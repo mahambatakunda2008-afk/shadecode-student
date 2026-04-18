@@ -6,6 +6,8 @@ const nextConfig = withPWA({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
-})({});
+})({
+  turbopack: {},
+});
 
 export default nextConfig;
