@@ -1,65 +1,83 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div style={{
+      minHeight: "100vh",
+      padding: "60px 24px 24px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "32px",
+    }}>
+      {/* Header */}
+      <div>
+        <p style={{ color: "var(--primary)", fontSize: "13px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase" }}>
+          Shadecode
+        </p>
+        <h1 style={{ fontSize: "36px", fontWeight: 800, lineHeight: 1.1, marginTop: "8px" }}>
+          Study smarter.<br />
+          <span style={{ color: "var(--primary)" }}>Live sharper.</span>
+        </h1>
+        <p style={{ color: "var(--muted-foreground)", marginTop: "12px", fontSize: "15px", lineHeight: 1.6 }}>
+          Your intelligent study companion. Stay consistent, track progress, and stay motivated.
+        </p>
+      </div>
+
+      {/* Quick Actions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <Link href="/auth/signup" style={{
+          background: "var(--primary)",
+          color: "white",
+          padding: "16px",
+          borderRadius: "12px",
+          textDecoration: "none",
+          fontWeight: 700,
+          fontSize: "16px",
+          textAlign: "center",
+          boxShadow: "0 0 24px var(--primary-glow)",
+        }}>
+          Get Started
+        </Link>
+        <Link href="/auth/login" style={{
+          background: "var(--card)",
+          color: "var(--foreground)",
+          padding: "16px",
+          borderRadius: "12px",
+          textDecoration: "none",
+          fontWeight: 600,
+          fontSize: "16px",
+          textAlign: "center",
+          border: "1px solid var(--card-border)",
+        }}>
+          Sign In
+        </Link>
+      </div>
+
+      {/* Features */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {[
+          { icon: "📅", title: "Smart Timetable", desc: "Auto-generated study schedule with breaks" },
+          { icon: "✅", title: "Task Tracker", desc: "Subject-based tasks with XP rewards" },
+          { icon: "🔥", title: "Streak System", desc: "Stay consistent and build daily habits" },
+          { icon: "🧠", title: "Cortex", desc: "AI that thinks with you — coming soon" },
+        ].map((feature) => (
+          <div key={feature.title} style={{
+            background: "var(--card)",
+            border: "1px solid var(--card-border)",
+            borderRadius: "12px",
+            padding: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+          }}>
+            <span style={{ fontSize: "24px" }}>{feature.icon}</span>
+            <div>
+              <p style={{ fontWeight: 600, fontSize: "15px" }}>{feature.title}</p>
+              <p style={{ color: "var(--muted-foreground)", fontSize: "13px", marginTop: "2px" }}>{feature.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
