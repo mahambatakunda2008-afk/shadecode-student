@@ -1,5 +1,6 @@
 "use client";
 
+import Cortex from "@/components/cortex/Cortex";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -34,14 +35,16 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cortexTrigger, setCortexTrigger] = useState(0);
   const router = useRouter();
   const supabase = createClient();
+  const [currentUser, setCurrentUser] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
-      
+
       await updateStreak(user.id);
 
       const [{ data: profileData }, { data: subjectsData }, { data: tasksData }, { data: achievementsData }] = await Promise.all([
@@ -56,6 +59,8 @@ export default function Dashboard() {
       setTasks(tasksData || []);
       setAchievements(achievementsData || []);
       setLoading(false);
+      setCortexTrigger(1);
+      setCurrentUser(user.id);
     };
 
     fetchData();
@@ -217,6 +222,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      <Cortex userId={currentUser} trigger={cortexTrigger} />
     </div>
   );
 }
