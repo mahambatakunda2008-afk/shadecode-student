@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import "./page.css";
 
 interface TimetableSlot {
   id?: string;
@@ -92,95 +93,75 @@ export default function Timetable() {
     setLoading(false);
   };
 
-  const cardStyle = {
-    background: "var(--card)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "12px",
-    padding: "16px",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    background: "var(--muted)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    color: "var(--foreground)",
-    fontSize: "14px",
-    outline: "none",
-  };
-
   return (
-    <div style={{ padding: "60px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-
+    <div className="container">
       {/* Header */}
-      <div>
-        <h1 style={{ fontSize: "28px", fontWeight: 800 }}>Timetable</h1>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginTop: "4px" }}>
+      <div className="header">
+        <h1 className="title">Timetable</h1>
+        <p className="subtitle">
           Generate your smart study schedule
         </p>
       </div>
 
       {/* Generator */}
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: "12px" }}>Generate Schedule</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div className="card">
+        <p className="card-title">Generate Schedule</p>
+        <div className="form">
           <div>
-            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "4px" }}>
-              Subjects (comma separated)
-            </p>
+            <label htmlFor="subjects" className="label">Subjects (comma separated)</label>
             <input
+              id="subjects"
+              type="text"
               placeholder="e.g. Math, Physics, English"
+              title="Subjects"
               value={subjects}
               onChange={(e) => setSubjects(e.target.value)}
-              style={inputStyle}
+              className="input"
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+          <div className="grid">
             <div>
-              <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "4px" }}>Start Time</p>
+              <label htmlFor="startTime" className="label">Start Time</label>
               <input
+                id="startTime"
                 type="time"
+                placeholder="08:00"
+                title="Start Time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                style={inputStyle}
+                className="input"
               />
             </div>
             <div>
-              <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "4px" }}>Study (mins)</p>
+              <label htmlFor="duration" className="label">Study (mins)</label>
               <input
+                id="duration"
                 type="number"
+                placeholder="60"
+                title="Study Duration in minutes"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
-                style={inputStyle}
+                className="input"
               />
             </div>
             <div>
-              <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "4px" }}>Break (mins)</p>
+              <label htmlFor="breakDuration" className="label">Break (mins)</label>
               <input
+                id="breakDuration"
                 type="number"
+                placeholder="10"
+                title="Break Duration in minutes"
                 value={breakDuration}
                 onChange={(e) => setBreakDuration(e.target.value)}
-                style={inputStyle}
+                className="input"
               />
             </div>
           </div>
 
           <button
             onClick={generateSchedule}
-            style={{
-              background: "var(--primary)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "12px",
-              fontWeight: 700,
-              fontSize: "15px",
-              cursor: "pointer",
-              boxShadow: "0 0 16px var(--primary-glow)",
-              marginTop: "4px",
-            }}
+            className="generate-button"
           >
             Generate Schedule
           </button>
@@ -189,46 +170,25 @@ export default function Timetable() {
 
       {/* Schedule */}
       {schedule.length > 0 && (
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <p style={{ fontWeight: 700 }}>Your Plan</p>
+        <div className="card">
+          <div className="schedule-header">
+            <p className="schedule-title">Your Plan</p>
             <button
               onClick={saveSchedule}
               disabled={loading || saved}
-              style={{
-                background: saved ? "var(--success)" : "var(--muted)",
-                color: saved ? "white" : "var(--foreground)",
-                border: "none",
-                borderRadius: "8px",
-                padding: "6px 12px",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: saved ? "default" : "pointer",
-              }}
+              className={`save-button ${saved ? 'saved' : ''} ${loading ? 'loading' : ''}`}
             >
               {saved ? "✓ Saved" : loading ? "Saving..." : "Save"}
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="slots">
             {schedule.map((slot, index) => (
-              <div key={index} style={{
-                background: slot.is_break ? "rgba(245,158,11,0.1)" : "rgba(99,102,241,0.1)",
-                border: `1px solid ${slot.is_break ? "rgba(245,158,11,0.2)" : "rgba(99,102,241,0.2)"}`,
-                borderRadius: "8px",
-                padding: "12px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}>
-                <p style={{
-                  fontWeight: 600,
-                  fontSize: "14px",
-                  color: slot.is_break ? "#f59e0b" : "var(--primary)",
-                }}>
+              <div key={index} className={`slot ${slot.is_break ? 'break' : 'study'}`}>
+                <p className="slot-subject">
                   {slot.is_break ? "☕ Break" : slot.subject}
                 </p>
-                <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
+                <p className="slot-time">
                   {slot.start_time} - {slot.end_time}
                 </p>
               </div>
@@ -236,20 +196,14 @@ export default function Timetable() {
           </div>
 
           {/* Summary */}
-          <div style={{
-            marginTop: "12px",
-            paddingTop: "12px",
-            borderTop: "1px solid var(--card-border)",
-            display: "flex",
-            justifyContent: "space-between",
-          }}>
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
+          <div className="summary">
+            <p className="summary-item">
               📚 {schedule.filter(s => !s.is_break).length} subjects
             </p>
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
+            <p className="summary-item">
               ☕ {schedule.filter(s => s.is_break).length} breaks
             </p>
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
+            <p className="summary-item">
               ⏱ {schedule.filter(s => !s.is_break).length * parseInt(duration)} mins
             </p>
           </div>

@@ -96,7 +96,7 @@ export default function Login() {
       </div>
 
       <p style={{ color: "var(--muted-foreground)", textAlign: "center", fontSize: "14px" }}>
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link href="/auth/signup" style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "none" }}>
           Get Started
         </Link>
