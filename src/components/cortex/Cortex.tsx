@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 interface CortexProps {
   userId: string;
-  trigger: number; // increment this to force Cortex to re-analyze
+  trigger: number;
 }
 
 interface Insight {
@@ -22,17 +22,14 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   const analyze = async () => {
     setProcessing(true);
 
-    // Gather behavioral data
     const [
       { data: tasks },
       { data: profile },
       { data: subjects },
-      { data: recentInsights },
     ] = await Promise.all([
       supabase.from("tasks").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("subjects").select("*").eq("user_id", userId),
-      supabase.from("cortex_insights").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(3),
     ]);
 
     if (!tasks || !profile) { setProcessing(false); return; }
@@ -40,7 +37,6 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     const completedTasks = tasks.filter(t => t.completed);
     const pendingTasks = tasks.filter(t => !t.completed);
 
-    // Build behavioral summary for Claude
     const behaviorSummary = `
 Student behavioral data:
 - Streak: ${profile.streak} days
@@ -51,42 +47,15 @@ Student behavioral data:
 - Recent task titles (last 5): ${tasks.slice(0, 5).map(t => t.title).join(", ")}
     `.trim();
 
-    // Call Claude API
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/cortex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 100,
-          system: `You are Cortex, a behavioral interpretation layer inside a student productivity app called Shadecode Student.
-Your job is to analyze student activity data and output ONE short, neutral insight (1-2 sentences max).
-
-Rules:
-- Never motivate or encourage
-- Never ask questions
-- Never give advice
-- No emotional language
-- Neutral, analytical tone only
-- Observe and reflect patterns only
-- Sound like a system, not a chatbot
-
-Example outputs:
-"Consistency improving over last 3 sessions."
-"Engagement concentrated in short bursts."
-"High task completion rate detected in Mathematics."
-"Irregular activity pattern identified across subjects."`,
-          messages: [
-            {
-              role: "user",
-              content: behaviorSummary,
-            },
-          ],
-        }),
+        body: JSON.stringify({ behaviorSummary }),
       });
 
       const data = await response.json();
-      const insight = data.content?.[0]?.text?.trim();
+      const insight = data.insight;
 
       if (insight) {
         const { data: saved } = await supabase
@@ -107,7 +76,6 @@ Example outputs:
   };
 
   useEffect(() => {
-    // Load existing insights
     const loadInsights = async () => {
       const { data } = await supabase
         .from("cortex_insights")
@@ -134,7 +102,6 @@ Example outputs:
       padding: "16px",
       backdropFilter: "blur(10px)",
     }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
         <span style={{ fontSize: "16px" }}>🧠</span>
         <p style={{ fontWeight: 700, fontSize: "14px", color: "var(--primary)" }}>CORTEX</p>
@@ -143,14 +110,12 @@ Example outputs:
             fontSize: "11px",
             color: "var(--muted-foreground)",
             marginLeft: "auto",
-            animation: "pulse 1s infinite",
           }}>
             processing...
           </span>
         )}
       </div>
 
-      {/* Insights */}
       {insights.length === 0 ? (
         <p style={{
           fontSize: "13px",
