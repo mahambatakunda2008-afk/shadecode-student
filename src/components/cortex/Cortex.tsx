@@ -20,7 +20,10 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   const supabase = createClient();
 
   const analyze = async () => {
-    setProcessing(true);
+  console.log("Cortex analyzing for userId:", userId);
+  if (!userId) return;
+  setProcessing(true);
+  // ... rest of function
 
     const [
       { data: tasks },
@@ -89,10 +92,10 @@ Student behavioral data:
   }, []);
 
   useEffect(() => {
-    if (trigger === 0) return;
-    const timeout = setTimeout(() => analyze(), 500);
-    return () => clearTimeout(timeout);
-  }, [trigger]);
+  if (trigger === 0 || !userId) return;
+  const timeout = setTimeout(() => analyze(), 500);
+  return () => clearTimeout(timeout);
+}, [trigger, userId]);
 
   return (
     <div style={{
