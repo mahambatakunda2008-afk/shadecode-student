@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { updateStreak } from "@/lib/utils/streak";
 
 interface Profile {
   username: string;
@@ -40,6 +41,8 @@ export default function Dashboard() {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
+      
+      await updateStreak(user.id);
 
       const [{ data: profileData }, { data: subjectsData }, { data: tasksData }, { data: achievementsData }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
