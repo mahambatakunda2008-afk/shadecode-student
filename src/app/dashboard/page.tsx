@@ -61,8 +61,10 @@ export default function Dashboard() {
       setTasks(tasksData || []);
       setAchievements(achievementsData || []);
       setLoading(false);
-      const params = new URLSearchParams(window.location.search);
-if (params.get("tour") === "true") setShowTour(true);
+     if (typeof window !== "undefined") {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("tour") === "true") setShowTour(true);
+}
       setCortexTrigger(1);
       setCurrentUser(user.id);
     };
