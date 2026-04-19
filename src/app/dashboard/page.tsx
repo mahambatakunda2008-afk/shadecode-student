@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { updateStreak } from "@/lib/utils/streak";
+import Tour from "@/components/shared/Tour";
 
 interface Profile {
   username: string;
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const router = useRouter();
   const supabase = createClient();
   const [currentUser, setCurrentUser] = useState<string>("");
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,6 +61,8 @@ export default function Dashboard() {
       setTasks(tasksData || []);
       setAchievements(achievementsData || []);
       setLoading(false);
+      const params = new URLSearchParams(window.location.search);
+if (params.get("tour") === "true") setShowTour(true);
       setCortexTrigger(1);
       setCurrentUser(user.id);
     };
@@ -116,12 +120,12 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
         {[
-          { label: "Level", value: profile?.level || 1, color: "var(--primary)" },
-          { label: "XP", value: profile?.xp || 0, color: "var(--primary)" },
-          { label: "🔥 Streak", value: `${profile?.streak || 0} days`, color: "#f59e0b" },
-          { label: "Tasks", value: `${completedTasks}/${totalTasks}`, color: "var(--success)" },
-        ].map((stat) => (
-          <div key={stat.label} style={cardStyle}>
+  { label: "Level", value: profile?.level || 1, color: "var(--primary)", id: "xp-card" },
+  { label: "XP", value: profile?.xp || 0, color: "var(--primary)", id: "" },
+  { label: "🔥 Streak", value: `${profile?.streak || 0} days`, color: "#f59e0b", id: "streak-card" },
+  { label: "Tasks", value: `${completedTasks}/${totalTasks}`, color: "var(--success)", id: "" },
+].map((stat) => (
+  <div key={stat.label} id={stat.id || undefined} style={cardStyle}>
             <p style={{ color: "var(--muted-foreground)", fontSize: "12px" }}>{stat.label}</p>
             <p style={{ fontSize: "24px", fontWeight: 800, color: stat.color, marginTop: "4px" }}>{stat.value}</p>
           </div>
@@ -222,7 +226,16 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-      <Cortex userId={currentUser} trigger={cortexTrigger} />
+      <div id="cortex-card">
+  <Cortex userId={currentUser} trigger={cortexTrigger} />
+</div>
+{showTour && (
+  <Tour onComplete={async () => {
+    setShowTour(false);
+    await supabase.from("profiles").update({ onboarding_complete: true }).eq("id", currentUser);
+    window.history.replaceState({}, "", "/dashboard");
+  }} />
+)}
     </div>
   );
 }

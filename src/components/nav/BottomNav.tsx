@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { Home, Calendar, CheckSquare, LayoutDashboard } from "lucide-react";
 
 const navItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Timetable", href: "/timetable", icon: Calendar },
-  { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Home", href: "/", icon: Home, id: "nav-home" },
+  { label: "Timetable", href: "/timetable", icon: Calendar, id: "nav-timetable" },
+  { label: "Tasks", href: "/tasks", icon: CheckSquare, id: "nav-tasks" },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, id: "nav-dashboard" },
 ];
 
 export default function BottomNav() {
@@ -32,11 +32,12 @@ export default function BottomNav() {
         margin: "0 auto",
       }}
     >
-      {navItems.map(({ label, href, icon: Icon }) => {
+      {navItems.map(({ label, href, icon: Icon, id }) => {
         const isActive = pathname === href;
         return (
           <Link
             key={href}
+            id={id}
             href={href}
             style={{
               display: "flex",
