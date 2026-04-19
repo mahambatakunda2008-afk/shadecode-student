@@ -54,7 +54,7 @@ export default function Tour({ onComplete }: TourProps) {
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
-  const current = tourSteps[step];
+ const current = tourSteps[step] || null;
 
   useEffect(() => {
     const el = document.getElementById(current.target);
@@ -81,7 +81,7 @@ export default function Tour({ onComplete }: TourProps) {
   return (
     <>
       {/* Dark overlay with hole cut out */}
-      {targetRect && (
+      {targetRect && current && (
         <>
           {/* Top overlay */}
           <div style={{
@@ -159,7 +159,7 @@ export default function Tour({ onComplete }: TourProps) {
       )}
 
       {/* Tooltip */}
-      {targetRect && (
+      {targetRect && current && (
         <div style={{
           position: "fixed",
           bottom: isAboveCenter ? window.innerHeight - targetRect.top + 52 : undefined,
