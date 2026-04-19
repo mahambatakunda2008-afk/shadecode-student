@@ -67,12 +67,12 @@ export default function Tour({ onComplete }: TourProps) {
   }, [step]);
 
   const next = () => {
-    if (step < tourSteps.length - 1) {
-      setStep(step + 1);
-    } else {
-      onComplete();
-    }
-  };
+  if (step < tourSteps.length - 1) {
+    setStep(step + 1);
+  } else {
+    setStep(tourSteps.length); // trigger outro
+  }
+};
 
   const skip = () => onComplete();
 
@@ -232,6 +232,56 @@ export default function Tour({ onComplete }: TourProps) {
           50% { transform: translateY(-6px); }
         }
       `}</style>
+      {/* Outro */}
+{step === tourSteps.length && (
+  <>
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.9)",
+      zIndex: 998,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      <div style={{
+        background: "var(--card)",
+        border: "1px solid var(--primary)",
+        borderRadius: "16px",
+        padding: "32px 24px",
+        width: "calc(100% - 48px)",
+        maxWidth: "400px",
+        textAlign: "center",
+        boxShadow: "0 0 40px var(--primary-glow)",
+      }}>
+        <p style={{ fontSize: "48px", marginBottom: "16px" }}>🚀</p>
+        <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>
+          You're all set.
+        </h2>
+        <p style={{ color: "var(--muted-foreground)", fontSize: "14px", lineHeight: 1.6, marginBottom: "24px" }}>
+          Your study environment is ready. Stay consistent, earn XP, and let Cortex guide your patterns.
+        </p>
+        <button
+          onClick={onComplete}
+          style={{
+            background: "var(--primary)",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            padding: "14px",
+            fontWeight: 700,
+            fontSize: "15px",
+            cursor: "pointer",
+            width: "100%",
+            boxShadow: "0 0 16px var(--primary-glow)",
+          }}
+        >
+          Start Studying
+        </button>
+      </div>
+    </div>
+  </>
+)}
     </>
   );
 }
