@@ -96,7 +96,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "60px 24px 24px", display: "flex", flexDirection: "column", gap: "16px", maxWidth: "100%", paddingRight: "calc(24px + 0px)" }} className="dashboard-main">
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>

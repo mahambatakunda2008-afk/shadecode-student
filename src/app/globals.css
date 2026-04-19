@@ -37,3 +37,8 @@ body {
   background: var(--muted);
   border-radius: 2px;
 }
+@media (min-width: 900px) {
+  .dashboard-main {
+    padding-right: 300px !important;
+  }
+}
