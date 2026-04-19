@@ -34,7 +34,7 @@ export default function SignUp() {
         xp: 0,
         streak: 0,
       });
-      router.push("/dashboard");
+      router.push("/onboarding");
     }
 
     setLoading(false);
