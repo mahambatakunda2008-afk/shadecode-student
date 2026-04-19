@@ -253,4 +253,62 @@ export default function Onboarding() {
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <div>
             <p style={{ color: "var(--primary)", fontSize: "13px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase" }}>
-              S
+              Step 2 of 2
+            </p>
+            <h1 style={{ fontSize: "32px", fontWeight: 800, marginTop: "8px" }}>
+              Generate your timetable
+            </h1>
+            <p style={{ color: "var(--muted-foreground)", marginTop: "8px", fontSize: "15px" }}>
+              Pick a start time and we'll build your schedule.
+            </p>
+          </div>
+
+          <div style={cardStyle}>
+            <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "8px" }}>Start Time</p>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+
+          {schedule.length === 0 ? (
+            <button onClick={generateSchedule} style={primaryBtn}>
+              Generate Schedule
+            </button>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={cardStyle}>
+                <p style={{ fontWeight: 700, marginBottom: "12px" }}>Your Plan</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {schedule.map((slot, index) => (
+                    <div key={index} style={{
+                      background: slot.is_break ? "rgba(245,158,11,0.1)" : "rgba(99,102,241,0.1)",
+                      border: `1px solid ${slot.is_break ? "rgba(245,158,11,0.2)" : "rgba(99,102,241,0.2)"}`,
+                      borderRadius: "8px",
+                      padding: "10px 12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}>
+                      <p style={{ fontWeight: 600, fontSize: "14px", color: slot.is_break ? "#f59e0b" : "var(--primary)" }}>
+                        {slot.is_break ? "☕ Break" : slot.subject}
+                      </p>
+                      <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
+                        {slot.start_time} - {slot.end_time}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={finish} disabled={loading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
+                {loading ? "Setting up..." : "Go to Dashboard 🚀"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
