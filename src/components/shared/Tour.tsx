@@ -133,6 +133,7 @@ export default function Tour({ onComplete }: TourProps) {
             zIndex: 1000,
             pointerEvents: "none",
             fontSize: "20px",
+            animation: "bounce 0.8s ease-in-out infinite",
           }}>
             {isAboveCenter ? "⬇️" : "⬆️"}
           </div>
