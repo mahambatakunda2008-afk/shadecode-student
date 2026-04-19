@@ -4,17 +4,19 @@ export async function POST(req: NextRequest) {
   try {
     const { behaviorSummary } = await req.json();
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 100,
-        system: `You are Cortex, a behavioral interpretation layer inside a student productivity app called Shadecode Student.
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are Cortex, a behavioral interpretation layer inside a student productivity app called Shadecode Student.
 Your job is to analyze student activity data and output ONE short, neutral insight (1-2 sentences max).
 
 Rules:
@@ -30,15 +32,26 @@ Example outputs:
 "Consistency improving over last 3 sessions."
 "Engagement concentrated in short bursts."
 "High task completion rate detected in Mathematics."
-"Irregular activity pattern identified across subjects."`,
-        messages: [{ role: "user", content: behaviorSummary }],
-      }),
-    });
+"Irregular activity pattern identified across subjects."
+
+Student behavioral data:
+${behaviorSummary}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 100,
+            temperature: 0.3,
+          },
+        }),
+      }
+    );
 
     const data = await response.json();
-    console.log("Anthropic response:", JSON.stringify(data));
+    console.log("Gemini response:", JSON.stringify(data));
 
-    const insight = data.content?.[0]?.text?.trim();
+    const insight = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!insight) {
       console.error("No insight returned:", JSON.stringify(data));
