@@ -127,7 +127,13 @@ Student behavioral data:
         }
 
         .cortex-insight {
-          animation: cortexFadeIn 0.4s ease forwards;
+  animation: cortexFadeIn 0.4s ease forwards;
+  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99,102,241,0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+}
         }
 
         /* Desktop: right sidebar */
