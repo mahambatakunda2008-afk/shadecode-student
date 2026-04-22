@@ -28,11 +28,10 @@ Rules:
 - Neutral, analytical tone only
 - Sound like a system, not a chatbot
 
-Examples:
-"Consistency improving over last 3 sessions."
-"Single subject focus detected with full task completion."
-"Engagement concentrated in short bursts across subjects."
-"High task completion rate detected in Mathematics."
+Examples of correct output (complete sentences only):
+"Consistency improving across Mathematics and Physics subjects."
+"Task completion rate at 40% with active engagement detected."
+"Study pattern shows partial progress across multiple subjects."
 
 Student behavioral data:
 ${behaviorSummary}`,
@@ -41,7 +40,7 @@ ${behaviorSummary}`,
             },
           ],
           generationConfig: {
-            maxOutputTokens: 100,
+            maxOutputTokens: 150,
             temperature: 0.3,
           },
         }),
