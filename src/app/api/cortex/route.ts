@@ -40,7 +40,7 @@ ${behaviorSummary}`,
             },
           ],
           generationConfig: {
-            maxOutputTokens: 150,
+            maxOutputTokens: 500,
             temperature: 0.3,
           },
         }),
