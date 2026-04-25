@@ -63,14 +63,20 @@ Rules:
       return NextResponse.json({ error: "No response from AI" }, { status: 500 });
     }
 
-    if (type === "explanation") {
-      return NextResponse.json({ explanation: text });
-    } else {
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      return NextResponse.json(parsed);
-    }
-
+   if (type === "explanation") {
+  return NextResponse.json({ explanation: text });
+} else {
+  try {
+    const clean = text.replace(/```json|```/g, "").trim();
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON found in response");
+    const parsed = JSON.parse(jsonMatch[0]);
+    return NextResponse.json(parsed);
+  } catch (parseErr) {
+    console.error("JSON parse error:", parseErr, "Raw text:", text);
+    return NextResponse.json({ error: "Failed to parse quiz", raw: text }, { status: 500 });
+  }
+}
   } catch (err) {
     console.error("Learn route error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
