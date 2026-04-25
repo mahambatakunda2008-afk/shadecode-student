@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, CheckSquare, LayoutDashboard } from "lucide-react";
+import { Home, Calendar, CheckSquare, LayoutDashboard, BookOpen } from "lucide-react";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home, id: "nav-home" },
   { label: "Timetable", href: "/timetable", icon: Calendar, id: "nav-timetable" },
   { label: "Tasks", href: "/tasks", icon: CheckSquare, id: "nav-tasks" },
+  { label: "Exams", href: "/exams", icon: BookOpen, id: "nav-exams" },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, id: "nav-dashboard" },
 ];
 
