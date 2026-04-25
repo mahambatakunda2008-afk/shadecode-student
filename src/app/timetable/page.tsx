@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { emitCortexEvent } from "@/lib/cortex/events/emit";
 
 interface TimetableSlot {
   id?: string;
@@ -22,7 +23,7 @@ export default function Timetable() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     const init = async () => {
@@ -38,7 +39,7 @@ export default function Timetable() {
       if (data && data.length > 0) setSchedule(data);
     };
     init();
-  }, []);
+  }, [router, supabase]);
 
   const generateSchedule = () => {
     const subjectList = subjects.split(",").map(s => s.trim()).filter(Boolean);
@@ -77,6 +78,19 @@ export default function Timetable() {
 
     setSchedule(slots);
     setSaved(false);
+
+    if (userId) {
+      emitCortexEvent({
+        userId,
+        type: "timetable.generated",
+        source: "timetable",
+        data: {
+          sessions: slots.filter((slot) => !slot.is_break).length,
+          breaks: slots.filter((slot) => slot.is_break).length,
+          totalMinutes: slots.filter((slot) => !slot.is_break).length * parseInt(duration),
+        },
+      });
+    }
   };
 
   const saveSchedule = async () => {
@@ -88,6 +102,17 @@ export default function Timetable() {
     );
     setSaved(true);
     setLoading(false);
+
+    emitCortexEvent({
+      userId,
+      type: "timetable.saved",
+      source: "timetable",
+      data: {
+        sessions: schedule.filter((slot) => !slot.is_break).length,
+        breaks: schedule.filter((slot) => slot.is_break).length,
+        totalMinutes: schedule.filter((slot) => !slot.is_break).length * parseInt(duration),
+      },
+    });
   };
 
   const cardStyle = {

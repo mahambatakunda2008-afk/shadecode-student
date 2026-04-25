@@ -37,8 +37,34 @@ body {
   background: var(--muted);
   border-radius: 2px;
 }
+
+/* Dashboard layout */
 @media (min-width: 900px) {
   .dashboard-main {
     padding-right: 300px !important;
+  }
+}
+
+/* Cortex responsive */
+.cortex-sidebar {
+  display: none !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+.cortex-card {
+  display: block !important;
+}
+
+@media (min-width: 900px) {
+  .cortex-sidebar {
+    display: flex !important;
+    width: 280px !important;
+    overflow: visible !important;
+    pointer-events: all !important;
+  }
+  .cortex-card {
+    display: none !important;
   }
 }

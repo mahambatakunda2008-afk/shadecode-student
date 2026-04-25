@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { updateStreak } from "@/lib/utils/streak";
 import Tour from "@/components/shared/Tour";
+import { emitCortexEvent } from "@/lib/cortex/events/emit";
 
 interface Profile {
   username: string;
@@ -38,7 +39,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [cortexTrigger, setCortexTrigger] = useState(0);
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [currentUser, setCurrentUser] = useState<string>("");
   const [showTour, setShowTour] = useState(false);
 
@@ -47,7 +48,7 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
 
-      await updateStreak(user.id);
+      const streakResult = await updateStreak(user.id);
 
       const [{ data: profileData }, { data: subjectsData }, { data: tasksData }, { data: achievementsData }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -61,16 +62,37 @@ export default function Dashboard() {
       setTasks(tasksData || []);
       setAchievements(achievementsData || []);
       setLoading(false);
-     if (typeof window !== "undefined") {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("tour") === "true") setShowTour(true);
-}
-      setCortexTrigger(1);
       setCurrentUser(user.id);
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("tour") === "true") setShowTour(true);
+      }
+
+      emitCortexEvent({
+        userId: user.id,
+        type: "dashboard.loaded",
+        source: "dashboard",
+        data: {
+          totalTasks: tasksData?.length || 0,
+          completedTasks: tasksData?.filter((task) => task.completed).length || 0,
+          subjects: subjectsData?.length || 0,
+        },
+      });
+
+      if (streakResult?.changed) {
+        emitCortexEvent({
+          userId: user.id,
+          type: "streak.updated",
+          source: "dashboard",
+          data: { streak: streakResult.streak, previousStreak: streakResult.previousStreak },
+        });
+      }
+
+      setCortexTrigger(1);
     };
 
     fetchData();
-  }, []);
+  }, [router, supabase]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

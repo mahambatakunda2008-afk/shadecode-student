@@ -1,7 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  clearQueuedCortexEvents,
+  getQueuedCortexEvents,
+  subscribeToCortexEvents,
+} from "@/lib/cortex/events/queue";
+import {
+  buildCortexFingerprint,
+  resolveCortexExtension,
+} from "@/lib/cortex/runtime/engine";
+import {
+  createCortexCacheKey,
+  getCachedCortexInsight,
+  setCachedCortexInsight,
+} from "@/lib/cortex/runtime/cache";
+import { CortexEvent, CortexSnapshot } from "@/lib/cortex/types";
 
 interface CortexProps {
   userId: string;
@@ -15,75 +30,196 @@ interface Insight {
   isNew?: boolean;
 }
 
+interface TaskRecord {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+interface SubjectRecord {
+  name: string;
+}
+
 export default function Cortex({ userId, trigger }: CortexProps) {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [processing, setProcessing] = useState(false);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
+  const analysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const analyze = async () => {
-    setProcessing(true);
+  const finishProcessing = useEffectEvent(() => {
+    setTimeout(() => setProcessing(false), 300);
+  });
 
-    const [
-      { data: tasks },
-      { data: profile },
-      { data: subjects },
-    ] = await Promise.all([
-      supabase.from("tasks").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
-      supabase.from("profiles").select("*").eq("id", userId).single(),
-      supabase.from("subjects").select("*").eq("user_id", userId),
+  const addInsightToState = useEffectEvent((saved: Insight) => {
+    setInsights((previous) => {
+      const nextInsight = { ...saved, isNew: true };
+      const nextList = [nextInsight, ...previous].slice(0, 4);
+
+      window.setTimeout(() => {
+        setInsights((current) =>
+          current.map((insight) =>
+            insight.id === saved.id ? { ...insight, isNew: false } : insight
+          )
+        );
+      }, 600);
+
+      return nextList;
+    });
+  });
+
+  const loadSnapshot = useEffectEvent(async (): Promise<CortexSnapshot | null> => {
+    const [{ data: tasks }, { data: profile }, { data: subjects }] = await Promise.all([
+      supabase
+        .from("tasks")
+        .select("id, title, completed")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase.from("profiles").select("streak, level, xp").eq("id", userId).single(),
+      supabase.from("subjects").select("name").eq("user_id", userId),
     ]);
 
-    if (!tasks || !profile) { setProcessing(false); return; }
+    if (!tasks || !profile) {
+      return null;
+    }
 
-    const completedTasks = tasks.filter(t => t.completed);
-    const pendingTasks = tasks.filter(t => !t.completed);
+    const typedTasks = tasks as TaskRecord[];
+    const typedSubjects = (subjects ?? []) as SubjectRecord[];
+    const completedTasks = typedTasks.filter((task) => task.completed);
 
-    const behaviorSummary = `
-Student behavioral data:
-- Streak: ${profile.streak} days
-- Level: ${profile.level}, XP: ${profile.xp}
-- Total tasks: ${tasks.length}, Completed: ${completedTasks.length}, Pending: ${pendingTasks.length}
-- Subjects: ${subjects?.map(s => s.name).join(", ") || "none"}
-- Completion rate: ${tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0}%
-- Recent task titles (last 5): ${tasks.slice(0, 5).map(t => t.title).join(", ")}
-    `.trim();
+    return {
+      streak: Number(profile.streak ?? 0),
+      level: Number(profile.level ?? 1),
+      xp: Number(profile.xp ?? 0),
+      totalTasks: typedTasks.length,
+      completedTasks: completedTasks.length,
+      pendingTasks: typedTasks.length - completedTasks.length,
+      subjects: typedSubjects.map((subject) => subject.name),
+      recentTaskTitles: typedTasks.slice(0, 5).map((task) => task.title),
+    };
+  });
+
+  const persistInsight = useEffectEvent(
+    async (insight: string, fingerprint: string, processedEvents: CortexEvent[]) => {
+      const cacheKey = createCortexCacheKey(userId, fingerprint);
+
+      if (insights[0]?.insight === insight) {
+        setCachedCortexInsight(cacheKey, insight);
+        clearQueuedCortexEvents(
+          userId,
+          processedEvents.map((event) => event.id)
+        );
+        return true;
+      }
+
+      const { data: saved, error } = await supabase
+        .from("cortex_insights")
+        .insert({ user_id: userId, insight })
+        .select()
+        .single();
+
+      if (error || !saved) {
+        console.error("Cortex insight save error:", error);
+        return false;
+      }
+
+      setCachedCortexInsight(cacheKey, insight);
+      clearQueuedCortexEvents(
+        userId,
+        processedEvents.map((event) => event.id)
+      );
+      addInsightToState(saved as Insight);
+      return true;
+    }
+  );
+
+  const runAnalysis = useEffectEvent(async () => {
+    if (!userId || processing) {
+      return;
+    }
+
+    setProcessing(true);
+    const queuedEvents = getQueuedCortexEvents(userId);
 
     try {
+      const snapshot = await loadSnapshot();
+      if (!snapshot) {
+        finishProcessing();
+        return;
+      }
+
+      const fingerprint = buildCortexFingerprint(snapshot, queuedEvents);
+      const cacheKey = createCortexCacheKey(userId, fingerprint);
+      const cachedInsight = getCachedCortexInsight(cacheKey);
+
+      if (cachedInsight) {
+        clearQueuedCortexEvents(
+          userId,
+          queuedEvents.map((event) => event.id)
+        );
+        return;
+      }
+
+      const extensionInsight = resolveCortexExtension({
+        events: queuedEvents,
+        snapshot,
+      });
+
+      if (extensionInsight) {
+        await persistInsight(extensionInsight, fingerprint, queuedEvents);
+        return;
+      }
+
       const response = await fetch("/api/cortex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ behaviorSummary }),
+        body: JSON.stringify({
+          requestType: "behavior.insight",
+          payload: {
+            userId,
+            events: queuedEvents,
+            snapshot,
+            fingerprint,
+          },
+        }),
       });
 
-      const data = await response.json();
-      const insight = data.insight;
-
-      if (insight) {
-        const { data: saved } = await supabase
-          .from("cortex_insights")
-          .insert({ user_id: userId, insight })
-          .select()
-          .single();
-
-        if (saved) {
-          setInsights(prev => {
-            const newInsight = { ...saved, isNew: true };
-            const updated = [newInsight, ...prev].slice(0, 4);
-            setTimeout(() => {
-              setInsights(curr => curr.map(i => i.id === saved.id ? { ...i, isNew: false } : i));
-            }, 600);
-            return updated;
-          });
-        }
+      if (!response.ok) {
+        throw new Error(`Cortex API failed with status ${response.status}`);
       }
-    } catch (err) {
-      console.error("Cortex error:", err);
+
+      const data = await response.json();
+      const remoteInsight = data.insight?.trim();
+
+      if (remoteInsight) {
+        await persistInsight(remoteInsight, fingerprint, queuedEvents);
+      }
+    } catch (error) {
+      console.error("Cortex error:", error);
+    } finally {
+      finishProcessing();
+    }
+  });
+
+  const scheduleAnalysis = useEffectEvent((delay = 350) => {
+    if (!userId) {
+      return;
     }
 
-    setTimeout(() => setProcessing(false), 300);
-  };
+    if (analysisTimerRef.current) {
+      clearTimeout(analysisTimerRef.current);
+    }
+
+    analysisTimerRef.current = setTimeout(() => {
+      void runAnalysis();
+    }, delay);
+  });
 
   useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
     const loadInsights = async () => {
       const { data } = await supabase
         .from("cortex_insights")
@@ -91,15 +227,40 @@ Student behavioral data:
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(4);
-      if (data) setInsights(data);
+
+      if (data) {
+        setInsights(data as Insight[]);
+      }
     };
-    loadInsights();
-  }, []);
+
+    void loadInsights();
+  }, [supabase, userId]);
 
   useEffect(() => {
-    if (trigger === 0 || !userId) return;
-    const timeout = setTimeout(() => analyze(), 600);
-    return () => clearTimeout(timeout);
+    if (!userId) {
+      return;
+    }
+
+    const unsubscribe = subscribeToCortexEvents((event) => {
+      if (event.userId === userId) {
+        scheduleAnalysis(250);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (analysisTimerRef.current) {
+        clearTimeout(analysisTimerRef.current);
+      }
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (trigger === 0 || !userId) {
+      return;
+    }
+
+    scheduleAnalysis(600);
   }, [trigger, userId]);
 
   return (
@@ -127,21 +288,18 @@ Student behavioral data:
         }
 
         .cortex-insight {
-  animation: cortexFadeIn 0.4s ease forwards;
-  background: rgba(99,102,241,0.06);
-  border: 1px solid rgba(99,102,241,0.12);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 2px;
-}
+          animation: cortexFadeIn 0.4s ease forwards;
+          background: rgba(99, 102, 241, 0.06);
+          border: 1px solid rgba(99, 102, 241, 0.12);
+          border-radius: 8px;
+          padding: 10px 12px;
+          margin-bottom: 2px;
         }
 
-        /* Desktop: right sidebar */
         .cortex-sidebar {
           display: none;
         }
 
-        /* Mobile: bottom card */
         .cortex-card {
           display: block;
         }
@@ -150,77 +308,112 @@ Student behavioral data:
           .cortex-sidebar {
             display: flex;
           }
+
           .cortex-card {
             display: none;
           }
         }
       `}</style>
 
-      {/* DESKTOP - Fixed right sidebar */}
-      <div className="cortex-sidebar" style={{
-        position: "fixed",
-        top: 0,
-        right: 0,
-        width: "280px",
-        height: "100vh",
-        flexDirection: "column",
-        gap: "0",
-        zIndex: 40,
-        background: "rgba(8, 8, 14, 0.85)",
-        backdropFilter: "blur(20px)",
-        borderLeft: "1px solid rgba(99, 102, 241, 0.1)",
-        padding: "32px 20px",
-        overflow: "hidden",
-      }}>
-        {/* Subtle background pulse */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "radial-gradient(ellipse at 50% 30%, rgba(99,102,241,0.08) 0%, transparent 70%)",
-          animation: "cortexPulse 15s ease-in-out infinite",
-          pointerEvents: "none",
-        }} />
+      <div
+        className="cortex-sidebar"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          width: "280px",
+          height: "100vh",
+          flexDirection: "column",
+          gap: "0",
+          zIndex: 40,
+          background: "rgba(8, 8, 14, 0.85)",
+          backdropFilter: "blur(20px)",
+          borderLeft: "1px solid rgba(99, 102, 241, 0.1)",
+          padding: "32px 20px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(ellipse at 50% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 70%)",
+            animation: "cortexPulse 15s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
 
-        {/* Header */}
         <div style={{ marginBottom: "24px", position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-            <span style={{ fontSize: "16px" }}>🧠</span>
-            <p style={{ fontWeight: 800, fontSize: "14px", color: "var(--primary)", letterSpacing: "2px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "4px",
+            }}
+          >
+            <p
+              style={{
+                fontWeight: 800,
+                fontSize: "14px",
+                color: "var(--primary)",
+                letterSpacing: "2px",
+              }}
+            >
               CORTEX
             </p>
             {processing && (
-              <div style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                border: "2px solid var(--primary)",
-                borderTopColor: "transparent",
-                marginLeft: "auto",
-                animation: "cortexSpin 0.8s linear infinite",
-              }} />
+              <div
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  border: "2px solid var(--primary)",
+                  borderTopColor: "transparent",
+                  marginLeft: "auto",
+                  animation: "cortexSpin 0.8s linear infinite",
+                }}
+              />
             )}
           </div>
-          <p style={{ fontSize: "11px", color: "var(--muted-foreground)", letterSpacing: "1px" }}>
+          <p
+            style={{
+              fontSize: "11px",
+              color: "var(--muted-foreground)",
+              letterSpacing: "1px",
+            }}
+          >
             Learning interpretation layer
           </p>
-          <div style={{
-            height: "1px",
-            background: "linear-gradient(to right, rgba(99,102,241,0.3), transparent)",
-            marginTop: "12px",
-          }} />
+          <div
+            style={{
+              height: "1px",
+              background: "linear-gradient(to right, rgba(99, 102, 241, 0.3), transparent)",
+              marginTop: "12px",
+            }}
+          />
         </div>
 
-        {/* Insights */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", position: "relative" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            position: "relative",
+          }}
+        >
           {insights.length === 0 ? (
-            <p style={{
-              fontSize: "12px",
-              color: "var(--muted-foreground)",
-              fontStyle: "italic",
-              lineHeight: 1.6,
-              opacity: 0.6,
-            }}>
-              {processing ? "Analyzing…" : "Idle — awaiting learning signals"}
+            <p
+              style={{
+                fontSize: "12px",
+                color: "var(--muted-foreground)",
+                fontStyle: "italic",
+                lineHeight: 1.6,
+                opacity: 0.6,
+              }}
+            >
+              {processing ? "Analyzing..." : "Idle - awaiting learning signals"}
             </p>
           ) : (
             insights.map((insight, index) => (
@@ -228,19 +421,22 @@ Student behavioral data:
                 key={insight.id}
                 className="cortex-insight"
                 style={{
-                  background: "rgba(99,102,241,0.04)",
-                  border: "1px solid rgba(99,102,241,0.1)",
+                  background: "rgba(99, 102, 241, 0.04)",
+                  border: "1px solid rgba(99, 102, 241, 0.1)",
                   borderRadius: "8px",
                   padding: "10px 12px",
                   opacity: index === 0 ? 1 : Math.max(0.3, 1 - index * 0.2),
                   transition: "opacity 0.5s ease",
                 }}
               >
-                <p style={{
-                  fontSize: "12px",
-                  lineHeight: 1.6,
-                  color: index === 0 ? "var(--foreground)" : "var(--muted-foreground)",
-                }}>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    lineHeight: 1.6,
+                    color:
+                      index === 0 ? "var(--foreground)" : "var(--muted-foreground)",
+                  }}
+                >
                   {insight.insight}
                 </p>
               </div>
@@ -248,63 +444,107 @@ Student behavioral data:
           )}
         </div>
 
-        {/* Footer state */}
         {processing && (
-          <p style={{
-            position: "absolute",
-            bottom: "24px",
-            fontSize: "11px",
-            color: "var(--primary)",
-            opacity: 0.6,
-            letterSpacing: "1px",
-          }}>
-            Analyzing…
+          <p
+            style={{
+              position: "absolute",
+              bottom: "24px",
+              fontSize: "11px",
+              color: "var(--primary)",
+              opacity: 0.6,
+              letterSpacing: "1px",
+            }}
+          >
+            Analyzing...
           </p>
         )}
       </div>
 
-      {/* MOBILE - Bottom card */}
-      <div className="cortex-card" style={{
-        background: "rgba(10,10,15,0.8)",
-        border: "1px solid rgba(99,102,241,0.15)",
-        borderRadius: "12px",
-        padding: "16px",
-        backdropFilter: "blur(10px)",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        {/* Pulse background */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)",
-          animation: "cortexPulse 15s ease-in-out infinite",
-          pointerEvents: "none",
-        }} />
+      <div
+        className="cortex-card"
+        style={{
+          background: "rgba(10, 10, 15, 0.8)",
+          border: "1px solid rgba(99, 102, 241, 0.15)",
+          borderRadius: "12px",
+          padding: "16px",
+          backdropFilter: "blur(10px)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 70%)",
+            animation: "cortexPulse 15s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px", position: "relative" }}>
-          <span style={{ fontSize: "14px" }}>🧠</span>
-          <p style={{ fontWeight: 800, fontSize: "13px", color: "var(--primary)", letterSpacing: "2px" }}>CORTEX</p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "4px",
+            position: "relative",
+          }}
+        >
+          <p
+            style={{
+              fontWeight: 800,
+              fontSize: "13px",
+              color: "var(--primary)",
+              letterSpacing: "2px",
+            }}
+          >
+            CORTEX
+          </p>
           {processing && (
-            <div style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              border: "2px solid var(--primary)",
-              borderTopColor: "transparent",
-              marginLeft: "auto",
-              animation: "cortexSpin 0.8s linear infinite",
-            }} />
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                border: "2px solid var(--primary)",
+                borderTopColor: "transparent",
+                marginLeft: "auto",
+                animation: "cortexSpin 0.8s linear infinite",
+              }}
+            />
           )}
         </div>
-        <p style={{ fontSize: "11px", color: "var(--muted-foreground)", letterSpacing: "1px", marginBottom: "12px", position: "relative" }}>
+        <p
+          style={{
+            fontSize: "11px",
+            color: "var(--muted-foreground)",
+            letterSpacing: "1px",
+            marginBottom: "12px",
+            position: "relative",
+          }}
+        >
           Learning interpretation layer
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", position: "relative" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            position: "relative",
+          }}
+        >
           {insights.length === 0 ? (
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)", fontStyle: "italic" }}>
-              {processing ? "Analyzing…" : "Idle — awaiting learning signals"}
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--muted-foreground)",
+                fontStyle: "italic",
+              }}
+            >
+              {processing ? "Analyzing..." : "Idle - awaiting learning signals"}
             </p>
           ) : (
             insights.map((insight, index) => (
@@ -312,15 +552,22 @@ Student behavioral data:
                 key={insight.id}
                 className="cortex-insight"
                 style={{
-                  background: "rgba(99,102,241,0.05)",
-                  border: "1px solid rgba(99,102,241,0.1)",
+                  background: "rgba(99, 102, 241, 0.05)",
+                  border: "1px solid rgba(99, 102, 241, 0.1)",
                   borderRadius: "8px",
                   padding: "10px 12px",
                   opacity: index === 0 ? 1 : Math.max(0.3, 1 - index * 0.2),
                   transition: "opacity 0.5s ease",
                 }}
               >
-                <p style={{ fontSize: "13px", lineHeight: 1.5, color: index === 0 ? "var(--foreground)" : "var(--muted-foreground)" }}>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    lineHeight: 1.5,
+                    color:
+                      index === 0 ? "var(--foreground)" : "var(--muted-foreground)",
+                  }}
+                >
                   {insight.insight}
                 </p>
               </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { emitCortexEvent } from "@/lib/cortex/events/emit";
 
 interface Subject {
   id: string;
@@ -26,7 +27,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function Tasks() {
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [router, supabase]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -65,6 +66,12 @@ export default function Tasks() {
     if (data) {
       setSubjects([...subjects, data]);
       setNewSubject("");
+      emitCortexEvent({
+        userId,
+        type: "subject.created",
+        source: "tasks",
+        data: { subjectName: data.name },
+      });
     }
   };
 
@@ -79,11 +86,17 @@ export default function Tasks() {
     if (data) {
       setTasks([...tasks, data]);
       setNewTasks({ ...newTasks, [subjectId]: "" });
+      emitCortexEvent({
+        userId,
+        type: "task.created",
+        source: "tasks",
+        data: { subjectId, title: data.title },
+      });
     }
   };
 
   const completeTask = async (task: Task) => {
-    if (task.completed) return;
+    if (task.completed || !userId) return;
     await supabase.from("tasks").update({ completed: true }).eq("id", task.id);
 
     const newXp = xp + 10;
@@ -106,18 +119,44 @@ export default function Tasks() {
     if (completedCount === 10) {
       await supabase.from("achievements").insert({ user_id: userId, title: "Study Machine ⚡" });
     }
+    emitCortexEvent({
+      userId,
+      type: "task.completed",
+      source: "tasks",
+      data: { taskId: task.id, subjectId: task.subject_id, title: task.title },
+    });
   };
 
   const deleteTask = async (taskId: string) => {
+    const deletedTask = tasks.find((task) => task.id === taskId);
     await supabase.from("tasks").delete().eq("id", taskId);
     setTasks(tasks.filter(t => t.id !== taskId));
+
+    if (userId && deletedTask) {
+      emitCortexEvent({
+        userId,
+        type: "task.deleted",
+        source: "tasks",
+        data: { taskId, subjectId: deletedTask.subject_id, title: deletedTask.title },
+      });
+    }
   };
 
   const deleteSubject = async (subjectId: string) => {
+    const deletedSubject = subjects.find((subject) => subject.id === subjectId);
     await supabase.from("tasks").delete().eq("subject_id", subjectId);
     await supabase.from("subjects").delete().eq("id", subjectId);
     setSubjects(subjects.filter(s => s.id !== subjectId));
     setTasks(tasks.filter(t => t.subject_id !== subjectId));
+
+    if (userId && deletedSubject) {
+      emitCortexEvent({
+        userId,
+        type: "subject.deleted",
+        source: "tasks",
+        data: { subjectId, subjectName: deletedSubject.name },
+      });
+    }
   };
 
   if (loading) return (
