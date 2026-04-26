@@ -1,0 +1,14 @@
+{
+  "name": "cortex-engine",
+  "version": "1.0.0",
+  "description": "Autonomous self-improvement engine for Shadecode Student",
+  "main": "cortex-engine.js",
+  "scripts": {
+    "start": "node cortex-engine.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@octokit/rest": "^21.0.2",
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}
