@@ -140,7 +140,7 @@ async function readTaskRoadmap() {
 async function analyzeAndDecide(schema, signals, roadmap) {
   log("Consulting Gemini 2.5 for improvement decisions...");
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-04-17" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const schemaDesc = Object.entries(schema)
     .map(([t, m]) => `${t}: columns=[${m.columns.join(", ")}]`)
