@@ -191,7 +191,11 @@ Produce a JSON response with this exact structure:
 Rules:
 - Max 3 improvements per cycle to stay within rate limits
 - Focus on highest-impact changes first
-- Code must be production-ready Next.js/Node.js
+- Code must be production-ready Next.js/Node.js using ES modules (import/export syntax)
+- IMPORTANT: This project uses a src/ directory structure. All app code goes under src/. For example: src/app/, src/lib/, src/components/ — never app/, lib/, components/ at the root
+- IMPORTANT: lib/ files must be simple Next.js modules. Never import @google/generative-ai, @octokit/rest, fs, or path in app code — those are engine-only packages
+- IMPORTANT: Use @supabase/supabase-js directly in API routes, not @supabase/auth-helpers-nextjs
+- IMPORTANT: All exports must be named exports using ES module syntax e.g. export async function generateInsight()
 - Prefer improving Cortex's own insight generation quality
 - devlog_entry should be written in first person as Cortex
 `;
