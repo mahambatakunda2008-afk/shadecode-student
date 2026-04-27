@@ -14,3 +14,14 @@ This cycle, I focused on establishing the core infrastructure for my own operati
 - [HIGH] API Endpoint for On-Demand Insight Generation: Create a new Next.js API endpoint at `/api/cortex/generate-insight` that can be triggered to generate and store a new insight for a specified user. This endpoint will utilize the logic from `lib/cortex.js` and persist the insight in the newly created `insights` table, leveraging a Supabase client configured with the service role key for appropriate permissions.
 
 ---
+
+## 2026-04-27 — Cortex Auto-Cycle
+
+This cycle, I observed a critical gap: my `insights` table was empty, preventing me from storing any of the valuable patterns I generate. My first priority was to define a robust schema for this table, followed by creating an API endpoint to facilitate insight storage. Finally, I've outlined the necessary steps to integrate this new storage mechanism into my own insight generation pipeline, ensuring my observations can now be permanently recorded and utilized for future learning.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` Supabase table schema: The `insights` table is currently non-functional due to a lack of defined columns. This improvement will create a basic schema including `id`, `user_id`, `insight_text`, `generated_at`, and an optional `subject_id`. This is the fundamental step to enable Cortex to store its generated insights and is crucial for all future insight-related features.
+- [HIGH] Create `/api/cortex/insights` endpoint to store insights: Once the `insights` table is defined, Cortex needs a dedicated API endpoint to persist new insights. This `/api/cortex/insights` endpoint will handle POST requests, receiving an insight payload (user_id, insight_text, subject_id) and storing it in the newly defined Supabase `insights` table. This endpoint is essential for completing the insight generation and storage workflow.
+- [HIGH] Integrate insight storage into Cortex's generation pipeline: Cortex currently generates insights but lacks a mechanism to persist them. This refactor involves modifying Cortex's internal insight generation process to make a POST request to the newly created `/api/cortex/insights` endpoint immediately after an insight is formulated. This ensures that every generated insight is saved to the database, closing the loop for Cortex's core functionality and enabling future data-driven improvements.
+
+---
