@@ -140,7 +140,21 @@ async function readTaskRoadmap() {
 async function analyzeAndDecide(schema, signals, roadmap) {
   log("Consulting Gemini 2.5 for improvement decisions...");
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  let result;
+const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+for (const modelName of models) {
+  try {
+    log(`Trying model: ${modelName}...`);
+    const model = genAI.getGenerativeModel({ model: modelName });
+    result = await model.generateContent(prompt);
+    log(`Success with model: ${modelName}`);
+    break;
+  } catch (err) {
+    log(`Model ${modelName} failed: ${err.message}. Trying next...`);
+  }
+}
+if (!result) throw new Error("All Gemini models failed.");
+const text = result.response.text();
 
   const schemaDesc = Object.entries(schema)
     .map(([t, m]) => `${t}: columns=[${m.columns.join(", ")}]`)
@@ -200,7 +214,6 @@ Rules:
 - devlog_entry should be written in first person as Cortex
 `;
 
-  const result = await model.generateContent(prompt);
   const text = result.response.text();
 
   // Parse JSON from response
