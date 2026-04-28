@@ -213,9 +213,6 @@ Rules:
 - Prefer improving Cortex's own insight generation quality
 - devlog_entry should be written in first person as Cortex
 `;
-
-  const text = result.response.text();
-
   // Parse JSON from response
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Gemini did not return valid JSON");
