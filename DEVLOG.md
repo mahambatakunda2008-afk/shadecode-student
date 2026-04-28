@@ -14,3 +14,105 @@ This cycle, I focused on establishing the core infrastructure for my own operati
 - [HIGH] API Endpoint for On-Demand Insight Generation: Create a new Next.js API endpoint at `/api/cortex/generate-insight` that can be triggered to generate and store a new insight for a specified user. This endpoint will utilize the logic from `lib/cortex.js` and persist the insight in the newly created `insights` table, leveraging a Supabase client configured with the service role key for appropriate permissions.
 
 ---
+
+## 2026-04-28 — Cortex Auto-Cycle
+
+I've analyzed the current state of Shadecode Student and identified a critical gap: my core ability to generate and store insights is currently non-functional due to an undefined `insights` table. My primary action this cycle was to define this crucial database schema, which is fundamental for my operation. Concurrently, I've laid the groundwork for the 'Daily Challenges System' as outlined in the roadmap by creating its corresponding Supabase table and an initial `lib` function, followed by an API endpoint to fetch today's challenge. This sets the stage for both my core functionality and the next user-facing feature.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` Supabase Table Schema: The `insights` table schema is currently empty, preventing Cortex from storing any generated insights. This improvement defines the essential columns for the `insights` table, including `id`, `user_id`, `insight_text`, `created_at`, `subject_id` (optional, for context), and `source_data` (JSONB for raw behavioral data). This is a critical step to enable Cortex's core functionality and allow the platform to begin capturing student behavior patterns. 
+
+**SQL Migration:**
+```sql
+CREATE TABLE public.insights (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    insight_text text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    subject_id uuid REFERENCES public.subjects(id) ON DELETE SET NULL,
+    source_data jsonb
+);
+
+ALTER TABLE public.insights ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read their own insights" ON public.insights
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own insights" ON public.insights
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+```
+- [HIGH] Implement Daily Challenges Supabase Table and Lib Functions: As per the roadmap, this improvement creates the `daily_challenges` Supabase table (`id`, `title`, `description`, `xp_reward`, `challenge_date`, `type`). It also introduces `src/lib/challenges.js` to encapsulate database interactions for challenges, starting with a function to fetch today's challenge. This sets up the backend foundation for the Daily Challenges System.
+
+**SQL Migration:**
+```sql
+CREATE TABLE public.daily_challenges (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    title text NOT NULL,
+    description text NOT NULL,
+    xp_reward integer NOT NULL DEFAULT 0,
+    challenge_date date NOT NULL UNIQUE,
+    type text NOT NULL
+);
+
+ALTER TABLE public.daily_challenges ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Enable read access for all users" ON public.daily_challenges
+  FOR SELECT USING (true);
+
+-- Optional: Add some initial challenge data for testing
+-- INSERT INTO public.daily_challenges (title, description, xp_reward, challenge_date, type) VALUES
+-- ('First Challenge', 'Complete your first task today.', 50, CURRENT_DATE, 'task'),
+-- ('Subject Explorer', 'Add a new subject.', 30, CURRENT_DATE + INTERVAL '1 day', 'subject');
+```
+
+**File: `src/lib/challenges.js`**
+```javascript
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// This client is used for server-side operations where auth is handled separately
+// or for public data.
+const supabaseServer = createClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Fetches today's daily challenge.
+ * @returns {Promise<object|null>} The daily challenge object or null if none exists.
+ */
+export async function getTodayChallenge() {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  const { data, error } = await supabaseServer
+    .from('daily_challenges')
+    .select('*')
+    .eq('challenge_date', today)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is 'No rows found'
+    console.error('Error fetching today\'s challenge:', error.message);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Marks a challenge as completed for a user.
+ * (This function would typically interact with a user_challenges table,
+ * which is not yet defined, so it's a placeholder for future implementation.)
+ * @param {string} userId - The ID of the user.
+ * @param {string} challengeId - The ID of the challenge.
+ * @returns {Promise<boolean>} True if successful, false otherwise.
+ */
+export async function completeChallenge(userId, challengeId) {
+  // Placeholder: In a real scenario, this would update a 'user_challenges' table
+  // and potentially award XP.
+  console.log(`User ${userId} attempting to complete challenge ${challengeId}`);
+  // For now, just simulate success
+  return true;
+}
+```
+- [MEDIUM] Build `/api/challenges/today` Endpoint: This improvement creates the `/api/challenges/today` endpoint, which leverages the `getTodayChallenge` function from `src/lib/challenges.js` to retrieve and return today's daily challenge. This API route will serve as the data source for the `DailyChallenge` React component, making the challenge accessible to the frontend application.
+
+---
