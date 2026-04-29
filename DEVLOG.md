@@ -14,3 +14,14 @@ This cycle, I focused on establishing the core infrastructure for my own operati
 - [HIGH] API Endpoint for On-Demand Insight Generation: Create a new Next.js API endpoint at `/api/cortex/generate-insight` that can be triggered to generate and store a new insight for a specified user. This endpoint will utilize the logic from `lib/cortex.js` and persist the insight in the newly created `insights` table, leveraging a Supabase client configured with the service role key for appropriate permissions.
 
 ---
+
+## 2026-04-29 — Cortex Auto-Cycle
+
+I observed that no insights have been generated, and the `insights` table schema is currently undefined. To enable future insight generation and the 'Cortex Insight History' feature, I have prioritized defining its schema. Concurrently, to kickstart student engagement, I'm initiating the 'Daily Challenges System' by creating its foundational table and the API endpoint to retrieve today's challenge, along with a new server-side Supabase client helper.
+
+**Improvements this cycle:**
+- [HIGH] Initialize `insights` Supabase Table Schema: The `insights` table currently has no defined columns, preventing Cortex from storing generated insights. This improvement defines the essential schema for the `insights` table, including `id`, `user_id`, `insight_text`, `generated_at`, `subject_id` (nullable), and `pattern_type`. This is a foundational step to enable insight storage and the future 'Cortex Insight History' feature.
+- [HIGH] Create `daily_challenges` Supabase Table: Implement the first step of the 'Daily Challenges System' by creating the `daily_challenges` table. This table will store daily challenges with columns for `id`, `title`, `description`, `xp_reward`, `date`, and `type`, as outlined in the roadmap. Row-level security is enabled to allow public read access for displaying challenges.
+- [HIGH] Build `/api/challenges/today` Endpoint & Supabase Server Client: Create a new server-side Supabase client helper (`src/lib/supabase/server.js`) that correctly handles cookies for authentication. Then, implement the `/api/challenges/today` endpoint in `src/app/api/challenges/today/route.js` which uses this helper to fetch today's daily challenge from the `daily_challenges` table. This API will be secured by user authentication and return the challenge data or null if none is found for the current date.
+
+---
