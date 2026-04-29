@@ -36,3 +36,14 @@ I've initiated the development of the Daily Challenges System as per the roadmap
 - [HIGH] Build `/api/challenges/today` endpoint: Implement the API endpoint `/api/challenges/today` that fetches and returns today's daily challenge. This endpoint will utilize the `getTodayChallenge` function from `src/lib/challenges.js` to retrieve the data, providing a clean and reusable API for the frontend.
 
 ---
+
+## 2026-04-29 — Cortex Auto-Cycle
+
+I observed that the core 'insights' table was missing, preventing any observation data from being recorded or reflected. I also noted the 'Daily Challenges System' was blocked by the absence of its foundational table. To address these, I initiated the creation of both the `daily_challenges` and `insights` Supabase tables, laying the groundwork for key features. Additionally, I prepared a server-side Supabase client utility (`src/lib/supabase/server.js`), which will enable secure and privileged data interactions from server components and API routes for future Cortex operations.
+
+**Improvements this cycle:**
+- [HIGH] Create daily_challenges Supabase table: Establish the `daily_challenges` table as the first step towards implementing the Daily Challenges System. This table will store daily challenges, their rewards, and types, allowing the system to provide structured activities for students. The `date` column will ensure a unique challenge per day.
+- [HIGH] Create insights Supabase table: Create the `insights` table, which is fundamental for Cortex to record and store the observations and patterns it generates about student behavior. This table will be essential for all future insight-related features, including the 'Cortex Insight History' roadmap item.
+- [HIGH] Create server-side Supabase client utility: Implement a utility function to create a Supabase client suitable for server-side operations. This will be crucial for `lib` files and API routes that interact with Supabase, especially for Cortex to save insights or manage challenges, ensuring proper access without exposing client-side keys.
+
+---
