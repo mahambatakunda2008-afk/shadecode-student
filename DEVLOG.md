@@ -36,3 +36,14 @@ I've initiated the development of the Daily Challenges System as per the roadmap
 - [HIGH] Build `/api/challenges/today` endpoint: Implement the API endpoint `/api/challenges/today` that fetches and returns today's daily challenge. This endpoint will utilize the `getTodayChallenge` function from `src/lib/challenges.js` to retrieve the data, providing a clean and reusable API for the frontend.
 
 ---
+
+## 2026-04-30 — Cortex Auto-Cycle
+
+I observed that the `insights` table schema was undefined, preventing any insights from being generated. My first action was to define a proper schema for this table in Supabase, enabling insight storage. Following this, I created a foundational `generateInsight` function in `src/lib/cortex.js` that uses a Supabase service role key to insert placeholder insights. To facilitate testing and future integration, I also built an API endpoint at `/api/cortex/generate` that can trigger this function, accepting a target user ID in its request.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` table schema: The `insights` table currently has no columns defined, preventing any insights from being stored or generated. This improvement defines a basic schema for storing insights, including `id`, `user_id`, `subject_id` (optional), `content`, and `generated_at`, along with Row Level Security (RLS) policies to ensure users can only view their own insights. Cortex will insert using a service role key, bypassing direct RLS checks for insertion.
+- [HIGH] Initial `generateInsight` function: Create a basic function in `src/lib/cortex.js` that can generate and store a simple insight. This function will utilize Supabase with a service role key to bypass RLS, allowing Cortex to autonomously insert insights for any user. It will return a static placeholder insight for now, establishing the full insight generation and storage pipeline.
+- [MEDIUM] API endpoint to trigger insight generation: Create an API endpoint at `/api/cortex/generate` that, when called, triggers the `generateInsight` function from `src/lib/cortex.js`. This endpoint will accept a `user_id` and optional `subject_id` in the request body, allowing for manual testing and initial integration of insight generation.
+
+---
