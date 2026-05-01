@@ -16,52 +16,62 @@ Cortex works top to bottom, high priority first. Max 1-2 tasks per cycle.
 
 ---
 
-## 🔴 Phase 1 — Retention Hooks (Do First)
+## ✅ Phase 0 — Database Foundation (Complete)
 
-- [ ] 🔴 **Daily Challenges System**
-  - Create a `daily_challenges` Supabase table (id, title, description, xp_reward, date, type)
-  - Build `/api/challenges/today` endpoint that returns today's challenge
-  - Build `DailyChallenge` React component showing challenge + completion button
-  - Reset challenges every midnight automatically
-  - Award XP on completion, update user record
-  - File targets: `lib/challenges.js`, `app/api/challenges/route.js`, `components/DailyChallenge.jsx`
+These tables already exist in Supabase. Do NOT recreate them.
+Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`, `insights`, `profiles`, `study_topics`, `subjects`, `tasks`, `timetable`
 
-- [ ] 🔴 **Badges & Achievements System**
-  - Create `badges` and `user_badges` Supabase tables
-  - Define 10 starter badges: First Login, 3-Day Streak, 7-Day Streak, 10 Tasks Done, First Insight, Night Owl, Early Bird, Subject Master, XP Milestone, Cortex Veteran
-  - Build badge award logic that triggers after each session
-  - Build `BadgeDisplay` component showing earned badges with unlock animations
-  - File targets: `lib/badges.js`, `components/BadgeDisplay.jsx`, `components/BadgeUnlock.jsx`
+- [x] 🔴 Create `insights` Supabase table
+- [x] 🔴 Create `daily_challenges` Supabase table
+- [x] 🔴 Create `achievements` Supabase table
+- [x] 🔴 Create `cortex_insights` Supabase table
 
-- [ ] 🔴 **Cortex Insight History**
-  - Build `/insights/history` page showing all past Cortex insights for the user
-  - Group insights by week, show patterns over time
-  - Add a "most repeated pattern" summary at the top
-  - Make insights searchable by subject or date
-  - File targets: `app/insights/history/page.jsx`, `components/InsightTimeline.jsx`
+---
+
+## 🔴 Phase 1 — Frontend Features (Do Now)
+
+- [ ] 🔴 **Daily Challenge Component**
+  - Build `src/components/DailyChallenge.jsx` — shows today's challenge card
+  - Fetch from `/api/challenges/today` endpoint
+  - Show challenge title, description, XP reward, and a "Complete" button
+  - On completion, call API to award XP and mark challenge done
+  - Use Tailwind for styling, match existing app design
+
+- [ ] 🔴 **Badges & Achievements Display**
+  - Build `src/components/BadgeDisplay.jsx` — shows earned badges in a grid
+  - Read from `achievements` table for current user
+  - Show badge icon, name, and unlock date
+  - Add a locked state for unearned badges (greyed out)
+  - File targets: `src/components/BadgeDisplay.jsx`, `src/app/api/achievements/route.js`
+
+- [ ] 🔴 **Cortex Insight History Page**
+  - Build `src/app/insights/history/page.jsx`
+  - Show all past Cortex insights for the logged-in user from `insights` table
+  - Group by week, show date and insight text
+  - Add a "most frequent pattern" summary at the top
+  - File targets: `src/app/insights/history/page.jsx`, `src/components/InsightTimeline.jsx`
 
 ---
 
 ## 🟡 Phase 2 — Social & Competition
 
-- [ ] 🟡 **Leaderboard**
-  - Create leaderboard page `/leaderboard` showing top students by XP this week
-  - Show rank, username, XP, streak
+- [ ] 🟡 **Leaderboard Page**
+  - Build `src/app/leaderboard/page.jsx`
+  - Show top students ranked by XP this week
+  - Display rank, username, XP, streak
   - Highlight current user's position even if not in top 10
-  - Add weekly reset logic
-  - File targets: `app/leaderboard/page.jsx`, `app/api/leaderboard/route.js`
+  - File targets: `src/app/leaderboard/page.jsx`, `src/app/api/leaderboard/route.js`
 
 - [ ] 🟡 **Goals System**
-  - Let users set a study goal (e.g. "Complete 20 tasks this week", "Study Math every day")
-  - Cortex tracks progress toward goal and mentions it in insights
+  - Let users set a weekly study goal
   - Show goal progress bar on dashboard
-  - File targets: `lib/goals.js`, `components/GoalTracker.jsx`, `app/api/goals/route.js`
+  - Cortex mentions goal progress in insights
+  - File targets: `src/components/GoalTracker.jsx`, `src/app/api/goals/route.js`
 
-- [ ] 🟡 **Study Streak Improvements**
-  - Make streaks more visible — show flame icon, streak count on dashboard
+- [ ] 🟡 **Streak Display Improvements**
+  - Make streaks more visible on dashboard — flame icon, streak count
   - Add streak freeze mechanic (one free miss per week)
-  - Notify user if streak is at risk (end of day with no activity)
-  - File targets: `components/StreakDisplay.jsx`, `lib/streaks.js`
+  - File targets: `src/components/StreakDisplay.jsx`, `src/lib/streaks.js`
 
 ---
 
@@ -69,31 +79,33 @@ Cortex works top to bottom, high priority first. Max 1-2 tasks per cycle.
 
 - [ ] 🟢 **Subject Progress Visualization**
   - Show per-subject progress bars or radar chart on dashboard
-  - Track time spent and tasks completed per subject
-  - Cortex uses this data to generate more specific insights
-  - File targets: `components/SubjectProgress.jsx`, `lib/subjects.js`
+  - Use `study_topics` and `subjects` tables
+  - File targets: `src/components/SubjectProgress.jsx`
 
 - [ ] 🟢 **Dashboard Redesign**
-  - Consolidate XP, streak, daily challenge, and latest Cortex insight into one clean dashboard
+  - Consolidate XP, streak, daily challenge, and latest Cortex insight
   - Make it feel alive — recent activity feed, next challenge, badge progress
-  - File targets: `app/dashboard/page.jsx`, `components/Dashboard.jsx`
+  - File targets: `src/app/dashboard/page.jsx`
 
 - [ ] 🟢 **Onboarding Flow**
-  - First-time users get a 3-step onboarding: pick subjects, set a goal, meet Cortex
-  - Reduces early drop-off from confusion
-  - File targets: `app/onboarding/page.jsx`, `components/OnboardingSteps.jsx`
+  - 3-step onboarding for first-time users: pick subjects, set a goal, meet Cortex
+  - File targets: `src/app/onboarding/page.jsx`
 
 - [ ] 🟢 **Cortex Prompt Quality Improvement**
-  - Review current Gemini prompt used for insight generation
-  - Improve specificity — insights should reference actual subject names and task counts
-  - Add tone calibration — insights should feel sharp and analytical, never generic
-  - File targets: `lib/cortex/prompts.js`
+  - Improve Gemini prompt for insight generation
+  - Insights should reference actual subject names and task counts
+  - File targets: `src/lib/cortex/prompts.js`
 
 ---
 
 ## ✅ Completed
 
-*Nothing yet — Cortex hasn't started. First cycle incoming.*
+- [x] Cortex Engine setup and GitHub Actions scheduler
+- [x] Supabase schema discovery
+- [x] Database foundation (all core tables exist)
+- [x] insights table created
+- [x] daily_challenges table created
+- [x] achievements table created
 
 ---
 
@@ -106,3 +118,6 @@ Cortex works top to bottom, high priority first. Max 1-2 tasks per cycle.
 5. If a task is too large, split it and do Part 1 first
 6. Prioritize retention over aesthetics
 7. Keep code consistent with existing Next.js + Supabase + Node stack
+8. NEVER create database tables that already exist — check the list above first
+9. All app code goes under src/ — never at root level
+10. Use ES module syntax (import/export) in all app files
