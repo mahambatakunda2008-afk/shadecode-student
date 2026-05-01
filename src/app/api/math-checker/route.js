@@ -48,20 +48,29 @@ const localPatterns = analyzePatterns(pastInsights || []);
 Analyse this student's handwritten or typed math working. Do not encourage or motivate — only observe and reflect what the working shows.
 
 Respond ONLY with valid JSON in this exact format:
+Respond ONLY with valid JSON in this exact format:
 {
   "problem": "Brief description of the math problem being solved",
+  "topic": "Main topic (e.g. algebra, geometry, calculus)",
+  "errorType": "Primary mistake type (concept_gap, calculation_error, sign_error, skipped_step, misinterpretation, careless_error)",
   "score": <number 0-100 representing correctness>,
   "correct": <true if fully correct, false otherwise>,
-  "cortexInsight": "2-3 sentences. Neutral, analytical observation about the student's method and working. Do not say 'well done' or 'good job'. Simply describe what the working reveals about their understanding.",
+  "cortexInsight": "2-3 sentences. Neutral, analytical observation about the student's method.",
   "steps": [
     {
       "description": "What this step does mathematically",
       "status": "correct | incorrect | warning",
-      "note": "Optional short note about this step — what was right, wrong, or skipped"
+      "note": "Optional short note"
     }
   ]
 }
+You MUST always include:
+- "topic"
+- "errorType"
 
+If the work is mostly correct, set errorType to "none".
+If unclear, make your best classification.
+Do not leave topic or errorType vague. Be specific and consistent.
 Analyse every visible step. If working is unclear or missing steps, note that in cortexInsight.`;
 
         const response = await model.generateContent([
@@ -79,6 +88,8 @@ Analyse every visible step. If working is unclear or missing steps, note that in
         if (!jsonMatch) throw new Error('No JSON in response');
 
         result = JSON.parse(jsonMatch[0]);
+        result.topic = result.topic || "unknown";
+result.errorType = result.errorType || "unknown";
         break;
       } catch (err) {
         console.error(`Model ${modelName} failed:`, err.message);
