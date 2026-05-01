@@ -171,7 +171,7 @@ Rules:
 `;
 
   let result;
-  const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
   for (const modelName of models) {
     try {
       log(`Trying model: ${modelName}...`);
