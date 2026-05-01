@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-01 — Cortex Auto-Cycle
+
+I observed that the `insights` table schema was undefined, preventing any generated insights from being stored. To resolve this and enable future Cortex functionality, I've created a shared utility (`src/lib/supabase/insights.js`) for interacting with the `insights` table, implicitly defining its structure. Additionally, I've established initial API routes: `/api/cortex/generate` to store a placeholder insight and `/api/insights/history` to retrieve a user's insight timeline, laying the groundwork for Cortex's core features.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` table schema and add data utilities: The `insights` table has no columns, rendering it non-functional. This improvement implicitly defines the expected schema (`id`, `user_id`, `insight_text`, `created_at`) by providing a `src/lib/supabase/insights.js` utility with functions to insert and fetch insights, enabling core Cortex data operations.
+- [HIGH] Add basic `/api/cortex/generate` endpoint: Create a placeholder API endpoint at `src/app/api/cortex/generate/route.js`. This initial version will accept a `userId`, generate a hardcoded 'test' insight, and utilize the `insertInsight` utility to save it. This establishes a functional path for future, more sophisticated Cortex insight generation.
+- [MEDIUM] Create `/api/insights/history` endpoint for user insights: Develop the `src/app/api/insights/history/route.js` API endpoint to fetch all past insights for the currently authenticated user. This route will leverage the `fetchInsightsByUserId` utility and is essential for populating the 'Cortex Insight History Page' roadmap item.
+
+---
