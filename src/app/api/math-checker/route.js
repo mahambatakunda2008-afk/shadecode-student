@@ -75,25 +75,24 @@ Analyse every visible step. If working is unclear or missing steps, note that in
     if (!result) {
       return NextResponse.json({ error: 'Analysis failed — try again' }, { status: 500 });
     }
-// Save to insights table
-    try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
-      await supabase.from('insights').insert({
-    // Optionally save to Supabase insights table
-    try {
-      await supabase.from('insights').insert({
-        content: result.cortexInsight,
-        title: `Math: ${result.problem}`,
-        metadata: { score: result.score, correct: result.correct, steps: result.steps },
-        generated_at: new Date().toISOString(),
-      });
-    } catch (dbErr) {
-      // Non-fatal — still return result even if save fails
-      console.error('DB save failed:', dbErr.message);
-    }
+  // Save to insights table
+try {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  await supabase.from('insights').insert({
+    content: result.cortexInsight,
+    title: `Math: ${result.problem}`,
+    metadata: { score: result.score, correct: result.correct, steps: result.steps },
+    generated_at: new Date().toISOString(),
+  });
+
+} catch (dbErr) {
+  // Non-fatal — still return result even if save fails
+  console.error('DB save failed:', dbErr.message);
+}
 
     return NextResponse.json(result);
   } catch (err) {
