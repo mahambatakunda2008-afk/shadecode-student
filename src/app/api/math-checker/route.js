@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
+import { analyzePatterns } from '@/lib/cortex/localEngine';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -13,6 +14,19 @@ export async function POST(req) {
     const imageFile = formData.get('image');
 
     if (!imageFile) {
+      const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// get last 10 insights
+const { data: pastInsights } = await supabase
+  .from('insights')
+  .select('metadata')
+  .order('generated_at', { ascending: false })
+  .limit(10);
+
+const localPatterns = analyzePatterns(pastInsights || []);
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
@@ -71,9 +85,21 @@ Analyse every visible step. If working is unclear or missing steps, note that in
         continue;
       }
     }
+if (!result) {
+  console.warn("AI failed — switching to Cortex local mode");
 
-    if (!result) {
-      return NextResponse.json({ error: 'Analysis failed — try again' }, { status: 500 });
+  const fallback = {
+    problem: "Unknown",
+    score: 0,
+    correct: false,
+    cortexInsight: localPatterns.insight,
+    steps: [],
+    fallback: true
+  };
+result.patternInsight = localPatterns.insight;
+result.mode = "enhanced";
+  return NextResponse.json(fallback);
+}
     }
   // Save to insights table
 try {
@@ -82,12 +108,20 @@ try {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  await supabase.from('insights').insert({
-    content: result.cortexInsight,
-    title: `Math: ${result.problem}`,
-    metadata: { score: result.score, correct: result.correct, steps: result.steps },
-    generated_at: new Date().toISOString(),
-  });
+  const { error } = await supabase.from('insights').insert({
+  content: result.cortexInsight,
+  title: `Math: ${result.problem}`,
+  metadata: {
+    score: result.score,
+    correct: result.correct,
+    steps: result.steps,
+    topic: result.topic || null,
+    errorType: result.errorType || null
+  },
+  generated_at: new Date().toISOString(),
+});
+
+if (error) console.error("DB error:", error.message);
 
 } catch (dbErr) {
   // Non-fatal — still return result even if save fails
