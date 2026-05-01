@@ -1,23 +1,45 @@
-import { NextResponse } from 'next/server';
-import { getTodayChallenge } from '@/lib/challenges'; // Assuming @/lib resolves to src/lib
+import { createClient } from '@supabase/supabase-js';
 
-/**
- * GET handler for /api/challenges/today
- * Fetches today's daily challenge.
- * @returns {NextResponse} JSON response with the challenge or a message if none is found.
- */
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 export async function GET(request) {
   try {
-    const challenge = await getTodayChallenge();
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
-    if (!challenge) {
-      return NextResponse.json({ message: 'No daily challenge for today.', challenge: null }, { status: 200 });
+    const { data: challenge, error } = await supabase
+      .from('daily_challenges')
+      .select('*')
+      .eq('date', today)
+      .single(); // Use single to get one row or null
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is 'No rows found'
+      console.error('Error fetching daily challenge:', error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    return NextResponse.json({ challenge }, { status: 200 });
+    if (!challenge) {
+      return new Response(JSON.stringify({ message: 'No challenge found for today.' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify(challenge), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('Error in /api/challenges/today API route:', error);
-    // Return a generic error message to the client, log full details on the server
-    return NextResponse.json({ error: 'Failed to fetch daily challenge.' }, { status: 500 });
+    console.error('Unexpected error in /api/challenges/today:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error.' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
