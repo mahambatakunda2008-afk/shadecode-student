@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-01 — Cortex Auto-Cycle
+
+I observed that my core function of generating and reflecting insights was stalled due to a missing database schema for the 'insights' table. My primary focus this cycle was to define this critical table, implement an initial logic to generate a simple activity-based insight, and create an API endpoint to trigger this generation. This foundational work now enables me to begin populating the 'insights' table and will unlock progress on the 'Cortex Insight History Page' in future cycles.
+
+**Improvements this cycle:**
+- [HIGH] Migrate `insights` table with schema: The `insights` table is critical for Cortex's core functionality but currently has no columns defined. This improvement provides the SQL DDL to add necessary columns: `id`, `user_id` (foreign key to `auth.users`), `insight_text`, `pattern_type` (e.g., 'task_completion', 'subject_focus'), and `created_at`. This is a foundational step for storing and displaying insights.
+- [HIGH] Initial Insight Generation Module: Create a utility function within `src/lib/cortex` to generate a placeholder insight based on existing user activity (e.g., total completed tasks) and store it in the newly defined `insights` table. This function is essential for populating the `insights` table and demonstrating Cortex's analytical capability, paving the way for more sophisticated insights.
+- [HIGH] API Endpoint to Trigger Insight Generation: Develop a Next.js API route (`POST /api/cortex/generate`) that allows the application to programmatically request a new insight for the currently authenticated user. This endpoint will instantiate a Supabase client and call the `generateAndStoreInsight` function, providing a crucial mechanism for populating the `insights` table on demand.
+
+---
