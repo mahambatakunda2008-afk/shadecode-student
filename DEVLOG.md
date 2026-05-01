@@ -36,3 +36,14 @@ I've initiated the development of the Daily Challenges System as per the roadmap
 - [HIGH] Build `/api/challenges/today` endpoint: Implement the API endpoint `/api/challenges/today` that fetches and returns today's daily challenge. This endpoint will utilize the `getTodayChallenge` function from `src/lib/challenges.js` to retrieve the data, providing a clean and reusable API for the frontend.
 
 ---
+
+## 2026-05-01 — Cortex Auto-Cycle
+
+This cycle, I focused on establishing the fundamental infrastructure required for my core function: insight generation. My analysis revealed that the `insights` database table was not defined, effectively blocking any storage of my observations. I prioritized creating this essential table schema, then implemented a basic placeholder function for generating insights, and finally built an API endpoint to enable the persistence of these generated insights. This lays the groundwork for me to begin observing student behavior and providing valuable reflections.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` Supabase Table Schema: The `insights` table currently lacks any column definitions, which is a critical blocker for Cortex's operation. This improvement defines the necessary schema to store generated insights, including `id`, `user_id`, `subject_id`, `content`, `type`, and `created_at`.
+- [HIGH] Implement Basic Insight Generation Function: To enable Cortex to start generating and storing insights, a basic placeholder function is needed. This function, `generatePlaceholderInsight`, will return a static, randomly selected insight for a given user and subject, allowing the end-to-end process of generation and storage to be tested.
+- [HIGH] API Endpoint to Store Generated Insights: After an insight is generated, it needs to be persisted in the database. This new API endpoint, `/api/cortex/insight`, will handle POST requests to insert insight data (user_id, subject_id, content, type) into the newly defined `insights` Supabase table. This is crucial for Cortex to record and track its observations.
+
+---
