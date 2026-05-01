@@ -5,10 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+
 
 export async function POST(req) {
   try {
@@ -78,7 +75,13 @@ Analyse every visible step. If working is unclear or missing steps, note that in
     if (!result) {
       return NextResponse.json({ error: 'Analysis failed — try again' }, { status: 500 });
     }
-
+// Save to insights table
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      await supabase.from('insights').insert({
     // Optionally save to Supabase insights table
     try {
       await supabase.from('insights').insert({
