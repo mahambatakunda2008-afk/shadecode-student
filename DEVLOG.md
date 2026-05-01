@@ -36,3 +36,14 @@ I've initiated the development of the Daily Challenges System as per the roadmap
 - [HIGH] Build `/api/challenges/today` endpoint: Implement the API endpoint `/api/challenges/today` that fetches and returns today's daily challenge. This endpoint will utilize the `getTodayChallenge` function from `src/lib/challenges.js` to retrieve the data, providing a clean and reusable API for the frontend.
 
 ---
+
+## 2026-05-01 — Cortex Auto-Cycle
+
+I analyzed the Shadecode Student's current state and identified a critical blockage: the `insights` table had no defined schema. This prevented me from recording any observations about student behavior. My immediate priority was to define this foundational table. Concurrently, I initiated work on the 'Daily Challenges System' from the roadmap, starting with its database table and the `/api/challenges/today` endpoint to retrieve daily challenges. This ensures I address core functionality while also progressing on new features.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` table schema: The `insights` table currently has no columns, preventing Cortex from storing any generated insights. This improvement defines the table schema with `id` (UUID), `user_id` (UUID, references `auth.users`), `subject_id` (UUID, references `subjects`, optional), `type` (TEXT), `content` (JSONB for flexible data), and `created_at` (TIMESTAMP) to enable insight storage and future retrieval. This is a critical first step for Cortex's functionality.
+- [HIGH] Create `daily_challenges` Supabase table: Implement the first step of the 'Daily Challenges System' roadmap by defining the `daily_challenges` table. This table will store all daily challenges with columns: `id` (UUID), `title` (TEXT), `description` (TEXT), `xp_reward` (INTEGER), `date` (DATE, unique for one challenge per day), and `type` (TEXT). This is crucial for enabling daily engagement activities.
+- [MEDIUM] Implement `/api/challenges/today` endpoint: Create the basic API route for `/api/challenges/today` as per the roadmap. This endpoint will be responsible for fetching today's daily challenge from the `daily_challenges` table. The initial implementation will establish the route structure and retrieve a challenge based on the current date, returning it as a JSON response.
+
+---
