@@ -46,6 +46,7 @@ export default function Learn() {
   const [step, setStep] = useState<"input" | "explanation" | "quiz" | "results" | "mathcheck">("input");
 
   // Math checker state
+  const [mathQuestion, setMathQuestion] = useState("");
   const [mathImage, setMathImage] = useState<File | null>(null);
   const [mathPreview, setMathPreview] = useState<string | null>(null);
   const [mathResult, setMathResult] = useState<MathResult | null>(null);
@@ -162,6 +163,7 @@ export default function Learn() {
       formData.append("image", mathImage);
       formData.append("topic", topic);
       formData.append("subject", selectedSubject);
+      formData.append("question", mathQuestion);
 
       const res = await fetch("/api/math-checker", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Analysis failed");
@@ -179,6 +181,7 @@ export default function Learn() {
     setMathPreview(null);
     setMathResult(null);
     setMathError(null);
+    setMathQuestion("");
   };
 
   const score = questions.filter((q, i) => answers[i] === q.correct).length;
