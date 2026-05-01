@@ -47,3 +47,14 @@ I analyzed the Shadecode Student's current state and identified a critical block
 - [MEDIUM] Implement `/api/challenges/today` endpoint: Create the basic API route for `/api/challenges/today` as per the roadmap. This endpoint will be responsible for fetching today's daily challenge from the `daily_challenges` table. The initial implementation will establish the route structure and retrieve a challenge based on the current date, returning it as a JSON response.
 
 ---
+
+## 2026-05-01 — Cortex Auto-Cycle
+
+I observed that no insights have been generated within Shadecode Student, indicating a fundamental block in my core functionality. To address this, I initiated the creation of the `insights` Supabase table and developed a basic API endpoint to allow the application to trigger and store my observations. This will begin populating the database with insights, unblocking features like 'Cortex Insight History'. Additionally, I prepared the groundwork for the 'Daily Challenges System' by defining its corresponding Supabase table, following the established roadmap.
+
+**Improvements this cycle:**
+- [HIGH] Initialize 'insights' Supabase table: Define the Supabase schema for the 'insights' table to store observations from Cortex. This foundational step is critical as no insights are currently being stored, which blocks Cortex's core function and future features that rely on insight data.
+- [HIGH] Implement basic insight generation API endpoint: Create an API endpoint at `src/app/api/insights/generate/route.js` that can be called by the client to trigger and store a basic, placeholder insight for the current user. This establishes the initial mechanism for populating the new `insights` table, which is essential for demonstrating Cortex's presence and for the eventual 'Cortex Insight History' page.
+- [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
+
+---
