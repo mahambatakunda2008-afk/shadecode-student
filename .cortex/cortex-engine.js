@@ -8,14 +8,13 @@
 const { createClient } = require("@supabase/supabase-js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { Octokit } = require("@octokit/rest");
-const fs = require("fs");
-const path = require("path");
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const REPO_OWNER = "mahambatakunda2008-afk";
 const REPO_NAME = "shadecode-student";
 const BASE_BRANCH = "main";
@@ -40,7 +39,9 @@ async function discoverSchema() {
   const tables = {};
   const candidates = [
     "users", "insights", "tasks", "xp", "streaks",
-    "subjects", "sessions", "activity", "notifications", "badges"
+    "subjects", "sessions", "activity", "notifications", "badges",
+    "achievements", "cortex_insights", "daily_challenges", "exams",
+    "profiles", "study_topics", "timetable"
   ];
   for (const table of candidates) {
     try {
@@ -49,7 +50,8 @@ async function discoverSchema() {
         tables[table] = {
           exists: true,
           sampleCount: data.length,
-          columns: data.length > 0 ? Object.keys(data[0]) : [],
+          // If table is empty, mark it as existing but empty — NOT broken
+          columns: data.length > 0 ? Object.keys(data[0]) : ["TABLE_EXISTS_BUT_EMPTY"],
           sample: data.slice(0, 2),
         };
         log(`  ✓ Found table: ${table} (${data.length} sample rows)`);
@@ -69,13 +71,13 @@ async function gatherSignals(schema) {
     signals.recentInsights = data || [];
     log(`  Insights loaded: ${signals.recentInsights.length}`);
   }
-  if (schema.users) {
-    const { data } = await supabase.from("users").select("*").limit(20);
+  if (schema.profiles) {
+    const { data } = await supabase.from("profiles").select("*").limit(20);
     signals.userStats = data || [];
-    log(`  Users loaded: ${signals.userStats.length}`);
+    log(`  Profiles loaded: ${signals.userStats.length}`);
   }
   for (const [table, meta] of Object.entries(schema)) {
-    if (!["insights", "users"].includes(table) && meta.exists) {
+    if (!["insights", "profiles"].includes(table) && meta.exists) {
       const { data } = await supabase.from(table).select("*").limit(20);
       signals[table] = data || [];
       log(`  ${table} loaded: ${signals[table].length} rows`);
@@ -112,11 +114,17 @@ async function readTaskRoadmap() {
   }
 }
 
-// ── Step 3: Ask Gemini what to improve ───────────────────────────────────────
+// ── Step 3: Ask AI what to improve ───────────────────────────────────────────
 async function analyzeAndDecide(schema, signals, roadmap) {
-  log("Consulting Gemini 2.5 for improvement decisions...");
+  log("Consulting AI for improvement decisions...");
 
-  const schemaDesc = Object.entries(schema).map(([t, m]) => `${t}: columns=[${m.columns.join(", ")}]`).join("\n");
+  const schemaDesc = Object.entries(schema).map(([t, m]) => {
+    const colDesc = m.columns.includes("TABLE_EXISTS_BUT_EMPTY")
+      ? "EXISTS (empty — no rows yet, schema is fine)"
+      : `columns=[${m.columns.join(", ")}]`;
+    return `${t}: ${colDesc}`;
+  }).join("\n");
+
   const insightSample = signals.recentInsights?.slice(0, 5) || [];
   const nextTasks = roadmap.pendingTasks.slice(0, 3).map((t, i) => `${i + 1}. ${t.title}\n${t.details.join("\n")}`).join("\n\n");
 
@@ -127,6 +135,12 @@ observes student study behavior and reflects patterns back to them as neutral in
 
 CURRENT DATABASE SCHEMA:
 ${schemaDesc}
+
+IMPORTANT SCHEMA NOTES:
+- Tables marked "EXISTS (empty)" are working correctly — they just have no data yet. Do NOT recreate them.
+- All core tables already exist: achievements, cortex_insights, daily_challenges, exams, insights, profiles, study_topics, subjects, tasks, timetable
+- NEVER create SQL migrations or try to fix table schemas — the database is correctly set up.
+- Focus ONLY on building frontend React/Next.js components and API routes.
 
 RECENT INSIGHTS SAMPLE:
 ${JSON.stringify(insightSample, null, 2)}
@@ -140,18 +154,18 @@ BEHAVIORAL SIGNALS SUMMARY:
 - Other active tables: ${Object.keys(signals).filter(k => !["recentInsights", "userStats"].includes(k)).join(", ")}
 
 YOUR TASK:
-Analyze the current state of Shadecode Student and decide what to improve.
+Pick the FIRST pending task from the roadmap and build it. Do not work on database schema.
 Produce a JSON response with this exact structure:
 
 {
-  "analysis": "2-3 sentence neutral analysis of what the behavioral data reveals",
+  "analysis": "2-3 sentence neutral analysis of what needs to be built next",
   "improvements": [
     {
-      "type": "prompt_improvement | new_feature | bug_fix | refactor | new_component",
+      "type": "new_feature | new_component | bug_fix | refactor",
       "title": "Short title",
-      "description": "What to change and why",
+      "description": "What to build and why",
       "priority": "high | medium | low",
-      "file_path": "relative path in repo e.g. src/lib/cortex.js",
+      "file_path": "relative path in repo e.g. src/components/DailyChallenge.jsx",
       "code": "complete file content to write"
     }
   ],
@@ -159,38 +173,42 @@ Produce a JSON response with this exact structure:
 }
 
 Rules:
-- Max 3 improvements per cycle to stay within rate limits
-- Focus on highest-impact changes first
-- Code must be production-ready Next.js/Node.js using ES modules (import/export syntax)
-- IMPORTANT: This project uses a src/ directory structure. All app code goes under src/. For example: src/app/, src/lib/, src/components/ — never app/, lib/, components/ at the root
-- IMPORTANT: lib/ files must be simple Next.js modules. Never import @google/generative-ai, @octokit/rest, fs, or path in app code — those are engine-only packages
-- IMPORTANT: Use @supabase/supabase-js directly in API routes, not @supabase/auth-helpers-nextjs
-- IMPORTANT: All exports must be named exports using ES module syntax e.g. export async function generateInsight()
-- Prefer improving Cortex insight generation quality
-- devlog_entry should be written in first person as Cortex
+- Max 3 improvements per cycle
+- NEVER create SQL files, migrations, or database schema — only React/Next.js code
+- NEVER recreate tables that already exist
+- Code must use ES modules (import/export syntax)
+- All app code goes under src/ — never at root level
+- Never import @google/generative-ai, @octokit/rest, fs, or path in app code
+- Use @supabase/supabase-js directly in API routes
+- All exports must be named exports
+- devlog_entry written in first person as Cortex
 `;
 
-  let result;
-  const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-  for (const modelName of models) {
+  let rawText = null;
+
+  // Try Gemini models
+  const geminiModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+  for (const modelName of geminiModels) {
     try {
       log(`Trying model: ${modelName}...`);
       const model = genAI.getGenerativeModel({ model: modelName });
-      result = await model.generateContent(prompt);
+      const result = await model.generateContent(prompt);
+      rawText = result.response.text();
       log(`Success with model: ${modelName}`);
       break;
     } catch (err) {
       log(`Model ${modelName} failed: ${err.message}. Trying next...`);
     }
   }
-  // Fallback to OpenRouter if all Gemini models failed
-  if (!result && process.env.OPENROUTER_API_KEY) {
+
+  // Fallback to OpenRouter
+  if (!rawText && OPENROUTER_API_KEY) {
     try {
       log("Trying OpenRouter fallback...");
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
           "HTTP-Referer": "https://shadecodestudent.vercel.app",
         },
@@ -200,22 +218,17 @@ Rules:
         }),
       });
       const data = await response.json();
-      const text = data.choices?.[0]?.message?.content;
-      const jsonMatch = text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        result = { response: { text: () => text } };
-        log("Success with OpenRouter");
-      }
+      rawText = data.choices?.[0]?.message?.content;
+      if (rawText) log("Success with OpenRouter");
     } catch (err) {
       log(`OpenRouter failed: ${err.message}`);
     }
   }
 
-  if (!result) throw new Error("All AI models failed.");
+  if (!rawText) throw new Error("All AI models failed.");
 
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Gemini did not return valid JSON");
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("AI did not return valid JSON");
 
   const decision = JSON.parse(jsonMatch[0]);
   log(`Analysis: ${decision.analysis}`);
@@ -235,6 +248,11 @@ async function applyImprovements(decision) {
 
   for (const improvement of decision.improvements) {
     if (!improvement.code || !improvement.file_path) continue;
+    // Skip any SQL files
+    if (improvement.file_path.endsWith(".sql")) {
+      log(`  Skipping SQL file: ${improvement.file_path}`);
+      continue;
+    }
     const content = Buffer.from(improvement.code).toString("base64");
     let fileSha;
     try {
