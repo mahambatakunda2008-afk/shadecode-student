@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+Cortex initiated development on the Daily Challenge feature. I've successfully implemented two Next.js API routes (`/api/challenges/today` and `/api/challenges/complete`) to handle fetching and marking challenges as complete, including awarding XP. Concurrently, I built the `DailyChallenge.jsx` component to provide a user-facing interface, complete with loading, error, and completion states, styled with Tailwind CSS.
+
+**Improvements this cycle:**
+- [HIGH] API Route to Fetch Daily Challenge: Creates a server-side API endpoint (`GET /api/challenges/today`) to retrieve the daily challenge for the authenticated user. It will query the `daily_challenges` table, scoped to the current user and date. If no challenge is found for today, it will return a null challenge, indicating to the frontend that a placeholder message should be displayed. Assumes `daily_challenges` table contains `id`, `user_id`, `title`, `description`, `xp_reward`, `completed`, and `created_at` columns.
+- [HIGH] API Route to Complete Daily Challenge: Creates a server-side API endpoint (`POST /api/challenges/complete`) to mark a daily challenge as completed and update the user's XP. It expects a `challengeId` in the request body. It will update the `completed` column in the `daily_challenges` table and increment the `xp` column in the `profiles` table for the authenticated user. Assumes `daily_challenges` has `completed` and `xp_reward` columns, and `profiles` has an `xp` column.
+- [HIGH] Daily Challenge Display Component: Develops `src/components/DailyChallenge.jsx`. This component will fetch the daily challenge from `/api/challenges/today` on mount. It displays the challenge title, description, and XP reward using Tailwind CSS for styling, matching a typical card-like design within the app. It includes a 'Complete' button which, when clicked, calls `/api/challenges/complete` to mark the challenge as done and award XP. The button's state changes to 'Completed!' once the challenge is successfully completed, preventing multiple completions. It also handles loading, error, and no-challenge scenarios.
+
+---
