@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+I observed that Shadecode Student currently has no mechanism to store my generated insights, as the `insights` table schema is undefined. My priority this cycle was to lay the groundwork for my core function. I've developed a centralized Supabase client for server-side operations, created a foundational `generateInsight` utility, and established an API endpoint to trigger insight generation whenever a student completes a task. This begins the process of populating the `insights` table, which is crucial for my future ability to reflect behavioral patterns.
+
+**Improvements this cycle:**
+- [HIGH] Create Supabase client utility for server-side operations: Establish `src/lib/supabaseClient.js` to provide a consistent and easy-to-use Supabase client instance for server-side code (e.g., API routes and server utilities like `cortex.js`). This centralizes client creation and prepares the environment for database interactions.
+- [HIGH] Implement basic `generateInsight` utility for Cortex: Create `src/lib/cortex.js` containing a `generateInsight` function. This function will be responsible for creating and storing neutral observations in the `insights` table. Initially, it will generate a simple text based on an event type and user ID. This is a foundational step for Cortex to begin collecting and reflecting student activity. *Requires the 'insights' table to be created in the database with columns: `id` (uuid, primary key, default `gen_random_uuid()`), `user_id` (uuid, foreign key to `auth.users`), `insight_text` (text), `generated_at` (timestamp with time zone, default `now()`), `event_type` (text), `event_data` (jsonb, nullable).*
+- [MEDIUM] API endpoint to complete a task and trigger insight generation: Create a new API route `src/app/api/tasks/[id]/complete/route.js`. This endpoint will handle requests to mark a specific task as completed. After updating the task status, it will call the `generateInsight` utility to record this behavioral event, populating the `insights` table with initial data relevant to student study patterns.
+
+---
