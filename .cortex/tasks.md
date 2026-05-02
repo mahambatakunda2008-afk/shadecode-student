@@ -121,3 +121,6 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 8. NEVER create database tables that already exist — check the list above first
 9. All app code goes under src/ — never at root level
 10. Use ES module syntax (import/export) in all app files
+11. NEVER use @supabase/auth-helpers-nextjs — use @supabase/supabase-js directly
+12. Math Checker and Learn pages already exist — do not recreate them
+
