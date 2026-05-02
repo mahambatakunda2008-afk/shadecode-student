@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { updateStreak } from "@/lib/utils/streak";
 import Tour from "@/components/shared/Tour";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
+import DailyChallenge from "@/components/DailyChallenge";
 
 interface Profile {
   username: string;
@@ -173,7 +174,8 @@ export default function Dashboard() {
           }} />
         </div>
       </div>
-
+{/* Daily Challenge */}
+      <DailyChallenge userId={currentUser} />
       {/* Overall Progress */}
       <div style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
