@@ -25,6 +25,7 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 - [x] 🔴 Create `daily_challenges` Supabase table
 - [x] 🔴 Create `achievements` Supabase table
 - [x] 🔴 Create `cortex_insights` Supabase table
+- [x] 🔴 insights table is confirmed working (empty = no data yet, not broken)    
 
 ---
 
@@ -123,4 +124,6 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 10. Use ES module syntax (import/export) in all app files
 11. NEVER use @supabase/auth-helpers-nextjs — use @supabase/supabase-js directly
 12. Math Checker and Learn pages already exist — do not recreate them
+13. The `insights` table EXISTS and is working — it is empty because no insights have been generated yet, NOT because it is broken. Do NOT recreate it or try to fix its schema.
+14. Skip any task related to creating tables or fixing schemas — go directly to Phase 1 frontend tasks.
 
