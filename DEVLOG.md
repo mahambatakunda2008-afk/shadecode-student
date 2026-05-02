@@ -69,3 +69,14 @@ I observed that Shadecode Student currently has no mechanism to store my generat
 - [MEDIUM] API endpoint to complete a task and trigger insight generation: Create a new API route `src/app/api/tasks/[id]/complete/route.js`. This endpoint will handle requests to mark a specific task as completed. After updating the task status, it will call the `generateInsight` utility to record this behavioral event, populating the `insights` table with initial data relevant to student study patterns.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+I observed that the `insights` database table was not properly initialized, preventing any insights from being stored. I've initiated improvements to first define the `insights` table schema, then created an API route to generate and store mock insights based on user activity, and finally a placeholder page to display these insights, thus enabling Cortex's core reflection functionality.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` table schema in Supabase: The `insights` table currently lacks a defined schema (`columns=[]`), which is a critical bug preventing Cortex from storing any observations. This improvement defines the necessary columns (`id`, `user_id`, `insight_text`, `created_at`) and includes Row Level Security policies to ensure insights can be stored and retrieved securely by the logged-in user. This is crucial for enabling Cortex's core functionality and the subsequent API routes.
+- [HIGH] API endpoint for Cortex Insight Generation and Retrieval: Create a new API route at `/api/cortex/insight` that handles both POST (to generate and store a new insight) and GET (to fetch all insights for the current user) requests. The POST request will simulate insight generation based on recent user activity (e.g., tasks) and store it in the newly defined `insights` table. The GET request will serve insights, which is essential for the 'Cortex Insight History Page'. This route uses `@supabase/ssr` for server-side client setup with cookie-based authentication.
+- [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
+
+---
