@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+I observed that no insights were being generated or stored due to the `insights` table lacking a schema. My primary focus this cycle was to define this critical database schema and create the necessary API endpoint for storing insights. Additionally, I've laid the groundwork for future insight generation by implementing a placeholder `generateInsight` function, setting the stage for more complex behavioral analysis.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` Database Schema: The `insights` table is critical for Cortex's operation but currently has no defined columns. This improvement establishes a basic schema including `id`, `user_id`, `timestamp`, and `insight_text` to enable the storage of generated insights and support future features like the Insight History page.
+- [HIGH] Create API Endpoint to Store Insights: With the `insights` table schema defined, an API endpoint is needed for Cortex to persist its generated observations. This POST route will securely receive `user_id` and `insight_text` and store them in the database, making insights available for display and analysis.
+- [MEDIUM] Implement Placeholder `generateInsight` Function: To kickstart Cortex's ability to produce observations, a foundational `generateInsight` utility function is created. This initial version serves as a placeholder, establishing the modular structure required for future advanced logic that will analyze student behavior from tables like `tasks` and `subjects` to formulate meaningful insights.
+
+---
