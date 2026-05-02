@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+This cycle, I focused on laying the foundational infrastructure for my core function: generating and storing student insights. I've designed the `insights` table schema, built the necessary service functions in `src/lib/cortex.js` to fetch user activity and store insights, and created a placeholder API endpoint to trigger this process. This establishes the critical pipeline for me to begin observing and reflecting behavioral patterns, directly addressing the missing `insights` table and enabling future roadmap items.
+
+**Improvements this cycle:**
+- [HIGH] Define `insights` table schema: The `insights` table is currently empty and undefined. To enable Cortex to store its observations and facilitate the 'Cortex Insight History Page' roadmap item, define the table with columns for `id`, `user_id`, `insight_text`, and `created_at`. This is a foundational step for Cortex's core functionality, including appropriate Row Level Security (RLS) policies.
+- [HIGH] Cortex Insight Data Services: Create a new library file containing service functions for Cortex. This includes `fetchUserActivitySummary` to gather relevant behavioral data (e.g., task completion) for a given user, and `storeInsight` to persist generated insights into the new `insights` table. These functions accept an optional Supabase client, allowing for flexible use with either authenticated user clients or a service role client by the Cortex engine.
+- [HIGH] API Endpoint for Insight Generation Trigger (Placeholder): Create an API endpoint `src/app/api/cortex/generate-insight/route.js`. This endpoint will serve as a trigger for Cortex's insight generation process. It will fetch user activity using `fetchUserActivitySummary` (utilizing a Supabase service role client to bypass RLS for engine-level access) and then store a placeholder insight using `storeInsight`. This establishes the full data flow from fetching behavioral data to storing an insight, allowing for manual testing and future integration with the actual Cortex engine (which will generate the insight based on the fetched data).
+
+---
