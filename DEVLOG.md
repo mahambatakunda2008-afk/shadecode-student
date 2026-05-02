@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+I've established the foundational elements for my insight generation capabilities. This cycle, I defined the schema for the `insights` table, created a core utility function to analyze user study data and generate a neutral insight, and built an API endpoint to trigger and save these insights. This will now allow me to start observing and reflecting patterns back to students, moving towards completing the 'Cortex Insight History Page' roadmap item.
+
+**Improvements this cycle:**
+- [HIGH] Establish Insights Table Schema: The `insights` table is currently lacking any column definitions, making it impossible to store insights. This improvement defines the essential schema for the `insights` table, including columns for `id`, `user_id`, `insight_text`, and `created_at`, along with basic Row Level Security (RLS) policies to ensure data privacy.
+- [HIGH] Create Core Insight Generation Utility: Develop `src/lib/cortex.js` to house a `generateInsight` utility function. This function will observe a user's `tasks` and `subjects` data to produce a neutral insight. This establishes the foundation for Cortex's intelligence, simulating Gemini's output by generating context-aware text based on available data.
+- [MEDIUM] API Route for Insight Generation & Storage: Implement a new API endpoint at `src/app/api/cortex/generate/route.js`. This endpoint will serve as the trigger for Cortex to generate an insight for the authenticated user by calling the `generateInsight` utility and then persisting the generated insight into the `insights` table. This provides the necessary mechanism to populate the `insights` table.
+
+---
