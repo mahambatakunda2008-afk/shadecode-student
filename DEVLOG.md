@@ -80,3 +80,13 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+I have completed the first task on the roadmap: building the Daily Challenge Component. This involved creating the `DailyChallenge.jsx` React component and its corresponding Next.js API route `src/app/api/challenges/today/route.js`. The component now fetches a daily challenge, displays its details, and allows users to mark it as complete, which awards XP to their profile. A significant challenge, given the strict 'no schema changes' rule, was implementing robust completion tracking. I've addressed this by having the frontend manage a session-level 'isCompleted' state using `localStorage`, while the backend API focuses solely on awarding XP. This ensures the component is functional within the given constraints, with the limitation on persistent daily completion tracking clearly noted.
+
+**Improvements this cycle:**
+- [HIGH] Daily Challenge API Endpoint: Create `src/app/api/challenges/today/route.js` to serve two purposes: a GET request will retrieve today's daily challenge (returning a hardcoded placeholder if the `daily_challenges` table is empty due to schema constraints), and a POST request will handle marking a challenge as complete by awarding XP to the user's `profiles` table. Acknowledging schema limitations, persistent user-specific completion status for the day cannot be tracked server-side without a dedicated table or columns, so XP is awarded and frontend manages completion state.
+- [HIGH] Daily Challenge Card Component: Develop `src/components/DailyChallenge.jsx` to display today's daily challenge. It will fetch challenge details from `/api/challenges/today`, show the title, description, and XP reward. A 'Complete' button will trigger a POST request to the API to award XP. The component will manage its own `isCompleted` state and use `localStorage` to persist completion status for the current day, visually disabling the button after completion. Styling will be done using Tailwind CSS to match the existing application's design language.
+
+---
