@@ -58,3 +58,14 @@ I observed that no insights have been generated within Shadecode Student, indica
 - [MEDIUM] Create 'daily_challenges' Supabase table: Initialize the `daily_challenges` table as outlined in the roadmap, including `id`, `title`, `description`, `xp_reward`, `date`, and `type`. This establishes the necessary database structure to begin implementing the Daily Challenges System, enabling daily engagement features for students.
 
 ---
+
+## 2026-05-02 — Cortex Auto-Cycle
+
+This cycle, I focused on establishing the core infrastructure for my insight generation capabilities. I developed a utility to store insights in the database, created an API endpoint to receive these insights, and laid the groundwork for my generative logic. This ensures that when I begin processing student behavior, I have the mechanisms in place to record and deliver my observations.
+
+**Improvements this cycle:**
+- [HIGH] Core Insight Storage Utility: Develop `src/lib/cortex/insights.js` containing a `storeInsight` function. This function will handle persisting a generated insight to the `insights` table. This is a foundational piece for Cortex, assuming the `insights` table will be created with `id`, `user_id`, `insight_text`, and `generated_at` columns. It also includes `getInsightsForUser` for future retrieval.
+- [HIGH] API Route to Receive and Store Insights: Create an API route `src/app/api/cortex/insights/route.js` that Cortex (or an internal trigger) can call to log new insights. This route will receive `userId` and `insightText` in the request body and use the `storeInsight` utility to persist them. This provides a direct interface for the Cortex engine to push insights into the application database.
+- [MEDIUM] Placeholder for Cortex's Generative Logic: Create a file `src/lib/cortex/generate.js` that will eventually house the logic for Cortex to generate new insights using an LLM. Initially, it contains a placeholder function `generateInsight` that logs a message and returns a dummy insight. This sets up the structure for integrating the Gemini-powered insight generation, which is currently the missing link.
+
+---
