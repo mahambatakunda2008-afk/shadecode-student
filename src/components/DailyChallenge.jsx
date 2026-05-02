@@ -1,157 +1,144 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { FaTrophy, FaCheckCircle, FaSpinner } from 'react-icons/fa'; // Ensure react-icons/fa is installed (npm install react-icons)
 
-  export default function DailyChallenge({ userId }) {
+export default function DailyChallenge() {
   const [challenge, setChallenge] = useState(null);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
-  const [xpAwarded, setXpAwarded] = useState(0);
+  const [error, setError] = useState(null);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completedSuccessfully, setCompletedSuccessfully] = useState(false);
 
   useEffect(() => {
-    const fetchChallenge = async () => {
+    async function fetchDailyChallenge() {
       try {
+        setLoading(true);
         const response = await fetch('/api/challenges/today');
         const data = await response.json();
-        setChallenge(data.challenge);
 
-        const today = new Date().toDateString();
-        const stored = localStorage.getItem(`dailyChallenge_${data.challenge?.id}_${today}`);
-        setIsCompleted(!!stored);
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch daily challenge');
+        }
+
+        if (data.challenge) {
+          setChallenge(data.challenge);
+          // If the challenge is already marked completed in the DB, reflect that immediately
+          if (data.challenge.completed) {
+            setCompletedSuccessfully(true);
+          }
+        } else {
+          // No challenge found for today
+          setChallenge(null);
+        }
       } catch (err) {
-        console.error('Failed to fetch daily challenge:', err);
+        console.error("Error fetching daily challenge:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
-    };
-    fetchChallenge();
+    }
+
+    fetchDailyChallenge();
   }, []);
 
-  const handleComplete = async () => {
-    if (!challenge || isCompleted || !userId || completing) return;
-    setCompleting(true);
+  const handleCompleteChallenge = async () => {
+    if (!challenge || completedSuccessfully || isCompleting) return; // Prevent multiple clicks or completing already done challenges
+
+    setIsCompleting(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/challenges/today', {
+      const response = await fetch('/api/challenges/complete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, challengeId: challenge.id, xpReward: challenge.xp_reward }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ challengeId: challenge.id }),
       });
 
       const data = await response.json();
-      if (data.success) {
-        setIsCompleted(true);
-        setXpAwarded(challenge.xp_reward);
-        const today = new Date().toDateString();
-        localStorage.setItem(`dailyChallenge_${challenge.id}_${today}`, 'true');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to complete challenge');
       }
+
+      setCompletedSuccessfully(true);
+      alert(`Challenge completed! You earned ${data.xpAwarded} XP!`);
+      // Update the local challenge state to reflect completion
+      setChallenge(prev => prev ? { ...prev, completed: true } : null);
+
     } catch (err) {
-      console.error('Failed to complete challenge:', err);
+      console.error("Error completing challenge:", err);
+      setError(err.message);
+      setCompletedSuccessfully(false); // Reset if completion failed after attempt
     } finally {
-      setCompleting(false);
+      setIsCompleting(false);
     }
   };
 
-  if (loading) return (
-    <div style={{
-      background: "var(--card)",
-      border: "1px solid var(--card-border)",
-      borderRadius: "12px",
-      padding: "16px",
-      opacity: 0.6,
-    }}>
-      <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>Loading challenge...</p>
-    </div>
-  );
+  // Display loading state
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-br from-purple-700 to-indigo-800 text-white rounded-lg p-6 shadow-xl flex items-center justify-center min-h-[150px]">
+        <FaSpinner className="animate-spin text-3xl mr-3" />
+        <p className="text-lg">Loading daily challenge...</p>
+      </div>
+    );
+  }
 
-  if (!challenge) return null;
+  // Display error state
+  if (error) {
+    return (
+      <div className="bg-red-500 text-white rounded-lg p-6 shadow-xl min-h-[150px] flex items-center justify-center">
+        <p className="text-lg font-semibold">Error: {error}</p>
+      </div>
+    );
+  }
+
+  // Display if no challenge is found for today
+  if (!challenge) {
+    return (
+      <div className="bg-gradient-to-br from-gray-700 to-gray-800 text-white rounded-lg p-6 shadow-xl min-h-[150px] flex flex-col items-center justify-center text-center">
+        <p className="text-xl font-bold mb-2">No Daily Challenge Today</p>
+        <p className="text-sm text-gray-300">Cortex is still learning your preferences. Check back later!</p>
+      </div>
+    );
+  }
+
+  const isChallengeCompleted = challenge.completed || completedSuccessfully; // Check both DB state and temporary client state
 
   return (
-    <div style={{
-      background: isCompleted ? "rgba(34,197,94,0.06)" : "rgba(99,102,241,0.06)",
-      border: `1px solid ${isCompleted ? "rgba(34,197,94,0.2)" : "rgba(99,102,241,0.2)"}`,
-      borderRadius: "14px",
-      padding: "16px",
-      transition: "all 0.3s ease",
-    }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "14px" }}>⚡</span>
-          <p style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: isCompleted ? "#22c55e" : "var(--primary)",
-          }}>
-            Daily Challenge
-          </p>
-        </div>
-        {isCompleted && (
-          <span style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            padding: "2px 8px",
-            borderRadius: "20px",
-            background: "rgba(34,197,94,0.15)",
-            color: "#22c55e",
-          }}>
-            +{xpAwarded || challenge.xp_reward} XP earned
-          </span>
-        )}
+    <div className="bg-gradient-to-br from-purple-700 to-indigo-800 text-white rounded-lg p-6 shadow-xl flex flex-col justify-between min-h-[180px]">
+      <div>
+        <h2 className="text-2xl font-bold mb-2 flex items-center">
+          <FaTrophy className="text-yellow-400 mr-2" />
+          Daily Challenge: {challenge.title}
+        </h2>
+        <p className="text-gray-200 mb-4 text-sm">{challenge.description}</p>
       </div>
-
-      {/* Content */}
-      <p style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", color: "var(--foreground)" }}>
-        {challenge.title}
-      </p>
-      <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.6, marginBottom: "14px" }}>
-        {challenge.description}
-      </p>
-
-      {/* Footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ fontSize: "13px" }}>🔮</span>
-          <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
-            <span style={{ color: "#8b5cf6", fontWeight: 700 }}>{challenge.xp_reward} XP</span> reward
-          </p>
-        </div>
-
-        {isCompleted ? (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            background: "rgba(34,197,94,0.1)",
-            border: "1px solid rgba(34,197,94,0.2)",
-            borderRadius: "8px",
-            padding: "6px 12px",
-          }}>
-            <span style={{ fontSize: "13px" }}>✅</span>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "#22c55e" }}>Completed</p>
-          </div>
+      <div className="flex justify-between items-center mt-auto">
+        <span className="text-lg font-semibold text-green-300">+{challenge.xp_reward || 0} XP</span>
+        {isChallengeCompleted ? (
+          <button
+            className="bg-green-600 text-white px-5 py-2 rounded-full flex items-center opacity-70 cursor-not-allowed"
+            disabled
+          >
+            <FaCheckCircle className="mr-2" /> Completed!
+          </button>
         ) : (
           <button
-            onClick={handleComplete}
-            disabled={completing}
-            style={{
-              background: completing ? "var(--muted)" : "var(--primary)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 16px",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: completing ? "not-allowed" : "pointer",
-              boxShadow: completing ? "none" : "0 0 12px rgba(99,102,241,0.4)",
-              transition: "all 0.2s ease",
-              opacity: completing ? 0.6 : 1,
-            }}
+            onClick={handleCompleteChallenge}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full flex items-center transition-colors duration-200"
+            disabled={isCompleting}
           >
-            {completing ? "Completing..." : "Complete →"}
+            {isCompleting ? (
+              <>
+                <FaSpinner className="animate-spin mr-2" /> Completing...
+              </>
+            ) : (
+              'Complete'
+            )}
           </button>
         )}
       </div>
