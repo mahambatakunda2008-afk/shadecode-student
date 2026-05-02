@@ -171,7 +171,7 @@ Rules:
 `;
 
   let result;
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+  const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
   for (const modelName of models) {
     try {
       log(`Trying model: ${modelName}...`);
@@ -183,7 +183,35 @@ Rules:
       log(`Model ${modelName} failed: ${err.message}. Trying next...`);
     }
   }
-  if (!result) throw new Error("All Gemini models failed.");
+  // Fallback to OpenRouter if all Gemini models failed
+  if (!result && process.env.OPENROUTER_API_KEY) {
+    try {
+      log("Trying OpenRouter fallback...");
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://shadecodestudent.vercel.app",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.3-70b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content;
+      const jsonMatch = text?.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = { response: { text: () => text } };
+        log("Success with OpenRouter");
+      }
+    } catch (err) {
+      log(`OpenRouter failed: ${err.message}`);
+    }
+  }
+
+  if (!result) throw new Error("All AI models failed.");
 
   const text = result.response.text();
   const jsonMatch = text.match(/\{[\s\S]*\}/);
