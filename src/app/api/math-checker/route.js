@@ -2,40 +2,26 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
-import { analyzePatterns } from '@/lib/cortex/localEngine';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-
 
 export async function POST(req) {
   try {
     const formData = await req.formData();
     const imageFile = formData.get('image');
+    const topic = formData.get('topic') || '';
+    const subject = formData.get('subject') || '';
+    const question = formData.get('question') || '';
+    const userId = formData.get('userId') || '';
 
     if (!imageFile) {
-      const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// get last 10 insights
-const { data: pastInsights } = await supabase
-  .from('insights')
-  .select('metadata')
-  .order('generated_at', { ascending: false })
-  .limit(10);
-
-const localPatterns = analyzePatterns(pastInsights || []);
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
-    // Convert file to base64
     const bytes = await imageFile.arrayBuffer();
     const base64 = Buffer.from(bytes).toString('base64');
     const mimeType = imageFile.type || 'image/jpeg';
 
-    // Try models in order
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
     let result = null;
 
@@ -45,42 +31,32 @@ const localPatterns = analyzePatterns(pastInsights || []);
 
         const prompt = `You are Cortex, a neutral mathematical analysis system inside Shadecode Student.
 
-Analyse this student's handwritten or typed math working. Do not encourage or motivate — only observe and reflect what the working shows.
+The student has just studied the topic: "${topic}" in ${subject || 'their subject'}.
+${question ? `The specific question they are solving is: "${question}"` : 'They were asked to solve a problem on paper and show their full working.'}
 
-Respond ONLY with valid JSON in this exact format:
-Respond ONLY with valid JSON in this exact format:
+Analyse this student's handwritten working carefully. Do not encourage or motivate — only observe and reflect what the working shows about their understanding.
+
+Respond ONLY with valid JSON in this exact format, no other text:
 {
-  "problem": "Brief description of the math problem being solved",
-  "topic": "Main topic (e.g. algebra, geometry, calculus)",
-  "errorType": "Primary mistake type (concept_gap, calculation_error, sign_error, skipped_step, misinterpretation, careless_error)",
-  "score": <number 0-100 representing correctness>,
-  "correct": <true if fully correct, false otherwise>,
-  "cortexInsight": "2-3 sentences. Neutral, analytical observation about the student's method.",
+  "problem": "Brief description of the specific math problem visible in the image",
+  "score": <number 0-100 representing correctness and method quality>,
+  "correct": <true if answer and method are fully correct, false otherwise>,
+  "cortexInsight": "2-3 sentences. Neutral, analytical observation about what this working reveals about the student's understanding. Reference specific steps. Do not say well done or good job. Simply describe what the method shows.",
+  "errorType": "concept_gap | calculation_error | sign_error | skipped_step | misinterpretation | careless_error | none",
   "steps": [
     {
       "description": "What this step does mathematically",
       "status": "correct | incorrect | warning",
-      "note": "Optional short note"
+      "note": "Short note about what was right, wrong, missing, or skipped"
     }
   ]
 }
-You MUST always include:
-- "topic"
-- "errorType"
 
-If the work is mostly correct, set errorType to "none".
-If unclear, make your best classification.
-Do not leave topic or errorType vague. Be specific and consistent.
-Analyse every visible step. If working is unclear or missing steps, note that in cortexInsight.`;
+Be thorough. Analyse every visible step. If the working is incomplete or skips steps, note exactly which steps are missing.`;
 
         const response = await model.generateContent([
           prompt,
-          {
-            inlineData: {
-              mimeType,
-              data: base64,
-            },
-          },
+          { inlineData: { mimeType, data: base64 } },
         ]);
 
         const text = response.response.text();
@@ -88,56 +64,68 @@ Analyse every visible step. If working is unclear or missing steps, note that in
         if (!jsonMatch) throw new Error('No JSON in response');
 
         result = JSON.parse(jsonMatch[0]);
-        result.topic = result.topic || "unknown";
-result.errorType = result.errorType || "unknown";
         break;
       } catch (err) {
         console.error(`Model ${modelName} failed:`, err.message);
         continue;
       }
     }
-if (!result) {
-  console.warn("AI failed — switching to Cortex local mode");
 
-  const fallback = {
-    problem: "Unknown",
-    score: 0,
-    correct: false,
-    cortexInsight: localPatterns.insight,
-    steps: [],
-    fallback: true
-  };
-result.patternInsight = localPatterns.insight;
-result.mode = "enhanced";
-  return NextResponse.json(fallback);
-}
+    if (!result) {
+      return NextResponse.json({ error: 'Analysis failed — try again' }, { status: 500 });
     }
-  // Save to insights table
-try {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
 
-  const { error } = await supabase.from('insights').insert({
-  content: result.cortexInsight,
-  title: `Math: ${result.problem}`,
-  metadata: {
-    score: result.score,
-    correct: result.correct,
-    steps: result.steps,
-    topic: result.topic || null,
-    errorType: result.errorType || null
-  },
-  generated_at: new Date().toISOString(),
-});
+    // ── Supabase actions ──────────────────────────────────────────────────────
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
 
-if (error) console.error("DB error:", error.message);
+      // 1. Save insight
+      await supabase.from('insights').insert({
+        content: result.cortexInsight,
+        title: `${subject} — ${topic}: ${result.problem}`,
+        metadata: {
+          score: result.score,
+          correct: result.correct,
+          errorType: result.errorType,
+          steps: result.steps,
+          topic,
+          subject,
+          question,
+        },
+        generated_at: new Date().toISOString(),
+      });
 
-} catch (dbErr) {
-  // Non-fatal — still return result even if save fails
-  console.error('DB save failed:', dbErr.message);
-}
+      // 2. Auto-create review task if score is low and we have a userId
+      if (result.score < 60 && userId) {
+        // Find the subject_id from subjects table
+        const { data: subjectData } = await supabase
+          .from('subjects')
+          .select('id')
+          .eq('user_id', userId)
+          .ilike('name', `%${subject}%`)
+          .limit(1)
+          .single();
+
+        const taskTitle = `Review: ${topic}${question ? ` — "${question}"` : ''}`;
+
+        await supabase.from('tasks').insert({
+          user_id: userId,
+          subject_id: subjectData?.id || null,
+          title: taskTitle,
+          completed: false,
+        });
+
+        result.taskCreated = true;
+        result.taskTitle = taskTitle;
+      }
+
+    } catch (dbErr) {
+      console.error('DB error:', dbErr.message);
+      // Non-fatal — still return result
+    }
 
     return NextResponse.json(result);
   } catch (err) {
