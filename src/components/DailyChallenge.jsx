@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-export default function DailyChallenge() {
+  export default function DailyChallenge({ userId }) {
   const [challenge, setChallenge] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,6 +51,7 @@ export default function DailyChallenge() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userID,
           challengeId: challenge.id,
           xpReward: challenge.xp_reward,
         }),
