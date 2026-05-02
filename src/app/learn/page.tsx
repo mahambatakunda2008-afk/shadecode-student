@@ -164,6 +164,7 @@ export default function Learn() {
       formData.append("topic", topic);
       formData.append("subject", selectedSubject);
       formData.append("question", mathQuestion);
+      if (userId) formData.append("userId", userId);
 
       const res = await fetch("/api/math-checker", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Analysis failed");
@@ -174,6 +175,13 @@ export default function Learn() {
     } finally {
       setMathLoading(false);
     }
+  };
+
+  const [taskToast, setTaskToast] = useState<string | null>(null);
+
+  const showTaskToast = (title: string) => {
+    setTaskToast(title);
+    setTimeout(() => setTaskToast(null), 4000);
   };
 
   const resetMath = () => {
