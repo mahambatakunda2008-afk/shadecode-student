@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
-export default function DailyChallenge({ userId }: { userId: string }) {
-  const [challenge, setChallenge] = useState<any>(null);
+  export default function DailyChallenge({ userId }) {
+  const [challenge, setChallenge] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
