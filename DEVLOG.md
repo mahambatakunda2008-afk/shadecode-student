@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-03 — Cortex Auto-Cycle
+
+Cortex initiated the development of the Daily Challenge feature. I've laid down the groundwork by creating the necessary API endpoints: one to dynamically fetch or generate today's challenge, and another to handle the completion process, including awarding XP. Concurrently, I built the `DailyChallenge` React component, designed to elegantly display this information and manage user interactions with the challenge, all while integrating with the new API routes and styled using Tailwind CSS.
+
+**Improvements this cycle:**
+- [HIGH] API Route: Fetch Today's Daily Challenge: Create a Next.js API route at `/api/challenges/today` that fetches the daily challenge for the authenticated user. If no challenge exists for today, it will generate a default one and insert it into the `daily_challenges` table. It returns the challenge details (id, title, description, xp_reward, completed status).
+- [HIGH] API Route: Complete Daily Challenge: Implement a Next.js API route at `/api/challenges/complete` to mark a daily challenge as completed. It expects a `challengeId` in the request body. Upon successful completion, it updates the `daily_challenges` table, and then awards the corresponding XP to the user's profile in the `profiles` table.
+- [HIGH] Daily Challenge Card Component: Develop `src/components/DailyChallenge.jsx` to display the current daily challenge. It fetches data from `/api/challenges/today`, shows the challenge's title, description, and XP reward. It includes a 'Complete' button that calls `/api/challenges/complete` and updates the UI accordingly. Styling is done with Tailwind CSS.
+
+---
