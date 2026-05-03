@@ -1,71 +1,79 @@
-// src/app/api/challenges/today/route.js
-import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
-function getSupabase() {
+function getSupabaseServerClient() {
+  const cookieStore = cookies();
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          cookieStore.set(name, value, options);
+        },
+        remove(name, options) {
+          cookieStore.set(name, '', options);
+        },
+      },
+    }
   );
 }
 
-const defaultChallenge = {
-  id: 'daily-default',
-  title: 'Focus Sprint: 30 Minutes',
-  description: 'Dedicate 30 uninterrupted minutes to your hardest subject today.',
-  xp_reward: 50,
-};
+export async function GET(request) {
+  const supabase = getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export async function GET() {
-  try {
-    const supabase = getSupabase();
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data, error } = await supabase
-      .from('daily_challenges')
-      .select('*')
-      .eq('date', today)
-      .limit(1)
-      .single();
-
-    const challenge = (!error && data) ? data : defaultChallenge;
-    return NextResponse.json({ challenge });
-  } catch (err) {
-    console.error('GET /api/challenges/today error:', err);
-    return NextResponse.json({ challenge: defaultChallenge });
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-}
 
-export async function POST(req) {
-  try {
-    const supabase = getSupabase();
-    const { userId, xpReward } = await req.json();
+  const userId = user.id;
 
-    if (!userId || typeof xpReward !== 'number') {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
-    }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Start of today
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1); // Start of tomorrow
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('xp, level')
-      .eq('id', userId)
+  const { data: challenge, error: fetchError } = await supabase
+    .from('daily_challenges')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('created_at', today.toISOString())
+    .lt('created_at', tomorrow.toISOString())
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found
+    console.error('Error fetching daily challenge:', fetchError);
+    return NextResponse.json({ error: 'Failed to fetch daily challenge' }, { status: 500 });
+  }
+
+  if (challenge) {
+    return NextResponse.json(challenge);
+  } else {
+    // No challenge for today, create a default one
+    const defaultChallenge = {
+      user_id: userId,
+      title: 'Complete a study session!',
+      description: 'Study for at least 30 minutes in any subject.',
+      xp_reward: 50,
+      completed: false,
+      created_at: new Date().toISOString(),
+    };
+
+    const { data: newChallenge, error: insertError } = await supabase
+      .from('daily_challenges')
+      .insert(defaultChallenge)
+      .select()
       .single();
 
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    if (insertError) {
+      console.error('Error creating daily challenge:', insertError);
+      return NextResponse.json({ error: 'Failed to create daily challenge' }, { status: 500 });
     }
-
-    const newXp = (profile.xp || 0) + xpReward;
-    const newLevel = Math.floor(newXp / 100) + 1;
-
-    await supabase
-      .from('profiles')
-      .update({ xp: newXp, level: newLevel })
-      .eq('id', userId);
-
-    return NextResponse.json({ success: true, newXp, newLevel });
-  } catch (err) {
-    console.error('POST /api/challenges/today error:', err);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    return NextResponse.json(newChallenge);
   }
 }
