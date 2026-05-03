@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, CheckSquare, LayoutDashboard, BookOpen, Brain, PenLine, Trophy, Settings } from "lucide-react";
+import { Home, Calendar, CheckSquare, LayoutDashboard, BookOpen, Brain, PenLine, Trophy, Settings, Timer } from "lucide-react";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home, id: "nav-home" },
@@ -11,6 +11,7 @@ const navItems = [
   { label: "Exams", href: "/exams", icon: BookOpen, id: "nav-exams" },
   { label: "Learn", href: "/learn", icon: Brain, id: "nav-learn" },
   { label: "Math", href: "/math-checker", icon: PenLine, id: "nav-math" },
+  { label: "Focus", href: "/focus", icon: Timer, id: "nav-focus" },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, id: "nav-dashboard" },
   { label: "Ranks", href: "/leaderboard", icon: Trophy, id: "nav-leaderboard" },
   { label: "Settings", href: "/settings", icon: Settings, id: "nav-settings" },
