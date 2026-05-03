@@ -1,71 +1,58 @@
-// src/app/api/challenges/today/route.js
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-}
+export async function GET(request) {
+  const supabase = createRouteHandlerClient({ cookies });
 
-const defaultChallenge = {
-  id: 'daily-default',
-  title: 'Focus Sprint: 30 Minutes',
-  description: 'Dedicate 30 uninterrupted minutes to your hardest subject today.',
-  xp_reward: 50,
-};
+  const { data: { user } } = await supabase.auth.getUser();
 
-export async function GET() {
-  try {
-    const supabase = getSupabase();
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data, error } = await supabase
-      .from('daily_challenges')
-      .select('*')
-      .eq('date', today)
-      .limit(1)
-      .single();
-
-    const challenge = (!error && data) ? data : defaultChallenge;
-    return NextResponse.json({ challenge });
-  } catch (err) {
-    console.error('GET /api/challenges/today error:', err);
-    return NextResponse.json({ challenge: defaultChallenge });
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-}
 
-export async function POST(req) {
-  try {
-    const supabase = getSupabase();
-    const { userId, xpReward } = await req.json();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to start of day for comparison
 
-    if (!userId || typeof xpReward !== 'number') {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
-    }
+  // Check if a challenge exists for today for this user
+  const { data: existingChallenges, error: fetchError } = await supabase
+    .from('daily_challenges')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', today.toISOString())
+    .lte('created_at', new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()) // End of day
+    .order('created_at', { ascending: false })
+    .limit(1);
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('xp, level')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    const newXp = (profile.xp || 0) + xpReward;
-    const newLevel = Math.floor(newXp / 100) + 1;
-
-    await supabase
-      .from('profiles')
-      .update({ xp: newXp, level: newLevel })
-      .eq('id', userId);
-
-    return NextResponse.json({ success: true, newXp, newLevel });
-  } catch (err) {
-    console.error('POST /api/challenges/today error:', err);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+  if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no row found
+    console.error('Error fetching daily challenge:', fetchError);
+    return NextResponse.json({ error: 'Failed to fetch daily challenge' }, { status: 500 });
   }
+
+  if (existingChallenges && existingChallenges.length > 0) {
+    return NextResponse.json(existingChallenges[0]);
+  }
+
+  // If no challenge exists for today, create a new one
+  const newChallenge = {
+    user_id: user.id,
+    title: 'Code for 30 minutes', 
+    description: 'Spend 30 minutes actively coding on any project or tutorial.',
+    xp_reward: 100,
+    completed: false,
+    created_at: new Date().toISOString(),
+  };
+
+  const { data: insertedChallenge, error: insertError } = await supabase
+    .from('daily_challenges')
+    .insert(newChallenge)
+    .select()
+    .single();
+
+  if (insertError) {
+    console.error('Error inserting new daily challenge:', insertError);
+    return NextResponse.json({ error: 'Failed to create daily challenge' }, { status: 500 });
+  }
+
+  return NextResponse.json(insertedChallenge);
 }
