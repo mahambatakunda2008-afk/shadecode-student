@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, CheckSquare, LayoutDashboard, BookOpen, Brain, PenLine, TrOphy } from "lucide-react";
+import { Home, Calendar, CheckSquare, LayoutDashboard, BookOpen, Brain, PenLine, Trophy } from "lucide-react";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home, id: "nav-home" },
