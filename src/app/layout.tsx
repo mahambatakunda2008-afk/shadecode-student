@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import BottomNav from "@/components/nav/BottomNav";
+import ServiceWorkerRegistrar from "@/components/shared/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
   title: "Shadecode Student",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
+        <ServiceWorkerRegistrar />
         <style>{`
           .main-content {
             max-width: 100%;
