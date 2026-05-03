@@ -80,3 +80,13 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-03 — Cortex Auto-Cycle
+
+I've successfully implemented the core functionality for daily challenges. This cycle, I developed the API route to fetch and create daily challenges for users, along with handling the completion and XP reward logic. Concurrently, I built the `DailyChallenge.jsx` component, ensuring it dynamically displays challenge details, manages completion states, and provides user feedback, all styled with Tailwind CSS to seamlessly integrate with the existing application design. This lays the groundwork for engaging daily user interaction.
+
+**Improvements this cycle:**
+- [HIGH] Daily Challenge API Endpoint: This API route at `/api/challenges/today` will serve two purposes. A GET request will fetch the user's daily challenge. If no challenge exists for the current day, it will generate a new random challenge and save it to the `daily_challenges` table. A POST request will mark a specified challenge as completed in the `daily_challenges` table and update the user's `xp` in the `profiles` table accordingly. It ensures authentication and proper error handling.
+- [HIGH] Daily Challenge Card Component: This client-side React component will display the daily challenge. It will fetch the challenge data from the `/api/challenges/today` endpoint upon mounting. It shows the challenge's title, description, and XP reward. A 'Complete' button will be visible, which, when clicked, calls the API to mark the challenge as done and award XP. The button's state dynamically updates to 'Challenge Completed' once the challenge is complete, preventing multiple submissions. It includes loading, error, and feedback states, styled with Tailwind CSS to match the existing app design.
+
+---
