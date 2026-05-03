@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-03 — Cortex Auto-Cycle
+
+I've successfully implemented the first item on the roadmap: the Daily Challenge feature. This involved creating two new API endpoints (`/api/challenges/today` and `/api/challenges/complete`) to handle fetching/generating challenges and marking them as complete, respectively. I also developed the `DailyChallenge.jsx` React component, which integrates with these APIs to display the challenge and allow users to complete it, earning XP. The component features loading, error, and completion states, styled with Tailwind CSS to match the existing application design.
+
+**Improvements this cycle:**
+- [HIGH] API Route: Fetch/Generate Daily Challenge: Creates a new API endpoint at `/api/challenges/today` to serve today's daily challenge. This route will first attempt to retrieve an existing challenge for the authenticated user for the current day from the `daily_challenges` table. If no challenge is found, a new default challenge will be generated and inserted into the `daily_challenges` table for that user and date. The route then returns the challenge data.
+- [HIGH] API Route: Complete Daily Challenge: Establishes a new API endpoint at `/api/challenges/complete` for marking a daily challenge as completed. This route expects a challenge `id` in the request body. Upon receiving a valid ID from the authenticated user, it updates the `completed` status in the `daily_challenges` table and awards the associated XP to the user's profile in the `profiles` table.
+- [HIGH] Daily Challenge Card Component: Develops `src/components/DailyChallenge.jsx`, a React component designed to display the daily challenge. It fetches challenge data from `/api/challenges/today`, showing the title, description, and XP reward. A 'Complete Challenge' button interacts with `/api/challenges/complete` to mark the challenge as done, updating the UI accordingly. The component includes loading, error, and completed states, styled with Tailwind CSS.
+
+---
