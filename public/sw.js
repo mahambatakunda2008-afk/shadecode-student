@@ -8,14 +8,6 @@ const OFFLINE_CACHE = "shadecode-offline-v1";
 // Pages to cache for offline access
 const STATIC_ASSETS = [
   "/",
-  "/dashboard",
-  "/tasks",
-  "/timetable",
-  "/exams",
-  "/learn",
-  "/leaderboard",
-  "/settings",
-  "/math-checker",
   "/offline",
 ];
 
