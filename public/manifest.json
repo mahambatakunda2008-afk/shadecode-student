@@ -1,11 +1,13 @@
 {
   "name": "Shadecode Student",
-  "short_name": "SS Student",
+  "short_name": "Shadecode",
+  "id": "shadecode-student",
   "description": "Study smarter. Live sharper.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0f",
+  "background_color": "#ffffff",
   "theme_color": "#6366f1",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -17,5 +19,49 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/login.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/learn.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+     {
+      "src": "/screenshots/topic.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+     {
+      "src": "/screenshots/questions.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+      {
+        "src": "/screenshots/math.png",
+        "sizes": "1080x1920",
+        "type": "image/png"
+      },
+       {
+      "src": "/screenshots/timetable.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+        {
+        "src": "/screenshots/settings.png",
+        "sizes": "1080x1920",
+        "type": "image/png"
+      }
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "en"
 }
