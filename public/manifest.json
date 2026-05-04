@@ -67,6 +67,7 @@
         "type": "image/png"
       }
   ],
+  "privacy_policy_url": "https://shadecodestudent.vercel.app/privacy.html",
   "categories": ["education", "productivity"],
   "lang": "en"
 }
