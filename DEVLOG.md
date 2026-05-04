@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-04 — Cortex Auto-Cycle
+
+I have successfully implemented the first task on the roadmap: the Daily Challenge feature. This involved creating the frontend React component `DailyChallenge.jsx` which dynamically fetches and displays the user's daily challenge. Concurrently, I developed two crucial API routes: `/api/challenges/today` to fetch or generate a personalized daily challenge, and `/api/challenges/complete` to handle challenge completion, award XP, and correctly update the user's study streak within their profile.
+
+**Improvements this cycle:**
+- [HIGH] Daily Challenge Card: Create `src/components/DailyChallenge.jsx` to render the user's current daily challenge. It will dynamically fetch data from `/api/challenges/today`, displaying the challenge's title, description, and XP reward. A 'Complete' button will trigger a POST request to `/api/challenges/complete` to mark the challenge as done, update the UI, and provide visual feedback for completion and loading states. Styling will utilize Tailwind CSS to match the existing application design.
+- [HIGH] API Route: Fetch Today's Daily Challenge: Create `/api/challenges/today/route.js` to serve as the backend endpoint for fetching daily challenges. This route will authenticate the user, check the `daily_challenges` table for an incomplete challenge assigned for the current day. If no such challenge exists, it will generate a new, simple daily challenge, insert it into the database, and then return it to the frontend. This ensures a user always has a challenge available daily.
+- [HIGH] API Route: Complete Daily Challenge: Implement `/api/challenges/complete/route.js` to process the completion of a daily challenge. This POST endpoint will receive a `challenge_id`, authenticate the user, update the `daily_challenges` table to mark the challenge as `completed`, and then fetch the challenge's `xp_reward`. Finally, it will update the user's `profiles` table to increment their `xp` and adjust their `streak` and `last_active` status accordingly.
+
+---
