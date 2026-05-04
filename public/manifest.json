@@ -23,7 +23,7 @@
   "screenshots": [
     {
       "src": "/screenshots/login.png",
-      "sizes": "1080x1920",
+      "sizes": "800x1378",
       "type": "image/png"
     },
     {
@@ -46,6 +46,11 @@
       "sizes": "1080x1920",
       "type": "image/png"
     },
+    {
+        "src": "/screenshots/mathdesktop.png",
+        "sizes": "1080x1920",
+        "type": "image/png"
+      },
       {
         "src": "/screenshots/math.png",
         "sizes": "1080x1920",

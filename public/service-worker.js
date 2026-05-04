@@ -1,10 +1,5 @@
 const CACHE_NAME = "shadecode-cache-v1";
-const urlsToCache = [
-  "/",
-  "/manifest.json",
-  "/icon-192.png",
-  "/icon-512.png"
-];
+const urlsToCache = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(
