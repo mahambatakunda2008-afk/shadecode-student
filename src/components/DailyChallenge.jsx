@@ -1,157 +1,121 @@
-"use client";
+"use client"; // This component needs client-side interactivity
 
 import { useState, useEffect } from 'react';
 
-  export default function DailyChallenge({ userId }) {
+export function DailyChallenge() {
   const [challenge, setChallenge] = useState(null);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
-  const [xpAwarded, setXpAwarded] = useState(0);
+  const [error, setError] = useState(null);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completionMessage, setCompletionMessage] = useState('');
 
   useEffect(() => {
-    const fetchChallenge = async () => {
+    async function fetchDailyChallenge() {
       try {
+        setLoading(true);
         const response = await fetch('/api/challenges/today');
+        if (!response.ok) {
+          throw new Error('Failed to fetch daily challenge');
+        }
         const data = await response.json();
-        setChallenge(data.challenge);
-
-        const today = new Date().toDateString();
-        const stored = localStorage.getItem(`dailyChallenge_${data.challenge?.id}_${today}`);
-        setIsCompleted(!!stored);
+        setChallenge(data);
       } catch (err) {
-        console.error('Failed to fetch daily challenge:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
-    };
-    fetchChallenge();
+    }
+    fetchDailyChallenge();
   }, []);
 
-  const handleComplete = async () => {
-    if (!challenge || isCompleted || !userId || completing) return;
-    setCompleting(true);
+  const handleCompleteChallenge = async () => {
+    if (!challenge || challenge.completed || isCompleting) return;
+
+    setIsCompleting(true);
+    setCompletionMessage('');
 
     try {
-      const response = await fetch('/api/challenges/today', {
+      const response = await fetch('/api/challenges/complete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, challengeId: challenge.id, xpReward: challenge.xp_reward }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ challenge_id: challenge.id }),
       });
 
-      const data = await response.json();
-      if (data.success) {
-        setIsCompleted(true);
-        setXpAwarded(challenge.xp_reward);
-        const today = new Date().toDateString();
-        localStorage.setItem(`dailyChallenge_${challenge.id}_${today}`, 'true');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to complete challenge');
       }
+
+      const data = await response.json();
+      setChallenge((prev) => ({ ...prev, completed: true }));
+      setCompletionMessage(`Challenge completed! You earned ${data.xp_awarded} XP!`);
+      // Optionally re-fetch user profile to show updated XP in UI if it's displayed elsewhere
     } catch (err) {
-      console.error('Failed to complete challenge:', err);
+      setError(err.message);
+      setCompletionMessage(`Error: ${err.message}`);
     } finally {
-      setCompleting(false);
+      setIsCompleting(false);
     }
   };
 
-  if (loading) return (
-    <div style={{
-      background: "var(--card)",
-      border: "1px solid var(--card-border)",
-      borderRadius: "12px",
-      padding: "16px",
-      opacity: 0.6,
-    }}>
-      <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>Loading challenge...</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-br from-indigo-900 to-purple-800 text-white p-6 rounded-lg shadow-lg max-w-sm mx-auto animate-pulse">
+        <h3 className="text-xl font-bold mb-2 h-6 bg-indigo-700 rounded w-3/4"></h3>
+        <p className="text-sm text-indigo-200 mb-4 h-4 bg-indigo-700 rounded w-full"></p>
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-lg font-semibold h-5 bg-indigo-700 rounded w-1/4"></span>
+          <div className="h-10 w-24 bg-indigo-700 rounded-md"></div>
+        </div>
+      </div>
+    );
+  }
 
-  if (!challenge) return null;
+  if (error) {
+    return (
+      <div className="bg-red-500 text-white p-4 rounded-lg shadow-md max-w-sm mx-auto">
+        <p>Error: {error}</p>
+      </div>
+    );
+  }
+
+  if (!challenge) {
+    return (
+      <div className="bg-gradient-to-br from-indigo-900 to-purple-800 text-white p-6 rounded-lg shadow-lg max-w-sm mx-auto">
+        <h3 className="text-xl font-bold mb-2">No Daily Challenge Today</h3>
+        <p className="text-sm text-indigo-200">
+          Looks like there isn't a challenge available right now. Check back later!
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{
-      background: isCompleted ? "rgba(34,197,94,0.06)" : "rgba(99,102,241,0.06)",
-      border: `1px solid ${isCompleted ? "rgba(34,197,94,0.2)" : "rgba(99,102,241,0.2)"}`,
-      borderRadius: "14px",
-      padding: "16px",
-      transition: "all 0.3s ease",
-    }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "14px" }}>⚡</span>
-          <p style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: isCompleted ? "#22c55e" : "var(--primary)",
-          }}>
-            Daily Challenge
-          </p>
-        </div>
-        {isCompleted && (
-          <span style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            padding: "2px 8px",
-            borderRadius: "20px",
-            background: "rgba(34,197,94,0.15)",
-            color: "#22c55e",
-          }}>
-            +{xpAwarded || challenge.xp_reward} XP earned
-          </span>
-        )}
-      </div>
+    <div className="bg-gradient-to-br from-indigo-900 to-purple-800 text-white p-6 rounded-lg shadow-lg max-w-sm mx-auto">
+      <h3 className="text-xl font-bold mb-2">{challenge.title}</h3>
+      <p className="text-sm text-indigo-200 mb-4">{challenge.description}</p>
 
-      {/* Content */}
-      <p style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", color: "var(--foreground)" }}>
-        {challenge.title}
-      </p>
-      <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.6, marginBottom: "14px" }}>
-        {challenge.description}
-      </p>
+      {completionMessage && (
+        <p className="text-green-300 text-sm mb-3">{completionMessage}</p>
+      )}
 
-      {/* Footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ fontSize: "13px" }}>🔮</span>
-          <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
-            <span style={{ color: "#8b5cf6", fontWeight: 700 }}>{challenge.xp_reward} XP</span> reward
-          </p>
-        </div>
-
-        {isCompleted ? (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            background: "rgba(34,197,94,0.1)",
-            border: "1px solid rgba(34,197,94,0.2)",
-            borderRadius: "8px",
-            padding: "6px 12px",
-          }}>
-            <span style={{ fontSize: "13px" }}>✅</span>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "#22c55e" }}>Completed</p>
-          </div>
-        ) : (
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-lg font-semibold text-yellow-300">
+          {challenge.completed ? 'Completed!' : `${challenge.xp_reward} XP`}
+        </span>
+        {!challenge.completed && (
           <button
-            onClick={handleComplete}
-            disabled={completing}
-            style={{
-              background: completing ? "var(--muted)" : "var(--primary)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 16px",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: completing ? "not-allowed" : "pointer",
-              boxShadow: completing ? "none" : "0 0 12px rgba(99,102,241,0.4)",
-              transition: "all 0.2s ease",
-              opacity: completing ? 0.6 : 1,
-            }}
+            onClick={handleCompleteChallenge}
+            disabled={isCompleting}
+            className={`px-4 py-2 rounded-md font-semibold
+              ${isCompleting
+                ? 'bg-indigo-600 text-indigo-300 cursor-not-allowed'
+                : 'bg-indigo-500 hover:bg-indigo-600 text-white transition duration-200'
+              }`}
           >
-            {completing ? "Completing..." : "Complete →"}
+            {isCompleting ? 'Completing...' : 'Complete'}
           </button>
         )}
       </div>
