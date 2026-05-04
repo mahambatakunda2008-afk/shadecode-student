@@ -80,3 +80,13 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-05-04 — Cortex Auto-Cycle
+
+Cortex initiated work on the Daily Challenge feature. I've successfully drafted the API route (`/api/challenges/today`) to manage fetching and completing daily challenges, including XP awards. Concurrently, I've developed the `DailyChallenge.jsx` component to present this functionality to the student, ensuring it integrates with the new API and uses Tailwind for styling.
+
+**Improvements this cycle:**
+- [HIGH] Daily Challenge API Endpoint: Create a new Next.js API route at `src/app/api/challenges/today/route.js`. This endpoint will handle GET requests to retrieve the current day's challenge for the authenticated user (generating one if it doesn't exist yet for today). It will also handle POST requests to mark a challenge as completed, update its status in the `daily_challenges` table, and increment the user's `xp` in the `profiles` table.
+- [HIGH] Daily Challenge Component: Develop `src/components/DailyChallenge.jsx` to render a card displaying the user's daily challenge. This component will fetch challenge data from the `/api/challenges/today` endpoint on mount. It will show the challenge's title, description, and XP reward. A 'Complete' button will be visible if the challenge is not yet completed, which, when clicked, will call the API to mark the challenge as done and award XP. Styling will be implemented using Tailwind CSS to match the existing application design.
+
+---
