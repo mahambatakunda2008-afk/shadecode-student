@@ -212,7 +212,7 @@ export default function ExamSimulation() {
           weak_areas: data.weakAreas,
           time_taken: totalTime - timeLeft,
           created_at: new Date().toISOString(),
-        }).then(() => {}).catch(() => {}); // Non-fatal
+        });
 
         // Award XP
         const xpEarned = Math.round(data.percentage * 0.5);
