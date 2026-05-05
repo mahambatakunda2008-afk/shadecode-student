@@ -94,6 +94,7 @@ Respond ONLY with valid JSON, no other text:
 
 Rules:
 - Questions must be exam-quality, specific, and answerable
+- Write all mathematical expressions in plain text, not LaTeX. Example: use "x^2 + 5x + 6 = 0" not "$x^2 + 5x + 6 = 0$". Use "sqrt(x)" not "\sqrt{x}". Write vectors as bold words like "vector a" not "\mathbf{a}".
 - Vary difficulty within the paper
 - Topics must be realistic for ${subject} at ${difficulty}
 - Marks should reflect question complexity
