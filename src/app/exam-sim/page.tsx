@@ -1,5 +1,7 @@
 "use client";
 
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -419,9 +421,7 @@ export default function ExamSimulation() {
           </p>
         </div>
 
-        <p style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.6, marginBottom: "16px" }}>
-          {q.question}
-        </p>
+        <p dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} style={{ fontSize: "15px", fontWeight: 600, lineHeight: 1.6, marginBottom: "16px" }} />
 
         {/* MCQ options */}
         {q.type === "multiple_choice" && q.options && (
@@ -438,7 +438,7 @@ export default function ExamSimulation() {
                 <span style={{ marginRight: "10px", opacity: 0.5 }}>
                   {String.fromCharCode(65 + i)}.
                 </span>
-                {option}
+                <span dangerouslySetInnerHTML={{ __html: renderMath(option) }} />
               </button>
             ))}
           </div>
@@ -649,6 +649,22 @@ export default function ExamSimulation() {
       </div>
     );
   }
-
+function renderMath(text: string) {
+  if (!text) return text;
+  try {
+    // Replace block math $$...$$ and inline math $...$
+    return text
+      .replace(/\$\$([^$]+)\$\$/g, (_, expr) => {
+        try {
+          return katex.renderToString(expr, { displayMode: true, throwOnError: false });
+        } catch { return expr; }
+      })
+      .replace(/\$([^$]+)\$/g, (_, expr) => {
+        try {
+          return katex.renderToString(expr, { displayMode: false, throwOnError: false });
+        } catch { return expr; }
+      });
+  } catch { return text; }
+}
   return null;
 }
