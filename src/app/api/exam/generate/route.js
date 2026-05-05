@@ -2,39 +2,50 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 async function callAI(prompt) {
+  const keys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+  ].filter(Boolean);
+
   const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
-  for (const modelName of models) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      return result.response.text();
-    } catch (err) {
-      console.error(`${modelName} failed:`, err.message);
+  for (const key of keys) {
+    const genAI = new GoogleGenerativeAI(key);
+    for (const modelName of models) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (err) {
+        console.error(`${modelName} with key ...${key.slice(-4)} failed:`, err.message);
+      }
     }
   }
 
+  // OpenRouter fallback
   if (process.env.OPENROUTER_API_KEY) {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://shadecodestudent.vercel.app",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3.3-70b-instruct:free",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content;
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://shadecodestudent.vercel.app",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.3-70b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    } catch (err) {
+      console.error("OpenRouter failed:", err.message);
+    }
   }
 
-  throw new Error("All AI models failed");
+  return null;
 }
 
 export async function POST(req) {
@@ -89,6 +100,14 @@ Rules:
 - For MCQ, only include options array`;
 
     const text = await callAI(prompt);
+
+    if (!text) {
+      return NextResponse.json(
+        { error: "All AI models are currently unavailable. Please try again in a few minutes." },
+        { status: 503 }
+      );
+    }
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
