@@ -1,121 +1,50 @@
 // src/app/api/exam/generate/route.js
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-async function callAI(prompt) {
-  const keys = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-  ].filter(Boolean);
-
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "openai", "GPT-4", "GPT-3.5", "gtp-5.5", "gpt-5.4-mini", "gpt-5.4-nano"];
-
-  for (const key of keys) {
-    const genAI = new GoogleGenerativeAI(key);
-    for (const modelName of models) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        return result.response.text();
-      } catch (err) {
-        console.error(`${modelName} with key ...${key.slice(-4)} failed:`, err.message);
-      }
-    }
-  }
-
-  // OpenRouter fallback
-  if (process.env.OPENROUTER_API_KEY) {
-    try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://shadecodestudent.vercel.app",
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-3.3-70b-instruct:free",
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      const data = await response.json();
-      return data.choices?.[0]?.message?.content || null;
-    } catch (err) {
-      console.error("OpenRouter failed:", err.message);
-    }
-  }
-
-  return null;
-}
+import OpenAI from "openai";
 
 export async function POST(req) {
   try {
-    const { subject, topic, difficulty, questionCount } = await req.json();
+    const body = await req.json();
+    const { prompt } = body;
 
-    const prompt = `You are an expert ${subject} examiner generating an exam paper.
+    // --- Primary: Gemini ---
+    try {
+      const genAI = new GoogleGenerativeAI({
+        apiKey: process.env.GEMINI_API_KEY, // make sure this matches your Vercel variable name
+      });
 
-Generate exactly ${questionCount} exam questions for:
-- Subject: ${subject}
-- Topic: ${topic || "mixed topics across the full syllabus"}
-- Standard: ${difficulty}
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(prompt);
 
-Create a MIX of question types:
-- ~40% Multiple choice (4 options each)
-- ~30% Short answer (2-4 marks each)  
-- ~30% Structured/extended (4-8 marks each)
-
-Respond ONLY with valid JSON, no other text:
-{
-  "questions": [
-    {
-      "id": 1,
-      "type": "multiple_choice",
-      "topic": "specific topic name",
-      "question": "Question text here",
-      "options": ["A) option", "B) option", "C) option", "D) option"],
-      "marks": 1
-    },
-    {
-      "id": 2,
-      "type": "short_answer",
-      "topic": "specific topic name", 
-      "question": "Question text here",
-      "marks": 3
-    },
-    {
-      "id": 3,
-      "type": "structured",
-      "topic": "specific topic name",
-      "question": "Question text here. Show all working.",
-      "marks": 6
-    }
-  ]
-}
-
-Rules:
-- Questions must be exam-quality, specific, and answerable
-- Write all mathematical expressions in plain text, not LaTeX. Example: use "x^2 + 5x + 6 = 0" not "$x^2 + 5x + 6 = 0$". Use "sqrt(x)" not "\sqrt{x}". Write vectors as bold words like "vector a" not "\mathbf{a}".
-- Vary difficulty within the paper
-- Topics must be realistic for ${subject} at ${difficulty}
-- Marks should reflect question complexity
-- For MCQ, only include options array`;
-
-    const text = await callAI(prompt);
-
-    if (!text) {
-      return NextResponse.json(
-        { error: "All AI models are currently unavailable. Please try again in a few minutes." },
-        { status: 503 }
-      );
+      return NextResponse.json({
+        exam: result.response.text(),
+        source: "gemini",
+      });
+    } catch (geminiError) {
+      console.warn("Gemini failed, falling back to OpenAI:", geminiError.message);
     }
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON in response");
+    // --- Fallback: OpenAI ---
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
-    const data = JSON.parse(jsonMatch[0]);
-    return NextResponse.json(data);
-  } catch (err) {
-    console.error("Exam generation error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // or "gpt-4-turbo" if you prefer
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    return NextResponse.json({
+      exam: completion.choices[0].message.content,
+      source: "openai",
+    });
+
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Exam generation failed" },
+      { status: 500 }
+    );
   }
 }
