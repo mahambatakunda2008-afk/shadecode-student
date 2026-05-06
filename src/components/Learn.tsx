@@ -1,149 +1,118 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-interface Subject {
-  id: string;
-  name: string;
-}
-
-interface StudyTopic {
-  id: string;
-  subject: string;
-  topic: string;
-  created_at: string;
-}
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correct: number;
-  explanation: string;
-}
-
-interface MathResult {
-  problem: string;
-  score: number;
-  correct: boolean;
-  cortexInsight: string;
-  steps: { description: string; status: string; note?: string }[];
-}
-
 export default function Learn() {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [explanation, setExplanation] = useState("");
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [studiedTopics, setStudiedTopics] = useState<StudyTopic[]>([]);
+  const [step, setStep] = useState<"input" | "explanation" | "quiz" | "results">("input");
   const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [step, setStep] = useState<
-    "input" | "explanation" | "quiz" | "results" | "mathcheck"
-  >("input");
 
-  const [mathQuestion, setMathQuestion] = useState("");
-  const [mathImage, setMathImage] = useState<File | null>(null);
-  const [mathPreview, setMathPreview] = useState<string | null>(null);
-  const [mathResult, setMathResult] = useState<MathResult | null>(null);
-  const [mathLoading, setMathLoading] = useState(false);
-  const [mathError, setMathError] = useState<string | null>(null);
+  // 🧠 NEW: prevents double calls / race conditions
+  const isGeneratingRef = useRef(false);
 
   const router = useRouter();
   const supabase = createClient();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  // ================= LOAD USER =================
+  // ================= LOAD =================
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return router.push("/auth/login");
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+      const { data } = await supabase
+        .from("subjects")
+        .select("*")
+        .eq("user_id", user.id);
 
-      setUserId(user.id);
-
-      const [{ data: subjectsData }, { data: topicsData }] = await Promise.all([
-        supabase.from("subjects").select("*").eq("user_id", user.id),
-        supabase
-          .from("study_topics")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
-
-      setSubjects(subjectsData || []);
-      setStudiedTopics(topicsData || []);
-      setPageLoading(false);
+      setSubjects(data || []);
     };
 
     init();
   }, []);
 
-  // ================= EXPLANATION =================
-  const generateExplanation = async () => {
-    setLoading(true);
-    setStep("explanation");
-
+  // ================= SAFE FETCH =================
+  const safeFetch = async (payload: any) => {
     const res = await fetch("/api/learn", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    return data;
+  };
+
+  // ================= EXPLANATION =================
+  const generateExplanation = async () => {
+    if (isGeneratingRef.current) return;
+    if (!selectedSubject || !topic) return;
+
+    isGeneratingRef.current = true;
+    setLoading(true);
+    setStep("explanation");
+    setExplanation("");
+
+    try {
+      const data = await safeFetch({
         type: "explanation",
         subject: selectedSubject,
         topic,
-      }),
-    });
+      });
 
-    const data = await res.json();
-    setExplanation(data.explanation || "No explanation returned.");
+      setExplanation(data.explanation || "No explanation returned.");
+    } catch {
+      setExplanation("Failed to generate explanation.");
+    }
+
     setLoading(false);
+    isGeneratingRef.current = false;
   };
 
   // ================= QUIZ =================
   const generateQuiz = async () => {
+    if (isGeneratingRef.current) return;
+
+    isGeneratingRef.current = true;
     setLoading(true);
     setStep("quiz");
+    setQuestions([]);
+    setAnswers({});
 
-    const res = await fetch("/api/learn", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const data = await safeFetch({
         type: "quiz",
         subject: selectedSubject,
         topic,
-      }),
-    });
+      });
 
-    const data = await res.json();
-    setQuestions(data.questions || []);
+      setQuestions(data.questions || []);
+    } catch {
+      setQuestions([]);
+    }
+
     setLoading(false);
+    isGeneratingRef.current = false;
   };
 
   const submitQuiz = () => {
-    setSubmitted(true);
     setStep("results");
   };
 
   const score = questions.filter((q, i) => answers[i] === q.correct).length;
 
   // ================= UI =================
-  if (pageLoading) return <div>Loading...</div>;
-
   return (
     <div style={{ padding: 24 }}>
       <h1>Learn</h1>
 
+      {/* INPUT */}
       {step === "input" && (
         <>
           <select
@@ -164,25 +133,38 @@ export default function Learn() {
             placeholder="Topic"
           />
 
-          <button onClick={generateExplanation}>
-            Explain
+          <button
+            onClick={generateExplanation}
+            disabled={loading}
+          >
+            {loading ? "Thinking..." : "Explain"}
           </button>
         </>
       )}
 
+      {/* EXPLANATION */}
       {step === "explanation" && (
         <>
-          <p>{loading ? "Loading..." : explanation}</p>
-          <button onClick={generateQuiz}>Generate Quiz</button>
+          <p>{loading ? "Generating..." : explanation}</p>
+
+          {!loading && (
+            <button onClick={generateQuiz}>
+              Generate Quiz
+            </button>
+          )}
         </>
       )}
 
+      {/* QUIZ */}
       {step === "quiz" && (
         <>
+          {loading && <p>Creating questions...</p>}
+
           {questions.map((q, i) => (
             <div key={i}>
               <p>{q.question}</p>
-              {q.options.map((opt, j) => (
+
+              {q.options?.map((opt: string, j: number) => (
                 <button
                   key={j}
                   onClick={() =>
@@ -195,17 +177,30 @@ export default function Learn() {
             </div>
           ))}
 
-          <button onClick={submitQuiz}>Submit</button>
+          {!loading && questions.length > 0 && (
+            <button onClick={submitQuiz}>
+              Submit
+            </button>
+          )}
         </>
       )}
 
+      {/* RESULTS */}
       {step === "results" && (
         <>
           <h2>
             Score: {score}/{questions.length}
           </h2>
 
-          <button onClick={() => setStep("input")}>
+          <button
+            onClick={() => {
+              setStep("input");
+              setTopic("");
+              setQuestions([]);
+              setAnswers({});
+              setExplanation("");
+            }}
+          >
             New Topic
           </button>
         </>
