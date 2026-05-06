@@ -1,84 +1,171 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const { type, subject, topic } = await req.json();
+// ===== CACHE =====
+const cache = new Map<string, string>();
 
-    let prompt = "";
+// ===== HELPERS =====
+function normalize(input: string) {
+  return input.toLowerCase().replace(/[^\w\s]/g, "").trim();
+}
 
-    if (type === "explanation") {
-      prompt = `You are an expert tutor helping a high school student (A-Level / ZIMSEC level) understand ${subject}.
+function fetchWithTimeout(url: string, options: any, timeout = 6000) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), timeout)
+    )
+  ]);
+}
 
-Explain the topic: "${topic}"
-
-Rules:
-- Clear, simple language suitable for A-Level students
-- Use examples where helpful
-- Structure with short paragraphs
-- Maximum 300 words
-- No markdown formatting, just plain text`;
-    } else {
-      prompt = `You are an expert tutor creating a practice quiz for a high school student (A-Level / ZIMSEC level) studying ${subject}.
-
-Create exactly 4 multiple choice questions about: "${topic}"
-
-You MUST respond with ONLY valid JSON in this exact format, nothing else:
-{
-  "questions": [
+// ===== GEMINI (PRIMARY - FREE) =====
+async function callGemini(prompt: string) {
+  const res: any = await fetchWithTimeout(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     {
-      "question": "Question text here?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correct": 0,
-      "explanation": "Brief explanation of why this is correct."
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": process.env.GEMINI_API_KEY!
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     }
-  ]
-}
+  );
 
-Rules:
-- correct is the index (0-3) of the correct option
-- All 4 questions must be about ${topic}
-- Make questions appropriate for A-Level level
-- Keep options concise`;
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            maxOutputTokens: 2000,
-            temperature: 0.4,
-          },
-        }),
-      }
-    );
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    if (!text) {
-      return NextResponse.json({ error: "No response from AI" }, { status: 500 });
-    }
-
-   if (type === "explanation") {
-  return NextResponse.json({ explanation: text });
-} else {
-  try {
-    const clean = text.replace(/```json|```/g, "").trim();
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON found in response");
-    const parsed = JSON.parse(jsonMatch[0]);
-    return NextResponse.json(parsed);
-  } catch (parseErr) {
-    console.error("JSON parse error:", parseErr, "Raw text:", text);
-    return NextResponse.json({ error: "Failed to parse quiz", raw: text }, { status: 500 });
+  if (!res.ok) {
+    throw new Error(`Gemini failed: ${res.status}`);
   }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
+
+// ===== OPENAI (SECONDARY - STABLE) =====
+async function callOpenAI(prompt: string) {
+  const res: any = await fetchWithTimeout(
+    "https://api.openai.com/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 200
+      })
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`OpenAI failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+// ===== OPENROUTER (LAST RESORT) =====
+async function callOpenRouter(prompt: string) {
+  const res: any = await fetchWithTimeout(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 200
+      })
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`OpenRouter failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+// ===== MAIN ROUTE =====
+export async function POST(req: Request) {
+  try {
+    const { message } = await req.json();
+
+    if (!message) {
+      return NextResponse.json({ error: "No message" }, { status: 400 });
+    }
+
+    const key = normalize(message);
+
+    // 🧊 CACHE HIT
+    if (cache.has(key)) {
+      return NextResponse.json({
+        response: cache.get(key),
+        source: "cache"
+      });
+    }
+
+    let responseText = "";
+
+    // 🥇 TRY GEMINI
+    try {
+      responseText = await callGemini(message);
+      if (responseText) {
+        cache.set(key, responseText);
+        return NextResponse.json({ response: responseText, source: "gemini" });
+      }
+    } catch (err) {
+      console.log("Gemini failed →", err);
+    }
+
+    // 🥈 FALLBACK → OPENAI
+    try {
+      responseText = await callOpenAI(message);
+      if (responseText) {
+        cache.set(key, responseText);
+        return NextResponse.json({ response: responseText, source: "openai" });
+      }
+    } catch (err) {
+      console.log("OpenAI failed →", err);
+    }
+
+    // 🥉 LAST RESORT → OPENROUTER
+    try {
+      responseText = await callOpenRouter(message);
+      if (responseText) {
+        cache.set(key, responseText);
+        return NextResponse.json({
+          response: responseText,
+          source: "openrouter"
+        });
+      }
+    } catch (err) {
+      console.log("OpenRouter failed →", err);
+    }
+
+    // 🧯 TOTAL FAILURE (VERY RARE)
+    return NextResponse.json(
+      {
+        response:
+          "All AI services are currently busy. Try again in a few seconds."
+      },
+      { status: 200 }
+    );
   } catch (err) {
-    console.error("Learn route error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("Fatal error:", err);
+
+    return NextResponse.json(
+      {
+        response: "Something went wrong. Please try again."
+      },
+      { status: 200 }
+    );
   }
 }
