@@ -8,7 +8,7 @@ async function callAI(prompt) {
     process.env.GEMINI_API_KEY_2,
   ].filter(Boolean);
 
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "openai"];
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "openai", "GPT-4", "GPT-3.5", "gtp-5.5", "gpt-5.4-mini", "gpt-5.4-nano"];
 
   for (const key of keys) {
     const genAI = new GoogleGenerativeAI(key);
