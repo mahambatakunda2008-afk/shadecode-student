@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -8,15 +8,20 @@ export default function Learn() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [topic, setTopic] = useState("");
+
   const [explanation, setExplanation] = useState("");
+  const [displayedExplanation, setDisplayedExplanation] = useState("");
+
   const [questions, setQuestions] = useState<any[]>([]);
-  const [answers, setAnswers] = useState<{ [key: number]: number }>({});
-  const [step, setStep] = useState<"input" | "explanation" | "quiz" | "results">("input");
+  const [answers, setAnswers] = useState<{ [k: number]: number }>({});
+
+  const [step, setStep] = useState<
+    "input" | "thinking" | "explanation" | "quiz" | "results"
+  >("input");
+
   const [loading, setLoading] = useState(false);
 
-  // 🧠 NEW: prevents double calls / race conditions
-  const isGeneratingRef = useRef(false);
-
+  const isLocked = useRef(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -38,79 +43,94 @@ export default function Learn() {
   }, []);
 
   // ================= SAFE FETCH =================
-  const safeFetch = async (payload: any) => {
+  const askAI = async (payload: any) => {
     const res = await fetch("/api/learn", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json().catch(() => ({}));
-    return data;
+    return res.json().catch(() => ({}));
+  };
+
+  // ================= STREAM EFFECT (FAKE BUT LIFELIKE) =================
+  const streamText = (text: string) => {
+    setDisplayedExplanation("");
+    let i = 0;
+
+    const interval = setInterval(() => {
+      i++;
+      setDisplayedExplanation(text.slice(0, i));
+
+      if (i >= text.length) {
+        clearInterval(interval);
+      }
+    }, 8); // fast “thinking flow”
   };
 
   // ================= EXPLANATION =================
   const generateExplanation = async () => {
-    if (isGeneratingRef.current) return;
-    if (!selectedSubject || !topic) return;
+    if (isLocked.current) return;
+    if (!topic || !selectedSubject) return;
 
-    isGeneratingRef.current = true;
+    isLocked.current = true;
+
+    setStep("thinking");
     setLoading(true);
-    setStep("explanation");
     setExplanation("");
+    setDisplayedExplanation("");
 
-    try {
-      const data = await safeFetch({
-        type: "explanation",
-        subject: selectedSubject,
-        topic,
-      });
+    const data = await askAI({
+      type: "explanation",
+      subject: selectedSubject,
+      topic,
+    });
 
-      setExplanation(data.explanation || "No explanation returned.");
-    } catch {
-      setExplanation("Failed to generate explanation.");
-    }
+    const text = data.explanation || "No response generated.";
+
+    setExplanation(text);
+    setStep("explanation");
+
+    // 🧠 Cortex Alive effect
+    streamText(text);
 
     setLoading(false);
-    isGeneratingRef.current = false;
+    isLocked.current = false;
   };
 
   // ================= QUIZ =================
   const generateQuiz = async () => {
-    if (isGeneratingRef.current) return;
+    if (isLocked.current) return;
+    isLocked.current = true;
 
-    isGeneratingRef.current = true;
+    setStep("thinking");
     setLoading(true);
-    setStep("quiz");
     setQuestions([]);
     setAnswers({});
 
-    try {
-      const data = await safeFetch({
-        type: "quiz",
-        subject: selectedSubject,
-        topic,
-      });
+    const data = await askAI({
+      type: "quiz",
+      subject: selectedSubject,
+      topic,
+    });
 
-      setQuestions(data.questions || []);
-    } catch {
-      setQuestions([]);
-    }
+    setQuestions(data.questions || []);
+    setStep("quiz");
 
     setLoading(false);
-    isGeneratingRef.current = false;
+    isLocked.current = false;
   };
 
-  const submitQuiz = () => {
-    setStep("results");
-  };
+  const submitQuiz = () => setStep("results");
 
-  const score = questions.filter((q, i) => answers[i] === q.correct).length;
+  const score = questions.filter(
+    (q, i) => answers[i] === q.correct
+  ).length;
 
   // ================= UI =================
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Learn</h1>
+    <div style={{ padding: 24, fontFamily: "system-ui" }}>
+      <h1>🧠 Cortex Learn</h1>
 
       {/* INPUT */}
       {step === "input" && (
@@ -130,26 +150,33 @@ export default function Learn() {
           <input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="Topic"
+            placeholder="Enter topic..."
           />
 
-          <button
-            onClick={generateExplanation}
-            disabled={loading}
-          >
-            {loading ? "Thinking..." : "Explain"}
+          <button onClick={generateExplanation}>
+            Enter Cortex
           </button>
         </>
       )}
 
-      {/* EXPLANATION */}
+      {/* THINKING STATE */}
+      {step === "thinking" && (
+        <div>
+          <p>🧠 Cortex is thinking...</p>
+        </div>
+      )}
+
+      {/* EXPLANATION (ALIVE TEXT) */}
       {step === "explanation" && (
         <>
-          <p>{loading ? "Generating..." : explanation}</p>
+          <div style={{ whiteSpace: "pre-wrap" }}>
+            {displayedExplanation}
+            <span style={{ opacity: 0.5 }}>▍</span>
+          </div>
 
           {!loading && (
             <button onClick={generateQuiz}>
-              Generate Quiz
+              Test Understanding →
             </button>
           )}
         </>
@@ -158,26 +185,24 @@ export default function Learn() {
       {/* QUIZ */}
       {step === "quiz" && (
         <>
-          {loading && <p>Creating questions...</p>}
-
           {questions.map((q, i) => (
             <div key={i}>
               <p>{q.question}</p>
 
-              {q.options?.map((opt: string, j: number) => (
+              {q.options?.map((o: string, j: number) => (
                 <button
                   key={j}
                   onClick={() =>
                     setAnswers({ ...answers, [i]: j })
                   }
                 >
-                  {opt}
+                  {o}
                 </button>
               ))}
             </div>
           ))}
 
-          {!loading && questions.length > 0 && (
+          {questions.length > 0 && (
             <button onClick={submitQuiz}>
               Submit
             </button>
@@ -187,7 +212,7 @@ export default function Learn() {
 
       {/* RESULTS */}
       {step === "results" && (
-        <>
+        <div>
           <h2>
             Score: {score}/{questions.length}
           </h2>
@@ -196,14 +221,15 @@ export default function Learn() {
             onClick={() => {
               setStep("input");
               setTopic("");
+              setExplanation("");
+              setDisplayedExplanation("");
               setQuestions([]);
               setAnswers({});
-              setExplanation("");
             }}
           >
-            New Topic
+            New Session
           </button>
-        </>
+        </div>
       )}
     </div>
   );
