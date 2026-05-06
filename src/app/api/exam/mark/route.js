@@ -2,39 +2,79 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 async function callAI(prompt) {
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
-
-  for (const modelName of models) {
+  // Try OpenAI first
+  if (process.env.OPENAI_API_KEY) {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      return result.response.text();
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 3000,
+          temperature: 0.3,
+        }),
+      });
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (text) {
+        console.log("Success with OpenAI gpt-4o-mini");
+        return text;
+      }
     } catch (err) {
-      console.error(`${modelName} failed:`, err.message);
+      console.error("OpenAI failed:", err.message);
     }
   }
 
-  if (process.env.OPENROUTER_API_KEY) {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://shadecodestudent.vercel.app",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3.3-70b-instruct:free",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content;
+  // Fallback to Gemini
+  const geminiKeys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+  ].filter(Boolean);
+
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+
+  for (const key of geminiKeys) {
+    const genAI = new GoogleGenerativeAI(key);
+    for (const modelName of models) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (err) {
+        console.error(`${modelName} failed:`, err.message);
+      }
+    }
   }
 
-  throw new Error("All AI models failed");
+  // OpenRouter fallback
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://shadecodestudent.vercel.app",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.3-70b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    } catch (err) {
+      console.error("OpenRouter failed:", err.message);
+    }
+  }
+
+  return null;
 }
 
 function getGrade(percentage) {
@@ -68,7 +108,7 @@ Standard: ${difficulty}
 QUESTIONS AND STUDENT ANSWERS:
 ${qaText}
 
-Mark each question fairly and provide detailed feedback. 
+Mark each question fairly and provide detailed feedback.
 Respond ONLY with valid JSON:
 {
   "results": [
@@ -95,12 +135,19 @@ Rules:
 - cortexInsight must be neutral and analytical, not motivational`;
 
     const text = await callAI(prompt);
+
+    if (!text) {
+      return NextResponse.json(
+        { error: "All AI models are currently unavailable. Please try again." },
+        { status: 503 }
+      );
+    }
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
     const markingData = JSON.parse(jsonMatch[0]);
 
-    // Calculate totals
     const totalScore = markingData.results.reduce((sum, r) => sum + (r.score || 0), 0);
     const maxScore = questions.reduce((sum, q) => sum + q.marks, 0);
     const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
