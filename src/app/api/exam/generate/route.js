@@ -1,77 +1,64 @@
 // src/app/api/exam/generate/route.js
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
 async function callAI(prompt) {
-  // Try OpenAI first
+  if (process.env.CLOUDFLARE_API_TOKEN) {
+    try {
+      const res = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 3000 }),
+        }
+      );
+      const data = await res.json();
+      const text = data?.result?.response;
+      if (text) { console.log("Cloudflare success"); return text; }
+    } catch (err) { console.error("Cloudflare failed:", err); }
+  }
+
   if (process.env.OPENAI_API_KEY) {
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 3000,
-          temperature: 0.7,
-        }),
+        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: 3000 }),
       });
-      const data = await response.json();
+      const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
-      if (text) {
-        console.log("Success with OpenAI gpt-4o-mini");
-        return text;
-      }
-    } catch (err) {
-      console.error("OpenAI failed:", err.message);
-    }
+      if (text) { console.log("OpenAI success"); return text; }
+    } catch (err) { console.error("OpenAI failed:", err); }
   }
 
-  // Fallback to Gemini keys
-  const geminiKeys = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-  ].filter(Boolean);
-
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
-
+  const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean);
   for (const key of geminiKeys) {
-    const genAI = new GoogleGenerativeAI(key);
-    for (const modelName of models) {
+    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
       try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        return result.response.text();
-      } catch (err) {
-        console.error(`${modelName} failed:`, err.message);
-      }
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        });
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) { console.log(`Gemini ${model} success`); return text; }
+      } catch (err) { console.error(`Gemini ${model} failed:`, err); }
     }
   }
 
-  // OpenRouter fallback
   if (process.env.OPENROUTER_API_KEY) {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://shadecodestudent.vercel.app",
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-3.3-70b-instruct:free",
-          messages: [{ role: "user", content: prompt }],
-        }),
+        headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app" },
+        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }] }),
       });
-      const data = await response.json();
+      const data = await res.json();
       return data.choices?.[0]?.message?.content || null;
-    } catch (err) {
-      console.error("OpenRouter failed:", err.message);
-    }
+    } catch (err) { console.error("OpenRouter failed:", err); }
   }
 
   return null;
@@ -127,16 +114,10 @@ Rules:
 - Topics must be realistic for ${subject} at ${difficulty}
 - Marks should reflect question complexity
 - For MCQ, only include options array
-- Write all math in plain text not LaTeX. Use x^2 not $x^2$, sqrt(x) not \\sqrt{x}`;
+- Write all math in plain text not LaTeX`;
 
     const text = await callAI(prompt);
-
-    if (!text) {
-      return NextResponse.json(
-        { error: "All AI models are currently unavailable. Please try again in a few minutes." },
-        { status: 503 }
-      );
-    }
+    if (!text) return NextResponse.json({ error: "All AI models unavailable. Try again shortly." }, { status: 503 });
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
