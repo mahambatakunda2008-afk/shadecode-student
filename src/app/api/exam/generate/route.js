@@ -15,7 +15,9 @@ async function callAI(prompt) {
         }
       );
       const data = await res.json();
-      const text = data?.result?.response;
+      const text = typeof data?.result?.response === "string" 
+  ? data.result.response 
+  : JSON.stringify(data?.result?.response || "");
       if (text) { console.log("Cloudflare success"); return text; }
     } catch (err) { console.error("Cloudflare failed:", err); }
   }
