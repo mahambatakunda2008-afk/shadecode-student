@@ -18,7 +18,9 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
         }
       );
       const data = await res.json() as any;
-      const text = data?.result?.response;
+      const text = typeof data?.result?.response === "string"
+  ? data.result.response
+  : JSON.stringify(data?.result?.response || "");
       if (text) { console.log("Cloudflare success"); return text; }
     } catch (err) { console.error("Cloudflare failed:", err); }
   }
