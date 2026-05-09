@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const isLoggedIn = req.cookies.get("isLoggedIn")?.value;
+  // Check for Supabase auth token cookie
+  const hasSession = [...req.cookies.getAll()].some(c => 
+    c.name.includes("auth-token") && c.value.length > 10
+  );
 
-  if (req.nextUrl.pathname === "/" && isLoggedIn === "1") {
+  if (req.nextUrl.pathname === "/" && hasSession) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
