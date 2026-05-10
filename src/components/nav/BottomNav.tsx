@@ -22,9 +22,19 @@ import {
   Flame,
   ChevronLeft,
   Search,
+  LucideIcon,
 } from "lucide-react";
 
-const primaryNavItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: string;
+  danger?: boolean;
+  glow?: boolean;
+};
+
+const primaryNavItems: NavItem[] = [
   {
     label: "Home",
     href: "/",
@@ -56,7 +66,7 @@ const primaryNavItems = [
   },
 ];
 
-const moreNavItems = [
+const moreNavItems: NavItem[] = [
   {
     label: "Timetable",
     href: "/timetable",
@@ -95,7 +105,7 @@ const moreNavItems = [
   },
 ];
 
-const sidebarItems = [
+const sidebarItems: NavItem[] = [
   ...primaryNavItems,
   ...moreNavItems,
 ];
@@ -559,7 +569,6 @@ export default function BottomNav() {
         }
       `}</style>
 
-      {/* MOBILE NAV */}
       <nav className="nav-bottom">
         {primaryNavItems.map(
           ({ label, href, icon: Icon, badge, danger, glow }) => {
@@ -605,7 +614,6 @@ export default function BottomNav() {
         </button>
       </nav>
 
-      {/* MOBILE DRAWER */}
       {drawerOpen && (
         <>
           <div
@@ -675,7 +683,6 @@ export default function BottomNav() {
         </>
       )}
 
-      {/* DESKTOP SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-top">
           {!collapsed && (
