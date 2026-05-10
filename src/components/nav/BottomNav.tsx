@@ -96,6 +96,7 @@ export default function BottomNav() {
           bottom: 0;
           background: rgba(0,0,0,0.4);
           z-index: 40;
+          pointer-events: ${open ? "auto" : "none"};
         }
         @keyframes bounceOpen {
           0% { transform: translateY(100%); }
@@ -110,9 +111,9 @@ export default function BottomNav() {
           right: 0;
           background: var(--card);
           border-top: 1px solid var(--card-border);
-          max-height: 50vh;
+          max-height: 70vh;
           overflow-y: auto;
-          transform: translateY(${open ? dragY + "px" : "100%"});
+          transform: translateY(${open ? (dragY > 0 ? dragY + "px" : "0") : "100%"});
           transition: ${dragY === 0 ? "transform 0.3s ease-in-out" : "none"};
           padding: 10px;
           z-index: 50;
