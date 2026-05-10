@@ -13,18 +13,19 @@ interface LeaderboardEntry {
   level: number;
   streak: number;
   weekly_xp?: number;
+  achievements?: string[];
   last_active?: string;
   score?: number;
+  league?: string;
+  intervention?: any;
+  difficulty?: string;
 }
 
 /* ---------------- SEASON ---------------- */
 
-function getCurrentWeekKey() {
+function getSeasonKey() {
   const now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - now.getDay());
-  start.setHours(0, 0, 0, 0);
-  return start.toISOString().split("T")[0];
+  return `S-${now.getFullYear()}-${now.getMonth() + 1}`;
 }
 
 /* ---------------- LEAGUES ---------------- */
@@ -36,28 +37,63 @@ function getLeague(score: number) {
   return { name: "Bronze", color: "#cd7c2f" };
 }
 
-/* ---------------- SCORE ---------------- */
+/* ---------------- CORE SCORING ---------------- */
 
 function computeScore(u: LeaderboardEntry) {
-  return (u.weekly_xp || 0) + (u.level || 1) * 50 + (u.streak || 0) * 20;
+  const achievements = u.achievements?.length || 0;
+
+  return (
+    (u.weekly_xp || 0) +
+    (u.level || 1) * 50 +
+    (u.streak || 0) * 20 +
+    achievements * 100
+  );
 }
 
-/* ---------------- XP DECAY ---------------- */
+/* ---------------- CORTEX INTERVENTION ---------------- */
 
-function applyXpDecay(lastActive?: string, weeklyXp: number = 0) {
-  if (!lastActive) return weeklyXp;
+function cortexIntervention(user: LeaderboardEntry) {
+  const score = computeScore(user);
 
-  const last = new Date(lastActive);
-  const now = new Date();
-
-  const diffDays =
-    (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
-
-  if (diffDays > 2) {
-    return Math.max(0, weeklyXp - Math.floor(diffDays * 10));
+  if (score < 200) {
+    return {
+      type: "recovery",
+      message: "Low consistency detected. Focus on rebuilding rhythm.",
+    };
   }
 
-  return weeklyXp;
+  if (score > 1200) {
+    return {
+      type: "challenge",
+      message: "Elite performance. Unlock harder learning paths.",
+    };
+  }
+
+  return {
+    type: "steady",
+    message: "Stable progression. Maintain consistency.",
+  };
+}
+
+/* ---------------- DIFFICULTY ENGINE ---------------- */
+
+function getDifficulty(user: LeaderboardEntry) {
+  if ((user.streak || 0) >= 5 && (user.weekly_xp || 0) > 500)
+    return "hard";
+  if ((user.streak || 0) < 2) return "easy";
+  return "normal";
+}
+
+/* ---------------- ACHIEVEMENTS ---------------- */
+
+function getAchievements(user: LeaderboardEntry) {
+  const a: string[] = [];
+
+  if ((user.streak || 0) >= 7) a.push("🔥 7 Day Streak");
+  if ((user.xp || 0) >= 1000) a.push("⚡ XP Grinder");
+  if ((user.level || 0) >= 5) a.push("📈 Level Climber");
+
+  return a;
 }
 
 /* ---------------- COMPONENT ---------------- */
@@ -70,11 +106,11 @@ export default function Leaderboard() {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
-  const weekKey = getCurrentWeekKey();
+  const season = getSeasonKey();
 
   /* ---------------- FETCH ---------------- */
 
-  const fetchLeaderboard = async () => {
+  const fetchData = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -88,7 +124,9 @@ export default function Leaderboard() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username, xp, level, streak, weekly_xp, last_active");
+      .select(
+        "id, username, xp, level, streak, weekly_xp, last_active"
+      );
 
     if (error) {
       console.error(error);
@@ -98,21 +136,25 @@ export default function Leaderboard() {
 
     const ranked = (data || [])
       .map((u: LeaderboardEntry) => {
-        const adjustedWeekly = applyXpDecay(
-          u.last_active,
-          u.weekly_xp || 0
-        );
+        const achievements = getAchievements(u);
+        const intervention = cortexIntervention({
+          ...u,
+          achievements,
+        });
+        const difficulty = getDifficulty(u);
 
         const score = computeScore({
           ...u,
-          weekly_xp: adjustedWeekly,
+          achievements,
         });
 
         const league = getLeague(score);
 
         return {
           ...u,
-          weekly_xp: adjustedWeekly,
+          achievements,
+          intervention,
+          difficulty,
           score,
           league: league.name,
         };
@@ -126,28 +168,28 @@ export default function Leaderboard() {
   /* ---------------- INIT ---------------- */
 
   useEffect(() => {
-    fetchLeaderboard();
+    fetchData();
 
     const interval = setInterval(() => {
-      fetchLeaderboard();
+      fetchData();
     }, 15000);
 
     return () => clearInterval(interval);
   }, []);
 
-  /* ---------------- CURRENT RANK ---------------- */
+  /* ---------------- RANK ---------------- */
 
-  const currentUserRank = useMemo(() => {
-    const index = entries.findIndex((e) => e.id === currentUserId);
-    return index >= 0 ? index + 1 : null;
+  const currentRank = useMemo(() => {
+    const i = entries.findIndex((e) => e.id === currentUserId);
+    return i >= 0 ? i + 1 : null;
   }, [entries, currentUserId]);
 
   /* ---------------- LOADING ---------------- */
 
   if (loading) {
     return (
-      <div style={{ padding: "60px 24px", textAlign: "center" }}>
-        Loading leaderboard...
+      <div style={{ padding: "60px", textAlign: "center" }}>
+        Loading system...
       </div>
     );
   }
@@ -160,65 +202,71 @@ export default function Leaderboard() {
       {/* HEADER */}
       <div>
         <h1 style={{ fontSize: "28px", fontWeight: 800 }}>
-          Weekly Leaderboard
+          Season Leaderboard
         </h1>
-
-        <p style={{ fontSize: "13px", opacity: 0.6 }}>
-          Season: {weekKey}
+        <p style={{ opacity: 0.6, fontSize: "13px" }}>
+          Season: {season}
         </p>
       </div>
 
       {/* USER RANK */}
-      {currentUserRank && (
+      {currentRank && (
         <div style={{
           padding: "12px",
-          borderRadius: "10px",
           background: "rgba(99,102,241,0.08)",
+          borderRadius: "10px",
         }}>
-          Your rank: <b>#{currentUserRank}</b>
+          Your rank: <b>#{currentRank}</b>
         </div>
       )}
 
       {/* LIST */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {entries.map((entry, index) => {
-          const rank = index + 1;
-          const league = getLeague(entry.score || 0);
-          const isMe = entry.id === currentUserId;
+        {entries.map((e, i) => {
+          const rank = i + 1;
+          const isMe = e.id === currentUserId;
 
           return (
             <div
-              key={entry.id}
+              key={e.id}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
                 padding: "12px",
                 borderRadius: "10px",
-                background: isMe ? "rgba(99,102,241,0.08)" : "transparent",
-                border: isMe ? "1px solid rgba(99,102,241,0.2)" : "none",
+                background: isMe
+                  ? "rgba(99,102,241,0.08)"
+                  : "transparent",
+                border: isMe
+                  ? "1px solid rgba(99,102,241,0.2)"
+                  : "none",
               }}
             >
-
-              {/* LEFT */}
-              <div>
-                <div style={{ fontWeight: 700 }}>
-                  #{rank} {entry.username} {isMe && "(you)"}
+              {/* TOP ROW */}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div>
+                  <b>#{rank} {e.username} {isMe && "(you)"}</b>
+                  <div style={{ fontSize: "11px", opacity: 0.7 }}>
+                    {e.league} · {e.difficulty}
+                  </div>
                 </div>
 
-                <div style={{ fontSize: "11px", color: league.color }}>
-                  {league.name} League
+                <div style={{ textAlign: "right" }}>
+                  <b>{e.score}</b>
+                  <div style={{ fontSize: "10px", opacity: 0.6 }}>
+                    score
+                  </div>
                 </div>
               </div>
 
-              {/* RIGHT */}
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: 800 }}>
-                  {entry.score}
+              {/* ACHIEVEMENTS */}
+              {e.achievements?.length ? (
+                <div style={{ fontSize: "11px", marginTop: "6px" }}>
+                  {e.achievements.join(" · ")}
                 </div>
+              ) : null}
 
-                <div style={{ fontSize: "10px", opacity: 0.6 }}>
-                  weekly XP
-                </div>
+              {/* CORTEX INTERVENTION */}
+              <div style={{ fontSize: "11px", marginTop: "4px", opacity: 0.7 }}>
+                🧠 {e.intervention?.message}
               </div>
             </div>
           );
