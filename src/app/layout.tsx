@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import BottomNav from "@/components/nav/BottomNav";
 import ServiceWorkerRegistrar from "@/components/shared/ServiceWorkerRegistrar";
+import CommandPalette from "@/components/ui/CommandPalette";
 
 export const metadata: Metadata = {
   title: "Shadecode Student",
@@ -23,6 +24,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
+        <CommandPalette />
         <ServiceWorkerRegistrar />
         <style>{`
           .main-content {
