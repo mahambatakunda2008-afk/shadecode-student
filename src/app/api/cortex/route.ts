@@ -6,41 +6,36 @@ const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
 const MEMORY_PATH = path.join(process.cwd(), "data", "cortex-memory.json");
 
-/* ---------------- MEMORY SYSTEM ---------------- */
+/* ---------------- MEMORY ---------------- */
 
-function readMemory(userId: string) {
+type CortexMemory = {
+  weakSubjects: string[];
+  strongSubjects: string[];
+  focusHistory: number[];
+  trend: "improving" | "declining" | "stable";
+};
+
+function getDefaultMemory(): CortexMemory {
+  return {
+    weakSubjects: [],
+    strongSubjects: [],
+    focusHistory: [],
+    trend: "stable",
+  };
+}
+
+function readMemory(userId: string): CortexMemory {
   try {
-    if (!fs.existsSync(MEMORY_PATH)) {
-      return {
-        weakSubjects: [],
-        strongSubjects: [],
-        focusHistory: [],
-        trend: "stable",
-      };
-    }
+    if (!fs.existsSync(MEMORY_PATH)) return getDefaultMemory();
 
-    const raw = fs.readFileSync(MEMORY_PATH, "utf-8");
-    const data = JSON.parse(raw);
-
-    return (
-      data[userId] || {
-        weakSubjects: [],
-        strongSubjects: [],
-        focusHistory: [],
-        trend: "stable",
-      }
-    );
+    const raw = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf-8"));
+    return raw[userId] || getDefaultMemory();
   } catch {
-    return {
-      weakSubjects: [],
-      strongSubjects: [],
-      focusHistory: [],
-      trend: "stable",
-    };
+    return getDefaultMemory();
   }
 }
 
-function writeMemory(userId: string, memory: any) {
+function writeMemory(userId: string, memory: CortexMemory) {
   try {
     let data: any = {};
 
@@ -56,112 +51,85 @@ function writeMemory(userId: string, memory: any) {
   }
 }
 
-/* ---------------- TREND ENGINE ---------------- */
+/* ---------------- TREND ---------------- */
 
-function getFocusTrend(history: number[]) {
+function getTrend(history: number[]) {
   if (!history || history.length < 3) return "stable";
 
   const recent = history.slice(-3);
-  const older = history.slice(-6, -3);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
 
-  const recentAvg =
-    recent.reduce((a, b) => a + b, 0) / recent.length;
-
-  const olderAvg =
-    older.length > 0
-      ? older.reduce((a, b) => a + b, 0) / older.length
-      : recentAvg;
-
-  if (recentAvg > olderAvg + 5) return "improving";
-  if (recentAvg < olderAvg - 5) return "declining";
+  if (avg > 75) return "improving";
+  if (avg < 40) return "declining";
   return "stable";
 }
 
-/* ---------------- AI FALLBACK ENGINE ---------------- */
+/* ---------------- AUTOPILOT ---------------- */
 
-async function callAI(prompt: string): Promise<string | null> {
-  // Cloudflare
-  if (process.env.CLOUDFLARE_API_TOKEN) {
-    try {
-      const res = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 180,
-          }),
-        }
-      );
+function autopilot(memory: CortexMemory) {
+  const focus = memory.focusHistory.slice(-3);
+  const avg =
+    focus.length > 0
+      ? focus.reduce((a, b) => a + b, 0) / focus.length
+      : 50;
 
-      const data = await res.json();
-      return data?.result?.response || null;
-    } catch (err) {
-      console.error("Cloudflare failed:", err);
-    }
+  if (memory.trend === "declining" && avg < 45) {
+    return {
+      recommendation: "warn",
+      message: "Performance decline detected. Recovery recommended.",
+      priority: "high",
+    };
   }
 
-  // OpenAI
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  if (avg > 80) {
+    return {
+      recommendation: "focus",
+      message: "High efficiency detected. Deep focus recommended.",
+      priority: "medium",
+    };
+  }
+
+  if (memory.weakSubjects.length > 0) {
+    return {
+      recommendation: "revise",
+      message: `Focus revision on ${memory.weakSubjects[0]}.`,
+      priority: "medium",
+    };
+  }
+
+  return {
+    recommendation: "plan",
+    message: "Balanced state. Continue structured study.",
+    priority: "low",
+  };
+}
+
+/* ---------------- AI ENGINE ---------------- */
+
+async function callAI(prompt: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
+      {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
           messages: [{ role: "user", content: prompt }],
-          max_tokens: 180,
         }),
-      });
+      }
+    );
 
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || null;
-    } catch (err) {
-      console.error("OpenAI failed:", err);
-    }
+    const data = await res.json();
+    return data?.result?.response || null;
+  } catch {
+    return null;
   }
-
-  // Gemini
-  const geminiKeys = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-  ].filter(Boolean) as string[];
-
-  for (const key of geminiKeys) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              maxOutputTokens: 180,
-              temperature: 0.3,
-            },
-          }),
-        }
-      );
-
-      const data = await res.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-    } catch (err) {
-      console.error("Gemini failed:", err);
-    }
-  }
-
-  return null;
 }
 
-/* ---------------- MAIN ROUTE ---------------- */
+/* ---------------- ROUTE ---------------- */
 
 export async function POST(req: NextRequest) {
   try {
@@ -169,9 +137,12 @@ export async function POST(req: NextRequest) {
     const userId = body.userId || "default";
 
     let memory = readMemory(userId);
+
+    const isCommand = body.type === "command";
+
     let behaviorSummary = "";
 
-    /* ---------------- SNAPSHOT PROCESSING ---------------- */
+    /* ---------------- SNAPSHOT ---------------- */
 
     if (body.payload?.snapshot) {
       const s = body.payload.snapshot;
@@ -181,115 +152,81 @@ export async function POST(req: NextRequest) {
           ? Math.round((s.completedTasks / s.totalTasks) * 100)
           : 0;
 
-      const trend =
-        rate > 75 ? "improving" : rate < 40 ? "declining" : "stable";
+      memory.focusHistory = [...memory.focusHistory.slice(-6), rate];
+      memory.trend = getTrend(memory.focusHistory);
 
-      memory = {
-        weakSubjects: s.subjects?.slice(0, 2) || memory.weakSubjects,
-        strongSubjects: s.subjects?.slice(2, 4) || memory.strongSubjects,
-        focusHistory: [...(memory.focusHistory || []).slice(-6), rate],
-        trend,
-      };
-
-      memory.trend = getFocusTrend(memory.focusHistory);
+      memory.weakSubjects = s.subjects?.slice(0, 2) || [];
+      memory.strongSubjects = s.subjects?.slice(2, 4) || [];
 
       writeMemory(userId, memory);
 
-      behaviorSummary = `Streak: ${s.streak} days, Level: ${s.level}, XP: ${s.xp}, Tasks: ${s.completedTasks}/${s.totalTasks} (${rate}%)`;
+      behaviorSummary = `Tasks ${rate}%, Streak ${s.streak}, XP ${s.xp}`;
     } else {
       behaviorSummary = body.behaviorSummary || "";
     }
 
-    const isCommandRequest =
-      body.type === "command" || body.payload?.intentMode === "command";
+    const auto = autopilot(memory);
 
-    if (!behaviorSummary && !body.input) {
-      return NextResponse.json({ insight: null });
-    }
-
-    /* ---------------- PROMPT ENGINE ---------------- */
+    /* ---------------- PROMPT ---------------- */
 
     let prompt = "";
 
-    if (isCommandRequest) {
+    if (isCommand) {
       prompt = `
-You are Cortex Command Engine inside Shadecode Student.
-
-Convert user input into structured action.
+You are Cortex Command Engine.
 
 Return ONLY JSON:
-
-Allowed actions:
-- focus
-- task
-- learn
-- exam
-- navigate
-
-Rules:
-- No explanation
-- No extra text
-- Only JSON
+{ "action": "focus | task | learn | exam | navigate" }
 
 Input:
-${body.input || ""}
+${body.input}
 `;
     } else {
       prompt = `
-You are Cortex, a predictive academic intelligence system.
+You are Cortex.
 
-Return ONE sentence (8–20 words).
-No advice. No motivation. No questions.
+Return ONE sentence only (8–20 words).
 
 Memory:
-- Weak: ${memory.weakSubjects.join(", ") || "unknown"}
-- Strong: ${memory.strongSubjects.join(", ") || "unknown"}
-- Trend: ${memory.trend}
-- Focus history: ${memory.focusHistory.slice(-5).join(", ") || "none"}
+Weak: ${memory.weakSubjects.join(", ")}
+Strong: ${memory.strongSubjects.join(", ")}
+Trend: ${memory.trend}
+Focus: ${memory.focusHistory.slice(-5).join(", ")}
 
-Student data:
+Behavior:
 ${behaviorSummary}
-
-Examples:
-"Math performance declining with unstable focus patterns."
-"Consistent improvement across recent study sessions."
-"Balanced subject engagement with stable output."
 `;
     }
 
     const result = await callAI(prompt);
-    if (!result) return NextResponse.json({ insight: null });
 
-    /* ---------------- COMMAND MODE ---------------- */
+    /* ---------------- COMMAND ---------------- */
 
-    if (isCommandRequest) {
+    if (isCommand) {
       try {
-        const cleaned = result.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(cleaned);
+        const cleaned = result?.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(cleaned || "{}");
 
-        // predictive priority boost
-        if (
-          parsed.action === "learn" &&
-          memory.trend === "declining"
-        ) {
-          parsed.priority = "high";
-        }
-
-        return NextResponse.json(parsed);
+        return NextResponse.json({
+          ...parsed,
+          autopilot: auto,
+        });
       } catch {
-        return NextResponse.json({ action: "navigate" });
+        return NextResponse.json({
+          action: "navigate",
+          autopilot: auto,
+        });
       }
     }
 
-    /* ---------------- OBSERVATION MODE ---------------- */
+    /* ---------------- OBSERVATION ---------------- */
 
     return NextResponse.json({
-      insight: result.trim(),
+      insight: result?.trim() || null,
       memory,
-      prediction: memory.trend,
+      autopilot: auto,
     });
   } catch (err) {
-    console.error("Cortex error:", err);
     return NextResponse.json(
       { error: String(err) },
       { status: 500 }
