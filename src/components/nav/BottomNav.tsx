@@ -2,30 +2,73 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, CheckSquare, LayoutDashboard, BookOpen, Brain, PenLine, GraduationCap, BarChart2, Trophy, Settings, Timer } from "lucide-react";
+import React from "react";
+import {
+  Home, Calendar, CheckSquare, LayoutDashboard, BookOpen, Brain,
+  PenLine, GraduationCap, BarChart2, Trophy, Settings, Timer, Menu, ChevronDown
+} from "lucide-react";
 
-const navItems = [
-  { label: "Home", href: "/", icon: Home, id: "nav-home" },
-  { label: "Timetable", href: "/timetable", icon: Calendar, id: "nav-timetable" },
-  { label: "Tasks", href: "/tasks", icon: CheckSquare, id: "nav-tasks" },
-  { label: "Exams", href: "/exams", icon: BookOpen, id: "nav-exams" },
-  { label: "Learn", href: "/learn", icon: Brain, id: "nav-learn" },
-  { label: "Math", href: "/math-checker", icon: PenLine, id: "nav-math" },
-  { label: "Focus", href: "/focus", icon: Timer, id: "nav-focus" },
-  { label: "Exam Sim", href: "/exam-sim", icon: GraduationCap, id: "nav-exam-sim" },
-  { label: "Analytics", href: "/analytics", icon: BarChart2, id: "nav-analytics" },
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, id: "nav-dashboard" },
-  { label: "Ranks", href: "/leaderboard", icon: Trophy, id: "nav-leaderboard" },
-  { label: "Settings", href: "/settings", icon: Settings, id: "nav-settings" },
+const coreNavItems = [
+  { label: "Home", href: "/", icon: Home },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Tasks", href: "/tasks", icon: CheckSquare },
 ];
+
+const groupedNavItems = {
+  Exams: [
+    { label: "Exams", href: "/exams", icon: BookOpen },
+    { label: "Exam Sim", href: "/exam-sim", icon: GraduationCap },
+  ],
+  Learning: [
+    { label: "Learn", href: "/learn", icon: Brain },
+    { label: "Math", href: "/math-checker", icon: PenLine },
+    { label: "Focus", href: "/focus", icon: Timer },
+  ],
+  Extras: [
+    { label: "Timetable", href: "/timetable", icon: Calendar },
+    { label: "Analytics", href: "/analytics", icon: BarChart2 },
+    { label: "Ranks", href: "/leaderboard", icon: Trophy },
+    { label: "Settings", href: "/settings", icon: Settings },
+  ],
+};
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [open, setOpen] = React.useState(false);
+  const [expanded, setExpanded] = React.useState({});
+  const [dragY, setDragY] = React.useState(0);
+  const touchStartY = React.useRef(null);
+
+  const toggleSection = (section) => {
+    setExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Swipe + drag handlers
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    setDragY(0);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+    if (deltaY > 0) {
+      setDragY(deltaY); // drawer follows finger downward
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragY > 80) {
+      setOpen(false); // close if dragged far enough
+    }
+    setDragY(0);
+    touchStartY.current = null;
+  };
 
   return (
     <>
       <style>{`
-        /* Mobile - bottom nav */
         .nav-bottom {
           display: flex;
           position: fixed;
@@ -39,104 +82,103 @@ export default function BottomNav() {
           padding: 12px 0 20px;
           z-index: 50;
         }
-
-        .nav-left {
-          display: none;
+        .overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.4);
+          z-index: 40;
         }
-
-        /* Desktop - left sidebar nav */
-        @media (min-width: 900px) {
-          .nav-bottom {
-            display: none;
-          }
-
-          .nav-left {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 220px;
-            height: 100vh;
-            flex-direction: column;
-            background: rgba(8, 8, 14, 0.85);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(99, 102, 241, 0.1);
-            padding: 32px 16px;
-            gap: 4px;
-            z-index: 50;
-          }
+        @keyframes bounceOpen {
+          0% { transform: translateY(100%); }
+          60% { transform: translateY(-10px); }
+          80% { transform: translateY(5px); }
+          100% { transform: translateY(0); }
+        }
+        .drawer {
+          position: fixed;
+          bottom: 60px;
+          left: 0;
+          right: 0;
+          background: var(--card);
+          border-top: 1px solid var(--card-border);
+          max-height: 50vh;
+          overflow-y: auto;
+          transform: translateY(${open ? dragY + "px" : "100%"});
+          transition: ${dragY === 0 ? "transform 0.3s ease-in-out" : "none"};
+          padding: 10px;
+          z-index: 50;
+          border-radius: 12px 12px 0 0;
+          animation: ${open && dragY === 0 ? "bounceOpen 0.5s ease" : "none"};
+        }
+        .drawer-handle {
+          width: 40px;
+          height: 5px;
+          background: var(--card-border);
+          border-radius: 3px;
+          margin: 8px auto;
+        }
+        .drawer-section {
+          margin-bottom: 10px;
+        }
+        .drawer-section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px;
+          cursor: pointer;
+          font-weight: bold;
+        }
+        .drawer a {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
         }
       `}</style>
 
-      {/* Mobile bottom nav */}
-      <nav className="nav-bottom">
-        {navItems.map(({ label, href, icon: Icon, id }) => {
-          const isActive = pathname === href;
-          return (
-            <Link
-              key={href}
-              id={id}
-              href={href}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "4px",
-                textDecoration: "none",
-                color: isActive ? "var(--primary)" : "var(--muted-foreground)",
-                transition: "color 0.2s",
-              }}
-            >
-              <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-              <span style={{ fontSize: "11px", fontWeight: isActive ? 600 : 400 }}>
-                {label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="nav-bottom">
+        {coreNavItems.map(({ label, href, icon: Icon }) => (
+          <Link key={href} href={href} className={pathname === href ? "active" : ""}>
+            <Icon />
+          </Link>
+        ))}
+        <button onClick={() => setOpen(!open)}>
+          <Menu />
+        </button>
+      </div>
 
-      {/* Desktop left sidebar nav */}
-      <nav className="nav-left">
-        {/* Logo */}
-        <div style={{ marginBottom: "32px", paddingLeft: "12px" }}>
-          <p style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase" }}>
-            Shadecode
-          </p>
-          <p style={{ fontSize: "16px", fontWeight: 800, marginTop: "2px" }}>
-            Student
-          </p>
-        </div>
+      {open && <div className="overlay" onClick={() => setOpen(false)} />}
 
-        {/* Nav items */}
-        {navItems.map(({ label, href, icon: Icon, id }) => {
-          const isActive = pathname === href;
-          return (
-            <Link
-              key={href}
-              id={id}
-              href={href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                textDecoration: "none",
-                color: isActive ? "var(--foreground)" : "var(--muted-foreground)",
-                background: isActive ? "rgba(99,102,241,0.12)" : "transparent",
-                border: isActive ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent",
-                transition: "all 0.2s",
-                fontWeight: isActive ? 600 : 400,
-                fontSize: "14px",
-              }}
-            >
-              <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} color={isActive ? "var(--primary)" : undefined} />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
+      <div
+        className="drawer"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="drawer-handle"></div>
+        {Object.entries(groupedNavItems).map(([section, items]) => (
+          <div key={section} className="drawer-section">
+            <div className="drawer-section-header" onClick={() => toggleSection(section)}>
+              {section}
+              <ChevronDown
+                style={{
+                  transform: expanded[section] ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s",
+                }}
+              />
+            </div>
+            {expanded[section] &&
+              items.map(({ label, href, icon: Icon }) => (
+                <Link key={href} href={href}>
+                  <Icon /> {label}
+                </Link>
+              ))}
+          </div>
+        ))}
+      </div>
     </>
   );
 }
