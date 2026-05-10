@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+/* ---------------- TYPES ---------------- */
+
 interface LeaderboardEntry {
   id: string;
   username: string;
@@ -11,23 +13,41 @@ interface LeaderboardEntry {
   level: number;
   streak: number;
   score?: number;
+  league?: string;
 }
+
+/* ---------------- LEAGUES ---------------- */
+
+function getLeague(score: number) {
+  if (score >= 1500) return { name: "Diamond", color: "#60a5fa" };
+  if (score >= 900) return { name: "Gold", color: "#f59e0b" };
+  if (score >= 400) return { name: "Silver", color: "#94a3b8" };
+  return { name: "Bronze", color: "#cd7c2f" };
+}
+
+function nextLeagueThreshold(score: number) {
+  if (score < 400) return 400;
+  if (score < 900) return 900;
+  if (score < 1500) return 1500;
+  return null;
+}
+
+/* ---------------- COMPONENT ---------------- */
 
 export default function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState("");
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
-  /* ---------------- SCORE SYSTEM ---------------- */
+  /* ---------------- SCORE ---------------- */
 
-  const computeScore = (u: LeaderboardEntry) => {
-    return (u.xp || 0) + (u.level || 1) * 50 + (u.streak || 0) * 20;
-  };
+  const computeScore = (u: LeaderboardEntry) =>
+    (u.xp || 0) + (u.level || 1) * 50 + (u.streak || 0) * 20;
 
-  /* ---------------- FETCH DATA ---------------- */
+  /* ---------------- FETCH ---------------- */
 
   useEffect(() => {
     const init = async () => {
@@ -47,16 +67,22 @@ export default function Leaderboard() {
         .select("id, username, xp, level, streak");
 
       if (error) {
-        console.error("Leaderboard fetch error:", error);
+        console.error(error);
         setLoading(false);
         return;
       }
 
       const ranked = (data || [])
-        .map((u: LeaderboardEntry) => ({
-          ...u,
-          score: computeScore(u),
-        }))
+        .map((u: LeaderboardEntry) => {
+          const score = computeScore(u);
+          const league = getLeague(score);
+
+          return {
+            ...u,
+            score,
+            league: league.name,
+          };
+        })
         .sort((a, b) => (b.score || 0) - (a.score || 0));
 
       setEntries(ranked);
@@ -66,14 +92,14 @@ export default function Leaderboard() {
     init();
   }, [router, supabase]);
 
-  /* ---------------- STYLES ---------------- */
+  /* ---------------- CURRENT USER RANK ---------------- */
 
-  const cardStyle = {
-    background: "var(--card)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "12px",
-    padding: "16px",
-  };
+  const currentUserRank = useMemo(() => {
+    const index = entries.findIndex((e) => e.id === currentUserId);
+    return index >= 0 ? index + 1 : null;
+  }, [entries, currentUserId]);
+
+  /* ---------------- UI HELPERS ---------------- */
 
   const getRankStyle = (rank: number) => {
     if (rank === 1) return { color: "#f59e0b", icon: "🥇" };
@@ -81,13 +107,6 @@ export default function Leaderboard() {
     if (rank === 3) return { color: "#cd7c2f", icon: "🥉" };
     return { color: "var(--muted-foreground)", icon: `${rank}` };
   };
-
-  /* ---------------- CURRENT USER RANK ---------------- */
-
-  const currentUserRank = useMemo(() => {
-    const index = entries.findIndex((e) => e.id === currentUserId);
-    return index >= 0 ? index + 1 : null;
-  }, [entries, currentUserId]);
 
   /* ---------------- LOADING ---------------- */
 
@@ -105,7 +124,7 @@ export default function Leaderboard() {
     );
   }
 
-  /* ---------------- UI ---------------- */
+  /* ---------------- RENDER ---------------- */
 
   return (
     <div
@@ -116,35 +135,30 @@ export default function Leaderboard() {
         gap: "16px",
       }}
     >
-      {/* Header */}
+      {/* HEADER */}
       <div>
         <p
           style={{
             fontSize: "12px",
             color: "var(--primary)",
             fontWeight: 600,
-            letterSpacing: "1px",
             textTransform: "uppercase",
-            marginBottom: "4px",
+            letterSpacing: "1px",
           }}
         >
           Shadecode Student
         </p>
-        <h1 style={{ fontSize: "28px", fontWeight: 800, margin: 0 }}>
+
+        <h1 style={{ fontSize: "28px", fontWeight: 800 }}>
           Leaderboard
         </h1>
-        <p
-          style={{
-            color: "var(--muted-foreground)",
-            fontSize: "14px",
-            marginTop: "4px",
-          }}
-        >
+
+        <p style={{ fontSize: "14px", color: "var(--muted-foreground)" }}>
           Ranked by XP + Level + Streak
         </p>
       </div>
 
-      {/* User rank */}
+      {/* USER RANK */}
       {currentUserRank && (
         <div
           style={{
@@ -156,127 +170,123 @@ export default function Leaderboard() {
             justifyContent: "space-between",
           }}
         >
-          <p style={{ fontSize: "14px", color: "var(--muted-foreground)" }}>
-            Your rank
-          </p>
-          <p
-            style={{
-              fontSize: "20px",
-              fontWeight: 800,
-              color: "var(--primary)",
-            }}
-          >
+          <span>Your rank</span>
+          <strong style={{ color: "var(--primary)", fontSize: "18px" }}>
             #{currentUserRank}
-          </p>
+          </strong>
         </div>
       )}
 
-      {/* Empty state */}
-      {entries.length === 0 && (
-        <div style={cardStyle}>
-          <p
-            style={{
-              color: "var(--muted-foreground)",
-              textAlign: "center",
-              fontSize: "14px",
-            }}
-          >
-            No students found yet.
-          </p>
-        </div>
-      )}
+      {/* LIST */}
+      <div
+        style={{
+          background: "var(--card)",
+          border: "1px solid var(--card-border)",
+          borderRadius: "12px",
+          padding: "12px",
+        }}
+      >
+        {entries.map((entry, index) => {
+          const rank = index + 1;
+          const { color, icon } = getRankStyle(rank);
 
-      {/* List */}
-      <div style={cardStyle}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {entries.map((entry, index) => {
-            const rank = index + 1;
-            const { color, icon } = getRankStyle(rank);
-            const isCurrentUser = entry.id === currentUserId;
+          const league = getLeague(entry.score || 0);
+          const next = nextLeagueThreshold(entry.score || 0);
 
-            return (
+          const progress = next
+            ? ((entry.score || 0) / next) * 100
+            : 100;
+
+          const isCurrent = entry.id === currentUserId;
+
+          return (
+            <div
+              key={entry.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px",
+                borderRadius: "10px",
+                background: isCurrent
+                  ? "rgba(99,102,241,0.08)"
+                  : "transparent",
+              }}
+            >
+              {/* RANK */}
+              <div style={{ width: "30px", textAlign: "center", color }}>
+                {icon}
+              </div>
+
+              {/* AVATAR */}
               <div
-                key={entry.id}
                 style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  background: "var(--muted)",
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
-                  padding: "12px",
-                  borderRadius: "10px",
-                  background: isCurrentUser
-                    ? "rgba(99,102,241,0.08)"
-                    : "transparent",
-                  border: isCurrentUser
-                    ? "1px solid rgba(99,102,241,0.2)"
-                    : "1px solid transparent",
+                  justifyContent: "center",
+                  fontWeight: 700,
                 }}
               >
-                {/* Rank */}
+                {(entry.username || "S")[0].toUpperCase()}
+              </div>
+
+              {/* INFO */}
+              <div style={{ flex: 1 }}>
                 <div
                   style={{
-                    width: "32px",
-                    textAlign: "center",
-                    fontWeight: 800,
-                    color,
+                    fontWeight: 600,
+                    fontSize: "14px",
                   }}
                 >
-                  {icon}
+                  {entry.username} {isCurrent && "(you)"}
                 </div>
 
-                {/* Avatar */}
                 <div
                   style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: isCurrentUser
-                      ? "rgba(99,102,241,0.3)"
-                      : "var(--muted)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    fontSize: "11px",
+                    color: league.color,
                     fontWeight: 700,
-                    color: isCurrentUser
-                      ? "var(--primary)"
-                      : "var(--muted-foreground)",
                   }}
                 >
-                  {(entry.username || "S")[0].toUpperCase()}
+                  {league.name} League
                 </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p
+                {/* PROGRESS BAR */}
+                {next && (
+                  <div
                     style={{
-                      fontSize: "14px",
-                      fontWeight: isCurrentUser ? 700 : 500,
+                      height: "4px",
+                      background: "#222",
+                      borderRadius: "10px",
+                      marginTop: "4px",
                       overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
                     }}
                   >
-                    {entry.username || "Student"}{" "}
-                    {isCurrentUser && "(you)"}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "11px",
-                      color: "var(--muted-foreground)",
-                    }}
-                  >
-                    Level {entry.level} · 🔥 {entry.streak}d
-                  </p>
-                </div>
+                    <div
+                      style={{
+                        width: `${Math.min(progress, 100)}%`,
+                        height: "100%",
+                        background: league.color,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
 
-                {/* Score */}
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontWeight: 800 }}>{entry.score}</p>
-                  <p style={{ fontSize: "10px", opacity: 0.6 }}>score</p>
+              {/* SCORE */}
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontWeight: 800 }}>{entry.score}</div>
+                <div style={{ fontSize: "10px", opacity: 0.6 }}>
+                  XP
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
