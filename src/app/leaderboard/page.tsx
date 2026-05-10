@@ -12,8 +12,19 @@ interface LeaderboardEntry {
   xp: number;
   level: number;
   streak: number;
+  weekly_xp?: number;
+  last_active?: string;
   score?: number;
-  league?: string;
+}
+
+/* ---------------- SEASON ---------------- */
+
+function getCurrentWeekKey() {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(now.getDate() - now.getDay());
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString().split("T")[0];
 }
 
 /* ---------------- LEAGUES ---------------- */
@@ -25,11 +36,28 @@ function getLeague(score: number) {
   return { name: "Bronze", color: "#cd7c2f" };
 }
 
-function nextLeagueThreshold(score: number) {
-  if (score < 400) return 400;
-  if (score < 900) return 900;
-  if (score < 1500) return 1500;
-  return null;
+/* ---------------- SCORE ---------------- */
+
+function computeScore(u: LeaderboardEntry) {
+  return (u.weekly_xp || 0) + (u.level || 1) * 50 + (u.streak || 0) * 20;
+}
+
+/* ---------------- XP DECAY ---------------- */
+
+function applyXpDecay(lastActive?: string, weeklyXp: number = 0) {
+  if (!lastActive) return weeklyXp;
+
+  const last = new Date(lastActive);
+  const now = new Date();
+
+  const diffDays =
+    (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (diffDays > 2) {
+    return Math.max(0, weeklyXp - Math.floor(diffDays * 10));
+  }
+
+  return weeklyXp;
 }
 
 /* ---------------- COMPONENT ---------------- */
@@ -42,246 +70,154 @@ export default function Leaderboard() {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
-  /* ---------------- SCORE ---------------- */
-
-  const computeScore = (u: LeaderboardEntry) =>
-    (u.xp || 0) + (u.level || 1) * 50 + (u.streak || 0) * 20;
+  const weekKey = getCurrentWeekKey();
 
   /* ---------------- FETCH ---------------- */
 
-  useEffect(() => {
-    const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const fetchLeaderboard = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
 
-      setCurrentUserId(user.id);
+    setCurrentUserId(user.id);
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, xp, level, streak");
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username, xp, level, streak, weekly_xp, last_active");
 
-      if (error) {
-        console.error(error);
-        setLoading(false);
-        return;
-      }
-
-      const ranked = (data || [])
-        .map((u: LeaderboardEntry) => {
-          const score = computeScore(u);
-          const league = getLeague(score);
-
-          return {
-            ...u,
-            score,
-            league: league.name,
-          };
-        })
-        .sort((a, b) => (b.score || 0) - (a.score || 0));
-
-      setEntries(ranked);
+    if (error) {
+      console.error(error);
       setLoading(false);
-    };
+      return;
+    }
 
-    init();
-  }, [router, supabase]);
+    const ranked = (data || [])
+      .map((u: LeaderboardEntry) => {
+        const adjustedWeekly = applyXpDecay(
+          u.last_active,
+          u.weekly_xp || 0
+        );
 
-  /* ---------------- CURRENT USER RANK ---------------- */
+        const score = computeScore({
+          ...u,
+          weekly_xp: adjustedWeekly,
+        });
+
+        const league = getLeague(score);
+
+        return {
+          ...u,
+          weekly_xp: adjustedWeekly,
+          score,
+          league: league.name,
+        };
+      })
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    setEntries(ranked);
+    setLoading(false);
+  };
+
+  /* ---------------- INIT ---------------- */
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    const interval = setInterval(() => {
+      fetchLeaderboard();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ---------------- CURRENT RANK ---------------- */
 
   const currentUserRank = useMemo(() => {
     const index = entries.findIndex((e) => e.id === currentUserId);
     return index >= 0 ? index + 1 : null;
   }, [entries, currentUserId]);
 
-  /* ---------------- UI HELPERS ---------------- */
-
-  const getRankStyle = (rank: number) => {
-    if (rank === 1) return { color: "#f59e0b", icon: "🥇" };
-    if (rank === 2) return { color: "#94a3b8", icon: "🥈" };
-    if (rank === 3) return { color: "#cd7c2f", icon: "🥉" };
-    return { color: "var(--muted-foreground)", icon: `${rank}` };
-  };
-
   /* ---------------- LOADING ---------------- */
 
   if (loading) {
     return (
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          color: "var(--muted-foreground)",
-        }}
-      >
+      <div style={{ padding: "60px 24px", textAlign: "center" }}>
         Loading leaderboard...
       </div>
     );
   }
 
-  /* ---------------- RENDER ---------------- */
+  /* ---------------- UI ---------------- */
 
   return (
-    <div
-      style={{
-        padding: "60px 24px 24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-      }}
-    >
+    <div style={{ padding: "60px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+
       {/* HEADER */}
       <div>
-        <p
-          style={{
-            fontSize: "12px",
-            color: "var(--primary)",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-          }}
-        >
-          Shadecode Student
-        </p>
-
         <h1 style={{ fontSize: "28px", fontWeight: 800 }}>
-          Leaderboard
+          Weekly Leaderboard
         </h1>
 
-        <p style={{ fontSize: "14px", color: "var(--muted-foreground)" }}>
-          Ranked by XP + Level + Streak
+        <p style={{ fontSize: "13px", opacity: 0.6 }}>
+          Season: {weekKey}
         </p>
       </div>
 
       {/* USER RANK */}
       {currentUserRank && (
-        <div
-          style={{
-            background: "rgba(99,102,241,0.08)",
-            border: "1px solid rgba(99,102,241,0.25)",
-            borderRadius: "12px",
-            padding: "14px 16px",
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <span>Your rank</span>
-          <strong style={{ color: "var(--primary)", fontSize: "18px" }}>
-            #{currentUserRank}
-          </strong>
+        <div style={{
+          padding: "12px",
+          borderRadius: "10px",
+          background: "rgba(99,102,241,0.08)",
+        }}>
+          Your rank: <b>#{currentUserRank}</b>
         </div>
       )}
 
       {/* LIST */}
-      <div
-        style={{
-          background: "var(--card)",
-          border: "1px solid var(--card-border)",
-          borderRadius: "12px",
-          padding: "12px",
-        }}
-      >
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {entries.map((entry, index) => {
           const rank = index + 1;
-          const { color, icon } = getRankStyle(rank);
-
           const league = getLeague(entry.score || 0);
-          const next = nextLeagueThreshold(entry.score || 0);
-
-          const progress = next
-            ? ((entry.score || 0) / next) * 100
-            : 100;
-
-          const isCurrent = entry.id === currentUserId;
+          const isMe = entry.id === currentUserId;
 
           return (
             <div
               key={entry.id}
               style={{
                 display: "flex",
-                alignItems: "center",
-                gap: "12px",
+                justifyContent: "space-between",
                 padding: "12px",
                 borderRadius: "10px",
-                background: isCurrent
-                  ? "rgba(99,102,241,0.08)"
-                  : "transparent",
+                background: isMe ? "rgba(99,102,241,0.08)" : "transparent",
+                border: isMe ? "1px solid rgba(99,102,241,0.2)" : "none",
               }}
             >
-              {/* RANK */}
-              <div style={{ width: "30px", textAlign: "center", color }}>
-                {icon}
-              </div>
 
-              {/* AVATAR */}
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "var(--muted)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                }}
-              >
-                {(entry.username || "S")[0].toUpperCase()}
-              </div>
-
-              {/* INFO */}
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: "14px",
-                  }}
-                >
-                  {entry.username} {isCurrent && "(you)"}
+              {/* LEFT */}
+              <div>
+                <div style={{ fontWeight: 700 }}>
+                  #{rank} {entry.username} {isMe && "(you)"}
                 </div>
 
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: league.color,
-                    fontWeight: 700,
-                  }}
-                >
+                <div style={{ fontSize: "11px", color: league.color }}>
                   {league.name} League
                 </div>
-
-                {/* PROGRESS BAR */}
-                {next && (
-                  <div
-                    style={{
-                      height: "4px",
-                      background: "#222",
-                      borderRadius: "10px",
-                      marginTop: "4px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${Math.min(progress, 100)}%`,
-                        height: "100%",
-                        background: league.color,
-                      }}
-                    />
-                  </div>
-                )}
               </div>
 
-              {/* SCORE */}
+              {/* RIGHT */}
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: 800 }}>{entry.score}</div>
+                <div style={{ fontWeight: 800 }}>
+                  {entry.score}
+                </div>
+
                 <div style={{ fontSize: "10px", opacity: 0.6 }}>
-                  XP
+                  weekly XP
                 </div>
               </div>
             </div>
