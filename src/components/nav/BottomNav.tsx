@@ -32,24 +32,30 @@ const groupedNavItems = {
   ],
 };
 
+type SectionKey = keyof typeof groupedNavItems;
+
 export default function BottomNav() {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
-  const [expanded, setExpanded] = React.useState({});
+  const [expanded, setExpanded] = React.useState<Record<SectionKey, boolean>>({
+    Exams: false,
+    Learning: false,
+    Extras: false,
+  });
   const [dragY, setDragY] = React.useState(0);
-  const touchStartY = React.useRef(null);
+  const touchStartY = React.useRef<number | null>(null);
 
-  const toggleSection = (section) => {
+  const toggleSection = (section: SectionKey) => {
     setExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   // Swipe + drag handlers
-  const handleTouchStart = (e) => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
     setDragY(0);
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
     if (touchStartY.current === null) return;
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartY.current;
@@ -161,16 +167,16 @@ export default function BottomNav() {
         <div className="drawer-handle"></div>
         {Object.entries(groupedNavItems).map(([section, items]) => (
           <div key={section} className="drawer-section">
-            <div className="drawer-section-header" onClick={() => toggleSection(section)}>
+            <div className="drawer-section-header" onClick={() => toggleSection(section as SectionKey)}>
               {section}
               <ChevronDown
                 style={{
-                  transform: expanded[section] ? "rotate(180deg)" : "rotate(0deg)",
+                  transform: expanded[section as SectionKey] ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.2s",
                 }}
               />
             </div>
-            {expanded[section] &&
+            {expanded[section as SectionKey] &&
               items.map(({ label, href, icon: Icon }) => (
                 <Link key={href} href={href}>
                   <Icon /> {label}
