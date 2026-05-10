@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Home,
@@ -19,27 +19,83 @@ import {
   Timer,
   MoreHorizontal,
   X,
+  Flame,
+  ChevronLeft,
+  Search,
 } from "lucide-react";
 
 const primaryNavItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Learn", href: "/learn", icon: Brain },
-  { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Focus", href: "/focus", icon: Timer },
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  {
+    label: "Home",
+    href: "/",
+    icon: Home,
+  },
+  {
+    label: "Learn",
+    href: "/learn",
+    icon: Brain,
+    badge: "AI",
+  },
+  {
+    label: "Tasks",
+    href: "/tasks",
+    icon: CheckSquare,
+    badge: "3",
+    danger: true,
+  },
+  {
+    label: "Focus",
+    href: "/focus",
+    icon: Timer,
+    glow: true,
+  },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
 ];
 
 const moreNavItems = [
-  { label: "Timetable", href: "/timetable", icon: Calendar },
-  { label: "Exams", href: "/exams", icon: BookOpen },
-  { label: "Exam Sim", href: "/exam-sim", icon: GraduationCap },
-  { label: "Math", href: "/math-checker", icon: PenLine },
-  { label: "Analytics", href: "/analytics", icon: BarChart2 },
-  { label: "Ranks", href: "/leaderboard", icon: Trophy },
-  { label: "Settings", href: "/settings", icon: Settings },
+  {
+    label: "Timetable",
+    href: "/timetable",
+    icon: Calendar,
+  },
+  {
+    label: "Exams",
+    href: "/exams",
+    icon: BookOpen,
+    badge: "2d",
+  },
+  {
+    label: "Exam Sim",
+    href: "/exam-sim",
+    icon: GraduationCap,
+  },
+  {
+    label: "Math",
+    href: "/math-checker",
+    icon: PenLine,
+  },
+  {
+    label: "Analytics",
+    href: "/analytics",
+    icon: BarChart2,
+  },
+  {
+    label: "Ranks",
+    href: "/leaderboard",
+    icon: Trophy,
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings,
+  },
 ];
 
-const sidebarNavItems = [
+const sidebarItems = [
   ...primaryNavItems,
   ...moreNavItems,
 ];
@@ -47,18 +103,53 @@ const sidebarNavItems = [
 export default function BottomNav() {
   const pathname = usePathname();
 
-  const [open, setOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const saved = localStorage.getItem("shade-sidebar");
+
+    if (saved === "collapsed") {
+      setCollapsed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    localStorage.setItem(
+      "shade-sidebar",
+      collapsed ? "collapsed" : "expanded"
+    );
+  }, [collapsed, mounted]);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+
+    return "Good evening";
+  }, []);
+
   return (
     <>
       <style>{`
         :root {
-          --sidebar-width: 240px;
+          --sidebar-width: 250px;
+          --sidebar-collapsed-width: 82px;
+        }
+
+        * {
+          box-sizing: border-box;
         }
 
         .nav-bottom {
@@ -77,6 +168,7 @@ export default function BottomNav() {
         }
 
         .mobile-link {
+          position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -92,6 +184,38 @@ export default function BottomNav() {
 
         .mobile-label {
           font-size: 11px;
+          font-weight: 600;
+        }
+
+        .mobile-badge {
+          position: absolute;
+          top: -4px;
+          right: 4px;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 5px;
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 9px;
+          font-weight: 800;
+          background: var(--primary);
+          color: white;
+        }
+
+        .mobile-badge.danger {
+          background: #ef4444;
+        }
+
+        .mobile-glow {
+          position: absolute;
+          inset: -8px;
+          border-radius: 999px;
+          background: rgba(99,102,241,0.18);
+          filter: blur(18px);
+          animation: pulseGlow 2s infinite;
+          z-index: -1;
         }
 
         .more-btn {
@@ -108,7 +232,7 @@ export default function BottomNav() {
         .drawer-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.5);
+          background: rgba(0,0,0,0.55);
           backdrop-filter: blur(6px);
           z-index: 998;
           animation: fadeIn 0.2s ease;
@@ -119,10 +243,10 @@ export default function BottomNav() {
           bottom: 0;
           left: 0;
           right: 0;
-          background: rgba(12,12,18,0.96);
+          background: rgba(10,10,16,0.97);
           backdrop-filter: blur(30px);
-          border-top-left-radius: 24px;
-          border-top-right-radius: 24px;
+          border-top-left-radius: 28px;
+          border-top-right-radius: 28px;
           border-top: 1px solid rgba(99,102,241,0.12);
           padding: 20px;
           z-index: 999;
@@ -131,14 +255,14 @@ export default function BottomNav() {
 
         .drawer-header {
           display: flex;
-          align-items: center;
           justify-content: space-between;
+          align-items: center;
           margin-bottom: 20px;
         }
 
         .drawer-title {
-          font-size: 18px;
-          font-weight: 700;
+          font-size: 20px;
+          font-weight: 800;
         }
 
         .drawer-grid {
@@ -148,6 +272,7 @@ export default function BottomNav() {
         }
 
         .drawer-link {
+          position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -157,12 +282,8 @@ export default function BottomNav() {
           border-radius: 18px;
           text-decoration: none;
           background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.05);
           transition: all 0.18s ease;
-        }
-
-        .drawer-link:active {
-          transform: scale(0.96);
         }
 
         .drawer-link.active {
@@ -170,7 +291,28 @@ export default function BottomNav() {
           border: 1px solid rgba(99,102,241,0.2);
         }
 
-        .nav-left {
+        .drawer-link:active {
+          transform: scale(0.96);
+        }
+
+        .drawer-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          min-width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 5px;
+          font-size: 9px;
+          font-weight: 800;
+          background: var(--primary);
+          color: white;
+        }
+
+        .sidebar {
           display: none;
         }
 
@@ -194,6 +336,23 @@ export default function BottomNav() {
           }
         }
 
+        @keyframes pulseGlow {
+          0% {
+            opacity: 0.5;
+            transform: scale(0.9);
+          }
+
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+
+          100% {
+            opacity: 0.5;
+            transform: scale(0.9);
+          }
+        }
+
         @media (min-width: 900px) {
           .nav-bottom,
           .drawer,
@@ -201,28 +360,40 @@ export default function BottomNav() {
             display: none;
           }
 
-          .nav-left {
-            display: flex;
+          .sidebar {
             position: fixed;
             top: 0;
             left: 0;
-            width: var(--sidebar-width);
+            width: ${
+              collapsed
+                ? "var(--sidebar-collapsed-width)"
+                : "var(--sidebar-width)"
+            };
             height: 100vh;
+            display: flex;
             flex-direction: column;
-            padding: 28px 14px;
             background: rgba(8,8,14,0.84);
             backdrop-filter: blur(24px);
             border-right: 1px solid rgba(99,102,241,0.08);
+            padding: 18px 12px;
             z-index: 999;
+            transition: width 0.22s ease;
+            overflow: hidden;
           }
 
-          .sidebar-logo {
-            margin-bottom: 30px;
-            padding: 0 12px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+          .sidebar-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
           }
 
-          .sidebar-logo p:first-child {
+          .logo-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+          }
+
+          .logo-kicker {
             font-size: 11px;
             color: var(--primary);
             letter-spacing: 2px;
@@ -230,7 +401,80 @@ export default function BottomNav() {
             font-weight: 700;
           }
 
-          .sidebar-logo p:last-child {
+          .logo-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 4px;
+          }
+
+          .collapse-btn {
+            border: none;
+            background: rgba(255,255,255,0.04);
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--foreground);
+            cursor: pointer;
+            flex-shrink: 0;
+          }
+
+          .streak-card {
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border-radius: 20px;
+            padding: 16px;
+            background:
+              radial-gradient(circle at top right,
+              rgba(249,115,22,0.22),
+              transparent 45%),
+              rgba(255,255,255,0.03);
+
+            border: 1px solid rgba(255,255,255,0.05);
+          }
+
+          .streak-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .streak-flame {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(249,115,22,0.16);
+            color: #fb923c;
+          }
+
+          .streak-title {
+            font-size: 13px;
+            font-weight: 700;
+          }
+
+          .streak-sub {
+            font-size: 12px;
+            color: var(--muted-foreground);
+            margin-top: 2px;
+          }
+
+          .greeting {
+            margin-bottom: 16px;
+            padding: 0 4px;
+          }
+
+          .greeting-title {
+            font-size: 13px;
+            color: var(--muted-foreground);
+          }
+
+          .greeting-main {
             font-size: 18px;
             font-weight: 800;
             margin-top: 4px;
@@ -243,14 +487,16 @@ export default function BottomNav() {
           }
 
           .sidebar-link {
+            position: relative;
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 12px 14px;
             border-radius: 14px;
             text-decoration: none;
-            transition: all 0.18s ease;
             border: 1px solid transparent;
+            transition: all 0.18s ease;
+            overflow: hidden;
           }
 
           .sidebar-link:hover {
@@ -261,53 +507,110 @@ export default function BottomNav() {
           .sidebar-link.active {
             background: rgba(99,102,241,0.12);
             border: 1px solid rgba(99,102,241,0.18);
-            box-shadow: inset 3px 0 0 var(--primary);
+            box-shadow:
+              inset 3px 0 0 var(--primary),
+              0 0 18px rgba(99,102,241,0.08);
+          }
+
+          .sidebar-label {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+          }
+
+          .sidebar-badge {
+            margin-left: auto;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 800;
+            background: var(--primary);
+            color: white;
+          }
+
+          .sidebar-badge.danger {
+            background: #ef4444;
+          }
+
+          .command-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 18px;
+            color: var(--muted-foreground);
+          }
+
+          .command-shortcut {
+            margin-left: auto;
+            font-size: 11px;
+            padding: 4px 6px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
           }
         }
       `}</style>
 
       {/* MOBILE NAV */}
       <nav className="nav-bottom">
-        {primaryNavItems.map(({ label, href, icon: Icon }) => {
-          const active = isActive(href);
+        {primaryNavItems.map(
+          ({ label, href, icon: Icon, badge, danger, glow }) => {
+            const active = isActive(href);
 
-          return (
-            <Link
-              key={href}
-              href={href}
-              className="mobile-link"
-              style={{
-                color: active
-                  ? "var(--primary)"
-                  : "var(--muted-foreground)",
-              }}
-            >
-              <Icon size={22} strokeWidth={active ? 2.6 : 1.9} />
-
-              <span
-                className="mobile-label"
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="mobile-link"
                 style={{
-                  fontWeight: active ? 700 : 500,
+                  color: active
+                    ? "var(--primary)"
+                    : "var(--muted-foreground)",
                 }}
               >
-                {label}
-              </span>
-            </Link>
-          );
-        })}
+                {glow && <div className="mobile-glow" />}
 
-        <button className="more-btn" onClick={() => setOpen(true)}>
+                {badge && (
+                  <div
+                    className={`mobile-badge ${
+                      danger ? "danger" : ""
+                    }`}
+                  >
+                    {badge}
+                  </div>
+                )}
+
+                <Icon size={22} strokeWidth={active ? 2.6 : 1.9} />
+
+                <span className="mobile-label">{label}</span>
+              </Link>
+            );
+          }
+        )}
+
+        <button
+          className="more-btn"
+          onClick={() => setDrawerOpen(true)}
+        >
           <MoreHorizontal size={22} />
           <span className="mobile-label">More</span>
         </button>
       </nav>
 
       {/* MOBILE DRAWER */}
-      {open && (
+      {drawerOpen && (
         <>
           <div
             className="drawer-backdrop"
-            onClick={() => setOpen(false)}
+            onClick={() => setDrawerOpen(false)}
           />
 
           <div className="drawer">
@@ -315,7 +618,7 @@ export default function BottomNav() {
               <div className="drawer-title">More</div>
 
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => setDrawerOpen(false)}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -328,80 +631,174 @@ export default function BottomNav() {
             </div>
 
             <div className="drawer-grid">
-              {moreNavItems.map(({ label, href, icon: Icon }) => {
-                const active = isActive(href);
+              {moreNavItems.map(
+                ({ label, href, icon: Icon, badge }) => {
+                  const active = isActive(href);
 
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`drawer-link ${active ? "active" : ""}`}
-                    onClick={() => setOpen(false)}
-                    style={{
-                      color: active
-                        ? "var(--primary)"
-                        : "var(--foreground)",
-                    }}
-                  >
-                    <Icon size={22} />
-                    <span
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={`drawer-link ${
+                        active ? "active" : ""
+                      }`}
+                      onClick={() => setDrawerOpen(false)}
                       style={{
-                        fontSize: "12px",
-                        textAlign: "center",
-                        fontWeight: 600,
+                        color: active
+                          ? "var(--primary)"
+                          : "var(--foreground)",
                       }}
                     >
-                      {label}
-                    </span>
-                  </Link>
-                );
-              })}
+                      {badge && (
+                        <div className="drawer-badge">
+                          {badge}
+                        </div>
+                      )}
+
+                      <Icon size={22} />
+
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          textAlign: "center",
+                        }}
+                      >
+                        {label}
+                      </span>
+                    </Link>
+                  );
+                }
+              )}
             </div>
           </div>
         </>
       )}
 
       {/* DESKTOP SIDEBAR */}
-      <nav className="nav-left">
-        <div className="sidebar-logo">
-          <p>Shadecode</p>
-          <p>Student</p>
+      <aside className="sidebar">
+        <div className="sidebar-top">
+          {!collapsed && (
+            <div className="logo-wrap">
+              <div className="logo-kicker">Shadecode</div>
+              <div className="logo-title">Student</div>
+            </div>
+          )}
+
+          <button
+            className="collapse-btn"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <ChevronLeft
+              size={18}
+              style={{
+                transform: collapsed
+                  ? "rotate(180deg)"
+                  : "rotate(0deg)",
+                transition: "transform 0.2s ease",
+              }}
+            />
+          </button>
         </div>
+
+        {!collapsed && (
+          <>
+            <div className="streak-card">
+              <div className="streak-row">
+                <div className="streak-flame">
+                  <Flame size={20} />
+                </div>
+
+                <div>
+                  <div className="streak-title">
+                    12 Day Streak
+                  </div>
+
+                  <div className="streak-sub">
+                    Your momentum is dangerous.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="greeting">
+              <div className="greeting-title">
+                {greeting},
+              </div>
+
+              <div className="greeting-main">
+                Takunda.
+              </div>
+            </div>
+
+            <div className="command-bar">
+              <Search size={16} />
+              <span>Search anything...</span>
+
+              <div className="command-shortcut">
+                Ctrl K
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="sidebar-nav">
-          {sidebarNavItems.map(({ label, href, icon: Icon }) => {
-            const active = isActive(href);
+          {sidebarItems.map(
+            ({
+              label,
+              href,
+              icon: Icon,
+              badge,
+              danger,
+            }) => {
+              const active = isActive(href);
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`sidebar-link ${active ? "active" : ""}`}
-                style={{
-                  color: active
-                    ? "var(--foreground)"
-                    : "var(--muted-foreground)",
-                }}
-              >
-                <Icon
-                  size={18}
-                  strokeWidth={active ? 2.5 : 1.9}
-                  color={active ? "var(--primary)" : undefined}
-                />
-
-                <span
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  title={label}
+                  className={`sidebar-link ${
+                    active ? "active" : ""
+                  }`}
                   style={{
-                    fontWeight: active ? 650 : 500,
-                    fontSize: "14px",
+                    color: active
+                      ? "var(--foreground)"
+                      : "var(--muted-foreground)",
+                    justifyContent: collapsed
+                      ? "center"
+                      : "flex-start",
                   }}
                 >
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
+                  <Icon
+                    size={19}
+                    strokeWidth={active ? 2.5 : 1.9}
+                    color={active ? "var(--primary)" : undefined}
+                  />
+
+                  {!collapsed && (
+                    <>
+                      <span className="sidebar-label">
+                        {label}
+                      </span>
+
+                      {badge && (
+                        <div
+                          className={`sidebar-badge ${
+                            danger ? "danger" : ""
+                          }`}
+                        >
+                          {badge}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Link>
+              );
+            }
+          )}
         </div>
-      </nav>
+      </aside>
     </>
   );
 }
