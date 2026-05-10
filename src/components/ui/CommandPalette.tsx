@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
 import {
   Command,
   CommandEmpty,
@@ -18,38 +17,18 @@ import {
   CheckSquare,
   Timer,
   LayoutDashboard,
-  Calendar,
   BookOpen,
-  GraduationCap,
-  PenLine,
-  BarChart2,
-  Trophy,
-  Settings,
   Search,
-  X,
   LucideIcon,
 } from "lucide-react";
 
 type CommandItemType = {
   name: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
+  description?: string;
+  action?: () => void;
 };
-
-const pages: CommandItemType[] = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Learn", href: "/learn", icon: Brain },
-  { name: "Tasks", href: "/tasks", icon: CheckSquare },
-  { name: "Focus", href: "/focus", icon: Timer },
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Timetable", href: "/timetable", icon: Calendar },
-  { name: "Exams", href: "/exams", icon: BookOpen },
-  { name: "Exam Sim", href: "/exam-sim", icon: GraduationCap },
-  { name: "Math Checker", href: "/math-checker", icon: PenLine },
-  { name: "Analytics", href: "/analytics", icon: BarChart2 },
-  { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
 
 export default function CommandPalette() {
   const router = useRouter();
@@ -61,17 +40,16 @@ export default function CommandPalette() {
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
-
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Ctrl + K support (desktop)
+  // Ctrl + K + ESC
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setOpen((prev) => !prev);
+        setOpen((o) => !o);
       }
 
       if (e.key === "Escape") {
@@ -83,9 +61,56 @@ export default function CommandPalette() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const run = (href: string) => {
+  const commands: CommandItemType[] = [
+    {
+      name: "Home",
+      href: "/",
+      icon: Home,
+      description: "Go to dashboard",
+    },
+    {
+      name: "Start Focus Session",
+      icon: Timer,
+      description: "Enter distraction-free study mode",
+      action: () => router.push("/focus?autoStart=true"),
+    },
+    {
+      name: "Create Task",
+      icon: CheckSquare,
+      description: "Quick add a new study task",
+      action: () => router.push("/tasks?create=true"),
+    },
+    {
+      name: "Open Learn Hub",
+      href: "/learn",
+      icon: Brain,
+      description: "AI learning assistant",
+    },
+    {
+      name: "Generate Revision Plan",
+      icon: BookOpen,
+      description: "AI builds your study schedule",
+      action: () => router.push("/learn?mode=revision"),
+    },
+    {
+      name: "Open Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      description: "Your study overview",
+    },
+  ];
+
+  const run = (cmd: CommandItemType) => {
     setOpen(false);
-    router.push(href);
+
+    if (cmd.action) {
+      cmd.action();
+      return;
+    }
+
+    if (cmd.href) {
+      router.push(cmd.href);
+    }
   };
 
   return (
@@ -96,10 +121,10 @@ export default function CommandPalette() {
           onClick={() => setOpen(true)}
           style={{
             position: "fixed",
-            right: "18px",
-            bottom: "90px",
-            width: "58px",
-            height: "58px",
+            right: 18,
+            bottom: 90,
+            width: 58,
+            height: 58,
             borderRadius: "999px",
             border: "1px solid rgba(99,102,241,0.25)",
             background: "rgba(99,102,241,0.18)",
@@ -139,7 +164,7 @@ export default function CommandPalette() {
               transform: "translateX(-50%)",
               width: "min(680px, 92vw)",
               zIndex: 2001,
-              borderRadius: "24px",
+              borderRadius: 24,
               overflow: "hidden",
               border: "1px solid rgba(99,102,241,0.15)",
               background: "rgba(10,10,16,0.96)",
@@ -149,106 +174,84 @@ export default function CommandPalette() {
           >
             <Command>
               <CommandInput
-                placeholder="Search pages, tools, actions..."
+                placeholder="Search actions, pages, study tools..."
                 style={{
                   width: "100%",
                   border: "none",
                   outline: "none",
                   background: "transparent",
                   color: "white",
-                  padding: "18px 18px",
-                  fontSize: "15px",
+                  padding: "18px",
+                  fontSize: 15,
                   borderBottom: "1px solid rgba(255,255,255,0.06)",
                 }}
               />
 
               <CommandList
                 style={{
-                  maxHeight: "420px",
+                  maxHeight: 420,
                   overflowY: "auto",
-                  padding: "10px",
+                  padding: 10,
                 }}
               >
                 <CommandEmpty
                   style={{
-                    padding: "20px",
+                    padding: 20,
                     textAlign: "center",
                     color: "rgba(255,255,255,0.5)",
                   }}
                 >
-                  Nothing found.
+                  No results found.
                 </CommandEmpty>
 
-                <CommandGroup heading="Navigation">
-                  {pages.map(({ name, href, icon: Icon }) => (
-                    <CommandItem
-                      key={href}
-                      value={name}
-                      onSelect={() => run(href)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "12px 14px",
-                        borderRadius: "14px",
-                        cursor: "pointer",
-                        color: "white",
-                        marginBottom: "6px",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      <div
+                <CommandGroup heading="Study Commands">
+                  {commands.map((cmd) => {
+                    const Icon = cmd.icon;
+
+                    return (
+                      <CommandItem
+                        key={cmd.name}
+                        value={cmd.name}
+                        onSelect={() => run(cmd)}
                         style={{
-                          width: "38px",
-                          height: "38px",
-                          borderRadius: "12px",
-                          background: "rgba(99,102,241,0.12)",
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                          color: "rgb(129,140,248)",
-                          flexShrink: 0,
+                          gap: 12,
+                          padding: 14,
+                          borderRadius: 14,
+                          cursor: "pointer",
+                          color: "white",
+                          marginBottom: 6,
                         }}
                       >
-                        <Icon size={18} />
-                      </div>
-
-                      <div>
-                        <div style={{ fontWeight: 700 }}>
-                          {name}
-                        </div>
                         <div
                           style={{
-                            fontSize: "12px",
-                            opacity: 0.6,
+                            width: 38,
+                            height: 38,
+                            borderRadius: 12,
+                            background: "rgba(99,102,241,0.12)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
                         >
-                          {href}
+                          <Icon size={18} />
                         </div>
-                      </div>
-                    </CommandItem>
-                  ))}
+
+                        <div>
+                          <div style={{ fontWeight: 700 }}>
+                            {cmd.name}
+                          </div>
+                          <div style={{ fontSize: 12, opacity: 0.6 }}>
+                            {cmd.description}
+                          </div>
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
                 </CommandGroup>
               </CommandList>
             </Command>
-
-            {/* CLOSE BUTTON (mobile-friendly) */}
-            <button
-              onClick={() => setOpen(false)}
-              style={{
-                position: "absolute",
-                top: "12px",
-                right: "12px",
-                background: "rgba(255,255,255,0.06)",
-                border: "none",
-                borderRadius: "10px",
-                padding: "6px",
-                cursor: "pointer",
-                color: "white",
-              }}
-            >
-              <X size={18} />
-            </button>
           </div>
         </>
       )}
