@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  Trophy,
-  Flame,
-  Zap,
   Crown,
-  RefreshCcw,
+  Flame,
   Medal,
   Orbit,
+  RefreshCcw,
+  Trophy,
+  Zap,
 } from "lucide-react";
 
 interface LeaderboardEntry {
@@ -31,7 +31,8 @@ export default function LeaderboardPage() {
     LeaderboardEntry[]
   >([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   const [currentUserId, setCurrentUserId] =
     useState("");
@@ -58,77 +59,88 @@ export default function LeaderboardPage() {
           setCurrentUserId(user.id);
         }
 
-        /* LEADERBOARD */
+        /* FETCH */
 
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(`
-            id,
-            username,
-            xp,
-            season_xp,
-            level,
-            streak,
-            current_season
-          `)
-          .eq(
-            "current_season",
-            CURRENT_SEASON
-          )
-          .order("season_xp", {
-            ascending: false,
-          })
-          .limit(100);
+        const { data, error } =
+          await supabase
+            .from("profiles")
+            .select(`
+              id,
+              username,
+              xp,
+              season_xp,
+              level,
+              streak,
+              current_season
+            `)
+            .eq(
+              "current_season",
+              CURRENT_SEASON
+            )
+            .order("season_xp", {
+              ascending: false,
+            })
+            .limit(100);
 
         if (error) {
-          console.error(error);
+          console.error(
+            "Leaderboard error:",
+            error
+          );
         }
 
-        /* FALLBACK */
+        /* CLEAN + NORMALIZE */
 
         const leaderboardData =
-          data && data.length > 0
-            ? data
-            : [
-                {
-                  id: "demo-1",
-                  username: "Nova",
-                  xp: 9200,
-                  season_xp: 3200,
-                  level: 18,
-                  streak: 24,
-                  current_season:
-                    CURRENT_SEASON,
-                },
-                {
-                  id: "demo-2",
-                  username: "Cipher",
-                  xp: 8700,
-                  season_xp: 2800,
-                  level: 16,
-                  streak: 18,
-                  current_season:
-                    CURRENT_SEASON,
-                },
-                {
-                  id: "demo-3",
-                  username: "Echo",
-                  xp: 7600,
-                  season_xp: 2100,
-                  level: 14,
-                  streak: 12,
-                  current_season:
-                    CURRENT_SEASON,
-                },
-              ];
+          (data || []).map(
+            (
+              p,
+              index
+            ): LeaderboardEntry => ({
+              id: p.id,
+              username:
+                p.username ||
+                `Student ${index + 1}`,
+
+              xp:
+                typeof p.xp ===
+                "number"
+                  ? p.xp
+                  : 0,
+
+              season_xp:
+                typeof p.season_xp ===
+                "number"
+                  ? p.season_xp
+                  : 0,
+
+              level:
+                typeof p.level ===
+                "number"
+                  ? p.level
+                  : 1,
+
+              streak:
+                typeof p.streak ===
+                "number"
+                  ? p.streak
+                  : 0,
+
+              current_season:
+                p.current_season,
+            })
+          );
 
         setEntries(leaderboardData);
 
         setLastUpdated(
-          new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          new Date().toLocaleTimeString(
+            [],
+            {
+              hour: "2-digit",
+              minute: "2-digit",
+            }
+          )
         );
       } catch (err) {
         console.error(err);
@@ -176,13 +188,15 @@ export default function LeaderboardPage() {
      HELPERS
   ========================= */
 
-  const getRankStyle = (rank: number) => {
+  const getRankStyle = (
+    rank: number
+  ) => {
     if (rank === 1) {
       return {
         color: "#f59e0b",
         bg: "rgba(245,158,11,0.12)",
         border:
-          "1px solid rgba(245,158,11,0.25)",
+          "1px solid rgba(245,158,11,0.22)",
         icon: <Crown size={18} />,
       };
     }
@@ -190,9 +204,9 @@ export default function LeaderboardPage() {
     if (rank === 2) {
       return {
         color: "#cbd5e1",
-        bg: "rgba(203,213,225,0.1)",
+        bg: "rgba(203,213,225,0.08)",
         border:
-          "1px solid rgba(203,213,225,0.2)",
+          "1px solid rgba(203,213,225,0.18)",
         icon: <Medal size={18} />,
       };
     }
@@ -200,17 +214,18 @@ export default function LeaderboardPage() {
     if (rank === 3) {
       return {
         color: "#d97706",
-        bg: "rgba(217,119,6,0.1)",
+        bg: "rgba(217,119,6,0.08)",
         border:
-          "1px solid rgba(217,119,6,0.2)",
+          "1px solid rgba(217,119,6,0.18)",
         icon: <Trophy size={18} />,
       };
     }
 
     return {
-      color: "var(--muted-foreground)",
+      color:
+        "var(--muted-foreground)",
       bg: "transparent",
-      border: "1px solid transparent",
+      border: "transparent",
       icon: (
         <span
           style={{
@@ -241,7 +256,8 @@ export default function LeaderboardPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "var(--muted-foreground)",
+          color:
+            "var(--muted-foreground)",
           fontSize: "14px",
         }}
       >
@@ -267,7 +283,7 @@ export default function LeaderboardPage() {
 
       <div
         style={{
-          marginBottom: "26px",
+          marginBottom: "28px",
         }}
       >
         <p
@@ -297,7 +313,8 @@ export default function LeaderboardPage() {
         <p
           style={{
             marginTop: "14px",
-            color: "var(--muted-foreground)",
+            color:
+              "var(--muted-foreground)",
             fontSize: "18px",
           }}
         >
@@ -350,18 +367,18 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* USER RANK */}
+      {/* USER POSITION */}
 
       {currentUserRank > 0 && (
         <div
           style={{
-            marginBottom: "20px",
+            marginBottom: "22px",
             background:
-              "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.04))",
+              "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(99,102,241,0.04))",
             border:
               "1px solid rgba(99,102,241,0.2)",
             borderRadius: "24px",
-            padding: "20px",
+            padding: "22px",
           }}
         >
           <div
@@ -376,9 +393,9 @@ export default function LeaderboardPage() {
               <p
                 style={{
                   margin: 0,
+                  fontSize: "13px",
                   color:
                     "var(--muted-foreground)",
-                  fontSize: "13px",
                 }}
               >
                 Your Position
@@ -397,93 +414,310 @@ export default function LeaderboardPage() {
             </div>
 
             <Orbit
-              size={44}
+              size={46}
               color="var(--primary)"
             />
           </div>
         </div>
       )}
 
-      {/* PODIUM */}
+      {/* EMPTY STATE */}
 
-      {entries.length >= 3 && (
+      {entries.length === 0 ? (
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(3, 1fr)",
-            gap: "16px",
-            marginBottom: "26px",
+            padding:
+              "90px 24px",
+            textAlign: "center",
+            borderRadius: "28px",
+            background:
+              "rgba(255,255,255,0.03)",
+            border:
+              "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          {[entries[1], entries[0], entries[2]].map(
-            (entry, index) => {
-              const actualRank =
-                index === 0
-                  ? 2
-                  : index === 1
-                  ? 1
-                  : 3;
+          <h2
+            style={{
+              fontSize: "34px",
+              fontWeight: 900,
+              marginBottom: "14px",
+            }}
+          >
+            No rankings yet
+          </h2>
 
-              const rankStyle =
-                getRankStyle(
-                  actualRank
-                );
+          <p
+            style={{
+              color:
+                "var(--muted-foreground)",
+              maxWidth: "520px",
+              margin: "0 auto",
+              lineHeight: 1.8,
+              fontSize: "15px",
+            }}
+          >
+            Cortex has not detected
+            enough competitive activity
+            this season.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* PODIUM */}
 
-              const isCurrentUser =
-                entry.id ===
-                currentUserId;
+          {entries.length >= 3 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(3, 1fr)",
+                gap: "16px",
+                marginBottom: "26px",
+              }}
+            >
+              {[
+                entries[1],
+                entries[0],
+                entries[2],
+              ].map(
+                (
+                  entry,
+                  index
+                ) => {
+                  const actualRank =
+                    index === 0
+                      ? 2
+                      : index === 1
+                      ? 1
+                      : 3;
 
-              return (
-                <div
-                  key={entry.id}
-                  style={{
-                    background:
-                      rankStyle.bg,
-                    border:
-                      rankStyle.border,
-                    borderRadius:
-                      "26px",
-                    padding:
-                      "24px 18px",
-                    textAlign:
-                      "center",
-                    transform:
-                      actualRank === 1
-                        ? "translateY(-12px)"
-                        : "none",
-                    position:
-                      "relative",
-                    overflow:
-                      "hidden",
-                  }}
-                >
-                  {/* glow */}
+                  const rankStyle =
+                    getRankStyle(
+                      actualRank
+                    );
 
+                  const isCurrentUser =
+                    entry.id ===
+                    currentUserId;
+
+                  return (
+                    <div
+                      key={
+                        entry.id
+                      }
+                      style={{
+                        background:
+                          rankStyle.bg,
+                        border:
+                          rankStyle.border,
+                        borderRadius:
+                          "26px",
+                        padding:
+                          "24px 18px",
+                        textAlign:
+                          "center",
+                        transform:
+                          actualRank ===
+                          1
+                            ? "translateY(-12px)"
+                            : "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display:
+                            "flex",
+                          justifyContent:
+                            "center",
+                          marginBottom:
+                            "14px",
+                          color:
+                            rankStyle.color,
+                        }}
+                      >
+                        {
+                          rankStyle.icon
+                        }
+                      </div>
+
+                      <div
+                        style={{
+                          width:
+                            actualRank ===
+                            1
+                              ? "88px"
+                              : "74px",
+
+                          height:
+                            actualRank ===
+                            1
+                              ? "88px"
+                              : "74px",
+
+                          borderRadius:
+                            "50%",
+
+                          background:
+                            isCurrentUser
+                              ? "rgba(99,102,241,0.35)"
+                              : "rgba(255,255,255,0.06)",
+
+                          margin:
+                            "0 auto 14px",
+
+                          display:
+                            "flex",
+
+                          alignItems:
+                            "center",
+
+                          justifyContent:
+                            "center",
+
+                          fontWeight: 900,
+
+                          fontSize:
+                            actualRank ===
+                            1
+                              ? "28px"
+                              : "22px",
+                        }}
+                      >
+                        {entry.username
+                          .charAt(
+                            0
+                          )
+                          .toUpperCase()}
+                      </div>
+
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontWeight: 800,
+                          fontSize:
+                            actualRank ===
+                            1
+                              ? "24px"
+                              : "18px",
+                        }}
+                      >
+                        {
+                          entry.username
+                        }
+                      </h3>
+
+                      <p
+                        style={{
+                          margin:
+                            "10px 0 0 0",
+                          fontSize:
+                            actualRank ===
+                            1
+                              ? "30px"
+                              : "22px",
+
+                          fontWeight: 900,
+
+                          color:
+                            rankStyle.color,
+                        }}
+                      >
+                        {entry.season_xp.toLocaleString()}
+                      </p>
+
+                      <p
+                        style={{
+                          margin:
+                            "4px 0 0 0",
+                          fontSize:
+                            "12px",
+                          color:
+                            "var(--muted-foreground)",
+                        }}
+                      >
+                        season XP
+                      </p>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          )}
+
+          {/* LIST */}
+
+          <div
+            style={{
+              background:
+                "rgba(255,255,255,0.03)",
+              border:
+                "1px solid rgba(255,255,255,0.06)",
+              borderRadius:
+                "28px",
+              overflow:
+                "hidden",
+            }}
+          >
+            {entries.map(
+              (
+                entry,
+                index
+              ) => {
+                const rank =
+                  index + 1;
+
+                const rankStyle =
+                  getRankStyle(
+                    rank
+                  );
+
+                const isCurrentUser =
+                  entry.id ===
+                  currentUserId;
+
+                return (
                   <div
+                    key={
+                      entry.id
+                    }
                     style={{
-                      position:
-                        "absolute",
-                      inset: 0,
+                      display:
+                        "flex",
+
+                      alignItems:
+                        "center",
+
+                      gap: "16px",
+
+                      padding:
+                        "18px 20px",
+
+                      borderBottom:
+                        index !==
+                        entries.length -
+                          1
+                          ? "1px solid rgba(255,255,255,0.04)"
+                          : "none",
+
                       background:
-                        "radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 70%)",
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      position:
-                        "relative",
+                        isCurrentUser
+                          ? "rgba(99,102,241,0.08)"
+                          : "transparent",
                     }}
                   >
+                    {/* RANK */}
+
                     <div
                       style={{
+                        width:
+                          "44px",
+
                         display:
                           "flex",
+
                         justifyContent:
                           "center",
-                        marginBottom:
-                          "14px",
+
                         color:
                           rankStyle.color,
                       }}
@@ -493,317 +727,172 @@ export default function LeaderboardPage() {
                       }
                     </div>
 
+                    {/* AVATAR */}
+
                     <div
                       style={{
                         width:
-                          actualRank === 1
-                            ? "88px"
-                            : "74px",
+                          "52px",
+
                         height:
-                          actualRank === 1
-                            ? "88px"
-                            : "74px",
+                          "52px",
+
                         borderRadius:
                           "50%",
+
                         background:
                           isCurrentUser
-                            ? "rgba(99,102,241,0.35)"
-                            : "rgba(255,255,255,0.08)",
-                        margin:
-                          "0 auto 14px",
+                            ? "rgba(99,102,241,0.3)"
+                            : "rgba(255,255,255,0.06)",
+
                         display:
                           "flex",
+
                         alignItems:
                           "center",
+
                         justifyContent:
                           "center",
-                        fontSize:
-                          actualRank === 1
-                            ? "28px"
-                            : "22px",
+
                         fontWeight: 900,
+
+                        fontSize:
+                          "18px",
+
+                        flexShrink: 0,
                       }}
                     >
                       {entry.username
-                        .charAt(0)
+                        .charAt(
+                          0
+                        )
                         .toUpperCase()}
                     </div>
 
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize:
-                          actualRank === 1
-                            ? "24px"
-                            : "18px",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {entry.username}
-                    </h3>
+                    {/* INFO */}
 
-                    <p
+                    <div
                       style={{
-                        marginTop:
-                          "8px",
-                        fontSize:
-                          actualRank === 1
-                            ? "28px"
-                            : "22px",
-                        fontWeight: 900,
-                        color:
-                          rankStyle.color,
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
-                      {entry.season_xp.toLocaleString()}
-                    </p>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontWeight: 800,
+                          fontSize:
+                            "16px",
+                        }}
+                      >
+                        {
+                          entry.username
+                        }
 
-                    <p
+                        {isCurrentUser &&
+                          " (you)"}
+                      </p>
+
+                      <div
+                        style={{
+                          display:
+                            "flex",
+                          alignItems:
+                            "center",
+                          gap: "14px",
+                          marginTop:
+                            "6px",
+                          flexWrap:
+                            "wrap",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "center",
+                            gap: "5px",
+                            fontSize:
+                              "12px",
+                            color:
+                              "var(--muted-foreground)",
+                          }}
+                        >
+                          <Zap
+                            size={
+                              12
+                            }
+                          />
+                          Level{" "}
+                          {
+                            entry.level
+                          }
+                        </div>
+
+                        <div
+                          style={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "center",
+                            gap: "5px",
+                            fontSize:
+                              "12px",
+                            color:
+                              "var(--muted-foreground)",
+                          }}
+                        >
+                          <Flame
+                            size={
+                              12
+                            }
+                          />
+                          {
+                            entry.streak
+                          }
+                          d streak
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* XP */}
+
+                    <div
                       style={{
-                        margin: 0,
-                        color:
-                          "var(--muted-foreground)",
-                        fontSize: "12px",
+                        textAlign:
+                          "right",
+                        flexShrink: 0,
                       }}
                     >
-                      season XP
-                    </p>
+                      <div
+                        style={{
+                          fontSize:
+                            "26px",
+                          fontWeight: 900,
+                        }}
+                      >
+                        {entry.season_xp.toLocaleString()}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize:
+                            "11px",
+                          color:
+                            "var(--muted-foreground)",
+                        }}
+                      >
+                        season XP
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            }
-          )}
-        </div>
+                );
+              }
+            )}
+          </div>
+        </>
       )}
-
-      {/* LIST */}
-
-      <div
-        style={{
-          background:
-            "rgba(255,255,255,0.03)",
-          border:
-            "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "28px",
-          overflow: "hidden",
-        }}
-      >
-        {entries.map(
-          (entry, index) => {
-            const rank =
-              index + 1;
-
-            const rankStyle =
-              getRankStyle(rank);
-
-            const isCurrentUser =
-              entry.id ===
-              currentUserId;
-
-            return (
-              <div
-                key={entry.id}
-                style={{
-                  display: "flex",
-                  alignItems:
-                    "center",
-                  gap: "16px",
-                  padding:
-                    "18px 20px",
-                  borderBottom:
-                    index !==
-                    entries.length -
-                      1
-                      ? "1px solid rgba(255,255,255,0.04)"
-                      : "none",
-                  background:
-                    isCurrentUser
-                      ? "rgba(99,102,241,0.08)"
-                      : "transparent",
-                }}
-              >
-                {/* RANK */}
-
-                <div
-                  style={{
-                    width: "44px",
-                    display:
-                      "flex",
-                    justifyContent:
-                      "center",
-                    color:
-                      rankStyle.color,
-                  }}
-                >
-                  {
-                    rankStyle.icon
-                  }
-                </div>
-
-                {/* AVATAR */}
-
-                <div
-                  style={{
-                    width: "52px",
-                    height: "52px",
-                    borderRadius:
-                      "50%",
-                    background:
-                      isCurrentUser
-                        ? "rgba(99,102,241,0.3)"
-                        : "rgba(255,255,255,0.06)",
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "center",
-                    fontWeight: 900,
-                    fontSize: "18px",
-                    flexShrink: 0,
-                  }}
-                >
-                  {entry.username
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-
-                {/* INFO */}
-
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      display:
-                        "flex",
-                      alignItems:
-                        "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: 0,
-                        fontWeight: 800,
-                        fontSize:
-                          "16px",
-                        overflow:
-                          "hidden",
-                        textOverflow:
-                          "ellipsis",
-                        whiteSpace:
-                          "nowrap",
-                      }}
-                    >
-                      {entry.username}
-
-                      {isCurrentUser &&
-                        " (you)"}
-                    </p>
-                  </div>
-
-                  <div
-                    style={{
-                      display:
-                        "flex",
-                      alignItems:
-                        "center",
-                      gap: "14px",
-                      marginTop:
-                        "6px",
-                      flexWrap:
-                        "wrap",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display:
-                          "flex",
-                        alignItems:
-                          "center",
-                        gap: "5px",
-                        color:
-                          "var(--muted-foreground)",
-                        fontSize:
-                          "12px",
-                      }}
-                    >
-                      <Zap
-                        size={
-                          12
-                        }
-                      />
-                      Level{" "}
-                      {
-                        entry.level
-                      }
-                    </div>
-
-                    <div
-                      style={{
-                        display:
-                          "flex",
-                        alignItems:
-                          "center",
-                        gap: "5px",
-                        color:
-                          "var(--muted-foreground)",
-                        fontSize:
-                          "12px",
-                      }}
-                    >
-                      <Flame
-                        size={
-                          12
-                        }
-                      />
-                      {
-                        entry.streak
-                      }
-                      d streak
-                    </div>
-                  </div>
-                </div>
-
-                {/* XP */}
-
-                <div
-                  style={{
-                    textAlign:
-                      "right",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize:
-                        "20px",
-                      fontWeight: 900,
-                    }}
-                  >
-                    {entry.season_xp.toLocaleString()}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize:
-                        "11px",
-                      color:
-                        "var(--muted-foreground)",
-                    }}
-                  >
-                    season XP
-                  </div>
-                </div>
-              </div>
-            );
-          }
-        )}
-      </div>
     </div>
   );
 }
