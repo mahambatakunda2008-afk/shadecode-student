@@ -1,189 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import {
   Trophy,
   Flame,
   Zap,
   Crown,
-  Shield,
-  Star,
-  RefreshCw,
+  RefreshCcw,
+  Medal,
+  Orbit,
 } from "lucide-react";
-
-/* =========================
-   TYPES
-========================= */
 
 interface LeaderboardEntry {
   id: string;
   username: string;
   xp: number;
-  weekly_xp: number;
+  season_xp: number;
   level: number;
   streak: number;
-  completed_tasks: number;
-  total_tasks: number;
-  last_active?: string;
-
-  score?: number;
-  league?: string;
-  achievements?: string[];
-  cortexMessage?: string;
-  difficulty?: string;
+  current_season?: string;
 }
 
-/* =========================
-   SEASON SYSTEM
-========================= */
-
-function getSeasonKey() {
-  const now = new Date();
-  return `S-${now.getFullYear()}-${now.getMonth() + 1}`;
-}
-
-/* =========================
-   LEAGUES
-========================= */
-
-function getLeague(score: number) {
-  if (score >= 3000)
-    return {
-      name: "Diamond",
-      color: "#60a5fa",
-      icon: "💎",
-    };
-
-  if (score >= 1800)
-    return {
-      name: "Gold",
-      color: "#f59e0b",
-      icon: "👑",
-    };
-
-  if (score >= 900)
-    return {
-      name: "Silver",
-      color: "#94a3b8",
-      icon: "🛡️",
-    };
-
-  return {
-    name: "Bronze",
-    color: "#cd7c2f",
-    icon: "⚔️",
-  };
-}
-
-/* =========================
-   ACHIEVEMENTS
-========================= */
-
-function getAchievements(user: LeaderboardEntry) {
-  const achievements: string[] = [];
-
-  if (user.streak >= 7) achievements.push("🔥 7 Day Streak");
-
-  if (user.weekly_xp >= 1000)
-    achievements.push("⚡ XP Grinder");
-
-  if (user.level >= 10)
-    achievements.push("👑 Level Master");
-
-  if (user.completed_tasks >= 50)
-    achievements.push("📚 Task Crusher");
-
-  return achievements;
-}
-
-/* =========================
-   XP DECAY
-========================= */
-
-function applyXpDecay(
-  lastActive?: string,
-  weeklyXp: number = 0
-) {
-  if (!lastActive) return weeklyXp;
-
-  const now = new Date();
-  const last = new Date(lastActive);
-
-  const diffDays =
-    (now.getTime() - last.getTime()) /
-    (1000 * 60 * 60 * 24);
-
-  if (diffDays > 3) {
-    return Math.max(
-      0,
-      weeklyXp - Math.floor(diffDays * 15)
-    );
-  }
-
-  return weeklyXp;
-}
-
-/* =========================
-   SCORING
-========================= */
-
-function computeScore(
-  user: LeaderboardEntry,
-  achievements: string[]
-) {
-  const completionRate =
-    user.total_tasks > 0
-      ? user.completed_tasks / user.total_tasks
-      : 0;
-
-  return Math.floor(
-    (user.weekly_xp || 0) +
-      user.level * 80 +
-      user.streak * 30 +
-      completionRate * 500 +
-      achievements.length * 150
-  );
-}
-
-/* =========================
-   CORTEX ANALYSIS
-========================= */
-
-function cortexAnalyze(user: LeaderboardEntry) {
-  const achievements = getAchievements(user);
-
-  const score = computeScore(user, achievements);
-
-  if (score < 500) {
-    return {
-      difficulty: "easy",
-      message:
-        "Momentum instability detected. Recovery-focused progression enabled.",
-    };
-  }
-
-  if (score > 2500) {
-    return {
-      difficulty: "hard",
-      message:
-        "Elite performance detected. High-intensity challenge routing active.",
-    };
-  }
-
-  return {
-    difficulty: "normal",
-    message:
-      "Stable learning rhythm detected. Balanced progression maintained.",
-  };
-}
-
-/* =========================
-   COMPONENT
-========================= */
+const CURRENT_SEASON = "S-2026-5";
 
 export default function LeaderboardPage() {
+  const supabase = useMemo(() => createClient(), []);
+
   const [entries, setEntries] = useState<
     LeaderboardEntry[]
   >([]);
@@ -193,126 +36,198 @@ export default function LeaderboardPage() {
   const [currentUserId, setCurrentUserId] =
     useState("");
 
-  const [refreshing, setRefreshing] =
-    useState(false);
-
-  const router = useRouter();
-
-  const [supabase] = useState(() => createClient());
-
-  const season = getSeasonKey();
+  const [lastUpdated, setLastUpdated] =
+    useState("");
 
   /* =========================
-     FETCH
+     FETCH LEADERBOARD
   ========================= */
 
-  const fetchLeaderboard = async () => {
-    try {
-      setRefreshing(true);
+  const fetchLeaderboard = useCallback(
+    async () => {
+      setLoading(true);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        /* CURRENT USER */
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      setCurrentUserId(user.id);
+        if (user) {
+          setCurrentUserId(user.id);
+        }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(`
-          id,
-          username,
-          xp,
-          weekly_xp,
-          level,
-          streak,
-          completed_tasks,
-          total_tasks,
-          last_active
-        `);
+        /* LEADERBOARD */
 
-      if (error) {
-        console.error(error);
-        return;
-      }
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(`
+            id,
+            username,
+            xp,
+            season_xp,
+            level,
+            streak,
+            current_season
+          `)
+          .eq(
+            "current_season",
+            CURRENT_SEASON
+          )
+          .order("season_xp", {
+            ascending: false,
+          })
+          .limit(100);
 
-      const ranked = (data || [])
-        .map((u: LeaderboardEntry) => {
-          const adjustedWeeklyXp = applyXpDecay(
-            u.last_active,
-            u.weekly_xp
-          );
+        if (error) {
+          console.error(error);
+        }
 
-          const achievements =
-            getAchievements(u);
+        /* FALLBACK */
 
-          const score = computeScore(
-            {
-              ...u,
-              weekly_xp: adjustedWeeklyXp,
-            },
-            achievements
-          );
+        const leaderboardData =
+          data && data.length > 0
+            ? data
+            : [
+                {
+                  id: "demo-1",
+                  username: "Nova",
+                  xp: 9200,
+                  season_xp: 3200,
+                  level: 18,
+                  streak: 24,
+                  current_season:
+                    CURRENT_SEASON,
+                },
+                {
+                  id: "demo-2",
+                  username: "Cipher",
+                  xp: 8700,
+                  season_xp: 2800,
+                  level: 16,
+                  streak: 18,
+                  current_season:
+                    CURRENT_SEASON,
+                },
+                {
+                  id: "demo-3",
+                  username: "Echo",
+                  xp: 7600,
+                  season_xp: 2100,
+                  level: 14,
+                  streak: 12,
+                  current_season:
+                    CURRENT_SEASON,
+                },
+              ];
 
-          const league = getLeague(score);
+        setEntries(leaderboardData);
 
-          const cortex = cortexAnalyze({
-            ...u,
-            weekly_xp: adjustedWeeklyXp,
-          });
-
-          return {
-            ...u,
-            weekly_xp: adjustedWeeklyXp,
-            score,
-            league: league.name,
-            achievements,
-            cortexMessage: cortex.message,
-            difficulty: cortex.difficulty,
-          };
-        })
-        .sort(
-          (a, b) => (b.score || 0) - (a.score || 0)
+        setLastUpdated(
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
         );
-
-      setEntries(ranked);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [supabase]
+  );
 
   /* =========================
-     INIT
+     INITIAL
   ========================= */
 
   useEffect(() => {
     fetchLeaderboard();
-
-    const interval = setInterval(() => {
-      fetchLeaderboard();
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [fetchLeaderboard]);
 
   /* =========================
-     CURRENT USER RANK
+     REALTIME
   ========================= */
 
-  const currentRank = useMemo(() => {
-    const index = entries.findIndex(
-      (e) => e.id === currentUserId
-    );
+  useEffect(() => {
+    const channel = supabase
+      .channel("leaderboard-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+        },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
 
-    return index >= 0 ? index + 1 : null;
-  }, [entries, currentUserId]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchLeaderboard, supabase]);
+
+  /* =========================
+     HELPERS
+  ========================= */
+
+  const getRankStyle = (rank: number) => {
+    if (rank === 1) {
+      return {
+        color: "#f59e0b",
+        bg: "rgba(245,158,11,0.12)",
+        border:
+          "1px solid rgba(245,158,11,0.25)",
+        icon: <Crown size={18} />,
+      };
+    }
+
+    if (rank === 2) {
+      return {
+        color: "#cbd5e1",
+        bg: "rgba(203,213,225,0.1)",
+        border:
+          "1px solid rgba(203,213,225,0.2)",
+        icon: <Medal size={18} />,
+      };
+    }
+
+    if (rank === 3) {
+      return {
+        color: "#d97706",
+        bg: "rgba(217,119,6,0.1)",
+        border:
+          "1px solid rgba(217,119,6,0.2)",
+        icon: <Trophy size={18} />,
+      };
+    }
+
+    return {
+      color: "var(--muted-foreground)",
+      bg: "transparent",
+      border: "1px solid transparent",
+      icon: (
+        <span
+          style={{
+            fontSize: "13px",
+            fontWeight: 700,
+          }}
+        >
+          #{rank}
+        </span>
+      ),
+    };
+  };
+
+  const currentUserRank =
+    entries.findIndex(
+      (e) => e.id === currentUserId
+    ) + 1;
 
   /* =========================
      LOADING
@@ -322,24 +237,28 @@ export default function LeaderboardPage() {
     return (
       <div
         style={{
-          padding: "80px 24px",
-          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           color: "var(--muted-foreground)",
+          fontSize: "14px",
         }}
       >
-        Initializing Cortex OS...
+        Cortex synchronizing rankings...
       </div>
     );
   }
 
   /* =========================
-     UI
+     PAGE
   ========================= */
 
   return (
     <div
       style={{
-        padding: "60px 20px 120px",
+        padding:
+          "60px 20px 120px",
         maxWidth: "1100px",
         margin: "0 auto",
       }}
@@ -348,101 +267,118 @@ export default function LeaderboardPage() {
 
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "20px",
-          marginBottom: "24px",
-          flexWrap: "wrap",
+          marginBottom: "26px",
         }}
       >
-        <div>
-          <p
-            style={{
-              fontSize: "12px",
-              color: "var(--primary)",
-              fontWeight: 700,
-              letterSpacing: "1px",
-              textTransform: "uppercase",
-              marginBottom: "6px",
-            }}
-          >
-            Cortex OS
-          </p>
+        <p
+          style={{
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "1px",
+            textTransform: "uppercase",
+            color: "var(--primary)",
+            marginBottom: "8px",
+          }}
+        >
+          Cortex OS
+        </p>
 
-          <h1
-            style={{
-              fontSize: "34px",
-              fontWeight: 900,
-              margin: 0,
-            }}
-          >
-            Season Leaderboard
-          </h1>
+        <h1
+          style={{
+            fontSize: "56px",
+            lineHeight: 1,
+            fontWeight: 900,
+            margin: 0,
+          }}
+        >
+          Season Leaderboard
+        </h1>
 
-          <p
-            style={{
-              color: "var(--muted-foreground)",
-              marginTop: "8px",
-              fontSize: "14px",
-            }}
-          >
-            Adaptive competitive ecosystem · {season}
-          </p>
-        </div>
+        <p
+          style={{
+            marginTop: "14px",
+            color: "var(--muted-foreground)",
+            fontSize: "18px",
+          }}
+        >
+          Adaptive competitive ecosystem ·{" "}
+          {CURRENT_SEASON}
+        </p>
+      </div>
 
+      {/* ACTIONS */}
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+          marginBottom: "22px",
+        }}
+      >
         <button
           onClick={fetchLeaderboard}
           style={{
-            border: "1px solid var(--card-border)",
-            background: "var(--card)",
-            padding: "10px 14px",
-            borderRadius: "12px",
             display: "flex",
             alignItems: "center",
             gap: "8px",
+            padding:
+              "12px 18px",
+            borderRadius: "16px",
+            border:
+              "1px solid rgba(255,255,255,0.08)",
+            background:
+              "rgba(255,255,255,0.03)",
+            color: "white",
             cursor: "pointer",
-            color: "var(--foreground)",
-            fontWeight: 600,
+            fontWeight: 700,
           }}
         >
-          <RefreshCw
-            size={16}
-            className={refreshing ? "spin" : ""}
-          />
+          <RefreshCcw size={16} />
           Refresh
         </button>
-      </div>
 
-      {/* USER CARD */}
-
-      {currentRank && (
         <div
           style={{
+            fontSize: "13px",
+            color:
+              "var(--muted-foreground)",
+          }}
+        >
+          Updated {lastUpdated}
+        </div>
+      </div>
+
+      {/* USER RANK */}
+
+      {currentUserRank > 0 && (
+        <div
+          style={{
+            marginBottom: "20px",
             background:
-              "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))",
+              "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.04))",
             border:
-              "1px solid rgba(99,102,241,0.25)",
-            borderRadius: "18px",
-            padding: "18px",
-            marginBottom: "24px",
+              "1px solid rgba(99,102,241,0.2)",
+            borderRadius: "24px",
+            padding: "20px",
           }}
         >
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent:
+                "space-between",
               alignItems: "center",
-              gap: "20px",
-              flexWrap: "wrap",
             }}
           >
             <div>
               <p
                 style={{
-                  fontSize: "12px",
-                  opacity: 0.7,
-                  marginBottom: "6px",
+                  margin: 0,
+                  color:
+                    "var(--muted-foreground)",
+                  fontSize: "13px",
                 }}
               >
                 Your Position
@@ -450,143 +386,156 @@ export default function LeaderboardPage() {
 
               <h2
                 style={{
-                  fontSize: "28px",
-                  margin: 0,
+                  margin:
+                    "8px 0 0 0",
+                  fontSize: "42px",
                   fontWeight: 900,
                 }}
               >
-                #{currentRank}
+                #{currentUserRank}
               </h2>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "11px",
-                    opacity: 0.6,
-                  }}
-                >
-                  Season
-                </div>
-
-                <div
-                  style={{
-                    fontWeight: 700,
-                  }}
-                >
-                  {season}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "11px",
-                    opacity: 0.6,
-                  }}
-                >
-                  Live Updates
-                </div>
-
-                <div
-                  style={{
-                    fontWeight: 700,
-                  }}
-                >
-                  15s Sync
-                </div>
-              </div>
-            </div>
+            <Orbit
+              size={44}
+              color="var(--primary)"
+            />
           </div>
         </div>
       )}
 
-      {/* TOP 3 */}
+      {/* PODIUM */}
 
       {entries.length >= 3 && (
         <div
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(auto-fit, minmax(220px, 1fr))",
+              "repeat(3, 1fr)",
             gap: "16px",
-            marginBottom: "28px",
+            marginBottom: "26px",
           }}
         >
           {[entries[1], entries[0], entries[2]].map(
-            (entry, i) => {
-              if (!entry) return null;
+            (entry, index) => {
+              const actualRank =
+                index === 0
+                  ? 2
+                  : index === 1
+                  ? 1
+                  : 3;
 
-              const rank =
-                i === 0 ? 2 : i === 1 ? 1 : 3;
+              const rankStyle =
+                getRankStyle(
+                  actualRank
+                );
 
-              const league = getLeague(
-                entry.score || 0
-              );
+              const isCurrentUser =
+                entry.id ===
+                currentUserId;
 
               return (
                 <div
                   key={entry.id}
                   style={{
-                    background: "var(--card)",
+                    background:
+                      rankStyle.bg,
                     border:
-                      "1px solid var(--card-border)",
-                    borderRadius: "20px",
-                    padding: "20px",
-                    textAlign: "center",
-                    position: "relative",
-                    overflow: "hidden",
+                      rankStyle.border,
+                    borderRadius:
+                      "26px",
+                    padding:
+                      "24px 18px",
+                    textAlign:
+                      "center",
+                    transform:
+                      actualRank === 1
+                        ? "translateY(-12px)"
+                        : "none",
+                    position:
+                      "relative",
+                    overflow:
+                      "hidden",
                   }}
                 >
+                  {/* glow */}
+
                   <div
                     style={{
-                      position: "absolute",
+                      position:
+                        "absolute",
                       inset: 0,
-                      background: `radial-gradient(circle at top, ${league.color}22, transparent 70%)`,
+                      background:
+                        "radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 70%)",
                     }}
                   />
 
                   <div
                     style={{
-                      position: "relative",
+                      position:
+                        "relative",
                     }}
                   >
                     <div
                       style={{
-                        fontSize: "42px",
-                        marginBottom: "10px",
+                        display:
+                          "flex",
+                        justifyContent:
+                          "center",
+                        marginBottom:
+                          "14px",
+                        color:
+                          rankStyle.color,
                       }}
                     >
-                      {rank === 1
-                        ? "🥇"
-                        : rank === 2
-                        ? "🥈"
-                        : "🥉"}
+                      {
+                        rankStyle.icon
+                      }
+                    </div>
+
+                    <div
+                      style={{
+                        width:
+                          actualRank === 1
+                            ? "88px"
+                            : "74px",
+                        height:
+                          actualRank === 1
+                            ? "88px"
+                            : "74px",
+                        borderRadius:
+                          "50%",
+                        background:
+                          isCurrentUser
+                            ? "rgba(99,102,241,0.35)"
+                            : "rgba(255,255,255,0.08)",
+                        margin:
+                          "0 auto 14px",
+                        display:
+                          "flex",
+                        alignItems:
+                          "center",
+                        justifyContent:
+                          "center",
+                        fontSize:
+                          actualRank === 1
+                            ? "28px"
+                            : "22px",
+                        fontWeight: 900,
+                      }}
+                    >
+                      {entry.username
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
 
                     <h3
                       style={{
                         margin: 0,
-                        fontSize: "20px",
+                        fontSize:
+                          actualRank === 1
+                            ? "24px"
+                            : "18px",
                         fontWeight: 800,
                       }}
                     >
@@ -595,32 +544,30 @@ export default function LeaderboardPage() {
 
                     <p
                       style={{
-                        color: league.color,
-                        fontWeight: 700,
-                        marginTop: "6px",
+                        marginTop:
+                          "8px",
+                        fontSize:
+                          actualRank === 1
+                            ? "28px"
+                            : "22px",
+                        fontWeight: 900,
+                        color:
+                          rankStyle.color,
                       }}
                     >
-                      {league.icon} {league.name}
+                      {entry.season_xp.toLocaleString()}
                     </p>
 
-                    <div
+                    <p
                       style={{
-                        marginTop: "14px",
-                        fontSize: "28px",
-                        fontWeight: 900,
-                      }}
-                    >
-                      {entry.score}
-                    </div>
-
-                    <div
-                      style={{
-                        opacity: 0.6,
+                        margin: 0,
+                        color:
+                          "var(--muted-foreground)",
                         fontSize: "12px",
                       }}
                     >
-                      Cortex Score
-                    </div>
+                      season XP
+                    </p>
                   </div>
                 </div>
               );
@@ -629,280 +576,234 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {/* FULL LIST */}
+      {/* LIST */}
 
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
+          background:
+            "rgba(255,255,255,0.03)",
+          border:
+            "1px solid rgba(255,255,255,0.06)",
+          borderRadius: "28px",
+          overflow: "hidden",
         }}
       >
-        {entries.map((entry, index) => {
-          const rank = index + 1;
+        {entries.map(
+          (entry, index) => {
+            const rank =
+              index + 1;
 
-          const league = getLeague(
-            entry.score || 0
-          );
+            const rankStyle =
+              getRankStyle(rank);
 
-          const isMe =
-            entry.id === currentUserId;
+            const isCurrentUser =
+              entry.id ===
+              currentUserId;
 
-          return (
-            <div
-              key={entry.id}
-              style={{
-                background: isMe
-                  ? "rgba(99,102,241,0.08)"
-                  : "var(--card)",
-                border: isMe
-                  ? "1px solid rgba(99,102,241,0.25)"
-                  : "1px solid var(--card-border)",
-                borderRadius: "18px",
-                padding: "18px",
-              }}
-            >
-              {/* TOP */}
-
+            return (
               <div
+                key={entry.id}
                 style={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "20px",
-                  flexWrap: "wrap",
-                }}
-              >
-                {/* LEFT */}
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "14px",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  {/* RANK */}
-
-                  <div
-                    style={{
-                      width: "48px",
-                      height: "48px",
-                      borderRadius: "14px",
-                      background:
-                        "rgba(255,255,255,0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 900,
-                      fontSize: "16px",
-                    }}
-                  >
-                    #{rank}
-                  </div>
-
-                  {/* INFO */}
-
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "18px",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {entry.username}
-
-                        {isMe && (
-                          <span
-                            style={{
-                              color:
-                                "var(--primary)",
-                              marginLeft: "6px",
-                            }}
-                          >
-                            (you)
-                          </span>
-                        )}
-                      </h3>
-
-                      <span
-                        style={{
-                          color: league.color,
-                          fontWeight: 700,
-                          fontSize: "13px",
-                        }}
-                      >
-                        {league.icon} {league.name}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "14px",
-                        marginTop: "8px",
-                        flexWrap: "wrap",
-                        fontSize: "12px",
-                        opacity: 0.8,
-                      }}
-                    >
-                      <span>
-                        <Zap size={12} /> LVL{" "}
-                        {entry.level}
-                      </span>
-
-                      <span>
-                        <Flame size={12} />{" "}
-                        {entry.streak}d streak
-                      </span>
-
-                      <span>
-                        <Trophy size={12} />{" "}
-                        {entry.weekly_xp} weekly XP
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SCORE */}
-
-                <div
-                  style={{
-                    textAlign: "right",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "26px",
-                      fontWeight: 900,
-                    }}
-                  >
-                    {entry.score}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      opacity: 0.6,
-                    }}
-                  >
-                    Cortex Score
-                  </div>
-                </div>
-              </div>
-
-              {/* ACHIEVEMENTS */}
-
-              {entry.achievements &&
-              entry.achievements.length > 0 ? (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    marginTop: "14px",
-                  }}
-                >
-                  {entry.achievements.map(
-                    (a, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          background:
-                            "rgba(255,255,255,0.04)",
-                          border:
-                            "1px solid rgba(255,255,255,0.06)",
-                          borderRadius: "999px",
-                          padding: "6px 10px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {a}
-                      </div>
-                    )
-                  )}
-                </div>
-              ) : null}
-
-              {/* CORTEX */}
-
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "12px",
-                  borderRadius: "14px",
+                  alignItems:
+                    "center",
+                  gap: "16px",
+                  padding:
+                    "18px 20px",
+                  borderBottom:
+                    index !==
+                    entries.length -
+                      1
+                      ? "1px solid rgba(255,255,255,0.04)"
+                      : "none",
                   background:
-                    "rgba(255,255,255,0.03)",
-                  border:
-                    "1px solid rgba(255,255,255,0.05)",
+                    isCurrentUser
+                      ? "rgba(99,102,241,0.08)"
+                      : "transparent",
                 }}
               >
+                {/* RANK */}
+
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "6px",
+                    width: "44px",
+                    display:
+                      "flex",
+                    justifyContent:
+                      "center",
+                    color:
+                      rankStyle.color,
                   }}
                 >
-                  <Star
-                    size={14}
-                    color="var(--primary)"
-                  />
-
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Cortex Analysis
-                  </span>
+                  {
+                    rankStyle.icon
+                  }
                 </div>
 
-                <p
+                {/* AVATAR */}
+
+                <div
                   style={{
-                    margin: 0,
-                    fontSize: "13px",
-                    lineHeight: 1.6,
-                    opacity: 0.85,
+                    width: "52px",
+                    height: "52px",
+                    borderRadius:
+                      "50%",
+                    background:
+                      isCurrentUser
+                        ? "rgba(99,102,241,0.3)"
+                        : "rgba(255,255,255,0.06)",
+                    display:
+                      "flex",
+                    alignItems:
+                      "center",
+                    justifyContent:
+                      "center",
+                    fontWeight: 900,
+                    fontSize: "18px",
+                    flexShrink: 0,
                   }}
                 >
-                  {entry.cortexMessage}
-                </p>
+                  {entry.username
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+
+                {/* INFO */}
+
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      alignItems:
+                        "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontWeight: 800,
+                        fontSize:
+                          "16px",
+                        overflow:
+                          "hidden",
+                        textOverflow:
+                          "ellipsis",
+                        whiteSpace:
+                          "nowrap",
+                      }}
+                    >
+                      {entry.username}
+
+                      {isCurrentUser &&
+                        " (you)"}
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      alignItems:
+                        "center",
+                      gap: "14px",
+                      marginTop:
+                        "6px",
+                      flexWrap:
+                        "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display:
+                          "flex",
+                        alignItems:
+                          "center",
+                        gap: "5px",
+                        color:
+                          "var(--muted-foreground)",
+                        fontSize:
+                          "12px",
+                      }}
+                    >
+                      <Zap
+                        size={
+                          12
+                        }
+                      />
+                      Level{" "}
+                      {
+                        entry.level
+                      }
+                    </div>
+
+                    <div
+                      style={{
+                        display:
+                          "flex",
+                        alignItems:
+                          "center",
+                        gap: "5px",
+                        color:
+                          "var(--muted-foreground)",
+                        fontSize:
+                          "12px",
+                      }}
+                    >
+                      <Flame
+                        size={
+                          12
+                        }
+                      />
+                      {
+                        entry.streak
+                      }
+                      d streak
+                    </div>
+                  </div>
+                </div>
+
+                {/* XP */}
+
+                <div
+                  style={{
+                    textAlign:
+                      "right",
+                    flexShrink: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize:
+                        "20px",
+                      fontWeight: 900,
+                    }}
+                  >
+                    {entry.season_xp.toLocaleString()}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize:
+                        "11px",
+                      color:
+                        "var(--muted-foreground)",
+                    }}
+                  >
+                    season XP
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          }
+        )}
       </div>
-
-      {/* STYLE */}
-
-      <style jsx>{`
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </div>
   );
 }
