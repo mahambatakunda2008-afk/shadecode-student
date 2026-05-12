@@ -1,23 +1,14 @@
 import { NextResponse } from "next/server";
+import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
-/* ─────────────────────────────
-   AI CALLER (SAFE + FALLBACKS)
-───────────────────────────── */
-async function callAI(prompt) {
-  const tryParse = (text) => {
-    if (!text) return null;
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[0]);
-    } catch {
-      return null;
-    }
-  };
+/* ─────────────────────────────────────────────
+   AI CALL PIPELINE (ROBUST FALLBACK CHAIN)
+───────────────────────────────────────────── */
 
-  // Cloudflare
+async function callAI(prompt) {
+  /* 1. Cloudflare */
   if (process.env.CLOUDFLARE_API_TOKEN) {
     try {
       const res = await fetch(
@@ -37,15 +28,13 @@ async function callAI(prompt) {
 
       const data = await res.json();
       const text = data?.result?.response;
-      const parsed = tryParse(text);
-
-      if (parsed) return parsed;
-    } catch (e) {
-      console.error("Cloudflare failed:", e);
+      if (text) return text;
+    } catch (err) {
+      console.error("Cloudflare failed:", err);
     }
   }
 
-  // OpenAI
+  /* 2. OpenAI */
   if (process.env.OPENAI_API_KEY) {
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -57,21 +46,19 @@ async function callAI(prompt) {
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [{ role: "user", content: prompt }],
+          max_tokens: 3000,
           temperature: 0.3,
         }),
       });
 
       const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content;
-      const parsed = tryParse(text);
-
-      if (parsed) return parsed;
-    } catch (e) {
-      console.error("OpenAI failed:", e);
+      return data?.choices?.[0]?.message?.content || null;
+    } catch (err) {
+      console.error("OpenAI failed:", err);
     }
   }
 
-  // Gemini
+  /* 3. Gemini fallback */
   const geminiKeys = [
     process.env.GEMINI_API_KEY,
     process.env.GEMINI_API_KEY_2,
@@ -94,11 +81,9 @@ async function callAI(prompt) {
 
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        const parsed = tryParse(text);
-
-        if (parsed) return parsed;
-      } catch (e) {
-        console.error(`Gemini ${model} failed:`, e);
+        if (text) return text;
+      } catch (err) {
+        console.error(`Gemini ${model} failed:`, err);
       }
     }
   }
@@ -106,9 +91,10 @@ async function callAI(prompt) {
   return null;
 }
 
-/* ─────────────────────────────
+/* ─────────────────────────────────────────────
    GRADE SYSTEM
-───────────────────────────── */
+───────────────────────────────────────────── */
+
 function getGrade(p) {
   if (p >= 90) return "A*";
   if (p >= 80) return "A";
@@ -119,9 +105,10 @@ function getGrade(p) {
   return "U";
 }
 
-/* ─────────────────────────────
+/* ─────────────────────────────────────────────
    MAIN ROUTE
-───────────────────────────── */
+───────────────────────────────────────────── */
+
 export async function POST(req) {
   try {
     const {
@@ -130,7 +117,19 @@ export async function POST(req) {
       questions,
       answers,
       timeTaken,
+      userId,
     } = await req.json();
+
+    if (!subject || !questions || !answers) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    /* ─────────────────────────────
+       BUILD MARKING INPUT
+    ───────────────────────────── */
 
     const qaText = questions
       .map((q, i) => {
@@ -162,61 +161,114 @@ Return ONLY valid JSON:
       "correct": false,
       "feedback": "short explanation",
       "modelAnswer": "correct answer",
-      "topic": "topic name"
+      "topic": "topic"
     }
   ],
   "weakAreas": [],
   "strongAreas": [],
-  "cortexInsight": "neutral analysis of performance patterns"
+  "cortexInsight": "neutral analytical summary of performance"
 }
 
 Rules:
-- MCQ = full or zero only
-- Partial marks allowed for structured answers
-- weakAreas = topics <50%
-- strongAreas = topics >80%
+- MCQ: full or zero marks only
+- Structured: partial credit allowed
+- Keep feedback short and factual
+- weakAreas = topics < 50%
+- strongAreas = topics > 80%
 
-DATA:
+EXAM DATA:
 ${qaText}
-`;
+    `;
 
-    const markingData = await callAI(prompt);
+    /* ─────────────────────────────
+       CALL AI
+    ───────────────────────────── */
 
-    if (!markingData) {
+    const text = await callAI(prompt);
+
+    if (!text) {
       return NextResponse.json(
-        { error: "All AI models unavailable or invalid response" },
+        { error: "All AI models unavailable" },
         { status: 503 }
       );
     }
 
-    const results = markingData.results || [];
+    /* ─────────────────────────────
+       SAFE JSON PARSE
+    ───────────────────────────── */
 
-    const totalScore = results.reduce(
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      return NextResponse.json(
+        { error: "Invalid AI response format" },
+        { status: 500 }
+      );
+    }
+
+    const markingData = JSON.parse(jsonMatch[0]);
+
+    /* ─────────────────────────────
+       SCORE CALCULATION
+    ───────────────────────────── */
+
+    const totalScore = markingData.results.reduce(
       (sum, r) => sum + (r.score || 0),
       0
     );
 
     const maxScore = questions.reduce(
-      (sum, q) => sum + (q.marks || 0),
+      (sum, q) => sum + q.marks,
       0
     );
 
     const percentage =
       maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
+    const grade = getGrade(percentage);
+
+    /* ─────────────────────────────
+       CORTEX INTEGRATION (🔥 MAIN FIX)
+    ───────────────────────────── */
+
+    if (userId) {
+      await updateCortexFromExam({
+        userId,
+        subject,
+        percentage,
+        weakAreas: markingData.weakAreas || [],
+        strongAreas: markingData.strongAreas || [],
+      });
+
+      await emitCortexEvent({
+        userId,
+        type: "exam.marking.completed",
+        source: "exam",
+        data: {
+          subject,
+          percentage,
+          grade,
+        },
+      });
+    }
+
+    /* ─────────────────────────────
+       RESPONSE
+    ───────────────────────────── */
+
     return NextResponse.json({
       ...markingData,
       totalScore,
       maxScore,
       percentage,
-      grade: getGrade(percentage),
+      grade,
       timeTaken,
     });
   } catch (err) {
     console.error("Marking error:", err);
 
     return NextResponse.json(
-      { error: err?.message || "Unknown error" },
+      { error: err.message || "Server error" },
       { status: 500 }
     );
   }
