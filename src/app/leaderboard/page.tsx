@@ -20,6 +20,7 @@ interface LeaderboardEntry {
   level: number;
   streak: number;
   current_season?: string;
+  cortex_score?: number;
 }
 
 const CURRENT_SEASON = "S-2026-5";
@@ -49,8 +50,6 @@ export default function LeaderboardPage() {
       setLoading(true);
 
       try {
-        /* CURRENT USER */
-
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -58,8 +57,6 @@ export default function LeaderboardPage() {
         if (user) {
           setCurrentUserId(user.id);
         }
-
-        /* FETCH */
 
         const { data, error } =
           await supabase
@@ -80,6 +77,15 @@ export default function LeaderboardPage() {
             .order("season_xp", {
               ascending: false,
             })
+            .order("xp", {
+              ascending: false,
+            })
+            .order("streak", {
+              ascending: false,
+            })
+            .order("level", {
+              ascending: false,
+            })
             .limit(100);
 
         if (error) {
@@ -89,47 +95,70 @@ export default function LeaderboardPage() {
           );
         }
 
-        /* CLEAN + NORMALIZE */
+        /* =========================
+           CORTEX SCORE
+        ========================= */
 
-        const leaderboardData =
-          (data || []).map(
-            (
-              p,
-              index
-            ): LeaderboardEntry => ({
-              id: p.id,
-              username:
-                p.username ||
-                `Student ${index + 1}`,
-
-              xp:
-                typeof p.xp ===
-                "number"
-                  ? p.xp
-                  : 0,
-
-              season_xp:
+        const leaderboardData: LeaderboardEntry[] =
+          (data || [])
+            .map((p) => {
+              const seasonXP =
                 typeof p.season_xp ===
                 "number"
                   ? p.season_xp
-                  : 0,
+                  : 0;
 
-              level:
-                typeof p.level ===
-                "number"
-                  ? p.level
-                  : 1,
+              const totalXP =
+                typeof p.xp === "number"
+                  ? p.xp
+                  : 0;
 
-              streak:
+              const streak =
                 typeof p.streak ===
                 "number"
                   ? p.streak
-                  : 0,
+                  : 0;
 
-              current_season:
-                p.current_season,
+              const level =
+                typeof p.level ===
+                "number"
+                  ? p.level
+                  : 1;
+
+              const cortex_score =
+                seasonXP * 1.0 +
+                totalXP * 0.15 +
+                streak * 40 +
+                level * 75;
+
+              return {
+                id: p.id,
+
+                username:
+                  p.username ||
+                  "Student",
+
+                xp: totalXP,
+
+                season_xp:
+                  seasonXP,
+
+                level,
+
+                streak,
+
+                current_season:
+                  p.current_season,
+
+                cortex_score,
+              };
             })
-          );
+
+            .sort(
+              (a, b) =>
+                (b.cortex_score || 0) -
+                (a.cortex_score || 0)
+            );
 
         setEntries(leaderboardData);
 
@@ -152,7 +181,7 @@ export default function LeaderboardPage() {
   );
 
   /* =========================
-     INITIAL
+     INITIAL LOAD
   ========================= */
 
   useEffect(() => {
@@ -166,6 +195,7 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const channel = supabase
       .channel("leaderboard-live")
+
       .on(
         "postgres_changes",
         {
@@ -177,6 +207,7 @@ export default function LeaderboardPage() {
           fetchLeaderboard();
         }
       )
+
       .subscribe();
 
     return () => {
@@ -224,8 +255,11 @@ export default function LeaderboardPage() {
     return {
       color:
         "var(--muted-foreground)",
+
       bg: "transparent",
+
       border: "transparent",
+
       icon: (
         <span
           style={{
@@ -367,7 +401,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* USER POSITION */}
+      {/* CURRENT USER */}
 
       {currentUserRank > 0 && (
         <div
@@ -508,14 +542,19 @@ export default function LeaderboardPage() {
                       style={{
                         background:
                           rankStyle.bg,
+
                         border:
                           rankStyle.border,
+
                         borderRadius:
                           "26px",
+
                         padding:
                           "24px 18px",
+
                         textAlign:
                           "center",
+
                         transform:
                           actualRank ===
                           1
@@ -527,10 +566,13 @@ export default function LeaderboardPage() {
                         style={{
                           display:
                             "flex",
+
                           justifyContent:
                             "center",
+
                           marginBottom:
                             "14px",
+
                           color:
                             rankStyle.color,
                         }}
@@ -610,6 +652,7 @@ export default function LeaderboardPage() {
                         style={{
                           margin:
                             "10px 0 0 0",
+
                           fontSize:
                             actualRank ===
                             1
@@ -622,20 +665,25 @@ export default function LeaderboardPage() {
                             rankStyle.color,
                         }}
                       >
-                        {entry.season_xp.toLocaleString()}
+                        {Math.round(
+                          entry.cortex_score ||
+                            0
+                        ).toLocaleString()}
                       </p>
 
                       <p
                         style={{
                           margin:
                             "4px 0 0 0",
+
                           fontSize:
                             "12px",
+
                           color:
                             "var(--muted-foreground)",
                         }}
                       >
-                        season XP
+                        cortex score
                       </p>
                     </div>
                   );
@@ -644,16 +692,19 @@ export default function LeaderboardPage() {
             </div>
           )}
 
-          {/* LIST */}
+          {/* FULL LIST */}
 
           <div
             style={{
               background:
                 "rgba(255,255,255,0.03)",
+
               border:
                 "1px solid rgba(255,255,255,0.06)",
+
               borderRadius:
                 "28px",
+
               overflow:
                 "hidden",
             }}
@@ -797,11 +848,15 @@ export default function LeaderboardPage() {
                         style={{
                           display:
                             "flex",
+
                           alignItems:
                             "center",
+
                           gap: "14px",
+
                           marginTop:
                             "6px",
+
                           flexWrap:
                             "wrap",
                         }}
@@ -810,11 +865,15 @@ export default function LeaderboardPage() {
                           style={{
                             display:
                               "flex",
+
                             alignItems:
                               "center",
+
                             gap: "5px",
+
                             fontSize:
                               "12px",
+
                             color:
                               "var(--muted-foreground)",
                           }}
@@ -834,11 +893,15 @@ export default function LeaderboardPage() {
                           style={{
                             display:
                               "flex",
+
                             alignItems:
                               "center",
+
                             gap: "5px",
+
                             fontSize:
                               "12px",
+
                             color:
                               "var(--muted-foreground)",
                           }}
@@ -856,34 +919,48 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
 
-                    {/* XP */}
+                    {/* SCORE */}
 
                     <div
                       style={{
                         textAlign:
                           "right",
+
                         flexShrink: 0,
+
+                        minWidth:
+                          "120px",
                       }}
                     >
                       <div
                         style={{
                           fontSize:
                             "26px",
+
                           fontWeight: 900,
+
+                          lineHeight: 1,
                         }}
                       >
-                        {entry.season_xp.toLocaleString()}
+                        {Math.round(
+                          entry.cortex_score ||
+                            0
+                        ).toLocaleString()}
                       </div>
 
                       <div
                         style={{
                           fontSize:
                             "11px",
+
                           color:
                             "var(--muted-foreground)",
+
+                          marginTop:
+                            "6px",
                         }}
                       >
-                        season XP
+                        cortex score
                       </div>
                     </div>
                   </div>
