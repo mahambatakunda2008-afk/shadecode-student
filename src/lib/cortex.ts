@@ -1,115 +1,123 @@
+import { createServerClient } from "@/lib/supabaseClient";
 import type {
-  CortexEvent,
+  CortexEventInput,
   CortexSnapshot,
-  CortexAIRequestType,
-  CortexBehaviorInsightPayload,
-  CortexBehaviorSummaryPayload,
-  CortexLearningFocusPayload,
-  CortexLearningRecommendationPayload,
-} from "./types";
+} from "@/types";
 
 /* ─────────────────────────────────────────────
-   CORE CORTEX ENGINE (SAFE + EXTENSIBLE)
-   ───────────────────────────────────────────── */
+   CORE EVENT EMITTER
+   (FIX: REQUIRED BY /exam/mark ROUTE)
+───────────────────────────────────────────── */
 
-/**
- * Generate a lightweight behavioral insight.
- * Used by: Tasks, Exams, Timetable (future unified layer)
- */
-export async function generateInsight(params: CortexBehaviorInsightPayload) {
-  const { snapshot } = params;
+export async function emitCortexEvent(event: CortexEventInput) {
+  const supabase = createServerClient();
 
-  const completionRate =
-    snapshot.totalTasks > 0
-      ? snapshot.completedTasks / snapshot.totalTasks
-      : 0;
+  try {
+    const { error } = await supabase.from("cortex_events").insert({
+      user_id: event.userId,
+      type: event.type,
+      source: event.source,
+      data: event.data ?? {},
+      created_at: new Date().toISOString(),
+    });
 
-  const streak = snapshot.streak || 0;
-  const xp = snapshot.xp || 0;
+    if (error) {
+      console.error("Cortex event insert failed:", error);
+      return false;
+    }
 
-  let insight = "";
-
-  // 🧠 behavioral logic (simple but scalable)
-  if (streak >= 10 && completionRate > 0.8) {
-    insight =
-      "You are in high discipline mode. Your consistency is shaping strong academic momentum.";
-  } else if (streak >= 5) {
-    insight =
-      "You are building consistency. Maintain your rhythm to unlock higher performance.";
-  } else if (completionRate > 0.7) {
-    insight =
-      "Good task execution, but consistency is unstable. Focus on daily structure.";
-  } else if (completionRate > 0.4) {
-    insight =
-      "Your activity is irregular. Small daily wins will stabilize performance.";
-  } else {
-    insight =
-      "Low engagement detected. Start with smaller tasks to rebuild momentum.";
+    return true;
+  } catch (err) {
+    console.error("Cortex event exception:", err);
+    return false;
   }
-
-  return {
-    insight,
-  };
-}
-
-/**
- * Summarize behavior from free-text (future AI expansion hook)
- */
-export async function generateBehaviorSummary(
-  params: CortexBehaviorSummaryPayload
-) {
-  const { behaviorSummary } = params;
-
-  return {
-    insight: behaviorSummary || "No behavior data available.",
-  };
 }
 
 /* ─────────────────────────────────────────────
-   EXAM → CORTEX UPDATE ENGINE (existing logic safe)
-   ───────────────────────────────────────────── */
+   EXAM → CORTEX INTELLIGENCE UPDATE
+───────────────────────────────────────────── */
 
-/**
- * Updates Cortex state after exam completion
- * (kept compatible with your existing system)
- */
 export async function updateCortexFromExam(params: {
-  snapshot: CortexSnapshot;
-  score: number;
-  weakAreas?: string[];
-  strongAreas?: string[];
-  events?: CortexEvent[];
+  userId: string;
+  subject: string;
+  percentage: number;
+  weakAreas: string[];
+  strongAreas: string[];
 }) {
-  const { snapshot, score } = params;
+  const supabase = createServerClient();
 
-  const performanceLevel =
-    score >= 80 ? "excellent" :
-    score >= 60 ? "good" :
-    score >= 40 ? "average" :
-    "weak";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", params.userId)
+    .single();
 
-  let insight = "";
+  if (!profile) return null;
 
-  switch (performanceLevel) {
-    case "excellent":
-      insight =
-        "Excellent performance. You demonstrate strong mastery and exam readiness.";
-      break;
-    case "good":
-      insight =
-        "Good performance. A few refinements can push you into top mastery.";
-      break;
-    case "average":
-      insight =
-        "Average performance. Focus on weak topics and structured revision.";
-      break;
-    default:
-      insight =
-        "Weak performance detected. Prioritize fundamentals before advancing.";
+  const currentXp = profile.xp ?? 0;
+  const currentLevel = profile.level ?? 1;
+
+  const xpGain = Math.round(params.percentage * 0.5);
+  const newXp = currentXp + xpGain;
+  const newLevel = Math.floor(newXp / 100) + 1;
+
+  /* ─────────────────────────────────────────────
+     SNAPSHOT BUILD (CORTEX MEMORY STATE)
+  ───────────────────────────────────────────── */
+
+  const snapshot: CortexSnapshot = {
+    streak: profile.streak ?? 0,
+    level: newLevel,
+    xp: newXp,
+
+    totalTasks: profile.total_tasks ?? 0,
+    completedTasks: profile.completed_tasks ?? 0,
+    pendingTasks: profile.pending_tasks ?? 0,
+
+    subjects: profile.subjects ?? [],
+    recentTaskTitles: profile.recent_task_titles ?? [],
+
+    weakestSubjects: params.weakAreas,
+    strongestSubjects: params.strongAreas,
+
+    lastExamScore: params.percentage,
+    lastExamSubject: params.subject,
+    lastExamWeakAreas: params.weakAreas,
+    lastExamStrongAreas: params.strongAreas,
+  };
+
+  /* ─────────────────────────────────────────────
+     SAVE PROFILE UPDATE
+  ───────────────────────────────────────────── */
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      xp: newXp,
+      level: newLevel,
+      snapshot,
+    })
+    .eq("id", params.userId);
+
+  if (error) {
+    console.error("Profile update failed:", error);
+    return null;
   }
 
-  return {
-    updatedSnapshot: snapshot,
-    insight,
-  };
+  /* ─────────────────────────────────────────────
+     EMIT EXAM EVENT (CORTEX MEMORY LOG)
+  ───────────────────────────────────────────── */
+
+  await emitCortexEvent({
+    userId: params.userId,
+    type: "exam.completed",
+    source: "exam",
+    data: {
+      subject: params.subject,
+      percentage: params.percentage,
+      xpGain,
+    },
+  });
+
+  return snapshot;
 }
