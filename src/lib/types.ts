@@ -1,3 +1,12 @@
+/* ─────────────────────────────────────────────
+   CORTEX CORE TYPES
+   Shadecode Student — Intelligence Layer
+───────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────
+   EVENT SYSTEM
+───────────────────────────────────────────── */
+
 export type CortexEventType =
   | "dashboard.loaded"
   | "streak.updated"
@@ -22,10 +31,6 @@ export interface CortexEventData {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-/* ─────────────────────────────
-   EVENT CORE
-───────────────────────────── */
-
 export interface CortexEvent {
   id: string;
   userId: string;
@@ -42,9 +47,9 @@ export interface CortexEventInput {
   data?: CortexEventData;
 }
 
-/* ─────────────────────────────
-   SNAPSHOT
-───────────────────────────── */
+/* ─────────────────────────────────────────────
+   USER INTELLIGENCE SNAPSHOT
+───────────────────────────────────────────── */
 
 export interface CortexSnapshot {
   streak: number;
@@ -58,37 +63,40 @@ export interface CortexSnapshot {
   subjects: string[];
   recentTaskTitles: string[];
 
+  /* ─── Learning Intelligence Layer ─── */
   weakestSubjects?: string[];
   strongestSubjects?: string[];
 
   lastExamScore?: number;
   lastExamSubject?: string;
+  lastExamWeakAreas?: string[];
+  lastExamStrongAreas?: string[];
 }
 
-/* ─────────────────────────────
-   INSIGHT CONTEXT
-───────────────────────────── */
+/* ─────────────────────────────────────────────
+   CONTEXT FOR AI
+───────────────────────────────────────────── */
 
 export interface CortexInsightContext {
   events: CortexEvent[];
   snapshot: CortexSnapshot;
 }
 
-/* ─────────────────────────────
-   STRUCTURED VALUE
-───────────────────────────── */
+/* ─────────────────────────────────────────────
+   SAFE STRUCTURE (AI / JSON FLEXIBILITY)
+───────────────────────────────────────────── */
 
 export type CortexStructuredValue =
   | null
-  | string
-  | number
   | boolean
+  | number
+  | string
   | CortexStructuredValue[]
   | { [key: string]: CortexStructuredValue };
 
-/* ─────────────────────────────
+/* ─────────────────────────────────────────────
    AI REQUEST TYPES
-───────────────────────────── */
+───────────────────────────────────────────── */
 
 export type CortexAIRequestType =
   | "behavior.insight"
@@ -96,9 +104,9 @@ export type CortexAIRequestType =
   | "learning.focus"
   | "learning.recommendation";
 
-/* ─────────────────────────────
-   PAYLOADS
-───────────────────────────── */
+/* ─────────────────────────────────────────────
+   AI PAYLOADS
+───────────────────────────────────────────── */
 
 export interface CortexBehaviorInsightPayload {
   userId: string;
@@ -127,9 +135,9 @@ export interface CortexLearningRecommendationPayload {
   subject: string;
 }
 
-/* ─────────────────────────────
+/* ─────────────────────────────────────────────
    REQUEST MAP
-───────────────────────────── */
+───────────────────────────────────────────── */
 
 export interface CortexAIRequestPayloadMap {
   "behavior.insight": CortexBehaviorInsightPayload;
@@ -138,9 +146,9 @@ export interface CortexAIRequestPayloadMap {
   "learning.recommendation": CortexLearningRecommendationPayload;
 }
 
-/* ─────────────────────────────
+/* ─────────────────────────────────────────────
    RESPONSE MAP
-───────────────────────────── */
+───────────────────────────────────────────── */
 
 export interface CortexAIResponseDataMap {
   "behavior.insight": { insight: string };
@@ -149,9 +157,9 @@ export interface CortexAIResponseDataMap {
   "learning.recommendation": { insight: string };
 }
 
-/* ─────────────────────────────
-   RESPONSE WRAPPER
-───────────────────────────── */
+/* ─────────────────────────────────────────────
+   AI RESPONSE WRAPPER
+───────────────────────────────────────────── */
 
 export type CortexAIProvider = "local" | "gemini";
 
@@ -166,9 +174,9 @@ export interface CortexAIResponse<
   data: CortexAIResponseDataMap[T];
 }
 
-/* ─────────────────────────────
-   CACHE
-───────────────────────────── */
+/* ─────────────────────────────────────────────
+   CACHE SYSTEM
+───────────────────────────────────────────── */
 
 export interface CortexCacheEntry<T = unknown> {
   createdAt: string;
