@@ -1,199 +1,286 @@
-// ONLY CHANGES ARE MARKED WITH 🔧
-
 "use client";
 
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
+import katex from "katex";
+import "katex/dist/katex.min.css";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-/* ... everything else unchanged ... */
+/* ---------------- DATA ---------------- */
 
-  // ── Exam Screen ───────────────────────────────────────────────────────────
-  if (step === "exam" && q) return (
-    <div
-      style={{
-        padding: "0",
-        display: "flex",
-        flexDirection: "column",
-        height: "100dvh", // 🔧 FIX: better mobile viewport handling
-        maxWidth: "600px",
-        margin: "0 auto",
-      }}
-    >
+const SUBJECTS = [
+  "Mathematics", "Physics", "Chemistry", "Biology",
+  "Geography", "History", "Economics", "Computer Science",
+  "English Language", "English Literature", "Accounting",
+  "Business Studies", "Sociology", "Psychology"
+];
 
-      {/* Timer bar */}
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000, // 🔧 FIX: ensure above everything
-        background: "var(--card)",
-        borderBottom: "1px solid var(--card-border)",
-        padding: "12px 20px",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <p style={{ fontSize: "13px", fontWeight: 600 }}>
-            {subject} — {DIFFICULTIES[difficulty].label}
-          </p>
+const DIFFICULTIES = [
+  { label: "Ordinary", value: "O-Level standard", color: "#22c55e" },
+  { label: "Advanced", value: "A-Level standard", color: "#f59e0b" },
+  { label: "Challenge", value: "beyond A-Level, university entrance standard", color: "#ef4444" },
+];
 
-          <p style={{
-            fontSize: "18px",
-            fontWeight: 800,
-            fontVariantNumeric: "tabular-nums",
-            color: timeLeft < 300 ? "#ef4444" : timeLeft < 600 ? "#f59e0b" : "var(--foreground)",
-          }}>
-            {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-          </p>
+const QUESTION_COUNTS = [5, 10, 15, 20];
+
+/* ---------------- TYPES ---------------- */
+
+interface Question {
+  id: number;
+  type: "multiple_choice" | "short_answer" | "structured";
+  question: string;
+  options?: string[];
+  marks: number;
+  topic: string;
+}
+
+interface Answer {
+  questionId: number;
+  answer: string;
+  timeSpent: number;
+}
+
+interface Result {
+  questionId: number;
+  score: number;
+  maxScore: number;
+  correct: boolean;
+  feedback: string;
+  modelAnswer: string;
+  topic: string;
+}
+
+interface ExamResults {
+  totalScore: number;
+  maxScore: number;
+  percentage: number;
+  grade: string;
+  weakAreas: string[];
+  strongAreas: string[];
+  cortexInsight: string;
+  results: Result[];
+  timeTaken: number;
+}
+
+type Step = "setup" | "exam" | "marking" | "results";
+
+/* ---------------- COMPONENT ---------------- */
+
+export default function ExamSimulation() {
+  const [step, setStep] = useState<Step>("setup");
+  const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState(0);
+  const [questionCount, setQuestionCount] = useState(10);
+
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentAnswer, setCurrentAnswer] = useState("");
+
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
+
+  const [results, setResults] = useState<ExamResults | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [marking, setMarking] = useState(false);
+
+  const questionStartTime = useRef(Date.now());
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const router = useRouter();
+  const [supabase] = useState(() => createClient());
+
+  const userIdRef = useRef("");
+
+  /* ---------------- AUTH ---------------- */
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) router.push("/auth/login");
+      else userIdRef.current = user.id;
+    })();
+  }, [router, supabase]);
+
+  /* ---------------- TIMER ---------------- */
+
+  useEffect(() => {
+    if (step !== "exam") return;
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          handleSubmitExam();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [step]);
+
+  /* ---------------- EXAM GENERATION ---------------- */
+
+  const generateExam = async () => {
+    if (!subject) return;
+    setGenerating(true);
+
+    try {
+      const res = await fetch("/api/exam/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject,
+          topic: topic || null,
+          difficulty: DIFFICULTIES[difficulty].value,
+          questionCount,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.questions) throw new Error("No questions");
+
+      setQuestions(data.questions);
+      setAnswers([]);
+      setCurrentQuestion(0);
+      setCurrentAnswer("");
+
+      const examTime = questionCount * 2 * 60;
+      setTimeLeft(examTime);
+      setTotalTime(examTime);
+
+      setStep("exam");
+      questionStartTime.current = Date.now();
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  /* ---------------- ANSWERS ---------------- */
+
+  const saveAnswer = () => {
+    const q = questions[currentQuestion];
+    if (!q) return;
+
+    const timeSpent = Math.round((Date.now() - questionStartTime.current) / 1000);
+
+    setAnswers(prev => {
+      const existing = prev.findIndex(a => a.questionId === q.id);
+      const updated = { questionId: q.id, answer: currentAnswer, timeSpent };
+
+      if (existing >= 0) {
+        const copy = [...prev];
+        copy[existing] = updated;
+        return copy;
+      }
+
+      return [...prev, updated];
+    });
+  };
+
+  const goToQuestion = (i: number) => {
+    saveAnswer();
+    setCurrentQuestion(i);
+    questionStartTime.current = Date.now();
+
+    const existing = answers.find(a => a.questionId === questions[i]?.id);
+    setCurrentAnswer(existing?.answer || "");
+  };
+
+  /* ---------------- SUBMIT ---------------- */
+
+  const handleSubmitExam = async () => {
+    saveAnswer();
+    setStep("marking");
+    setMarking(true);
+
+    try {
+      const res = await fetch("/api/exam/mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject,
+          difficulty: DIFFICULTIES[difficulty].value,
+          questions,
+          answers,
+          timeTaken: totalTime - timeLeft,
+        }),
+      });
+
+      const data = await res.json();
+      setResults(data);
+
+      setStep("results");
+    } finally {
+      setMarking(false);
+    }
+  };
+
+  const reset = () => {
+    setStep("setup");
+    setQuestions([]);
+    setAnswers([]);
+    setResults(null);
+    setCurrentAnswer("");
+    setCurrentQuestion(0);
+  };
+
+  const q = questions[currentQuestion];
+
+  const renderMath = (text: string) => {
+    if (!text) return text;
+    return text
+      .replace(/\$\$([^$]+)\$\$/g, (_, e) => katex.renderToString(e, { displayMode: true }))
+      .replace(/\$([^$]+)\$/g, (_, e) => katex.renderToString(e, { displayMode: false }));
+  };
+
+  /* ---------------- SINGLE RETURN FIX ---------------- */
+
+  return (
+    <>
+      {step === "setup" && (
+        <div style={{ padding: 40 }}>
+          <h1>Exam Setup</h1>
+          <button onClick={generateExam} disabled={generating}>
+            Start Exam
+          </button>
         </div>
+      )}
 
-        <div style={{ background: "var(--muted)", borderRadius: "99px", height: "4px" }}>
-          <div style={{
-            background: timeLeft < 300 ? "#ef4444" : timeLeft < 600 ? "#f59e0b" : "var(--primary)",
-            borderRadius: "99px",
-            height: "4px",
-            width: `${timePercent}%`,
-            transition: "width 1s linear, background 0.3s ease",
-          }} />
-        </div>
-      </div>
+      {step === "exam" && q && (
+        <div style={{ padding: 20 }}>
+          <h2 dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
 
-      {/* Question content */}
-      <div
-        style={{
-          padding: "80px 20px 260px", // 🔧 FIX: MORE bottom space so footer never hides content
-          overflowY: "auto",
-          flex: 1,
-        }}
-      >
-        {/* ... unchanged question UI ... */}
-      </div>
-
-      {/* Bottom navigation */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000, // 🔧 FIX: ensure always visible
-          background: "var(--card)",
-          borderTop: "1px solid var(--card-border)",
-          padding: "12px 20px",
-          paddingBottom: "calc(12px + env(safe-area-inset-bottom))", // 🔧 FIX: iOS safe area
-        }}
-      >
-        {/* Question dots */}
-        <div
-          style={{
-            display: "flex",
-            gap: "6px",
-            marginBottom: "10px",
-            flexWrap: "wrap", // 🔧 FIX: prevents overflow on small screens
-          }}
-        >
-          {questions.map((_, i) => {
-            const answered =
-              answers.some(a => a.questionId === questions[i].id) ||
-              (i === currentQuestion && currentAnswer);
-
-            return (
-              <button
-                key={i}
-                onClick={() => goToQuestion(i)}
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  border: "none",
-                  background:
-                    i === currentQuestion
-                      ? "var(--primary)"
-                      : answered
-                      ? "rgba(34,197,94,0.3)"
-                      : "var(--muted)",
-                  color:
-                    i === currentQuestion
-                      ? "white"
-                      : answered
-                      ? "#22c55e"
-                      : "var(--muted-foreground)",
-                }}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Buttons */}
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            flexWrap: "wrap", // 🔧 FIX: prevents cutoff on very small screens
-          }}
-        >
-          {currentQuestion > 0 && (
-            <button
-              onClick={() => goToQuestion(currentQuestion - 1)}
-              style={{
-                background: "var(--muted)",
-                border: "none",
-                borderRadius: "8px",
-                padding: "10px 16px",
-                fontSize: "14px",
-                cursor: "pointer",
-                color: "var(--foreground)",
-                flex: "1",
-              }}
-            >
-              ← Prev
+          {q.type === "multiple_choice" && q.options?.map((o, i) => (
+            <button key={i} onClick={() => setCurrentAnswer(o)}>
+              {o}
             </button>
-          )}
+          ))}
 
-          {currentQuestion < questions.length - 1 ? (
-            <button
-              onClick={() => goToQuestion(currentQuestion + 1)}
-              style={{
-                flex: 2,
-                background: "var(--primary)",
-                border: "none",
-                borderRadius: "8px",
-                padding: "10px",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: "pointer",
-                color: "white",
-              }}
-            >
-              Next →
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmitExam}
-              style={{
-                flex: 2,
-                background: "#22c55e",
-                border: "none",
-                borderRadius: "8px",
-                padding: "10px",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: "pointer",
-                color: "white",
-                boxShadow: "0 0 16px rgba(34,197,94,0.4)",
-              }}
-            >
-              Submit Exam ✓
-            </button>
-          )}
+          <textarea
+            value={currentAnswer}
+            onChange={(e) => setCurrentAnswer(e.target.value)}
+          />
+
+          <button onClick={handleSubmitExam}>Submit</button>
         </div>
-      </div>
-    </div>
+      )}
+
+      {step === "marking" && <div>Marking...</div>}
+
+      {step === "results" && results && (
+        <div>
+          <h1>{results.percentage}%</h1>
+          <button onClick={reset}>New Exam</button>
+        </div>
+      )}
+    </>
   );
+}
