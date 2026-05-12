@@ -1,8 +1,11 @@
 import type {
-  CortexSnapshot,
   CortexEvent,
+  CortexSnapshot,
+  CortexAIRequestType,
   CortexBehaviorInsightPayload,
   CortexBehaviorSummaryPayload,
+  CortexLearningFocusPayload,
+  CortexLearningRecommendationPayload,
 } from "./types";
 
 /* ─────────────────────────────────────────────
