@@ -3,7 +3,7 @@ import type {
   CortexEvent,
   CortexBehaviorInsightPayload,
   CortexBehaviorSummaryPayload,
-} from "@/types";
+} from "../types";
 
 /* ─────────────────────────────────────────────
    CORE CORTEX ENGINE (SAFE + EXTENSIBLE)
