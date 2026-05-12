@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+/* ───────────────────────── DATA ───────────────────────── */
+
 const SUBJECTS = [
   "Mathematics", "Physics", "Chemistry", "Biology",
   "Geography", "History", "Economics", "Computer Science",
@@ -16,10 +18,12 @@ const SUBJECTS = [
 const DIFFICULTIES = [
   { label: "Ordinary", value: "O-Level standard", color: "#22c55e" },
   { label: "Advanced", value: "A-Level standard", color: "#f59e0b" },
-  { label: "Challenge", value: "beyond A-Level, university entrance standard", color: "#ef4444" },
+  { label: "Challenge", value: "university entrance standard", color: "#ef4444" },
 ];
 
 const QUESTION_COUNTS = [5, 10, 15, 20];
+
+/* ───────────────────────── TYPES ───────────────────────── */
 
 interface Question {
   id: number;
@@ -36,53 +40,45 @@ interface Answer {
   timeSpent: number;
 }
 
-interface Result {
-  questionId: number;
-  score: number;
-  maxScore: number;
-  correct: boolean;
-  feedback: string;
-  modelAnswer: string;
-  topic: string;
-}
-
-interface ExamResults {
-  totalScore: number;
-  maxScore: number;
-  percentage: number;
-  grade: string;
-  weakAreas: string[];
-  strongAreas: string[];
-  cortexInsight: string;
-  results: Result[];
-  timeTaken: number;
-}
-
 type Step = "setup" | "exam" | "marking" | "results";
+
+/* ───────────────────────── COMPONENT ───────────────────────── */
 
 export default function ExamSimulation() {
   const [step, setStep] = useState<Step>("setup");
+
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState(0);
   const [questionCount, setQuestionCount] = useState(10);
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentAnswer, setCurrentAnswer] = useState("");
+
   const [timeLeft, setTimeLeft] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
-  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [generating, setGenerating] = useState(false);
-  const [marking, setMarking] = useState(false);
-  const [results, setResults] = useState<ExamResults | null>(null);
-  const [currentAnswer, setCurrentAnswer] = useState("");
+
+  const [results, setResults] = useState<any>(null);
   const [userId, setUserId] = useState("");
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const [supabase] = useState(() => createClient());
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const questionStart = useRef(Date.now());
 
-  // ✅ MUST be above usage
+  /* ───────────────────────── SAFE DERIVED STATE ───────────────────────── */
+
+  const q = questions[currentQuestion] ?? null;
+  const hasQuestions = questions.length > 0;
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const timePercent = totalTime ? (timeLeft / totalTime) * 100 : 100;
+
+  /* ───────────────────────── MATH RENDER ───────────────────────── */
+
   function renderMath(text: string) {
     if (!text) return text;
     try {
@@ -98,6 +94,8 @@ export default function ExamSimulation() {
     }
   }
 
+  /* ───────────────────────── AUTH INIT ───────────────────────── */
+
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -107,79 +105,90 @@ export default function ExamSimulation() {
     init();
   }, [router, supabase]);
 
+  /* ───────────────────────── TIMER ───────────────────────── */
+
   useEffect(() => {
-    if (step === "exam" && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current!);
-            handleSubmitExam();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    if (step !== "exam") return;
+
+    if (timeLeft <= 0) return;
+
+    intervalRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          handleSubmitExam();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [step, timeLeft]);
 
+  /* ───────────────────────── EXAM FLOW ───────────────────────── */
+
   const generateExam = async () => {
-    if (!subject) return;
-    setGenerating(true);
+    const res = await fetch("/api/exam/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subject,
+        topic: topic || null,
+        difficulty: DIFFICULTIES[difficulty].value,
+        questionCount,
+      }),
+    });
 
-    try {
-      const res = await fetch("/api/exam/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject,
-          topic: topic.trim() || null,
-          difficulty: DIFFICULTIES[difficulty].value,
-          questionCount,
-        }),
-      });
+    const data = await res.json();
 
-      const data = await res.json();
-      setQuestions(data.questions || []);
-
-      const examTime = questionCount * 2 * 60;
-      setTimeLeft(examTime);
-      setTotalTime(examTime);
-      setCurrentQuestion(0);
-      setCurrentAnswer("");
-      setAnswers([]);
-      setStep("exam");
-    } finally {
-      setGenerating(false);
+    if (!Array.isArray(data.questions)) {
+      alert("Invalid exam data");
+      return;
     }
+
+    setQuestions(data.questions);
+    setAnswers([]);
+    setCurrentQuestion(0);
+    setCurrentAnswer("");
+
+    const examTime = questionCount * 2 * 60;
+    setTimeLeft(examTime);
+    setTotalTime(examTime);
+
+    setStep("exam");
   };
 
   const saveAnswer = () => {
     const q = questions[currentQuestion];
     if (!q) return;
 
-    const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+    const timeSpent = Math.round((Date.now() - questionStart.current) / 1000);
 
     setAnswers(prev => {
       const idx = prev.findIndex(a => a.questionId === q.id);
-      const newAns = { questionId: q.id, answer: currentAnswer, timeSpent };
+
+      const updated = { questionId: q.id, answer: currentAnswer, timeSpent };
 
       if (idx >= 0) {
         const copy = [...prev];
-        copy[idx] = newAns;
+        copy[idx] = updated;
         return copy;
       }
-      return [...prev, newAns];
+
+      return [...prev, updated];
     });
   };
 
   const goToQuestion = (i: number) => {
     saveAnswer();
     setCurrentQuestion(i);
-    setQuestionStartTime(Date.now());
-    setCurrentAnswer(answers.find(a => a.questionId === questions[i]?.id)?.answer || "");
+    questionStart.current = Date.now();
+
+    const existing = answers.find(a => a.questionId === questions[i]?.id);
+    setCurrentAnswer(existing?.answer || "");
   };
 
   const handleSubmitExam = async () => {
@@ -205,46 +214,56 @@ export default function ExamSimulation() {
     setStep("results");
   };
 
-  const q = questions[currentQuestion];
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const timePercent = totalTime ? (timeLeft / totalTime) * 100 : 100;
+  /* ───────────────────────── SCREENS ───────────────────────── */
 
-  // ───────── EXAM SCREEN (FIXED) ─────────
-  if (step === "exam" && q) {
+  const SetupScreen = () => (
+    <div style={{ padding: 24 }}>
+      <h1>Exam Setup</h1>
+
+      <button onClick={generateExam} disabled={!subject}>
+        Start Exam
+      </button>
+    </div>
+  );
+
+  const ExamScreen = () => {
+    if (!hasQuestions) return <div>Loading exam...</div>;
+    if (!q) return <div>Loading question...</div>;
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
 
         {/* TOP BAR */}
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, padding: 12, background: "#111", color: "#fff" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>{subject}</span>
-            <span>{minutes}:{String(seconds).padStart(2, "0")}</span>
-          </div>
+        <div style={{ padding: 12 }}>
+          {subject} — {DIFFICULTIES[difficulty].label}
+          <div>{minutes}:{String(seconds).padStart(2, "0")}</div>
         </div>
 
         {/* QUESTION */}
-        <div style={{ paddingTop: 80, flex: 1, padding: 20 }}>
+        <div style={{ padding: 20 }}>
           <div dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
+        </div>
 
-          {q.type === "multiple_choice" && q.options?.map((opt, i) => (
+        {/* ANSWER */}
+        {q.type === "multiple_choice" ? (
+          q.options?.map((opt, i) => (
             <button key={i} onClick={() => setCurrentAnswer(opt)}>
               {opt}
             </button>
-          ))}
-
-          {q.type !== "multiple_choice" && (
-            <textarea
-              value={currentAnswer}
-              onChange={e => setCurrentAnswer(e.target.value)}
-              style={{ width: "100%" }}
-            />
-          )}
-        </div>
+          ))
+        ) : (
+          <textarea
+            value={currentAnswer}
+            onChange={(e) => setCurrentAnswer(e.target.value)}
+          />
+        )}
 
         {/* NAV */}
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: 12, background: "#111" }}>
-          <button disabled={currentQuestion === 0} onClick={() => goToQuestion(currentQuestion - 1)}>
+        <div style={{ marginTop: "auto", padding: 12 }}>
+          <button
+            disabled={currentQuestion === 0}
+            onClick={() => goToQuestion(currentQuestion - 1)}
+          >
             Prev
           </button>
 
@@ -261,7 +280,27 @@ export default function ExamSimulation() {
 
       </div>
     );
-  }
+  };
 
-  return null;
+  const MarkingScreen = () => (
+    <div style={{ padding: 40 }}>Cortex is marking...</div>
+  );
+
+  const ResultsScreen = () => (
+    <div style={{ padding: 40 }}>
+      <h1>Results</h1>
+      <pre>{JSON.stringify(results, null, 2)}</pre>
+    </div>
+  );
+
+  /* ───────────────────────── SAFE ROUTER ───────────────────────── */
+
+  const screens: Record<Step, JSX.Element> = {
+    setup: <SetupScreen />,
+    exam: <ExamScreen />,
+    marking: <MarkingScreen />,
+    results: <ResultsScreen />,
+  };
+
+  return screens[step];
 }
