@@ -7,7 +7,9 @@ const nextConfig = withPWA({
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
 })({
-  turbopack: {},
+  turbopack: {
+    root: process.cwd(),
+  },
 });
 
 export default nextConfig;
