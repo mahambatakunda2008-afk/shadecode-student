@@ -395,3 +395,72 @@ document.head.appendChild(style);
 // - Sound effects (optional)
 // - Particle bursts for elite achievements
 
+
+// -----------------------------
+// EVOLUTION: RARITY + REACT-READY UNLOCK SYSTEM
+// -----------------------------
+// This upgrades Shadecode from "popup engine" → "experience engine"
+
+export type AchievementRarity = "common" | "rare" | "epic" | "legendary";
+
+export interface RichAchievement extends Achievement {
+  rarity?: AchievementRarity;
+  xpReward?: number;
+}
+
+// Suggested rarity rules (design layer, not enforced logic yet):
+// common     -> basic progress
+// rare       -> streak milestones
+// epic       -> discipline consistency
+// legendary  -> hidden + comeback + extreme consistency
+
+export function getRarityColor(rarity?: AchievementRarity) {
+  switch (rarity) {
+    case "rare": return "#4f8cff";
+    case "epic": return "#b84cff";
+    case "legendary": return "#ffb84c";
+    default: return "#ffffff";
+  }
+}
+
+// -----------------------------
+// REACT-READY UNLOCK MODEL (replaces DOM system)
+// -----------------------------
+
+export interface AchievementUnlockEvent {
+  achievements: RichAchievement[];
+}
+
+/*
+Example React usage (future implementation):
+
+<AchievementModal
+  open={true}
+  achievements={unlockedAchievements}
+  onClose={...}
+/>
+
+with Framer Motion:
+- fade background
+- scale + spring badge reveal
+- stagger multiple achievements
+*/
+
+export function createUnlockPayload(achievements: RichAchievement[]): AchievementUnlockEvent {
+  return {
+    achievements
+  };
+}
+
+// -----------------------------
+// NEXT ARCHITECTURE SHIFT
+// -----------------------------
+// Replace showAchievementUnlock (DOM) with:
+// 1. React modal system
+// 2. Framer Motion animations
+// 3. rarity-based glow effects
+// 4. sound design layer (optional)
+//
+// RESULT:
+// Shadecode becomes emotionally "cinematic" instead of functional UI
+
