@@ -294,3 +294,104 @@ function triggerAchievementUnlockEvent(newAchievements: Achievement[]) {
 // 3. Persist updated achievements to database per user
 // 4. Add animation layer for unlock events
 
+
+// -----------------------------
+// UI LAYER: ACHIEVEMENT UNLOCK SYSTEM
+// -----------------------------
+// This is the emotional core of Shadecode achievements.
+// Replace console logging with this system for real user impact.
+
+export interface AchievementUnlockPayload {
+  achievements: Achievement[];
+}
+
+export function showAchievementUnlock(payload: AchievementUnlockPayload) {
+  const { achievements } = payload;
+
+  // Step 1: Create overlay container
+  const overlay = document.createElement("div");
+  overlay.id = "achievement-unlock-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100vw";
+  overlay.style.height = "100vh";
+  overlay.style.background = "rgba(0,0,0,0.75)";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+  overlay.style.color = "white";
+  overlay.style.fontFamily = "sans-serif";
+
+  // Step 2: Build content
+  const container = document.createElement("div");
+  container.style.textAlign = "center";
+  container.style.animation = "popIn 0.6s ease-out";
+
+  const title = document.createElement("h1");
+  title.innerText = "🎉 Achievement Unlocked";
+  title.style.fontSize = "2rem";
+  title.style.marginBottom = "1rem";
+
+  container.appendChild(title);
+
+  achievements.forEach((a) => {
+    const badge = document.createElement("div");
+    badge.style.margin = "1rem 0";
+    badge.style.padding = "1rem 2rem";
+    badge.style.border = "2px solid white";
+    badge.style.borderRadius = "12px";
+    badge.style.display = "inline-block";
+
+    const name = document.createElement("h2");
+    name.innerText = a.title;
+
+    const desc = document.createElement("p");
+    desc.innerText = a.description;
+    desc.style.opacity = "0.8";
+
+    badge.appendChild(name);
+    badge.appendChild(desc);
+
+    container.appendChild(badge);
+  });
+
+  const hint = document.createElement("p");
+  hint.innerText = "Keep going. Momentum is building.";
+  hint.style.marginTop = "2rem";
+  hint.style.opacity = "0.6";
+
+  container.appendChild(hint);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+
+  // Step 3: Auto remove after delay
+  setTimeout(() => {
+    overlay.remove();
+  }, 3500);
+}
+
+// -----------------------------
+// ANIMATION KEYFRAME INJECTION
+// -----------------------------
+
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+`;
+document.head.appendChild(style);
+
+// -----------------------------
+// NEXT EVOLUTION
+// -----------------------------
+// Replace DOM system with:
+// - React modal system OR
+// - Framer Motion animations
+// - Sound effects (optional)
+// - Particle bursts for elite achievements
+
