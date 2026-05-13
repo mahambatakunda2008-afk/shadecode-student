@@ -8,7 +8,7 @@ import type {
   CortexAIResponse,
   CortexBehaviorInsightPayload,
   CortexBehaviorSummaryPayload,
-} from "../types";
+} from "@/types";
 
 /* ─────────────────────────────────────────────
    SIMPLE IN-MEMORY EVENT STORE (replace with DB later)
