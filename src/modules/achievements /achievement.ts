@@ -221,3 +221,76 @@ export function getUnlockedAchievements(list: Achievement[]) {
 export function getLockedAchievements(list: Achievement[]) {
   return list.filter((a) => !a.unlocked);
 }
+
+// -----------------------------
+// INTEGRATION LAYER (NEXT STEP)
+// -----------------------------
+// This is where Shadecode connects achievements to real app events.
+// Wire these functions into your task, timetable, and streak systems.
+
+export type AchievementEvent =
+  | "TASK_COMPLETED"
+  | "STREAK_UPDATED"
+  | "PERFECT_DAY"
+  | "USER_RETURNED";
+
+export function handleAchievementEvent(
+  event: AchievementEvent,
+  stats: UserStats,
+  achievements: Achievement[] = ACHIEVEMENTS
+): Achievement[] {
+  let updatedStats = { ...stats };
+
+  switch (event) {
+    case "TASK_COMPLETED":
+      updatedStats = onTaskCompleted(updatedStats);
+      break;
+
+    case "STREAK_UPDATED":
+      updatedStats = onStreakUpdate(updatedStats, true);
+      break;
+
+    case "PERFECT_DAY":
+      updatedStats = onPerfectDay(updatedStats);
+      break;
+
+    case "USER_RETURNED":
+      updatedStats = {
+        ...updatedStats,
+        lastActive: new Date(),
+        loginStreak: updatedStats.loginStreak + 1,
+      };
+      break;
+  }
+
+  const evaluated = evaluateAchievements(updatedStats, achievements);
+
+  const newlyUnlocked = evaluated.filter(
+    (a, i) => !achievements[i]?.unlocked && a.unlocked
+  );
+
+  // This is your dopamine hook point
+  if (newlyUnlocked.length > 0) {
+    triggerAchievementUnlockEvent(newlyUnlocked);
+  }
+
+  return evaluated;
+}
+
+// -----------------------------
+// UNLOCK HOOK (UI CONNECTOR)
+// -----------------------------
+
+function triggerAchievementUnlockEvent(newAchievements: Achievement[]) {
+  // Replace this with your UI system (toast, modal, animation engine)
+  console.log("🎉 Achievement Unlocked:", newAchievements.map(a => a.title));
+}
+
+// -----------------------------
+// WHAT TO DO NEXT
+// -----------------------------
+// 1. Connect handleAchievementEvent to your task completion flow
+// 2. Replace console.log with real UI popup system
+// 3. Persist updated achievements to database per user
+// 4. Add animation layer for unlock events
+
