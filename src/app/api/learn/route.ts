@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
-async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
+async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> {
   // 1. Cloudflare
   if (process.env.CLOUDFLARE_API_TOKEN) {
     try {
@@ -22,13 +22,9 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
       );
 
       const data = await res.json();
-
-      const text =
-        typeof data?.result?.response === "string"
-          ? data.result.response
-          : JSON.stringify(data?.result?.response || "");
-
-      if (text) return text;
+      return typeof data?.result?.response === "string"
+        ? data.result.response
+        : JSON.stringify(data?.result?.response || "");
     } catch (err) {
       console.error("Cloudflare failed:", err);
     }
@@ -37,156 +33,79 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
   // 2. OpenAI
   if (process.env.OPENAI_API_KEY) {
     try {
-      const res = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: maxTokens,
-          }),
-        }
-      );
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: maxTokens,
+        }),
+      });
 
       const data = await res.json();
-      return data?.choices?.[0]?.message?.content || null;
+      return data.choices?.[0]?.message?.content || null;
     } catch (err) {
       console.error("OpenAI failed:", err);
-    }
-  }
-
-  // 3. Gemini fallback
-  const geminiKeys = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-  ].filter(Boolean) as string[];
-
-  for (const key of geminiKeys) {
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: prompt }],
-                },
-              ],
-            }),
-          }
-        );
-
-        const data = await res.json();
-
-        const text =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (text) return text;
-      } catch (err) {
-        console.error(`Gemini ${model} failed:`, err);
-      }
     }
   }
 
   return null;
 }
 
-// 🧠 CORE LESSON PROMPT (REAL STRUCTURED PEDAGOGY)
-function lessonPrompt(subject: string, topic: string) {
+/**
+ * 🧠 CORE IDEA:
+ * We force the AI to output STRUCTURED LESSON BLOCKS
+ */
+function buildLessonPrompt(subject: string, topic: string) {
   return `
-You are an expert ${subject} tutor teaching an A-Level student.
+You are an expert ${subject} teacher creating a structured A-Level lesson.
 
-Teach: "${topic}"
+Topic: "${topic}"
 
-Return ONLY valid JSON. No markdown. No explanation outside JSON.
-
-The lesson MUST follow this structure:
+Return ONLY valid JSON in this format:
 
 {
-  "topic": "${topic}",
-  "subject": "${subject}",
+  "title": "string",
   "blocks": [
     {
-      "type": "intro",
-      "title": "What you are learning",
-      "content": ""
-    },
-    {
-      "type": "concept",
-      "title": "Key Idea",
-      "content": ""
-    },
-    {
-      "type": "concept",
-      "title": "How it works",
-      "content": ""
+      "type": "text",
+      "content": "clear explanation"
     },
     {
       "type": "example",
-      "title": "Worked Example",
-      "content": ""
+      "content": "worked example step-by-step"
     },
     {
-      "type": "mistake",
-      "title": "Common Mistakes",
-      "content": ""
+      "type": "math",
+      "content": "LaTeX equation ONLY"
     },
     {
-      "type": "reflection",
-      "title": "Think About It",
-      "content": ""
+      "type": "tip",
+      "content": "important exam tip"
     }
   ]
 }
 
-STRICT RULES:
-- NO LaTeX
-- Use simple math like x^2, not symbols
-- Each block must be short (2–6 sentences)
-- Must feel like a real tutor teaching step-by-step
-- Include at least 1 example with numbers where relevant
-- Avoid fluff or repetition
+RULES:
+- Use SIMPLE, clear English
+- Break explanations into small steps
+- Include at least:
+  - 2 text blocks
+  - 1 example
+  - 1 math block (use LaTeX)
+  - 1 tip block
+- Math MUST be valid LaTeX (e.g. x^2 - 5x + 6 = 0)
+- Do NOT include markdown
+- Do NOT include commentary
+- Output ONLY JSON
 `;
 }
 
-function quizPrompt(subject: string, topic: string) {
-  return `
-Create 5 A-Level MCQs for:
-
-Subject: ${subject}
-Topic: ${topic}
-
-Return ONLY JSON:
-
-{
-  "questions": [
-    {
-      "question": "",
-      "options": ["A", "B", "C", "D"],
-      "correct": 0,
-      "explanation": ""
-    }
-  ]
-}
-
-Rules:
-- NO LaTeX
-- Test understanding, not memory
-- Make distractors realistic
-`;
-}
-
-// 🧠 SAFE JSON PARSER
-function extractJSON(text: string) {
+function safeParseJSON(text: string) {
   try {
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) return null;
@@ -201,82 +120,45 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { type, subject, topic } = body;
 
-    if (!type || !subject || !topic) {
-      return NextResponse.json(
-        { error: "Missing fields" },
-        { status: 400 }
-      );
+    if (type !== "lesson") {
+      return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }
 
-    // 📘 LESSON MODE (MAIN FEATURE)
-    if (type === "lesson") {
-      const prompt = lessonPrompt(subject, topic);
+    const prompt = buildLessonPrompt(subject, topic);
 
-      const raw = await callAI(prompt);
+    const raw = await callAI(prompt);
 
-      if (!raw) {
-        return NextResponse.json({
-          topic,
-          subject,
-          blocks: [
-            {
-              type: "mistake",
-              title: "Error",
-              content:
-                "AI failed to generate lesson. Try again.",
-            },
-          ],
-        });
-      }
-
-      const json = extractJSON(raw);
-
-      if (!json?.blocks) {
-        return NextResponse.json({
-          topic,
-          subject,
-          blocks: [
-            {
-              type: "warning",
-              title: "Parsing Error",
-              content:
-                "AI response was invalid. Try again.",
-            },
-          ],
-        });
-      }
-
-      return NextResponse.json(json);
+    if (!raw) {
+      return NextResponse.json({
+        title: "Unavailable",
+        blocks: [
+          {
+            type: "text",
+            content: "AI is currently unavailable. Please try again.",
+          },
+        ],
+      });
     }
 
-    // 🧪 QUIZ MODE
-    if (type === "quiz") {
-      const prompt = quizPrompt(subject, topic);
+    const parsed = safeParseJSON(raw);
 
-      const raw = await callAI(prompt);
-
-      if (!raw) {
-        return NextResponse.json({ questions: [] });
-      }
-
-      const json = extractJSON(raw);
-
-      if (!json?.questions) {
-        return NextResponse.json({ questions: [] });
-      }
-
-      return NextResponse.json(json);
+    if (!parsed || !parsed.blocks) {
+      return NextResponse.json({
+        title: topic,
+        blocks: [
+          {
+            type: "text",
+            content: "Failed to generate structured lesson. Try again.",
+          },
+        ],
+      });
     }
 
-    return NextResponse.json(
-      { error: "Invalid type" },
-      { status: 400 }
-    );
+    return NextResponse.json(parsed);
   } catch (err) {
     console.error("Learn API error:", err);
-
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Something went wrong" },
       { status: 500 }
     );
   }
