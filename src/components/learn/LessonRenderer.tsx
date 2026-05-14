@@ -4,32 +4,18 @@ import LessonBlock from "./LessonBlock";
 
 interface Block {
   type: string;
-  title: string;
   content: string;
 }
 
-export default function LessonRenderer({
-  blocks,
-}: {
+interface Props {
   blocks: Block[];
-}) {
-  if (!blocks || blocks.length === 0) {
-    return (
-      <div style={{ opacity: 0.6, fontSize: "14px" }}>
-        No lesson content available.
-      </div>
-    );
-  }
+}
 
+export default function LessonRenderer({ blocks }: Props) {
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div className="lesson-renderer">
       {blocks.map((block, i) => (
-        <LessonBlock
-          key={i}
-          type={block.type as any}
-          title={block.title}
-          content={block.content}
-        />
+        <LessonBlock key={i} type={block.type} content={block.content} />
       ))}
     </div>
   );
