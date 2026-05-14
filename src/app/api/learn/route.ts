@@ -1,140 +1,96 @@
 import { NextResponse } from "next/server";
 
-const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
-
-async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> {
-  // 1. Cloudflare
-  if (process.env.CLOUDFLARE_API_TOKEN) {
-    try {
-      const res = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
-        }
-      );
-      const data = await res.json() as any;
-      const text = typeof data?.result?.response === "string"
-  ? data.result.response
-  : JSON.stringify(data?.result?.response || "");
-      if (text) { console.log("Cloudflare success"); return text; }
-    } catch (err) { console.error("Cloudflare failed:", err); }
-  }
-
-  // 2. OpenAI
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
-      });
-      const data = await res.json() as any;
-      const text = data.choices?.[0]?.message?.content;
-      if (text) { console.log("OpenAI success"); return text; }
-    } catch (err) { console.error("OpenAI failed:", err); }
-  }
-
-  // 3. Gemini
-  const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  for (const key of geminiKeys) {
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        });
-        const data = await res.json() as any;
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) { console.log(`Gemini ${model} success`); return text; }
-      } catch (err) { console.error(`Gemini ${model} failed:`, err); }
-    }
-  }
-
-  // 4. OpenRouter
-  if (process.env.OPENROUTER_API_KEY) {
-    try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app" },
-        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }] }),
-      });
-      const data = await res.json() as any;
-      return data.choices?.[0]?.message?.content || null;
-    } catch (err) { console.error("OpenRouter failed:", err); }
-  }
-
-  return null;
-}
+import { callAI } from "./providers";
+import { extractJSON } from "./parser";
+import { lessonPrompt, quizPrompt } from "./prompts";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { type, subject, topic } = body;
+    const { type, subject, topic, mode = "standard" } =
+      await req.json();
 
-    if (type === "explanation") {
-      const prompt = `You are an expert ${subject} teacher explaining a topic to an A-Level student.
+    // ---------------- LESSON ----------------
+    if (type === "lesson") {
+      const prompt = lessonPrompt(
+        subject,
+        topic,
+        mode
+      );
 
-Explain the topic: "${topic}" in ${subject}
+      const text = await callAI(prompt, 2500);
 
-Structure your explanation clearly:
-1. Start with a simple overview (2-3 sentences)
-2. Explain the key concepts step by step
-3. Give a worked example if applicable
-4. Mention common mistakes to avoid
-
-Write in clear, plain English. No LaTeX. Use simple math notation like x^2 instead of $x^2$.
-Length: 300-400 words.`;
-
-      const text = await callAI(prompt);
-      if (!text) return NextResponse.json({ explanation: "AI is currently unavailable. Please try again in a few minutes." });
-      return NextResponse.json({ explanation: text });
-    }
-
-    if (type === "quiz") {
-      const prompt = `You are an expert ${subject} teacher creating practice questions about "${topic}".
-
-Generate exactly 4 multiple choice questions at A-Level standard.
-
-Respond ONLY with valid JSON, no other text:
-{
-  "questions": [
-    {
-      "question": "Question text here",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correct": 0,
-      "explanation": "Why this answer is correct"
-    }
-  ]
-}
-
-Rules:
-- correct is the index (0-3) of the correct option
-- Questions must test understanding, not just recall
-- Write math in plain text: x^2 not LaTeX
-- Make options plausible, not obviously wrong`;
-
-      const text = await callAI(prompt);
-      if (!text) return NextResponse.json({ questions: [] });
+      if (!text) {
+        return NextResponse.json({
+          blocks: [
+            {
+              type: "intro",
+              title: "Unavailable",
+              content:
+                "AI is currently unavailable.",
+            },
+          ],
+          xpReward: 10,
+          difficulty: mode,
+        });
+      }
 
       try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("No JSON");
-        const data = JSON.parse(jsonMatch[0]);
-        return NextResponse.json(data);
+        return NextResponse.json(
+          extractJSON(text)
+        );
       } catch {
-        return NextResponse.json({ questions: [] });
+        return NextResponse.json({
+          blocks: [
+            {
+              type: "intro",
+              title: topic,
+              content:
+                "Could not generate structured lesson.",
+            },
+          ],
+          xpReward: 10,
+          difficulty: mode,
+        });
       }
     }
 
-    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+    // ---------------- QUIZ ----------------
+    if (type === "quiz") {
+      const prompt = quizPrompt(
+        subject,
+        topic,
+        mode
+      );
+
+      const text = await callAI(prompt, 2000);
+
+      if (!text) {
+        return NextResponse.json({
+          questions: [],
+        });
+      }
+
+      try {
+        return NextResponse.json(
+          extractJSON(text)
+        );
+      } catch {
+        return NextResponse.json({
+          questions: [],
+        });
+      }
+    }
+
+    return NextResponse.json(
+      { error: "Invalid type" },
+      { status: 400 }
+    );
   } catch (err) {
-    console.error("Learn API error:", err);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    console.error(err);
+
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }
