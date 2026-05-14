@@ -1,32 +1,58 @@
 "use client";
 
-import { BlockMath } from "react-katex";
+import MathRenderer from "./MathRenderer";
 
 interface Props {
   type: string;
   content: string;
 }
 
+function containsMath(text: string) {
+  return text.includes("^") || text.includes("=") || text.includes("\\");
+}
+
 export default function LessonBlock({ type, content }: Props) {
   switch (type) {
     case "text":
-      return <p>{content}</p>;
+      return (
+        <p style={{ lineHeight: 1.7 }}>
+          {content}
+        </p>
+      );
+
     case "example":
       return (
-        <div className="lesson-example">
-          <strong>Example:</strong>
-          <p>{content}</p>
+        <div style={{ padding: 12, borderLeft: "3px solid #6366f1", background: "rgba(99,102,241,0.06)", borderRadius: 8 }}>
+          <strong>Example</strong>
+          <p style={{ marginTop: 6 }}>
+            {content}
+          </p>
         </div>
       );
+
     case "math":
-      return <BlockMath math={content} />;
+      return (
+        <div style={{ padding: "8px 0" }}>
+          <MathRenderer content={content} block />
+        </div>
+      );
+
     case "tip":
       return (
-        <div className="lesson-tip">
-          <em>Tip: {content}</em>
+        <div style={{ padding: 10, background: "rgba(34,197,94,0.08)", borderRadius: 8 }}>
+          <strong>Tip:</strong> {content}
         </div>
       );
+
     default:
-      return <p>{content}</p>;
+      return (
+        <p>
+          {containsMath(content) ? (
+            <MathRenderer content={content} block={false} />
+          ) : (
+            content
+          )}
+        </p>
+      );
   }
 }
