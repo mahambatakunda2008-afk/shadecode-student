@@ -3,8 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import "katex/dist/katex.min.css";
-import { BlockMath } from "react-katex";
 
 /* ---------------- TYPES ---------------- */
 
@@ -27,8 +25,28 @@ interface QuizQuestion {
   explanation: string;
 }
 
+interface MathResult {
+  problem: string;
+  score: number;
+  correct: boolean;
+  cortexInsight: string;
+  steps: {
+    description: string;
+    status: string;
+    note?: string;
+  }[];
+}
+
 interface LessonBlock {
-  type: "intro" | "concept" | "example" | "tip" | "warning" | "summary";
+  type:
+    | "intro"
+    | "concept"
+    | "example"
+    | "tip"
+    | "warning"
+    | "summary"
+    | "reflection"
+    | "formula";
 
   title?: string;
   content: string;
@@ -47,19 +65,7 @@ interface LessonResponse {
   difficulty: "guided" | "standard" | "challenge";
 }
 
-interface MathResult {
-  problem: string;
-  score: number;
-  correct: boolean;
-  cortexInsight: string;
-  steps: {
-    description: string;
-    status: string;
-    note?: string;
-  }[];
-}
-
-/* ---------------- PAGE ---------------- */
+/* ---------------- COMPONENT ---------------- */
 
 export default function Learn() {
   const router = useRouter();
@@ -75,25 +81,63 @@ export default function Learn() {
   const [submitted, setSubmitted] = useState(false);
 
   const [studiedTopics, setStudiedTopics] = useState<StudyTopic[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const [learningMode, setLearningMode] = useState<
+    "guided" | "standard" | "challenge"
+  >("standard");
 
   const [reflection, setReflection] = useState("");
 
   const [step, setStep] = useState<
-    "input" | "lesson" | "quiz" | "results" | "math"
+    "input" | "lesson" | "quiz" | "results" | "mathcheck"
   >("input");
 
-  /* ---------------- MATH CHECKER ---------------- */
+  const score = questions.filter(
+    (q, i) => answers[i] === q.correct
+  ).length;
 
-  const [mathImage, setMathImage] = useState<File | null>(null);
-  const [mathPreview, setMathPreview] = useState<string | null>(null);
-  const [mathResult, setMathResult] = useState<MathResult | null>(null);
-  const [mathLoading, setMathLoading] = useState(false);
+  const cardStyle = {
+    background: "var(--card)",
+    border: "1px solid var(--card-border)",
+    borderRadius: "16px",
+    padding: "18px",
+  };
 
-  const fileRef = useRef<HTMLInputElement>(null);
+  const inputStyle = {
+    width: "100%",
+    background: "var(--muted)",
+    border: "1px solid var(--card-border)",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    color: "var(--foreground)",
+    fontSize: "14px",
+    outline: "none",
+  };
+
+  const primaryBtn = {
+    background: "var(--primary)",
+    color: "white",
+    border: "none",
+    borderRadius: "10px",
+    padding: "12px 16px",
+    fontWeight: 700,
+    fontSize: "14px",
+    cursor: "pointer",
+  };
+
+  const mutedBtn = {
+    background: "var(--muted)",
+    color: "var(--foreground)",
+    border: "none",
+    borderRadius: "10px",
+    padding: "12px 16px",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: "pointer",
+  };
 
   /* ---------------- INIT ---------------- */
 
@@ -110,33 +154,30 @@ export default function Learn() {
 
       setUserId(user.id);
 
-      const [{ data: s }, { data: t }] = await Promise.all([
-        supabase.from("subjects").select("*").eq("user_id", user.id),
-        supabase
-          .from("study_topics")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
+      const [{ data: subjectsData }, { data: topicsData }] =
+        await Promise.all([
+          supabase.from("subjects").select("*").eq("user_id", user.id),
+          supabase
+            .from("study_topics")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(10),
+        ]);
 
-      setSubjects(s || []);
-      setStudiedTopics(t || []);
+      setSubjects(subjectsData || []);
+      setStudiedTopics(topicsData || []);
       setPageLoading(false);
     };
 
     init();
   }, []);
 
-  /* ---------------- LESSON ---------------- */
+  /* ---------------- API CALLS ---------------- */
 
   const generateLesson = async () => {
     setLoading(true);
     setStep("lesson");
-    setLesson(null);
-    setQuestions([]);
-    setAnswers({});
-    setSubmitted(false);
 
     const res = await fetch("/api/learn", {
       method: "POST",
@@ -145,23 +186,14 @@ export default function Learn() {
         type: "lesson",
         subject: selectedSubject,
         topic: topic.trim(),
+        mode: learningMode,
       }),
     });
 
     const data = await res.json();
     setLesson(data);
     setLoading(false);
-
-    if (userId) {
-      await supabase.from("study_topics").insert({
-        user_id: userId,
-        subject: selectedSubject,
-        topic: topic.trim(),
-      });
-    }
   };
-
-  /* ---------------- QUIZ ---------------- */
 
   const generateQuiz = async () => {
     setLoading(true);
@@ -174,6 +206,7 @@ export default function Learn() {
         type: "quiz",
         subject: selectedSubject,
         topic: topic.trim(),
+        mode: learningMode,
       }),
     });
 
@@ -187,56 +220,30 @@ export default function Learn() {
     setStep("results");
   };
 
-  const score = questions.filter(
-    (q, i) => answers[i] === q.correct
-  ).length;
-
-  /* ---------------- MATH ---------------- */
-
-  const handleMath = async () => {
-    if (!mathImage) return;
-
-    setMathLoading(true);
-
-    const form = new FormData();
-    form.append("image", mathImage);
-    form.append("topic", topic);
-    form.append("subject", selectedSubject);
-
-    const res = await fetch("/api/math-checker", {
-      method: "POST",
-      body: form,
-    });
-
-    const data = await res.json();
-    setMathResult(data);
-    setMathLoading(false);
-  };
-
-  const onFile = (file: File) => {
-    setMathImage(file);
-    setMathPreview(URL.createObjectURL(file));
-  };
-
   /* ---------------- UI ---------------- */
 
-  if (pageLoading) return <div>Loading...</div>;
+  if (pageLoading) {
+    return <div style={{ padding: 40 }}>Loading...</div>;
+  }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: "40px 20px" }}>
+      {/* HEADER */}
+      <h1>AI Learn</h1>
 
       {/* INPUT */}
       {step === "input" && (
-        <div>
-          <h1>Learn</h1>
-
+        <div style={cardStyle}>
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
+            style={inputStyle}
           >
             <option value="">Select subject</option>
             {subjects.map((s) => (
-              <option key={s.id}>{s.name}</option>
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
             ))}
           </select>
 
@@ -244,45 +251,46 @@ export default function Learn() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Enter topic"
+            style={inputStyle}
           />
 
-          <button onClick={generateLesson}>
-            Start Learning
+          <button onClick={generateLesson} style={primaryBtn}>
+            Generate Lesson
           </button>
         </div>
       )}
 
       {/* LESSON */}
-      {step === "lesson" && lesson && (
+      {step === "lesson" && (
         <div>
-          {lesson.blocks.map((b, i) => (
-            <div key={i}>
-              {b.title && <h3>{b.title}</h3>}
-              <p>{b.content}</p>
+          {loading && <p>Generating lesson...</p>}
 
-              {b.formula && (
-                <BlockMath math={b.formula} />
-              )}
+          {!loading &&
+            lesson?.blocks.map((b, i) => (
+              <div key={i} style={cardStyle}>
+                <h3>{b.title}</h3>
+                <p>{b.content}</p>
 
-              {b.example && (
-                <div>
-                  <p>{b.example.question}</p>
-                  <p>{b.example.answer}</p>
-                </div>
-              )}
-            </div>
-          ))}
+                {/* SAFE math fallback */}
+                {b.formula && (
+                  <code
+                    style={{
+                      display: "block",
+                      marginTop: 10,
+                      background: "#111",
+                      color: "#0f0",
+                      padding: 10,
+                      borderRadius: 8,
+                    }}
+                  >
+                    {b.formula}
+                  </code>
+                )}
+              </div>
+            ))}
 
-          <textarea
-            value={reflection}
-            onChange={(e) =>
-              setReflection(e.target.value)
-            }
-            placeholder="Explain in your own words"
-          />
-
-          <button onClick={generateQuiz}>
-            Continue to Quiz
+          <button onClick={generateQuiz} style={primaryBtn}>
+            Take Quiz
           </button>
         </div>
       )}
@@ -291,17 +299,14 @@ export default function Learn() {
       {step === "quiz" && (
         <div>
           {questions.map((q, i) => (
-            <div key={i}>
+            <div key={i} style={cardStyle}>
               <p>{q.question}</p>
 
               {q.options.map((o, oi) => (
                 <button
                   key={oi}
                   onClick={() =>
-                    setAnswers({
-                      ...answers,
-                      [i]: oi,
-                    })
+                    setAnswers({ ...answers, [i]: oi })
                   }
                 >
                   {o}
@@ -310,7 +315,7 @@ export default function Learn() {
             </div>
           ))}
 
-          <button onClick={submitQuiz}>
+          <button onClick={submitQuiz} style={primaryBtn}>
             Submit
           </button>
         </div>
@@ -318,44 +323,17 @@ export default function Learn() {
 
       {/* RESULTS */}
       {step === "results" && (
-        <div>
+        <div style={cardStyle}>
           <h2>
             Score: {score}/{questions.length}
           </h2>
 
-          <button onClick={() => setStep("math")}>
-            Show Working
+          <button
+            onClick={() => setStep("input")}
+            style={primaryBtn}
+          >
+            New Topic
           </button>
-        </div>
-      )}
-
-      {/* MATH */}
-      {step === "math" && (
-        <div>
-          <input
-            type="file"
-            onChange={(e) =>
-              e.target.files &&
-              onFile(e.target.files[0])
-            }
-          />
-
-          {mathPreview && (
-            <img
-              src={mathPreview}
-              width={300}
-            />
-          )}
-
-          <button onClick={handleMath}>
-            Analyse
-          </button>
-
-          {mathResult && (
-            <pre>
-              {JSON.stringify(mathResult, null, 2)}
-            </pre>
-          )}
         </div>
       )}
     </div>
