@@ -1,6 +1,6 @@
 "use client";
 
-import LessonBlock from "./LessonBlock";
+import LessonRenderer from "@/components/learn/LessonRenderer";
 
 interface Block {
   type: string;
