@@ -1,341 +1,170 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import LessonCard from "@/components/LessonCard";
+import ProgressBar from "@/components/ProgressBar";
+import SubjectDropdown from "@/components/SubjectDropdown";
+import { getLessons, getSuggestedTopics, getUserStats } from "@/lib/api";
+import { generateAILesson } from "@/lib/api/openai";
+import { fetchRecommendations } from "@/lib/api/gemini";
 
-/* ---------------- TYPES ---------------- */
-
-interface Subject {
+interface Lesson {
   id: string;
-  name: string;
-}
-
-interface StudyTopic {
-  id: string;
+  title: string;
   subject: string;
-  topic: string;
-  created_at: string;
+  type: string;
+  xp: number;
+  createdAt: string;
 }
 
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correct: number;
-  explanation: string;
+interface Topic {
+  id: string;
+  title: string;
+  subject: string;
 }
 
-interface MathResult {
-  problem: string;
-  score: number;
-  correct: boolean;
-  cortexInsight: string;
-  steps: {
-    description: string;
-    status: string;
-    note?: string;
-  }[];
-}
-
-interface LessonBlock {
-  type:
-    | "intro"
-    | "concept"
-    | "example"
-    | "tip"
-    | "warning"
-    | "summary"
-    | "reflection"
-    | "formula";
-
-  title?: string;
-  content: string;
-
-  formula?: string;
-
-  example?: {
-    question: string;
-    answer: string;
-  };
-}
-
-interface LessonResponse {
-  blocks: LessonBlock[];
-  xpReward: number;
-  difficulty: "guided" | "standard" | "challenge";
-}
-
-/* ---------------- COMPONENT ---------------- */
-
-export default function Learn() {
+export default function LearnPage() {
   const router = useRouter();
-  const supabase = createClient();
 
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [topic, setTopic] = useState("");
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [suggestedTopics, setSuggestedTopics] = useState<Topic[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [aiTopic, setAITopic] = useState<string>("");
+  const [xp, setXP] = useState<number>(0);
+  const [level, setLevel] = useState<number>(1);
+  const [streak, setStreak] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
 
-  const [lesson, setLesson] = useState<LessonResponse | null>(null);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [answers, setAnswers] = useState<{ [key: number]: number }>({});
-  const [submitted, setSubmitted] = useState(false);
-
-  const [studiedTopics, setStudiedTopics] = useState<StudyTopic[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  const [learningMode, setLearningMode] = useState<
-    "guided" | "standard" | "challenge"
-  >("standard");
-
-  const [reflection, setReflection] = useState("");
-
-  const [step, setStep] = useState<
-    "input" | "lesson" | "quiz" | "results" | "mathcheck"
-  >("input");
-
-  const score = questions.filter(
-    (q, i) => answers[i] === q.correct
-  ).length;
-
-  const cardStyle = {
-    background: "var(--card)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "16px",
-    padding: "18px",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    background: "var(--muted)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "10px",
-    padding: "12px 14px",
-    color: "var(--foreground)",
-    fontSize: "14px",
-    outline: "none",
-  };
-
-  const primaryBtn = {
-    background: "var(--primary)",
-    color: "white",
-    border: "none",
-    borderRadius: "10px",
-    padding: "12px 16px",
-    fontWeight: 700,
-    fontSize: "14px",
-    cursor: "pointer",
-  };
-
-  const mutedBtn = {
-    background: "var(--muted)",
-    color: "var(--foreground)",
-    border: "none",
-    borderRadius: "10px",
-    padding: "12px 16px",
-    fontWeight: 600,
-    fontSize: "14px",
-    cursor: "pointer",
-  };
-
-  /* ---------------- INIT ---------------- */
-
+  // Fetch user stats
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
-
-      setUserId(user.id);
-
-      const [{ data: subjectsData }, { data: topicsData }] =
-        await Promise.all([
-          supabase.from("subjects").select("*").eq("user_id", user.id),
-          supabase
-            .from("study_topics")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(10),
-        ]);
-
-      setSubjects(subjectsData || []);
-      setStudiedTopics(topicsData || []);
-      setPageLoading(false);
-    };
-
-    init();
+    getUserStats()
+      .then((stats) => {
+        setXP(stats.currentXP);
+        setLevel(stats.level);
+        setStreak(stats.currentStreak);
+      })
+      .catch((err) => console.error("Failed to load stats:", err));
   }, []);
 
-  /* ---------------- API CALLS ---------------- */
-
-  const generateLesson = async () => {
+  // Fetch lessons and subjects
+  useEffect(() => {
     setLoading(true);
-    setStep("lesson");
+    setError("");
+    getLessons()
+      .then((data) => {
+        setLessons(data);
+        const subjectsList = Array.from(new Set(data.map((l) => l.subject)));
+        setSubjects(subjectsList);
+        if (!selectedSubject && subjectsList.length) setSelectedSubject(subjectsList[0]);
+      })
+      .catch((err) => setError("Failed to fetch lessons"))
+      .finally(() => setLoading(false));
+  }, []);
 
-    const res = await fetch("/api/learn", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "lesson",
-        subject: selectedSubject,
-        topic: topic.trim(),
-        mode: learningMode,
-      }),
-    });
+  // Fetch suggested topics dynamically via Gemini API
+  useEffect(() => {
+    if (!selectedSubject) return;
+    fetchRecommendations(selectedSubject)
+      .then((topics) => setSuggestedTopics(topics))
+      .catch((err) => console.error("Gemini suggestions failed:", err));
+  }, [selectedSubject]);
 
-    const data = await res.json();
-    setLesson(data);
-    setLoading(false);
-  };
-
-  const generateQuiz = async () => {
+  // Handle AI Lesson generation
+  const handleGenerateLesson = async () => {
+    if (!selectedSubject || !aiTopic) return;
     setLoading(true);
-    setStep("quiz");
-
-    const res = await fetch("/api/learn", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "quiz",
-        subject: selectedSubject,
-        topic: topic.trim(),
-        mode: learningMode,
-      }),
-    });
-
-    const data = await res.json();
-    setQuestions(data.questions || []);
-    setLoading(false);
+    try {
+      const lesson = await generateAILesson(selectedSubject, aiTopic);
+      router.push(`/learn/${lesson.id}`);
+    } catch (err) {
+      console.error("AI lesson generation failed:", err);
+      setError("Failed to generate AI lesson. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const submitQuiz = () => {
-    setSubmitted(true);
-    setStep("results");
-  };
-
-  /* ---------------- UI ---------------- */
-
-  if (pageLoading) {
-    return <div style={{ padding: 40 }}>Loading...</div>;
-  }
+  const filteredLessons = lessons.filter((l) => l.subject === selectedSubject);
 
   return (
-    <div style={{ padding: "40px 20px" }}>
-      {/* HEADER */}
-      <h1>AI Learn</h1>
+    <div className="flex flex-col md:flex-row bg-gray-900 text-white min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-800 p-4 flex flex-col">
+        <div className="text-xl font-bold mb-6">Shadecode Student</div>
+        <nav className="flex-1 space-y-2">
+          {["Dashboard","AI Learn","Quizzes","Challenges","Progress","Notes","Subjects","Calendar","Bookmarks","Achievements","Cortex AI","Settings"].map((item) => (
+            <button key={item} className={`w-full text-left py-2 px-3 rounded hover:bg-gray-700 ${item==="AI Learn"?"bg-gray-700":""}`}>{item}</button>
+          ))}
+        </nav>
+        <div className="mt-6">
+          <div className="text-sm">Level {level}</div>
+          <ProgressBar value={xp} max={3000} />
+          <div className="mt-2 text-sm">🔥 {streak}-day streak</div>
+        </div>
+      </aside>
 
-      {/* INPUT */}
-      {step === "input" && (
-        <div style={cardStyle}>
-          <select
-            value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            style={inputStyle}
-          >
-            <option value="">Select subject</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+      {/* Main content */}
+      <main className="flex-1 p-6">
+        <h1 className="text-3xl font-bold mb-2">✨ AI Learn</h1>
+        <p className="text-gray-400 mb-6">Personalized lessons powered by AI</p>
 
+        {/* AI Lesson generator */}
+        <div className="bg-gray-800 rounded-lg p-6 flex flex-col md:flex-row items-center mb-8 space-y-4 md:space-y-0 md:space-x-4">
+          <div className="flex-1 w-full md:w-auto">
+            <SubjectDropdown subjects={subjects} selected={selectedSubject} onSelect={setSelectedSubject} />
+          </div>
           <input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Enter topic"
-            style={inputStyle}
+            type="text"
+            placeholder="Enter topic to learn..."
+            className="flex-1 p-2 rounded bg-gray-700 placeholder-gray-400"
+            value={aiTopic}
+            onChange={(e) => setAITopic(e.target.value)}
           />
-
-          <button onClick={generateLesson} style={primaryBtn}>
-            Generate Lesson
+          <button
+            className="bg-purple-600 px-6 py-2 rounded hover:bg-purple-500"
+            onClick={handleGenerateLesson}
+            disabled={loading}
+          >
+            ✨ Generate Lesson
           </button>
         </div>
-      )}
 
-      {/* LESSON */}
-      {step === "lesson" && (
-        <div>
-          {loading && <p>Generating lesson...</p>}
-
-          {!loading &&
-            lesson?.blocks.map((b, i) => (
-              <div key={i} style={cardStyle}>
-                <h3>{b.title}</h3>
-                <p>{b.content}</p>
-
-                {/* SAFE math fallback */}
-                {b.formula && (
-                  <code
-                    style={{
-                      display: "block",
-                      marginTop: 10,
-                      background: "#111",
-                      color: "#0f0",
-                      padding: 10,
-                      borderRadius: 8,
-                    }}
-                  >
-                    {b.formula}
-                  </code>
-                )}
+        {/* Suggested topics */}
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">✨ Suggested topics for you</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {suggestedTopics.map((t) => (
+              <div key={t.id} className="bg-gray-800 p-4 rounded hover:scale-105 transform transition">
+                <div className="font-semibold">{t.title}</div>
+                <div className="text-sm text-gray-400">{t.subject}</div>
               </div>
             ))}
+          </div>
+        </section>
 
-          <button onClick={generateQuiz} style={primaryBtn}>
-            Take Quiz
-          </button>
-        </div>
-      )}
-
-      {/* QUIZ */}
-      {step === "quiz" && (
-        <div>
-          {questions.map((q, i) => (
-            <div key={i} style={cardStyle}>
-              <p>{q.question}</p>
-
-              {q.options.map((o, oi) => (
-                <button
-                  key={oi}
-                  onClick={() =>
-                    setAnswers({ ...answers, [i]: oi })
-                  }
-                >
-                  {o}
-                </button>
+        {/* Recent lessons */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">🕒 Recent lessons</h2>
+          {error && <div className="text-red-500 mb-4">{error}</div>}
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredLessons.map((l) => (
+                <LessonCard
+                  key={l.id}
+                  lesson={l}
+                  onClick={() => router.push(`/learn/${l.id}`)}
+                />
               ))}
+              {filteredLessons.length === 0 && <div className="text-gray-400">No lessons found</div>}
             </div>
-          ))}
-
-          <button onClick={submitQuiz} style={primaryBtn}>
-            Submit
-          </button>
-        </div>
-      )}
-
-      {/* RESULTS */}
-      {step === "results" && (
-        <div style={cardStyle}>
-          <h2>
-            Score: {score}/{questions.length}
-          </h2>
-
-          <button
-            onClick={() => setStep("input")}
-            style={primaryBtn}
-          >
-            New Topic
-          </button>
-        </div>
-      )}
+          )}
+        </section>
+      </main>
     </div>
   );
 }
