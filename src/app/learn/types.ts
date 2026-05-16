@@ -55,3 +55,39 @@ export interface MathResult {
     note?: string;
   }[];
 }
+
+export type LessonDifficulty = "easy" | "medium" | "hard";
+
+export interface LearnSubject {
+  id: string;
+  name: string;
+  lessonCount: number;
+}
+
+export interface LearnLesson {
+  id: string;
+  subjectId: string;
+  subject: string;
+  title: string;
+  description: string;
+  difficulty: LessonDifficulty;
+  progress: number;
+  completed: boolean;
+}
+
+export interface LearnSummary {
+  currentXP: number;
+  currentStreak: number;
+  level: number;
+  xpGoal: number;
+}
+
+export interface LearnListResponse {
+  subjects: LearnSubject[];
+  lessons: LearnLesson[];
+  summary: LearnSummary;
+}
+
+export interface LearnDetailResponse {
+  lesson: LearnLesson;
+}
