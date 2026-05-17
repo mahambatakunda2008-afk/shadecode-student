@@ -1,11 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import LearnPageClient from "./LearnPageClient";
-
-export default function Learn() {
-  return <LearnPageClient />;
-=======
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import LessonCard from "@/components/LessonCard";
@@ -14,6 +9,10 @@ import SubjectDropdown from "@/components/SubjectDropdown";
 import { getLessons, getSuggestedTopics, getUserStats } from "@/lib/api";
 import { generateAILesson } from "@/lib/api/openai";
 import { fetchRecommendations } from "@/lib/api/gemini";
+
+
+export default function Learn() {
+  return <LearnPageClient />;
 
 interface Lesson {
   id: string;
