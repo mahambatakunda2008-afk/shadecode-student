@@ -33,6 +33,7 @@ interface LearnLessonRow {
   description: string | null;
   difficulty: string | null;
   progress: number | null;
+  updated_at: string | null;
 }
 
 interface AuthContext {
@@ -102,7 +103,8 @@ function toLearnLesson(
     difficulty: normalizeDifficulty(row.difficulty),
     progress,
     completed: progress >= 100,
-  };
+    updated_at: row.updated_at ?? undefined,
+  } as LearnLesson & { updated_at?: string };
 }
 
 function buildSubjectTabs(
@@ -121,7 +123,10 @@ function buildSubjectTabs(
   }));
 }
 
-async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> {
+async function callAI(
+  prompt: string,
+  maxTokens = 2000
+): Promise<string | null> {
   // 1. Cloudflare
   if (process.env.CLOUDFLARE_API_TOKEN) {
     try {
@@ -175,10 +180,6 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
   return null;
 }
 
-/**
- * 🧠 CORE IDEA:
- * We force the AI to output STRUCTURED LESSON BLOCKS
- */
 function buildLessonPrompt(subject: string, topic: string) {
   return `
 You are an expert ${subject} teacher creating a structured A-Level lesson.
@@ -234,6 +235,8 @@ function safeParseJSON(text: string) {
   }
 }
 
+// ── GET ───────────────────────────────────────────────────────────────────────
+
 export async function GET(req: Request) {
   try {
     const auth = await authenticateRequest(req);
@@ -247,6 +250,7 @@ export async function GET(req: Request) {
     const lessonId = url.searchParams.get("lessonId");
     const { supabase, user } = auth;
 
+    // Fetch profile + subjects in parallel — don't crash on failure
     const [{ data: profileData }, { data: subjectsData, error: subjectsError }] =
       await Promise.all([
         supabase
@@ -262,10 +266,7 @@ export async function GET(req: Request) {
       ]);
 
     if (subjectsError) {
-      return NextResponse.json(
-        { error: "Unable to load subjects." },
-        { status: 500 }
-      );
+      console.error("Subjects query error:", subjectsError);
     }
 
     const subjects = (subjectsData ?? []) as SubjectRow[];
@@ -275,15 +276,27 @@ export async function GET(req: Request) {
     const profile = profileData as ProfileRow | null;
     const level = profile?.level ?? 1;
 
+    const summary = {
+      currentXP: profile?.xp ?? 0,
+      currentStreak: profile?.streak ?? 0,
+      level,
+      xpGoal: Math.max(100, level * 100),
+    };
+
+    // ── Single lesson detail ────────────────────────────────────────────────
+
     if (lessonId) {
       const { data: lessonData, error: lessonError } = await supabase
         .from("learn_lessons")
-        .select("id, subject_id, title, description, difficulty, progress")
+        .select(
+          "id, subject_id, title, description, difficulty, progress, updated_at"
+        )
         .eq("user_id", user.id)
         .eq("id", lessonId)
         .maybeSingle();
 
       if (lessonError) {
+        console.error("Lesson detail error:", lessonError);
         return NextResponse.json(
           { error: "Unable to load lesson." },
           { status: 500 }
@@ -304,17 +317,28 @@ export async function GET(req: Request) {
       return NextResponse.json(response);
     }
 
+    // ── Lesson list ─────────────────────────────────────────────────────────
+
     const { data: allLessonData, error: allLessonsError } = await supabase
       .from("learn_lessons")
-      .select("id, subject_id, title, description, difficulty, progress")
+      .select(
+        "id, subject_id, title, description, difficulty, progress, updated_at"
+      )
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
     if (allLessonsError) {
-      return NextResponse.json(
-        { error: "Unable to load lessons." },
-        { status: 500 }
-      );
+      // Log but don't crash — the table may not exist yet.
+      // Return subjects + summary with empty lessons so the page renders.
+      console.error("learn_lessons query error:", allLessonsError);
+
+      const response: LearnListResponse = {
+        subjects: buildSubjectTabs(subjects, []),
+        lessons: [],
+        summary,
+      };
+
+      return NextResponse.json(response);
     }
 
     const allLessons = (allLessonData ?? []) as LearnLessonRow[];
@@ -328,12 +352,7 @@ export async function GET(req: Request) {
       lessons: filteredLessonRows.map((lesson) =>
         toLearnLesson(lesson, subjectById)
       ),
-      summary: {
-        currentXP: profile?.xp ?? 0,
-        currentStreak: profile?.streak ?? 0,
-        level,
-        xpGoal: Math.max(100, level * 100),
-      },
+      summary,
     };
 
     return NextResponse.json(response);
@@ -346,6 +365,8 @@ export async function GET(req: Request) {
   }
 }
 
+// ── POST ──────────────────────────────────────────────────────────────────────
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -356,7 +377,6 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildLessonPrompt(subject, topic);
-
     const raw = await callAI(prompt);
 
     if (!raw) {
@@ -387,7 +407,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(parsed);
   } catch (err) {
-    console.error("Learn API error:", err);
+    console.error("Learn POST error:", err);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }
