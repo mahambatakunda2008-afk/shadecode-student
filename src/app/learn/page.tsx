@@ -10,10 +10,6 @@ import { getLessons, getSuggestedTopics, getUserStats } from "@/lib/api";
 import { generateAILesson } from "@/lib/api/openai";
 import { fetchRecommendations } from "@/lib/api/gemini";
 
-
-export default function Learn() {
-  return <LearnPageClient />;
-
 interface Lesson {
   id: string;
   title: string;
