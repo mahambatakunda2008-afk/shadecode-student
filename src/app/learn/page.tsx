@@ -168,5 +168,4 @@ export default function LearnPage() {
       </main>
     </div>
   );
->>>>>>> f85b4d2077e0e469c0af20dac1e47827eeb84b6b
 }
