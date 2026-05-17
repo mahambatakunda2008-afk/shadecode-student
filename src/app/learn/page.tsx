@@ -12,77 +12,98 @@ import {
 } from "lucide-react";
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 
-// ── Subject config ────────────────────────────────────────────────────────────
+// ── Colour palette — all inline, never dynamic Tailwind ───────────────────────
 
-type SubjectConfig = {
-  color: string;
-  badgeColor: string;
-  bg: string;
+type SubjectTheme = {
   hex: string;
-  icon: React.ComponentType<{ className?: string }>;
+  bg: string;
+  border: string;
+  text: string;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
 };
 
-const SUBJECT_CONFIG: Record<string, SubjectConfig> = {
-  Mathematics:        { color: "text-violet-300",  badgeColor: "text-violet-300",  bg: "bg-violet-500/20",  hex: "#7c3aed", icon: Calculator   },
-  Physics:            { color: "text-blue-300",    badgeColor: "text-blue-300",    bg: "bg-blue-500/20",    hex: "#3b82f6", icon: Zap          },
-  Biology:            { color: "text-emerald-300", badgeColor: "text-emerald-300", bg: "bg-emerald-500/20", hex: "#10b981", icon: Dna          },
-  History:            { color: "text-amber-300",   badgeColor: "text-amber-300",   bg: "bg-amber-500/20",   hex: "#f59e0b", icon: Globe        },
-  Chemistry:          { color: "text-cyan-300",    badgeColor: "text-cyan-300",    bg: "bg-cyan-500/20",    hex: "#06b6d4", icon: FlaskConical },
-  Geography:          { color: "text-teal-300",    badgeColor: "text-teal-300",    bg: "bg-teal-500/20",    hex: "#14b8a6", icon: Globe        },
-  "Computer Science": { color: "text-indigo-300",  badgeColor: "text-indigo-300",  bg: "bg-indigo-500/20",  hex: "#6366f1", icon: Code2        },
-  Psychology:         { color: "text-pink-300",    badgeColor: "text-pink-300",    bg: "bg-pink-500/20",    hex: "#ec4899", icon: Brain        },
-  Economics:          { color: "text-green-300",   badgeColor: "text-green-300",   bg: "bg-green-500/20",   hex: "#22c55e", icon: TrendingUp   },
-  Languages:          { color: "text-rose-300",    badgeColor: "text-rose-300",    bg: "bg-rose-500/20",    hex: "#f43f5e", icon: Languages    },
-  Music:              { color: "text-purple-300",  badgeColor: "text-purple-300",  bg: "bg-purple-500/20",  hex: "#a855f7", icon: Music        },
-  Art:                { color: "text-orange-300",  badgeColor: "text-orange-300",  bg: "bg-orange-500/20",  hex: "#f97316", icon: Palette      },
-  default:            { color: "text-slate-300",   badgeColor: "text-slate-400",   bg: "bg-slate-500/20",   hex: "#64748b", icon: BookOpen     },
+const THEMES: Record<string, SubjectTheme> = {
+  Mathematics:        { hex: "#8b5cf6", bg: "rgba(139,92,246,0.18)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd", icon: Calculator   },
+  Physics:            { hex: "#3b82f6", bg: "rgba(59,130,246,0.18)",  border: "rgba(59,130,246,0.3)",  text: "#93c5fd", icon: Zap          },
+  Biology:            { hex: "#10b981", bg: "rgba(16,185,129,0.18)",  border: "rgba(16,185,129,0.3)",  text: "#6ee7b7", icon: Dna          },
+  History:            { hex: "#f59e0b", bg: "rgba(245,158,11,0.18)",  border: "rgba(245,158,11,0.3)",  text: "#fcd34d", icon: Globe        },
+  Chemistry:          { hex: "#06b6d4", bg: "rgba(6,182,212,0.18)",   border: "rgba(6,182,212,0.3)",   text: "#67e8f9", icon: FlaskConical },
+  Geography:          { hex: "#14b8a6", bg: "rgba(20,184,166,0.18)",  border: "rgba(20,184,166,0.3)",  text: "#5eead4", icon: Globe        },
+  "Computer Science": { hex: "#6366f1", bg: "rgba(99,102,241,0.18)",  border: "rgba(99,102,241,0.3)",  text: "#a5b4fc", icon: Code2        },
+  Psychology:         { hex: "#ec4899", bg: "rgba(236,72,153,0.18)",  border: "rgba(236,72,153,0.3)",  text: "#f9a8d4", icon: Brain        },
+  Economics:          { hex: "#22c55e", bg: "rgba(34,197,94,0.18)",   border: "rgba(34,197,94,0.3)",   text: "#86efac", icon: TrendingUp   },
+  Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
+  Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
+  Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
+  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
 };
 
-function getSubjectConfig(name: string): SubjectConfig {
-  return SUBJECT_CONFIG[name] ?? SUBJECT_CONFIG.default;
+function theme(name: string): SubjectTheme {
+  return THEMES[name] ?? THEMES.default;
 }
 
-// ── Topic suggestions ─────────────────────────────────────────────────────────
+// ── Difficulty ────────────────────────────────────────────────────────────────
 
-const TOPIC_SUGGESTIONS: Record<string, { topic: string; subtopic: string }[]> = {
-  Mathematics:        [{ topic: "Calculus",        subtopic: "Differentiation"       }, { topic: "Algebra",      subtopic: "Quadratic Equations" }],
-  Physics:            [{ topic: "Electricity",     subtopic: "Ohm's Law & Circuits"  }, { topic: "Mechanics",    subtopic: "Newton's Laws"       }],
-  Biology:            [{ topic: "Genetics",        subtopic: "DNA Structure"         }, { topic: "Cell Division",subtopic: "Mitosis & Meiosis"   }],
-  History:            [{ topic: "World War II",    subtopic: "Causes & Events"       }, { topic: "Cold War",     subtopic: "USA vs USSR"         }],
-  Chemistry:          [{ topic: "Chemical Bonds",  subtopic: "Ionic & Covalent"      }, { topic: "Periodic Table",subtopic: "Element Groups"     }],
-  Geography:          [{ topic: "Plate Tectonics", subtopic: "Earthquakes & Volcanoes"}],
-  "Computer Science": [{ topic: "Algorithms",      subtopic: "Sorting & Searching"   }],
-  Economics:          [{ topic: "Supply & Demand", subtopic: "Market Equilibrium"    }],
-  Psychology:         [{ topic: "Memory",          subtopic: "Storage & Retrieval"   }],
+const DIFF: Record<string, { label: string; bg: string; border: string; text: string }> = {
+  easy:   { label: "Guided",    bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#6ee7b7" },
+  medium: { label: "Standard",  bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  text: "#93c5fd" },
+  hard:   { label: "Challenge", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd" },
 };
 
-// ── Difficulty config ─────────────────────────────────────────────────────────
+function diff(d: string) { return DIFF[d] ?? DIFF.medium; }
+function xp(d: string)   { return d === "hard" ? 30 : d === "medium" ? 25 : 20; }
 
-const DIFF: Record<string, { label: string; cls: string }> = {
-  easy:   { label: "Guided",    cls: "text-emerald-400 bg-emerald-500/10 border border-emerald-500/25" },
-  medium: { label: "Standard",  cls: "text-blue-400    bg-blue-500/10    border border-blue-500/25"    },
-  hard:   { label: "Challenge", cls: "text-violet-400  bg-violet-500/10  border border-violet-500/25"  },
-};
-
-function getDiff(d: string) { return DIFF[d] ?? DIFF.medium; }
-function xpForDiff(d: string) { return d === "hard" ? 30 : d === "medium" ? 25 : 20; }
-
-function timeAgo(dateStr: string): string {
-  if (!dateStr) return "Recently";
-  const h = Math.floor((Date.now() - new Date(dateStr).getTime()) / 3_600_000);
-  if (h < 1) return "Just now";
+function ago(iso: string): string {
+  if (!iso) return "Recently";
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
+  if (h < 1)  return "Just now";
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
-  if (d === 1) return "Yesterday";
-  return `${d} days ago`;
+  return d === 1 ? "Yesterday" : `${d} days ago`;
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Suggested topics ──────────────────────────────────────────────────────────
+
+const SUGGESTIONS: Record<string, { topic: string; subtopic: string }[]> = {
+  Mathematics:        [{ topic: "Calculus",        subtopic: "Differentiation"        }, { topic: "Algebra",       subtopic: "Quadratic Equations" }],
+  Physics:            [{ topic: "Electricity",     subtopic: "Ohm's Law & Circuits"   }, { topic: "Mechanics",     subtopic: "Newton's Laws"       }],
+  Biology:            [{ topic: "Genetics",        subtopic: "DNA Structure"           }, { topic: "Cell Division", subtopic: "Mitosis & Meiosis"   }],
+  History:            [{ topic: "World War II",    subtopic: "Causes & Events"         }, { topic: "Cold War",      subtopic: "USA vs USSR"         }],
+  Chemistry:          [{ topic: "Chemical Bonds",  subtopic: "Ionic & Covalent"        }, { topic: "Periodic Table",subtopic: "Element Groups"      }],
+  Geography:          [{ topic: "Plate Tectonics", subtopic: "Earthquakes & Volcanoes" }],
+  "Computer Science": [{ topic: "Algorithms",      subtopic: "Sorting & Searching"     }],
+  Economics:          [{ topic: "Supply & Demand", subtopic: "Market Equilibrium"      }],
+  Psychology:         [{ topic: "Memory",          subtopic: "Storage & Retrieval"     }],
+  Languages:          [{ topic: "Grammar",          subtopic: "Tenses & Structure"      }],
+};
+
+// ── Lesson block types ────────────────────────────────────────────────────────
 
 interface LessonBlock { type: string; content: string; }
 interface GeneratedLesson { title: string; blocks: LessonBlock[]; }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Shared style tokens ───────────────────────────────────────────────────────
+
+const CARD: React.CSSProperties = {
+  background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  borderRadius: 20,
+  overflow: "hidden",
+};
+
+const INPUT: React.CSSProperties = {
+  width: "100%",
+  background: "rgba(0,0,0,0.35)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: 12,
+  padding: "12px 14px 12px 42px",
+  fontSize: 14,
+  color: "#fff",
+  outline: "none",
+  transition: "border-color .15s",
+};
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function LearnPageClient() {
   const router = useRouter();
@@ -92,138 +113,124 @@ export default function LearnPageClient() {
   const [summary, setSummary]     = useState<LearnSummary | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
-  const [accessToken, setToken]   = useState<string | null>(null);
+  const [token, setToken]         = useState<string | null>(null);
 
-  const [selectedSubject, setSelectedSubject] = useState("");
+  const [subject, setSubject]     = useState("");
   const [topic, setTopic]         = useState("");
   const [generating, setGenerating] = useState(false);
-  const [generatedLesson, setGeneratedLesson] = useState<GeneratedLesson | null>(null);
-  const [genError, setGenError]   = useState<string | null>(null);
+  const [lesson, setLesson]       = useState<GeneratedLesson | null>(null);
+  const [genErr, setGenErr]       = useState<string | null>(null);
+
+  // focus state for inputs
+  const [focusSubject, setFocusSubject] = useState(false);
+  const [focusTopic,   setFocusTopic]   = useState(false);
 
   useEffect(() => {
-    async function init() {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+    (async () => {
+      const sb = createClient();
+      const { data: { session } } = await sb.auth.getSession();
       if (!session) { router.push("/login"); return; }
       setToken(session.access_token);
-      await fetchData(session.access_token);
-    }
-    init();
+      await load(session.access_token);
+    })();
   }, []);
 
-  async function fetchData(token: string) {
+  async function load(tok: string) {
     try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch("/api/learn", { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setSubjects(data.subjects ?? []);
-      setLessons(data.lessons ?? []);
-      setSummary(data.summary ?? null);
-    } catch {
-      setError("Couldn't load your lessons.");
-    } finally {
-      setLoading(false);
-    }
+      setLoading(true); setError(null);
+      const r = await fetch("/api/learn", { headers: { Authorization: `Bearer ${tok}` } });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      setSubjects(d.subjects ?? []);
+      setLessons(d.lessons ?? []);
+      setSummary(d.summary ?? null);
+    } catch { setError("Couldn't load your lessons."); }
+    finally  { setLoading(false); }
   }
 
-  async function generateLesson() {
-    if (!selectedSubject || !topic.trim() || !accessToken) return;
-    setGenerating(true);
-    setGenError(null);
+  async function generate() {
+    if (!subject || !topic.trim() || !token) return;
+    setGenerating(true); setGenErr(null);
     try {
-      const res = await fetch("/api/learn", {
+      const r = await fetch("/api/learn", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ type: "lesson", subject: selectedSubject, topic: topic.trim() }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: "lesson", subject, topic: topic.trim() }),
       });
-      const data = await res.json();
-      if (data?.title && Array.isArray(data?.blocks)) setGeneratedLesson(data);
-      else setGenError("Couldn't generate the lesson. Try a different topic.");
-    } catch {
-      setGenError("Generation failed. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
+      const d = await r.json();
+      if (d?.title && Array.isArray(d?.blocks)) setLesson(d);
+      else setGenErr("Couldn't generate the lesson. Try a different topic.");
+    } catch { setGenErr("Generation failed. Please try again."); }
+    finally  { setGenerating(false); }
   }
 
-  const suggestedTopics = subjects
-    .flatMap((s) => (TOPIC_SUGGESTIONS[s.name] ?? []).slice(0, 1).map((t) => ({ ...t, subject: s.name })))
+  const suggestions = subjects
+    .flatMap(s => (SUGGESTIONS[s.name] ?? []).slice(0, 1).map(t => ({ ...t, subject: s.name })))
     .slice(0, 5);
 
-  const recentLessons = [...lessons]
-    .sort((a, b) => {
-      const aDate = (a as any).updated_at ?? "";
-      const bDate = (b as any).updated_at ?? "";
-      return bDate.localeCompare(aDate);
-    })
+  const recent = [...lessons]
+    .sort((a, b) => ((b as any).updated_at ?? "").localeCompare((a as any).updated_at ?? ""))
     .slice(0, 4);
 
   // ── Loading ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0a18] flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative w-9 h-9">
-          <div className="absolute inset-0 rounded-full border-2 border-violet-500/20" />
-          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-violet-400 animate-spin" />
+    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+        <div style={{ position: "relative", width: 36, height: 36 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
         </div>
-        <p className="text-slate-600 text-sm">Loading…</p>
+        <p style={{ color: "#64748b", fontSize: 13 }}>Loading your lessons…</p>
       </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   // ── Lesson viewer ───────────────────────────────────────────────────────────
 
-  if (generatedLesson) return (
-    <div className="min-h-screen bg-[#0a0a18] text-white">
-      <div className="max-w-2xl mx-auto px-6 py-10">
+  if (lesson) return (
+    <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "40px 24px" }}>
         <button
-          onClick={() => setGeneratedLesson(null)}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-300 text-sm mb-10 transition-colors group"
+          onClick={() => setLesson(null)}
+          style={{ display: "flex", alignItems: "center", gap: 8, color: "#64748b", fontSize: 13, background: "none", border: "none", cursor: "pointer", marginBottom: 40, padding: 0 }}
         >
-          <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowRight size={14} style={{ transform: "rotate(180deg)" }} />
           Back to Learn
         </button>
 
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase text-violet-400 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full mb-4">
-          <Sparkles className="w-3 h-3" /> AI Generated · {selectedSubject}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)", padding: "4px 12px", borderRadius: 999 }}>
+            <Sparkles size={11} /> AI Generated
+          </span>
+          <span style={{ color: "#475569", fontSize: 12 }}>· {subject}</span>
+        </div>
 
-        <h1 className="text-2xl font-bold text-white mt-3 mb-8 leading-snug">{generatedLesson.title}</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", lineHeight: 1.3, marginBottom: 32 }}>{lesson.title}</h1>
 
-        <div className="space-y-4">
-          {generatedLesson.blocks.map((block, i) => {
-            const base = "relative rounded-2xl p-5 pl-6 overflow-hidden border";
-            if (block.type === "tip") return (
-              <div key={i} className={`${base} bg-amber-500/5 border-amber-500/15`}>
-                <div className="absolute top-0 left-0 w-[3px] h-full bg-amber-500/60 rounded-l-2xl" />
-                <p className="text-amber-400 text-[10px] font-bold uppercase tracking-widest mb-2">💡 Tip</p>
-                <p className="text-slate-300 text-sm leading-relaxed">{block.content}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {lesson.blocks.map((b, i) => {
+            const styles: Record<string, React.CSSProperties> = {
+              tip:     { background: "rgba(245,158,11,0.06)",  border: "1px solid rgba(245,158,11,0.2)",  color: "#fcd34d" },
+              example: { background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)",  color: "#6ee7b7" },
+              math:    { background: "rgba(59,130,246,0.06)",  border: "1px solid rgba(59,130,246,0.2)",  color: "#93c5fd" },
+            };
+            const labels: Record<string, string> = { tip: "💡 Tip", example: "Example", math: "Formula" };
+            if (b.type in styles) return (
+              <div key={i} style={{ ...styles[b.type], borderRadius: 16, padding: "18px 20px 18px 24px", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: styles[b.type].color as string, borderRadius: "16px 0 0 16px" }} />
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: styles[b.type].color as string, marginBottom: 8 }}>{labels[b.type]}</p>
+                <p style={{ fontSize: 13, lineHeight: 1.75, color: "#cbd5e1", fontFamily: b.type === "text" ? undefined : "monospace" }}>{b.content}</p>
               </div>
             );
-            if (block.type === "example") return (
-              <div key={i} className={`${base} bg-emerald-500/5 border-emerald-500/15`}>
-                <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-500/60 rounded-l-2xl" />
-                <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-2">Example</p>
-                <p className="text-slate-300 text-sm leading-relaxed font-mono">{block.content}</p>
-              </div>
-            );
-            if (block.type === "math") return (
-              <div key={i} className={`${base} bg-blue-500/5 border-blue-500/15`}>
-                <div className="absolute top-0 left-0 w-[3px] h-full bg-blue-500/60 rounded-l-2xl" />
-                <p className="text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-2">Formula</p>
-                <p className="text-slate-200 text-sm leading-relaxed font-mono">{block.content}</p>
-              </div>
-            );
-            return <p key={i} className="text-slate-300 leading-[1.85] text-sm">{block.content}</p>;
+            return <p key={i} style={{ fontSize: 14, lineHeight: 1.85, color: "#94a3b8" }}>{b.content}</p>;
           })}
         </div>
 
         <button
-          onClick={() => setGeneratedLesson(null)}
-          className="mt-10 w-full border border-white/8 hover:border-white/14 bg-white/3 hover:bg-white/5 rounded-2xl py-3.5 text-sm text-slate-400 hover:text-slate-200 transition-all"
+          onClick={() => setLesson(null)}
+          style={{ marginTop: 40, width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 0", fontSize: 14, color: "#64748b", cursor: "pointer" }}
         >
           ← Back to Learn
         </button>
@@ -233,49 +240,52 @@ export default function LearnPageClient() {
 
   // ── Main page ───────────────────────────────────────────────────────────────
 
-  const inputCls =
-    "w-full bg-[#0d0d20] border border-[#2a2a45] hover:border-[#3a3a5c] focus:border-violet-500/70 focus:ring-2 focus:ring-violet-500/15 rounded-xl py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none transition-all";
+  const canGenerate = subject && topic.trim() && !generating;
 
   return (
-    <div className="min-h-screen bg-[#0a0a18] text-white">
+    <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+        .learn-input:focus { border-color: rgba(139,92,246,0.6) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }
+        .topic-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.13) !important; }
+        .lesson-row:hover { background: rgba(255,255,255,0.025) !important; }
+        .gen-btn:not(:disabled):hover { filter: brightness(1.1); }
+        .gen-btn:not(:disabled):active { transform: scale(0.99); }
+        .back-btn:hover { color: #cbd5e1 !important; }
+      `}</style>
 
-      {/* Page-level ambient glow */}
-      <div className="fixed inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(ellipse, #6d28d9 0%, transparent 70%)" }} />
+      {/* Ambient glow */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden" }} aria-hidden>
+        <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 800, height: 500, background: "radial-gradient(ellipse, rgba(109,40,217,0.14) 0%, transparent 65%)", borderRadius: "50%" }} />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-6 py-8 space-y-6">
+      <div style={{ position: "relative", maxWidth: 900, margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: 28 }}>
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Icon badge */}
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.35), rgba(109,40,217,0.1))", border: "1px solid rgba(109,40,217,0.35)" }}>
-              <Sparkles className="w-4.5 h-4.5 text-violet-400" />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 14, background: "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(139,92,246,0.12))", border: "1px solid rgba(139,92,246,0.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Sparkles size={18} color="#a78bfa" />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-none">AI Learn</h1>
-              <p className="text-slate-500 text-xs mt-1">Personalized lessons powered by AI</p>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", lineHeight: 1, margin: 0 }}>AI Learn</h1>
+              <p style={{ fontSize: 12, color: "#475569", margin: "4px 0 0" }}>Personalized lessons powered by AI</p>
             </div>
           </div>
 
           {summary && (
-            <div className="flex items-center gap-2">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {summary.currentStreak > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border"
-                  style={{ background: "rgba(249,115,22,0.08)", borderColor: "rgba(249,115,22,0.2)" }}>
-                  <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  <span className="text-orange-300 text-xs font-bold">{summary.currentStreak}d</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.25)", borderRadius: 12, padding: "8px 12px" }}>
+                  <Flame size={14} color="#fb923c" />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#fdba74" }}>{summary.currentStreak}d</span>
                 </div>
               )}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border"
-                style={{ background: "#111128", borderColor: "#2a2a45" }}>
-                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#111128", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "10px 16px" }}>
+                <Star size={14} color="#fbbf24" fill="#fbbf24" />
                 <div>
-                  <p className="text-white font-bold text-sm leading-none">{summary.currentXP.toLocaleString()} XP</p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">Level {summary.level}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1 }}>{summary.currentXP.toLocaleString()} XP</p>
+                  <p style={{ fontSize: 11, color: "#475569", margin: "3px 0 0" }}>Level {summary.level}</p>
                 </div>
               </div>
             </div>
@@ -283,157 +293,128 @@ export default function LearnPageClient() {
         </div>
 
         {/* ── Hero card ── */}
-        <div
-          className="relative rounded-2xl overflow-hidden"
-          style={{
-            background: "radial-gradient(ellipse at 85% 20%, rgba(109,40,217,0.22) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(37,99,235,0.12) 0%, transparent 50%), linear-gradient(160deg, #131330 0%, #0e0e24 50%, #0c0c1e 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-          }}
-        >
+        <div style={{ position: "relative", borderRadius: 22, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", background: "radial-gradient(ellipse at 80% 15%, rgba(109,40,217,0.25) 0%, transparent 55%), radial-gradient(ellipse at 5% 90%, rgba(37,99,235,0.14) 0%, transparent 50%), linear-gradient(160deg, #141432 0%, #0f0f28 50%, #0c0c1e 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07)" }}>
           {/* Top shimmer */}
-          <div className="absolute top-0 inset-x-0 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent)" }} />
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.7), transparent)" }} />
 
-          <div className="p-8">
-            <div className="flex items-start gap-10">
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 40, padding: "36px 40px" }}>
 
-              {/* Left: form — takes full width, right side is decorative overlay */}
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold mb-2">What will you learn today?</h2>
-                <p className="text-slate-400 text-sm leading-relaxed mb-7">
-                  Choose a subject, enter a topic, and let AI create a personalized lesson for you.
-                </p>
+            {/* Form */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>What will you learn today?</h2>
+              <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 28px", lineHeight: 1.65 }}>
+                Choose a subject, enter a topic, and let AI create a personalized lesson for you.
+              </p>
 
-                <div className="space-y-3">
-                  {/* Subject */}
-                  <div className="relative">
-                    <BookOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none z-10" />
-                    <select
-                      value={selectedSubject}
-                      onChange={(e) => setSelectedSubject(e.target.value)}
-                      className={`${inputCls} pl-10 pr-10 appearance-none cursor-pointer`}
-                    >
-                      <option value="" disabled>Select subject</option>
-                      {subjects.map((s) => (
-                        <option key={s.id} value={s.name}>{s.name}</option>
-                      ))}
-                    </select>
-                    <ChevronRight className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none rotate-90" />
-                  </div>
-
-                  {/* Topic */}
-                  <div className="relative">
-                    <Wand2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Enter topic to learn..."
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && generateLesson()}
-                      className={`${inputCls} pl-10 pr-4`}
-                    />
-                  </div>
-
-                  {/* Button */}
-                  <button
-                    onClick={generateLesson}
-                    disabled={!selectedSubject || !topic.trim() || generating}
-                    className="relative w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
-                    style={{
-                      background: "linear-gradient(135deg, #6d28d9 0%, #5046e4 50%, #2563eb 100%)",
-                      boxShadow: (!selectedSubject || !topic.trim() || generating)
-                        ? "none"
-                        : "0 0 24px rgba(109,40,217,0.45), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18)",
-                    }}
-                  >
-                    {generating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Generating lesson…
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Generate Lesson
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-
-                  {genError && <p className="text-red-400 text-xs text-center">{genError}</p>}
-                </div>
+              {/* Subject */}
+              <div style={{ position: "relative", marginBottom: 12 }}>
+                <BookOpen size={15} color="#475569" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                <select
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  className="learn-input"
+                  style={{ ...INPUT, paddingRight: 40, appearance: "none", cursor: "pointer", WebkitAppearance: "none" }}
+                >
+                  <option value="" disabled>Select subject</option>
+                  {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
+                <ChevronRight size={14} color="#475569" style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%) rotate(90deg)", pointerEvents: "none" }} />
               </div>
 
-              {/* Right: floating icon grid — hidden on small viewports */}
-              <div className="hidden xl:block flex-shrink-0 self-center">
-                <div className="grid grid-cols-2 gap-3 opacity-40">
-                  {[
-                    { I: Atom,         c: "text-violet-400",  b: "rgba(109,40,217,0.25)"  },
-                    { I: Brain,        c: "text-blue-400",    b: "rgba(59,130,246,0.25)"  },
-                    { I: FlaskConical, c: "text-cyan-400",    b: "rgba(6,182,212,0.25)"   },
-                    { I: Calculator,   c: "text-emerald-400", b: "rgba(16,185,129,0.25)"  },
-                    { I: Globe,        c: "text-amber-400",   b: "rgba(245,158,11,0.25)"  },
-                    { I: Code2,        c: "text-indigo-400",  b: "rgba(99,102,241,0.25)"  },
-                  ].map(({ I, c, b }, i) => (
-                    <div key={i} className="w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ background: b, border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <I className={`w-5 h-5 ${c}`} />
-                    </div>
-                  ))}
-                </div>
+              {/* Topic */}
+              <div style={{ position: "relative", marginBottom: 16 }}>
+                <Wand2 size={15} color="#475569" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                <input
+                  type="text"
+                  placeholder="Enter topic to learn..."
+                  value={topic}
+                  onChange={e => setTopic(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && generate()}
+                  className="learn-input"
+                  style={{ ...INPUT }}
+                />
               </div>
+
+              {/* Generate button */}
+              <button
+                onClick={generate}
+                disabled={!canGenerate}
+                className="gen-btn"
+                style={{
+                  width: "100%", borderRadius: 12, padding: "13px 0",
+                  fontSize: 14, fontWeight: 600, color: "#fff",
+                  background: "linear-gradient(135deg, #7c3aed 0%, #5046e4 50%, #2563eb 100%)",
+                  border: "none", cursor: canGenerate ? "pointer" : "not-allowed",
+                  opacity: canGenerate ? 1 : 0.45,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  boxShadow: canGenerate ? "0 0 28px rgba(109,40,217,0.45), 0 2px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)" : "none",
+                  transition: "opacity .15s, filter .15s, transform .1s",
+                }}
+              >
+                {generating ? (
+                  <>
+                    <div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite" }} />
+                    Generating lesson…
+                  </>
+                ) : (
+                  <><Sparkles size={15} /> Generate Lesson <ArrowRight size={15} /></>
+                )}
+              </button>
+
+              {genErr && <p style={{ fontSize: 12, color: "#f87171", textAlign: "center", marginTop: 10 }}>{genErr}</p>}
+            </div>
+
+            {/* Decorative icon grid — only on wider viewports */}
+            <div style={{ flexShrink: 0, alignSelf: "center", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, opacity: 0.45 }} className="hero-icons">
+              {[
+                { I: Atom,        c: "#a78bfa", b: "rgba(139,92,246,0.22)" },
+                { I: Brain,       c: "#93c5fd", b: "rgba(59,130,246,0.22)" },
+                { I: FlaskConical,c: "#67e8f9", b: "rgba(6,182,212,0.22)"  },
+                { I: Calculator,  c: "#6ee7b7", b: "rgba(16,185,129,0.22)" },
+                { I: Globe,       c: "#fcd34d", b: "rgba(245,158,11,0.22)" },
+                { I: Code2,       c: "#a5b4fc", b: "rgba(99,102,241,0.22)" },
+              ].map(({ I, c, b }, i) => (
+                <div key={i} style={{ width: 48, height: 48, borderRadius: 14, background: b, border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <I size={20} color={c} />
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Bottom shimmer */}
-          <div className="absolute bottom-0 inset-x-0 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(37,99,235,0.25), transparent)" }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(37,99,235,0.3), transparent)" }} />
         </div>
 
         {/* ── Suggested topics ── */}
-        {suggestedTopics.length > 0 && (
+        {suggestions.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+                <Sparkles size={14} color="#a78bfa" />
                 Suggested topics for you
               </h3>
-              <Link href="/subjects"
-                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
-                style={{ textDecoration: "none" }}>
-                View all subjects <ArrowRight className="w-3 h-3" />
+              <Link href="/subjects" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 10px", textDecoration: "none", transition: "color .15s" }}>
+                View all subjects <ArrowRight size={12} />
               </Link>
             </div>
 
-            {/* Scrollable row */}
-            <div className="flex gap-3 overflow-x-auto pb-1 -mx-6 px-6 [scrollbar-width:none]">
-              {suggestedTopics.map((item, i) => {
-                const cfg = getSubjectConfig(item.subject);
-                const Icon = cfg.icon;
+            <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4, marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, scrollbarWidth: "none" }}>
+              {suggestions.map((item, i) => {
+                const t = theme(item.subject);
+                const Icon = t.icon;
                 return (
                   <button
                     key={i}
-                    onClick={() => { setSelectedSubject(item.subject); setTopic(item.topic); }}
-                    className="flex-shrink-0 w-52 rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-0.5 group"
-                    style={{
-                      background: "linear-gradient(145deg, #141430 0%, #0f0f24 100%)",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                    }}
+                    className="topic-card"
+                    onClick={() => { setSubject(item.subject); setTopic(item.topic); }}
+                    style={{ flexShrink: 0, width: 190, background: "linear-gradient(150deg, #141432 0%, #101024 100%)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: "20px 18px", textAlign: "left", cursor: "pointer", transition: "transform .2s, border-color .2s", color: "#fff" }}
                   >
-                    {/* Icon */}
-                    <div className={`w-11 h-11 ${cfg.bg} rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-105`}>
-                      <Icon className={`w-5 h-5 ${cfg.color}`} />
+                    <div style={{ width: 44, height: 44, borderRadius: 13, background: t.bg, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                      <Icon size={20} color={t.text} />
                     </div>
-
-                    {/* Text */}
-                    <p className="text-white font-bold text-sm mb-0.5 truncate">{item.topic}</p>
-                    <p className="text-slate-500 text-xs mb-4 truncate">{item.subtopic}</p>
-
-                    {/* Subject badge */}
-                    <span
-                      className={`inline-block text-[11px] font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.badgeColor}`}
-                    >
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.topic}</p>
+                    <p style={{ fontSize: 12, color: "#475569", margin: "0 0 16px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.subtopic}</p>
+                    <span style={{ display: "inline-block", fontSize: 11, fontWeight: 600, color: t.text, background: t.bg, border: `1px solid ${t.border}`, borderRadius: 999, padding: "3px 10px" }}>
                       {item.subject}
                     </span>
                   </button>
@@ -445,84 +426,78 @@ export default function LearnPageClient() {
 
         {/* ── Recent lessons ── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+              <Clock size={14} color="#475569" />
               Recent lessons
             </h3>
-            <Link href="/learn/history"
-              className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
-              style={{ textDecoration: "none" }}>
-              View all <ArrowRight className="w-3 h-3" />
+            <Link href="/learn/history" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#475569", textDecoration: "none" }}>
+              View all <ArrowRight size={12} />
             </Link>
           </div>
 
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: "linear-gradient(160deg, #111128 0%, #0d0d1e 100%)",
-              border: "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
-            {recentLessons.length === 0 ? (
-              <div className="py-16 flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <BookOpen className="w-5 h-5 text-slate-600" />
+          <div style={{ ...CARD }}>
+            {recent.length === 0 ? (
+              <div style={{ padding: "56px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <BookOpen size={20} color="#334155" />
                 </div>
-                <p className="text-slate-400 text-sm font-medium">No lessons yet</p>
-                <p className="text-slate-600 text-xs">Generate your first one above</p>
+                <p style={{ fontSize: 14, color: "#475569", margin: 0, fontWeight: 500 }}>No lessons yet</p>
+                <p style={{ fontSize: 12, color: "#334155", margin: 0 }}>Generate your first one above</p>
               </div>
             ) : (
               <>
-                {recentLessons.map((lesson, i) => {
-                  const cfg  = getSubjectConfig(lesson.subject);
-                  const Icon = cfg.icon;
-                  const diff = getDiff(lesson.difficulty);
-                  const xp   = xpForDiff(lesson.difficulty);
-                  const date = (lesson as any).updated_at ?? (lesson as any).updatedAt ?? "";
+                {recent.map((l, i) => {
+                  const t    = theme(l.subject);
+                  const Icon = t.icon;
+                  const d    = diff(l.difficulty);
+                  const date = (l as any).updated_at ?? (l as any).updatedAt ?? "";
+                  const isLast = i === recent.length - 1;
 
                   return (
                     <Link
-                      key={lesson.id}
-                      href={`/learn/${lesson.id}`}
-                      className="relative flex items-center gap-4 px-6 py-4 hover:bg-white/3 transition-colors"
-                      style={i < recentLessons.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.05)" } : {}}
+                      key={l.id}
+                      href={`/learn/${l.id}`}
+                      className="lesson-row"
+                      style={{
+                        position: "relative", display: "flex", alignItems: "center", gap: 16,
+                        padding: "16px 24px", textDecoration: "none", color: "#fff",
+                        borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.05)",
+                        transition: "background .15s",
+                      }}
                     >
-                      {/* Left colour bar */}
-                      <div className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full opacity-60"
-                        style={{ background: cfg.hex }} />
+                      {/* Colour accent bar */}
+                      <div style={{ position: "absolute", left: 0, top: 14, bottom: 14, width: 3, borderRadius: "0 3px 3px 0", background: t.hex, opacity: 0.7 }} />
 
-                      {/* Subject icon */}
-                      <div className={`w-10 h-10 ${cfg.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                        <Icon className={`w-4.5 h-4.5 ${cfg.color}`} />
+                      {/* Icon */}
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: t.bg, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Icon size={17} color={t.text} />
                       </div>
 
-                      {/* Title + meta */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{lesson.title}</p>
-                        <p className="text-slate-500 text-xs mt-0.5">{lesson.subject} · {timeAgo(date)}</p>
+                      {/* Text */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
+                        <p style={{ fontSize: 12, color: "#475569", margin: "3px 0 0" }}>{l.subject} · {ago(date)}</p>
                       </div>
 
-                      {/* Difficulty badge */}
-                      <span className={`text-[11px] font-semibold px-3 py-1 rounded-full flex-shrink-0 ${diff.cls}`}>
-                        {diff.label}
+                      {/* Difficulty */}
+                      <span style={{ fontSize: 12, fontWeight: 600, color: d.text, background: d.bg, border: `1px solid ${d.border}`, borderRadius: 999, padding: "4px 12px", flexShrink: 0 }}>
+                        {d.label}
                       </span>
 
                       {/* XP */}
-                      <span className="text-emerald-400 text-sm font-bold tabular-nums flex-shrink-0">
-                        +{xp} XP
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#34d399", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                        +{xp(l.difficulty)} XP
                       </span>
 
-                      <ChevronRight className="w-4 h-4 text-slate-700 flex-shrink-0" />
+                      <ChevronRight size={16} color="#334155" style={{ flexShrink: 0 }} />
                     </Link>
                   );
                 })}
 
-                <button
-                  className="w-full py-4 text-xs text-slate-600 hover:text-slate-400 hover:bg-white/2 transition-colors"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-                >
+                <button style={{ width: "100%", padding: "14px 0", fontSize: 12, color: "#334155", background: "none", border: "none", borderTop: "1px solid rgba(255,255,255,0.05)", cursor: "pointer", transition: "color .15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#64748b")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "#334155")}>
                   View full history
                 </button>
               </>
@@ -532,18 +507,16 @@ export default function LearnPageClient() {
 
         {/* ── Error ── */}
         {error && (
-          <div className="flex items-center justify-between gap-4 rounded-xl px-5 py-4"
-            style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)" }}>
-            <p className="text-red-400 text-sm">{error}</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 14, padding: "14px 20px" }}>
+            <p style={{ fontSize: 13, color: "#f87171", margin: 0 }}>{error}</p>
             <button
-              onClick={() => accessToken && fetchData(accessToken)}
-              className="flex items-center gap-1.5 text-red-400 hover:text-red-300 text-sm flex-shrink-0 transition-colors"
+              onClick={() => token && load(token)}
+              style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#f87171", background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Retry
+              <RotateCcw size={13} /> Retry
             </button>
           </div>
         )}
-
       </div>
     </div>
   );
