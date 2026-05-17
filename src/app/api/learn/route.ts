@@ -217,10 +217,10 @@ export async function GET(req: Request) {
 
     if (subjectsError) console.error("Subjects query error:", subjectsError);
 
-    const subjects   = (subjectsData ?? []) as SubjectRow[];
+    const subjects    = (subjectsData ?? []) as SubjectRow[];
     const subjectById = new Map(subjects.map(s => [s.id, s.name]));
-    const profile    = profileData as ProfileRow | null;
-    const level      = profile?.level ?? 1;
+    const profile     = profileData as ProfileRow | null;
+    const level       = profile?.level ?? 1;
 
     const summary = {
       currentXP:     profile?.xp ?? 0,
@@ -282,7 +282,6 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    // Authenticate
     const auth = await authenticateRequest(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -291,9 +290,8 @@ export async function POST(req: Request) {
     const { type, subject, topic } = body;
 
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
-    if (!subject || !topic)  return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
+    if (!subject || !topic) return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
 
-    // Generate
     const prompt = buildLessonPrompt(subject, topic);
     const raw    = await callAI(prompt);
 
@@ -313,7 +311,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // Find subject_id
     const { data: subjectRow } = await supabase
       .from("subjects")
       .select("id")
@@ -321,20 +318,19 @@ export async function POST(req: Request) {
       .eq("name", subject)
       .maybeSingle();
 
-    // Save to DB
     let savedId: string | null = null;
 
     if (subjectRow?.id) {
       const { data: inserted, error: insertError } = await supabase
         .from("learn_lessons")
         .insert({
-          user_id:    user.id,
-          subject_id: subjectRow.id,
-          title:      parsed.title ?? topic,
+          user_id:     user.id,
+          subject_id:  subjectRow.id,
+          title:       parsed.title ?? topic,
           description: `AI-generated lesson on ${topic}`,
-          difficulty: "medium",
-          progress:   0,
-          blocks:     parsed.blocks,
+          difficulty:  "medium",
+          progress:    0,
+          blocks:      parsed.blocks,
         })
         .select("id")
         .single();
@@ -343,8 +339,6 @@ export async function POST(req: Request) {
         console.error("Failed to save lesson:", insertError);
       } else {
         savedId = inserted.id;
-
-        // Award XP (25 for generating a lesson)
         try { await supabase.rpc("increment_xp", { user_id: user.id, amount: 25 }); } catch {}
       }
     }
@@ -357,6 +351,47 @@ export async function POST(req: Request) {
 
   } catch (err) {
     console.error("Learn POST error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
+
+// ── PATCH — update lesson progress ────────────────────────────────────────────
+
+export async function PATCH(req: Request) {
+  try {
+    const auth = await authenticateRequest(req);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { supabase, user } = auth;
+    const body = await req.json();
+    const { lessonId, progress } = body;
+
+    if (!lessonId || typeof progress !== "number") {
+      return NextResponse.json({ error: "Missing lessonId or progress" }, { status: 400 });
+    }
+
+    const clamped = Math.min(100, Math.max(0, Math.round(progress)));
+
+    const { error: updateError } = await supabase
+      .from("learn_lessons")
+      .update({ progress: clamped, updated_at: new Date().toISOString() })
+      .eq("id", lessonId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Progress update error:", updateError);
+      return NextResponse.json({ error: "Failed to update progress" }, { status: 500 });
+    }
+
+    // Award XP on completion
+    if (clamped === 100) {
+      try { await supabase.rpc("increment_xp", { user_id: user.id, amount: 35 }); } catch {}
+    }
+
+    return NextResponse.json({ success: true, progress: clamped });
+
+  } catch (err) {
+    console.error("Learn PATCH error:", err);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
