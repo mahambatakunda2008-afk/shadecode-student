@@ -345,7 +345,7 @@ export async function POST(req: Request) {
         savedId = inserted.id;
 
         // Award XP (25 for generating a lesson)
-        await supabase.rpc("increment_xp", { user_id: user.id, amount: 25 }).catch(() => {});
+        try { await supabase.rpc("increment_xp", { user_id: user.id, amount: 25 }); } catch {}
       }
     }
 
