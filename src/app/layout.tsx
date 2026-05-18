@@ -4,9 +4,31 @@ import BottomNav from "@/components/nav/BottomNav";
 import ServiceWorkerRegistrar from "@/components/shared/ServiceWorkerRegistrar";
 import CommandPalette from "@/components/ui/CommandPalette";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Shadecode Student",
-  description: "Study smarter. Live sharper.",
+  description:
+    "AI-powered learning platform for students. Learn Computer Science, Mathematics, and more with interactive AI tools.",
+  keywords: [
+    "Shadecode Student",
+    "AI learning platform",
+    "Computer Science",
+    "A Level",
+    "AS Level",
+    "Zimbabwe students",
+    "education",
+  ],
+  authors: [{ name: "Shadecode" }],
+  creator: "Shadecode",
+  metadataBase: new URL("https://shadecodestudent.vercel.app"),
+  openGraph: {
+    title: "Shadecode Student",
+    description:
+      "AI-powered learning platform for students.",
+    url: "https://shadecodestudent.vercel.app",
+    siteName: "Shadecode Student",
+    locale: "en_US",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
