@@ -15,9 +15,9 @@ import type {
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
-interface SubjectRow   { id: string; name: string; }
-interface ProfileRow   { xp: number | null; streak: number | null; level: number | null; }
-interface LessonBlock  { type: string; content: string; }
+interface SubjectRow { id: string; name: string; }
+interface ProfileRow { xp: number | null; streak: number | null; level: number | null; }
+interface LessonBlock { type: string; content: string; }
 interface LearnLessonRow {
   id: string; subject_id: string; title: string;
   description: string | null; difficulty: string | null;
@@ -26,15 +26,13 @@ interface LearnLessonRow {
 }
 interface AuthContext { supabase: SupabaseClient; user: User; }
 
-// ── Supabase admin ────────────────────────────────────────────────────────────
+// ── Supabase ──────────────────────────────────────────────────────────────────
 
 function getSupabaseAdmin() {
-  const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) throw new Error("Missing Supabase credentials.");
-  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase server credentials.");
+  return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 function getBearerToken(req: Request): string | null {
@@ -54,30 +52,27 @@ async function authenticateRequest(req: Request): Promise<AuthContext | null> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function normalizeDifficulty(value: string | null): LessonDifficulty {
-  if (value === "medium" || value === "hard") return value;
+function normalizeDifficulty(v: string | null): LessonDifficulty {
+  if (v === "medium" || v === "hard") return v;
   return "easy";
 }
 
-function clampProgress(value: number | null): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
-  return Math.min(100, Math.max(0, Math.round(value)));
+function clampProgress(v: number | null): number {
+  if (typeof v !== "number" || !Number.isFinite(v)) return 0;
+  return Math.min(100, Math.max(0, Math.round(v)));
 }
 
 function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
   const progress = clampProgress(row.progress);
   return {
-    id:          row.id,
-    subjectId:   row.subject_id,
-    subject:     subjectById.get(row.subject_id) ?? "Unknown",
-    title:       row.title,
-    description: row.description ?? "",
-    difficulty:  normalizeDifficulty(row.difficulty),
-    progress,
-    completed:   progress >= 100,
-    updated_at:  row.updated_at ?? undefined,
-    blocks:      row.blocks ?? undefined,
-  } as LearnLesson & { updated_at?: string; blocks?: LessonBlock[] };
+    id: row.id, subjectId: row.subject_id,
+    subject: subjectById.get(row.subject_id) ?? "Unknown subject",
+    title: row.title, description: row.description ?? "",
+    difficulty: normalizeDifficulty(row.difficulty),
+    progress, completed: progress >= 100,
+    updated_at: row.updated_at ?? undefined,
+    blocks: row.blocks ?? undefined,
+  };
 }
 
 function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): LearnSubject[] {
@@ -88,187 +83,114 @@ function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): Le
   return subjects.map(s => ({ id: s.id, name: s.name, lessonCount: counts[s.id] ?? 0 }));
 }
 
-// ── Prompt ───────────────────────────────────────────────────────────────────
-// KEY RULE: NO LaTeX backslashes. Plain text math only.
-// This prevents JSON parse failures on topics like trig, calculus, etc.
-
-function buildLessonPrompt(subject: string, topic: string): string {
-  return `You are an expert ${subject} tutor creating a structured A-Level lesson.
-
-Topic: "${topic}"
-
-Return ONLY a valid JSON object. No markdown, no code fences, no extra text.
-
-CRITICAL JSON RULES:
-- Use double quotes for all strings
-- NO backslashes except for \\n inside string values
-- NO LaTeX (no \\frac, \\sin, \\theta etc.)
-- Write math in plain text: use ^ for powers, / for fractions, words for Greek letters
-- Examples of safe math notation:
-    sin(x), cos(theta), tan(x)
-    x^2 + 5x - 6 = 0
-    dy/dx = 2x
-    (a + b)^2 = a^2 + 2ab + b^2
-    f(x) = x^3 - 3x + 2
-    sum from n=1 to infinity of 1/n^2
-
-Required JSON format:
-{
-  "title": "Lesson title here",
-  "blocks": [
-    {"type": "text",    "content": "Introduction or explanation paragraph"},
-    {"type": "text",    "content": "Second explanation paragraph"},
-    {"type": "example", "content": "Step 1: ... Step 2: ... Step 3: ..."},
-    {"type": "math",    "content": "key formula in plain text e.g. sin^2(x) + cos^2(x) = 1"},
-    {"type": "tip",     "content": "Exam tip or common mistake to avoid"}
-  ]
-}
-
-Include at least: 2 text blocks, 1 example, 1 math block, 1 tip block.
-Keep explanations clear and concise for A-Level students.
-Output ONLY the JSON object, nothing else.`;
-}
-
-// ── Robust JSON parser ────────────────────────────────────────────────────────
-// Handles: markdown fences, unescaped backslashes, extra text before/after JSON
+// ── JSON parser — multi-stage recovery ───────────────────────────────────────
+//
+// LaTeX like \sin, \theta, \frac{}{} contains backslashes that are invalid
+// JSON escape sequences. We fix this before parsing rather than failing.
 
 function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
-  if (!raw?.trim()) return null;
-
-  // 1. Strip markdown code fences
+  // Stage 1: strip markdown fences
   let text = raw
     .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```\s*$/,        "")
+    .replace(/\s*```\s*$/, "")
     .trim();
 
-  // 2. Extract the first {...} block
-  const start = text.indexOf("{");
-  const end   = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) return null;
-  text = text.slice(start, end + 1);
-
-  // 3. Try direct parse first
+  // Stage 2: try straight parse
   try {
-    const parsed = JSON.parse(text);
-    if (isValidLesson(parsed)) return parsed;
-  } catch {}
-
-  // 4. Fix unescaped backslashes inside string values
-  //    Replace lone backslashes (not already escaped) with empty string
-  //    This handles LaTeX that slipped through despite the prompt
-  const cleaned = text.replace(
-    /"((?:[^"\\]|\\.)*)"/g,
-    (_match, inner: string) => {
-      // Remove LaTeX commands entirely: \sin -> sin, \frac -> frac, etc.
-      const fixed = inner
-        .replace(/\\([a-zA-Z]+)/g, "$1")   // \sin -> sin, \frac -> frac
-        .replace(/\\([^"\\nrtbfu])/g, "$1") // other lone backslashes
-        .replace(/\{/g, "(")               // { -> (
-        .replace(/\}/g, ")")               // } -> )
-        .trim();
-      return `"${fixed}"`;
+    const m = text.match(/\{[\s\S]*\}/);
+    if (m) {
+      const parsed = JSON.parse(m[0]);
+      if (parsed?.title && Array.isArray(parsed?.blocks)) return parsed;
     }
-  );
-
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (isValidLesson(parsed)) return parsed;
   } catch {}
 
-  // 5. Last resort: manually extract title + blocks with regex
+  // Stage 3: fix unescaped backslashes
+  // Replace any \ not already followed by a valid JSON escape char
   try {
-    const titleMatch  = cleaned.match(/"title"\s*:\s*"([^"]+)"/);
-    const blocksMatch = cleaned.match(/"blocks"\s*:\s*(\[[\s\S]*?\])\s*[,}]/);
+    const fixed = text.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+    const m = fixed.match(/\{[\s\S]*\}/);
+    if (m) {
+      const parsed = JSON.parse(m[0]);
+      if (parsed?.title && Array.isArray(parsed?.blocks)) return parsed;
+    }
+  } catch {}
+
+  // Stage 4: aggressive — strip all backslashes, then parse
+  try {
+    const stripped = text.replace(/\\/g, "");
+    const m = stripped.match(/\{[\s\S]*\}/);
+    if (m) {
+      const parsed = JSON.parse(m[0]);
+      if (parsed?.title && Array.isArray(parsed?.blocks)) return parsed;
+    }
+  } catch {}
+
+  // Stage 5: field-by-field extraction as last resort
+  try {
+    const titleMatch = text.match(/"title"\s*:\s*"([^"]+)"/);
+    const blocksMatch = text.match(/"blocks"\s*:\s*(\[[\s\S]*?\])\s*[,}]/);
 
     if (titleMatch && blocksMatch) {
-      const blocks = JSON.parse(blocksMatch[1]) as LessonBlock[];
-      if (Array.isArray(blocks)) {
-        return { title: titleMatch[1], blocks };
-      }
+      const title  = titleMatch[1];
+      const blocks = JSON.parse(blocksMatch[1].replace(/\\(?!["\\/bfnrtu])/g, "\\\\"));
+      if (Array.isArray(blocks)) return { title, blocks };
     }
   } catch {}
 
   return null;
 }
 
-function isValidLesson(obj: unknown): obj is { title: string; blocks: LessonBlock[] } {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof (obj as any).title === "string" &&
-    Array.isArray((obj as any).blocks) &&
-    (obj as any).blocks.length > 0
-  );
-}
-
-// ── Full AI provider chain ────────────────────────────────────────────────────
-// Order: Cloudflare → OpenAI → Gemini 2.0 Flash (3 keys) →
-//        Gemini 2.5 Flash (3 keys) → OpenRouter
+// ── AI providers — full chain ─────────────────────────────────────────────────
 
 async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
 
-  // ── 1. Cloudflare Workers AI ─────────────────────────────────────────────
+  // 1. Cloudflare Workers AI
   if (process.env.CLOUDFLARE_API_TOKEN) {
     try {
       const res = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: maxTokens,
-          }),
+          headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
         }
       );
       const data = await res.json();
-      const text = data?.result?.response;
-      if (typeof text === "string" && text.trim()) {
-        console.log("✓ Cloudflare succeeded");
-        return text;
-      }
-    } catch (err) { console.error("Cloudflare failed:", err); }
+      const text = typeof data?.result?.response === "string"
+        ? data.result.response
+        : JSON.stringify(data?.result?.response ?? "");
+      if (text && text.length > 20) return text;
+    } catch (err) { console.error("[AI] Cloudflare failed:", err); }
   }
 
-  // ── 2. OpenAI GPT-4o-mini ────────────────────────────────────────────────
+  // 2. OpenAI
   if (process.env.OPENAI_API_KEY) {
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [{ role: "user", content: prompt }],
           max_tokens: maxTokens,
-          response_format: { type: "json_object" }, // forces valid JSON
+          response_format: { type: "json_object" }, // force JSON mode
         }),
       });
       const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content;
-      if (text?.trim()) {
-        console.log("✓ OpenAI succeeded");
-        return text;
-      }
-    } catch (err) { console.error("OpenAI failed:", err); }
+      const text = data.choices?.[0]?.message?.content;
+      if (text && text.length > 20) return text;
+    } catch (err) { console.error("[AI] OpenAI failed:", err); }
   }
 
-  // ── 3. Gemini — try all keys × two models ────────────────────────────────
+  // 3. Gemini — rotate through all available keys
   const geminiKeys = [
     process.env.GEMINI_API_KEY,
     process.env.GEMINI_API_KEY_2,
     process.env.GEMINI_API_KEY_3,
-  ].filter((k): k is string => !!k);
+  ].filter(Boolean) as string[];
 
-  const geminiModels = ["gemini-2.0-flash", "gemini-2.5-flash"];
-
-  for (const model of geminiModels) {
-    for (const key of geminiKeys) {
+  for (const key of geminiKeys) {
+    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -279,22 +201,19 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
                 maxOutputTokens: maxTokens,
-                temperature: 0.4,
+                responseMimeType: "application/json", // force JSON output
               },
             }),
           }
         );
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text?.trim()) {
-          console.log(`✓ Gemini ${model} succeeded`);
-          return text;
-        }
-      } catch (err) { console.error(`Gemini ${model} failed:`, err); }
+        if (text && text.length > 20) return text;
+      } catch (err) { console.error(`[AI] Gemini (${model}) failed:`, err); }
     }
   }
 
-  // ── 4. OpenRouter (free Llama fallback) ──────────────────────────────────
+  // 4. OpenRouter — free Llama fallback
   if (process.env.OPENROUTER_API_KEY) {
     try {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -312,16 +231,43 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
         }),
       });
       const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content;
-      if (text?.trim()) {
-        console.log("✓ OpenRouter succeeded");
-        return text;
-      }
-    } catch (err) { console.error("OpenRouter failed:", err); }
+      const text = data.choices?.[0]?.message?.content;
+      if (text && text.length > 20) return text;
+    } catch (err) { console.error("[AI] OpenRouter failed:", err); }
   }
 
-  console.error("✗ All AI providers exhausted");
+  console.error("[AI] All providers exhausted.");
   return null;
+}
+
+// ── Prompt — Unicode math, no LaTeX backslashes ───────────────────────────────
+//
+// LaTeX backslashes (\sin, \frac, \theta) are invalid in JSON strings.
+// We use Unicode math notation instead: θ, π, √, ∫, ², ×, ÷, ±, ≤, ≥, ≠
+
+function buildLessonPrompt(subject: string, topic: string): string {
+  return `You are an expert ${subject} teacher. Create a structured A-Level lesson on: "${topic}"
+
+Return ONLY a valid JSON object. No markdown, no code fences, no commentary.
+
+{
+  "title": "Lesson title here",
+  "blocks": [
+    { "type": "text",    "content": "Clear explanation in plain English." },
+    { "type": "example","content": "Worked example with steps shown." },
+    { "type": "math",   "content": "Equation using plain notation, e.g: sin(θ) = opposite/hypotenuse or x² + 5x + 6 = 0" },
+    { "type": "tip",    "content": "Key exam tip or common mistake to avoid." }
+  ]
+}
+
+STRICT RULES:
+- Output ONLY the JSON object. Nothing before or after it.
+- Include at least: 2 text blocks, 1 example block, 1 math block, 1 tip block.
+- For math: use plain readable notation with Unicode symbols (θ, π, √, ², ³, ×, ÷, ±, ≤, ≥, ≠, ∞, ∑, ∫, Δ).
+- Do NOT use LaTeX backslash commands like \\sin, \\frac, \\theta — they break JSON.
+- Do NOT use markdown formatting inside content strings.
+- All strings must be properly JSON-escaped (use \\" for quotes inside strings).
+- Keep explanations clear, concise, and A-Level appropriate.`;
 }
 
 // ── GET ───────────────────────────────────────────────────────────────────────
@@ -336,13 +282,12 @@ export async function GET(req: Request) {
     const lessonId  = url.searchParams.get("lessonId");
     const { supabase, user } = auth;
 
-    const [{ data: profileData }, { data: subjectsData, error: subjectsError }] =
-      await Promise.all([
-        supabase.from("profiles").select("xp, streak, level").eq("id", user.id).maybeSingle(),
-        supabase.from("subjects").select("id, name").eq("user_id", user.id).order("name", { ascending: true }),
-      ]);
+    const [{ data: profileData }, { data: subjectsData, error: subjectsError }] = await Promise.all([
+      supabase.from("profiles").select("xp, streak, level").eq("id", user.id).maybeSingle(),
+      supabase.from("subjects").select("id, name").eq("user_id", user.id).order("name", { ascending: true }),
+    ]);
 
-    if (subjectsError) console.error("Subjects error:", subjectsError);
+    if (subjectsError) console.error("Subjects query error:", subjectsError);
 
     const subjects    = (subjectsData ?? []) as SubjectRow[];
     const subjectById = new Map(subjects.map(s => [s.id, s.name]));
@@ -365,10 +310,14 @@ export async function GET(req: Request) {
         .eq("id", lessonId)
         .maybeSingle();
 
-      if (lessonError) return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
-      if (!lessonData)  return NextResponse.json({ error: "Lesson not found." },     { status: 404 });
+      if (lessonError) {
+        console.error("Lesson detail error:", lessonError);
+        return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
+      }
+      if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
 
-      return NextResponse.json({ lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) } as LearnDetailResponse);
+      const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) };
+      return NextResponse.json(response);
     }
 
     // Lesson list
@@ -379,18 +328,19 @@ export async function GET(req: Request) {
       .order("updated_at", { ascending: false });
 
     if (allLessonsError) {
-      console.error("learn_lessons error:", allLessonsError);
+      console.error("learn_lessons query error:", allLessonsError);
       return NextResponse.json({ subjects: buildSubjectTabs(subjects, []), lessons: [], summary });
     }
 
     const allLessons = (allLessonData ?? []) as LearnLessonRow[];
     const filtered   = subjectId === "all" ? allLessons : allLessons.filter(l => l.subject_id === subjectId);
 
-    return NextResponse.json({
+    const response: LearnListResponse = {
       subjects: buildSubjectTabs(subjects, allLessons),
       lessons:  filtered.map(l => toLearnLesson(l, subjectById)),
       summary,
-    } as LearnListResponse);
+    };
+    return NextResponse.json(response);
 
   } catch (err) {
     console.error("Learn GET error:", err);
@@ -406,33 +356,33 @@ export async function POST(req: Request) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { supabase, user } = auth;
-    const { type, subject, topic } = await req.json();
+    const body = await req.json();
+    const { type, subject, topic } = body;
 
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
-    if (!subject || !topic)  return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
+    if (!subject || !topic) return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
 
-    // Generate with full provider chain
-    const raw = await callAI(buildLessonPrompt(subject, topic));
+    const prompt = buildLessonPrompt(subject, topic);
+    const raw    = await callAI(prompt);
 
     if (!raw) {
       return NextResponse.json({
-        title:  "AI Unavailable",
+        title:  `${topic} — Lesson Unavailable`,
         blocks: [{ type: "text", content: "All AI providers are currently unavailable. Please try again in a moment." }],
       });
     }
 
-    // Robust parse — handles LaTeX escaping issues
     const parsed = safeParseJSON(raw);
 
-    if (!parsed) {
-      console.error("Failed to parse AI response:", raw.slice(0, 300));
+    if (!parsed?.blocks?.length) {
+      console.error("[Parse] All stages failed. Raw excerpt:", raw.slice(0, 300));
       return NextResponse.json({
         title:  topic,
-        blocks: [{ type: "text", content: "The lesson couldn't be structured properly. Please try again or rephrase the topic." }],
+        blocks: [{ type: "text", content: "The AI returned content that couldn't be parsed. Please try again or rephrase the topic." }],
       });
     }
 
-    // Find subject_id and save
+    // Find subject_id
     const { data: subjectRow } = await supabase
       .from("subjects")
       .select("id")
@@ -448,7 +398,7 @@ export async function POST(req: Request) {
         .insert({
           user_id:     user.id,
           subject_id:  subjectRow.id,
-          title:       parsed.title,
+          title:       parsed.title ?? topic,
           description: `AI-generated lesson on ${topic}`,
           difficulty:  "medium",
           progress:    0,
@@ -465,7 +415,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ id: savedId, title: parsed.title, blocks: parsed.blocks });
+    return NextResponse.json({ id: savedId, title: parsed.title ?? topic, blocks: parsed.blocks });
 
   } catch (err) {
     console.error("Learn POST error:", err);
@@ -473,7 +423,7 @@ export async function POST(req: Request) {
   }
 }
 
-// ── PATCH — update lesson progress ────────────────────────────────────────────
+// ── PATCH — update lesson progress ───────────────────────────────────────────
 
 export async function PATCH(req: Request) {
   try {
