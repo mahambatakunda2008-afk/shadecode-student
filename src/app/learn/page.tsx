@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -101,6 +101,12 @@ export default function LearnPageClient() {
   const [topic,      setTopic]      = useState("");
   const [generating, setGenerating] = useState(false);
   const [genErr,     setGenErr]     = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+useEffect(() => {
+  const s = searchParams.get("subject");
+  if (s) setSubject(s);
+}, [searchParams]);
 
   useEffect(() => {
     (async () => {
