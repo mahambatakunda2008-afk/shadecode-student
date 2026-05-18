@@ -136,10 +136,8 @@ export default function LearnPageClient() {
       });
       const d = await r.json();
       if (d?.id) {
-        // Saved — navigate to the lesson detail page
         router.push(`/learn/${d.id}`);
       } else if (d?.title && Array.isArray(d?.blocks)) {
-        // Generated but not saved (subject not found in DB) — store in sessionStorage and redirect
         sessionStorage.setItem("unsaved_lesson", JSON.stringify({ ...d, subject }));
         router.push(`/learn/preview`);
       } else {
@@ -181,6 +179,7 @@ export default function LearnPageClient() {
         .lesson-row:hover  { background: rgba(255,255,255,0.025) !important; }
         .gen-btn:not(:disabled):hover  { filter: brightness(1.1); }
         .gen-btn:not(:disabled):active { transform: scale(0.99); }
+        .history-btn:hover { color: #94a3b8 !important; background: rgba(255,255,255,0.03) !important; }
       `}</style>
 
       {/* Ambient glow */}
@@ -356,11 +355,15 @@ export default function LearnPageClient() {
                     </Link>
                   );
                 })}
-                <button style={{ width: "100%", padding: "14px 0", fontSize: 12, color: "#334155", background: "none", border: "none", borderTop: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "#64748b")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "#334155")}>
-                  View full history
-                </button>
+
+                {/* ✅ FIXED: now navigates to /learn/history */}
+                <Link
+                  href="/learn/history"
+                  className="history-btn"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", padding: "14px 0", fontSize: 12, color: "#475569", background: "none", borderTop: "1px solid rgba(255,255,255,0.05)", textDecoration: "none", transition: "color .15s, background .15s" }}
+                >
+                  View full history <ArrowRight size={12} />
+                </Link>
               </>
             )}
           </div>
