@@ -43,6 +43,12 @@ const DIFF: Record<string, { label: string; bg: string; border: string; text: st
   hard:   { label: "Challenge", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd" },
 };
 
+const DIFF_PICKER = [
+  { v: "easy"   as const, label: "Guided",    desc: "Step-by-step",  bg: "rgba(16,185,129,0.15)",  border: "rgba(16,185,129,0.4)",  text: "#6ee7b7" },
+  { v: "medium" as const, label: "Standard",  desc: "A-Level pace",  bg: "rgba(59,130,246,0.15)",  border: "rgba(59,130,246,0.4)",  text: "#93c5fd" },
+  { v: "hard"   as const, label: "Challenge", desc: "Exam-ready",    bg: "rgba(139,92,246,0.15)",  border: "rgba(139,92,246,0.4)",  text: "#c4b5fd" },
+];
+
 function diff(d: string) { return DIFF[d] ?? DIFF.medium; }
 function xp(d: string)   { return d === "hard" ? 30 : d === "medium" ? 25 : 20; }
 
@@ -88,25 +94,27 @@ const INPUT: React.CSSProperties = {
 };
 
 export default function LearnPageClient() {
-  const router = useRouter();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
 
-  const [subjects, setSubjects] = useState<LearnSubject[]>([]);
-  const [lessons,  setLessons]  = useState<LearnLesson[]>([]);
-  const [summary,  setSummary]  = useState<LearnSummary | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-  const [token,    setToken]    = useState<string | null>(null);
+  const [subjects,   setSubjects]   = useState<LearnSubject[]>([]);
+  const [lessons,    setLessons]    = useState<LearnLesson[]>([]);
+  const [summary,    setSummary]    = useState<LearnSummary | null>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [token,      setToken]      = useState<string | null>(null);
 
   const [subject,    setSubject]    = useState("");
   const [topic,      setTopic]      = useState("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [generating, setGenerating] = useState(false);
   const [genErr,     setGenErr]     = useState<string | null>(null);
 
-  const searchParams = useSearchParams();
-useEffect(() => {
-  const s = searchParams.get("subject");
-  if (s) setSubject(s);
-}, [searchParams]);
+  // Pre-fill subject from ?subject= query param (e.g. from Subjects page)
+  useEffect(() => {
+    const s = searchParams.get("subject");
+    if (s) setSubject(s);
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
@@ -138,7 +146,7 @@ useEffect(() => {
       const r = await fetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: "lesson", subject, topic: topic.trim() }),
+        body: JSON.stringify({ type: "lesson", subject, topic: topic.trim(), difficulty }),
       });
       const d = await r.json();
       if (d?.id) {
@@ -163,6 +171,8 @@ useEffect(() => {
 
   const canGenerate = subject && topic.trim() && !generating;
 
+  // ── Loading ─────────────────────────────────────────────────────────────────
+
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
@@ -176,16 +186,19 @@ useEffect(() => {
     </div>
   );
 
+  // ── Main ────────────────────────────────────────────────────────────────────
+
   return (
     <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
-        .learn-input:focus { border-color: rgba(139,92,246,0.6) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }
-        .topic-card:hover  { transform: translateY(-3px); border-color: rgba(255,255,255,0.13) !important; }
-        .lesson-row:hover  { background: rgba(255,255,255,0.025) !important; }
+        .learn-input:focus  { border-color: rgba(139,92,246,0.6) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }
+        .topic-card:hover   { transform: translateY(-3px); border-color: rgba(255,255,255,0.13) !important; }
+        .lesson-row:hover   { background: rgba(255,255,255,0.025) !important; }
         .gen-btn:not(:disabled):hover  { filter: brightness(1.1); }
         .gen-btn:not(:disabled):active { transform: scale(0.99); }
-        .history-btn:hover { color: #94a3b8 !important; background: rgba(255,255,255,0.03) !important; }
+        .history-btn:hover  { color: #94a3b8 !important; background: rgba(255,255,255,0.03) !important; }
+        .diff-btn:hover     { filter: brightness(1.1); }
       `}</style>
 
       {/* Ambient glow */}
@@ -233,10 +246,11 @@ useEffect(() => {
           <div style={{ display: "flex", alignItems: "flex-start", gap: 40, padding: "36px 40px" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>What will you learn today?</h2>
-              <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 28px", lineHeight: 1.65 }}>
-                Choose a subject, enter a topic, and let AI create a personalized lesson for you.
+              <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 24px", lineHeight: 1.65 }}>
+                Choose a subject, topic, and difficulty — then let AI build your lesson.
               </p>
 
+              {/* Subject */}
               <div style={{ position: "relative", marginBottom: 12 }}>
                 <BookOpen size={15} color="#475569" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <select value={subject} onChange={e => setSubject(e.target.value)} className="learn-input"
@@ -247,7 +261,8 @@ useEffect(() => {
                 <ChevronRight size={14} color="#475569" style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%) rotate(90deg)", pointerEvents: "none" }} />
               </div>
 
-              <div style={{ position: "relative", marginBottom: 16 }}>
+              {/* Topic */}
+              <div style={{ position: "relative", marginBottom: 12 }}>
                 <Wand2 size={15} color="#475569" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <input type="text" placeholder="Enter topic to learn..." value={topic}
                   onChange={e => setTopic(e.target.value)}
@@ -255,6 +270,34 @@ useEffect(() => {
                   className="learn-input" style={{ ...INPUT }} />
               </div>
 
+              {/* Difficulty picker */}
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: "#334155", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>
+                  Difficulty
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {DIFF_PICKER.map(({ v, label, desc, bg, border, text }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      className="diff-btn"
+                      onClick={() => setDifficulty(v)}
+                      style={{
+                        flex: 1, padding: "10px 8px", borderRadius: 12,
+                        border: `1px solid ${difficulty === v ? border : "rgba(255,255,255,0.07)"}`,
+                        background: difficulty === v ? bg : "rgba(255,255,255,0.03)",
+                        cursor: "pointer", transition: "all .15s", textAlign: "center",
+                        boxShadow: difficulty === v ? `0 0 12px ${border}` : "none",
+                      }}
+                    >
+                      <p style={{ fontSize: 12, fontWeight: 700, color: difficulty === v ? text : "#475569", margin: 0, lineHeight: 1 }}>{label}</p>
+                      <p style={{ fontSize: 10, color: difficulty === v ? text : "#334155", margin: "4px 0 0", opacity: 0.85 }}>{desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Generate button */}
               <button onClick={generate} disabled={!canGenerate} className="gen-btn"
                 style={{ width: "100%", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 600, color: "#fff", background: "linear-gradient(135deg, #7c3aed 0%, #5046e4 50%, #2563eb 100%)", border: "none", cursor: canGenerate ? "pointer" : "not-allowed", opacity: canGenerate ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: canGenerate ? "0 0 28px rgba(109,40,217,0.45), 0 2px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)" : "none", transition: "opacity .15s, filter .15s, transform .1s" }}>
                 {generating ? (
@@ -267,6 +310,7 @@ useEffect(() => {
               {genErr && <p style={{ fontSize: 12, color: "#f87171", textAlign: "center", marginTop: 10 }}>{genErr}</p>}
             </div>
 
+            {/* Decorative icon grid */}
             <div style={{ flexShrink: 0, alignSelf: "center", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, opacity: 0.45 }}>
               {[
                 { I: Atom,         c: "#a78bfa", b: "rgba(139,92,246,0.22)" },
@@ -361,13 +405,8 @@ useEffect(() => {
                     </Link>
                   );
                 })}
-
-                {/* ✅ FIXED: now navigates to /learn/history */}
-                <Link
-                  href="/learn/history"
-                  className="history-btn"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", padding: "14px 0", fontSize: 12, color: "#475569", background: "none", borderTop: "1px solid rgba(255,255,255,0.05)", textDecoration: "none", transition: "color .15s, background .15s" }}
-                >
+                <Link href="/learn/history" className="history-btn"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", padding: "14px 0", fontSize: 12, color: "#475569", background: "none", borderTop: "1px solid rgba(255,255,255,0.05)", textDecoration: "none", transition: "color .15s, background .15s" }}>
                   View full history <ArrowRight size={12} />
                 </Link>
               </>
