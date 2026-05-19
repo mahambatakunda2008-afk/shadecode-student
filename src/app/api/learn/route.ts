@@ -84,63 +84,57 @@ function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): Le
 }
 
 // ── JSON parser — multi-stage recovery ───────────────────────────────────────
-//
-// LaTeX like \sin, \theta, \frac{}{} contains backslashes that are invalid
-// JSON escape sequences. We fix this before parsing rather than failing.
 
 function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
-  // Stage 1: strip markdown fences
   let text = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/, "")
     .trim();
 
-  // Stage 2: try straight parse
+  // Stage 1: direct parse
   try {
     const m = text.match(/\{[\s\S]*\}/);
     if (m) {
-      const parsed = JSON.parse(m[0]);
-      if (parsed?.title && Array.isArray(parsed?.blocks)) return parsed;
+      const p = JSON.parse(m[0]);
+      if (p?.title && Array.isArray(p?.blocks)) return p;
     }
   } catch {}
 
-  // Stage 3: fix unescaped backslashes
-  // Replace any \ not already followed by a valid JSON escape char
+  // Stage 2: fix unescaped backslashes
   try {
     const fixed = text.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
     const m = fixed.match(/\{[\s\S]*\}/);
     if (m) {
-      const parsed = JSON.parse(m[0]);
-      if (parsed?.title && Array.isArray(parsed?.blocks)) return parsed;
+      const p = JSON.parse(m[0]);
+      if (p?.title && Array.isArray(p?.blocks)) return p;
     }
   } catch {}
 
-  // Stage 4: aggressive — strip all backslashes, then parse
+  // Stage 3: strip all backslashes
   try {
     const stripped = text.replace(/\\/g, "");
     const m = stripped.match(/\{[\s\S]*\}/);
     if (m) {
-      const parsed = JSON.parse(m[0]);
-      if (parsed?.title && Array.isArray(parsed?.blocks)) return parsed;
+      const p = JSON.parse(m[0]);
+      if (p?.title && Array.isArray(p?.blocks)) return p;
     }
   } catch {}
 
-  // Stage 5: field-by-field extraction as last resort
+  // Stage 4: field-by-field extraction
   try {
-    const titleMatch = text.match(/"title"\s*:\s*"([^"]+)"/);
+    const titleMatch  = text.match(/"title"\s*:\s*"([^"]+)"/);
     const blocksMatch = text.match(/"blocks"\s*:\s*(\[[\s\S]*?\])\s*[,}]/);
-
     if (titleMatch && blocksMatch) {
-      const title  = titleMatch[1];
       const blocks = JSON.parse(blocksMatch[1].replace(/\\(?!["\\/bfnrtu])/g, "\\\\"));
-      if (Array.isArray(blocks)) return { title, blocks };
+      if (Array.isArray(blocks)) return { title: titleMatch[1], blocks };
     }
   } catch {}
 
+  console.error("[Parse] All stages failed. Raw excerpt:", raw.slice(0, 300));
   return null;
 }
 
-// ── AI providers — full chain ─────────────────────────────────────────────────
+// ── AI providers ──────────────────────────────────────────────────────────────
 
 async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
 
@@ -163,7 +157,7 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
     } catch (err) { console.error("[AI] Cloudflare failed:", err); }
   }
 
-  // 2. OpenAI
+  // 2. OpenAI (JSON mode)
   if (process.env.OPENAI_API_KEY) {
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -173,7 +167,7 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
           model: "gpt-4o-mini",
           messages: [{ role: "user", content: prompt }],
           max_tokens: maxTokens,
-          response_format: { type: "json_object" }, // force JSON mode
+          response_format: { type: "json_object" },
         }),
       });
       const data = await res.json();
@@ -182,7 +176,7 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
     } catch (err) { console.error("[AI] OpenAI failed:", err); }
   }
 
-  // 3. Gemini — rotate through all available keys
+  // 3. Gemini — all keys × both models
   const geminiKeys = [
     process.env.GEMINI_API_KEY,
     process.env.GEMINI_API_KEY_2,
@@ -199,10 +193,7 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                maxOutputTokens: maxTokens,
-                responseMimeType: "application/json", // force JSON output
-              },
+              generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" },
             }),
           }
         );
@@ -240,22 +231,27 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
   return null;
 }
 
-// ── Prompt — Unicode math, no LaTeX backslashes ───────────────────────────────
-//
-// LaTeX backslashes (\sin, \frac, \theta) are invalid in JSON strings.
-// We use Unicode math notation instead: θ, π, √, ∫, ², ×, ÷, ±, ≤, ≥, ≠
+// ── Prompt ────────────────────────────────────────────────────────────────────
 
-function buildLessonPrompt(subject: string, topic: string): string {
+function buildLessonPrompt(subject: string, topic: string, difficulty: string): string {
+  const diffGuide = {
+    easy:   "Use very simple language. Break every concept into small steps. Assume the student is new to this topic.",
+    medium: "Use standard A-Level language and pace. Assume the student has basic knowledge of the subject.",
+    hard:   "Use challenging, exam-ready content. Include edge cases, common exam traps, and higher-order thinking.",
+  }[difficulty] ?? "Use standard A-Level language and pace.";
+
   return `You are an expert ${subject} teacher. Create a structured A-Level lesson on: "${topic}"
 
-Return ONLY a valid JSON object. No markdown, no code fences, no commentary.
+Difficulty level: ${difficulty.toUpperCase()} — ${diffGuide}
+
+Return ONLY a valid JSON object. No markdown, no code fences, no commentary before or after.
 
 {
   "title": "Lesson title here",
   "blocks": [
     { "type": "text",    "content": "Clear explanation in plain English." },
     { "type": "example","content": "Worked example with steps shown." },
-    { "type": "math",   "content": "Equation using plain notation, e.g: sin(θ) = opposite/hypotenuse or x² + 5x + 6 = 0" },
+    { "type": "math",   "content": "Equation using plain notation, e.g: sin(θ) = opposite/hypotenuse" },
     { "type": "tip",    "content": "Key exam tip or common mistake to avoid." }
   ]
 }
@@ -266,8 +262,7 @@ STRICT RULES:
 - For math: use plain readable notation with Unicode symbols (θ, π, √, ², ³, ×, ÷, ±, ≤, ≥, ≠, ∞, ∑, ∫, Δ).
 - Do NOT use LaTeX backslash commands like \\sin, \\frac, \\theta — they break JSON.
 - Do NOT use markdown formatting inside content strings.
-- All strings must be properly JSON-escaped (use \\" for quotes inside strings).
-- Keep explanations clear, concise, and A-Level appropriate.`;
+- All strings must be properly JSON-escaped.`;
 }
 
 // ── GET ───────────────────────────────────────────────────────────────────────
@@ -301,7 +296,6 @@ export async function GET(req: Request) {
       xpGoal: Math.max(100, level * 100),
     };
 
-    // Single lesson
     if (lessonId) {
       const { data: lessonData, error: lessonError } = await supabase
         .from("learn_lessons")
@@ -320,7 +314,6 @@ export async function GET(req: Request) {
       return NextResponse.json(response);
     }
 
-    // Lesson list
     const { data: allLessonData, error: allLessonsError } = await supabase
       .from("learn_lessons")
       .select("id, subject_id, title, description, difficulty, progress, updated_at, blocks")
@@ -357,12 +350,15 @@ export async function POST(req: Request) {
 
     const { supabase, user } = auth;
     const body = await req.json();
-    const { type, subject, topic } = body;
+    const { type, subject, topic, difficulty } = body;
 
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     if (!subject || !topic) return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
 
-    const prompt = buildLessonPrompt(subject, topic);
+    // Validate difficulty
+    const validDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
+
+    const prompt = buildLessonPrompt(subject, topic, validDifficulty);
     const raw    = await callAI(prompt);
 
     if (!raw) {
@@ -375,7 +371,6 @@ export async function POST(req: Request) {
     const parsed = safeParseJSON(raw);
 
     if (!parsed?.blocks?.length) {
-      console.error("[Parse] All stages failed. Raw excerpt:", raw.slice(0, 300));
       return NextResponse.json({
         title:  topic,
         blocks: [{ type: "text", content: "The AI returned content that couldn't be parsed. Please try again or rephrase the topic." }],
@@ -399,8 +394,8 @@ export async function POST(req: Request) {
           user_id:     user.id,
           subject_id:  subjectRow.id,
           title:       parsed.title ?? topic,
-          description: `AI-generated lesson on ${topic}`,
-          difficulty:  "medium",
+          description: `AI-generated ${validDifficulty} lesson on ${topic}`,
+          difficulty:  validDifficulty,
           progress:    0,
           blocks:      parsed.blocks,
         })
@@ -411,7 +406,9 @@ export async function POST(req: Request) {
         console.error("Failed to save lesson:", insertError);
       } else {
         savedId = inserted.id;
-        try { await supabase.rpc("increment_xp", { user_id: user.id, amount: 25 }); } catch {}
+        // XP scales with difficulty
+        const xpAmount = validDifficulty === "hard" ? 30 : validDifficulty === "medium" ? 25 : 20;
+        try { await supabase.rpc("increment_xp", { user_id: user.id, amount: xpAmount }); } catch {}
       }
     }
 
