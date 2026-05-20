@@ -7,10 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import {
   ArrowLeft, Sparkles, BookOpen, Zap, Dna, Globe,
   FlaskConical, Calculator, Brain, Code2, TrendingUp,
-  Languages, Music, Palette, CheckCircle2, Clock, Star,
+  Languages, Music, Palette, CheckCircle2, Clock,
+  HelpCircle, ArrowRight,
 } from "lucide-react";
-
-// ── Themes ────────────────────────────────────────────────────────────────────
 
 type SubjectTheme = {
   hex: string; bg: string; border: string; text: string;
@@ -33,9 +32,7 @@ const THEMES: Record<string, SubjectTheme> = {
   default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
 };
 
-function theme(name: string): SubjectTheme {
-  return THEMES[name] ?? THEMES.default;
-}
+function theme(name: string): SubjectTheme { return THEMES[name] ?? THEMES.default; }
 
 const DIFF: Record<string, { label: string; bg: string; border: string; text: string }> = {
   easy:   { label: "Guided",    bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#6ee7b7" },
@@ -43,61 +40,43 @@ const DIFF: Record<string, { label: string; bg: string; border: string; text: st
   hard:   { label: "Challenge", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd" },
 };
 
-function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 : 20; }
-
 interface LessonBlock { type: string; content: string; }
-
 interface Lesson {
-  id: string;
-  title: string;
-  subject: string;
-  description: string;
-  difficulty: string;
-  progress: number;
-  completed: boolean;
-  blocks?: LessonBlock[];
-  updated_at?: string;
+  id: string; title: string; subject: string; description: string;
+  difficulty: string; progress: number; completed: boolean;
+  blocks?: LessonBlock[]; updated_at?: string;
 }
 
-// ── Block renderer ────────────────────────────────────────────────────────────
-
 function BlockCard({ block }: { block: LessonBlock }) {
-  const configs: Record<string, { label: string; emoji: string; bg: string; border: string; accent: string; textColor: string }> = {
+  const cfg: Record<string, { label: string; emoji: string; bg: string; border: string; accent: string; textColor: string }> = {
     tip:     { label: "Tip",     emoji: "💡", bg: "rgba(245,158,11,0.06)",  border: "rgba(245,158,11,0.2)",  accent: "#f59e0b", textColor: "#fcd34d" },
     example: { label: "Example", emoji: "📝", bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.2)",  accent: "#10b981", textColor: "#6ee7b7" },
     math:    { label: "Formula", emoji: "∑",  bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",  accent: "#3b82f6", textColor: "#93c5fd" },
   };
-
-  const cfg = configs[block.type];
-
-  if (cfg) return (
-    <div style={{ position: "relative", background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 16, padding: "18px 20px 18px 24px", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: cfg.accent, borderRadius: "16px 0 0 16px" }} />
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: cfg.textColor, margin: "0 0 8px" }}>
-        {cfg.emoji} {cfg.label}
-      </p>
-      <p style={{ fontSize: 14, lineHeight: 1.75, color: "#cbd5e1", margin: 0, fontFamily: block.type === "math" ? "monospace" : undefined }}>
-        {block.content}
-      </p>
+  const c = cfg[block.type];
+  if (c) return (
+    <div style={{ position: "relative", background: c.bg, border: `1px solid ${c.border}`, borderRadius: 16, padding: "18px 20px 18px 24px", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: c.accent, borderRadius: "16px 0 0 16px" }} />
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.textColor, margin: "0 0 8px" }}>{c.emoji} {c.label}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.75, color: "#cbd5e1", margin: 0, fontFamily: block.type === "math" ? "monospace" : undefined }}>{block.content}</p>
     </div>
   );
-
   return <p style={{ fontSize: 14, lineHeight: 1.85, color: "#94a3b8", margin: 0 }}>{block.content}</p>;
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 : 20; }
 
 export default function LessonDetailPage() {
-  const router = useRouter();
-  const params = useParams();
+  const router   = useRouter();
+  const params   = useParams();
   const lessonId = params?.lessonId as string;
 
-  const [lesson,     setLesson]     = useState<Lesson | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
-  const [completing, setCompleting] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [lesson,       setLesson]       = useState<Lesson | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [completing,   setCompleting]   = useState(false);
+  const [showToast,    setShowToast]    = useState(false);
+  const [accessToken,  setAccessToken]  = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -105,19 +84,13 @@ export default function LessonDetailPage() {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { router.push("/login"); return; }
       setAccessToken(session.access_token);
-
       try {
-        const r = await fetch(`/api/learn?lessonId=${lessonId}`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
+        const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
         if (!r.ok) throw new Error();
         const d = await r.json();
         setLesson(d.lesson ?? null);
-      } catch {
-        setError("Couldn't load this lesson.");
-      } finally {
-        setLoading(false);
-      }
+      } catch { setError("Couldn't load this lesson."); }
+      finally   { setLoading(false); }
     })();
   }, [lessonId]);
 
@@ -131,45 +104,28 @@ export default function LessonDetailPage() {
         body: JSON.stringify({ lessonId: lesson.id, progress: 100 }),
       });
       if (!r.ok) throw new Error();
-      // Update local state
       setLesson(prev => prev ? { ...prev, progress: 100, completed: true } : prev);
-      setShowCelebration(true);
-      // Hide celebration after 4s
-      setTimeout(() => setShowCelebration(false), 4000);
-    } catch {
-      // Silently fail — UX still intact
-    } finally {
-      setCompleting(false);
-    }
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    } catch {} finally { setCompleting(false); }
   }
-
-  // ── Loading ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-        <div style={{ position: "relative", width: 36, height: 36 }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
-        </div>
-        <p style={{ color: "#64748b", fontSize: 13 }}>Loading lesson…</p>
+      <div style={{ position: "relative", width: 36, height: 36 }}>
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
-  // ── Error ───────────────────────────────────────────────────────────────────
-
   if (error || !lesson) return (
-    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ textAlign: "center" }}>
-        <p style={{ color: "#f87171", fontSize: 14, marginBottom: 16 }}>{error ?? "Lesson not found."}</p>
-        <Link href="/learn" style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none" }}>← Back to Learn</Link>
-      </div>
+    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <p style={{ color: "#f87171", fontSize: 14 }}>{error ?? "Lesson not found."}</p>
+      <Link href="/learn" style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none" }}>← Back to Learn</Link>
     </div>
   );
-
-  // ── Render ──────────────────────────────────────────────────────────────────
 
   const t         = theme(lesson.subject);
   const Icon      = t.icon;
@@ -181,8 +137,10 @@ export default function LessonDetailPage() {
     <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
       <style>{`
         @keyframes spin       { to { transform: rotate(360deg) } }
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes pop        { 0%,100% { transform: scale(1) } 50% { transform: scale(1.08) } }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes pop        { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+        .complete-btn:not(:disabled):hover { filter: brightness(1.08); }
+        .quiz-btn:hover { filter: brightness(1.1); }
       `}</style>
 
       {/* Ambient glow */}
@@ -190,71 +148,52 @@ export default function LessonDetailPage() {
         <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: `radial-gradient(ellipse, ${t.hex}22 0%, transparent 65%)`, borderRadius: "50%" }} />
       </div>
 
-      {/* ── Celebration toast ── */}
-      {showCelebration && (
+      {/* ── Completion toast ── */}
+      {showToast && (
         <div style={{ position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 50, animation: "fadeSlideUp 0.35s ease" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, background: "linear-gradient(135deg, #052e16, #14532d)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 16, padding: "14px 20px", boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 24px rgba(52,211,153,0.15)" }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.3)", display: "flex", alignItems: "center", justifyContent: "center", animation: "pop 0.5s ease 0.2s" }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(52,211,153,0.15)", display: "flex", alignItems: "center", justifyContent: "center", animation: "pop 0.5s ease 0.2s" }}>
               <CheckCircle2 size={18} color="#34d399" />
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 700, color: "#f0fdf4", margin: 0 }}>Lesson Complete! 🎉</p>
-              <p style={{ fontSize: 12, color: "#86efac", margin: "2px 0 0" }}>
-                +{earnedXP} XP earned · Keep it up!
-              </p>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 8, padding: "4px 10px", marginLeft: 4 }}>
-              <Star size={12} color="#fbbf24" fill="#fbbf24" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#fcd34d" }}>+{earnedXP} XP</span>
+              <p style={{ fontSize: 12, color: "#86efac", margin: "2px 0 0" }}>+{earnedXP} XP earned · Now take the quiz!</p>
             </div>
           </div>
         </div>
       )}
 
-      <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", padding: "32px 16px 60px" }}>
 
-        {/* Back */}
-        <Link href="/learn"
-          style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, textDecoration: "none", marginBottom: 32 }}
+        <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, textDecoration: "none", marginBottom: 28 }}
           onMouseEnter={e => (e.currentTarget.style.color = "#94a3b8")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#475569")}
-        >
+          onMouseLeave={e => (e.currentTarget.style.color = "#475569")}>
           <ArrowLeft size={15} /> Back to Learn
         </Link>
 
         {/* ── Header card ── */}
-        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, marginBottom: 32, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, marginBottom: 28, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
           <div style={{ height: 3, background: `linear-gradient(90deg, ${t.hex}, ${t.hex}44)` }} />
-
-          <div style={{ padding: "28px 32px" }}>
-            {/* Subject + difficulty + completed badge */}
-            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: t.bg, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon size={16} color={t.text} />
+          <div style={{ padding: "24px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: t.bg, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon size={15} color={t.text} />
               </div>
               <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{lesson.subject}</span>
-              <span style={{ color: "#334155", fontSize: 12 }}>·</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: d.text, background: d.bg, border: `1px solid ${d.border}`, borderRadius: 999, padding: "3px 10px" }}>
-                {d.label}
-              </span>
+              <span style={{ color: "#334155" }}>·</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: d.text, background: d.bg, border: `1px solid ${d.border}`, borderRadius: 999, padding: "3px 10px" }}>{d.label}</span>
               {lesson.completed && (
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#34d399", background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 999, padding: "3px 10px" }}>
-                  <CheckCircle2 size={12} /> Completed
+                  <CheckCircle2 size={11} /> Completed
                 </span>
               )}
             </div>
 
-            {/* Title */}
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f1f5f9", margin: "0 0 10px", lineHeight: 1.3 }}>{lesson.title}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", lineHeight: 1.3 }}>{lesson.title}</h1>
+            {lesson.description && <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 18px", lineHeight: 1.6 }}>{lesson.description}</p>}
 
-            {/* Description */}
-            {lesson.description && (
-              <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 20px", lineHeight: 1.6 }}>{lesson.description}</p>
-            )}
-
-            {/* Progress bar */}
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
                 <span style={{ fontSize: 12, color: "#475569" }}>Progress</span>
                 <span style={{ fontSize: 12, fontWeight: 600, color: lesson.completed ? "#34d399" : t.text }}>{lesson.progress}%</span>
               </div>
@@ -267,67 +206,56 @@ export default function LessonDetailPage() {
 
         {/* ── Lesson content ── */}
         {hasBlocks ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ marginBottom: 4 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", padding: "4px 12px", borderRadius: 999 }}>
                 <Sparkles size={11} /> AI Generated Lesson
               </span>
             </div>
 
-            {lesson.blocks!.map((block, i) => (
-              <BlockCard key={i} block={block} />
-            ))}
+            {lesson.blocks!.map((block, i) => <BlockCard key={i} block={block} />)}
 
-            {/* ── Mark as Complete button ── */}
-            <div style={{ marginTop: 16 }}>
+            {/* ── Action bar ── */}
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              {/* Mark complete */}
               {lesson.completed ? (
-                /* Already done — show a static success state */
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "16px 24px", background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 16 }}>
-                  <CheckCircle2 size={18} color="#34d399" />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#34d399" }}>You completed this lesson</span>
-                  <span style={{ fontSize: 12, color: "#065f46", background: "rgba(52,211,153,0.1)", borderRadius: 999, padding: "2px 10px" }}>+{earnedXP} XP earned</span>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 16, fontSize: 14, fontWeight: 600, color: "#34d399" }}>
+                  <CheckCircle2 size={17} /> Completed · +{earnedXP} XP
                 </div>
               ) : (
-                /* Ready to complete */
-                <button
-                  onClick={markComplete}
-                  disabled={completing}
-                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "16px 24px", background: completing ? "rgba(52,211,153,0.06)" : "linear-gradient(135deg, rgba(16,185,129,0.25), rgba(52,211,153,0.15))", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 16, cursor: completing ? "not-allowed" : "pointer", transition: "all .2s", color: "#34d399", fontSize: 15, fontWeight: 700 }}
-                  onMouseEnter={e => { if (!completing) e.currentTarget.style.background = "linear-gradient(135deg, rgba(16,185,129,0.35), rgba(52,211,153,0.22))"; }}
-                  onMouseLeave={e => { if (!completing) e.currentTarget.style.background = "linear-gradient(135deg, rgba(16,185,129,0.25), rgba(52,211,153,0.15))"; }}
-                >
+                <button onClick={markComplete} disabled={completing} className="complete-btn"
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: completing ? "rgba(52,211,153,0.06)" : "linear-gradient(135deg, rgba(16,185,129,0.25), rgba(52,211,153,0.15))", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 16, cursor: completing ? "not-allowed" : "pointer", color: "#34d399", fontSize: 14, fontWeight: 700, transition: "all .2s" }}>
                   {completing ? (
-                    <>
-                      <div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(52,211,153,0.3)", borderTopColor: "#34d399", animation: "spin 0.8s linear infinite" }} />
-                      Saving…
-                    </>
+                    <><div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(52,211,153,0.3)", borderTopColor: "#34d399", animation: "spin 0.8s linear infinite" }} />Saving…</>
                   ) : (
-                    <>
-                      <CheckCircle2 size={18} />
-                      Mark as Complete · +{earnedXP} XP
-                    </>
+                    <><CheckCircle2 size={17} /> Mark Complete · +{earnedXP} XP</>
                   )}
                 </button>
               )}
+
+              {/* Take quiz */}
+              <Link href={`/learn/${lessonId}/quiz`} className="quiz-btn"
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #2563eb)", border: "none", borderRadius: 16, color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "filter .15s", boxShadow: "0 0 20px rgba(109,40,217,0.3)" }}>
+                <HelpCircle size={17} /> Test Yourself <ArrowRight size={14} />
+              </Link>
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: "56px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <BookOpen size={22} color="#334155" />
+          <div style={{ textAlign: "center", padding: "52px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 15, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <BookOpen size={21} color="#334155" />
             </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: "#475569", margin: "0 0 6px" }}>No content yet</p>
-            <p style={{ fontSize: 13, color: "#334155", margin: "0 0 24px" }}>This lesson was saved before content generation was supported.</p>
-            <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "10px 18px", textDecoration: "none" }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#475569", margin: "0 0 6px" }}>No content yet</p>
+            <p style={{ fontSize: 13, color: "#334155", margin: "0 0 20px" }}>This lesson was saved before content generation was added.</p>
+            <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "9px 16px", textDecoration: "none" }}>
               Generate a new lesson
             </Link>
           </div>
         )}
 
-        {/* Footer */}
         {lesson.updated_at && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 32, color: "#334155", fontSize: 12 }}>
-            <Clock size={12} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "#334155", fontSize: 12 }}>
+            <Clock size={11} />
             Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
           </div>
         )}
