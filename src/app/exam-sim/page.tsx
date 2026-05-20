@@ -2,20 +2,18 @@
 
 import katex from "katex";
 import "katex/dist/katex.min.css";
-
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import {
-  CheckCircle2, XCircle, AlertCircle, Clock,
-  TrendingUp, TrendingDown, RotateCcw, Star, Zap,
+  CheckCircle2, XCircle, AlertCircle, Trophy,
+  Clock, RotateCcw, ChevronDown, ChevronUp, Flame,
 } from "lucide-react";
 
 const SUBJECTS = [
-  "Mathematics", "Physics", "Chemistry", "Biology",
-  "Geography", "History", "Economics", "Computer Science",
-  "English Language", "English Literature", "Accounting",
-  "Business Studies", "Sociology", "Psychology",
+  "Mathematics","Physics","Chemistry","Biology","Geography",
+  "History","Economics","Computer Science","English Language",
+  "English Literature","Accounting","Business Studies","Sociology","Psychology",
 ];
 
 const DIFFICULTIES = [
@@ -30,15 +28,18 @@ interface Question {
   id: number; type: "multiple_choice" | "short_answer" | "structured";
   question: string; options?: string[]; marks: number; topic: string;
 }
+
 interface Answer { questionId: number; answer: string; timeSpent: number; }
+
 interface Result {
   questionId: number; score: number; maxScore: number;
   correct: boolean; feedback: string; modelAnswer: string; topic: string;
 }
+
 interface ExamResults {
   totalScore: number; maxScore: number; percentage: number; grade: string;
-  weakAreas: string[]; strongAreas: string[]; cortexInsight: string;
-  results: Result[]; timeTaken: number;
+  weakAreas: string[]; strongAreas: string[];
+  cortexInsight: string; results: Result[]; timeTaken: number;
 }
 
 type Step = "setup" | "exam" | "marking" | "results";
@@ -47,30 +48,25 @@ function renderMath(text: string) {
   if (!text) return text;
   try {
     return text
-      .replace(/\$\$([^$]+)\$\$/g, (_, expr) => {
-        try { return katex.renderToString(expr, { displayMode: true, throwOnError: false }); }
-        catch { return expr; }
-      })
-      .replace(/\$([^$]+)\$/g, (_, expr) => {
-        try { return katex.renderToString(expr, { displayMode: false, throwOnError: false }); }
-        catch { return expr; }
-      });
+      .replace(/\$\$([^$]+)\$\$/g, (_, expr) => { try { return katex.renderToString(expr, { displayMode: true, throwOnError: false }); } catch { return expr; } })
+      .replace(/\$([^$]+)\$/g,     (_, expr) => { try { return katex.renderToString(expr, { displayMode: false, throwOnError: false }); } catch { return expr; } });
   } catch { return text; }
 }
 
 function getGrade(p: number) {
-  if (p >= 90) return { grade: "A*", color: "#34d399", label: "Outstanding!" };
-  if (p >= 80) return { grade: "A",  color: "#6ee7b7", label: "Excellent!" };
-  if (p >= 70) return { grade: "B",  color: "#93c5fd", label: "Great work!" };
-  if (p >= 60) return { grade: "C",  color: "#fcd34d", label: "Good effort." };
-  if (p >= 50) return { grade: "D",  color: "#fdba74", label: "Keep going." };
-  if (p >= 40) return { grade: "E",  color: "#fca5a5", label: "Needs work." };
-  return              { grade: "U",  color: "#f87171", label: "Review this topic." };
+  if (p >= 90) return "A*"; if (p >= 80) return "A"; if (p >= 70) return "B";
+  if (p >= 60) return "C";  if (p >= 50) return "D"; if (p >= 40) return "E";
+  return "U";
+}
+
+function gradeColor(p: number) {
+  if (p >= 80) return "#34d399"; if (p >= 60) return "#60a5fa";
+  if (p >= 40) return "#f59e0b"; return "#f87171";
 }
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60);
-  return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+  return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
 export default function ExamSimulation() {
@@ -78,41 +74,43 @@ export default function ExamSimulation() {
   const supabase = createClient();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [step,          setStep]          = useState<Step>("setup");
+  const [step, setStep] = useState<Step>("setup");
+
   const [subject,       setSubject]       = useState("");
   const [topic,         setTopic]         = useState("");
   const [difficulty,    setDifficulty]    = useState(0);
   const [questionCount, setQuestionCount] = useState(10);
+
   const [questions,     setQuestions]     = useState<Question[]>([]);
   const [answers,       setAnswers]       = useState<Answer[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [currentAnswer,   setCurrentAnswer]   = useState("");
-  const [timeLeft,      setTimeLeft]      = useState(0);
-  const [totalTime,     setTotalTime]     = useState(0);
-  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [generating,    setGenerating]    = useState(false);
-  const [results,       setResults]       = useState<ExamResults | null>(null);
-  const [userId,        setUserId]        = useState("");
-  const [expandedResult, setExpandedResult] = useState<number | null>(null);
+  const [currentQ,      setCurrentQ]      = useState(0);
+  const [currentAnswer, setCurrentAnswer] = useState("");
 
-  const q            = questions[currentQuestion];
-  const timePercent  = totalTime > 0 ? (timeLeft / totalTime) * 100 : 100;
-  const minutes      = Math.floor(timeLeft / 60);
-  const seconds      = timeLeft % 60;
+  const [timeLeft,  setTimeLeft]  = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
+  const [qStartTime, setQStartTime] = useState(Date.now());
 
-  // Timer color logic
-  const timerColor =
-    timePercent > 50 ? "#6366f1" :
-    timePercent > 20 ? "#f59e0b" : "#ef4444";
-  const timerPulse = timePercent <= 20;
+  const [generating, setGenerating] = useState(false);
+  const [marking,    setMarking]    = useState(false);
+  const [results,    setResults]    = useState<ExamResults | null>(null);
+  const [userId,     setUserId]     = useState("");
 
+  // Results UI state
+  const [expandedQ, setExpandedQ]     = useState<number | null>(null);
+  const [activeTab, setActiveTab]     = useState<"overview" | "review">("overview");
+
+  const q = questions[currentQ];
+
+  /* ── Auth ── */
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
-    });
+    })();
   }, []);
 
+  /* ── Timer ── */
   useEffect(() => {
     if (step !== "exam") return;
     intervalRef.current = setInterval(() => {
@@ -124,46 +122,37 @@ export default function ExamSimulation() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [step]);
 
-  const cardStyle: React.CSSProperties = {
-    background: "var(--card)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "16px",
-    padding: "16px",
-  };
+  /* ── Timer color ── */
+  const timePercent  = totalTime > 0 ? (timeLeft / totalTime) * 100 : 100;
+  const timerColor   = timePercent > 50 ? "#22c55e" : timePercent > 20 ? "#f59e0b" : "#ef4444";
+  const timerPulse   = timePercent <= 20;
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "var(--muted)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "10px",
-    padding: "12px 14px",
-    color: "var(--foreground)",
-    fontSize: "14px",
-    outline: "none",
-    boxSizing: "border-box",
-    fontFamily: "inherit",
-  };
+  /* ── Shared styles ── */
+  const card: React.CSSProperties = { background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: 16 };
+  const input: React.CSSProperties = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "12px 14px", color: "var(--foreground)", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
 
-  function saveAnswer() {
+  /* ── Save answer ── */
+  const saveAnswer = () => {
     if (!q) return;
-    const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+    const timeSpent = Math.round((Date.now() - qStartTime) / 1000);
     const payload: Answer = { questionId: q.id, answer: currentAnswer, timeSpent };
     setAnswers(prev => {
-      const exists = prev.findIndex(a => a.questionId === q.id);
-      if (exists >= 0) { const u = [...prev]; u[exists] = payload; return u; }
+      const idx = prev.findIndex(a => a.questionId === q.id);
+      if (idx >= 0) { const u = [...prev]; u[idx] = payload; return u; }
       return [...prev, payload];
     });
-  }
+  };
 
-  function goToQuestion(index: number) {
+  const goToQuestion = (index: number) => {
     saveAnswer();
-    setCurrentQuestion(index);
+    setCurrentQ(index);
     const existing = answers.find(a => a.questionId === questions[index]?.id);
     setCurrentAnswer(existing?.answer || "");
-    setQuestionStartTime(Date.now());
-  }
+    setQStartTime(Date.now());
+  };
 
-  async function generateExam() {
+  /* ── Generate ── */
+  const generateExam = async () => {
     if (!subject) return;
     setGenerating(true);
     try {
@@ -175,19 +164,20 @@ export default function ExamSimulation() {
       const data = await res.json();
       if (!data.questions) throw new Error("No questions generated");
       setQuestions(data.questions);
-      setCurrentQuestion(0); setCurrentAnswer(""); setAnswers([]);
-      const examTime = questionCount * 2 * 60;
-      setTimeLeft(examTime); setTotalTime(examTime);
-      setQuestionStartTime(Date.now());
+      setCurrentQ(0); setCurrentAnswer(""); setAnswers([]);
+      const t = questionCount * 2 * 60;
+      setTimeLeft(t); setTotalTime(t); setQStartTime(Date.now());
       setStep("exam");
-    } catch { alert("Failed to generate exam. Please try again."); }
-    finally { setGenerating(false); }
-  }
+    } catch (err) {
+      console.error(err); alert("Failed to generate exam. Please try again.");
+    } finally { setGenerating(false); }
+  };
 
-  async function handleSubmitExam() {
+  /* ── Submit ── */
+  const handleSubmitExam = async () => {
     saveAnswer();
     if (intervalRef.current) clearInterval(intervalRef.current);
-    setStep("marking");
+    setStep("marking"); setMarking(true);
     try {
       const res = await fetch("/api/exam/mark", {
         method: "POST",
@@ -205,171 +195,174 @@ export default function ExamSimulation() {
         });
       }
       setStep("results");
-    } catch { alert("Failed to mark exam."); setStep("exam"); }
-  }
+    } catch (err) {
+      console.error(err); alert("Failed to mark exam."); setStep("exam");
+    } finally { setMarking(false); }
+  };
 
-  function resetExam() {
+  const resetExam = () => {
     setStep("setup"); setQuestions([]); setAnswers([]);
-    setCurrentQuestion(0); setCurrentAnswer(""); setResults(null);
-  }
+    setCurrentQ(0); setCurrentAnswer(""); setResults(null);
+    setExpandedQ(null); setActiveTab("overview");
+  };
 
-  function retakeExam() {
-    setQuestions([]); setAnswers([]);
-    setCurrentQuestion(0); setCurrentAnswer(""); setResults(null);
-    generateExam();
-  }
-
-  // ── SETUP ────────────────────────────────────────────────────────────────────
-
+  /* ══════════════════════════════════════════════════════
+     SETUP
+  ══════════════════════════════════════════════════════ */
   if (step === "setup") return (
-    <div style={{ maxWidth: 650, margin: "0 auto", padding: "40px 20px 120px", display: "flex", flexDirection: "column", gap: 18 }}>
+    <div style={{ maxWidth: 650, margin: "0 auto", padding: "40px 16px 120px", display: "flex", flexDirection: "column", gap: 18 }}>
       <div>
-        <h1 style={{ fontSize: 34, fontWeight: 900, marginBottom: 6 }}>Exam Simulation</h1>
+        <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 6 }}>Exam Simulation</h1>
         <p style={{ color: "var(--muted-foreground)", fontSize: 14 }}>Cortex-generated exams with live marking 🧠</p>
       </div>
 
-      <div style={cardStyle}>
+      {/* Subject */}
+      <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 12 }}>Subject</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setSubject(s)}
-              style={{ padding: "8px 14px", borderRadius: 999, border: subject === s ? "1px solid var(--primary)" : "1px solid transparent", background: subject === s ? "rgba(99,102,241,0.15)" : "var(--muted)", color: subject === s ? "var(--primary)" : "var(--foreground)", cursor: "pointer", fontWeight: 600 }}>
+            <button key={s} onClick={() => setSubject(s)} style={{ padding: "8px 14px", borderRadius: 999, border: subject === s ? "1px solid var(--primary)" : "1px solid transparent", background: subject === s ? "rgba(99,102,241,0.15)" : "var(--muted)", color: subject === s ? "var(--primary)" : "var(--foreground)", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
               {s}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: 10 }}>Topic <span style={{ fontWeight: 400, color: "var(--muted-foreground)", fontSize: 12 }}>(optional)</span></p>
-        <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Trigonometry, World War II..." style={inputStyle} />
+      {/* Topic */}
+      <div style={card}>
+        <p style={{ fontWeight: 700, marginBottom: 10 }}>Topic <span style={{ fontWeight: 400, color: "var(--muted-foreground)", fontSize: 13 }}>(optional)</span></p>
+        <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="Leave blank for mixed topics..." style={input} />
       </div>
 
-      <div style={cardStyle}>
+      {/* Difficulty */}
+      <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>Difficulty</p>
         <div style={{ display: "flex", gap: 10 }}>
           {DIFFICULTIES.map((d, i) => (
-            <button key={d.label} onClick={() => setDifficulty(i)}
-              style={{ flex: 1, padding: "12px", borderRadius: 10, border: difficulty === i ? `1px solid ${d.color}` : "1px solid transparent", background: difficulty === i ? `${d.color}20` : "var(--muted)", color: difficulty === i ? d.color : "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>
-              {d.label}
+            <button key={d.label} onClick={() => setDifficulty(i)} style={{ flex: 1, padding: "14px 10px", borderRadius: 12, border: difficulty === i ? `1px solid ${d.color}` : "1px solid transparent", background: difficulty === i ? `${d.color}20` : "var(--muted)", color: difficulty === i ? d.color : "var(--foreground)", fontWeight: 700, cursor: "pointer", textAlign: "center" }}>
+              <p style={{ margin: 0, fontSize: 14 }}>{d.label}</p>
+              <p style={{ margin: "3px 0 0", fontSize: 11, opacity: 0.7 }}>{i === 0 ? "O-Level" : i === 1 ? "A-Level" : "University"}</p>
             </button>
           ))}
         </div>
       </div>
 
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: 10 }}>Questions</p>
+      {/* Questions */}
+      <div style={card}>
+        <p style={{ fontWeight: 700, marginBottom: 10 }}>Number of Questions</p>
         <div style={{ display: "flex", gap: 10 }}>
           {QUESTION_COUNTS.map(n => (
-            <button key={n} onClick={() => setQuestionCount(n)}
-              style={{ flex: 1, padding: "12px", borderRadius: 10, border: questionCount === n ? "1px solid var(--primary)" : "1px solid transparent", background: questionCount === n ? "rgba(99,102,241,0.15)" : "var(--muted)", color: questionCount === n ? "var(--primary)" : "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>
+            <button key={n} onClick={() => setQuestionCount(n)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: questionCount === n ? "1px solid var(--primary)" : "1px solid transparent", background: questionCount === n ? "rgba(99,102,241,0.15)" : "var(--muted)", color: questionCount === n ? "var(--primary)" : "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>
               {n}
             </button>
           ))}
         </div>
-        <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 8 }}>
-          Time allowed: {questionCount * 2} minutes
+        <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "10px 0 0" }}>
+          ⏱ Time limit: {questionCount * 2} minutes
         </p>
       </div>
 
-      <button onClick={generateExam} disabled={!subject || generating}
-        style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: !subject || generating ? "not-allowed" : "pointer", opacity: !subject ? 0.5 : 1 }}>
+      <button onClick={generateExam} disabled={!subject || generating} style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: "pointer", opacity: !subject || generating ? 0.5 : 1 }}>
         {generating ? "Generating exam…" : "Start Exam →"}
       </button>
     </div>
   );
 
-  // ── EXAM ─────────────────────────────────────────────────────────────────────
-
+  /* ══════════════════════════════════════════════════════
+     EXAM
+  ══════════════════════════════════════════════════════ */
   if (step === "exam" && q) return (
     <div style={{ maxWidth: 700, margin: "0 auto", minHeight: "100vh", position: "relative", paddingBottom: 180 }}>
       <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .timer-pulse { animation: pulse 1s ease-in-out infinite; }
+        @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .pulse-timer { animation: timerPulse 0.8s ease infinite; }
       `}</style>
 
-      {/* TOP BAR */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--background)", padding: "16px", borderBottom: "1px solid var(--card-border)" }}>
+      {/* Sticky top bar */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--background)", padding: "14px 16px", borderBottom: "1px solid var(--card-border)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <p style={{ fontWeight: 700, fontSize: 13 }}>{subject} · Q{currentQuestion + 1}/{questions.length}</p>
-          <div className={timerPulse ? "timer-pulse" : ""}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: `${timerColor}15`, border: `1px solid ${timerColor}40`, borderRadius: 10, padding: "6px 12px" }}>
-            <Clock size={14} color={timerColor} />
-            <p style={{ fontWeight: 900, fontSize: 18, color: timerColor, margin: 0, fontVariantNumeric: "tabular-nums" }}>
-              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{subject}</p>
+            <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
+              Q{currentQ + 1}/{questions.length} · {DIFFICULTIES[difficulty].label}
             </p>
           </div>
+
+          {/* Timer */}
+          <div className={timerPulse ? "pulse-timer" : ""} style={{ display: "flex", alignItems: "center", gap: 6, background: `${timerColor}15`, border: `1px solid ${timerColor}40`, borderRadius: 12, padding: "8px 14px" }}>
+            <Clock size={14} color={timerColor} />
+            <span style={{ fontWeight: 900, fontSize: 18, color: timerColor, fontVariantNumeric: "tabular-nums" }}>
+              {formatTime(timeLeft)}
+            </span>
+          </div>
         </div>
+
         {/* Progress bar */}
         <div style={{ height: 5, background: "var(--muted)", borderRadius: 999, overflow: "hidden" }}>
-          <div style={{ width: `${timePercent}%`, height: "100%", background: timerColor, transition: "width 1s linear, background 1s ease" }} />
+          <div style={{ width: `${timePercent}%`, height: "100%", background: timerColor, transition: "width 1s linear, background 1s" }} />
         </div>
       </div>
 
-      {/* QUESTION */}
-      <div style={{ padding: "20px" }}>
+      {/* Question content */}
+      <div style={{ padding: "20px 16px" }}>
         <div style={{ marginBottom: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <p style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Question {currentQuestion + 1} of {questions.length}</p>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)" }}>{q.marks} mark{q.marks > 1 ? "s" : ""}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {q.type.replace("_", " ")}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>·</span>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)", fontWeight: 600 }}>{q.marks} mark{q.marks !== 1 ? "s" : ""}</span>
           </div>
-          <div style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }}
-            dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
+          <div style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
         </div>
 
+        {/* MCQ */}
         {q.type === "multiple_choice" && q.options && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {q.options.map((opt, i) => (
               <button key={i} onClick={() => setCurrentAnswer(opt)}
-                style={{ padding: 14, borderRadius: 12, border: currentAnswer === opt ? "1px solid var(--primary)" : "1px solid var(--card-border)", background: currentAnswer === opt ? "rgba(99,102,241,0.15)" : "var(--card)", cursor: "pointer", textAlign: "left", color: "var(--foreground)", fontWeight: currentAnswer === opt ? 600 : 400 }}>
+                style={{ padding: "14px 16px", borderRadius: 12, border: currentAnswer === opt ? "1px solid var(--primary)" : "1px solid var(--card-border)", background: currentAnswer === opt ? "rgba(99,102,241,0.15)" : "var(--card)", cursor: "pointer", textAlign: "left", color: "var(--foreground)", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${currentAnswer === opt ? "var(--primary)" : "var(--card-border)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: currentAnswer === opt ? "var(--primary)" : "var(--muted-foreground)", flexShrink: 0 }}>
+                  {["A","B","C","D"][i]}
+                </div>
                 <span dangerouslySetInnerHTML={{ __html: renderMath(opt) }} />
               </button>
             ))}
           </div>
         )}
 
+        {/* Text / Structured */}
         {(q.type === "short_answer" || q.type === "structured") && (
           <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)}
-            rows={q.type === "structured" ? 8 : 4} placeholder="Write your answer here…"
-            style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+            rows={q.type === "structured" ? 8 : 4} placeholder="Write your answer here..."
+            style={{ ...input, resize: "vertical", lineHeight: 1.6 }} />
         )}
       </div>
 
-      {/* FIXED NAVIGATION */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1000, background: "var(--background)", borderTop: "1px solid var(--card-border)", padding: 16 }}>
+      {/* Fixed bottom nav */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1000, background: "var(--background)", borderTop: "1px solid var(--card-border)", padding: "14px 16px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+          {/* Question dots */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
             {questions.map((_, i) => {
               const answered = answers.some(a => a.questionId === questions[i]?.id && a.answer);
               return (
                 <button key={i} onClick={() => goToQuestion(i)}
-                  style={{ width: 34, height: 34, borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12,
-                    background: i === currentQuestion ? "var(--primary)" : answered ? "rgba(34,197,94,0.2)" : "var(--muted)",
-                    color: i === currentQuestion ? "white" : answered ? "#22c55e" : "var(--foreground)",
-                    outline: answered && i !== currentQuestion ? "1px solid rgba(34,197,94,0.4)" : "none",
-                  }}>
+                  style={{ width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, background: i === currentQ ? "var(--primary)" : answered ? "rgba(34,197,94,0.3)" : "var(--muted)", color: i === currentQ ? "white" : answered ? "#22c55e" : "var(--foreground)" }}>
                   {i + 1}
                 </button>
               );
             })}
           </div>
+
           <div style={{ display: "flex", gap: 10 }}>
-            {currentQuestion > 0 && (
-              <button onClick={() => goToQuestion(currentQuestion - 1)}
-                style={{ flex: 1, padding: 14, borderRadius: 12, border: "none", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: "pointer", minHeight: 52 }}>
-                ← Previous
-              </button>
+            {currentQ > 0 && (
+              <button onClick={() => goToQuestion(currentQ - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>← Prev</button>
             )}
-            {currentQuestion < questions.length - 1 ? (
-              <button onClick={() => goToQuestion(currentQuestion + 1)}
-                style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer", minHeight: 52, boxShadow: "0 0 24px rgba(99,102,241,0.35)" }}>
-                Next →
-              </button>
+            {currentQ < questions.length - 1 ? (
+              <button onClick={() => goToQuestion(currentQ + 1)} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 0 24px rgba(99,102,241,0.35)" }}>Next →</button>
             ) : (
-              <button onClick={handleSubmitExam}
-                style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: "#22c55e", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer", minHeight: 52, boxShadow: "0 0 24px rgba(34,197,94,0.35)" }}>
-                Submit Exam ✓
-              </button>
+              <button onClick={handleSubmitExam} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "#22c55e", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 0 24px rgba(34,197,94,0.35)" }}>Submit Exam ✓</button>
             )}
           </div>
         </div>
@@ -377,90 +370,86 @@ export default function ExamSimulation() {
     </div>
   );
 
-  // ── MARKING ──────────────────────────────────────────────────────────────────
-
+  /* ══════════════════════════════════════════════════════
+     MARKING
+  ══════════════════════════════════════════════════════ */
   if (step === "marking") return (
     <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 20 }}>
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-      <div style={{ fontSize: 60, animation: "spin 2s linear infinite" }}>🧠</div>
-      <h2 style={{ fontSize: 24, fontWeight: 900 }}>Cortex is marking…</h2>
-      <p style={{ color: "var(--muted-foreground)", fontSize: 14 }}>Analysing every answer…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+      <div style={{ fontSize: 56, animation: "spin 2s linear infinite" }}>🧠</div>
+      <div style={{ textAlign: "center" }}>
+        <h2 style={{ fontSize: 22, fontWeight: 900, margin: "0 0 8px" }}>Cortex is marking…</h2>
+        <p style={{ color: "var(--muted-foreground)", fontSize: 14, animation: "pulse 1.5s ease infinite" }}>Analysing your answers</p>
+      </div>
     </div>
   );
 
-  // ── RESULTS ──────────────────────────────────────────────────────────────────
-
+  /* ══════════════════════════════════════════════════════
+     RESULTS
+  ══════════════════════════════════════════════════════ */
   if (step === "results" && results) {
-    const { grade, color, label } = getGrade(results.percentage);
-    const answeredCount = answers.filter(a => a.answer).length;
-    const avgTime = answeredCount > 0
-      ? Math.round(answers.reduce((s, a) => s + a.timeSpent, 0) / answeredCount)
-      : 0;
+    const pct         = results.percentage;
+    const grade       = getGrade(pct);
+    const gc          = gradeColor(pct);
+    const timeTakenFmt = formatTime(results.timeTaken);
+    const answeredCount = answers.filter(a => a.answer.trim()).length;
 
     return (
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "40px 20px 120px", display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 16px 80px" }}>
         <style>{`
-          .result-card { transition: border-color .15s; }
-          .result-card:hover { border-color: rgba(255,255,255,0.12) !important; }
+          @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes pop    { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+          .result-tab { cursor: pointer; padding: 9px 20px; borderRadius: 10; border: 1px solid transparent; fontWeight: 600; fontSize: 13; transition: all .15s; }
           .expand-btn:hover { background: rgba(255,255,255,0.06) !important; }
         `}</style>
 
-        {/* ── Hero score card ── */}
-        <div style={{ ...cardStyle, textAlign: "center", padding: "32px 24px", background: `linear-gradient(160deg, ${color}12, transparent)`, border: `1px solid ${color}30` }}>
-          <div style={{ fontSize: 72, fontWeight: 900, color, lineHeight: 1, marginBottom: 8 }}>{grade}</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--foreground)", marginBottom: 4 }}>{results.percentage}%</div>
-          <p style={{ fontSize: 16, fontWeight: 600, color, marginBottom: 20 }}>{label}</p>
+        {/* ── Score hero ── */}
+        <div style={{ borderRadius: 22, border: "1px solid rgba(255,255,255,0.07)", background: `radial-gradient(ellipse at 70% 0%, ${gc}22 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: `${gc}18`, border: `2px solid ${gc}40`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
+            <Trophy size={32} color={gc} />
+          </div>
+          <p style={{ fontSize: 11, color: "#475569", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{subject} · {DIFFICULTIES[difficulty].label}</p>
+          <h1 style={{ fontSize: 56, fontWeight: 900, color: gc, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
+          <p style={{ fontSize: 28, fontWeight: 800, color: "#f1f5f9", margin: "0 0 24px" }}>Grade {grade}</p>
 
           {/* Stats row */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 0, flexWrap: "wrap" }}>
             {[
-              { icon: <Star size={14} />, label: "Score", value: `${results.totalScore}/${results.maxScore}` },
-              { icon: <Clock size={14} />, label: "Time taken", value: formatTime(results.timeTaken) },
-              { icon: <Zap size={14} />, label: "Avg per Q", value: formatTime(avgTime) },
-              { icon: <CheckCircle2 size={14} />, label: "Answered", value: `${answeredCount}/${questions.length}` },
-            ].map((stat, i) => (
-              <div key={i} style={{ textAlign: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--muted-foreground)", justifyContent: "center", marginBottom: 4 }}>
-                  {stat.icon}
-                  <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>{stat.label}</span>
-                </div>
-                <p style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", margin: 0 }}>{stat.value}</p>
+              { val: `${results.totalScore}/${results.maxScore}`, label: "Score",     color: gc },
+              { val: timeTakenFmt,                                label: "Time",      color: "#60a5fa" },
+              { val: `${answeredCount}/${questions.length}`,      label: "Answered",  color: "#a78bfa" },
+            ].map((s, i) => (
+              <div key={i} style={{ textAlign: "center", padding: "0 20px", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+                <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                <p style={{ fontSize: 11, color: "#475569", margin: "3px 0 0" }}>{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Weak & Strong areas ── */}
-        {(results.weakAreas.length > 0 || results.strongAreas.length > 0) && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {results.weakAreas.length > 0 && (
-              <div style={{ ...cardStyle, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                  <TrendingDown size={14} color="#f87171" />
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#f87171", margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>Needs Work</p>
-                </div>
+        {/* ── Weak / Strong areas ── */}
+        {(results.weakAreas?.length > 0 || results.strongAreas?.length > 0) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            {results.strongAreas?.length > 0 && (
+              <div style={{ borderRadius: 16, background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", padding: "16px" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#34d399", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                  <CheckCircle2 size={13} /> Strong Areas
+                </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {results.weakAreas.map((area, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <XCircle size={13} color="#ef4444" style={{ flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, color: "var(--foreground)" }}>{area}</span>
-                    </div>
+                  {results.strongAreas.map((a, i) => (
+                    <p key={i} style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>· {a}</p>
                   ))}
                 </div>
               </div>
             )}
-            {results.strongAreas.length > 0 && (
-              <div style={{ ...cardStyle, border: "1px solid rgba(34,197,94,0.25)", background: "rgba(34,197,94,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                  <TrendingUp size={14} color="#22c55e" />
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>Strong Areas</p>
-                </div>
+            {results.weakAreas?.length > 0 && (
+              <div style={{ borderRadius: 16, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.2)", padding: "16px" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#f87171", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertCircle size={13} /> Needs Work
+                </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {results.strongAreas.map((area, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <CheckCircle2 size={13} color="#22c55e" style={{ flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, color: "var(--foreground)" }}>{area}</span>
-                    </div>
+                  {results.weakAreas.map((a, i) => (
+                    <p key={i} style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>· {a}</p>
                   ))}
                 </div>
               </div>
@@ -470,84 +459,104 @@ export default function ExamSimulation() {
 
         {/* ── Cortex insight ── */}
         {results.cortexInsight && (
-          <div style={{ ...cardStyle, border: "1px solid rgba(99,102,241,0.25)", background: "rgba(99,102,241,0.06)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <div style={{ fontSize: 18 }}>🧠</div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--primary)", margin: 0 }}>Cortex Insight</p>
-            </div>
-            <p style={{ fontSize: 14, color: "var(--foreground)", margin: 0, lineHeight: 1.65 }}>{results.cortexInsight}</p>
+          <div style={{ borderRadius: 16, background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)", padding: "16px 18px", marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 6 }}>
+              🧠 Cortex Insight
+            </p>
+            <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, lineHeight: 1.65 }}>{results.cortexInsight}</p>
           </div>
         )}
 
-        {/* ── Per-question breakdown ── */}
-        <div>
-          <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Question Breakdown</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {results.results.map((r, i) => {
-              const q        = questions.find(q => q.id === r.questionId);
-              const userAns  = answers.find(a => a.questionId === r.questionId)?.answer || "(no answer)";
-              const isOpen   = expandedResult === i;
-              const statusColor = r.correct ? "#22c55e" : r.score > 0 ? "#f59e0b" : "#ef4444";
-              const statusBg    = r.correct ? "rgba(34,197,94,0.08)" : r.score > 0 ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)";
-              const statusBorder= r.correct ? "rgba(34,197,94,0.25)" : r.score > 0 ? "rgba(245,158,11,0.25)" : "rgba(239,68,68,0.25)";
+        {/* ── Tabs ── */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {(["overview", "review"] as const).map(tab => (
+            <button key={tab} className="result-tab" onClick={() => setActiveTab(tab)}
+              style={{ background: activeTab === tab ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.03)", borderColor: activeTab === tab ? "rgba(99,102,241,0.4)" : "rgba(255,255,255,0.08)", color: activeTab === tab ? "#a78bfa" : "#475569", cursor: "pointer", padding: "9px 20px", borderRadius: 10, border: "1px solid", fontWeight: 600, fontSize: 13, transition: "all .15s" }}>
+              {tab === "overview" ? "Overview" : `Review All (${results.results?.length ?? 0})`}
+            </button>
+          ))}
+        </div>
 
+        {/* ── Overview tab ── */}
+        {activeTab === "overview" && (
+          <div style={{ animation: "fadeUp .3s ease" }}>
+            {/* Performance by topic */}
+            {results.results && (
+              <div style={{ borderRadius: 18, background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)", border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                {Object.entries(
+                  results.results.reduce<Record<string, { score: number; max: number }>>((acc, r) => {
+                    const t = r.topic || "General";
+                    if (!acc[t]) acc[t] = { score: 0, max: 0 };
+                    acc[t].score += r.score; acc[t].max += r.maxScore;
+                    return acc;
+                  }, {})
+                ).map(([topic, { score, max }], i, arr) => {
+                  const topicPct = max > 0 ? Math.round((score / max) * 100) : 0;
+                  const tc = gradeColor(topicPct);
+                  return (
+                    <div key={topic} style={{ padding: "14px 18px", borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9", margin: 0 }}>{topic}</p>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: tc }}>{topicPct}%</span>
+                      </div>
+                      <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${topicPct}%`, height: "100%", background: tc, borderRadius: 999, transition: "width .6s ease" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Review tab ── */}
+        {activeTab === "review" && results.results && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeUp .3s ease" }}>
+            {results.results.map((r, i) => {
+              const origQ   = questions.find(q => q.id === r.questionId);
+              const userAns = answers.find(a => a.questionId === r.questionId);
+              const isOpen  = expandedQ === i;
               return (
-                <div key={i} className="result-card"
-                  style={{ borderRadius: 14, border: `1px solid ${statusBorder}`, background: statusBg, overflow: "hidden" }}>
-                  {/* Header row */}
-                  <button className="expand-btn" onClick={() => setExpandedResult(isOpen ? null : i)}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", color: "var(--foreground)" }}>
-                    {/* Status icon */}
-                    <div style={{ flexShrink: 0 }}>
-                      {r.correct
-                        ? <CheckCircle2 size={18} color="#22c55e" />
-                        : r.score > 0
-                          ? <AlertCircle size={18} color="#f59e0b" />
-                          : <XCircle size={18} color="#ef4444" />}
-                    </div>
-                    {/* Question preview */}
+                <div key={r.questionId} style={{ borderRadius: 16, border: `1px solid ${r.correct ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, background: r.correct ? "rgba(52,211,153,0.04)" : "rgba(248,113,113,0.04)", overflow: "hidden", animation: `fadeUp .3s ease ${i * 0.05}s both` }}>
+                  {/* Header */}
+                  <button className="expand-btn" onClick={() => setExpandedQ(isOpen ? null : i)}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+                    {r.correct ? <CheckCircle2 size={16} color="#34d399" style={{ flexShrink: 0 }} /> : <XCircle size={16} color="#f87171" style={{ flexShrink: 0 }} />}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        Q{i + 1}: {q?.question?.slice(0, 80)}{(q?.question?.length ?? 0) > 80 ? "…" : ""}
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: isOpen ? "normal" : "nowrap" }}>
+                        Q{i + 1}. {origQ?.question ?? `Question ${i + 1}`}
                       </p>
-                      <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>{r.topic}</p>
+                      <p style={{ fontSize: 11, color: "#475569", margin: "2px 0 0" }}>{r.topic} · {r.score}/{r.maxScore} marks</p>
                     </div>
-                    {/* Score pill */}
-                    <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: statusColor, background: `${statusColor}15`, border: `1px solid ${statusColor}30`, borderRadius: 999, padding: "2px 10px" }}>
-                      {r.score}/{r.maxScore}
-                    </span>
-                    {/* Expand chevron */}
-                    <span style={{ color: "var(--muted-foreground)", fontSize: 12, flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>
+                    <div style={{ flexShrink: 0, color: "#475569" }}>
+                      {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
                   </button>
 
                   {/* Expanded detail */}
                   {isOpen && (
-                    <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${statusBorder}` }}>
-                      {/* Full question */}
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)", margin: "14px 0 10px", lineHeight: 1.5 }}>{q?.question}</p>
-
-                      {/* Your answer */}
-                      <div style={{ marginBottom: 10 }}>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 4px" }}>Your Answer</p>
-                        <div style={{ fontSize: 13, color: r.correct ? "#6ee7b7" : "#fca5a5", background: r.correct ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)", border: `1px solid ${r.correct ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`, borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 }}>
-                          {userAns}
-                        </div>
+                    <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                      {/* User answer */}
+                      <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px" }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Your Answer</p>
+                        <p style={{ fontSize: 13, color: r.correct ? "#34d399" : "#f87171", margin: 0, lineHeight: 1.5 }}>
+                          {userAns?.answer || "No answer given"}
+                        </p>
                       </div>
 
                       {/* Model answer */}
                       {!r.correct && (
-                        <div style={{ marginBottom: 10 }}>
-                          <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 4px" }}>Correct Answer</p>
-                          <div style={{ fontSize: 13, color: "#6ee7b7", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 }}>
-                            {r.modelAnswer}
-                          </div>
+                        <div style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                          <p style={{ fontSize: 10, fontWeight: 700, color: "#34d399", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>✓ Model Answer</p>
+                          <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, lineHeight: 1.6 }}>{r.modelAnswer}</p>
                         </div>
                       )}
 
-                      {/* Feedback / explanation */}
-                      <div>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 4px" }}>Explanation</p>
-                        <p style={{ fontSize: 13, color: "var(--foreground)", margin: 0, lineHeight: 1.65 }}>{r.feedback}</p>
+                      {/* Feedback */}
+                      <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px" }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Feedback</p>
+                        <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, lineHeight: 1.65 }}>{r.feedback}</p>
                       </div>
                     </div>
                   )}
@@ -555,17 +564,15 @@ export default function ExamSimulation() {
               );
             })}
           </div>
-        </div>
+        )}
 
-        {/* ── Action buttons ── */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={retakeExam}
-            style={{ flex: 1, padding: 16, borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <RotateCcw size={15} /> Retake
+        {/* ── Actions ── */}
+        <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+          <button onClick={resetExam} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+            <RotateCcw size={15} /> New Exam
           </button>
-          <button onClick={resetExam}
-            style={{ flex: 2, padding: 16, borderRadius: 14, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-            New Exam →
+          <button onClick={() => { resetExam(); setTimeout(() => { setSubject(subject); setDifficulty(difficulty); setQuestionCount(questionCount); setTopic(topic); }, 0); }} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.1))", border: "1px solid rgba(99,102,241,0.3)", color: "#a78bfa", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+            <Flame size={15} /> Retake Same
           </button>
         </div>
       </div>
