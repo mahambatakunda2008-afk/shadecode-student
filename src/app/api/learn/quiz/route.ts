@@ -1,0 +1,161 @@
+import { NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
+const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
+
+function getSupabaseAdmin() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+
+function getBearerToken(req: Request): string | null {
+  const h = req.headers.get("authorization");
+  if (!h?.startsWith("Bearer ")) return null;
+  return h.slice(7).trim() || null;
+}
+
+async function callAI(prompt: string): Promise<string | null> {
+  if (process.env.CLOUDFLARE_API_TOKEN) {
+    try {
+      const res = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
+        { method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 2000 }) }
+      );
+      const d = await res.json();
+      const t = typeof d?.result?.response === "string" ? d.result.response : null;
+      if (t && t.length > 20) return t;
+    } catch {}
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: 2000, response_format: { type: "json_object" } }),
+      });
+      const d = await res.json();
+      const t = d.choices?.[0]?.message?.content;
+      if (t && t.length > 20) return t;
+    } catch {}
+  }
+
+  const keys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
+  for (const key of keys) {
+    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 2000, responseMimeType: "application/json" } }),
+        });
+        const d = await res.json();
+        const t = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (t && t.length > 20) return t;
+      } catch {}
+    }
+  }
+
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app" },
+        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }], max_tokens: 2000 }),
+      });
+      const d = await res.json();
+      const t = d.choices?.[0]?.message?.content;
+      if (t && t.length > 20) return t;
+    } catch {}
+  }
+
+  return null;
+}
+
+function safeParseJSON(raw: string) {
+  const candidates = [
+    raw,
+    raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim(),
+    raw.replace(/\\(?!["\\/bfnrtu])/g, "\\\\"),
+    raw.replace(/\\/g, ""),
+  ];
+  for (const text of candidates) {
+    try {
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) { const p = JSON.parse(m[0]); if (p?.questions) return p; }
+    } catch {}
+  }
+  return null;
+}
+
+export async function POST(req: Request) {
+  try {
+    const token = getBearerToken(req);
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const supabase = getSupabaseAdmin();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { lessonId } = await req.json();
+    if (!lessonId) return NextResponse.json({ error: "Missing lessonId" }, { status: 400 });
+
+    const { data: lesson, error: lessonErr } = await supabase
+      .from("learn_lessons")
+      .select("id, title, subject_id, blocks, difficulty")
+      .eq("id", lessonId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (lessonErr || !lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+
+    const { data: subjectRow } = await supabase
+      .from("subjects").select("name").eq("id", lesson.subject_id).maybeSingle();
+
+    const subject = subjectRow?.name ?? "the subject";
+    const blocks  = (lesson.blocks ?? []) as { type: string; content: string }[];
+    const content = blocks.map(b => `[${b.type.toUpperCase()}] ${b.content}`).join("\n\n");
+
+    const prompt = `You are a ${subject} teacher. Based on this lesson, generate exactly 5 multiple-choice quiz questions to test student understanding.
+
+LESSON TITLE: ${lesson.title}
+
+LESSON CONTENT:
+${content}
+
+Return ONLY a valid JSON object:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Question text here?",
+      "options": ["A) option one", "B) option two", "C) option three", "D) option four"],
+      "correctIndex": 0,
+      "explanation": "Brief explanation of why A is correct and why others are wrong."
+    }
+  ]
+}
+
+STRICT RULES:
+- Exactly 5 questions, all multiple choice with exactly 4 options
+- Questions must test understanding of THIS specific lesson content
+- correctIndex is 0-based (0=A, 1=B, 2=C, 3=D)
+- explanation must be 1-2 sentences, clear and educational
+- Do NOT use LaTeX backslashes. Use plain text math (x^2, sin(x), etc.)
+- Output ONLY the JSON object, nothing else`;
+
+    const raw    = await callAI(prompt);
+    if (!raw) return NextResponse.json({ error: "AI unavailable" }, { status: 503 });
+
+    const parsed = safeParseJSON(raw);
+    if (!parsed?.questions?.length) return NextResponse.json({ error: "Failed to generate quiz" }, { status: 500 });
+
+    return NextResponse.json({ questions: parsed.questions.slice(0, 5) });
+
+  } catch (err) {
+    console.error("Quiz generation error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
