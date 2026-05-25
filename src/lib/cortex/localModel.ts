@@ -1,5 +1,31 @@
+// src/lib/cortex/localModel.ts
+
+import { Context } from "./router";
+
 export class LocalModel {
-  async ask(question: string): Promise<string> {
-    return `Local Cortex fallback response: ${question}`;
+  /**
+   * Main generation method (recommended standard)
+   */
+  async generate(question: string, context?: Context): Promise<string> {
+    // 🔮 Replace this with your real logic (rules, small LLM, etc.)
+
+    const memoryHint = context?.history?.length
+      ? `I remember some context.`
+      : `No prior context.`;
+
+    return `🧠 LocalModel answer:
+Question: ${question}
+${memoryHint}`;
+  }
+
+  /**
+   * Alias method (kept for backward compatibility)
+   * Your router supports both generate() and generateResponse()
+   */
+  async generateResponse(
+    question: string,
+    context?: Context
+  ): Promise<string> {
+    return this.generate(question, context);
   }
 }
