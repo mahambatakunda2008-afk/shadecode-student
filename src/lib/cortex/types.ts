@@ -1,3 +1,7 @@
+/* ─────────────────────────────────────────────
+   CORE EVENT SYSTEM
+───────────────────────────────────────────── */
+
 export type CortexEventType =
   | "dashboard.loaded"
   | "streak.updated"
@@ -8,7 +12,7 @@ export type CortexEventType =
   | "task.deleted"
   | "timetable.generated"
   | "timetable.saved"
-  | "exam.completed" // 🧠 added: exam intelligence hook
+  | "exam.completed"
   | "exam.question.answered"
   | "exam.marking.completed";
 
@@ -21,10 +25,6 @@ export type CortexEventSource =
 export interface CortexEventData {
   [key: string]: boolean | number | string | null | undefined;
 }
-
-/* ─────────────────────────────────────────────
-   CORE EVENT STRUCTURE
-───────────────────────────────────────────── */
 
 export interface CortexEvent {
   id: string;
@@ -59,7 +59,6 @@ export interface CortexSnapshot {
 
   recentTaskTitles: string[];
 
-  // 🧠 NEW: learning intelligence layer
   weakestSubjects?: string[];
   strongestSubjects?: string[];
 
@@ -68,12 +67,19 @@ export interface CortexSnapshot {
 }
 
 /* ─────────────────────────────────────────────
-   CONTEXT FOR AI / INSIGHTS
+   AI RUNTIME CONTEXT (NEW FIX)
+   ← this replaces broken router imports
 ───────────────────────────────────────────── */
 
-export interface CortexInsightContext {
-  events: CortexEvent[];
-  snapshot: CortexSnapshot;
+export interface CortexContext {
+  userId?: string;
+
+  history?: unknown[];
+  snapshot?: CortexSnapshot;
+  events?: CortexEvent[];
+
+  // flexible extension point (future-proofing)
+  [key: string]: unknown;
 }
 
 /* ─────────────────────────────────────────────
@@ -95,7 +101,7 @@ export type CortexStructuredValue =
 export type CortexAIRequestType =
   | "behavior.insight"
   | "behavior.summary"
-  | "learning.focus" // 🧠 NEW: exam-driven focus generation
+  | "learning.focus"
   | "learning.recommendation";
 
 export interface CortexBehaviorInsightPayload {
@@ -126,7 +132,7 @@ export interface CortexLearningRecommendationPayload {
 }
 
 /* ─────────────────────────────────────────────
-   REQUEST MAP
+   REQUEST MAPS
 ───────────────────────────────────────────── */
 
 export interface CortexAIRequestPayloadMap {
