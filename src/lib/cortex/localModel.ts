@@ -1,6 +1,6 @@
 // src/lib/cortex/localModel.ts
 
-import { Context } from "./router";
+import { CortexContext } from "./types";
 
 export class LocalModel {
   /**
@@ -24,7 +24,7 @@ ${memoryHint}`;
    */
   async generateResponse(
     question: string,
-    context?: Context
+    context?: CortexContext
   ): Promise<string> {
     return this.generate(question, context);
   }
