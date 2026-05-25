@@ -15,6 +15,14 @@ export type CortexEventType =
   | "exam.completed"
   | "exam.question.answered"
   | "exam.marking.completed";
+/* ─────────────────────────────────────────────
+   CONTEXT FOR AI INSIGHTS (ENGINE USE)
+───────────────────────────────────────────── */
+
+export interface CortexInsightContext {
+  events: CortexEvent[];
+  snapshot: CortexSnapshot;
+};
 
 export type CortexEventSource =
   | "dashboard"
