@@ -1,24 +1,34 @@
 "use client";
 
+import Cortex from "@/components/cortex/Cortex";
+import DailyChallenge from "@/components/DailyChallenge";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { updateStreak } from "@/lib/utils/streak";
+import Tour from "@/components/shared/Tour";
+import { emitCortexEvent } from "@/lib/cortex/events/emit";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Profile {
-  display_name: string | null;
+  username: string;
   level: number;
   xp: number;
   streak: number;
 }
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
 interface Task {
   id: string;
-  title: string;
-  due_date: string | null;
+  subject_id: string;
   completed: boolean;
-  subject: string | null;
+  title?: string;
+  due_date?: string | null;
 }
 
 interface ExamResult {
@@ -37,108 +47,169 @@ interface FocusSession {
   created_at: string;
 }
 
-interface DashboardData {
-  profile: Profile;
-  tasks: Task[];
-  examResults: ExamResult[];
-  focusSessions: FocusSession[];
-  userEmail: string;
+// ─── Existing: CircularProgress (preserved exactly) ───────────────────────────
+
+function CircularProgress({
+  value,
+  max,
+  size = 80,
+  color = "#6366f1",
+  label,
+  sublabel,
+}: {
+  value: number;
+  max: number;
+  size?: number;
+  color?: string;
+  label: string;
+  sublabel?: string;
+}) {
+  const radius = (size - 10) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const percent = max > 0 ? Math.min(value / max, 1) : 0;
+  const offset = circumference - percent * circumference;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--muted)" strokeWidth="6" />
+          <circle
+            cx={size / 2} cy={size / 2} r={radius} fill="none"
+            stroke={color} strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={circumference} strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 1s ease", filter: `drop-shadow(0 0 4px ${color}80)` }}
+          />
+        </svg>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+          <p style={{ fontSize: size > 70 ? "18px" : "14px", fontWeight: 800, color, lineHeight: 1 }}>
+            {label}
+          </p>
+        </div>
+      </div>
+      {sublabel && (
+        <p style={{ fontSize: "11px", color: "var(--muted-foreground)", textAlign: "center" }}>
+          {sublabel}
+        </p>
+      )}
+    </div>
+  );
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const XP_PER_LEVEL = 500;
-const FETCH_TIMEOUT_MS = 8000;
+function DashboardSkeleton() {
+  const pulse: React.CSSProperties = {
+    background: "var(--muted)",
+    borderRadius: "8px",
+    animation: "dash-pulse 1.5s ease-in-out infinite",
+  };
+  const card: React.CSSProperties = {
+    background: "var(--card)",
+    border: "1px solid var(--card-border)",
+    borderRadius: "12px",
+    padding: "16px",
+  };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+  return (
+    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Header skeleton */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ ...pulse, height: "11px", width: "90px" }} />
+          <div style={{ ...pulse, height: "22px", width: "160px", animationDelay: "0.1s" }} />
+        </div>
+        <div style={{ ...pulse, height: "34px", width: "72px", borderRadius: "8px" }} />
+      </div>
 
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+      {/* Circular progress row skeleton */}
+      <div style={{ ...card, display: "flex", justifyContent: "space-around", alignItems: "center", padding: "20px 16px" }}>
+        {[0, 0.15, 0.3].map((delay, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+            <div style={{ ...pulse, width: "80px", height: "80px", borderRadius: "50%", animationDelay: `${delay}s` }} />
+            <div style={{ ...pulse, height: "10px", width: "48px", animationDelay: `${delay + 0.1}s` }} />
+          </div>
+        ))}
+      </div>
+
+      {/* XP bar skeleton */}
+      <div style={{ ...card, display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ ...pulse, height: "12px", width: "120px" }} />
+        <div style={{ ...pulse, height: "10px", width: "80px", animationDelay: "0.1s" }} />
+      </div>
+
+      {/* Stat cards skeleton */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        {[0, 0.08, 0.16, 0.24].map((delay, i) => (
+          <div key={i} style={{ ...pulse, height: "76px", borderRadius: "12px", animationDelay: `${delay}s` }} />
+        ))}
+      </div>
+
+      {/* Content block skeleton */}
+      <div style={{ ...card, display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ ...pulse, height: "12px", width: "80px" }} />
+        {[0, 0.1, 0.2].map((delay, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ ...pulse, height: "12px", width: "100px", animationDelay: `${delay}s` }} />
+              <div style={{ ...pulse, height: "12px", width: "32px", animationDelay: `${delay}s` }} />
+            </div>
+            <div style={{ ...pulse, height: "5px", width: "100%", borderRadius: "99px", animationDelay: `${delay}s` }} />
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes dash-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+      `}</style>
+    </div>
+  );
 }
 
-function getDisplayName(profile: Profile, email: string): string {
-  if (profile.display_name) return profile.display_name;
-  return email.split("@")[0];
-}
+// ─── New: Cortex Insight (client-side, no API call) ───────────────────────────
 
-function getTodayString(): string {
-  return new Date().toISOString().split("T")[0];
-}
-
-function getDaysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function getXpProgress(xp: number): { current: number; needed: number; pct: number } {
-  const current = xp % XP_PER_LEVEL;
-  const needed = XP_PER_LEVEL;
-  return { current, needed, pct: Math.min((current / needed) * 100, 100) };
-}
-
-// Cortex insight — generated from available data, no API call
 function generateInsight(
   examResults: ExamResult[],
   focusSessions: FocusSession[],
   tasks: Task[]
 ): string {
   // Evening focus pattern
-  const eveningSessions = focusSessions.filter(s => {
-    const h = new Date(s.created_at).getHours();
-    return h >= 17;
-  });
-  if (focusSessions.length >= 3 && eveningSessions.length / focusSessions.length > 0.5) {
-    return "You focus best in the evening. Schedule your hardest work then.";
+  if (focusSessions.length >= 3) {
+    const eveningCount = focusSessions.filter(s => new Date(s.created_at).getHours() >= 17).length;
+    if (eveningCount / focusSessions.length > 0.5) {
+      return "You focus best in the evening. Schedule your hardest work then.";
+    }
   }
 
-  // Dropping subject
+  // Subject declining
   if (examResults.length >= 3) {
-    const subjectMap: Record<string, number[]> = {};
-    examResults.forEach(r => {
-      if (!subjectMap[r.subject]) subjectMap[r.subject] = [];
-      subjectMap[r.subject].push(r.score);
+    const bySubject: Record<string, number[]> = {};
+    [...examResults].reverse().forEach(r => {
+      if (!bySubject[r.subject]) bySubject[r.subject] = [];
+      bySubject[r.subject].push(r.score);
     });
-    for (const [subject, scores] of Object.entries(subjectMap)) {
-      if (scores.length >= 2) {
-        const first = scores[scores.length - 1];
-        const last = scores[0];
-        if (first - last > 10) {
-          return `${subject} performance has dropped recently. Time to review.`;
-        }
+    for (const [subject, scores] of Object.entries(bySubject)) {
+      if (scores.length >= 2 && scores[0] - scores[scores.length - 1] > 10) {
+        return `${subject} performance has dropped recently. Time to review.`;
       }
     }
   }
 
-  // Weak area
-  const weakAreaCount: Record<string, number> = {};
-  examResults.forEach(r =>
-    (r.weak_areas || []).forEach(a => {
-      weakAreaCount[a] = (weakAreaCount[a] || 0) + 1;
-    })
-  );
-  const topWeak = Object.entries(weakAreaCount).sort((a, b) => b[1] - a[1])[0];
+  // Top weak area
+  const weakCount: Record<string, number> = {};
+  examResults.forEach(r => (r.weak_areas || []).forEach(a => { weakCount[a] = (weakCount[a] || 0) + 1; }));
+  const topWeak = Object.entries(weakCount).sort((a, b) => b[1] - a[1])[0];
   if (topWeak) return `"${topWeak[0]}" keeps appearing as a weak area. Target it next.`;
 
-  // Overdue tasks
-  const today = getTodayString();
-  const overdue = tasks.filter(t => !t.completed && t.due_date && t.due_date < today);
-  if (overdue.length > 0) {
-    return `You have ${overdue.length} overdue task${overdue.length > 1 ? "s" : ""}. Start with the oldest one.`;
-  }
-
   // Sprint XP
-  const sprintSessions = focusSessions.filter(s => s.duration_minutes <= 15);
-  if (sprintSessions.length >= 2) {
-    return "Sprint sessions earn XP faster per minute. Use them for short review bursts.";
+  if (focusSessions.filter(s => s.duration_minutes <= 15).length >= 2) {
+    return "Sprint sessions earn XP faster per minute. Use them for review bursts.";
   }
 
-  // Default motivational
+  // Default
   const defaults = [
     "Consistency beats intensity. Show up every day.",
     "Your next session is your most important one.",
@@ -147,144 +218,7 @@ function generateInsight(
   return defaults[new Date().getDay() % defaults.length];
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function DashboardSkeleton() {
-  const pulse: React.CSSProperties = {
-    animation: "pulse 1.5s ease-in-out infinite",
-    background: "var(--muted)",
-    borderRadius: "8px",
-  };
-
-  return (
-    <div style={{ padding: "24px 20px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* Hero skeleton */}
-      <div style={{
-        background: "var(--card)", border: "1px solid var(--card-border)",
-        borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px",
-      }}>
-        <div style={{ ...pulse, height: "12px", width: "120px" }} />
-        <div style={{ ...pulse, height: "28px", width: "200px" }} />
-        <div style={{ ...pulse, height: "8px", width: "100%", borderRadius: "99px" }} />
-        <div style={{ ...pulse, height: "12px", width: "260px" }} />
-      </div>
-
-      {/* Today skeleton */}
-      <div style={{
-        background: "var(--card)", border: "1px solid var(--card-border)",
-        borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "10px",
-      }}>
-        <div style={{ ...pulse, height: "11px", width: "60px" }} />
-        {[1, 2].map(i => (
-          <div key={i} style={{ ...pulse, height: "48px", width: "100%", borderRadius: "10px" }} />
-        ))}
-      </div>
-
-      {/* Stat cards skeleton */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} style={{
-            ...pulse, height: "76px", borderRadius: "12px",
-            animationDelay: `${i * 0.1}s`,
-          }} />
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Section 1: Hero ──────────────────────────────────────────────────────────
-
-function HeroSection({
-  profile,
-  email,
-  examResults,
-  focusSessions,
-  tasks,
-}: {
-  profile: Profile;
-  email: string;
-  examResults: ExamResult[];
-  focusSessions: FocusSession[];
-  tasks: Task[];
-}) {
-  const name = getDisplayName(profile, email);
-  const { current, needed, pct } = getXpProgress(profile.xp);
-  const insight = generateInsight(examResults, focusSessions, tasks);
-
-  return (
-    <div style={{
-      background: "var(--card)", border: "1px solid var(--card-border)",
-      borderRadius: "16px", padding: "20px",
-    }}>
-      {/* Greeting + streak */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
-        <p style={{ fontSize: "12px", color: "var(--muted-foreground)", fontWeight: 500 }}>
-          {getGreeting()}
-        </p>
-        {profile.streak > 0 && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: "4px",
-            background: "rgba(251,146,60,0.12)", border: "1px solid rgba(251,146,60,0.25)",
-            borderRadius: "20px", padding: "3px 10px",
-          }}>
-            <span style={{ fontSize: "13px" }}>🔥</span>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#fb923c" }}>
-              {profile.streak} day streak
-            </span>
-          </div>
-        )}
-      </div>
-
-      <h1 style={{ fontSize: "26px", fontWeight: 800, marginBottom: "16px", lineHeight: 1.2 }}>
-        {name}.
-      </h1>
-
-      {/* Level + XP bar */}
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--primary)" }}>
-            Level {profile.level}
-          </span>
-          <span style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
-            {current} / {needed} XP
-          </span>
-        </div>
-        <div style={{ background: "var(--muted)", borderRadius: "99px", height: "6px", overflow: "hidden" }}>
-          <div style={{
-            height: "100%", borderRadius: "99px",
-            width: `${pct}%`,
-            background: "linear-gradient(90deg, var(--primary), #818cf8)",
-            boxShadow: "0 0 8px var(--primary)",
-            transition: "width 0.8s ease",
-          }} />
-        </div>
-      </div>
-
-      {/* Cortex insight */}
-      <div style={{
-        display: "flex", gap: "10px", alignItems: "flex-start",
-        background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.18)",
-        borderRadius: "10px", padding: "10px 12px",
-      }}>
-        <span style={{ fontSize: "14px", flexShrink: 0, marginTop: "1px" }}>🔮</span>
-        <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.5, margin: 0 }}>
-          <span style={{ color: "var(--primary)", fontWeight: 600 }}>Cortex: </span>
-          {insight}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Section 2: Today Panel ───────────────────────────────────────────────────
+// ─── New: Today Panel ─────────────────────────────────────────────────────────
 
 function TodayPanel({
   tasks,
@@ -295,24 +229,20 @@ function TodayPanel({
   examResults: ExamResult[];
   router: ReturnType<typeof useRouter>;
 }) {
-  const today = getTodayString();
-  const dueTodayTasks = tasks.filter(
-    t => !t.completed && t.due_date === today
-  );
-  const overdueTasks = tasks.filter(
-    t => !t.completed && t.due_date && t.due_date < today
-  );
-
-  // Next exam countdown — use most recent exam result's subject as proxy
-  // In a real system this would come from an exams/schedule table
+  const today = new Date().toISOString().split("T")[0];
+  const tasksWithDates = tasks.filter(t => t.due_date);
+  const dueToday = tasksWithDates.filter(t => !t.completed && t.due_date === today);
+  const overdue = tasksWithDates.filter(t => !t.completed && t.due_date! < today);
   const lastSubject = examResults[0]?.subject ?? null;
 
-  const isEmpty = dueTodayTasks.length === 0 && overdueTasks.length === 0;
+  // If tasks have no due_date (current schema only has subject_id + completed),
+  // show a focused CTA block instead
+  const hasDateData = tasksWithDates.length > 0;
 
   return (
     <div style={{
       background: "var(--card)", border: "1px solid var(--card-border)",
-      borderRadius: "16px", padding: "20px",
+      borderRadius: "12px", padding: "16px",
     }}>
       <p style={{
         fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
@@ -321,182 +251,99 @@ function TodayPanel({
         Today
       </p>
 
-      {isEmpty ? (
-        <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <p style={{ fontSize: "2rem", marginBottom: "8px" }}>✅</p>
-          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>
-            All clear for today
+      {!hasDateData ? (
+        // Tasks exist but have no due dates — show action shortcuts
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <ActionRow icon="⏱" label="Start a Focus session" sub="Earn XP and build your streak" onClick={() => router.push("/focus")} />
+          <ActionRow icon="🎯" label="Run an Exam Sim" sub="Test what you know" onClick={() => router.push("/exam-sim")} />
+          {lastSubject && (
+            <ActionRow icon="📖" label={`Continue ${lastSubject}`} sub="Pick up where you left off" onClick={() => router.push("/exam-sim")} />
+          )}
+        </div>
+      ) : dueToday.length === 0 && overdue.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "12px 0 16px" }}>
+          <p style={{ fontSize: "1.8rem", marginBottom: "6px" }}>✅</p>
+          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>All clear</p>
+          <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "14px" }}>
+            Nothing due today. Great time to get ahead.
           </p>
-          <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "16px" }}>
-            No tasks due. A great time to get ahead.
-          </p>
-          <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
-            <button
-              onClick={() => router.push("/focus")}
-              style={primaryBtnStyle}
-            >
-              ⏱ Start Focus
-            </button>
-            <button
-              onClick={() => router.push("/tasks")}
-              style={ghostBtnStyle}
-            >
-              + Add Task
-            </button>
-          </div>
+          <button onClick={() => router.push("/focus")} style={primaryBtn}>
+            ⏱ Start Focus Session
+          </button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {/* Overdue — shown first, red-tinted */}
-          {overdueTasks.slice(0, 2).map(task => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              isOverdue
-              onClick={() => router.push("/tasks")}
-            />
+          {overdue.slice(0, 2).map(t => (
+            <div key={t.id} onClick={() => router.push("/tasks")} style={{
+              display: "flex", alignItems: "center", gap: "10px",
+              padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
+              background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)",
+            }}>
+              <div style={{ width: "16px", height: "16px", borderRadius: "50%", border: "2px solid #ef4444", flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: "13px", fontWeight: 500, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {t.title ?? "Untitled task"}
+                </p>
+                <p style={{ fontSize: "11px", color: "#ef4444", margin: 0 }}>
+                  Overdue · {new Date(t.due_date!).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                </p>
+              </div>
+            </div>
           ))}
-          {overdueTasks.length > 2 && (
-            <button
-              onClick={() => router.push("/tasks")}
-              style={{ ...ghostBtnStyle, fontSize: "12px", alignSelf: "flex-start" }}
-            >
-              +{overdueTasks.length - 2} more overdue
-            </button>
-          )}
-
-          {/* Due today */}
-          {dueTodayTasks.slice(0, 3).map(task => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              isOverdue={false}
-              onClick={() => router.push("/tasks")}
-            />
+          {dueToday.slice(0, 3).map(t => (
+            <div key={t.id} onClick={() => router.push("/tasks")} style={{
+              display: "flex", alignItems: "center", gap: "10px",
+              padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
+              background: "var(--muted)",
+            }}>
+              <div style={{ width: "16px", height: "16px", borderRadius: "50%", border: "2px solid var(--muted-foreground)", flexShrink: 0 }} />
+              <p style={{ fontSize: "13px", fontWeight: 500, margin: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {t.title ?? "Untitled task"}
+              </p>
+            </div>
           ))}
-          {dueTodayTasks.length > 3 && (
-            <button
-              onClick={() => router.push("/tasks")}
-              style={{ ...ghostBtnStyle, fontSize: "12px", alignSelf: "flex-start" }}
-            >
-              +{dueTodayTasks.length - 3} more due today
-            </button>
-          )}
-
-          {/* Focus CTA */}
-          <button
-            onClick={() => router.push("/focus")}
-            style={{ ...primaryBtnStyle, marginTop: "6px" }}
-          >
-            ⏱ Start a Focus Session
+          <button onClick={() => router.push("/focus")} style={{ ...primaryBtn, marginTop: "4px" }}>
+            ⏱ Start Focus Session
           </button>
         </div>
       )}
-
-      {/* Exam sim nudge */}
-      {lastSubject && (
-        <div style={{
-          marginTop: "14px",
-          display: "flex", alignItems: "center", gap: "10px",
-          background: "rgba(99,102,241,0.07)", borderRadius: "10px", padding: "10px 12px",
-          cursor: "pointer",
-        }}
-          onClick={() => router.push("/exam-sim")}
-        >
-          <span style={{ fontSize: "16px" }}>🎯</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>
-              Practice {lastSubject}
-            </p>
-            <p style={{ fontSize: "11px", color: "var(--muted-foreground)", margin: 0 }}>
-              Run an exam simulation →
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function TaskRow({
-  task,
-  isOverdue,
-  onClick,
-}: {
-  task: Task;
-  isOverdue: boolean;
-  onClick: () => void;
-}) {
+function ActionRow({ icon, label, sub, onClick }: { icon: string; label: string; sub: string; onClick: () => void }) {
   return (
-    <div
-      onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: "10px",
-        padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
-        background: isOverdue ? "rgba(239,68,68,0.07)" : "var(--muted)",
-        border: `1px solid ${isOverdue ? "rgba(239,68,68,0.2)" : "transparent"}`,
-      }}
-    >
-      <div style={{
-        width: "18px", height: "18px", borderRadius: "50%", flexShrink: 0,
-        border: `2px solid ${isOverdue ? "#ef4444" : "var(--muted-foreground)"}`,
-      }} />
+    <div onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: "12px",
+      padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
+      background: "var(--muted)", transition: "opacity 0.15s",
+    }}>
+      <span style={{ fontSize: "18px", flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: "13px", fontWeight: 500,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0,
-        }}>
-          {task.title}
-        </p>
-        {isOverdue && task.due_date && (
-          <p style={{ fontSize: "11px", color: "#ef4444", margin: 0, marginTop: "1px" }}>
-            Overdue · {new Date(task.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-          </p>
-        )}
+        <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>{label}</p>
+        <p style={{ fontSize: "11px", color: "var(--muted-foreground)", margin: 0 }}>{sub}</p>
       </div>
-      {task.subject && (
-        <span style={{
-          fontSize: "10px", padding: "2px 7px", borderRadius: "20px",
-          background: "rgba(99,102,241,0.12)", color: "var(--primary)", fontWeight: 600,
-          flexShrink: 0,
-        }}>
-          {task.subject}
-        </span>
-      )}
+      <span style={{ color: "var(--muted-foreground)", fontSize: "14px", flexShrink: 0 }}>→</span>
     </div>
   );
 }
 
-// ─── Section 3: Continue Learning ────────────────────────────────────────────
+// ─── New: Continue Learning ───────────────────────────────────────────────────
 
-function ContinueLearning({
-  examResults,
-  router,
-}: {
-  examResults: ExamResult[];
-  router: ReturnType<typeof useRouter>;
-}) {
+function ContinueLearning({ examResults, router }: { examResults: ExamResult[]; router: ReturnType<typeof useRouter> }) {
   if (examResults.length === 0) {
     return (
-      <div style={{
-        background: "var(--card)", border: "1px solid var(--card-border)",
-        borderRadius: "16px", padding: "20px",
-      }}>
-        <p style={{
-          fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-          textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px",
-        }}>
+      <div style={{ background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: "12px", padding: "16px" }}>
+        <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px" }}>
           Continue Learning
         </p>
-        <div style={{ textAlign: "center", padding: "16px 0" }}>
+        <div style={{ textAlign: "center", padding: "8px 0 12px" }}>
           <p style={{ fontSize: "2rem", marginBottom: "8px" }}>📚</p>
-          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>
-            Nothing started yet
+          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>Nothing started yet</p>
+          <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "14px" }}>
+            Take your first exam simulation to begin tracking progress.
           </p>
-          <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "16px" }}>
-            Take your first exam simulation to start tracking progress.
-          </p>
-          <button onClick={() => router.push("/exam-sim")} style={primaryBtnStyle}>
+          <button onClick={() => router.push("/exam-sim")} style={primaryBtn}>
             Start Exam Sim →
           </button>
         </div>
@@ -506,150 +353,88 @@ function ContinueLearning({
 
   const latest = examResults[0];
   const topWeak = latest.weak_areas?.[0] ?? null;
-
-  const getGradeColor = (score: number) => {
-    if (score >= 70) return "#22c55e";
-    if (score >= 50) return "#f59e0b";
-    return "#ef4444";
-  };
-
-  const color = getGradeColor(latest.score);
+  const scoreColor = latest.score >= 70 ? "#22c55e" : latest.score >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div style={{
-      background: "var(--card)", border: "1px solid var(--card-border)",
-      borderRadius: "16px", padding: "20px",
-    }}>
-      <p style={{
-        fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-        textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px",
-      }}>
+    <div style={{ background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: "12px", padding: "16px" }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px" }}>
         Continue Learning
       </p>
-
       <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
-        {/* Score badge */}
         <div style={{
-          width: "52px", height: "52px", borderRadius: "12px", flexShrink: 0,
-          background: `${color}15`, border: `1px solid ${color}30`,
+          width: "50px", height: "50px", borderRadius: "12px", flexShrink: 0,
+          background: `${scoreColor}15`, border: `1px solid ${scoreColor}30`,
           display: "flex", alignItems: "center", justifyContent: "center",
           flexDirection: "column",
         }}>
-          <span style={{ fontSize: "16px", fontWeight: 800, color, lineHeight: 1 }}>{latest.score}%</span>
-          <span style={{ fontSize: "9px", color: "var(--muted-foreground)", marginTop: "1px" }}>last</span>
+          <span style={{ fontSize: "15px", fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{latest.score}%</span>
+          <span style={{ fontSize: "9px", color: "var(--muted-foreground)" }}>last</span>
         </div>
-
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, marginBottom: "2px" }}>
-            {latest.subject}
-          </p>
+          <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, marginBottom: "2px" }}>{latest.subject}</p>
           {latest.topic && (
-            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0, marginBottom: "4px" }}>
-              {latest.topic}
-            </p>
+            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0, marginBottom: "3px" }}>{latest.topic}</p>
           )}
           {topWeak && (
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <span style={{ fontSize: "10px" }}>⚠️</span>
-              <p style={{ fontSize: "11px", color: "#f59e0b", margin: 0 }}>
-                Weak: {topWeak}
-              </p>
-            </div>
+            <p style={{ fontSize: "11px", color: "#f59e0b", margin: 0 }}>⚠️ Weak: {topWeak}</p>
           )}
         </div>
       </div>
-
-      <button
-        onClick={() => router.push("/exam-sim")}
-        style={primaryBtnStyle}
-      >
+      <button onClick={() => router.push("/exam-sim")} style={primaryBtn}>
         Retry {latest.subject} →
       </button>
     </div>
   );
 }
 
-// ─── Section 4: Progress Snapshot ────────────────────────────────────────────
+// ─── New: Progress Snapshot ───────────────────────────────────────────────────
 
-function ProgressSnapshot({
-  profile,
-  examResults,
-  focusSessions,
-}: {
+function ProgressSnapshot({ profile, examResults, focusSessions }: {
   profile: Profile;
   examResults: ExamResult[];
   focusSessions: FocusSession[];
 }) {
-  // Weekly XP — sum xp_earned from focus sessions in last 7 days
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
+
   const weeklyXp = focusSessions
     .filter(s => new Date(s.created_at) >= weekAgo)
     .reduce((sum, s) => sum + (s.xp_earned ?? 0), 0);
 
-  // Focus minutes this week
-  const weeklyFocusMin = focusSessions
+  const weeklyMins = focusSessions
     .filter(s => new Date(s.created_at) >= weekAgo)
     .reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0);
 
-  // Avg exam score
   const avgScore = examResults.length > 0
     ? Math.round(examResults.reduce((sum, r) => sum + r.score, 0) / examResults.length)
     : null;
 
   const stats = [
-    {
-      label: "Weekly XP", value: weeklyXp > 0 ? `+${weeklyXp}` : "—",
-      icon: "⚡", color: "#6366f1",
-      sub: weeklyXp > 0 ? "this week" : "start a session",
-    },
-    {
-      label: "Focus time", value: weeklyFocusMin > 0 ? `${weeklyFocusMin}m` : "—",
-      icon: "⏱", color: "#8b5cf6",
-      sub: weeklyFocusMin > 0 ? "this week" : "no sessions yet",
-    },
-    {
-      label: "Avg score", value: avgScore !== null ? `${avgScore}%` : "—",
-      icon: "📈", color: avgScore !== null ? (avgScore >= 60 ? "#22c55e" : "#f59e0b") : "#94a3b8",
-      sub: avgScore !== null ? (avgScore >= 60 ? "on track" : "needs work") : "no exams yet",
-    },
-    {
-      label: "Streak", value: profile.streak > 0 ? `${profile.streak}d` : "—",
-      icon: "🔥", color: "#fb923c",
-      sub: profile.streak > 0 ? "keep it going" : "start today",
-    },
+    { label: "Weekly XP", value: weeklyXp > 0 ? `+${weeklyXp}` : "—", icon: "⚡", color: "#6366f1", sub: weeklyXp > 0 ? "this week" : "start a session" },
+    { label: "Focus", value: weeklyMins > 0 ? `${weeklyMins}m` : "—", icon: "⏱", color: "#8b5cf6", sub: weeklyMins > 0 ? "this week" : "no sessions yet" },
+    { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : "—", icon: "📈", color: avgScore !== null ? (avgScore >= 60 ? "#22c55e" : "#f59e0b") : "#94a3b8", sub: avgScore !== null ? (avgScore >= 60 ? "on track" : "needs work") : "no exams yet" },
+    { label: "Streak", value: profile.streak > 0 ? `${profile.streak}d` : "—", icon: "🔥", color: "#fb923c", sub: profile.streak > 0 ? "keep going" : "start today" },
   ];
 
   return (
     <div>
-      <p style={{
-        fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-        textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "10px",
-      }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "10px" }}>
         Progress
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        {stats.map(stat => (
-          <div key={stat.label} style={{
-            background: `${stat.color}10`,
-            border: `1px solid ${stat.color}25`,
+        {stats.map(s => (
+          <div key={s.label} style={{
+            background: `${s.color}10`, border: `1px solid ${s.color}25`,
             borderRadius: "12px", padding: "14px",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "4px" }}>
-              <span style={{ fontSize: "13px" }}>{stat.icon}</span>
-              <p style={{
-                fontSize: "10px", color: "var(--muted-foreground)",
-                textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, margin: 0,
-              }}>
-                {stat.label}
+              <span style={{ fontSize: "12px" }}>{s.icon}</span>
+              <p style={{ fontSize: "10px", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, margin: 0 }}>
+                {s.label}
               </p>
             </div>
-            <p style={{ fontSize: "24px", fontWeight: 800, color: stat.color, margin: 0, lineHeight: 1 }}>
-              {stat.value}
-            </p>
-            <p style={{ fontSize: "10px", color: "var(--muted-foreground)", margin: 0, marginTop: "3px" }}>
-              {stat.sub}
-            </p>
+            <p style={{ fontSize: "22px", fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
+            <p style={{ fontSize: "10px", color: "var(--muted-foreground)", margin: 0, marginTop: "3px" }}>{s.sub}</p>
           </div>
         ))}
       </div>
@@ -657,38 +442,60 @@ function ProgressSnapshot({
   );
 }
 
-// ─── Shared Button Styles ─────────────────────────────────────────────────────
+// ─── New: Enhanced Empty States ───────────────────────────────────────────────
 
-const primaryBtnStyle: React.CSSProperties = {
+function SubjectsEmptyState({ router }: { router: ReturnType<typeof useRouter> }) {
+  return (
+    <div style={{
+      background: "var(--card)", border: "1px solid var(--card-border)",
+      borderRadius: "12px", padding: "20px", textAlign: "center",
+    }}>
+      <p style={{ fontSize: "2rem", marginBottom: "8px" }}>🗂</p>
+      <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>No subjects yet</p>
+      <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "16px" }}>
+        Add your first subject to start tracking tasks and progress by topic.
+      </p>
+      <button onClick={() => router.push("/tasks")} style={primaryBtn}>
+        Add a Subject →
+      </button>
+    </div>
+  );
+}
+
+// ─── Shared Styles ────────────────────────────────────────────────────────────
+
+const primaryBtn: React.CSSProperties = {
   background: "var(--primary)", color: "white", border: "none",
   borderRadius: "10px", padding: "10px 16px", fontWeight: 700,
   fontSize: "13px", cursor: "pointer", width: "100%",
-  boxShadow: "0 0 12px rgba(99,102,241,0.3)",
-};
-
-const ghostBtnStyle: React.CSSProperties = {
-  background: "transparent", color: "var(--muted-foreground)",
-  border: "1px solid var(--card-border)", borderRadius: "10px",
-  padding: "9px 14px", fontWeight: 600, fontSize: "13px",
-  cursor: "pointer",
+  boxShadow: "0 0 12px rgba(99,102,241,0.25)",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
+export default function Dashboard() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [examResults, setExamResults] = useState<ExamResult[]>([]);
+  const [focusSessions, setFocusSessions] = useState<FocusSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cortexTrigger, setCortexTrigger] = useState(0);
+  const [showTour, setShowTour] = useState(false);
+
   const router = useRouter();
   const [supabase] = useState(() => createClient());
+  const [currentUser, setCurrentUser] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
 
+    // Hard timeout — prevents infinite loading on network failure
     const timeoutId = setTimeout(() => {
       if (!cancelled) setLoading(false);
-    }, FETCH_TIMEOUT_MS);
+    }, 8000);
 
-    const init = async () => {
+    const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -697,29 +504,26 @@ export default function DashboardPage() {
           return;
         }
 
-        // Parallel fetch — all queries fire simultaneously
-        const [profileRes, tasksRes, examRes, focusRes] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("display_name, level, xp, streak")
-            .eq("id", user.id)
-            .single(),
+        // Streak update (preserved exactly)
+        const streakResult = await updateStreak(user.id);
 
-          supabase
-            .from("tasks")
-            .select("id, title, due_date, completed, subject")
-            .eq("user_id", user.id)
-            .eq("completed", false)
-            .order("due_date", { ascending: true })
-            .limit(20),
-
+        // Parallel fetch — new queries added alongside existing ones
+        const [
+          { data: profileData },
+          { data: subjectsData },
+          { data: tasksData },
+          { data: examData },
+          { data: focusData },
+        ] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", user.id).single(),
+          supabase.from("subjects").select("*").eq("user_id", user.id),
+          supabase.from("tasks").select("*").eq("user_id", user.id),
           supabase
             .from("exam_results")
             .select("id, subject, topic, score, weak_areas, created_at")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(20),
-
           supabase
             .from("focus_sessions")
             .select("id, duration_minutes, xp_earned, created_at")
@@ -731,98 +535,253 @@ export default function DashboardPage() {
         clearTimeout(timeoutId);
         if (cancelled) return;
 
-        // Defensive: profile may not exist yet for new users
-        const profile: Profile = profileRes.data ?? {
-          display_name: null,
-          level: 1,
-          xp: 0,
-          streak: 0,
-        };
-
-        setData({
-          profile,
-          tasks: tasksRes.data ?? [],
-          examResults: examRes.data ?? [],
-          focusSessions: focusRes.data ?? [],
-          userEmail: user.email ?? "",
-        });
+        setProfile(profileData);
+        setSubjects(subjectsData || []);
+        setTasks(tasksData || []);
+        setExamResults(examData || []);
+        setFocusSessions(focusData || []);
         setLoading(false);
+        setCurrentUser(user.id);
+
+        // Cortex analytics events (preserved exactly)
+        emitCortexEvent({
+          userId: user.id,
+          type: "dashboard.loaded",
+          source: "dashboard",
+          data: {
+            totalTasks: tasksData?.length || 0,
+            completedTasks: tasksData?.filter((t) => t.completed).length || 0,
+            subjects: subjectsData?.length || 0,
+          },
+        });
+
+        if (streakResult?.changed) {
+          emitCortexEvent({
+            userId: user.id,
+            type: "streak.updated",
+            source: "dashboard",
+            data: {
+              streak: streakResult.streak,
+              previousStreak: streakResult.previousStreak,
+            },
+          });
+        }
+
+        setCortexTrigger(1);
+
+        // Tour logic (preserved exactly)
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("tour") === "true") setShowTour(true);
+        }
       } catch (err) {
         clearTimeout(timeoutId);
         if (!cancelled) {
-          console.error("[Dashboard] init failed:", err);
+          console.error("[Dashboard] fetchData failed:", err);
           setLoading(false);
         }
       }
     };
 
-    init();
+    fetchData();
     return () => { cancelled = true; clearTimeout(timeoutId); };
   }, [router, supabase]);
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
+
+  // ── Loading ──────────────────────────────────────────────────────────────
+
   if (loading) return <DashboardSkeleton />;
 
-  // Timeout fired with no data — new user or network failure
-  if (!data) {
-    return (
-      <div style={{ padding: "60px 20px 100px", textAlign: "center" }}>
-        <p style={{ fontSize: "2rem", marginBottom: "12px" }}>🛰</p>
-        <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>
-          Couldn't load your dashboard
-        </p>
-        <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "20px" }}>
-          Check your connection and try again.
-        </p>
-        <button onClick={() => window.location.reload()} style={primaryBtnStyle}>
-          Retry
-        </button>
-      </div>
-    );
-  }
+  // ── Derived stats (preserved exactly from original) ───────────────────────
 
-  const { profile, tasks, examResults, focusSessions, userEmail } = data;
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.completed).length;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const xpToNextLevel = (profile?.level || 1) * 100;
+
+  const cardStyle: React.CSSProperties = {
+    background: "var(--card)",
+    border: "1px solid var(--card-border)",
+    borderRadius: "12px",
+    padding: "16px",
+  };
+
+  // Cortex insight — derived from real data, no API call
+  const insight = generateInsight(examResults, focusSessions, tasks);
 
   return (
-    <div style={{ padding: "24px 20px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-      {/* Section 1 — Hero */}
-      <HeroSection
-        profile={profile}
-        email={userEmail}
-        examResults={examResults}
-        focusSessions={focusSessions}
-        tasks={tasks}
-      />
+      {/* ── PRESERVED: Header + sign out ─────────────────────────────────── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "13px" }}>Welcome back</p>
+          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>
+            {profile?.username || "Student"} 👋
+          </h1>
+        </div>
+        <button
+          onClick={handleSignOut}
+          style={{
+            background: "var(--muted)", border: "none", borderRadius: "8px",
+            padding: "8px 12px", color: "var(--muted-foreground)", fontSize: "13px", cursor: "pointer",
+          }}
+        >
+          Sign out
+        </button>
+      </div>
 
-      {/* Section 2 — Today */}
-      <TodayPanel
-        tasks={tasks}
-        examResults={examResults}
-        router={router}
-      />
+      {/* ── PRESERVED: Circular progress row ─────────────────────────────── */}
+      <div style={{ ...cardStyle, display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+        <CircularProgress
+          value={profile?.xp || 0}
+          max={xpToNextLevel}
+          label={`L${profile?.level || 1}`}
+          sublabel={`${profile?.xp || 0} XP`}
+        />
+        <CircularProgress
+          value={Math.min(profile?.streak || 0, 30)}
+          max={30}
+          color="#f59e0b"
+          label={`${profile?.streak || 0}🔥`}
+          sublabel="streak"
+        />
+        <CircularProgress
+          value={completedTasks}
+          max={totalTasks || 1}
+          color="#22c55e"
+          label={`${progress}%`}
+          sublabel={`${completedTasks}/${totalTasks}`}
+        />
+      </div>
 
-      {/* Section 3 — Continue Learning */}
-      <ContinueLearning
-        examResults={examResults}
-        router={router}
-      />
+      {/* ── PRESERVED: XP bar ────────────────────────────────────────────── */}
+      <div style={cardStyle}>
+        <p style={{ fontSize: "13px", fontWeight: 600 }}>
+          Level {profile?.level || 1} → {(profile?.level || 1) + 1}
+        </p>
+        <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
+          {profile?.xp || 0} / {xpToNextLevel} XP
+        </p>
+        {/* Enhanced: visual XP progress bar */}
+        <div style={{ background: "var(--muted)", borderRadius: "99px", height: "5px", marginTop: "10px", overflow: "hidden" }}>
+          <div style={{
+            height: "100%", borderRadius: "99px",
+            width: `${Math.min(((profile?.xp || 0) / xpToNextLevel) * 100, 100)}%`,
+            background: "linear-gradient(90deg, var(--primary), #818cf8)",
+            boxShadow: "0 0 6px rgba(99,102,241,0.5)",
+            transition: "width 0.8s ease",
+          }} />
+        </div>
+      </div>
 
-      {/* Section 4 — Progress Snapshot */}
+      {/* ── NEW: Cortex Insight strip ─────────────────────────────────────── */}
+      <div style={{
+        display: "flex", gap: "10px", alignItems: "flex-start",
+        background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.18)",
+        borderRadius: "12px", padding: "12px 14px",
+      }}>
+        <span style={{ fontSize: "14px", flexShrink: 0, marginTop: "1px" }}>🔮</span>
+        <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.5, margin: 0 }}>
+          <span style={{ color: "var(--primary)", fontWeight: 600 }}>Cortex: </span>
+          {insight}
+        </p>
+      </div>
+
+      {/* ── PRESERVED: DailyChallenge ─────────────────────────────────────── */}
+      <DailyChallenge userId={currentUser} />
+
+      {/* ── NEW: Today Panel ──────────────────────────────────────────────── */}
+      <TodayPanel tasks={tasks} examResults={examResults} router={router} />
+
+      {/* ── PRESERVED: Subjects (enhanced empty state) ───────────────────── */}
+      {subjects.length > 0 ? (
+        <div style={cardStyle}>
+          <p style={{ fontWeight: 700, marginBottom: "12px" }}>Subjects</p>
+          {subjects.map((subject) => {
+            const subjectTasks = tasks.filter((t) => t.subject_id === subject.id);
+            const done = subjectTasks.filter((t) => t.completed).length;
+            const percent = subjectTasks.length
+              ? Math.round((done / subjectTasks.length) * 100)
+              : 0;
+            return (
+              <div key={subject.id} style={{ marginBottom: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <p>{subject.name}</p>
+                  <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
+                    {done}/{subjectTasks.length}
+                  </p>
+                </div>
+                <div style={{ background: "var(--muted)", height: "5px", borderRadius: "99px" }}>
+                  <div style={{
+                    width: `${percent}%`, height: "5px",
+                    background: "#6366f1", borderRadius: "99px",
+                    transition: "width 0.4s ease",
+                  }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* NEW: Subjects empty state replaces silent "No subjects yet" */
+        <SubjectsEmptyState router={router} />
+      )}
+
+      {/* ── NEW: Continue Learning ────────────────────────────────────────── */}
+      <ContinueLearning examResults={examResults} router={router} />
+
+      {/* ── NEW: Progress Snapshot ────────────────────────────────────────── */}
       <ProgressSnapshot
-        profile={profile}
+        profile={profile || { username: "", level: 1, xp: 0, streak: 0 }}
         examResults={examResults}
         focusSessions={focusSessions}
       />
 
-      {/* Quick actions footer */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", paddingTop: "4px" }}>
-        <button onClick={() => router.push("/learn")} style={ghostBtnStyle}>
+      {/* ── Quick actions ─────────────────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <button
+          onClick={() => router.push("/learn")}
+          style={{
+            background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)",
+            borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+          }}
+        >
           🤖 AI Learn
         </button>
-        <button onClick={() => router.push("/analytics")} style={ghostBtnStyle}>
+        <button
+          onClick={() => router.push("/analytics")}
+          style={{
+            background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)",
+            borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+          }}
+        >
           📊 Analytics
         </button>
       </div>
+
+      {/* ── PRESERVED: Cortex component ──────────────────────────────────── */}
+      <div id="cortex-card">
+        <Cortex userId={currentUser} trigger={cortexTrigger} />
+      </div>
+
+      {/* ── PRESERVED: Tour ───────────────────────────────────────────────── */}
+      {showTour && (
+        <Tour
+          onComplete={async () => {
+            setShowTour(false);
+            await supabase
+              .from("profiles")
+              .update({ onboarding_complete: true })
+              .eq("id", currentUser);
+            window.history.replaceState({}, "", "/dashboard");
+          }}
+        />
+      )}
     </div>
   );
 }
