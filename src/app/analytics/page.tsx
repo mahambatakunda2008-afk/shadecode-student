@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,9 +40,7 @@ const FETCH_TIMEOUT_MS = 8000;
 
 function SkeletonCard({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse ${className}`}
-    >
+    <div className={`rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse ${className}`}>
       <div className="h-3 w-24 rounded bg-white/10 mb-4" />
       <div className="h-8 w-16 rounded bg-white/10 mb-2" />
       <div className="h-3 w-32 rounded bg-white/10" />
@@ -52,29 +51,20 @@ function SkeletonCard({ className = "" }: { className?: string }) {
 function AnalyticsSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Stat cards row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
       </div>
-
-      {/* Chart placeholder */}
       <div className="rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse">
         <div className="h-3 w-28 rounded bg-white/10 mb-6" />
         <div className="flex items-end gap-2 h-28">
           {[40, 65, 30, 80, 55, 70, 45].map((h, i) => (
-            <div
-              key={i}
-              className="flex-1 rounded-t bg-white/10"
-              style={{ height: `${h}%` }}
-            />
+            <div key={i} className="flex-1 rounded-t bg-white/10" style={{ height: `${h}%` }} />
           ))}
         </div>
       </div>
-
-      {/* List placeholder */}
       <div className="rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse space-y-3">
         <div className="h-3 w-24 rounded bg-white/10 mb-4" />
         {[1, 2, 3].map((i) => (
@@ -118,30 +108,19 @@ function AnalyticsEmptyState() {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      {/* Pulse ring */}
       <div className="relative mb-8">
         <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
         <div className="relative h-16 w-16 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-2xl">
           📊
         </div>
       </div>
-
-      <h2 className="text-xl font-semibold text-white mb-2">
-        No analytics yet
-      </h2>
+      <h2 className="text-xl font-semibold text-white mb-2">No analytics yet</h2>
       <p className="text-sm text-white/50 max-w-xs mb-10">
-        Cortex is watching. Start studying and your patterns will appear here
-        automatically.
+        Cortex is watching. Start studying and your patterns will appear here automatically.
       </p>
-
-      {/* Action steps */}
       <div className="w-full max-w-sm space-y-3 text-left">
         {steps.map(({ icon, label, sub, href }) => (
-          
-            key={href}
-            href={href}
-            className="flex items-center gap-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10 hover:border-indigo-500/40 transition-all duration-200 group"
-          >
+          <Link key={href} href={href} className="flex items-center gap-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10 hover:border-indigo-500/40 transition-all duration-200 group">
             <span className="text-xl shrink-0">{icon}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white group-hover:text-indigo-300 transition-colors">
@@ -152,7 +131,7 @@ function AnalyticsEmptyState() {
             <span className="text-white/30 group-hover:text-indigo-400 transition-colors text-lg">
               →
             </span>
-          </a>
+          </Link>
         ))}
       </div>
     </div>
@@ -167,12 +146,9 @@ function AnalyticsErrorState({ onRetry }: { onRetry: () => void }) {
       <div className="h-16 w-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl mb-6">
         ⚠️
       </div>
-      <h2 className="text-xl font-semibold text-white mb-2">
-        Couldn't load analytics
-      </h2>
+      <h2 className="text-xl font-semibold text-white mb-2">Couldn't load analytics</h2>
       <p className="text-sm text-white/50 max-w-xs mb-8">
-        This could be a connection issue. Your data is safe — try again when
-        you're back online.
+        This could be a connection issue. Your data is safe — try again when you're back online.
       </p>
       <button
         onClick={onRetry}
@@ -186,12 +162,7 @@ function AnalyticsErrorState({ onRetry }: { onRetry: () => void }) {
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
-function StatCard({
-  label,
-  value,
-  sub,
-  icon,
-}: {
+function StatCard({ label, value, sub, icon }: {
   label: string;
   value: string | number;
   sub?: string;
@@ -207,7 +178,7 @@ function StatCard({
   );
 }
 
-// ─── Exam Results Table ───────────────────────────────────────────────────────
+// ─── Exam Results ─────────────────────────────────────────────────────────────
 
 function ExamResultsSection({ results }: { results: ExamResult[] }) {
   if (results.length === 0) {
@@ -218,9 +189,7 @@ function ExamResultsSection({ results }: { results: ExamResult[] }) {
         </p>
         <p className="text-sm text-white/30 text-center py-6">
           No exam simulations completed yet.{" "}
-          <a href="/exam-sim" className="text-indigo-400 hover:underline">
-            Start one →
-          </a>
+          <Link href="/exam-sim" className="text-indigo-400 hover:underline">Start one →</Link>
         </p>
       </div>
     );
@@ -235,20 +204,13 @@ function ExamResultsSection({ results }: { results: ExamResult[] }) {
         {results.slice(0, 6).map((r) => {
           const pct = Math.round((r.score / r.total) * 100);
           const color =
-            pct >= 70
-              ? "bg-emerald-500/80"
-              : pct >= 50
-              ? "bg-amber-500/80"
-              : "bg-red-500/80";
+            pct >= 70 ? "bg-emerald-500/80" :
+            pct >= 50 ? "bg-amber-500/80" :
+            "bg-red-500/80";
           return (
-            <div
-              key={r.id}
-              className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5"
-            >
+            <div key={r.id} className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {r.subject}
-                </p>
+                <p className="text-sm font-medium text-white truncate">{r.subject}</p>
                 <p className="text-xs text-white/40">
                   {new Date(r.created_at).toLocaleDateString("en-GB", {
                     day: "numeric",
@@ -256,11 +218,10 @@ function ExamResultsSection({ results }: { results: ExamResult[] }) {
                   })}
                 </p>
               </div>
-              {/* Score bar */}
               <div className="flex items-center gap-2">
                 <div className="w-20 h-1.5 rounded-full bg-white/10">
                   <div
-                    className={`h-full rounded-full ${color} transition-all`}
+                    className={`h-full rounded-full transition-all ${color}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -276,7 +237,7 @@ function ExamResultsSection({ results }: { results: ExamResult[] }) {
   );
 }
 
-// ─── Focus Sessions Chart ─────────────────────────────────────────────────────
+// ─── Focus Sessions ───────────────────────────────────────────────────────────
 
 function FocusSessionsSection({ sessions }: { sessions: FocusSession[] }) {
   if (sessions.length === 0) {
@@ -287,15 +248,12 @@ function FocusSessionsSection({ sessions }: { sessions: FocusSession[] }) {
         </p>
         <p className="text-sm text-white/30 text-center py-6">
           No sessions logged yet.{" "}
-          <a href="/focus" className="text-indigo-400 hover:underline">
-            Start focusing →
-          </a>
+          <Link href="/focus" className="text-indigo-400 hover:underline">Start focusing →</Link>
         </p>
       </div>
     );
   }
 
-  // Last 7 sessions for the bar chart
   const recent = sessions.slice(-7);
   const maxMin = Math.max(...recent.map((s) => s.duration_minutes), 1);
 
@@ -309,10 +267,7 @@ function FocusSessionsSection({ sessions }: { sessions: FocusSession[] }) {
         {recent.map((s, i) => {
           const heightPct = (s.duration_minutes / maxMin) * 100;
           return (
-            <div
-              key={s.id}
-              className="flex-1 flex flex-col items-center justify-end gap-1 group"
-            >
+            <div key={s.id ?? i} className="flex-1 flex flex-col items-center justify-end gap-1 group">
               <div
                 className="w-full rounded-t-md bg-indigo-500/60 group-hover:bg-indigo-400/80 transition-all"
                 style={{ height: `${Math.max(heightPct, 4)}%` }}
@@ -329,12 +284,12 @@ function FocusSessionsSection({ sessions }: { sessions: FocusSession[] }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [fetchKey, setFetchKey] = useState(0); // increment to retry
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -347,25 +302,19 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
       setPageState("loading");
 
-      // Hard timeout — if we haven't resolved in FETCH_TIMEOUT_MS, show error
       const timeoutId = setTimeout(() => {
         if (!cancelled) setPageState("error");
       }, FETCH_TIMEOUT_MS);
 
       try {
-        // Verify auth first — no point querying if not logged in
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          // Not authenticated — treat as empty rather than error
           clearTimeout(timeoutId);
           if (!cancelled) setPageState("empty");
           return;
         }
 
-        // Parallel fetch — both queries fire simultaneously
         const [examRes, focusRes] = await Promise.all([
           supabase
             .from("exam_results")
@@ -385,7 +334,6 @@ export default function AnalyticsPage() {
         clearTimeout(timeoutId);
         if (cancelled) return;
 
-        // Surface the first Supabase-level error
         if (examRes.error) throw examRes.error;
         if (focusRes.error) throw focusRes.error;
 
@@ -393,25 +341,20 @@ export default function AnalyticsPage() {
         const focusSessions: FocusSession[] = focusRes.data ?? [];
 
         const totalFocusMinutes = focusSessions.reduce(
-          (sum, s) => sum + (s.duration_minutes ?? 0),
-          0
+          (sum, s) => sum + (s.duration_minutes ?? 0), 0
         );
         const totalXpEarned = focusSessions.reduce(
-          (sum, s) => sum + (s.xp_earned ?? 0),
-          0
+          (sum, s) => sum + (s.xp_earned ?? 0), 0
         );
         const averageScore =
           examResults.length > 0
             ? Math.round(
-                examResults.reduce(
-                  (sum, r) => sum + (r.score / r.total) * 100,
-                  0
-                ) / examResults.length
+                examResults.reduce((sum, r) => sum + (r.score / r.total) * 100, 0) /
+                examResults.length
               )
             : null;
 
-        const hasAnyData =
-          examResults.length > 0 || focusSessions.length > 0;
+        const hasAnyData = examResults.length > 0 || focusSessions.length > 0;
 
         setAnalytics({
           examResults,
@@ -433,10 +376,7 @@ export default function AnalyticsPage() {
     };
 
     fetchAnalytics();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [fetchKey]);
 
   const handleRetry = () => setFetchKey((k) => k + 1);
@@ -444,69 +384,39 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       <div className="max-w-2xl mx-auto px-4 py-8 pb-28">
-        {/* Header — always visible */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Analytics
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Analytics</h1>
           <p className="text-sm text-white/40 mt-1">
             Cortex tracks your patterns. Here's what it sees.
           </p>
         </div>
 
-        {/* State router */}
         {pageState === "loading" && <AnalyticsSkeleton />}
 
-        {pageState === "error" && (
-          <AnalyticsErrorState onRetry={handleRetry} />
-        )}
+        {pageState === "error" && <AnalyticsErrorState onRetry={handleRetry} />}
 
         {pageState === "empty" && <AnalyticsEmptyState />}
 
         {pageState === "data" && analytics && (
           <div className="space-y-4">
-            {/* Stat grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard
-                icon="⏱"
-                label="Focus minutes"
-                value={analytics.totalFocusMinutes}
-                sub="all time"
-              />
-              <StatCard
-                icon="⚡"
-                label="XP from focus"
-                value={analytics.totalXpEarned}
-              />
-              <StatCard
-                icon="🎯"
-                label="Exams taken"
-                value={analytics.completedExams}
-              />
+              <StatCard icon="⏱" label="Focus minutes" value={analytics.totalFocusMinutes} sub="all time" />
+              <StatCard icon="⚡" label="XP from focus" value={analytics.totalXpEarned} />
+              <StatCard icon="🎯" label="Exams taken" value={analytics.completedExams} />
               <StatCard
                 icon="📈"
                 label="Avg score"
-                value={
-                  analytics.averageScore !== null
-                    ? `${analytics.averageScore}%`
-                    : "—"
-                }
+                value={analytics.averageScore !== null ? `${analytics.averageScore}%` : "—"}
                 sub={
                   analytics.averageScore !== null
-                    ? analytics.averageScore >= 70
-                      ? "Strong"
-                      : analytics.averageScore >= 50
-                      ? "Building"
+                    ? analytics.averageScore >= 70 ? "Strong"
+                      : analytics.averageScore >= 50 ? "Building"
                       : "Keep pushing"
                     : "No exams yet"
                 }
               />
             </div>
-
-            {/* Focus chart */}
             <FocusSessionsSection sessions={analytics.focusSessions} />
-
-            {/* Exam results */}
             <ExamResultsSection results={analytics.examResults} />
           </div>
         )}
