@@ -1,426 +1,404 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { createBrowserClient } from "@supabase/ssr";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface ExamResult {
   id: string;
   subject: string;
+  topic: string | null;
+  difficulty: string;
   score: number;
-  total: number;
+  total_questions: number;
+  correct_answers: number;
+  weak_areas: string[];
+  time_taken: number;
   created_at: string;
 }
 
-interface FocusSession {
-  id: string;
-  duration_minutes: number;
-  xp_earned: number;
-  created_at: string;
+interface SubjectStats {
+  subject: string;
+  attempts: number;
+  avgScore: number;
+  bestScore: number;
+  trend: "improving" | "declining" | "stable";
 }
 
-interface AnalyticsData {
-  examResults: ExamResult[];
-  focusSessions: FocusSession[];
-  totalFocusMinutes: number;
-  totalXpEarned: number;
-  averageScore: number | null;
-  completedExams: number;
-}
-
-type PageState = "loading" | "empty" | "error" | "data";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const FETCH_TIMEOUT_MS = 8000;
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function SkeletonCard({ className = "" }: { className?: string }) {
-  return (
-    <div className={`rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse ${className}`}>
-      <div className="h-3 w-24 rounded bg-white/10 mb-4" />
-      <div className="h-8 w-16 rounded bg-white/10 mb-2" />
-      <div className="h-3 w-32 rounded bg-white/10" />
-    </div>
-  );
-}
+// ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 function AnalyticsSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
+    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Header skeleton */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ height: "10px", width: "100px", borderRadius: "6px", background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ height: "24px", width: "180px", borderRadius: "6px", background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ height: "10px", width: "240px", borderRadius: "6px", background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite" }} />
       </div>
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse">
-        <div className="h-3 w-28 rounded bg-white/10 mb-6" />
-        <div className="flex items-end gap-2 h-28">
-          {[40, 65, 30, 80, 55, 70, 45].map((h, i) => (
-            <div key={i} className="flex-1 rounded-t bg-white/10" style={{ height: `${h}%` }} />
+
+      {/* Stat cards skeleton */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} style={{
+            borderRadius: "12px", padding: "14px", height: "80px",
+            background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite",
+            animationDelay: `${i * 0.1}s`,
+          }} />
+        ))}
+      </div>
+
+      {/* Subject breakdown skeleton */}
+      <div style={{
+        background: "var(--card)", border: "1px solid var(--card-border)",
+        borderRadius: "12px", padding: "16px",
+      }}>
+        <div style={{ height: "12px", width: "80px", borderRadius: "6px", background: "var(--muted)", marginBottom: "16px", animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ height: "12px", width: "100px", borderRadius: "6px", background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite" }} />
+                <div style={{ height: "12px", width: "40px", borderRadius: "6px", background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite" }} />
+              </div>
+              <div style={{ height: "5px", borderRadius: "99px", background: "var(--muted)", animation: "pulse 1.5s ease-in-out infinite" }} />
+            </div>
           ))}
         </div>
       </div>
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-5 animate-pulse space-y-3">
-        <div className="h-3 w-24 rounded bg-white/10 mb-4" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-white/10 shrink-0" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3 w-3/4 rounded bg-white/10" />
-              <div className="h-2.5 w-1/2 rounded bg-white/10" />
+
+      {/* Recent exams skeleton */}
+      <div style={{
+        background: "var(--card)", border: "1px solid var(--card-border)",
+        borderRadius: "12px", padding: "16px",
+      }}>
+        <div style={{ height: "12px", width: "90px", borderRadius: "6px", background: "var(--muted)", marginBottom: "16px", animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: "12px",
+              padding: "10px 12px", borderRadius: "8px", background: "var(--muted)",
+              animation: "pulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.08}s`,
+            }}>
+              <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "var(--card)", flexShrink: 0 }} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
+                <div style={{ height: "11px", width: "60%", borderRadius: "4px", background: "var(--card)" }} />
+                <div style={{ height: "9px", width: "40%", borderRadius: "4px", background: "var(--card)" }} />
+              </div>
+              <div style={{ width: "32px", height: "16px", borderRadius: "4px", background: "var(--card)", flexShrink: 0 }} />
             </div>
-            <div className="h-5 w-10 rounded bg-white/10" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Empty State ──────────────────────────────────────────────────────────────
-
-function AnalyticsEmptyState() {
-  const steps = [
-    {
-      icon: "⏱",
-      label: "Run a Focus session",
-      sub: "Complete at least one Pomodoro session",
-      href: "/focus",
-    },
-    {
-      icon: "✅",
-      label: "Complete tasks",
-      sub: "Mark tasks done to log activity",
-      href: "/tasks",
-    },
-    {
-      icon: "🎯",
-      label: "Take an Exam Sim",
-      sub: "Sit a timed exam to generate results",
-      href: "/exam-sim",
-    },
-  ];
-
-  return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="relative mb-8">
-        <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
-        <div className="relative h-16 w-16 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-2xl">
-          📊
+          ))}
         </div>
       </div>
-      <h2 className="text-xl font-semibold text-white mb-2">No analytics yet</h2>
-      <p className="text-sm text-white/50 max-w-xs mb-10">
-        Cortex is watching. Start studying and your patterns will appear here automatically.
-      </p>
-      <div className="w-full max-w-sm space-y-3 text-left">
-        {steps.map(({ icon, label, sub, href }) => (
-          <Link key={href} href={href} className="flex items-center gap-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10 hover:border-indigo-500/40 transition-all duration-200 group">
-            <span className="text-xl shrink-0">{icon}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white group-hover:text-indigo-300 transition-colors">
-                {label}
-              </p>
-              <p className="text-xs text-white/40 truncate">{sub}</p>
-            </div>
-            <span className="text-white/30 group-hover:text-indigo-400 transition-colors text-lg">
-              →
-            </span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-// ─── Error State ──────────────────────────────────────────────────────────────
-
-function AnalyticsErrorState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="h-16 w-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl mb-6">
-        ⚠️
-      </div>
-      <h2 className="text-xl font-semibold text-white mb-2">Couldn't load analytics</h2>
-      <p className="text-sm text-white/50 max-w-xs mb-8">
-        This could be a connection issue. Your data is safe — try again when you're back online.
-      </p>
-      <button
-        onClick={onRetry}
-        className="rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-medium px-6 py-2.5 transition-colors duration-150"
-      >
-        Try again
-      </button>
-    </div>
-  );
-}
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function StatCard({ label, value, sub, icon }: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-5 flex flex-col gap-1">
-      <span className="text-lg">{icon}</span>
-      <span className="text-2xl font-bold text-white">{value}</span>
-      <span className="text-xs font-medium text-white/60">{label}</span>
-      {sub && <span className="text-xs text-white/30">{sub}</span>}
-    </div>
-  );
-}
-
-// ─── Exam Results ─────────────────────────────────────────────────────────────
-
-function ExamResultsSection({ results }: { results: ExamResult[] }) {
-  if (results.length === 0) {
-    return (
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-        <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-4">
-          Exam Results
-        </p>
-        <p className="text-sm text-white/30 text-center py-6">
-          No exam simulations completed yet.{" "}
-          <Link href="/exam-sim" className="text-indigo-400 hover:underline">Start one →</Link>
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-      <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-4">
-        Recent Exam Results
-      </p>
-      <div className="space-y-2">
-        {results.slice(0, 6).map((r) => {
-          const pct = Math.round((r.score / r.total) * 100);
-          const color =
-            pct >= 70 ? "bg-emerald-500/80" :
-            pct >= 50 ? "bg-amber-500/80" :
-            "bg-red-500/80";
-          return (
-            <div key={r.id} className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{r.subject}</p>
-                <p className="text-xs text-white/40">
-                  {new Date(r.created_at).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-20 h-1.5 rounded-full bg-white/10">
-                  <div
-                    className={`h-full rounded-full transition-all ${color}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="text-xs font-semibold text-white/80 w-9 text-right">
-                  {pct}%
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Focus Sessions ───────────────────────────────────────────────────────────
-
-function FocusSessionsSection({ sessions }: { sessions: FocusSession[] }) {
-  if (sessions.length === 0) {
-    return (
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-        <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-4">
-          Focus Sessions
-        </p>
-        <p className="text-sm text-white/30 text-center py-6">
-          No sessions logged yet.{" "}
-          <Link href="/focus" className="text-indigo-400 hover:underline">Start focusing →</Link>
-        </p>
-      </div>
-    );
-  }
-
-  const recent = sessions.slice(-7);
-  const maxMin = Math.max(...recent.map((s) => s.duration_minutes), 1);
-
-  return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-      <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-1">
-        Focus Sessions
-      </p>
-      <p className="text-xs text-white/30 mb-5">Last {recent.length} sessions</p>
-      <div className="flex items-end gap-1.5 h-24">
-        {recent.map((s, i) => {
-          const heightPct = (s.duration_minutes / maxMin) * 100;
-          return (
-            <div key={s.id ?? i} className="flex-1 flex flex-col items-center justify-end gap-1 group">
-              <div
-                className="w-full rounded-t-md bg-indigo-500/60 group-hover:bg-indigo-400/80 transition-all"
-                style={{ height: `${Math.max(heightPct, 4)}%` }}
-                title={`${s.duration_minutes}m`}
-              />
-              <span className="text-xs text-white/20 group-hover:text-white/50 transition-colors">
-                {s.duration_minutes}m
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function AnalyticsPage() {
-  const [pageState, setPageState] = useState<PageState>("loading");
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [fetchKey, setFetchKey] = useState(0);
+export default function Analytics() {
+  const [results, setResults] = useState<ExamResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
+  const router = useRouter();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     let cancelled = false;
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    // Hard timeout — prevents infinite loading on network failure or Supabase error
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 8000);
 
-    const fetchAnalytics = async () => {
-      setPageState("loading");
-
-      const timeoutId = setTimeout(() => {
-        if (!cancelled) setPageState("error");
-      }, FETCH_TIMEOUT_MS);
-
+    const init = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-
         if (!user) {
           clearTimeout(timeoutId);
-          if (!cancelled) setPageState("empty");
+          router.push("/auth/login");
           return;
         }
+        setUserId(user.id);
 
-        const [examRes, focusRes] = await Promise.all([
-          supabase
-            .from("exam_results")
-            .select("id, subject, score, total, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(20),
-
-          supabase
-            .from("focus_sessions")
-            .select("id, duration_minutes, xp_earned, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(20),
-        ]);
+        const { data } = await supabase
+          .from("exam_results")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
         clearTimeout(timeoutId);
-        if (cancelled) return;
-
-        if (examRes.error) throw examRes.error;
-        if (focusRes.error) throw focusRes.error;
-
-        const examResults: ExamResult[] = examRes.data ?? [];
-        const focusSessions: FocusSession[] = focusRes.data ?? [];
-
-        const totalFocusMinutes = focusSessions.reduce(
-          (sum, s) => sum + (s.duration_minutes ?? 0), 0
-        );
-        const totalXpEarned = focusSessions.reduce(
-          (sum, s) => sum + (s.xp_earned ?? 0), 0
-        );
-        const averageScore =
-          examResults.length > 0
-            ? Math.round(
-                examResults.reduce((sum, r) => sum + (r.score / r.total) * 100, 0) /
-                examResults.length
-              )
-            : null;
-
-        const hasAnyData = examResults.length > 0 || focusSessions.length > 0;
-
-        setAnalytics({
-          examResults,
-          focusSessions,
-          totalFocusMinutes,
-          totalXpEarned,
-          averageScore,
-          completedExams: examResults.length,
-        });
-
-        setPageState(hasAnyData ? "data" : "empty");
+        if (!cancelled) {
+          setResults(data || []);
+          setLoading(false);
+        }
       } catch (err) {
         clearTimeout(timeoutId);
         if (!cancelled) {
-          console.error("[Analytics] fetch failed:", err);
-          setPageState("error");
+          console.error("[Analytics] init failed:", err);
+          setLoading(false);
         }
       }
     };
 
-    fetchAnalytics();
-    return () => { cancelled = true; };
-  }, [fetchKey]);
+    init();
+    return () => { cancelled = true; clearTimeout(timeoutId); };
+  }, [router, supabase]);
 
-  const handleRetry = () => setFetchKey((k) => k + 1);
+  const cardStyle = {
+    background: "var(--card)",
+    border: "1px solid var(--card-border)",
+    borderRadius: "12px",
+    padding: "16px",
+  };
+
+  // ── Derived stats (unchanged) ──────────────────────────────────────────────
+
+  const totalExams = results.length;
+  const avgScore = totalExams > 0
+    ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalExams)
+    : 0;
+  const bestScore = totalExams > 0 ? Math.max(...results.map(r => r.score)) : 0;
+  const totalTime = results.reduce((sum, r) => sum + (r.time_taken || 0), 0);
+
+  const subjectMap: Record<string, ExamResult[]> = {};
+  results.forEach(r => {
+    if (!subjectMap[r.subject]) subjectMap[r.subject] = [];
+    subjectMap[r.subject].push(r);
+  });
+
+  const subjectStats: SubjectStats[] = Object.entries(subjectMap).map(([subject, exams]) => {
+    const sorted = [...exams].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const avgScore = Math.round(exams.reduce((sum, e) => sum + e.score, 0) / exams.length);
+    const bestScore = Math.max(...exams.map(e => e.score));
+
+    let trend: "improving" | "declining" | "stable" = "stable";
+    if (sorted.length >= 2) {
+      const first = sorted[0].score;
+      const last = sorted[sorted.length - 1].score;
+      if (last - first > 10) trend = "improving";
+      else if (first - last > 10) trend = "declining";
+    }
+
+    return { subject, attempts: exams.length, avgScore, bestScore, trend };
+  }).sort((a, b) => b.attempts - a.attempts);
+
+  const weakAreaCount: Record<string, number> = {};
+  results.forEach(r => {
+    (r.weak_areas || []).forEach(area => {
+      weakAreaCount[area] = (weakAreaCount[area] || 0) + 1;
+    });
+  });
+  const topWeakAreas = Object.entries(weakAreaCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const getGrade = (score: number) => {
+    if (score >= 90) return { grade: "A*", color: "#f59e0b" };
+    if (score >= 80) return { grade: "A", color: "#22c55e" };
+    if (score >= 70) return { grade: "B", color: "#22c55e" };
+    if (score >= 60) return { grade: "C", color: "#6366f1" };
+    if (score >= 50) return { grade: "D", color: "#8b5cf6" };
+    if (score >= 40) return { grade: "E", color: "#f59e0b" };
+    return { grade: "U", color: "#ef4444" };
+  };
+
+  const getTrendIcon = (trend: string) => {
+    if (trend === "improving") return { icon: "↑", color: "#22c55e" };
+    if (trend === "declining") return { icon: "↓", color: "#ef4444" };
+    return { icon: "→", color: "#94a3b8" };
+  };
+
+  // ── State gates ────────────────────────────────────────────────────────────
+
+  if (loading) return <AnalyticsSkeleton />;
+
+  // ── Render (100% preserved from original) ─────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <div className="max-w-2xl mx-auto px-4 py-8 pb-28">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Analytics</h1>
-          <p className="text-sm text-white/40 mt-1">
-            Cortex tracks your patterns. Here's what it sees.
-          </p>
-        </div>
+    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-        {pageState === "loading" && <AnalyticsSkeleton />}
-
-        {pageState === "error" && <AnalyticsErrorState onRetry={handleRetry} />}
-
-        {pageState === "empty" && <AnalyticsEmptyState />}
-
-        {pageState === "data" && analytics && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard icon="⏱" label="Focus minutes" value={analytics.totalFocusMinutes} sub="all time" />
-              <StatCard icon="⚡" label="XP from focus" value={analytics.totalXpEarned} />
-              <StatCard icon="🎯" label="Exams taken" value={analytics.completedExams} />
-              <StatCard
-                icon="📈"
-                label="Avg score"
-                value={analytics.averageScore !== null ? `${analytics.averageScore}%` : "—"}
-                sub={
-                  analytics.averageScore !== null
-                    ? analytics.averageScore >= 70 ? "Strong"
-                      : analytics.averageScore >= 50 ? "Building"
-                      : "Keep pushing"
-                    : "No exams yet"
-                }
-              />
-            </div>
-            <FocusSessionsSection sessions={analytics.focusSessions} />
-            <ExamResultsSection results={analytics.examResults} />
-          </div>
-        )}
+      {/* Header */}
+      <div>
+        <p style={{ fontSize: "12px", color: "var(--primary)", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "4px" }}>
+          Cortex Analytics
+        </p>
+        <h1 style={{ fontSize: "28px", fontWeight: 800 }}>Performance</h1>
+        <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginTop: "4px" }}>
+          Your exam history and progress patterns
+        </p>
       </div>
+
+      {totalExams === 0 ? (
+        <div style={{ ...cardStyle, textAlign: "center", padding: "40px" }}>
+          <p style={{ fontSize: "3rem", marginBottom: "12px" }}>📊</p>
+          <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>No exams yet</p>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginBottom: "16px" }}>
+            Complete an exam simulation to see your analytics here.
+          </p>
+          <button
+            onClick={() => router.push("/exam-sim")}
+            style={{
+              background: "var(--primary)", color: "white", border: "none",
+              borderRadius: "8px", padding: "10px 20px", fontWeight: 700,
+              fontSize: "14px", cursor: "pointer",
+            }}
+          >
+            Start Exam →
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Overview stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {[
+              { label: "Exams taken", value: totalExams, icon: "📝", color: "#6366f1" },
+              { label: "Average score", value: `${avgScore}%`, icon: "📊", color: avgScore >= 60 ? "#22c55e" : "#f59e0b" },
+              { label: "Best score", value: `${bestScore}%`, icon: "⭐", color: "#f59e0b" },
+              { label: "Time studied", value: `${Math.round(totalTime / 60)}m`, icon: "⏱", color: "#8b5cf6" },
+            ].map(stat => (
+              <div key={stat.label} style={{
+                background: `${stat.color}10`,
+                border: `1px solid ${stat.color}30`,
+                borderRadius: "12px",
+                padding: "14px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "14px" }}>{stat.icon}</span>
+                  <p style={{ fontSize: "11px", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>
+                    {stat.label}
+                  </p>
+                </div>
+                <p style={{ fontSize: "26px", fontWeight: 800, color: stat.color }}>{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Subject breakdown */}
+          {subjectStats.length > 0 && (
+            <div style={cardStyle}>
+              <p style={{ fontWeight: 700, marginBottom: "12px", fontSize: "14px" }}>By Subject</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {subjectStats.map(stat => {
+                  const { grade, color } = getGrade(stat.avgScore);
+                  const { icon, color: trendColor } = getTrendIcon(stat.trend);
+                  return (
+                    <div key={stat.subject}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <p style={{ fontSize: "14px", fontWeight: 600 }}>{stat.subject}</p>
+                          <span style={{ fontSize: "12px", color: trendColor, fontWeight: 700 }}>{icon}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{
+                            fontSize: "11px", padding: "2px 8px", borderRadius: "20px",
+                            background: `${color}15`, color, fontWeight: 700,
+                          }}>
+                            {grade}
+                          </span>
+                          <p style={{ fontSize: "13px", fontWeight: 700, color }}>{stat.avgScore}%</p>
+                        </div>
+                      </div>
+                      <div style={{ background: "var(--muted)", borderRadius: "99px", height: "5px" }}>
+                        <div style={{
+                          background: color, borderRadius: "99px", height: "5px",
+                          width: `${stat.avgScore}%`, transition: "width 0.5s ease",
+                          boxShadow: `0 0 6px ${color}60`,
+                        }} />
+                      </div>
+                      <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "3px" }}>
+                        {stat.attempts} attempt{stat.attempts !== 1 ? "s" : ""} · Best: {stat.bestScore}%
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Weak areas */}
+          {topWeakAreas.length > 0 && (
+            <div style={{
+              background: "rgba(239,68,68,0.06)",
+              border: "1px solid rgba(239,68,68,0.2)",
+              borderRadius: "12px",
+              padding: "16px",
+            }}>
+              <p style={{ fontWeight: 700, marginBottom: "10px", fontSize: "14px", color: "#ef4444" }}>
+                ⚠ Areas needing attention
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {topWeakAreas.map(([area, count]) => (
+                  <div key={area} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <p style={{ fontSize: "13px", color: "var(--foreground)" }}>{area}</p>
+                    <span style={{
+                      fontSize: "11px", padding: "2px 8px", borderRadius: "20px",
+                      background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 600,
+                    }}>
+                      {count}x
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent exams */}
+          <div style={cardStyle}>
+            <p style={{ fontWeight: 700, marginBottom: "12px", fontSize: "14px" }}>Recent Exams</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {results.slice(0, 10).map(result => {
+                const { grade, color } = getGrade(result.score);
+                const date = new Date(result.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                return (
+                  <div key={result.id} style={{
+                    display: "flex", alignItems: "center", gap: "12px",
+                    padding: "10px 12px", borderRadius: "8px", background: "var(--muted)",
+                  }}>
+                    <div style={{
+                      width: "36px", height: "36px", borderRadius: "8px", flexShrink: 0,
+                      background: `${color}15`, display: "flex", alignItems: "center",
+                      justifyContent: "center", fontWeight: 800, fontSize: "14px", color,
+                    }}>
+                      {grade}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: "13px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {result.subject}{result.topic ? ` — ${result.topic}` : ""}
+                      </p>
+                      <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "1px" }}>
+                        {result.difficulty} · {date}
+                      </p>
+                    </div>
+                    <p style={{ fontSize: "16px", fontWeight: 800, color, flexShrink: 0 }}>
+                      {result.score}%
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <button
+            onClick={() => router.push("/exam-sim")}
+            style={{
+              background: "var(--primary)", color: "white", border: "none",
+              borderRadius: "12px", padding: "14px", fontWeight: 700,
+              fontSize: "15px", cursor: "pointer", boxShadow: "0 0 16px var(--primary-glow)",
+            }}
+          >
+            Take Another Exam →
+          </button>
+        </>
+      )}
     </div>
   );
 }
