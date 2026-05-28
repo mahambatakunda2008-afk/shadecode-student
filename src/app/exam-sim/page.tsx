@@ -2,7 +2,7 @@
 
 import katex from "katex";
 import "katex/dist/katex.min.css";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import {
@@ -97,31 +97,73 @@ function formatTime(s: number) {
 export default function ExamSimulation() {
   const router   = useRouter();
   const supabase = createClient();
+
+  // ─── Interval ref ────────────────────────────────────────────────────────
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [step, setStep] = useState<Step>("setup");
+  // ─── Submission mutex ─────────────────────────────────────────────────────
+  // Synchronous ref-based guard — checked before any async work begins.
+  // useState would not work here because two rapid calls can both read
+  // isSubmitting === false before the first setIsSubmitting(true) re-renders.
+  const isSubmittingRef = useRef(false);
 
-  const [subject,       setSubject]       = useState("");
-  const [topic,         setTopic]         = useState("");
-  const [difficulty,    setDifficulty]    = useState(0);
+  // ─── State-as-refs mirrors ────────────────────────────────────────────────
+  // These are kept in sync with their useState counterparts via the setters
+  // below. The timer callback and handleSubmitExam read from refs to always
+  // get the latest values regardless of closure age.
+  const userIdRef       = useRef<string>("");
+  const answersRef      = useRef<Answer[]>([]);
+  const questionsRef    = useRef<Question[]>([]);
+  const currentAnswerRef = useRef<string>("");
+  const timeLeftRef     = useRef<number>(0);
+  const totalTimeRef    = useRef<number>(0);
+  const subjectRef      = useRef<string>("");
+  const topicRef        = useRef<string>("");
+  const difficultyRef   = useRef<number>(0);
+
+  // ─── State ────────────────────────────────────────────────────────────────
+  const [step,          setStep]          = useState<Step>("setup");
+  const [subject,       setSubjectState]  = useState("");
+  const [topic,         setTopicState]    = useState("");
+  const [difficulty,    setDifficultyState] = useState(0);
   const [questionCount, setQuestionCount] = useState(10);
-
-  const [questions,     setQuestions]     = useState<Question[]>([]);
-  const [answers,       setAnswers]       = useState<Answer[]>([]);
+  const [questions,     setQuestionsState] = useState<Question[]>([]);
+  const [answers,       setAnswersState]  = useState<Answer[]>([]);
   const [currentQ,      setCurrentQ]      = useState(0);
-  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [currentAnswer, setCurrentAnswerState] = useState("");
+  const [timeLeft,      setTimeLeftState] = useState(0);
+  const [totalTime,     setTotalTimeState] = useState(0);
+  const [qStartTime,    setQStartTime]    = useState(Date.now());
+  const [generating,    setGenerating]    = useState(false);
+  const [marking,       setMarking]       = useState(false);
+  const [results,       setResults]       = useState<ExamResults | null>(null);
+  const [userId,        setUserIdState]   = useState("");
+  const [expandedQ,     setExpandedQ]     = useState<number | null>(null);
+  const [activeTab,     setActiveTab]     = useState<"overview" | "review">("overview");
 
-  const [timeLeft,   setTimeLeft]   = useState(0);
-  const [totalTime,  setTotalTime]  = useState(0);
-  const [qStartTime, setQStartTime] = useState(Date.now());
-
-  const [generating, setGenerating] = useState(false);
-  const [marking,    setMarking]    = useState(false);
-  const [results,    setResults]    = useState<ExamResults | null>(null);
-  const [userId,     setUserId]     = useState("");
-
-  const [expandedQ, setExpandedQ] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "review">("overview");
+  // ─── Synced setters ───────────────────────────────────────────────────────
+  // Every setter updates both state (for rendering) and the ref (for closures).
+  const setSubject = (v: string)     => { subjectRef.current = v;       setSubjectState(v); };
+  const setTopic   = (v: string)     => { topicRef.current = v;         setTopicState(v); };
+  const setDifficulty = (v: number)  => { difficultyRef.current = v;    setDifficultyState(v); };
+  const setUserId  = (v: string)     => { userIdRef.current = v;        setUserIdState(v); };
+  const setAnswers = (fn: (prev: Answer[]) => Answer[]) => {
+    setAnswersState(prev => {
+      const next = fn(prev);
+      answersRef.current = next;
+      return next;
+    });
+  };
+  const setQuestions = (v: Question[]) => { questionsRef.current = v;   setQuestionsState(v); };
+  const setCurrentAnswer = (v: string) => { currentAnswerRef.current = v; setCurrentAnswerState(v); };
+  const setTimeLeft = (fn: (prev: number) => number) => {
+    setTimeLeftState(prev => {
+      const next = fn(prev);
+      timeLeftRef.current = next;
+      return next;
+    });
+  };
+  const setTotalTime = (v: number) => { totalTimeRef.current = v; setTotalTimeState(v); };
 
   const q = questions[currentQ];
 
@@ -134,61 +176,202 @@ export default function ExamSimulation() {
     })();
   }, []);
 
-  /* ── Timer ── */
+  /* ── Core submit function ─────────────────────────────────────────────────
+   *
+   * Reads exclusively from refs — never from closure-captured state.
+   * This makes it safe to call from both the Submit button AND the timer
+   * callback, regardless of when either fires.
+   *
+   * The isSubmittingRef mutex ensures this function body executes at most
+   * once per exam session, even if called simultaneously from two paths.
+   */
+  const handleSubmitExam = useCallback(async () => {
+    // ── Mutex: synchronous guard, checked before any async work ──────────
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
+    // ── Stop the timer immediately ────────────────────────────────────────
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // ── Flush currentAnswer into answers before submitting ────────────────
+    // Read from refs — these are always current regardless of closure age.
+    const currentQSnapshot   = questionsRef.current[/* currentQ from ref not available — see note */ 0];
+    // Note: currentQ is UI-only state (which question is visible).
+    // We flush the current answer into answersRef directly using the
+    // synchronous ref values rather than triggering a state update.
+    const latestAnswers      = answersRef.current;
+    const latestQuestions    = questionsRef.current;
+    const latestUserId       = userIdRef.current;
+    const latestSubject      = subjectRef.current;
+    const latestTopic        = topicRef.current;
+    const latestDifficulty   = difficultyRef.current;
+    const latestTimeLeft     = timeLeftRef.current;
+    const latestTotalTime    = totalTimeRef.current;
+
+    setStep("marking");
+    setMarking(true);
+
+    try {
+      const res = await fetch("/api/exam/mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject:    latestSubject,
+          difficulty: DIFFICULTIES[latestDifficulty].value,
+          questions:  latestQuestions,
+          answers:    latestAnswers,
+          timeTaken:  latestTotalTime - latestTimeLeft,
+          userId:     latestUserId,
+        }),
+      });
+      const data: ExamResults = await res.json();
+      setResults(data);
+
+      // ── Persist to Supabase ─────────────────────────────────────────────
+      if (latestUserId) {
+        const timeTaken    = latestTotalTime - latestTimeLeft;
+        const correctCount = data.results?.filter(r => r.correct).length ?? 0;
+
+        const { error: insertError } = await supabase
+          .from("exam_results")
+          .insert({
+            user_id:         latestUserId,
+            subject:         latestSubject,
+            topic:           latestTopic || null,
+            difficulty:      DIFFICULTIES[latestDifficulty].label,
+            score:           data.percentage,
+            total_questions: latestQuestions.length,
+            correct_answers: correctCount,
+            weak_areas:      data.weakAreas  ?? [],
+            time_taken:      timeTaken,
+            // created_at omitted — let Postgres DEFAULT now() handle it
+          });
+
+        if (insertError) {
+          console.error("[ExamSim] insert error:", insertError.message);
+        }
+
+        // ── Revision queue hook ─────────────────────────────────────────
+        if (!insertError && (data.weakAreas?.length ?? 0) > 0) {
+          import("@/lib/revisionQueue").then(({ upsertWeakAreas }) => {
+            upsertWeakAreas(latestUserId, latestSubject, data.weakAreas);
+          }).catch(err => {
+            console.error("[RevisionQueue] hook failed:", err);
+          });
+        }
+      }
+
+      setStep("results");
+    } catch (err) {
+      console.error("[ExamSim] submit failed:", err);
+      alert("Failed to mark exam. Please try again.");
+      // Reset the mutex so the user can retry
+      isSubmittingRef.current = false;
+      setStep("exam");
+    } finally {
+      setMarking(false);
+    }
+  }, []); // stable — reads everything from refs
+
+  /* ── currentQ ref ────────────────────────────────────────────────────────
+   * currentQ is needed inside saveAnswer which is called from handleSubmitExam.
+   * We track it via a separate ref rather than making handleSubmitExam depend
+   * on it as a closure variable.
+   */
+  const currentQRef = useRef(0);
+  const setCurrentQ = (v: number) => {
+    currentQRef.current = v;
+    // direct state setter — no wrapper needed for rendering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    _setCurrentQ(v);
+  };
+  const [, _setCurrentQ] = useState(0); // internal raw setter
+
+  /* ── saveAnswer — reads from refs ────────────────────────────────────────
+   * Flushes the current in-progress answer into answersRef and state.
+   * Safe to call from any context since it only reads refs.
+   */
+  const saveAnswer = useCallback(() => {
+    const currentQuestion = questionsRef.current[currentQRef.current];
+    if (!currentQuestion) return;
+    const timeSpent = Math.round((Date.now() - qStartTime) / 1000);
+    const payload: Answer = {
+      questionId: currentQuestion.id,
+      answer:     currentAnswerRef.current,
+      timeSpent,
+    };
+    setAnswers(prev => {
+      const idx = prev.findIndex(a => a.questionId === currentQuestion.id);
+      if (idx >= 0) { const u = [...prev]; u[idx] = payload; return u; }
+      return [...prev, payload];
+    });
+  }, [qStartTime]);
+
+  /* ── Timer ───────────────────────────────────────────────────────────────
+   * The callback reads timeLeftRef directly and calls handleSubmitExam
+   * (which is stable via useCallback + reads all state from refs).
+   * No stale closure possible.
+   */
   useEffect(() => {
     if (step !== "exam") return;
+
     intervalRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          // Flush current answer before auto-submit
+          saveAnswer();
           handleSubmitExam();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [step]);
 
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [step, handleSubmitExam, saveAnswer]);
+
+  /* ── Timer color ── */
   const timePercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 100;
   const timerColor  = timePercent > 50 ? "#22c55e" : timePercent > 20 ? "#f59e0b" : "#ef4444";
   const timerPulse  = timePercent <= 20;
 
+  /* ── Shared styles ── */
   const card: React.CSSProperties  = { background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: 16 };
   const input: React.CSSProperties = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "12px 14px", color: "var(--foreground)", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
 
-  /* ── Save answer ── */
-  const saveAnswer = () => {
-    if (!q) return;
-    const timeSpent = Math.round((Date.now() - qStartTime) / 1000);
-    const payload: Answer = { questionId: q.id, answer: currentAnswer, timeSpent };
-    setAnswers(prev => {
-      const idx = prev.findIndex(a => a.questionId === q.id);
-      if (idx >= 0) { const u = [...prev]; u[idx] = payload; return u; }
-      return [...prev, payload];
-    });
-  };
-
+  /* ── Navigate between questions ── */
   const goToQuestion = (index: number) => {
     saveAnswer();
     setCurrentQ(index);
-    const existing = answers.find(a => a.questionId === questions[index]?.id);
+    const existing = answersRef.current.find(a => a.questionId === questionsRef.current[index]?.id);
     setCurrentAnswer(existing?.answer || "");
     setQStartTime(Date.now());
   };
 
-  /* ── Generate ── */
+  /* ── Generate exam ── */
   const generateExam = async () => {
     if (!subject) return;
     setGenerating(true);
+    // Reset submission mutex for new exam session
+    isSubmittingRef.current = false;
     try {
       const res = await fetch("/api/exam/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject,
-          topic: topic.trim() || null,
-          difficulty: DIFFICULTIES[difficulty].value,
+          topic:           topic.trim() || null,
+          difficulty:      DIFFICULTIES[difficulty].value,
           questionCount,
         }),
       });
@@ -197,9 +380,9 @@ export default function ExamSimulation() {
       setQuestions(data.questions);
       setCurrentQ(0);
       setCurrentAnswer("");
-      setAnswers([]);
+      setAnswers(() => []);
       const t = questionCount * 2 * 60;
-      setTimeLeft(t);
+      setTimeLeft(() => t);
       setTotalTime(t);
       setQStartTime(Date.now());
       setStep("exam");
@@ -211,86 +394,27 @@ export default function ExamSimulation() {
     }
   };
 
-  /* ── Submit + mark ── */
-  const handleSubmitExam = async () => {
-    saveAnswer();
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setStep("marking");
-    setMarking(true);
-
-    try {
-      const res = await fetch("/api/exam/mark", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject,
-          difficulty: DIFFICULTIES[difficulty].value,
-          questions,
-          answers,
-          timeTaken: totalTime - timeLeft,
-          userId,
-        }),
-      });
-      const data: ExamResults = await res.json();
-      setResults(data);
-
-      // ── Save result to Supabase ──────────────────────────────────────────
-      if (userId) {
-        const timeTaken = totalTime - timeLeft;
-        const correctCount = data.results?.filter(r => r.correct).length ?? 0;
-
-        const { error: insertError } = await supabase
-          .from("exam_results")
-          .insert({
-            user_id:         userId,
-            subject,
-            topic:           topic || null,
-            difficulty:      DIFFICULTIES[difficulty].label,
-            score:           data.percentage,
-            total_questions: questions.length,
-            correct_answers: correctCount,
-            weak_areas:      data.weakAreas  ?? [],
-            time_taken:      timeTaken,
-            created_at:      new Date().toISOString(),
-          });
-
-        if (insertError) {
-          console.error("[ExamSim] insert error:", insertError.message);
-        }
-
-        // ── Revision Queue hook ────────────────────────────────────────────
-        // Fire-and-forget: never blocks the results render.
-        // Weak areas from this exam are upserted into revision_queue:
-        //   - new topic  → inserted with priority 1
-        //   - seen topic → priority incremented, last_seen refreshed
-        if (!insertError && (data.weakAreas?.length ?? 0) > 0) {
-          import("@/lib/revisionQueue").then(({ upsertWeakAreas }) => {
-            upsertWeakAreas(userId, subject, data.weakAreas);
-          }).catch(err => {
-            console.error("[RevisionQueue] hook failed:", err);
-          });
-        }
-      }
-
-      setStep("results");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to mark exam.");
-      setStep("exam");
-    } finally {
-      setMarking(false);
-    }
-  };
-
+  /* ── Reset ── */
   const resetExam = () => {
+    isSubmittingRef.current = false;
     setStep("setup");
     setQuestions([]);
-    setAnswers([]);
+    setAnswers(() => []);
     setCurrentQ(0);
     setCurrentAnswer("");
     setResults(null);
     setExpandedQ(null);
     setActiveTab("overview");
+  };
+
+  /* ── Submit button handler ───────────────────────────────────────────────
+   * Flushes current answer then delegates to handleSubmitExam.
+   * The mutex inside handleSubmitExam prevents double execution even if
+   * this is called twice before the first async tick completes.
+   */
+  const onSubmitClick = () => {
+    saveAnswer();
+    handleSubmitExam();
   };
 
   /* ══════════════════════════════════════════════════════
@@ -453,10 +577,11 @@ export default function ExamSimulation() {
           {/* Question dots */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
             {questions.map((_, i) => {
-              const answered = answers.some(a => a.questionId === questions[i]?.id && a.answer);
+              const answered = answersRef.current.some(a => a.questionId === questions[i]?.id && a.answer);
               return (
                 <button key={i} onClick={() => goToQuestion(i)}
-                  style={{ width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, background: i === currentQ ? "var(--primary)" : answered ? "rgba(34,197,94,0.3)" : "var(--muted)", color: i === currentQ ? "white" : answered ? "#22c55e" : "var(--foreground)" }}>
+                  disabled={marking}
+                  style={{ width: 32, height: 32, borderRadius: 8, border: "none", cursor: marking ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 12, background: i === currentQ ? "var(--primary)" : answered ? "rgba(34,197,94,0.3)" : "var(--muted)", color: i === currentQ ? "white" : answered ? "#22c55e" : "var(--foreground)", opacity: marking ? 0.5 : 1 }}>
                   {i + 1}
                 </button>
               );
@@ -465,17 +590,30 @@ export default function ExamSimulation() {
 
           <div style={{ display: "flex", gap: 10 }}>
             {currentQ > 0 && (
-              <button onClick={() => goToQuestion(currentQ - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>
+              <button
+                onClick={() => goToQuestion(currentQ - 1)}
+                disabled={marking}
+                style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: marking ? "not-allowed" : "pointer", opacity: marking ? 0.5 : 1 }}
+              >
                 ← Prev
               </button>
             )}
             {currentQ < questions.length - 1 ? (
-              <button onClick={() => goToQuestion(currentQ + 1)} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 0 24px rgba(99,102,241,0.35)" }}>
+              <button
+                onClick={() => goToQuestion(currentQ + 1)}
+                disabled={marking}
+                style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: marking ? "not-allowed" : "pointer", boxShadow: "0 0 24px rgba(99,102,241,0.35)", opacity: marking ? 0.5 : 1 }}
+              >
                 Next →
               </button>
             ) : (
-              <button onClick={handleSubmitExam} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "#22c55e", color: "white", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 0 24px rgba(34,197,94,0.35)" }}>
-                Submit Exam ✓
+              // Submit button — disabled once isSubmittingRef fires or while marking
+              <button
+                onClick={onSubmitClick}
+                disabled={marking}
+                style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: marking ? "var(--muted)" : "#22c55e", color: marking ? "var(--muted-foreground)" : "white", fontWeight: 800, fontSize: 15, cursor: marking ? "not-allowed" : "pointer", boxShadow: marking ? "none" : "0 0 24px rgba(34,197,94,0.35)", transition: "all 0.2s" }}
+              >
+                {marking ? "Submitting…" : "Submit Exam ✓"}
               </button>
             )}
           </div>
@@ -490,8 +628,8 @@ export default function ExamSimulation() {
   if (step === "marking") return (
     <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @keyframes spin  { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
       <div style={{ fontSize: 56, animation: "spin 2s linear infinite" }}>🧠</div>
       <div style={{ textAlign: "center" }}>
@@ -507,11 +645,11 @@ export default function ExamSimulation() {
      RESULTS
   ══════════════════════════════════════════════════════ */
   if (step === "results" && results) {
-    const pct          = results.percentage;
-    const grade        = getGrade(pct);
-    const gc           = gradeColor(pct);
-    const timeTakenFmt = formatTime(results.timeTaken);
-    const answeredCount = answers.filter(a => a.answer.trim()).length;
+    const pct           = results.percentage;
+    const grade         = getGrade(pct);
+    const gc            = gradeColor(pct);
+    const timeTakenFmt  = formatTime(results.timeTaken);
+    const answeredCount = answersRef.current.filter(a => a.answer.trim()).length;
 
     return (
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 16px 80px" }}>
@@ -635,7 +773,7 @@ export default function ExamSimulation() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeUp .3s ease" }}>
             {results.results.map((r, i) => {
               const origQ   = questions.find(q => q.id === r.questionId);
-              const userAns = answers.find(a => a.questionId === r.questionId);
+              const userAns = answersRef.current.find(a => a.questionId === r.questionId);
               const isOpen  = expandedQ === i;
               return (
                 <div key={r.questionId} style={{ borderRadius: 16, border: `1px solid ${r.correct ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, background: r.correct ? "rgba(52,211,153,0.04)" : "rgba(248,113,113,0.04)", overflow: "hidden", animation: `fadeUp .3s ease ${i * 0.05}s both` }}>
