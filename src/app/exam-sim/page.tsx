@@ -5,10 +5,13 @@ import "katex/dist/katex.min.css";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { log } from "@/lib/observability";
 import {
   CheckCircle2, XCircle, AlertCircle, Trophy,
   Clock, RotateCcw, ChevronDown, ChevronUp, Flame,
 } from "lucide-react";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const SUBJECTS = [
   "Mathematics","Physics","Chemistry","Biology","Geography",
@@ -23,6 +26,8 @@ const DIFFICULTIES = [
 ];
 
 const QUESTION_COUNTS = [5, 10, 15, 20];
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Question {
   id: number;
@@ -52,7 +57,7 @@ interface Result {
 interface ExamResults {
   totalScore: number;
   maxScore: number;
-  percentage: number;
+  percentage: number;   // 0–100 — this is what gets stored in exam_results.score
   grade: string;
   weakAreas: string[];
   strongAreas: string[];
@@ -62,6 +67,8 @@ interface ExamResults {
 }
 
 type Step = "setup" | "exam" | "marking" | "results";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderMath(text: string) {
   if (!text) return text;
@@ -94,21 +101,23 @@ function formatTime(s: number) {
   return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export default function ExamSimulation() {
-  const router   = useRouter();
-  const supabase = createClient();
+// ─── Component ────────────────────────────────────────────────────────────────
 
-  // ─── Interval ref ─────────────────────────────────────────────────────────
+export default function ExamSimulation() {
+  const router = useRouter();
+
+  // ── Interval ref ────────────────────────────────────────────────────────
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ─── Submission mutex ──────────────────────────────────────────────────────
+  // ── Submission mutex ───────────────────────────────────────────────────
   // useRef is synchronous — two rapid calls both see the updated value
-  // immediately, unlike useState which batches and re-renders asynchronously.
+  // immediately, unlike useState which batches re-renders.
   const isSubmittingRef = useRef(false);
 
-  // ─── Ref mirrors of mutable exam state ────────────────────────────────────
-  // handleSubmitExam and the timer callback read from these refs so they
-  // always access current values regardless of closure capture age.
+  // ── Ref mirrors of all mutable exam state ─────────────────────────────
+  // handleSubmitExam is useCallback([], []) — it never closes over state.
+  // All exam state is read from these refs so timer-triggered auto-submit
+  // always uses the latest values regardless of closure age.
   const userIdRef        = useRef<string>("");
   const answersRef       = useRef<Answer[]>([]);
   const questionsRef     = useRef<Question[]>([]);
@@ -120,51 +129,45 @@ export default function ExamSimulation() {
   const difficultyRef    = useRef<number>(0);
   const currentQRef      = useRef<number>(0);
 
-  // ─── State ────────────────────────────────────────────────────────────────
-  const [step,          setStep]          = useState<Step>("setup");
-  const [subject,       setSubjectState]  = useState("");
-  const [topic,         setTopicState]    = useState("");
+  // ── State ───────────────────────────────────────────────────────────────
+  const [step,          setStep]            = useState<Step>("setup");
+  const [subject,       setSubjectState]    = useState("");
+  const [topic,         setTopicState]      = useState("");
   const [difficulty,    setDifficultyState] = useState(0);
-  const [questionCount, setQuestionCount] = useState(10);
-  const [questions,     setQuestionsState] = useState<Question[]>([]);
-  const [answers,       setAnswersState]  = useState<Answer[]>([]);
+  const [questionCount, setQuestionCount]   = useState(10);
+  const [questions,     setQuestionsState]  = useState<Question[]>([]);
+  const [answers,       setAnswersState]    = useState<Answer[]>([]);
 
-  // currentQState is the render-facing value; currentQRef is for closures.
-  // Both are updated together via setCurrentQ().
-  const [currentQState, _setCurrentQState] = useState(0);
+  // currentQState drives rendering; currentQRef drives closures.
+  // Both updated together via setCurrentQ().
+  const [currentQState, _setCurrentQState]  = useState(0);
 
   const [currentAnswer, setCurrentAnswerState] = useState("");
-  const [timeLeft,      setTimeLeftState]  = useState(0);
-  const [totalTime,     setTotalTimeState] = useState(0);
-  const [qStartTime,    setQStartTime]     = useState(Date.now());
-  const [generating,    setGenerating]     = useState(false);
-  const [marking,       setMarking]        = useState(false);
-  const [results,       setResults]        = useState<ExamResults | null>(null);
-  const [userId,        setUserIdState]    = useState("");
-  const [expandedQ,     setExpandedQ]      = useState<number | null>(null);
-  const [activeTab,     setActiveTab]      = useState<"overview" | "review">("overview");
+  const [timeLeft,      setTimeLeftState]   = useState(0);
+  const [totalTime,     setTotalTimeState]  = useState(0);
+  const [qStartTime,    setQStartTime]      = useState(Date.now());
+  const [generating,    setGenerating]      = useState(false);
+  const [marking,       setMarking]         = useState(false);
+  const [results,       setResults]         = useState<ExamResults | null>(null);
+  const [userId,        setUserIdState]     = useState("");
+  const [expandedQ,     setExpandedQ]       = useState<number | null>(null);
+  const [activeTab,     setActiveTab]       = useState<"overview" | "review">("overview");
 
-  // ─── Synced setters ───────────────────────────────────────────────────────
+  // ── Synced setters ─────────────────────────────────────────────────────
   const setSubject = (v: string) => {
-    subjectRef.current = v;
-    setSubjectState(v);
+    subjectRef.current = v; setSubjectState(v);
   };
   const setTopic = (v: string) => {
-    topicRef.current = v;
-    setTopicState(v);
+    topicRef.current = v; setTopicState(v);
   };
   const setDifficulty = (v: number) => {
-    difficultyRef.current = v;
-    setDifficultyState(v);
+    difficultyRef.current = v; setDifficultyState(v);
   };
   const setUserId = (v: string) => {
-    userIdRef.current = v;
-    setUserIdState(v);
+    userIdRef.current = v; setUserIdState(v);
   };
-  // currentQ: single setter updates both ref (for closures) and state (for rendering)
   const setCurrentQ = (v: number) => {
-    currentQRef.current = v;
-    _setCurrentQState(v);
+    currentQRef.current = v; _setCurrentQState(v);
   };
   const setAnswers = (fn: (prev: Answer[]) => Answer[]) => {
     setAnswersState(prev => {
@@ -174,12 +177,10 @@ export default function ExamSimulation() {
     });
   };
   const setQuestions = (v: Question[]) => {
-    questionsRef.current = v;
-    setQuestionsState(v);
+    questionsRef.current = v; setQuestionsState(v);
   };
   const setCurrentAnswer = (v: string) => {
-    currentAnswerRef.current = v;
-    setCurrentAnswerState(v);
+    currentAnswerRef.current = v; setCurrentAnswerState(v);
   };
   const setTimeLeft = (fn: (prev: number) => number) => {
     setTimeLeftState(prev => {
@@ -189,23 +190,21 @@ export default function ExamSimulation() {
     });
   };
   const setTotalTime = (v: number) => {
-    totalTimeRef.current = v;
-    setTotalTimeState(v);
+    totalTimeRef.current = v; setTotalTimeState(v);
   };
 
-  // currentQState drives rendering; use it everywhere in JSX.
   const q = questions[currentQState];
 
-  /* ── Auth ── */
+  // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await createClient().auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
     })();
   }, []);
 
-  /* ── saveAnswer — reads from refs, safe in any closure ───────────────────*/
+  // ── saveAnswer — reads from refs, safe in any closure ─────────────────
   const saveAnswer = useCallback(() => {
     const currentQuestion = questionsRef.current[currentQRef.current];
     if (!currentQuestion) return;
@@ -222,13 +221,18 @@ export default function ExamSimulation() {
     });
   }, [qStartTime]);
 
-  /* ── handleSubmitExam ─────────────────────────────────────────────────────
-   * Reads exclusively from refs — never from closure-captured state.
-   * isSubmittingRef prevents concurrent execution from button + timer.
-   */
+  // ── handleSubmitExam ──────────────────────────────────────────────────
+  // Reads exclusively from refs. useCallback([], []) = stable identity.
+  // isSubmittingRef mutex prevents concurrent execution from button + timer.
   const handleSubmitExam = useCallback(async () => {
-    // Synchronous mutex — checked before any async work
-    if (isSubmittingRef.current) return;
+    // ── Mutex: synchronous, checked before any async work ──────────────
+    if (isSubmittingRef.current) {
+      log.examDuplicateBlocked({
+        userId:  userIdRef.current,
+        subject: subjectRef.current,
+      });
+      return;
+    }
     isSubmittingRef.current = true;
 
     // Stop the timer immediately
@@ -237,22 +241,24 @@ export default function ExamSimulation() {
       intervalRef.current = null;
     }
 
-    // Snapshot all state from refs
-    const latestAnswers   = answersRef.current;
-    const latestQuestions = questionsRef.current;
-    const latestUserId    = userIdRef.current;
-    const latestSubject   = subjectRef.current;
-    const latestTopic     = topicRef.current;
+    // Snapshot all state from refs — never stale
+    const latestAnswers    = answersRef.current;
+    const latestQuestions  = questionsRef.current;
+    const latestUserId     = userIdRef.current;
+    const latestSubject    = subjectRef.current;
+    const latestTopic      = topicRef.current;
     const latestDifficulty = difficultyRef.current;
-    const latestTimeLeft  = timeLeftRef.current;
-    const latestTotalTime = totalTimeRef.current;
+    const latestTimeLeft   = timeLeftRef.current;
+    const latestTotalTime  = totalTimeRef.current;
 
     setStep("marking");
     setMarking(true);
 
+    // ── AI marking call ────────────────────────────────────────────────
+    let data: ExamResults;
     try {
       const res = await fetch("/api/exam/mark", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject:    latestSubject,
@@ -263,56 +269,86 @@ export default function ExamSimulation() {
           userId:     latestUserId,
         }),
       });
-      const data: ExamResults = await res.json();
-      setResults(data);
 
-      // Persist to Supabase
-      if (latestUserId) {
-        const timeTaken    = latestTotalTime - latestTimeLeft;
-        const correctCount = data.results?.filter(r => r.correct).length ?? 0;
-
-        const { error: insertError } = await supabase
-          .from("exam_results")
-          .insert({
-            user_id:         latestUserId,
-            subject:         latestSubject,
-            topic:           latestTopic || null,
-            difficulty:      DIFFICULTIES[latestDifficulty].label,
-            score:           data.percentage,
-            total_questions: latestQuestions.length,
-            correct_answers: correctCount,
-            weak_areas:      data.weakAreas ?? [],
-            time_taken:      timeTaken,
-            // created_at omitted — Postgres DEFAULT now()
-          });
-
-        if (insertError) {
-          console.error("[ExamSim] insert error:", insertError.message);
-        }
-
-        // Revision queue hook — fire-and-forget, never blocks results render
-        if (!insertError && (data.weakAreas?.length ?? 0) > 0) {
-          import("@/lib/revisionQueue").then(({ upsertWeakAreas }) => {
-            upsertWeakAreas(latestUserId, latestSubject, data.weakAreas);
-          }).catch(err => {
-            console.error("[RevisionQueue] hook failed:", err);
-          });
-        }
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "(no body)");
+        log.examMarkingFailed({
+          userId:  latestUserId,
+          subject: latestSubject,
+          status:  res.status,
+          error:   errorText.slice(0, 300),
+        });
+        throw new Error(`Marking API returned ${res.status}`);
       }
 
-      setStep("results");
+      data = await res.json();
     } catch (err) {
-      console.error("[ExamSim] submit failed:", err);
+      log.examMarkingFailed({
+        userId:  latestUserId,
+        subject: latestSubject,
+        error:   String(err),
+      });
       alert("Failed to mark exam. Please try again.");
-      // Reset mutex so the user can retry
       isSubmittingRef.current = false;
       setStep("exam");
-    } finally {
       setMarking(false);
+      return;
     }
-  }, []); // stable — all state read from refs
 
-  /* ── Timer ───────────────────────────────────────────────────────────────*/
+    setResults(data);
+
+    // ── Persist to Supabase ────────────────────────────────────────────
+    if (latestUserId) {
+      const timeTaken    = latestTotalTime - latestTimeLeft;
+      const correctCount = data.results?.filter(r => r.correct).length ?? 0;
+
+      const { error: insertError } = await createClient()
+        .from("exam_results")
+        .insert({
+          user_id:         latestUserId,
+          subject:         latestSubject,
+          topic:           latestTopic || null,
+          difficulty:      DIFFICULTIES[latestDifficulty].label,
+          // score = percentage 0–100. Never store raw marks here.
+          score:           data.percentage,
+          total_questions: latestQuestions.length,
+          correct_answers: correctCount,
+          weak_areas:      data.weakAreas ?? [],
+          time_taken:      timeTaken,
+          // created_at omitted — DB DEFAULT now()
+        });
+
+      if (insertError) {
+        log.examInsertFailed({
+          userId:  latestUserId,
+          subject: latestSubject,
+          code:    insertError.code,
+          message: insertError.message,
+        });
+        // Non-fatal: results page still renders. User is not shown a DB error.
+      }
+
+      // ── Revision queue hook ──────────────────────────────────────────
+      // Fire-and-forget via dynamic import — never blocks the results render.
+      if (!insertError && (data.weakAreas?.length ?? 0) > 0) {
+        import("@/lib/revisionQueue").then(({ upsertWeakAreas }) => {
+          upsertWeakAreas(latestUserId, latestSubject, data.weakAreas);
+        }).catch(err => {
+          log.revisionUpsertFailed({
+            userId:  latestUserId,
+            topic:   "(hook)",
+            subject: latestSubject,
+            message: String(err),
+          });
+        });
+      }
+    }
+
+    setStep("results");
+    setMarking(false);
+  }, []); // stable — reads everything from refs
+
+  // ── Timer ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (step !== "exam") return;
 
@@ -344,7 +380,7 @@ export default function ExamSimulation() {
   const card: React.CSSProperties  = { background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: 16 };
   const input: React.CSSProperties = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "12px 14px", color: "var(--foreground)", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
 
-  /* ── Navigate between questions ──────────────────────────────────────────*/
+  // ── Navigation ────────────────────────────────────────────────────────
   const goToQuestion = (index: number) => {
     saveAnswer();
     setCurrentQ(index);
@@ -355,20 +391,19 @@ export default function ExamSimulation() {
     setQStartTime(Date.now());
   };
 
-  /* ── Submit button handler ───────────────────────────────────────────────*/
   const onSubmitClick = () => {
     saveAnswer();
     handleSubmitExam();
   };
 
-  /* ── Generate exam ───────────────────────────────────────────────────────*/
+  // ── Generate ──────────────────────────────────────────────────────────
   const generateExam = async () => {
     if (!subject) return;
     setGenerating(true);
     isSubmittingRef.current = false; // reset mutex for new session
     try {
       const res = await fetch("/api/exam/generate", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject,
@@ -396,7 +431,7 @@ export default function ExamSimulation() {
     }
   };
 
-  /* ── Reset ───────────────────────────────────────────────────────────────*/
+  // ── Reset ─────────────────────────────────────────────────────────────
   const resetExam = () => {
     isSubmittingRef.current = false;
     setStep("setup");
@@ -504,7 +539,6 @@ export default function ExamSimulation() {
               Q{currentQState + 1}/{questions.length} · {DIFFICULTIES[difficulty].label}
             </p>
           </div>
-
           <div className={timerPulse ? "pulse-timer" : ""} style={{ display: "flex", alignItems: "center", gap: 6, background: `${timerColor}15`, border: `1px solid ${timerColor}40`, borderRadius: 12, padding: "8px 14px" }}>
             <Clock size={14} color={timerColor} />
             <span style={{ fontWeight: 900, fontSize: 18, color: timerColor, fontVariantNumeric: "tabular-nums" }}>
@@ -512,7 +546,6 @@ export default function ExamSimulation() {
             </span>
           </div>
         </div>
-
         <div style={{ height: 5, background: "var(--muted)", borderRadius: 999, overflow: "hidden" }}>
           <div style={{ width: `${timePercent}%`, height: "100%", background: timerColor, transition: "width 1s linear, background 1s" }} />
         </div>
@@ -530,10 +563,7 @@ export default function ExamSimulation() {
               {q.marks} mark{q.marks !== 1 ? "s" : ""}
             </span>
           </div>
-          <div
-            style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }}
-            dangerouslySetInnerHTML={{ __html: renderMath(q.question) }}
-          />
+          <div style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
         </div>
 
         {/* MCQ */}
@@ -569,12 +599,9 @@ export default function ExamSimulation() {
           {/* Question dots */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
             {questions.map((_, i) => {
-              const answered = answersRef.current.some(
-                a => a.questionId === questions[i]?.id && a.answer
-              );
+              const answered = answersRef.current.some(a => a.questionId === questions[i]?.id && a.answer);
               return (
-                <button key={i} onClick={() => goToQuestion(i)}
-                  disabled={marking}
+                <button key={i} onClick={() => goToQuestion(i)} disabled={marking}
                   style={{ width: 32, height: 32, borderRadius: 8, border: "none", cursor: marking ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 12, background: i === currentQState ? "var(--primary)" : answered ? "rgba(34,197,94,0.3)" : "var(--muted)", color: i === currentQState ? "white" : answered ? "#22c55e" : "var(--foreground)", opacity: marking ? 0.5 : 1 }}>
                   {i + 1}
                 </button>
@@ -584,28 +611,19 @@ export default function ExamSimulation() {
 
           <div style={{ display: "flex", gap: 10 }}>
             {currentQState > 0 && (
-              <button
-                onClick={() => goToQuestion(currentQState - 1)}
-                disabled={marking}
-                style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: marking ? "not-allowed" : "pointer", opacity: marking ? 0.5 : 1 }}
-              >
+              <button onClick={() => goToQuestion(currentQState - 1)} disabled={marking}
+                style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--muted)", color: "var(--foreground)", fontWeight: 700, cursor: marking ? "not-allowed" : "pointer", opacity: marking ? 0.5 : 1 }}>
                 ← Prev
               </button>
             )}
             {currentQState < questions.length - 1 ? (
-              <button
-                onClick={() => goToQuestion(currentQState + 1)}
-                disabled={marking}
-                style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: marking ? "not-allowed" : "pointer", boxShadow: "0 0 24px rgba(99,102,241,0.35)", opacity: marking ? 0.5 : 1 }}
-              >
+              <button onClick={() => goToQuestion(currentQState + 1)} disabled={marking}
+                style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "var(--primary)", color: "white", fontWeight: 800, fontSize: 15, cursor: marking ? "not-allowed" : "pointer", boxShadow: "0 0 24px rgba(99,102,241,0.35)", opacity: marking ? 0.5 : 1 }}>
                 Next →
               </button>
             ) : (
-              <button
-                onClick={onSubmitClick}
-                disabled={marking}
-                style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: marking ? "var(--muted)" : "#22c55e", color: marking ? "var(--muted-foreground)" : "white", fontWeight: 800, fontSize: 15, cursor: marking ? "not-allowed" : "pointer", boxShadow: marking ? "none" : "0 0 24px rgba(34,197,94,0.35)", transition: "all 0.2s" }}
-              >
+              <button onClick={onSubmitClick} disabled={marking}
+                style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: marking ? "var(--muted)" : "#22c55e", color: marking ? "var(--muted-foreground)" : "white", fontWeight: 800, fontSize: 15, cursor: marking ? "not-allowed" : "pointer", boxShadow: marking ? "none" : "0 0 24px rgba(34,197,94,0.35)", transition: "all 0.2s" }}>
                 {marking ? "Submitting…" : "Submit Exam ✓"}
               </button>
             )}
@@ -653,7 +671,7 @@ export default function ExamSimulation() {
           .expand-btn:hover { background: rgba(255,255,255,0.06) !important; }
         `}</style>
 
-        {/* ── Score hero ── */}
+        {/* Score hero */}
         <div style={{ borderRadius: 22, border: "1px solid rgba(255,255,255,0.07)", background: `radial-gradient(ellipse at 70% 0%, ${gc}22 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", background: `${gc}18`, border: `2px solid ${gc}40`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
             <Trophy size={32} color={gc} />
@@ -663,7 +681,6 @@ export default function ExamSimulation() {
           </p>
           <h1 style={{ fontSize: 56, fontWeight: 900, color: gc, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
           <p style={{ fontSize: 28, fontWeight: 800, color: "#f1f5f9", margin: "0 0 24px" }}>Grade {grade}</p>
-
           <div style={{ display: "flex", justifyContent: "center", gap: 0, flexWrap: "wrap" }}>
             {[
               { val: `${results.totalScore}/${results.maxScore}`, label: "Score",    color: gc },
@@ -678,7 +695,7 @@ export default function ExamSimulation() {
           </div>
         </div>
 
-        {/* ── Weak / Strong areas ── */}
+        {/* Weak / Strong areas */}
         {(results.weakAreas?.length > 0 || results.strongAreas?.length > 0) && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
             {results.strongAreas?.length > 0 && (
@@ -708,7 +725,7 @@ export default function ExamSimulation() {
           </div>
         )}
 
-        {/* ── Cortex insight ── */}
+        {/* Cortex insight */}
         {results.cortexInsight && (
           <div style={{ borderRadius: 16, background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)", padding: "16px 18px", marginBottom: 20 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 6 }}>
@@ -718,7 +735,7 @@ export default function ExamSimulation() {
           </div>
         )}
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {(["overview", "review"] as const).map(tab => (
             <button key={tab} className="result-tab" onClick={() => setActiveTab(tab)}
@@ -728,7 +745,7 @@ export default function ExamSimulation() {
           ))}
         </div>
 
-        {/* ── Overview tab ── */}
+        {/* Overview tab */}
         {activeTab === "overview" && (
           <div style={{ animation: "fadeUp .3s ease" }}>
             {results.results && (
@@ -761,7 +778,7 @@ export default function ExamSimulation() {
           </div>
         )}
 
-        {/* ── Review tab ── */}
+        {/* Review tab */}
         {activeTab === "review" && results.results && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeUp .3s ease" }}>
             {results.results.map((r, i) => {
@@ -788,31 +805,22 @@ export default function ExamSimulation() {
                       {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
                   </button>
-
                   {isOpen && (
                     <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px" }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
-                          Your Answer
-                        </p>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Your Answer</p>
                         <p style={{ fontSize: 13, color: r.correct ? "#34d399" : "#f87171", margin: 0, lineHeight: 1.5 }}>
                           {userAns?.answer || "No answer given"}
                         </p>
                       </div>
-
                       {!r.correct && (
                         <div style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)", borderRadius: 10, padding: "12px 14px" }}>
-                          <p style={{ fontSize: 10, fontWeight: 700, color: "#34d399", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
-                            ✓ Model Answer
-                          </p>
+                          <p style={{ fontSize: 10, fontWeight: 700, color: "#34d399", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>✓ Model Answer</p>
                           <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, lineHeight: 1.6 }}>{r.modelAnswer}</p>
                         </div>
                       )}
-
                       <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px" }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
-                          Feedback
-                        </p>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Feedback</p>
                         <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, lineHeight: 1.65 }}>{r.feedback}</p>
                       </div>
                     </div>
@@ -823,7 +831,7 @@ export default function ExamSimulation() {
           </div>
         )}
 
-        {/* ── Actions ── */}
+        {/* Actions */}
         <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
           <button onClick={resetExam} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={15} /> New Exam
