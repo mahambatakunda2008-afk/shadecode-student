@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export interface RevisionItem {
   id: string;
   user_id: string;
@@ -11,15 +13,16 @@ export interface RevisionItem {
   created_at: string;
 }
 
+// ─── upsertWeakAreas ──────────────────────────────────────────────────────────
+
 /**
- * Upserts weak areas from an exam result into the revision queue.
+ * Called after a successful exam_results insert.
+ * For each weak area:
+ *   - If (user_id, topic, subject) exists → priority += 1, last_seen = now
+ *   - If not → insert with priority = 1, source = "exam"
  *
- * Behaviour:
- * - If (user_id, topic, subject) does not exist → insert with priority = 1
- * - If it already exists → increment priority by 1, update last_seen
- *
- * Called after a successful exam_results insert in the exam-sim flow.
- * Does NOT throw — errors are logged silently so they never break the exam save.
+ * Never throws. All errors are logged silently so they never
+ * interrupt the exam save flow that calls this.
  */
 export async function upsertWeakAreas(
   userId: string,
@@ -31,18 +34,18 @@ export async function upsertWeakAreas(
   const supabase = createClient();
   const now = new Date().toISOString();
 
-  // Process each weak area independently — one failure doesn't block others
+  // Process all weak areas in parallel — one failure never blocks others
   await Promise.allSettled(
-    weakAreas.map(async (topic) => {
-      const trimmed = topic.trim();
-      if (!trimmed) return;
+    weakAreas.map(async (rawTopic) => {
+      const topic = rawTopic.trim();
+      if (!topic) return;
 
-      // Check if this (user, topic, subject) already exists
+      // Check for existing row
       const { data: existing, error: fetchError } = await supabase
         .from("revision_queue")
         .select("id, priority")
         .eq("user_id", userId)
-        .eq("topic", trimmed)
+        .eq("topic", topic)
         .eq("subject", subject)
         .maybeSingle();
 
@@ -52,7 +55,7 @@ export async function upsertWeakAreas(
       }
 
       if (existing) {
-        // Already in queue — increment priority and refresh last_seen
+        // Row exists — bump priority and refresh last_seen
         const { error: updateError } = await supabase
           .from("revision_queue")
           .update({
@@ -65,15 +68,15 @@ export async function upsertWeakAreas(
           console.error("[RevisionQueue] update error:", updateError.message);
         }
       } else {
-        // New entry
+        // New weak area — insert fresh row
         const { error: insertError } = await supabase
           .from("revision_queue")
           .insert({
             user_id: userId,
-            topic: trimmed,
+            topic,
             subject,
             priority: 1,
-            source: "exam",
+            source: "exam" as const,
             last_seen: now,
           });
 
@@ -85,9 +88,11 @@ export async function upsertWeakAreas(
   );
 }
 
+// ─── getRevisionQueue ─────────────────────────────────────────────────────────
+
 /**
- * Fetches the top N revision queue items for a user, ordered by priority desc.
- * Safe to call on dashboard — returns empty array on any error.
+ * Fetches top N revision items for a user, ordered by priority desc.
+ * Returns empty array on any error — safe to call in dashboard renders.
  */
 export async function getRevisionQueue(
   userId: string,
@@ -113,9 +118,11 @@ export async function getRevisionQueue(
   return (data as RevisionItem[]) ?? [];
 }
 
+// ─── markRevised ─────────────────────────────────────────────────────────────
+
 /**
- * Marks a revision item as seen — resets priority to 1 and updates last_seen.
- * Called when user clicks "Revise →" on a queue item.
+ * Resets priority to 1 and updates last_seen when user clicks "Revise →".
+ * Non-blocking — called fire-and-forget from the component.
  */
 export async function markRevised(itemId: string): Promise<void> {
   if (!itemId) return;
