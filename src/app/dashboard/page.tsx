@@ -2,12 +2,14 @@
 
 import Cortex from "@/components/cortex/Cortex";
 import DailyChallenge from "@/components/DailyChallenge";
+import RevisionQueue from "@/components/RevisionQueue";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { updateStreak } from "@/lib/utils/streak";
 import Tour from "@/components/shared/Tour";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
+import { RevisionItem } from "@/lib/revisionQueue";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,7 +49,7 @@ interface FocusSession {
   created_at: string;
 }
 
-// ─── Existing: CircularProgress (preserved exactly) ───────────────────────────
+// ─── CircularProgress (preserved exactly) ────────────────────────────────────
 
 function CircularProgress({
   value,
@@ -81,7 +83,10 @@ function CircularProgress({
             style={{ transition: "stroke-dashoffset 1s ease", filter: `drop-shadow(0 0 4px ${color}80)` }}
           />
         </svg>
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
+        }}>
           <p style={{ fontSize: size > 70 ? "18px" : "14px", fontWeight: 800, color, lineHeight: 1 }}>
             {label}
           </p>
@@ -113,7 +118,6 @@ function DashboardSkeleton() {
 
   return (
     <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* Header skeleton */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <div style={{ ...pulse, height: "11px", width: "90px" }} />
@@ -122,7 +126,6 @@ function DashboardSkeleton() {
         <div style={{ ...pulse, height: "34px", width: "72px", borderRadius: "8px" }} />
       </div>
 
-      {/* Circular progress row skeleton */}
       <div style={{ ...card, display: "flex", justifyContent: "space-around", alignItems: "center", padding: "20px 16px" }}>
         {[0, 0.15, 0.3].map((delay, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
@@ -132,20 +135,18 @@ function DashboardSkeleton() {
         ))}
       </div>
 
-      {/* XP bar skeleton */}
       <div style={{ ...card, display: "flex", flexDirection: "column", gap: "6px" }}>
         <div style={{ ...pulse, height: "12px", width: "120px" }} />
         <div style={{ ...pulse, height: "10px", width: "80px", animationDelay: "0.1s" }} />
+        <div style={{ ...pulse, height: "5px", width: "100%", borderRadius: "99px", marginTop: "4px" }} />
       </div>
 
-      {/* Stat cards skeleton */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         {[0, 0.08, 0.16, 0.24].map((delay, i) => (
           <div key={i} style={{ ...pulse, height: "76px", borderRadius: "12px", animationDelay: `${delay}s` }} />
         ))}
       </div>
 
-      {/* Content block skeleton */}
       <div style={{ ...card, display: "flex", flexDirection: "column", gap: "10px" }}>
         <div style={{ ...pulse, height: "12px", width: "80px" }} />
         {[0, 0.1, 0.2].map((delay, i) => (
@@ -169,16 +170,35 @@ function DashboardSkeleton() {
   );
 }
 
-// ─── New: Cortex Insight (client-side, no API call) ───────────────────────────
+// ─── Cortex Insight (client-side, no API call) ────────────────────────────────
 
 function generateInsight(
   examResults: ExamResult[],
   focusSessions: FocusSession[],
-  tasks: Task[]
+  tasks: Task[],
+  revisionItems?: RevisionItem[]
 ): string {
+  // Section 5: Reference top revision queue items if available
+  if (revisionItems && revisionItems.length >= 2) {
+    const top = revisionItems[0];
+    const second = revisionItems[1];
+    if (top.priority >= 3) {
+      return `"${top.topic}" in ${top.subject} needs urgent attention — flagged ${top.priority} times.`;
+    }
+    if (top.priority >= 2) {
+      return `Focus on "${top.topic}" and "${second.topic}" — both flagged as weak areas.`;
+    }
+  }
+  if (revisionItems && revisionItems.length === 1 && revisionItems[0].priority >= 2) {
+    const top = revisionItems[0];
+    return `"${top.topic}" in ${top.subject} keeps coming up as a weak area. Revise it next.`;
+  }
+
   // Evening focus pattern
   if (focusSessions.length >= 3) {
-    const eveningCount = focusSessions.filter(s => new Date(s.created_at).getHours() >= 17).length;
+    const eveningCount = focusSessions.filter(
+      (s) => new Date(s.created_at).getHours() >= 17
+    ).length;
     if (eveningCount / focusSessions.length > 0.5) {
       return "You focus best in the evening. Schedule your hardest work then.";
     }
@@ -187,7 +207,7 @@ function generateInsight(
   // Subject declining
   if (examResults.length >= 3) {
     const bySubject: Record<string, number[]> = {};
-    [...examResults].reverse().forEach(r => {
+    [...examResults].reverse().forEach((r) => {
       if (!bySubject[r.subject]) bySubject[r.subject] = [];
       bySubject[r.subject].push(r.score);
     });
@@ -198,18 +218,31 @@ function generateInsight(
     }
   }
 
-  // Top weak area
+  // Top weak area from exam results
   const weakCount: Record<string, number> = {};
-  examResults.forEach(r => (r.weak_areas || []).forEach(a => { weakCount[a] = (weakCount[a] || 0) + 1; }));
+  examResults.forEach((r) =>
+    (r.weak_areas || []).forEach((a) => {
+      weakCount[a] = (weakCount[a] || 0) + 1;
+    })
+  );
   const topWeak = Object.entries(weakCount).sort((a, b) => b[1] - a[1])[0];
   if (topWeak) return `"${topWeak[0]}" keeps appearing as a weak area. Target it next.`;
 
   // Sprint XP
-  if (focusSessions.filter(s => s.duration_minutes <= 15).length >= 2) {
+  if (focusSessions.filter((s) => s.duration_minutes <= 15).length >= 2) {
     return "Sprint sessions earn XP faster per minute. Use them for review bursts.";
   }
 
-  // Default
+  // Overdue tasks
+  const today = new Date().toISOString().split("T")[0];
+  const overdue = tasks.filter(
+    (t) => !t.completed && t.due_date && t.due_date < today
+  );
+  if (overdue.length > 0) {
+    return `You have ${overdue.length} overdue task${overdue.length > 1 ? "s" : ""}. Start with the oldest.`;
+  }
+
+  // Defaults
   const defaults = [
     "Consistency beats intensity. Show up every day.",
     "Your next session is your most important one.",
@@ -218,7 +251,7 @@ function generateInsight(
   return defaults[new Date().getDay() % defaults.length];
 }
 
-// ─── New: Today Panel ─────────────────────────────────────────────────────────
+// ─── Today Panel ──────────────────────────────────────────────────────────────
 
 function TodayPanel({
   tasks,
@@ -230,13 +263,10 @@ function TodayPanel({
   router: ReturnType<typeof useRouter>;
 }) {
   const today = new Date().toISOString().split("T")[0];
-  const tasksWithDates = tasks.filter(t => t.due_date);
-  const dueToday = tasksWithDates.filter(t => !t.completed && t.due_date === today);
-  const overdue = tasksWithDates.filter(t => !t.completed && t.due_date! < today);
+  const tasksWithDates = tasks.filter((t) => t.due_date);
+  const dueToday = tasksWithDates.filter((t) => !t.completed && t.due_date === today);
+  const overdue = tasksWithDates.filter((t) => !t.completed && t.due_date! < today);
   const lastSubject = examResults[0]?.subject ?? null;
-
-  // If tasks have no due_date (current schema only has subject_id + completed),
-  // show a focused CTA block instead
   const hasDateData = tasksWithDates.length > 0;
 
   return (
@@ -252,12 +282,23 @@ function TodayPanel({
       </p>
 
       {!hasDateData ? (
-        // Tasks exist but have no due dates — show action shortcuts
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <ActionRow icon="⏱" label="Start a Focus session" sub="Earn XP and build your streak" onClick={() => router.push("/focus")} />
-          <ActionRow icon="🎯" label="Run an Exam Sim" sub="Test what you know" onClick={() => router.push("/exam-sim")} />
+          <ActionRow
+            icon="⏱" label="Start a Focus session"
+            sub="Earn XP and build your streak"
+            onClick={() => router.push("/focus")}
+          />
+          <ActionRow
+            icon="🎯" label="Run an Exam Sim"
+            sub="Test what you know"
+            onClick={() => router.push("/exam-sim")}
+          />
           {lastSubject && (
-            <ActionRow icon="📖" label={`Continue ${lastSubject}`} sub="Pick up where you left off" onClick={() => router.push("/exam-sim")} />
+            <ActionRow
+              icon="📖" label={`Continue ${lastSubject}`}
+              sub="Pick up where you left off"
+              onClick={() => router.push("/exam-sim")}
+            />
           )}
         </div>
       ) : dueToday.length === 0 && overdue.length === 0 ? (
@@ -273,36 +314,64 @@ function TodayPanel({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {overdue.slice(0, 2).map(t => (
-            <div key={t.id} onClick={() => router.push("/tasks")} style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
-              background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)",
-            }}>
-              <div style={{ width: "16px", height: "16px", borderRadius: "50%", border: "2px solid #ef4444", flexShrink: 0 }} />
+          {overdue.slice(0, 2).map((t) => (
+            <div
+              key={t.id}
+              onClick={() => router.push("/tasks")}
+              style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
+                background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.18)",
+              }}
+            >
+              <div style={{
+                width: "16px", height: "16px", borderRadius: "50%",
+                border: "2px solid #ef4444", flexShrink: 0,
+              }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: "13px", fontWeight: 500, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{
+                  fontSize: "13px", fontWeight: 500, margin: 0,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
                   {t.title ?? "Untitled task"}
                 </p>
                 <p style={{ fontSize: "11px", color: "#ef4444", margin: 0 }}>
-                  Overdue · {new Date(t.due_date!).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  Overdue ·{" "}
+                  {new Date(t.due_date!).toLocaleDateString("en-GB", {
+                    day: "numeric", month: "short",
+                  })}
                 </p>
               </div>
             </div>
           ))}
-          {dueToday.slice(0, 3).map(t => (
-            <div key={t.id} onClick={() => router.push("/tasks")} style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
-              background: "var(--muted)",
-            }}>
-              <div style={{ width: "16px", height: "16px", borderRadius: "50%", border: "2px solid var(--muted-foreground)", flexShrink: 0 }} />
-              <p style={{ fontSize: "13px", fontWeight: 500, margin: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+
+          {dueToday.slice(0, 3).map((t) => (
+            <div
+              key={t.id}
+              onClick={() => router.push("/tasks")}
+              style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
+                background: "var(--muted)",
+              }}
+            >
+              <div style={{
+                width: "16px", height: "16px", borderRadius: "50%",
+                border: "2px solid var(--muted-foreground)", flexShrink: 0,
+              }} />
+              <p style={{
+                fontSize: "13px", fontWeight: 500, margin: 0, flex: 1,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
                 {t.title ?? "Untitled task"}
               </p>
             </div>
           ))}
-          <button onClick={() => router.push("/focus")} style={{ ...primaryBtn, marginTop: "4px" }}>
+
+          <button
+            onClick={() => router.push("/focus")}
+            style={{ ...primaryBtn, marginTop: "4px" }}
+          >
             ⏱ Start Focus Session
           </button>
         </div>
@@ -311,13 +380,20 @@ function TodayPanel({
   );
 }
 
-function ActionRow({ icon, label, sub, onClick }: { icon: string; label: string; sub: string; onClick: () => void }) {
+function ActionRow({
+  icon, label, sub, onClick,
+}: {
+  icon: string; label: string; sub: string; onClick: () => void;
+}) {
   return (
-    <div onClick={onClick} style={{
-      display: "flex", alignItems: "center", gap: "12px",
-      padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
-      background: "var(--muted)", transition: "opacity 0.15s",
-    }}>
+    <div
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: "12px",
+        padding: "10px 12px", borderRadius: "10px", cursor: "pointer",
+        background: "var(--muted)",
+      }}
+    >
       <span style={{ fontSize: "18px", flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>{label}</p>
@@ -328,18 +404,32 @@ function ActionRow({ icon, label, sub, onClick }: { icon: string; label: string;
   );
 }
 
-// ─── New: Continue Learning ───────────────────────────────────────────────────
+// ─── Continue Learning ────────────────────────────────────────────────────────
 
-function ContinueLearning({ examResults, router }: { examResults: ExamResult[]; router: ReturnType<typeof useRouter> }) {
+function ContinueLearning({
+  examResults,
+  router,
+}: {
+  examResults: ExamResult[];
+  router: ReturnType<typeof useRouter>;
+}) {
   if (examResults.length === 0) {
     return (
-      <div style={{ background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: "12px", padding: "16px" }}>
-        <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px" }}>
+      <div style={{
+        background: "var(--card)", border: "1px solid var(--card-border)",
+        borderRadius: "12px", padding: "16px",
+      }}>
+        <p style={{
+          fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px",
+        }}>
           Continue Learning
         </p>
         <div style={{ textAlign: "center", padding: "8px 0 12px" }}>
           <p style={{ fontSize: "2rem", marginBottom: "8px" }}>📚</p>
-          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>Nothing started yet</p>
+          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>
+            Nothing started yet
+          </p>
           <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "14px" }}>
             Take your first exam simulation to begin tracking progress.
           </p>
@@ -353,13 +443,23 @@ function ContinueLearning({ examResults, router }: { examResults: ExamResult[]; 
 
   const latest = examResults[0];
   const topWeak = latest.weak_areas?.[0] ?? null;
-  const scoreColor = latest.score >= 70 ? "#22c55e" : latest.score >= 50 ? "#f59e0b" : "#ef4444";
+  const scoreColor =
+    latest.score >= 70 ? "#22c55e" :
+    latest.score >= 50 ? "#f59e0b" :
+    "#ef4444";
 
   return (
-    <div style={{ background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: "12px", padding: "16px" }}>
-      <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px" }}>
+    <div style={{
+      background: "var(--card)", border: "1px solid var(--card-border)",
+      borderRadius: "12px", padding: "16px",
+    }}>
+      <p style={{
+        fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
+        textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "14px",
+      }}>
         Continue Learning
       </p>
+
       <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
         <div style={{
           width: "50px", height: "50px", borderRadius: "12px", flexShrink: 0,
@@ -367,19 +467,28 @@ function ContinueLearning({ examResults, router }: { examResults: ExamResult[]; 
           display: "flex", alignItems: "center", justifyContent: "center",
           flexDirection: "column",
         }}>
-          <span style={{ fontSize: "15px", fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{latest.score}%</span>
+          <span style={{ fontSize: "15px", fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
+            {latest.score}%
+          </span>
           <span style={{ fontSize: "9px", color: "var(--muted-foreground)" }}>last</span>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, marginBottom: "2px" }}>{latest.subject}</p>
+          <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, marginBottom: "2px" }}>
+            {latest.subject}
+          </p>
           {latest.topic && (
-            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0, marginBottom: "3px" }}>{latest.topic}</p>
+            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0, marginBottom: "3px" }}>
+              {latest.topic}
+            </p>
           )}
           {topWeak && (
-            <p style={{ fontSize: "11px", color: "#f59e0b", margin: 0 }}>⚠️ Weak: {topWeak}</p>
+            <p style={{ fontSize: "11px", color: "#f59e0b", margin: 0 }}>
+              ⚠️ Weak: {topWeak}
+            </p>
           )}
         </div>
       </div>
+
       <button onClick={() => router.push("/exam-sim")} style={primaryBtn}>
         Retry {latest.subject} →
       </button>
@@ -387,9 +496,13 @@ function ContinueLearning({ examResults, router }: { examResults: ExamResult[]; 
   );
 }
 
-// ─── New: Progress Snapshot ───────────────────────────────────────────────────
+// ─── Progress Snapshot ────────────────────────────────────────────────────────
 
-function ProgressSnapshot({ profile, examResults, focusSessions }: {
+function ProgressSnapshot({
+  profile,
+  examResults,
+  focusSessions,
+}: {
   profile: Profile;
   examResults: ExamResult[];
   focusSessions: FocusSession[];
@@ -398,43 +511,77 @@ function ProgressSnapshot({ profile, examResults, focusSessions }: {
   weekAgo.setDate(weekAgo.getDate() - 7);
 
   const weeklyXp = focusSessions
-    .filter(s => new Date(s.created_at) >= weekAgo)
+    .filter((s) => new Date(s.created_at) >= weekAgo)
     .reduce((sum, s) => sum + (s.xp_earned ?? 0), 0);
 
   const weeklyMins = focusSessions
-    .filter(s => new Date(s.created_at) >= weekAgo)
+    .filter((s) => new Date(s.created_at) >= weekAgo)
     .reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0);
 
-  const avgScore = examResults.length > 0
-    ? Math.round(examResults.reduce((sum, r) => sum + r.score, 0) / examResults.length)
-    : null;
+  const avgScore =
+    examResults.length > 0
+      ? Math.round(
+          examResults.reduce((sum, r) => sum + r.score, 0) / examResults.length
+        )
+      : null;
 
   const stats = [
-    { label: "Weekly XP", value: weeklyXp > 0 ? `+${weeklyXp}` : "—", icon: "⚡", color: "#6366f1", sub: weeklyXp > 0 ? "this week" : "start a session" },
-    { label: "Focus", value: weeklyMins > 0 ? `${weeklyMins}m` : "—", icon: "⏱", color: "#8b5cf6", sub: weeklyMins > 0 ? "this week" : "no sessions yet" },
-    { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : "—", icon: "📈", color: avgScore !== null ? (avgScore >= 60 ? "#22c55e" : "#f59e0b") : "#94a3b8", sub: avgScore !== null ? (avgScore >= 60 ? "on track" : "needs work") : "no exams yet" },
-    { label: "Streak", value: profile.streak > 0 ? `${profile.streak}d` : "—", icon: "🔥", color: "#fb923c", sub: profile.streak > 0 ? "keep going" : "start today" },
+    {
+      label: "Weekly XP", value: weeklyXp > 0 ? `+${weeklyXp}` : "—",
+      icon: "⚡", color: "#6366f1",
+      sub: weeklyXp > 0 ? "this week" : "start a session",
+    },
+    {
+      label: "Focus", value: weeklyMins > 0 ? `${weeklyMins}m` : "—",
+      icon: "⏱", color: "#8b5cf6",
+      sub: weeklyMins > 0 ? "this week" : "no sessions yet",
+    },
+    {
+      label: "Avg Score",
+      value: avgScore !== null ? `${avgScore}%` : "—",
+      icon: "📈",
+      color: avgScore !== null ? (avgScore >= 60 ? "#22c55e" : "#f59e0b") : "#94a3b8",
+      sub: avgScore !== null
+        ? avgScore >= 60 ? "on track" : "needs work"
+        : "no exams yet",
+    },
+    {
+      label: "Streak", value: profile.streak > 0 ? `${profile.streak}d` : "—",
+      icon: "🔥", color: "#fb923c",
+      sub: profile.streak > 0 ? "keep going" : "start today",
+    },
   ];
 
   return (
     <div>
-      <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "10px" }}>
+      <p style={{
+        fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
+        textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "10px",
+      }}>
         Progress
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        {stats.map(s => (
+        {stats.map((s) => (
           <div key={s.label} style={{
             background: `${s.color}10`, border: `1px solid ${s.color}25`,
             borderRadius: "12px", padding: "14px",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "4px" }}>
               <span style={{ fontSize: "12px" }}>{s.icon}</span>
-              <p style={{ fontSize: "10px", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, margin: 0 }}>
+              <p style={{
+                fontSize: "10px", color: "var(--muted-foreground)",
+                textTransform: "uppercase", letterSpacing: "0.06em",
+                fontWeight: 600, margin: 0,
+              }}>
                 {s.label}
               </p>
             </div>
-            <p style={{ fontSize: "22px", fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
-            <p style={{ fontSize: "10px", color: "var(--muted-foreground)", margin: 0, marginTop: "3px" }}>{s.sub}</p>
+            <p style={{ fontSize: "22px", fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>
+              {s.value}
+            </p>
+            <p style={{ fontSize: "10px", color: "var(--muted-foreground)", margin: 0, marginTop: "3px" }}>
+              {s.sub}
+            </p>
           </div>
         ))}
       </div>
@@ -442,7 +589,7 @@ function ProgressSnapshot({ profile, examResults, focusSessions }: {
   );
 }
 
-// ─── New: Enhanced Empty States ───────────────────────────────────────────────
+// ─── Subjects Empty State ─────────────────────────────────────────────────────
 
 function SubjectsEmptyState({ router }: { router: ReturnType<typeof useRouter> }) {
   return (
@@ -479,6 +626,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [focusSessions, setFocusSessions] = useState<FocusSession[]>([]);
+  const [revisionItems, setRevisionItems] = useState<RevisionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cortexTrigger, setCortexTrigger] = useState(0);
   const [showTour, setShowTour] = useState(false);
@@ -490,7 +638,6 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
 
-    // Hard timeout — prevents infinite loading on network failure
     const timeoutId = setTimeout(() => {
       if (!cancelled) setLoading(false);
     }, 8000);
@@ -507,13 +654,13 @@ export default function Dashboard() {
         // Streak update (preserved exactly)
         const streakResult = await updateStreak(user.id);
 
-        // Parallel fetch — new queries added alongside existing ones
         const [
           { data: profileData },
           { data: subjectsData },
           { data: tasksData },
           { data: examData },
           { data: focusData },
+          { data: revisionData },
         ] = await Promise.all([
           supabase.from("profiles").select("*").eq("id", user.id).single(),
           supabase.from("subjects").select("*").eq("user_id", user.id),
@@ -530,6 +677,13 @@ export default function Dashboard() {
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(30),
+          supabase
+            .from("revision_queue")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("priority", { ascending: false })
+            .order("last_seen", { ascending: false })
+            .limit(5),
         ]);
 
         clearTimeout(timeoutId);
@@ -540,6 +694,7 @@ export default function Dashboard() {
         setTasks(tasksData || []);
         setExamResults(examData || []);
         setFocusSessions(focusData || []);
+        setRevisionItems(revisionData || []);
         setLoading(false);
         setCurrentUser(user.id);
 
@@ -592,12 +747,9 @@ export default function Dashboard() {
     router.push("/");
   };
 
-  // ── Loading ──────────────────────────────────────────────────────────────
-
   if (loading) return <DashboardSkeleton />;
 
-  // ── Derived stats (preserved exactly from original) ───────────────────────
-
+  // Derived stats (preserved exactly from original)
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.completed).length;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -610,8 +762,7 @@ export default function Dashboard() {
     padding: "16px",
   };
 
-  // Cortex insight — derived from real data, no API call
-  const insight = generateInsight(examResults, focusSessions, tasks);
+  const insight = generateInsight(examResults, focusSessions, tasks, revisionItems);
 
   return (
     <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -628,7 +779,8 @@ export default function Dashboard() {
           onClick={handleSignOut}
           style={{
             background: "var(--muted)", border: "none", borderRadius: "8px",
-            padding: "8px 12px", color: "var(--muted-foreground)", fontSize: "13px", cursor: "pointer",
+            padding: "8px 12px", color: "var(--muted-foreground)",
+            fontSize: "13px", cursor: "pointer",
           }}
         >
           Sign out
@@ -659,7 +811,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* ── PRESERVED: XP bar ────────────────────────────────────────────── */}
+      {/* ── PRESERVED: XP bar (enhanced with visual bar) ─────────────────── */}
       <div style={cardStyle}>
         <p style={{ fontSize: "13px", fontWeight: 600 }}>
           Level {profile?.level || 1} → {(profile?.level || 1) + 1}
@@ -667,8 +819,10 @@ export default function Dashboard() {
         <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
           {profile?.xp || 0} / {xpToNextLevel} XP
         </p>
-        {/* Enhanced: visual XP progress bar */}
-        <div style={{ background: "var(--muted)", borderRadius: "99px", height: "5px", marginTop: "10px", overflow: "hidden" }}>
+        <div style={{
+          background: "var(--muted)", borderRadius: "99px",
+          height: "5px", marginTop: "10px", overflow: "hidden",
+        }}>
           <div style={{
             height: "100%", borderRadius: "99px",
             width: `${Math.min(((profile?.xp || 0) / xpToNextLevel) * 100, 100)}%`,
@@ -728,12 +882,14 @@ export default function Dashboard() {
           })}
         </div>
       ) : (
-        /* NEW: Subjects empty state replaces silent "No subjects yet" */
         <SubjectsEmptyState router={router} />
       )}
 
       {/* ── NEW: Continue Learning ────────────────────────────────────────── */}
       <ContinueLearning examResults={examResults} router={router} />
+
+      {/* ── NEW: Revision Queue ───────────────────────────────────────────── */}
+      <RevisionQueue userId={currentUser} />
 
       {/* ── NEW: Progress Snapshot ────────────────────────────────────────── */}
       <ProgressSnapshot
@@ -742,13 +898,14 @@ export default function Dashboard() {
         focusSessions={focusSessions}
       />
 
-      {/* ── Quick actions ─────────────────────────────────────────────────── */}
+      {/* ── NEW: Quick actions ────────────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         <button
           onClick={() => router.push("/learn")}
           style={{
-            background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)",
-            borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+            background: "var(--muted)", color: "var(--foreground)",
+            border: "1px solid var(--card-border)", borderRadius: "10px",
+            padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
           }}
         >
           🤖 AI Learn
@@ -756,8 +913,9 @@ export default function Dashboard() {
         <button
           onClick={() => router.push("/analytics")}
           style={{
-            background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)",
-            borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+            background: "var(--muted)", color: "var(--foreground)",
+            border: "1px solid var(--card-border)", borderRadius: "10px",
+            padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
           }}
         >
           📊 Analytics
