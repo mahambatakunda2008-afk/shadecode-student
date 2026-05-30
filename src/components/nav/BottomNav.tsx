@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Home,
@@ -25,6 +25,10 @@ import {
   LucideIcon,
 } from "lucide-react";
 
+import { useUser } from "@/contexts/UserContext";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type NavItem = {
   label: string;
   href: string;
@@ -34,121 +38,67 @@ type NavItem = {
   glow?: boolean;
 };
 
+// ─── Nav items ────────────────────────────────────────────────────────────────
+// Badges here are UI placeholders — wire to real counts from context/query
+// when task and exam data is available.
+
 const primaryNavItems: NavItem[] = [
-  {
-    label: "Home",
-    href: "/",
-    icon: Home,
-  },
-  {
-    label: "Learn",
-    href: "/learn",
-    icon: Brain,
-    badge: "AI",
-  },
-  {
-    label: "Tasks",
-    href: "/tasks",
-    icon: CheckSquare,
-    badge: "3",
-    danger: true,
-  },
-  {
-    label: "Focus",
-    href: "/focus",
-    icon: Timer,
-    glow: true,
-  },
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
+  { label: "Home",      href: "/",          icon: Home },
+  { label: "Learn",     href: "/learn",     icon: Brain,          badge: "AI" },
+  { label: "Tasks",     href: "/tasks",     icon: CheckSquare },
+  { label: "Focus",     href: "/focus",     icon: Timer,          glow: true },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 ];
 
 const moreNavItems: NavItem[] = [
-  {
-    label: "Timetable",
-    href: "/timetable",
-    icon: Calendar,
-  },
-  {
-    label: "Exams",
-    href: "/exams",
-    icon: BookOpen,
-    badge: "2d",
-  },
-  {
-    label: "Exam Sim",
-    href: "/exam-sim",
-    icon: GraduationCap,
-  },
-  {
-    label: "Math",
-    href: "/math-checker",
-    icon: PenLine,
-  },
-  {
-    label: "Analytics",
-    href: "/analytics",
-    icon: BarChart2,
-  },
-  {
-    label: "Ranks",
-    href: "/leaderboard",
-    icon: Trophy,
-  },
-  {
-    label: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  { label: "Timetable", href: "/timetable",    icon: Calendar },
+  { label: "Exams",     href: "/exams",        icon: BookOpen },
+  { label: "Exam Sim",  href: "/exam-sim",     icon: GraduationCap },
+  { label: "Math",      href: "/math-checker", icon: PenLine },
+  { label: "Analytics", href: "/analytics",    icon: BarChart2 },
+  { label: "Ranks",     href: "/leaderboard",  icon: Trophy },
+  { label: "Settings",  href: "/settings",     icon: Settings },
 ];
 
-const sidebarItems: NavItem[] = [
-  ...primaryNavItems,
-  ...moreNavItems,
-];
+const sidebarItems: NavItem[] = [...primaryNavItems, ...moreNavItems];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function BottomNav() {
-  const pathname = usePathname();
+  const pathname    = usePathname();
+  const { profile } = useUser();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [collapsed,  setCollapsed]  = useState(false);
+  const [mounted,    setMounted]    = useState(false);
+  const [greeting,   setGreeting]   = useState("Hello");
+
+  // Derive display name from profile — never fall back to a hardcoded string
+  const firstName =
+    profile?.first_name ??
+    profile?.full_name?.split(" ")[0] ??
+    null;
 
   useEffect(() => {
     setMounted(true);
-
     const saved = localStorage.getItem("shade-sidebar");
-
-    if (saved === "collapsed") {
-      setCollapsed(true);
-    }
+    if (saved === "collapsed") setCollapsed(true);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-
-    localStorage.setItem(
-      "shade-sidebar",
-      collapsed ? "collapsed" : "expanded"
-    );
+    localStorage.setItem("shade-sidebar", collapsed ? "collapsed" : "expanded");
   }, [collapsed, mounted]);
 
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-  };
-
-  const greeting = useMemo(() => {
+  useEffect(() => {
     const hour = new Date().getHours();
-
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-
-    return "Good evening";
+    if (hour < 12)      setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else                setGreeting("Good evening");
   }, []);
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <>
@@ -158,9 +108,7 @@ export default function BottomNav() {
           --sidebar-collapsed-width: 82px;
         }
 
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         .nav-bottom {
           position: fixed;
@@ -188,9 +136,7 @@ export default function BottomNav() {
           transition: all 0.18s ease;
         }
 
-        .mobile-link:active {
-          transform: scale(0.94);
-        }
+        .mobile-link:active { transform: scale(0.94); }
 
         .mobile-label {
           font-size: 11px;
@@ -214,9 +160,7 @@ export default function BottomNav() {
           color: white;
         }
 
-        .mobile-badge.danger {
-          background: #ef4444;
-        }
+        .mobile-badge.danger { background: #ef4444; }
 
         .mobile-glow {
           position: absolute;
@@ -301,9 +245,7 @@ export default function BottomNav() {
           border: 1px solid rgba(99,102,241,0.2);
         }
 
-        .drawer-link:active {
-          transform: scale(0.96);
-        }
+        .drawer-link:active { transform: scale(0.96); }
 
         .drawer-badge {
           position: absolute;
@@ -322,63 +264,34 @@ export default function BottomNav() {
           color: white;
         }
 
-        .sidebar {
-          display: none;
-        }
+        .sidebar { display: none; }
 
         @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-          }
-
-          to {
-            transform: translateY(0);
-          }
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
         }
 
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
 
         @keyframes pulseGlow {
-          0% {
-            opacity: 0.5;
-            transform: scale(0.9);
-          }
-
-          50% {
-            opacity: 1;
-            transform: scale(1.05);
-          }
-
-          100% {
-            opacity: 0.5;
-            transform: scale(0.9);
-          }
+          0%   { opacity: 0.5; transform: scale(0.9); }
+          50%  { opacity: 1;   transform: scale(1.05); }
+          100% { opacity: 0.5; transform: scale(0.9); }
         }
 
         @media (min-width: 900px) {
           .nav-bottom,
           .drawer,
-          .drawer-backdrop {
-            display: none;
-          }
+          .drawer-backdrop { display: none; }
 
           .sidebar {
             position: fixed;
             top: 0;
             left: 0;
-            width: ${
-              collapsed
-                ? "var(--sidebar-collapsed-width)"
-                : "var(--sidebar-width)"
-            };
+            width: ${collapsed ? "var(--sidebar-collapsed-width)" : "var(--sidebar-width)"};
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -438,11 +351,8 @@ export default function BottomNav() {
             border-radius: 20px;
             padding: 16px;
             background:
-              radial-gradient(circle at top right,
-              rgba(249,115,22,0.22),
-              transparent 45%),
+              radial-gradient(circle at top right, rgba(249,115,22,0.22), transparent 45%),
               rgba(255,255,255,0.03);
-
             border: 1px solid rgba(255,255,255,0.05);
           }
 
@@ -543,9 +453,7 @@ export default function BottomNav() {
             color: white;
           }
 
-          .sidebar-badge.danger {
-            background: #ef4444;
-          }
+          .sidebar-badge.danger { background: #ef4444; }
 
           .command-bar {
             display: flex;
@@ -569,62 +477,42 @@ export default function BottomNav() {
         }
       `}</style>
 
+      {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
       <nav className="nav-bottom">
-        {primaryNavItems.map(
-          ({ label, href, icon: Icon, badge, danger, glow }) => {
-            const active = isActive(href);
+        {primaryNavItems.map(({ label, href, icon: Icon, badge, danger, glow }) => {
+          const active = isActive(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="mobile-link"
+              style={{ color: active ? "var(--primary)" : "var(--muted-foreground)" }}
+            >
+              {glow && <div className="mobile-glow" />}
+              {badge && (
+                <div className={`mobile-badge ${danger ? "danger" : ""}`}>
+                  {badge}
+                </div>
+              )}
+              <Icon size={22} strokeWidth={active ? 2.6 : 1.9} />
+              <span className="mobile-label">{label}</span>
+            </Link>
+          );
+        })}
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="mobile-link"
-                style={{
-                  color: active
-                    ? "var(--primary)"
-                    : "var(--muted-foreground)",
-                }}
-              >
-                {glow && <div className="mobile-glow" />}
-
-                {badge && (
-                  <div
-                    className={`mobile-badge ${
-                      danger ? "danger" : ""
-                    }`}
-                  >
-                    {badge}
-                  </div>
-                )}
-
-                <Icon size={22} strokeWidth={active ? 2.6 : 1.9} />
-
-                <span className="mobile-label">{label}</span>
-              </Link>
-            );
-          }
-        )}
-
-        <button
-          className="more-btn"
-          onClick={() => setDrawerOpen(true)}
-        >
+        <button className="more-btn" onClick={() => setDrawerOpen(true)}>
           <MoreHorizontal size={22} />
           <span className="mobile-label">More</span>
         </button>
       </nav>
 
+      {/* ── More drawer ───────────────────────────────────────────────────── */}
       {drawerOpen && (
         <>
-          <div
-            className="drawer-backdrop"
-            onClick={() => setDrawerOpen(false)}
-          />
-
+          <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)} />
           <div className="drawer">
             <div className="drawer-header">
               <div className="drawer-title">More</div>
-
               <button
                 onClick={() => setDrawerOpen(false)}
                 style={{
@@ -639,50 +527,30 @@ export default function BottomNav() {
             </div>
 
             <div className="drawer-grid">
-              {moreNavItems.map(
-                ({ label, href, icon: Icon, badge }) => {
-                  const active = isActive(href);
-
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={`drawer-link ${
-                        active ? "active" : ""
-                      }`}
-                      onClick={() => setDrawerOpen(false)}
-                      style={{
-                        color: active
-                          ? "var(--primary)"
-                          : "var(--foreground)",
-                      }}
-                    >
-                      {badge && (
-                        <div className="drawer-badge">
-                          {badge}
-                        </div>
-                      )}
-
-                      <Icon size={22} />
-
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          textAlign: "center",
-                        }}
-                      >
-                        {label}
-                      </span>
-                    </Link>
-                  );
-                }
-              )}
+              {moreNavItems.map(({ label, href, icon: Icon, badge }) => {
+                const active = isActive(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`drawer-link ${active ? "active" : ""}`}
+                    onClick={() => setDrawerOpen(false)}
+                    style={{ color: active ? "var(--primary)" : "var(--foreground)" }}
+                  >
+                    {badge && <div className="drawer-badge">{badge}</div>}
+                    <Icon size={22} />
+                    <span style={{ fontSize: "12px", fontWeight: 700, textAlign: "center" }}>
+                      {label}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </>
       )}
 
+      {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
       <aside className="sidebar">
         <div className="sidebar-top">
           {!collapsed && (
@@ -691,7 +559,6 @@ export default function BottomNav() {
               <div className="logo-title">Student</div>
             </div>
           )}
-
           <button
             className="collapse-btn"
             onClick={() => setCollapsed(!collapsed)}
@@ -699,9 +566,7 @@ export default function BottomNav() {
             <ChevronLeft
               size={18}
               style={{
-                transform: collapsed
-                  ? "rotate(180deg)"
-                  : "rotate(0deg)",
+                transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
                 transition: "transform 0.2s ease",
               }}
             />
@@ -710,100 +575,73 @@ export default function BottomNav() {
 
         {!collapsed && (
           <>
-            <div className="streak-card">
-              <div className="streak-row">
-                <div className="streak-flame">
-                  <Flame size={20} />
-                </div>
-
-                <div>
-                  <div className="streak-title">
-                    12 Day Streak
+            {/* Streak card — only rendered when user is logged in and has an active streak */}
+            {profile && profile.streak > 0 && (
+              <div className="streak-card">
+                <div className="streak-row">
+                  <div className="streak-flame">
+                    <Flame size={20} />
                   </div>
-
-                  <div className="streak-sub">
-                    Your momentum is dangerous.
+                  <div>
+                    <div className="streak-title">
+                      {profile.streak} Day Streak
+                    </div>
+                    <div className="streak-sub">
+                      {profile.streak_message ?? "Keep the momentum going."}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="greeting">
-              <div className="greeting-title">
-                {greeting},
+            {/* Greeting — only rendered when user is logged in */}
+            {firstName && (
+              <div className="greeting">
+                <div className="greeting-title">{greeting},</div>
+                <div className="greeting-main">{firstName}.</div>
               </div>
-
-              <div className="greeting-main">
-                Takunda.
-              </div>
-            </div>
+            )}
 
             <div className="command-bar">
               <Search size={16} />
               <span>Search anything...</span>
-
-              <div className="command-shortcut">
-                Ctrl K
-              </div>
+              <div className="command-shortcut">Ctrl K</div>
             </div>
           </>
         )}
 
         <div className="sidebar-nav">
-          {sidebarItems.map(
-            ({
-              label,
-              href,
-              icon: Icon,
-              badge,
-              danger,
-            }) => {
-              const active = isActive(href);
-
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  title={label}
-                  className={`sidebar-link ${
-                    active ? "active" : ""
-                  }`}
-                  style={{
-                    color: active
-                      ? "var(--foreground)"
-                      : "var(--muted-foreground)",
-                    justifyContent: collapsed
-                      ? "center"
-                      : "flex-start",
-                  }}
-                >
-                  <Icon
-                    size={19}
-                    strokeWidth={active ? 2.5 : 1.9}
-                    color={active ? "var(--primary)" : undefined}
-                  />
-
-                  {!collapsed && (
-                    <>
-                      <span className="sidebar-label">
-                        {label}
-                      </span>
-
-                      {badge && (
-                        <div
-                          className={`sidebar-badge ${
-                            danger ? "danger" : ""
-                          }`}
-                        >
-                          {badge}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </Link>
-              );
-            }
-          )}
+          {sidebarItems.map(({ label, href, icon: Icon, badge, danger }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                title={label}
+                className={`sidebar-link ${active ? "active" : ""}`}
+                style={{
+                  color: active ? "var(--foreground)" : "var(--muted-foreground)",
+                  justifyContent: collapsed ? "center" : "flex-start",
+                }}
+              >
+                <Icon
+                  size={19}
+                  strokeWidth={active ? 2.5 : 1.9}
+                  color={active ? "var(--primary)" : undefined}
+                />
+                {!collapsed && (
+                  <>
+                    <span className="sidebar-label">{label}</span>
+                    {badge && (
+                      <div className={`sidebar-badge ${danger ? "danger" : ""}`}>
+                        {badge}
+                      </div>
+                    )}
+                  </>
+                )}
+              </Link>
+            );
+          })}
         </div>
       </aside>
     </>
