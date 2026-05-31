@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import { useUser } from "@/contexts/UserContext";
 import {
   LayoutDashboard, Brain, CheckSquare, Calendar, Timer,
   FlaskConical, Gamepad2, Calculator, BarChart3, Trophy,
@@ -53,21 +54,14 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-interface SidebarProps {
-  userName?: string;
-  userInitial?: string;
-  streakDays?: number;
-  level?: number;
-  xp?: number;
-}
+export function Sidebar() {
+  const { profile } = useUser();
 
-export function Sidebar({
-  userName = "Student",
-  userInitial = "S",
-  streakDays = 0,
-  level = 1,
-  xp = 0,
-}: SidebarProps) {
+  const userName    = profile?.first_name ?? profile?.full_name?.split(" ")[0] ?? "Student";
+  const userInitial = userName.charAt(0).toUpperCase();
+  const streakDays  = profile?.streak  ?? 0;
+  const level       = profile?.level   ?? 1;
+  const xp          = profile?.xp      ?? 0;
   const pathname = usePathname();
   const router = useRouter();
 
