@@ -53,20 +53,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <UserProvider>
-      {/* APP SHELL */}
-      <div className="h-screen flex bg-[#0a0a10] text-white overflow-hidden">
+      {/* APP SHELL ROOT */}
+      <div className="relative h-screen flex bg-[#0a0a10] text-white">
 
-        {/* DESKTOP SIDEBAR */}
-        <aside className="hidden md:flex">
+        {/* SIDEBAR (desktop only) */}
+        <aside className="hidden md:flex md:w-[260px] md:flex-shrink-0">
           <Sidebar />
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-[80px] md:pb-0">
           {children}
         </main>
 
-        {/* MOBILE NAV (portal-safe layer) */}
+        {/* MOBILE NAV LAYER (safe fixed layer) */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]">
           <BottomNav />
         </div>
