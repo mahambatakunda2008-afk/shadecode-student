@@ -11,7 +11,7 @@ import type {
   LearnListResponse,
   LearnSubject,
   LessonDifficulty,
-} from "@/app/learn/types";
+} from "@/app/(app)/learn/types";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
