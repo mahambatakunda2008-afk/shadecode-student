@@ -1,11 +1,6 @@
 "use client";
 // src/app/(app)/layout.tsx
-//
-// Layout for all AUTHENTICATED routes: /dashboard, /exam-sim, /focus, etc.
-// Wraps children in UserProvider + Sidebar.
-// Redirects unauthenticated visitors to /auth/login.
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { UserProvider } from "@/contexts/UserContext";
@@ -13,30 +8,31 @@ import { Sidebar } from "@/components/layout/Sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
   const [authChecked, setAuthChecked] = useState(false);
+
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
+  );
 
   useEffect(() => {
     const checkSession = async () => {
-      // getUser() validates against the Supabase server — harder to spoof than getSession()
       const {
         data: { user },
       } = await supabase.auth.getUser();
-
       if (!user) {
         router.replace("/auth/login");
         return;
       }
-
       setAuthChecked(true);
     };
 
     checkSession();
 
-    // Also listen for sign-out events mid-session
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
@@ -48,7 +44,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [router, supabase]);
 
-  // Render nothing while we verify auth — prevents flash of authenticated UI
   if (!authChecked) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0a0a10]">
@@ -63,18 +58,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <UserProvider>
       <div className="flex h-screen overflow-hidden bg-[#0a0a10] text-white antialiased">
-        {/* Desktop sidebar */}
         <Sidebar />
-
-        {/* Page content */}
-        <main
-          className="
-            flex-1
-            overflow-y-auto
-            pb-20          /* mobile bottom nav clearance */
-            sm:pb-0
-          "
-        >
+        <main className="flex-1 overflow-y-auto pb-20 sm:pb-0">
           {children}
         </main>
       </div>
