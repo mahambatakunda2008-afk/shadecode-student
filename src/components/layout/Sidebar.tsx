@@ -86,8 +86,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="hidden md:flex h-screen w-[220px] flex-shrink-0 flex-col
-      bg-[#0e0e18] border-r border-white/[0.06] px-2.5 py-4 overflow-y-auto">
+    <aside className="hidden md:flex h-screen w-[220px] flex-shrink-0 flex-col bg-[#0e0e18] border-r border-white/[0.06] px-2.5 py-4 overflow-y-auto">
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-2.5 pb-4 mb-2
