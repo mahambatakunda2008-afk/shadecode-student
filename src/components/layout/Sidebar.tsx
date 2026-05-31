@@ -11,7 +11,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV_GROUPS = [
+// Add this interface above NAV_GROUPS
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  badgeVariant?: "default" | "urgent";
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Study",
     items: [
@@ -25,7 +39,7 @@ const NAV_GROUPS = [
     label: "Tools",
     items: [
       { href: "/focus",        label: "Focus",        icon: Timer },
-      { href: "/exams",        label: "Exams",        icon: FlaskConical, badge: "2d", badgeVariant: "urgent" as const },
+      { href: "/exams",        label: "Exams",        icon: FlaskConical, badge: "2d", badgeVariant: "urgent" },
       { href: "/exam-sim",     label: "Exam Sim",     icon: Gamepad2 },
       { href: "/math-checker", label: "Math Checker", icon: Calculator },
     ],
