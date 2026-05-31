@@ -2,14 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  Brain,
-  CheckSquare,
-  Timer,
-  LayoutDashboard,
-  Grid
-} from "lucide-react";
+import { Home, Brain, CheckSquare, Timer, LayoutDashboard, Grid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BOTTOM_NAV_ITEMS = [
@@ -24,34 +17,26 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="
-      w-full
-      bg-[#0e0e18]/95
-      backdrop-blur
-      border-t border-white/[0.06]
-      flex items-center px-2
-      pb-safe
-    ">
+    <nav className="w-full bg-[#0e0e18]/95 backdrop-blur border-t border-white/[0.06] flex items-center px-2">
       {BOTTOM_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const isActive =
-          pathname === href ||
-          (href !== "/" && pathname.startsWith(href));
+          pathname === href || (href !== "/" && pathname.startsWith(href));
 
         return (
           <Link
             key={href}
             href={href}
-            className="flex flex-1 flex-col items-center gap-1 py-2.5 rounded-lg"
+            className="flex flex-1 flex-col items-center gap-1 py-2.5"
           >
             <Icon
               className={cn(
-                "w-5 h-5 transition-colors",
+                "w-5 h-5",
                 isActive ? "text-indigo-400" : "text-white/30"
               )}
             />
             <span
               className={cn(
-                "text-[10px] transition-colors",
+                "text-[10px]",
                 isActive ? "text-indigo-400 font-medium" : "text-white/30"
               )}
             >
@@ -61,7 +46,6 @@ export function BottomNav() {
         );
       })}
 
-      {/* More button */}
       <button className="flex flex-1 flex-col items-center gap-1 py-2.5">
         <Grid className="w-5 h-5 text-white/30" />
         <span className="text-[10px] text-white/30">More</span>
