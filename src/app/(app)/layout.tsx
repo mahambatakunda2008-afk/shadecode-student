@@ -1,10 +1,10 @@
 "use client";
-// src/app/(app)/layout.tsx
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { UserProvider } from "@/contexts/UserContext";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -21,26 +21,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkSession = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.replace("/auth/login");
         return;
       }
       setAuthChecked(true);
     };
-
     checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        router.replace("/auth/login");
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") router.replace("/auth/login");
     });
-
     return () => subscription.unsubscribe();
   }, [router, supabase]);
 
@@ -59,10 +50,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <UserProvider>
       <div className="flex h-screen overflow-hidden bg-[#0a0a10] text-white antialiased">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto pb-20 sm:pb-0">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           {children}
         </main>
       </div>
+      {/* Mobile bottom nav — hidden on desktop */}
+      <BottomNav />
     </UserProvider>
   );
 }
