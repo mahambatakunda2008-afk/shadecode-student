@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Brain, CheckSquare, Timer,
-  Calendar, BookOpen, Gamepad2, Calculator,
+  Calendar, BookOpen, Gamepad2, Calculator, BrainCircuit,
   BarChart3, Trophy, Settings, X, MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ const MORE_ITEMS = [
   { href: "/math-checker", label: "Math",        icon: Calculator },
   { href: "/analytics",    label: "Analytics",   icon: BarChart3 },
   { href: "/leaderboard",  label: "Leaderboard", icon: Trophy },
+  { href: "/insights/history", label: "Cortex",       icon: BrainCircuit },
   { href: "/settings",     label: "Settings",    icon: Settings },
 ];
 

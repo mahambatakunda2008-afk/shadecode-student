@@ -7,7 +7,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import {
   LayoutDashboard, Brain, CheckSquare, Calendar, Timer,
   FlaskConical, Gamepad2, Calculator, BarChart3, Trophy,
-  Settings, LogOut, Flame, Search, ChevronRight,
+  Settings, LogOut, Flame, Search, ChevronRight, BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -51,6 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/analytics",   label: "Analytics",   icon: BarChart3 },
       { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+      { href: "/insights/history", label: "Cortex", icon: BrainCircuit },
     ],
   },
 ];
