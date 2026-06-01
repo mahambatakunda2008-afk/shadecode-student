@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 import { UserProvider } from "@/contexts/UserContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { getOnboardingStatus } from "@/lib/onboarding";
 
 export default function AppLayout({
   children,
@@ -19,6 +20,8 @@ export default function AppLayout({
     "loading" | "authenticated" | "unauthenticated"
   >("loading");
 
+  const [ready, setReady] = useState(false);
+
   const supabase = useMemo(
     () =>
       createBrowserClient(
@@ -29,12 +32,13 @@ export default function AppLayout({
   );
 
   useEffect(() => {
-    const checkSession = async () => {
+    const checkAuthAndOnboarding = async () => {
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
+        // 🔐 NOT LOGGED IN → LOGIN
         if (!user) {
           setStatus("unauthenticated");
           router.replace("/auth/login");
@@ -42,14 +46,24 @@ export default function AppLayout({
         }
 
         setStatus("authenticated");
+
+        // 🧭 ONBOARDING CHECK
+        const onboarded = getOnboardingStatus();
+
+        if (!onboarded) {
+          router.replace("/onboarding");
+          return;
+        }
+
+        setReady(true);
       } catch (err) {
-        console.error("Auth check failed:", err);
+        console.error("Auth error:", err);
         setStatus("unauthenticated");
         router.replace("/auth/login");
       }
     };
 
-    checkSession();
+    checkAuthAndOnboarding();
 
     const {
       data: { subscription },
@@ -67,8 +81,8 @@ export default function AppLayout({
     return () => subscription.unsubscribe();
   }, [router, supabase]);
 
-  // 🔥 NEVER block forever
-  if (status === "loading") {
+  // 🔄 LOADING STATE (never infinite because we always resolve or redirect)
+  if (!ready) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0a0a10]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-500" />
@@ -76,22 +90,20 @@ export default function AppLayout({
     );
   }
 
-  if (status === "unauthenticated") {
-    // optional fallback UI instead of blank flicker
-    return null;
-  }
-
   return (
     <UserProvider>
       <div className="relative h-screen flex bg-[#0a0a10] text-white">
+        {/* Desktop Sidebar */}
         <aside className="hidden md:flex md:w-[260px] md:flex-shrink-0">
           <Sidebar />
         </aside>
 
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto pb-[80px] md:pb-0">
           {children}
         </main>
 
+        {/* Mobile Bottom Navigation */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]">
           <BottomNav />
         </div>
