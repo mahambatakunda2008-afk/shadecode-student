@@ -2,28 +2,23 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-async function getSupabaseServerClient() {
+async function createClient() {
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: Record<string, unknown>) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
           } catch {
-            // GET requests are read-only — session refresh cookies are ignored safely
-          }
-        },
-        remove(name: string, options: Record<string, unknown>) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch {
-            // same as above
+            // Read-only in GET requests — safe to ignore
           }
         },
       },
@@ -33,7 +28,7 @@ async function getSupabaseServerClient() {
 
 export async function GET() {
   try {
-    const supabase = await getSupabaseServerClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -47,20 +42,20 @@ export async function GET() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[cortex/insight GET]", error.message);
+      console.error("[cortex GET]", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(insights ?? []);
   } catch (err) {
-    console.error("[cortex/insight GET] unexpected:", err);
+    console.error("[cortex GET] unexpected:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function POST() {
   try {
-    const supabase = await getSupabaseServerClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -93,7 +88,7 @@ export async function POST() {
       .select();
 
     if (error) {
-      console.error("[cortex/insight POST]", error.message);
+      console.error("[cortex POST]", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -102,7 +97,7 @@ export async function POST() {
       { status: 201 }
     );
   } catch (err) {
-    console.error("[cortex/insight POST] unexpected:", err);
+    console.error("[cortex POST] unexpected:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
