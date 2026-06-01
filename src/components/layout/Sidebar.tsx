@@ -97,9 +97,9 @@ export function Sidebar() {
       bg-[#0e0e18] border-r border-white/[0.08] px-[10px] py-4 overflow-y-auto">
 
       {/* ── Logo ── */}
-      <div className="flex items-center gap-[10px] px-[2px] pb-4 mb-2
+      <div className="flex items-center gap-[10px] px-[10px] pb-4 mb-2
         border-b border-white/[0.07]">
-        <div className="w-8 h-8 rounded-[8px] bg-indigo-500 flex items-center
+        <div className="w-7 h-7 rounded-[7px] bg-indigo-500 flex items-center
           justify-center text-[15px] font-medium text-white flex-shrink-0">
           ◈
         </div>
@@ -142,7 +142,7 @@ export function Sidebar() {
 
             {/* Section label */}
             <p className="text-[10px] font-medium text-white/20 uppercase
-              tracking-[0.08em] px-[10px] pt-[10px] pb-[4px]">
+              tracking-[0.08em] px-[10px] pt-[8px] pb-[4px]">
               {group.label}
             </p>
 
