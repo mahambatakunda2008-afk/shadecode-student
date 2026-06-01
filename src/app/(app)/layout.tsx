@@ -16,7 +16,6 @@ export default function AppLayout({
   const router = useRouter();
 
   const [authChecked, setAuthChecked] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const supabase = useMemo(
     () =>
@@ -78,8 +77,6 @@ export default function AppLayout({
         {/* Mobile Bottom Navigation */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]">
           <BottomNav
-            drawerOpen={drawerOpen}
-            setDrawerOpen={setDrawerOpen}
           />
         </div>
       </div>
