@@ -1,235 +1,90 @@
-import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+cat > src/app/api/cortex/insight/route.ts << 'EOF'
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
-
-const MEMORY_PATH = path.join(process.cwd(), "data", "cortex-memory.json");
-
-/* ---------------- MEMORY ---------------- */
-
-type CortexMemory = {
-  weakSubjects: string[];
-  strongSubjects: string[];
-  focusHistory: number[];
-  trend: "improving" | "declining" | "stable";
-};
-
-function getDefaultMemory(): CortexMemory {
-  return {
-    weakSubjects: [],
-    strongSubjects: [],
-    focusHistory: [],
-    trend: "stable",
-  };
-}
-
-function readMemory(userId: string): CortexMemory {
-  try {
-    if (!fs.existsSync(MEMORY_PATH)) return getDefaultMemory();
-
-    const raw = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf-8"));
-    return raw[userId] || getDefaultMemory();
-  } catch {
-    return getDefaultMemory();
-  }
-}
-
-function writeMemory(userId: string, memory: CortexMemory) {
-  try {
-    let data: any = {};
-
-    if (fs.existsSync(MEMORY_PATH)) {
-      data = JSON.parse(fs.readFileSync(MEMORY_PATH, "utf-8"));
-    }
-
-    data[userId] = memory;
-
-    fs.writeFileSync(MEMORY_PATH, JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error("Memory write failed:", err);
-  }
-}
-
-/* ---------------- TREND ---------------- */
-
-function getTrend(history: number[]) {
-  if (!history || history.length < 3) return "stable";
-
-  const recent = history.slice(-3);
-  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
-
-  if (avg > 75) return "improving";
-  if (avg < 40) return "declining";
-  return "stable";
-}
-
-/* ---------------- AUTOPILOT ---------------- */
-
-function autopilot(memory: CortexMemory) {
-  const focus = memory.focusHistory.slice(-3);
-  const avg =
-    focus.length > 0
-      ? focus.reduce((a, b) => a + b, 0) / focus.length
-      : 50;
-
-  if (memory.trend === "declining" && avg < 45) {
-    return {
-      recommendation: "warn",
-      message: "Performance decline detected. Recovery recommended.",
-      priority: "high",
-    };
-  }
-
-  if (avg > 80) {
-    return {
-      recommendation: "focus",
-      message: "High efficiency detected. Deep focus recommended.",
-      priority: "medium",
-    };
-  }
-
-  if (memory.weakSubjects.length > 0) {
-    return {
-      recommendation: "revise",
-      message: `Focus revision on ${memory.weakSubjects[0]}.`,
-      priority: "medium",
-    };
-  }
-
-  return {
-    recommendation: "plan",
-    message: "Balanced state. Continue structured study.",
-    priority: "low",
-  };
-}
-
-/* ---------------- AI ENGINE ---------------- */
-
-async function callAI(prompt: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-          "Content-Type": "application/json",
+async function getSupabaseServerClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: prompt }],
-        }),
-      }
-    );
-
-    const data = await res.json();
-    return data?.result?.response || null;
-  } catch {
-    return null;
-  }
+        set(name: string, value: string, options: Record<string, unknown>) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: Record<string, unknown>) {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
 }
 
-/* ---------------- ROUTE ---------------- */
+export async function GET() {
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const userId = body.userId || "default";
-
-    let memory = readMemory(userId);
-
-    const isCommand = body.type === "command";
-
-    let behaviorSummary = "";
-
-    /* ---------------- SNAPSHOT ---------------- */
-
-    if (body.payload?.snapshot) {
-      const s = body.payload.snapshot;
-
-      const rate =
-        s.totalTasks > 0
-          ? Math.round((s.completedTasks / s.totalTasks) * 100)
-          : 0;
-
-      memory.focusHistory = [...memory.focusHistory.slice(-6), rate];
-      memory.trend = getTrend(memory.focusHistory);
-
-      memory.weakSubjects = s.subjects?.slice(0, 2) || [];
-      memory.strongSubjects = s.subjects?.slice(2, 4) || [];
-
-      writeMemory(userId, memory);
-
-      behaviorSummary = `Tasks ${rate}%, Streak ${s.streak}, XP ${s.xp}`;
-    } else {
-      behaviorSummary = body.behaviorSummary || "";
-    }
-
-    const auto = autopilot(memory);
-
-    /* ---------------- PROMPT ---------------- */
-
-    let prompt = "";
-
-    if (isCommand) {
-      prompt = `
-You are Cortex Command Engine.
-
-Return ONLY JSON:
-{ "action": "focus | task | learn | exam | navigate" }
-
-Input:
-${body.input}
-`;
-    } else {
-      prompt = `
-You are Cortex.
-
-Return ONE sentence only (8–20 words).
-
-Memory:
-Weak: ${memory.weakSubjects.join(", ")}
-Strong: ${memory.strongSubjects.join(", ")}
-Trend: ${memory.trend}
-Focus: ${memory.focusHistory.slice(-5).join(", ")}
-
-Behavior:
-${behaviorSummary}
-`;
-    }
-
-    const result = await callAI(prompt);
-
-    /* ---------------- COMMAND ---------------- */
-
-    if (isCommand) {
-      try {
-        const cleaned = result?.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(cleaned || "{}");
-
-        return NextResponse.json({
-          ...parsed,
-          autopilot: auto,
-        });
-      } catch {
-        return NextResponse.json({
-          action: "navigate",
-          autopilot: auto,
-        });
-      }
-    }
-
-    /* ---------------- OBSERVATION ---------------- */
-
-    return NextResponse.json({
-      insight: result?.trim() || null,
-      memory,
-      autopilot: auto,
-    });
-  } catch (err) {
-    return NextResponse.json(
-      { error: String(err) },
-      { status: 500 }
-    );
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { data: insights, error } = await supabase
+    .from("insights")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(insights);
 }
+
+export async function POST() {
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id, title, completed, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const templates = [
+    "It seems you're focusing on similar subjects lately. Consistency is key!",
+    "You've completed several tasks this week. Keep up the great work!",
+    "Notice a pattern in your study times? Optimising your schedule could boost productivity.",
+    "Your engagement with tasks is a positive sign of active learning.",
+  ];
+
+  const insightText =
+    `Cortex observes: ${templates[Math.floor(Math.random() * templates.length)]}` +
+    (tasks && tasks.length > 0
+      ? ` You've recently worked on ${tasks.length} tasks.`
+      : " No recent tasks were found.");
+
+  const { data, error } = await supabase
+    .from("insights")
+    .insert([{ user_id: user.id, insight_text: insightText }])
+    .select();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(
+    { message: "Insight generated", insight: data[0] },
+    { status: 201 }
+  );
+}
+EOF
