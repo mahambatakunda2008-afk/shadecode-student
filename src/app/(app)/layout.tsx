@@ -8,6 +8,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { getOnboardingStatus } from "@/lib/onboarding";
+import { useSession } from "@/hooks/useSession";
 
 export default function AppLayout({
   children,
@@ -30,7 +31,8 @@ export default function AppLayout({
       ),
     []
   );
-
+  
+useSession(true);
   useEffect(() => {
     const checkAuthAndOnboarding = async () => {
       try {
