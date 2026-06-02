@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 
-// ─── Nav config ───────────────────────────────────────────────────────────────
+// ─── NAV CONFIG ───────────────────────────────────────────────────────────────
 
 interface NavItem {
   href: string;
@@ -24,39 +24,49 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
+  hint?: string;
   items: NavItem[];
 }
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Study",
+    label: "Core journey",
+    hint: "Where your learning starts",
     items: [
-      { href: "/dashboard",  label: "Dashboard",    icon: LayoutDashboard },
-      { href: "/learn",      label: "AI Learn",     icon: Brain },
-      { href: "/tasks",      label: "Tasks",        icon: CheckSquare, badge: "3" },
-      { href: "/timetable",  label: "Timetable",    icon: Calendar },
+      { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+      { href: "/focus", label: "Focus", icon: Timer },
+    ],
+  },
+  {
+    label: "Practice",
+    hint: "Train your skills",
+    items: [
+      { href: "/tasks", label: "Tasks", icon: CheckSquare, badge: "3" },
+      { href: "/exams", label: "Exams", icon: FlaskConical, badge: "2d", badgeVariant: "urgent" },
+      { href: "/exam-sim", label: "Exam Sim", icon: Gamepad2 },
     ],
   },
   {
     label: "Tools",
+    hint: "Support your learning",
     items: [
-      { href: "/focus",         label: "Focus",        icon: Timer },
-      { href: "/exams",         label: "Exams",        icon: FlaskConical, badge: "2d", badgeVariant: "urgent" },
-      { href: "/exam-sim",      label: "Exam Sim",     icon: Gamepad2 },
-      { href: "/math-checker",  label: "Math Checker", icon: Calculator },
+      { href: "/learn", label: "AI Learn", icon: Brain },
+      { href: "/math-checker", label: "Math Checker", icon: Calculator },
+      { href: "/timetable", label: "Timetable", icon: Calendar },
     ],
   },
   {
-    label: "Progress",
+    label: "Growth",
+    hint: "See your progress",
     items: [
-      { href: "/analytics",   label: "Analytics",   icon: BarChart3 },
+      { href: "/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
       { href: "/insights/history", label: "Cortex", icon: BrainCircuit },
     ],
   },
 ];
 
-// ─── Streak message ───────────────────────────────────────────────────────────
+// ─── STREAK MESSAGE ───────────────────────────────────────────────────────────
 
 function getStreakMessage(days: number): string {
   if (days >= 30) return "Unstoppable.";
@@ -66,18 +76,18 @@ function getStreakMessage(days: number): string {
   return "Building the habit.";
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── COMPONENT ────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
   const { profile } = useUser();
 
   const firstName = profile?.first_name ?? profile?.full_name?.split(" ")[0] ?? "Student";
-  const initial   = firstName.charAt(0).toUpperCase();
-  const streak    = profile?.streak ?? 0;
-  const level     = profile?.level  ?? 1;
-  const xp        = profile?.xp     ?? 0;
+  const initial = firstName.charAt(0).toUpperCase();
+  const streak = profile?.streak ?? 0;
+  const level = profile?.level ?? 1;
+  const xp = profile?.xp ?? 0;
 
   const supabase = useMemo(
     () =>
@@ -97,7 +107,7 @@ export function Sidebar() {
     <aside className="hidden md:flex h-screen w-[220px] flex-shrink-0 flex-col
       bg-[#0e0e18] border-r border-white/[0.08] px-[10px] py-4 overflow-y-auto">
 
-      {/* ── Logo ── */}
+      {/* ── LOGO ── */}
       <div className="flex items-center gap-[10px] px-[10px] pb-4 mb-2
         border-b border-white/[0.07]">
         <div className="w-7 h-7 rounded-[7px] bg-indigo-500 flex items-center
@@ -110,7 +120,24 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* ── Streak pill ── */}
+      {/* ── START HERE CARD ── */}
+      <div className="px-[10px] mb-3">
+        <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+          <p className="text-[11px] text-indigo-300 font-medium">Start here</p>
+          <p className="text-[12px] text-white/70 mt-1 leading-snug">
+            Begin with Focus to start your first study session.
+          </p>
+
+          <Link
+            href="/focus"
+            className="inline-flex mt-2 text-[12px] text-indigo-400 hover:text-indigo-300"
+          >
+            Start studying →
+          </Link>
+        </div>
+      </div>
+
+      {/* ── STREAK ── */}
       {streak > 0 && (
         <div className="flex flex-col gap-0.5 px-[10px] py-[6px] mt-2 mb-3
           bg-orange-500/10 border border-orange-500/20 rounded-lg">
@@ -126,7 +153,7 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* ── Search ── */}
+      {/* ── SEARCH ── */}
       <button className="flex items-center gap-2 w-full px-[10px] py-[7px] mb-3
         bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08]
         rounded-lg transition-colors text-left">
@@ -136,18 +163,21 @@ export function Sidebar() {
           px-1.5 py-[2px] rounded font-mono leading-none">⌘K</kbd>
       </button>
 
-      {/* ── Nav groups ── */}
+      {/* ── NAV ── */}
       <nav className="flex-1 flex flex-col">
         {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="mb-[2px]">
+          <div key={group.label} className="mb-[6px]">
 
-            {/* Section label */}
-            <p className="text-[10px] font-medium text-white/20 uppercase
-              tracking-[0.08em] px-[10px] pt-[8px] pb-[4px]">
+            <p className="text-[10px] font-medium text-white/20 uppercase tracking-[0.08em] px-[10px] pt-[8px]">
               {group.label}
             </p>
 
-            {/* Items */}
+            {group.hint && (
+              <p className="text-[9px] text-white/10 px-[10px] mb-[4px]">
+                {group.hint}
+              </p>
+            )}
+
             <div className="flex flex-col gap-[2px]">
               {group.items.map(({ href, label, icon: Icon, badge, badgeVariant }) => {
                 const isActive =
@@ -167,19 +197,21 @@ export function Sidebar() {
                     )}
                   >
                     <Icon className={cn(
-                      "w-[15px] h-[15px] flex-shrink-0 transition-colors",
+                      "w-[15px] h-[15px] flex-shrink-0",
                       isActive
                         ? "text-indigo-400"
                         : "text-white/40 group-hover:text-white/60"
                     )} />
+
                     <span className={cn(
-                      "text-[13px] flex-1 transition-colors",
+                      "text-[13px] flex-1",
                       isActive
                         ? "text-indigo-400 font-medium"
                         : "text-white/60 group-hover:text-white/80"
                     )}>
                       {label}
                     </span>
+
                     {badge && (
                       <span className={cn(
                         "text-[10px] font-medium px-[6px] py-[2px] rounded-full",
@@ -198,7 +230,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* ── Bottom ── */}
+      {/* ── BOTTOM ── */}
       <div className="mt-2 pt-2 border-t border-white/[0.07] flex flex-col gap-[2px]">
 
         <Link
@@ -211,7 +243,7 @@ export function Sidebar() {
           )}
         >
           <Settings className={cn(
-            "w-[15px] h-[15px] flex-shrink-0",
+            "w-[15px] h-[15px]",
             pathname === "/settings" ? "text-indigo-400" : "text-white/40"
           )} />
           <span className={cn(
@@ -225,33 +257,35 @@ export function Sidebar() {
         <button
           onClick={handleSignOut}
           className="flex items-center gap-[9px] px-[10px] py-[8px] rounded-lg
-            border border-transparent hover:bg-red-500/[0.08]
-            hover:border-red-500/[0.15] transition-colors group w-full text-left"
+            hover:bg-red-500/[0.08] transition-colors group w-full text-left"
         >
-          <LogOut className="w-[15px] h-[15px] flex-shrink-0 text-white/25
-            group-hover:text-red-400 transition-colors" />
-          <span className="text-[13px] text-white/30
-            group-hover:text-red-400 transition-colors">
+          <LogOut className="w-[15px] h-[15px] text-white/25 group-hover:text-red-400" />
+          <span className="text-[13px] text-white/30 group-hover:text-red-400">
             Sign out
           </span>
         </button>
 
-        {/* ── Profile row ── */}
+        {/* Profile */}
         <Link
           href="/settings"
           className="flex items-center gap-[9px] px-[10px] py-[8px] mt-1 rounded-lg
-            border-t border-white/[0.07] pt-3
             hover:bg-white/[0.05] transition-colors"
         >
           <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center
-            justify-center text-[11px] font-semibold text-white flex-shrink-0">
+            justify-center text-[11px] font-semibold text-white">
             {initial}
           </div>
+
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-medium text-white/75 truncate">{firstName}</p>
-            <p className="text-[10px] text-white/30">Level {level} · {xp} XP</p>
+            <p className="text-[12px] font-medium text-white/75 truncate">
+              {firstName}
+            </p>
+            <p className="text-[10px] text-white/30">
+              Level {level} · {xp} XP
+            </p>
           </div>
-          <ChevronRight className="w-[13px] h-[13px] text-white/20 flex-shrink-0" />
+
+          <ChevronRight className="w-[13px] h-[13px] text-white/20" />
         </Link>
       </div>
     </aside>
