@@ -5,59 +5,47 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import {
-  LayoutDashboard, Brain, CheckSquare, Calendar, Timer,
-  FlaskConical, Gamepad2, Calculator, BarChart3, Trophy,
-  Settings, LogOut, Flame, Search, ChevronRight, BrainCircuit,
+  LayoutDashboard,
+  Timer,
+  CheckSquare,
+  FlaskConical,
+  Brain,
+  Calculator,
+  BarChart3,
+  Trophy,
+  Settings,
+  LogOut,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 
-// ─── NAV CONFIG ───────────────────────────────────────────────────────────────
+// ─── NAV ───────────────────────────────────────────────────────────────
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
-  badgeVariant?: "default" | "urgent";
-}
-
-interface NavGroup {
-  label: string;
-  hint?: string;
-  items: NavItem[];
-}
-
-const NAV_GROUPS: NavGroup[] = [
+const NAV = [
   {
-    label: "Core journey",
-    hint: "Where your learning starts",
+    group: "Core",
     items: [
       { href: "/dashboard", label: "Home", icon: LayoutDashboard },
       { href: "/focus", label: "Focus", icon: Timer },
     ],
   },
   {
-    label: "Practice",
-    hint: "Train your skills",
+    group: "Practice",
     items: [
-      { href: "/tasks", label: "Tasks", icon: CheckSquare, badge: "3" },
-      { href: "/exams", label: "Exams", icon: FlaskConical, badge: "2d", badgeVariant: "urgent" },
-      { href: "/exam-sim", label: "Exam Sim", icon: Gamepad2 },
+      { href: "/tasks", label: "Tasks", icon: CheckSquare },
+      { href: "/exams", label: "Exams", icon: FlaskConical },
     ],
   },
   {
-    label: "Tools",
-    hint: "Support your learning",
+    group: "Tools",
     items: [
       { href: "/learn", label: "AI Learn", icon: Brain },
-      { href: "/math-checker", label: "Math Checker", icon: Calculator },
-      { href: "/timetable", label: "Timetable", icon: Calendar },
+      { href: "/math-checker", label: "Math", icon: Calculator },
     ],
   },
   {
-    label: "Growth",
-    hint: "See your progress",
+    group: "Progress",
     items: [
       { href: "/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -66,28 +54,15 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-// ─── STREAK MESSAGE ───────────────────────────────────────────────────────────
-
-function getStreakMessage(days: number): string {
-  if (days >= 30) return "Unstoppable.";
-  if (days >= 14) return "Your momentum is dangerous.";
-  if (days >= 7)  return "One week strong.";
-  if (days >= 3)  return "Keep it going.";
-  return "Building the habit.";
-}
-
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
-
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useUser();
 
-  const firstName = profile?.first_name ?? profile?.full_name?.split(" ")[0] ?? "Student";
-  const initial = firstName.charAt(0).toUpperCase();
-  const streak = profile?.streak ?? 0;
-  const level = profile?.level ?? 1;
-  const xp = profile?.xp ?? 0;
+  const firstName =
+    profile?.first_name ??
+    profile?.full_name?.split(" ")[0] ??
+    "Student";
 
   const supabase = useMemo(
     () =>
@@ -104,83 +79,25 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex h-screen w-[220px] flex-shrink-0 flex-col
-      bg-[#0e0e18] border-r border-white/[0.08] px-[10px] py-4 overflow-y-auto">
+    <aside className="hidden md:flex h-screen w-[220px] flex-col bg-[#0e0e18] border-r border-white/[0.08] px-[10px] py-4">
 
-      {/* ── LOGO ── */}
-      <div className="flex items-center gap-[10px] px-[10px] pb-4 mb-2
-        border-b border-white/[0.07]">
-        <div className="w-7 h-7 rounded-[7px] bg-indigo-500 flex items-center
-          justify-center text-[15px] font-medium text-white flex-shrink-0">
-          ◈
-        </div>
-        <div>
-          <p className="text-[14px] font-medium text-white/90 leading-tight">Shadecode</p>
-          <p className="text-[10px] text-white/35">Student</p>
-        </div>
+      {/* Logo */}
+      <div className="px-[10px] pb-4 mb-4 border-b border-white/[0.07]">
+        <p className="text-[14px] font-semibold text-white">Shadecode</p>
+        <p className="text-[10px] text-white/30">Student</p>
       </div>
 
-      {/* ── START HERE CARD ── */}
-      <div className="px-[10px] mb-3">
-        <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-          <p className="text-[11px] text-indigo-300 font-medium">Start here</p>
-          <p className="text-[12px] text-white/70 mt-1 leading-snug">
-            Begin with Focus to start your first study session.
-          </p>
-
-          <Link
-            href="/focus"
-            className="inline-flex mt-2 text-[12px] text-indigo-400 hover:text-indigo-300"
-          >
-            Start studying →
-          </Link>
-        </div>
-      </div>
-
-      {/* ── STREAK ── */}
-      {streak > 0 && (
-        <div className="flex flex-col gap-0.5 px-[10px] py-[6px] mt-2 mb-3
-          bg-orange-500/10 border border-orange-500/20 rounded-lg">
-          <div className="flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
-            <span className="text-[12px] font-medium text-orange-400/90">
-              {streak} day streak
-            </span>
-          </div>
-          <p className="text-[10px] text-orange-400/40 pl-5 leading-none">
-            {getStreakMessage(streak)}
-          </p>
-        </div>
-      )}
-
-      {/* ── SEARCH ── */}
-      <button className="flex items-center gap-2 w-full px-[10px] py-[7px] mb-3
-        bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08]
-        rounded-lg transition-colors text-left">
-        <Search className="w-[13px] h-[13px] text-white/25 flex-shrink-0" />
-        <span className="text-[12px] text-white/30 flex-1">Search anything…</span>
-        <kbd className="text-[10px] text-white/20 bg-white/[0.06]
-          px-1.5 py-[2px] rounded font-mono leading-none">⌘K</kbd>
-      </button>
-
-      {/* ── NAV ── */}
-      <nav className="flex-1 flex flex-col">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="mb-[6px]">
-
-            <p className="text-[10px] font-medium text-white/20 uppercase tracking-[0.08em] px-[10px] pt-[8px]">
-              {group.label}
+      {/* NAV */}
+      <nav className="flex-1 flex flex-col gap-4">
+        {NAV.map((section) => (
+          <div key={section.group}>
+            <p className="text-[10px] text-white/25 uppercase px-[10px] mb-2">
+              {section.group}
             </p>
 
-            {group.hint && (
-              <p className="text-[9px] text-white/10 px-[10px] mb-[4px]">
-                {group.hint}
-              </p>
-            )}
-
             <div className="flex flex-col gap-[2px]">
-              {group.items.map(({ href, label, icon: Icon, badge, badgeVariant }) => {
-                const isActive =
+              {section.items.map(({ href, label, icon: Icon }) => {
+                const active =
                   pathname === href ||
                   (href !== "/" && pathname.startsWith(href));
 
@@ -189,39 +106,14 @@ export function Sidebar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-[9px] px-[10px] py-[8px] rounded-lg",
-                      "transition-colors duration-150 group",
-                      isActive
-                        ? "bg-indigo-500/[0.15] border border-indigo-500/[0.3]"
-                        : "hover:bg-white/[0.06] border border-transparent"
+                      "flex items-center gap-2 px-[10px] py-[8px] rounded-lg text-[13px]",
+                      active
+                        ? "bg-indigo-500/15 text-indigo-300"
+                        : "text-white/60 hover:text-white hover:bg-white/5"
                     )}
                   >
-                    <Icon className={cn(
-                      "w-[15px] h-[15px] flex-shrink-0",
-                      isActive
-                        ? "text-indigo-400"
-                        : "text-white/40 group-hover:text-white/60"
-                    )} />
-
-                    <span className={cn(
-                      "text-[13px] flex-1",
-                      isActive
-                        ? "text-indigo-400 font-medium"
-                        : "text-white/60 group-hover:text-white/80"
-                    )}>
-                      {label}
-                    </span>
-
-                    {badge && (
-                      <span className={cn(
-                        "text-[10px] font-medium px-[6px] py-[2px] rounded-full",
-                        badgeVariant === "urgent"
-                          ? "bg-red-500/15 text-red-400"
-                          : "bg-indigo-500/20 text-indigo-400"
-                      )}>
-                        {badge}
-                      </span>
-                    )}
+                    <Icon className="w-4 h-4" />
+                    {label}
                   </Link>
                 );
               })}
@@ -230,63 +122,26 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* ── BOTTOM ── */}
-      <div className="mt-2 pt-2 border-t border-white/[0.07] flex flex-col gap-[2px]">
+      {/* Bottom */}
+      <div className="border-t border-white/[0.07] pt-3 flex flex-col gap-2">
 
         <Link
           href="/settings"
-          className={cn(
-            "flex items-center gap-[9px] px-[10px] py-[8px] rounded-lg transition-colors",
-            pathname === "/settings"
-              ? "bg-indigo-500/[0.15] border border-indigo-500/[0.3]"
-              : "hover:bg-white/[0.06] border border-transparent"
-          )}
+          className="text-[13px] text-white/50 hover:text-white px-[10px]"
         >
-          <Settings className={cn(
-            "w-[15px] h-[15px]",
-            pathname === "/settings" ? "text-indigo-400" : "text-white/40"
-          )} />
-          <span className={cn(
-            "text-[13px]",
-            pathname === "/settings" ? "text-indigo-400 font-medium" : "text-white/40"
-          )}>
-            Settings
-          </span>
+          Settings
         </Link>
 
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-[9px] px-[10px] py-[8px] rounded-lg
-            hover:bg-red-500/[0.08] transition-colors group w-full text-left"
+          className="text-[13px] text-red-400/60 hover:text-red-400 px-[10px] text-left"
         >
-          <LogOut className="w-[15px] h-[15px] text-white/25 group-hover:text-red-400" />
-          <span className="text-[13px] text-white/30 group-hover:text-red-400">
-            Sign out
-          </span>
+          Sign out
         </button>
 
-        {/* Profile */}
-        <Link
-          href="/settings"
-          className="flex items-center gap-[9px] px-[10px] py-[8px] mt-1 rounded-lg
-            hover:bg-white/[0.05] transition-colors"
-        >
-          <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center
-            justify-center text-[11px] font-semibold text-white">
-            {initial}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-medium text-white/75 truncate">
-              {firstName}
-            </p>
-            <p className="text-[10px] text-white/30">
-              Level {level} · {xp} XP
-            </p>
-          </div>
-
-          <ChevronRight className="w-[13px] h-[13px] text-white/20" />
-        </Link>
+        <div className="px-[10px] pt-2 text-[11px] text-white/30">
+          {firstName}
+        </div>
       </div>
     </aside>
   );
