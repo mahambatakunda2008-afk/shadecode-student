@@ -32,7 +32,8 @@ export default function AppLayout({
     []
   );
   
-useSession(true);
+  useSession(true);
+
   useEffect(() => {
     const checkAuthAndOnboarding = async () => {
       try {
@@ -94,18 +95,18 @@ useSession(true);
 
   return (
     <UserProvider>
-      <div className="relative h-screen flex bg-[#0a0a10] text-white">
-        {/* Desktop Sidebar */}
-        <aside className="hidden md:flex md:w-[260px] md:flex-shrink-0">
+      <div className="relative h-screen flex bg-[#0a0a10] text-white overflow-hidden">
+        {/* Desktop Sidebar Wrapper */}
+        <aside className="hidden md:flex md:w-[240px] md:flex-shrink-0">
           <Sidebar />
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pb-[80px] md:pb-0">
+        <main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0">
           {children}
         </main>
 
-        {/* Mobile Bottom Navigation */}
+        {/* Mobile Bottom Navigation Wrapper */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]">
           <BottomNav />
         </div>

@@ -1,0 +1,87 @@
+import {
+  LayoutDashboard,
+  Timer,
+  CheckSquare,
+  BookOpen,
+  Brain,
+  Calculator,
+  BarChart3,
+  Trophy,
+  BrainCircuit,
+  Calendar,
+  Gamepad2,
+  Settings,
+} from "lucide-react";
+
+export interface NavItem {
+  href: string;
+  label: string;
+  icon: any;
+  badge?: string;
+  urgent?: boolean;
+}
+
+export interface NavGroup {
+  group: string;
+  items: NavItem[];
+}
+
+export const NAV_ITEMS = {
+  dashboard: { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  focus: { href: "/focus", label: "Focus", icon: Timer },
+  tasks: { href: "/tasks", label: "Tasks", icon: CheckSquare, badge: "3", urgent: false },
+  exams: { href: "/exams", label: "Exams", icon: BookOpen, badge: "2d", urgent: true },
+  examSim: { href: "/exam-sim", label: "Exam Sim", icon: Gamepad2 },
+  learn: { href: "/learn", label: "Learn", icon: Brain },
+  mathChecker: { href: "/math-checker", label: "Math", icon: Calculator },
+  timetable: { href: "/timetable", label: "Timetable", icon: Calendar },
+  analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  leaderboard: { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  cortex: { href: "/insights/history", label: "Cortex", icon: BrainCircuit },
+  settings: { href: "/settings", label: "Settings", icon: Settings },
+};
+
+// Sidebar groups (all items accessible on desktop)
+export const SIDEBAR_GROUPS: NavGroup[] = [
+  {
+    group: "Core",
+    items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.timetable],
+  },
+  {
+    group: "Practice",
+    items: [NAV_ITEMS.tasks, NAV_ITEMS.exams, NAV_ITEMS.examSim],
+  },
+  {
+    group: "Tools",
+    items: [NAV_ITEMS.learn, NAV_ITEMS.mathChecker],
+  },
+  {
+    group: "Progress",
+    items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.cortex],
+  },
+];
+
+// BottomNav items for mobile layout
+export const BOTTOM_PRIMARY: NavItem[] = [
+  NAV_ITEMS.dashboard,
+  NAV_ITEMS.learn,
+  NAV_ITEMS.tasks,
+  NAV_ITEMS.focus,
+  NAV_ITEMS.examSim,
+];
+
+export const BOTTOM_MORE: NavItem[] = [
+  NAV_ITEMS.timetable,
+  NAV_ITEMS.exams,
+  NAV_ITEMS.mathChecker,
+  NAV_ITEMS.analytics,
+  NAV_ITEMS.leaderboard,
+  NAV_ITEMS.cortex,
+  NAV_ITEMS.settings,
+];
+
+export function isRouteActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
