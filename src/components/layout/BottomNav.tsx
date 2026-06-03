@@ -24,45 +24,59 @@ export function BottomNav() {
     };
   }, [open]);
 
-  const anyMoreActive = BOTTOM_MORE.some(({ href }) => isRouteActive(pathname, href));
+  const anyMoreActive = BOTTOM_MORE.some(({ href }) =>
+    isRouteActive(pathname, href)
+  );
 
   return (
     <>
-      {/* ── Bottom bar ──────────────────────────────────────────────────── */}
-      <nav className="w-full bg-[#0e0e18]/95 backdrop-blur-xl border-t border-white/[0.07] flex items-stretch px-1">
+      {/* ── Bottom tab bar ──────────────────────────────────────────── */}
+      <nav
+        className="w-full bg-[#0e0e18]/96 backdrop-blur-2xl border-t border-white/[0.07] flex items-stretch"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         {BOTTOM_PRIMARY.map(({ href, label, icon: Icon, badge, urgent }) => {
           const active = isRouteActive(pathname, href);
           return (
             <Link
               key={href}
               href={href}
-              className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 relative"
+              className="flex flex-1 flex-col items-center justify-center gap-[5px] pt-[10px] pb-[9px] relative"
             >
-              <div className="relative">
+              {/* Icon with pill indicator */}
+              <div
+                className={cn(
+                  "relative w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
+                  active ? "bg-indigo-500/[0.18]" : "bg-transparent"
+                )}
+              >
                 <Icon
                   className={cn(
-                    "w-[22px] h-[22px] transition-colors",
-                    active ? "text-indigo-400" : "text-white/30"
+                    "w-[20px] h-[20px] transition-all duration-200",
+                    active ? "text-indigo-400" : "text-white/[0.3]"
                   )}
-                  strokeWidth={active ? 2.5 : 1.8}
+                  strokeWidth={active ? 2.2 : 1.8}
                 />
                 {badge && (
                   <span
                     className={cn(
-                      "absolute -top-1.5 -right-2.5",
-                      "min-w-[16px] h-4 px-1 rounded-full",
-                      "text-[9px] font-bold flex items-center justify-center leading-none",
-                      urgent ? "bg-red-500 text-white" : "bg-indigo-500 text-white"
+                      "absolute -top-[5px] -right-[7px]",
+                      "min-w-[15px] h-[15px] px-[3px] rounded-full",
+                      "text-[8px] font-bold flex items-center justify-center leading-none",
+                      urgent
+                        ? "bg-red-500 text-white"
+                        : "bg-indigo-500 text-white"
                     )}
                   >
                     {badge}
                   </span>
                 )}
               </div>
+              {/* Label */}
               <span
                 className={cn(
-                  "text-[10px] font-medium transition-colors",
-                  active ? "text-indigo-400" : "text-white/30"
+                  "text-[10px] font-medium leading-none transition-colors duration-200",
+                  active ? "text-indigo-400" : "text-white/[0.26]"
                 )}
               >
                 {label}
@@ -74,19 +88,26 @@ export function BottomNav() {
         {/* More button */}
         <button
           onClick={() => setOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 cursor-pointer"
+          className="flex flex-1 flex-col items-center justify-center gap-[5px] pt-[10px] pb-[9px] cursor-pointer"
         >
-          <MoreHorizontal
+          <div
             className={cn(
-              "w-[22px] h-[22px] transition-colors",
-              anyMoreActive || open ? "text-indigo-400" : "text-white/30"
+              "w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
+              anyMoreActive || open ? "bg-indigo-500/[0.18]" : "bg-transparent"
             )}
-            strokeWidth={1.8}
-          />
+          >
+            <MoreHorizontal
+              className={cn(
+                "w-[20px] h-[20px] transition-colors duration-200",
+                anyMoreActive || open ? "text-indigo-400" : "text-white/[0.3]"
+              )}
+              strokeWidth={1.8}
+            />
+          </div>
           <span
             className={cn(
-              "text-[10px] font-medium transition-colors",
-              anyMoreActive || open ? "text-indigo-400" : "text-white/30"
+              "text-[10px] font-medium leading-none transition-colors duration-200",
+              anyMoreActive || open ? "text-indigo-400" : "text-white/[0.26]"
             )}
           >
             More
@@ -94,37 +115,43 @@ export function BottomNav() {
         </button>
       </nav>
 
-      {/* ── Backdrop ────────────────────────────────────────────────────── */}
+      {/* ── Backdrop ────────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
-          style={{ animation: "fadeIn 0.18s ease" }}
+          className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm"
+          style={{ animation: "ssc-fadeIn 0.15s ease forwards" }}
           onClick={() => setOpen(false)}
         />
       )}
 
-      {/* ── More drawer ─────────────────────────────────────────────────── */}
+      {/* ── More drawer ─────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0a10]/98 backdrop-blur-2xl border-t border-white/[0.08] rounded-t-[24px] px-5 pt-5 pb-8"
-          style={{ animation: "slideUp 0.22s ease" }}
+          className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#0d0d17]/98 backdrop-blur-2xl border-t border-white/[0.07] rounded-t-[22px]"
+          style={{
+            animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            paddingBottom:
+              "max(env(safe-area-inset-bottom, 0px), 20px)",
+          }}
         >
-          {/* Handle bar */}
-          <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5" />
+          {/* Drag handle */}
+          <div className="w-8 h-[3px] bg-white/[0.1] rounded-full mx-auto mt-[14px] mb-[18px]" />
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <span className="text-[15px] font-bold text-white/80">More</span>
+          <div className="flex items-center justify-between px-5 mb-[18px]">
+            <span className="text-[14px] font-semibold text-white/70 tracking-[-0.01em]">
+              More
+            </span>
             <button
               onClick={() => setOpen(false)}
-              className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center hover:bg-white/[0.1] transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center hover:bg-white/[0.1] active:bg-white/[0.14] transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4 text-white/50" />
+              <X className="w-[14px] h-[14px] text-white/[0.45]" />
             </button>
           </div>
 
-          {/* 3-col grid */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* 3-column grid */}
+          <div className="grid grid-cols-3 gap-[10px] px-4 pb-2">
             {BOTTOM_MORE.map(({ href, label, icon: Icon, badge, urgent }) => {
               const active = isRouteActive(pathname, href);
               return (
@@ -132,20 +159,22 @@ export function BottomNav() {
                   key={href}
                   href={href}
                   className={cn(
-                    "relative flex flex-col items-center justify-center",
-                    "gap-2 py-4 px-2 rounded-2xl border transition-colors",
+                    "relative flex flex-col items-center justify-center gap-2",
+                    "py-[18px] px-2 rounded-2xl border transition-all duration-150",
                     active
-                      ? "bg-indigo-500/[0.15] border-indigo-500/30"
-                      : "bg-white/[0.03] border-white/[0.06] active:bg-white/[0.08]"
+                      ? "bg-indigo-500/[0.12] border-indigo-500/[0.22]"
+                      : "bg-white/[0.025] border-white/[0.05] active:bg-white/[0.06]"
                   )}
                 >
                   {badge && (
                     <span
                       className={cn(
-                        "absolute top-2.5 right-2.5",
-                        "min-w-[18px] h-[18px] px-1 rounded-full",
-                        "text-[9px] font-bold flex items-center justify-center",
-                        urgent ? "bg-red-500/20 text-red-400" : "bg-indigo-500/20 text-indigo-400"
+                        "absolute top-2 right-2",
+                        "min-w-[16px] h-4 px-1 rounded-full",
+                        "text-[8px] font-bold flex items-center justify-center leading-none",
+                        urgent
+                          ? "bg-red-500/[0.15] text-red-400"
+                          : "bg-indigo-500/[0.15] text-indigo-400"
                       )}
                     >
                       {badge}
@@ -153,15 +182,15 @@ export function BottomNav() {
                   )}
                   <Icon
                     className={cn(
-                      "w-[22px] h-[22px]",
-                      active ? "text-indigo-400" : "text-white/45"
+                      "w-[21px] h-[21px] transition-colors duration-150",
+                      active ? "text-indigo-400" : "text-white/[0.42]"
                     )}
                     strokeWidth={active ? 2.2 : 1.8}
                   />
                   <span
                     className={cn(
-                      "text-[11px] font-semibold text-center",
-                      active ? "text-indigo-400" : "text-white/50"
+                      "text-[11px] font-medium text-center leading-tight",
+                      active ? "text-indigo-300" : "text-white/[0.48]"
                     )}
                   >
                     {label}
@@ -173,13 +202,13 @@ export function BottomNav() {
         </div>
       )}
 
-      {/* ── Animations ──────────────────────────────────────────────────── */}
+      {/* ── Keyframes ───────────────────────────────────────────────── */}
       <style>{`
-        @keyframes slideUp {
+        @keyframes ssc-slideUp {
           from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
-        @keyframes fadeIn {
+        @keyframes ssc-fadeIn {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
