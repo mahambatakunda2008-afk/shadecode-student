@@ -308,7 +308,7 @@ export default function LeaderboardPage() {
     <div
       style={{
         padding:
-          "60px 20px 120px",
+          "32px 20px 24px",
         maxWidth: "1100px",
         margin: "0 auto",
       }}
