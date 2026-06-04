@@ -101,7 +101,7 @@ function DashboardSkeleton() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <div style={{ ...pulse, height: "11px", width: "90px" }} />
@@ -582,13 +582,13 @@ export default function Dashboard() {
   const insight = generateInsight(examResults, focusSessions, tasks, revisionItems);
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* ── Header + sign out (preserved exactly) ──────────────────────── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <p style={{ color: "var(--muted-foreground)", fontSize: "13px" }}>Welcome back</p>
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>
+          <h1 style={{ fontSize: "28px", fontWeight: 800 }}>
             {profile?.username || "Student"} 👋
           </h1>
         </div>
