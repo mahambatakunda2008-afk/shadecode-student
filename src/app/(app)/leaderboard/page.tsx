@@ -1,5 +1,13 @@
 "use client";
 
+// src/app/(app)/leaderboard/page.tsx
+//
+// FIX: Removed .eq("current_season", CURRENT_SEASON) filter.
+// The streak.ts utility never writes current_season to profiles,
+// so that filter always returned 0 results → "No rankings yet".
+// Now fetches all profiles and computes cortex_score client-side.
+// Season XP is shown when available but is not required for ranking.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -19,268 +27,140 @@ interface LeaderboardEntry {
   season_xp: number;
   level: number;
   streak: number;
-  current_season?: string;
   cortex_score?: number;
 }
-
-const CURRENT_SEASON = "S-2026-5";
 
 export default function LeaderboardPage() {
   const supabase = useMemo(() => createClient(), []);
 
-  const [entries, setEntries] = useState<
-    LeaderboardEntry[]
-  >([]);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState("");
+  const [lastUpdated, setLastUpdated] = useState("");
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [currentUserId, setCurrentUserId] =
-    useState("");
-
-  const [lastUpdated, setLastUpdated] =
-    useState("");
-
-  /* =========================
+  /* ═══════════════════════════
      FETCH LEADERBOARD
-  ========================= */
+  ═══════════════════════════ */
 
-  const fetchLeaderboard = useCallback(
-    async () => {
-      setLoading(true);
+  const fetchLeaderboard = useCallback(async () => {
+    setLoading(true);
 
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-        if (user) {
-          setCurrentUserId(user.id);
-        }
+      if (user) setCurrentUserId(user.id);
 
-        const { data, error } =
-          await supabase
-            .from("profiles")
-            .select(`
-              id,
-              username,
-              xp,
-              season_xp,
-              level,
-              streak,
-              current_season
-            `)
-            .eq(
-              "current_season",
-              CURRENT_SEASON
-            )
-            .order("season_xp", {
-              ascending: false,
-            })
-            .order("xp", {
-              ascending: false,
-            })
-            .order("streak", {
-              ascending: false,
-            })
-            .order("level", {
-              ascending: false,
-            })
-            .limit(100);
+      // FIX: removed .eq("current_season", CURRENT_SEASON)
+      // That field is never set by streak.ts so it always returned empty.
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, username, xp, season_xp, level, streak")
+        .order("xp", { ascending: false })
+        .limit(100);
 
-        if (error) {
-          console.error(
-            "Leaderboard error:",
-            error
-          );
-        }
-
-        /* =========================
-           CORTEX SCORE
-        ========================= */
-
-        const leaderboardData: LeaderboardEntry[] =
-          (data || [])
-            .map((p) => {
-              const seasonXP =
-                typeof p.season_xp ===
-                "number"
-                  ? p.season_xp
-                  : 0;
-
-              const totalXP =
-                typeof p.xp === "number"
-                  ? p.xp
-                  : 0;
-
-              const streak =
-                typeof p.streak ===
-                "number"
-                  ? p.streak
-                  : 0;
-
-              const level =
-                typeof p.level ===
-                "number"
-                  ? p.level
-                  : 1;
-
-              const cortex_score =
-                seasonXP * 1.0 +
-                totalXP * 0.15 +
-                streak * 40 +
-                level * 75;
-
-              return {
-                id: p.id,
-
-                username:
-                  p.username ||
-                  "Student",
-
-                xp: totalXP,
-
-                season_xp:
-                  seasonXP,
-
-                level,
-
-                streak,
-
-                current_season:
-                  p.current_season,
-
-                cortex_score,
-              };
-            })
-
-            .sort(
-              (a, b) =>
-                (b.cortex_score || 0) -
-                (a.cortex_score || 0)
-            );
-
-        setEntries(leaderboardData);
-
-        setLastUpdated(
-          new Date().toLocaleTimeString(
-            [],
-            {
-              hour: "2-digit",
-              minute: "2-digit",
-            }
-          )
-        );
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error("Leaderboard error:", error);
       }
-    },
-    [supabase]
-  );
 
-  /* =========================
-     INITIAL LOAD
-  ========================= */
+      const leaderboardData: LeaderboardEntry[] = (data || [])
+        .map((p) => {
+          const seasonXP = typeof p.season_xp === "number" ? p.season_xp : 0;
+          const totalXP = typeof p.xp === "number" ? p.xp : 0;
+          const streak = typeof p.streak === "number" ? p.streak : 0;
+          const level = typeof p.level === "number" ? p.level : 1;
+
+          // Cortex score — same formula as before
+          const cortex_score =
+            seasonXP * 1.0 + totalXP * 0.15 + streak * 40 + level * 75;
+
+          return {
+            id: p.id,
+            username: p.username || "Student",
+            xp: totalXP,
+            season_xp: seasonXP,
+            level,
+            streak,
+            cortex_score,
+          };
+        })
+        .sort((a, b) => (b.cortex_score || 0) - (a.cortex_score || 0));
+
+      setEntries(leaderboardData);
+      setLastUpdated(
+        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
-  /* =========================
+  /* ═══════════════════════════
      REALTIME
-  ========================= */
+  ═══════════════════════════ */
 
   useEffect(() => {
     const channel = supabase
       .channel("leaderboard-live")
-
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "profiles",
-        },
-        () => {
-          fetchLeaderboard();
-        }
+        { event: "*", schema: "public", table: "profiles" },
+        () => fetchLeaderboard()
       )
-
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [fetchLeaderboard, supabase]);
 
-  /* =========================
+  /* ═══════════════════════════
      HELPERS
-  ========================= */
+  ═══════════════════════════ */
 
-  const getRankStyle = (
-    rank: number
-  ) => {
-    if (rank === 1) {
+  const getRankStyle = (rank: number) => {
+    if (rank === 1)
       return {
         color: "#f59e0b",
         bg: "rgba(245,158,11,0.12)",
-        border:
-          "1px solid rgba(245,158,11,0.22)",
+        border: "1px solid rgba(245,158,11,0.22)",
         icon: <Crown size={18} />,
       };
-    }
-
-    if (rank === 2) {
+    if (rank === 2)
       return {
         color: "#cbd5e1",
         bg: "rgba(203,213,225,0.08)",
-        border:
-          "1px solid rgba(203,213,225,0.18)",
+        border: "1px solid rgba(203,213,225,0.18)",
         icon: <Medal size={18} />,
       };
-    }
-
-    if (rank === 3) {
+    if (rank === 3)
       return {
         color: "#d97706",
         bg: "rgba(217,119,6,0.08)",
-        border:
-          "1px solid rgba(217,119,6,0.18)",
+        border: "1px solid rgba(217,119,6,0.18)",
         icon: <Trophy size={18} />,
       };
-    }
-
     return {
-      color:
-        "var(--muted-foreground)",
-
+      color: "var(--muted-foreground)",
       bg: "transparent",
-
       border: "transparent",
-
       icon: (
-        <span
-          style={{
-            fontSize: "13px",
-            fontWeight: 700,
-          }}
-        >
-          #{rank}
-        </span>
+        <span style={{ fontSize: "13px", fontWeight: 700 }}>#{rank}</span>
       ),
     };
   };
 
   const currentUserRank =
-    entries.findIndex(
-      (e) => e.id === currentUserId
-    ) + 1;
+    entries.findIndex((e) => e.id === currentUserId) + 1;
 
-  /* =========================
+  /* ═══════════════════════════
      LOADING
-  ========================= */
+  ═══════════════════════════ */
 
   if (loading) {
     return (
@@ -290,36 +170,36 @@ export default function LeaderboardPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color:
-            "var(--muted-foreground)",
-          fontSize: "14px",
+          flexDirection: "column",
+          gap: 12,
+          color: "var(--muted-foreground)",
         }}
       >
-        Cortex synchronizing rankings...
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            border: "2px solid rgba(99,102,241,0.2)",
+            borderTopColor: "var(--primary)",
+            animation: "lb-spin 0.8s linear infinite",
+          }}
+        />
+        <span style={{ fontSize: 14 }}>Loading rankings…</span>
+        <style>{`@keyframes lb-spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
 
-  /* =========================
+  /* ═══════════════════════════
      PAGE
-  ========================= */
+  ═══════════════════════════ */
 
   return (
-    <div
-      style={{
-        padding:
-          "32px 20px 24px",
-        maxWidth: "1100px",
-        margin: "0 auto",
-      }}
-    >
-      {/* HEADER */}
+    <div style={{ padding: "32px 20px 24px", maxWidth: "1100px", margin: "0 auto" }}>
 
-      <div
-        style={{
-          marginBottom: "28px",
-        }}
-      >
+      {/* HEADER */}
+      <div style={{ marginBottom: "28px" }}>
         <p
           style={{
             fontSize: "12px",
@@ -332,33 +212,15 @@ export default function LeaderboardPage() {
         >
           Cortex OS
         </p>
-
-        <h1
-          style={{
-            fontSize: "56px",
-            lineHeight: 1,
-            fontWeight: 900,
-            margin: 0,
-          }}
-        >
-          Season Leaderboard
+        <h1 style={{ fontSize: "56px", lineHeight: 1, fontWeight: 900, margin: 0 }}>
+          Leaderboard
         </h1>
-
-        <p
-          style={{
-            marginTop: "14px",
-            color:
-              "var(--muted-foreground)",
-            fontSize: "18px",
-          }}
-        >
-          Adaptive competitive ecosystem ·{" "}
-          {CURRENT_SEASON}
+        <p style={{ marginTop: "14px", color: "var(--muted-foreground)", fontSize: "18px" }}>
+          Ranked by Cortex score · XP + Streak + Level
         </p>
       </div>
 
       {/* ACTIONS */}
-
       <div
         style={{
           display: "flex",
@@ -374,13 +236,10 @@ export default function LeaderboardPage() {
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            padding:
-              "12px 18px",
+            padding: "12px 18px",
             borderRadius: "16px",
-            border:
-              "1px solid rgba(255,255,255,0.08)",
-            background:
-              "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.03)",
             color: "white",
             cursor: "pointer",
             fontWeight: 700,
@@ -389,28 +248,20 @@ export default function LeaderboardPage() {
           <RefreshCcw size={16} />
           Refresh
         </button>
-
-        <div
-          style={{
-            fontSize: "13px",
-            color:
-              "var(--muted-foreground)",
-          }}
-        >
-          Updated {lastUpdated}
-        </div>
+        {lastUpdated && (
+          <div style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
+            Updated {lastUpdated}
+          </div>
+        )}
       </div>
 
-      {/* CURRENT USER */}
-
+      {/* CURRENT USER POSITION */}
       {currentUserRank > 0 && (
         <div
           style={{
             marginBottom: "22px",
-            background:
-              "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(99,102,241,0.04))",
-            border:
-              "1px solid rgba(99,102,241,0.2)",
+            background: "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(99,102,241,0.04))",
+            border: "1px solid rgba(99,102,241,0.2)",
             borderRadius: "24px",
             padding: "22px",
           }}
@@ -418,555 +269,186 @@ export default function LeaderboardPage() {
           <div
             style={{
               display: "flex",
-              justifyContent:
-                "space-between",
+              justifyContent: "space-between",
               alignItems: "center",
             }}
           >
             <div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "13px",
-                  color:
-                    "var(--muted-foreground)",
-                }}
-              >
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--muted-foreground)" }}>
                 Your Position
               </p>
-
-              <h2
-                style={{
-                  margin:
-                    "8px 0 0 0",
-                  fontSize: "42px",
-                  fontWeight: 900,
-                }}
-              >
+              <h2 style={{ margin: "8px 0 0 0", fontSize: "42px", fontWeight: 900 }}>
                 #{currentUserRank}
               </h2>
             </div>
-
-            <Orbit
-              size={46}
-              color="var(--primary)"
-            />
+            <Orbit size={46} color="var(--primary)" />
           </div>
         </div>
       )}
 
       {/* EMPTY STATE */}
-
       {entries.length === 0 ? (
         <div
           style={{
-            padding:
-              "90px 24px",
+            padding: "90px 24px",
             textAlign: "center",
             borderRadius: "28px",
-            background:
-              "rgba(255,255,255,0.03)",
-            border:
-              "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <h2
-            style={{
-              fontSize: "34px",
-              fontWeight: 900,
-              marginBottom: "14px",
-            }}
-          >
+          <h2 style={{ fontSize: "34px", fontWeight: 900, marginBottom: "14px" }}>
             No rankings yet
           </h2>
-
-          <p
-            style={{
-              color:
-                "var(--muted-foreground)",
-              maxWidth: "520px",
-              margin: "0 auto",
-              lineHeight: 1.8,
-              fontSize: "15px",
-            }}
-          >
-            Cortex has not detected
-            enough competitive activity
-            this season.
+          <p style={{ color: "var(--muted-foreground)", maxWidth: "520px", margin: "0 auto", lineHeight: 1.8, fontSize: "15px" }}>
+            Complete exams and focus sessions to earn XP and appear on the leaderboard.
           </p>
         </div>
       ) : (
         <>
           {/* PODIUM */}
-
           {entries.length >= 3 && (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns:
-                  "repeat(3, 1fr)",
+                gridTemplateColumns: "repeat(3, 1fr)",
                 gap: "16px",
                 marginBottom: "26px",
               }}
             >
-              {[
-                entries[1],
-                entries[0],
-                entries[2],
-              ].map(
-                (
-                  entry,
-                  index
-                ) => {
-                  const actualRank =
-                    index === 0
-                      ? 2
-                      : index === 1
-                      ? 1
-                      : 3;
+              {[entries[1], entries[0], entries[2]].map((entry, index) => {
+                const actualRank = index === 0 ? 2 : index === 1 ? 1 : 3;
+                const rankStyle = getRankStyle(actualRank);
+                const isCurrentUser = entry.id === currentUserId;
 
-                  const rankStyle =
-                    getRankStyle(
-                      actualRank
-                    );
-
-                  const isCurrentUser =
-                    entry.id ===
-                    currentUserId;
-
-                  return (
+                return (
+                  <div
+                    key={entry.id}
+                    style={{
+                      background: rankStyle.bg,
+                      border: rankStyle.border,
+                      borderRadius: "26px",
+                      padding: "24px 18px",
+                      textAlign: "center",
+                      transform: actualRank === 1 ? "translateY(-12px)" : "none",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px", color: rankStyle.color }}>
+                      {rankStyle.icon}
+                    </div>
                     <div
-                      key={
-                        entry.id
-                      }
                       style={{
-                        background:
-                          rankStyle.bg,
-
-                        border:
-                          rankStyle.border,
-
-                        borderRadius:
-                          "26px",
-
-                        padding:
-                          "24px 18px",
-
-                        textAlign:
-                          "center",
-
-                        transform:
-                          actualRank ===
-                          1
-                            ? "translateY(-12px)"
-                            : "none",
+                        width: actualRank === 1 ? "88px" : "74px",
+                        height: actualRank === 1 ? "88px" : "74px",
+                        borderRadius: "50%",
+                        background: isCurrentUser ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.06)",
+                        margin: "0 auto 14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 900,
+                        fontSize: actualRank === 1 ? "28px" : "22px",
                       }}
                     >
-                      <div
-                        style={{
-                          display:
-                            "flex",
-
-                          justifyContent:
-                            "center",
-
-                          marginBottom:
-                            "14px",
-
-                          color:
-                            rankStyle.color,
-                        }}
-                      >
-                        {
-                          rankStyle.icon
-                        }
-                      </div>
-
-                      <div
-                        style={{
-                          width:
-                            actualRank ===
-                            1
-                              ? "88px"
-                              : "74px",
-
-                          height:
-                            actualRank ===
-                            1
-                              ? "88px"
-                              : "74px",
-
-                          borderRadius:
-                            "50%",
-
-                          background:
-                            isCurrentUser
-                              ? "rgba(99,102,241,0.35)"
-                              : "rgba(255,255,255,0.06)",
-
-                          margin:
-                            "0 auto 14px",
-
-                          display:
-                            "flex",
-
-                          alignItems:
-                            "center",
-
-                          justifyContent:
-                            "center",
-
-                          fontWeight: 900,
-
-                          fontSize:
-                            actualRank ===
-                            1
-                              ? "28px"
-                              : "22px",
-                        }}
-                      >
-                        {entry.username
-                          .charAt(
-                            0
-                          )
-                          .toUpperCase()}
-                      </div>
-
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontWeight: 800,
-                          fontSize:
-                            actualRank ===
-                            1
-                              ? "24px"
-                              : "18px",
-                        }}
-                      >
-                        {
-                          entry.username
-                        }
-                      </h3>
-
-                      <p
-                        style={{
-                          margin:
-                            "10px 0 0 0",
-
-                          fontSize:
-                            actualRank ===
-                            1
-                              ? "30px"
-                              : "22px",
-
-                          fontWeight: 900,
-
-                          color:
-                            rankStyle.color,
-                        }}
-                      >
-                        {Math.round(
-                          entry.cortex_score ||
-                            0
-                        ).toLocaleString()}
-                      </p>
-
-                      <p
-                        style={{
-                          margin:
-                            "4px 0 0 0",
-
-                          fontSize:
-                            "12px",
-
-                          color:
-                            "var(--muted-foreground)",
-                        }}
-                      >
-                        cortex score
-                      </p>
+                      {entry.username.charAt(0).toUpperCase()}
                     </div>
-                  );
-                }
-              )}
+                    <h3 style={{ margin: 0, fontWeight: 800, fontSize: actualRank === 1 ? "24px" : "18px" }}>
+                      {entry.username}
+                    </h3>
+                    <p style={{ margin: "10px 0 0 0", fontSize: actualRank === 1 ? "30px" : "22px", fontWeight: 900, color: rankStyle.color }}>
+                      {Math.round(entry.cortex_score || 0).toLocaleString()}
+                    </p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                      cortex score
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* FULL LIST */}
-
           <div
             style={{
-              background:
-                "rgba(255,255,255,0.03)",
-
-              border:
-                "1px solid rgba(255,255,255,0.06)",
-
-              borderRadius:
-                "28px",
-
-              overflow:
-                "hidden",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: "28px",
+              overflow: "hidden",
             }}
           >
-            {entries.map(
-              (
-                entry,
-                index
-              ) => {
-                const rank =
-                  index + 1;
+            {entries.map((entry, index) => {
+              const rank = index + 1;
+              const rankStyle = getRankStyle(rank);
+              const isCurrentUser = entry.id === currentUserId;
 
-                const rankStyle =
-                  getRankStyle(
-                    rank
-                  );
+              return (
+                <div
+                  key={entry.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    padding: "18px 20px",
+                    borderBottom:
+                      index !== entries.length - 1
+                        ? "1px solid rgba(255,255,255,0.04)"
+                        : "none",
+                    background: isCurrentUser ? "rgba(99,102,241,0.08)" : "transparent",
+                  }}
+                >
+                  {/* RANK */}
+                  <div style={{ width: "44px", display: "flex", justifyContent: "center", color: rankStyle.color }}>
+                    {rankStyle.icon}
+                  </div>
 
-                const isCurrentUser =
-                  entry.id ===
-                  currentUserId;
-
-                return (
+                  {/* AVATAR */}
                   <div
-                    key={
-                      entry.id
-                    }
                     style={{
-                      display:
-                        "flex",
-
-                      alignItems:
-                        "center",
-
-                      gap: "16px",
-
-                      padding:
-                        "18px 20px",
-
-                      borderBottom:
-                        index !==
-                        entries.length -
-                          1
-                          ? "1px solid rgba(255,255,255,0.04)"
-                          : "none",
-
-                      background:
-                        isCurrentUser
-                          ? "rgba(99,102,241,0.08)"
-                          : "transparent",
+                      width: "52px",
+                      height: "52px",
+                      borderRadius: "50%",
+                      background: isCurrentUser ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 900,
+                      fontSize: "18px",
+                      flexShrink: 0,
                     }}
                   >
-                    {/* RANK */}
+                    {entry.username.charAt(0).toUpperCase()}
+                  </div>
 
-                    <div
-                      style={{
-                        width:
-                          "44px",
-
-                        display:
-                          "flex",
-
-                        justifyContent:
-                          "center",
-
-                        color:
-                          rankStyle.color,
-                      }}
-                    >
-                      {
-                        rankStyle.icon
-                      }
-                    </div>
-
-                    {/* AVATAR */}
-
-                    <div
-                      style={{
-                        width:
-                          "52px",
-
-                        height:
-                          "52px",
-
-                        borderRadius:
-                          "50%",
-
-                        background:
-                          isCurrentUser
-                            ? "rgba(99,102,241,0.3)"
-                            : "rgba(255,255,255,0.06)",
-
-                        display:
-                          "flex",
-
-                        alignItems:
-                          "center",
-
-                        justifyContent:
-                          "center",
-
-                        fontWeight: 900,
-
-                        fontSize:
-                          "18px",
-
-                        flexShrink: 0,
-                      }}
-                    >
-                      {entry.username
-                        .charAt(
-                          0
-                        )
-                        .toUpperCase()}
-                    </div>
-
-                    {/* INFO */}
-
-                    <div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: 0,
-                          fontWeight: 800,
-                          fontSize:
-                            "16px",
-                        }}
-                      >
-                        {
-                          entry.username
-                        }
-
-                        {isCurrentUser &&
-                          " (you)"}
-                      </p>
-
-                      <div
-                        style={{
-                          display:
-                            "flex",
-
-                          alignItems:
-                            "center",
-
-                          gap: "14px",
-
-                          marginTop:
-                            "6px",
-
-                          flexWrap:
-                            "wrap",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display:
-                              "flex",
-
-                            alignItems:
-                              "center",
-
-                            gap: "5px",
-
-                            fontSize:
-                              "12px",
-
-                            color:
-                              "var(--muted-foreground)",
-                          }}
-                        >
-                          <Zap
-                            size={
-                              12
-                            }
-                          />
-                          Level{" "}
-                          {
-                            entry.level
-                          }
-                        </div>
-
-                        <div
-                          style={{
-                            display:
-                              "flex",
-
-                            alignItems:
-                              "center",
-
-                            gap: "5px",
-
-                            fontSize:
-                              "12px",
-
-                            color:
-                              "var(--muted-foreground)",
-                          }}
-                        >
-                          <Flame
-                            size={
-                              12
-                            }
-                          />
-                          {
-                            entry.streak
-                          }
-                          d streak
-                        </div>
+                  {/* INFO */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: "16px" }}>
+                      {entry.username}
+                      {isCurrentUser && " (you)"}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "6px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                        <Zap size={12} />
+                        Level {entry.level}
                       </div>
-                    </div>
-
-                    {/* SCORE */}
-
-                    <div
-                      style={{
-                        textAlign:
-                          "right",
-
-                        flexShrink: 0,
-
-                        minWidth:
-                          "120px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize:
-                            "26px",
-
-                          fontWeight: 900,
-
-                          lineHeight: 1,
-                        }}
-                      >
-                        {Math.round(
-                          entry.cortex_score ||
-                            0
-                        ).toLocaleString()}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize:
-                            "11px",
-
-                          color:
-                            "var(--muted-foreground)",
-
-                          marginTop:
-                            "6px",
-                        }}
-                      >
-                        cortex score
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--muted-foreground)" }}>
+                        <Flame size={12} />
+                        {entry.streak}d streak
                       </div>
                     </div>
                   </div>
-                );
-              }
-            )}
+
+                  {/* SCORE */}
+                  <div style={{ textAlign: "right", flexShrink: 0, minWidth: "120px" }}>
+                    <div style={{ fontSize: "26px", fontWeight: 900, lineHeight: 1 }}>
+                      {Math.round(entry.cortex_score || 0).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "6px" }}>
+                      cortex score
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
