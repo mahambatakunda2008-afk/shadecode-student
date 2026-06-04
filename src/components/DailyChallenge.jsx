@@ -11,15 +11,12 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Flame, ChevronRight, CheckCircle2, Zap } from "lucide-react";
 
-interface DailyChallengeData {
-  id: string;
-  subject: string;
-  question: string;
-  options: string[];
-  correct_index: number;
-  xp_reward: number;
-  date: string;
-}
+/**
+ * @typedef {Object} DailyChallengeData
+ * @property {string} id
+ * @property {string} subject
+ * @property {string} question
+ */
 
 interface UserChallengeStatus {
   completed: boolean;
