@@ -160,7 +160,7 @@ export default function Tasks() {
   };
 
   if (loading) return (
-    <div style={{ padding: "60px 24px", textAlign: "center", color: "var(--muted-foreground)" }}>
+    <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--muted-foreground)" }}>
       Loading...
     </div>
   );
@@ -184,7 +184,7 @@ export default function Tasks() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* Toast */}
       {toast && (
