@@ -198,7 +198,7 @@ export default function Timetable() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       <div>
         <h1 style={{ fontSize: "28px", fontWeight: 800 }}>Timetable</h1>
