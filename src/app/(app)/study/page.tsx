@@ -334,7 +334,7 @@ export default function StudyPage() {
   return (
     <div
       style={{
-        padding: "60px 20px 140px",
+        padding: "32px 20px 24px",
         maxWidth: "1100px",
         margin: "0 auto",
       }}
@@ -361,8 +361,8 @@ export default function StudyPage() {
 
         <h1
           style={{
-            fontSize: "36px",
-            fontWeight: 900,
+            fontSize: "30px",
+            fontWeight: 800,
             margin: 0,
           }}
         >
