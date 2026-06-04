@@ -44,9 +44,9 @@ export default function Feedback() {
   };
 
   if (submitted) return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px", alignItems: "center", textAlign: "center" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px", alignItems: "center", textAlign: "center" }}>
       <span style={{ fontSize: "4rem" }}>🙏</span>
-      <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Thank you</h1>
+      <h1 style={{ fontSize: "28px", fontWeight: 800 }}>Thank you</h1>
       <p style={{ color: "var(--muted-foreground)", fontSize: "14px", lineHeight: 1.6 }}>
         Your feedback has been received. Every report helps make Shadecode Student better.
       </p>
@@ -70,7 +70,7 @@ export default function Feedback() {
   );
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* Header */}
       <div>
