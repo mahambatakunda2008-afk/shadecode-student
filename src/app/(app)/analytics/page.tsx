@@ -64,7 +64,7 @@ function AnalyticsSkeleton() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* Header */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <div style={{ ...pulse, height: "10px", width: "100px" }} />
@@ -119,7 +119,7 @@ function AnalyticsSkeleton() {
 
 function AnalyticsError({ onRetry }: { onRetry: () => void }) {
   return (
-    <div style={{ padding: "60px 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+    <div style={{ padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
       <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", marginBottom: "16px" }}>
         ⚠️
       </div>
@@ -248,7 +248,7 @@ export default function Analytics() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* Header */}
       <div>
