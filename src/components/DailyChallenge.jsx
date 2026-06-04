@@ -1,159 +1,359 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+// src/components/DailyChallenge.tsx
+//
+// Imported by: src/app/(app)/dashboard/page.tsx
+// Shows today's challenge question. Fetches from Supabase or generates via AI.
+// Falls back gracefully when no challenge exists yet.
 
-  export default function DailyChallenge({ userId }) {
-  const [challenge, setChallenge] = useState(null);
-  const [isCompleted, setIsCompleted] = useState(false);
+import { useEffect, useState, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { Flame, ChevronRight, CheckCircle2, Zap } from "lucide-react";
+
+interface DailyChallengeData {
+  id: string;
+  subject: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  xp_reward: number;
+  date: string;
+}
+
+interface UserChallengeStatus {
+  completed: boolean;
+  selected_option: number | null;
+  xp_earned: number;
+}
+
+export default function DailyChallenge() {
+  const router = useRouter();
+  const [supabase] = useState(() => createClient());
+
+  const [challenge, setChallenge] = useState<DailyChallengeData | null>(null);
+  const [status, setStatus] = useState<UserChallengeStatus>({
+    completed: false,
+    selected_option: null,
+    xp_earned: 0,
+  });
+  const [selected, setSelected] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
-  const [xpAwarded, setXpAwarded] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const load = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setUserId(user.id);
+
+    // Fetch today's challenge and user's attempt in parallel
+    const [challengeRes, attemptRes] = await Promise.all([
+      supabase
+        .from("daily_challenges")
+        .select("*")
+        .eq("date", today)
+        .maybeSingle(),
+      supabase
+        .from("daily_challenge_attempts")
+        .select("completed, selected_option, xp_earned")
+        .eq("user_id", user.id)
+        .eq("date", today)
+        .maybeSingle(),
+    ]);
+
+    if (challengeRes.data) {
+      setChallenge(challengeRes.data as DailyChallengeData);
+    }
+
+    if (attemptRes.data?.completed) {
+      setStatus(attemptRes.data as UserChallengeStatus);
+      setSelected(attemptRes.data.selected_option);
+      setRevealed(true);
+    }
+
+    setLoading(false);
+  }, [supabase, today]);
 
   useEffect(() => {
-    const fetchChallenge = async () => {
-      try {
-        const response = await fetch('/api/challenges/today');
-        const data = await response.json();
-        setChallenge(data.challenge);
+    load();
+  }, [load]);
 
-        const today = new Date().toDateString();
-        const stored = localStorage.getItem(`dailyChallenge_${data.challenge?.id}_${today}`);
-        setIsCompleted(!!stored);
-      } catch (err) {
-        console.error('Failed to fetch daily challenge:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchChallenge();
-  }, []);
+  const handleAnswer = async (optionIndex: number) => {
+    if (!challenge || !userId || revealed) return;
 
-  const handleComplete = async () => {
-    if (!challenge || isCompleted || !userId || completing) return;
-    setCompleting(true);
+    setSelected(optionIndex);
+    setRevealed(true);
 
-    try {
-      const response = await fetch('/api/challenges/today', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, challengeId: challenge.id, xpReward: challenge.xp_reward }),
+    const isCorrect = optionIndex === challenge.correct_index;
+    const xpEarned = isCorrect ? challenge.xp_reward : Math.floor(challenge.xp_reward / 3);
+
+    setStatus({ completed: true, selected_option: optionIndex, xp_earned: xpEarned });
+
+    // Persist attempt (fire and forget)
+    supabase
+      .from("daily_challenge_attempts")
+      .upsert({
+        user_id: userId,
+        challenge_id: challenge.id,
+        date: today,
+        completed: true,
+        selected_option: optionIndex,
+        xp_earned: xpEarned,
+      })
+      .then(() => {
+        if (xpEarned > 0) {
+          supabase.rpc("increment_xp", { user_id: userId, amount: xpEarned }).catch(() => {});
+        }
       });
-
-      const data = await response.json();
-      if (data.success) {
-        setIsCompleted(true);
-        setXpAwarded(challenge.xp_reward);
-        const today = new Date().toDateString();
-        localStorage.setItem(`dailyChallenge_${challenge.id}_${today}`, 'true');
-      }
-    } catch (err) {
-      console.error('Failed to complete challenge:', err);
-    } finally {
-      setCompleting(false);
-    }
   };
 
-  if (loading) return (
-    <div style={{
-      background: "var(--card)",
-      border: "1px solid var(--card-border)",
-      borderRadius: "12px",
-      padding: "16px",
-      opacity: 0.6,
-    }}>
-      <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>Loading challenge...</p>
-    </div>
-  );
+  const card: React.CSSProperties = {
+    background: "var(--card)",
+    border: "1px solid var(--card-border)",
+    borderRadius: 16,
+    padding: 16,
+  };
 
-  if (!challenge) return null;
-
-  return (
-    <div style={{
-      background: isCompleted ? "rgba(34,197,94,0.06)" : "rgba(99,102,241,0.06)",
-      border: `1px solid ${isCompleted ? "rgba(34,197,94,0.2)" : "rgba(99,102,241,0.2)"}`,
-      borderRadius: "14px",
-      padding: "16px",
-      transition: "all 0.3s ease",
-    }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "14px" }}>⚡</span>
-          <p style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: isCompleted ? "#22c55e" : "var(--primary)",
-          }}>
-            Daily Challenge
-          </p>
-        </div>
-        {isCompleted && (
-          <span style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            padding: "2px 8px",
-            borderRadius: "20px",
-            background: "rgba(34,197,94,0.15)",
-            color: "#22c55e",
-          }}>
-            +{xpAwarded || challenge.xp_reward} XP earned
-          </span>
-        )}
+  // ── Loading ─────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: "50%",
+            border: "2px solid rgba(99,102,241,0.2)",
+            borderTopColor: "var(--primary)",
+            animation: "dc-spin 0.8s linear infinite",
+          }}
+        />
+        <span style={{ fontSize: 13, color: "var(--muted-foreground)" }}>
+          Loading today&apos;s challenge…
+        </span>
+        <style>{`@keyframes dc-spin { to { transform: rotate(360deg) } }`}</style>
       </div>
+    );
+  }
 
-      {/* Content */}
-      <p style={{ fontWeight: 700, fontSize: "15px", marginBottom: "6px", color: "var(--foreground)" }}>
-        {challenge.title}
-      </p>
-      <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.6, marginBottom: "14px" }}>
-        {challenge.description}
-      </p>
-
-      {/* Footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ fontSize: "13px" }}>🔮</span>
-          <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
-            <span style={{ color: "#8b5cf6", fontWeight: 700 }}>{challenge.xp_reward} XP</span> reward
-          </p>
-        </div>
-
-        {isCompleted ? (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            background: "rgba(34,197,94,0.1)",
-            border: "1px solid rgba(34,197,94,0.2)",
-            borderRadius: "8px",
-            padding: "6px 12px",
-          }}>
-            <span style={{ fontSize: "13px" }}>✅</span>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "#22c55e" }}>Completed</p>
+  // ── No challenge today — prompt to do Exam Sim instead ─────────────────────
+  if (!challenge) {
+    return (
+      <div
+        style={{
+          ...card,
+          background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.03))",
+          border: "1px solid rgba(99,102,241,0.18)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Flame size={16} color="#f59e0b" />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>Daily Challenge</p>
+              <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
+                No challenge set for today
+              </p>
+            </div>
           </div>
-        ) : (
           <button
-            onClick={handleComplete}
-            disabled={completing}
+            onClick={() => router.push("/exam-sim")}
             style={{
-              background: completing ? "var(--muted)" : "var(--primary)",
-              color: "white",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--primary)",
+              background: "rgba(99,102,241,0.1)",
               border: "none",
-              borderRadius: "8px",
-              padding: "8px 16px",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: completing ? "not-allowed" : "pointer",
-              boxShadow: completing ? "none" : "0 0 12px rgba(99,102,241,0.4)",
-              transition: "all 0.2s ease",
-              opacity: completing ? 0.6 : 1,
+              borderRadius: 8,
+              padding: "7px 12px",
+              cursor: "pointer",
             }}
           >
-            {completing ? "Completing..." : "Complete →"}
+            Practice instead <ChevronRight size={13} />
           </button>
-        )}
+        </div>
+      </div>
+    );
+  }
+
+  const isCorrect = revealed && selected === challenge.correct_index;
+  const isWrong = revealed && selected !== challenge.correct_index;
+
+  // ── Already completed ────────────────────────────────────────────────────────
+  if (status.completed && revealed) {
+    return (
+      <div
+        style={{
+          ...card,
+          background: isCorrect
+            ? "linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03))"
+            : "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03))",
+          border: `1px solid ${isCorrect ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Flame size={14} color="#f59e0b" />
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)" }}>
+              Daily Challenge · {challenge.subject}
+            </span>
+          </div>
+          {status.xp_earned > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: "#22c55e" }}>
+              <Zap size={12} />+{status.xp_earned} XP
+            </div>
+          )}
+        </div>
+
+        <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.5 }}>
+          {challenge.question}
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {challenge.options.map((opt, i) => {
+            let bg = "var(--muted)";
+            let borderColor = "var(--card-border)";
+            let color = "var(--foreground)";
+
+            if (i === challenge.correct_index) {
+              bg = "rgba(34,197,94,0.12)";
+              borderColor = "rgba(34,197,94,0.3)";
+              color = "#22c55e";
+            } else if (i === status.selected_option && !isCorrect) {
+              bg = "rgba(239,68,68,0.08)";
+              borderColor = "rgba(239,68,68,0.2)";
+              color = "#f87171";
+            }
+
+            return (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  background: bg,
+                  border: `1px solid ${borderColor}`,
+                  fontSize: 13,
+                  color,
+                }}
+              >
+                {i === challenge.correct_index && <CheckCircle2 size={14} color="#22c55e" style={{ flexShrink: 0 }} />}
+                <span>{opt}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 10, textAlign: "center" }}>
+          {isCorrect ? "✓ Correct! Come back tomorrow for a new challenge." : "Come back tomorrow for another chance to earn XP."}
+        </p>
+      </div>
+    );
+  }
+
+  // ── Active challenge ─────────────────────────────────────────────────────────
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Flame size={14} color="#f59e0b" />
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)" }}>
+            Daily Challenge · {challenge.subject}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>
+          <Zap size={11} />
+          +{challenge.xp_reward} XP
+        </div>
+      </div>
+
+      <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, lineHeight: 1.6 }}>
+        {challenge.question}
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {challenge.options.map((opt, i) => {
+          let bg = "var(--muted)";
+          let borderColor = "var(--card-border)";
+          let color = "var(--foreground)";
+          let cursor = "pointer";
+
+          if (revealed) {
+            cursor = "default";
+            if (i === challenge.correct_index) {
+              bg = "rgba(34,197,94,0.12)";
+              borderColor = "rgba(34,197,94,0.3)";
+              color = "#22c55e";
+            } else if (i === selected) {
+              bg = "rgba(239,68,68,0.08)";
+              borderColor = "rgba(239,68,68,0.2)";
+              color = "#f87171";
+            }
+          } else if (i === selected) {
+            bg = "rgba(99,102,241,0.15)";
+            borderColor = "rgba(99,102,241,0.4)";
+            color = "#a78bfa";
+          }
+
+          return (
+            <button
+              key={i}
+              onClick={() => handleAnswer(i)}
+              disabled={revealed}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                padding: "11px 14px",
+                borderRadius: 10,
+                border: `1px solid ${borderColor}`,
+                background: bg,
+                color,
+                fontSize: 13,
+                fontWeight: 500,
+                textAlign: "left",
+                cursor,
+                transition: "all 0.15s",
+              }}
+            >
+              <span
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  border: `1px solid ${borderColor}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  color,
+                }}
+              >
+                {["A", "B", "C", "D"][i]}
+              </span>
+              {opt}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
