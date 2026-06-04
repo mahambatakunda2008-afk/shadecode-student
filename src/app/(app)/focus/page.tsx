@@ -150,7 +150,7 @@ export default function FocusTimer() {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div style={{ padding: "60px 24px 100px", display: "flex", flexDirection: "column", gap: "20px", alignItems: "center" }}>
+    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "20px", alignItems: "center" }}>
 
       {/* Header */}
       <div style={{ width: "100%", maxWidth: "400px" }}>
