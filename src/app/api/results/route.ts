@@ -1,6 +1,6 @@
 // src/app/api/results/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export type ExamResultPayload = {
   subject: string
@@ -8,21 +8,20 @@ export type ExamResultPayload = {
   difficulty: string
   score: number
   total: number
-  time_taken: number  // seconds
+  time_taken: number
   xp_earned: number
   grade: string
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createSupabaseServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     const body: ExamResultPayload = await request.json()
 
-    // Validate
     const required = ['subject', 'difficulty', 'score', 'total', 'time_taken', 'xp_earned', 'grade']
     for (const field of required) {
       if (body[field as keyof ExamResultPayload] === undefined) {
@@ -30,7 +29,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fetch username if logged in
     let user_name: string | null = null
     if (user) {
       const { data: profile } = await supabase
@@ -75,7 +73,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from('exam_results')
     .select('*')
