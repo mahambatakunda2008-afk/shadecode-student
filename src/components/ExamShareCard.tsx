@@ -1,4 +1,3 @@
-// src/components/ExamShareCard.tsx
 'use client'
 
 import { useState } from 'react'
@@ -21,16 +20,16 @@ export type ExamResult = {
 
 const GRADE_COLORS: Record<string, string> = {
   'A+': 'text-emerald-400',
-  'A':  'text-emerald-400',
-  'B':  'text-blue-400',
-  'C':  'text-yellow-400',
-  'D':  'text-orange-400',
-  'F':  'text-red-400',
+  'A': 'text-emerald-400',
+  'B': 'text-blue-400',
+  'C': 'text-yellow-400',
+  'D': 'text-orange-400',
+  'F': 'text-red-400',
 }
 
 const DIFFICULTY_BADGE: Record<string, string> = {
-  'O-Level':    'bg-blue-500/15 text-blue-300 border-blue-500/30',
-  'A-Level':    'bg-purple-500/15 text-purple-300 border-purple-500/30',
+  'O-Level': 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  'A-Level': 'bg-purple-500/15 text-purple-300 border-purple-500/30',
   'University': 'bg-rose-500/15 text-rose-300 border-rose-500/30',
 }
 
@@ -47,7 +46,6 @@ function getPercentage(score: number, total: number): number {
 interface ExamShareCardProps {
   result: ExamResult
   shareUrl: string
-  /** When true, shows full share controls (used on /results/[id] page) */
   showSignupCta?: boolean
 }
 
@@ -62,9 +60,10 @@ export default function ExamShareCard({
   const gradeColor = GRADE_COLORS[result.grade] ?? 'text-slate-300'
   const diffBadge = DIFFICULTY_BADGE[result.difficulty] ?? 'bg-slate-500/15 text-slate-300 border-slate-500/30'
 
-  const fullShareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${shareUrl}`
-    : `https://shadecodestudent.vercel.app${shareUrl}`
+  const fullShareUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${shareUrl}`
+      : `https://shadecodestudent.vercel.app${shareUrl}`
 
   const shareText = `I scored ${result.score}/${result.total} (${percentage}%) on ${result.subject} ${result.difficulty} on Shadecode Student 🔥\n\nCan you beat me? ${fullShareUrl}`
 
@@ -80,12 +79,9 @@ export default function ExamShareCard({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {/* Result Card */}
       <div className="relative rounded-2xl border border-white/10 bg-[#0f0f14] overflow-hidden shadow-2xl">
-        {/* Ambient glow */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/8 via-transparent to-purple-600/8 pointer-events-none" />
 
-        {/* Header strip */}
         <div className="px-6 pt-6 pb-4 border-b border-white/5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold tracking-widest text-indigo-400 uppercase">
@@ -102,9 +98,7 @@ export default function ExamShareCard({
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-6 space-y-6">
-          {/* Subject */}
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Subject</p>
             <p className="text-xl font-bold text-white">
@@ -117,7 +111,6 @@ export default function ExamShareCard({
             </p>
           </div>
 
-          {/* Score + Grade */}
           <div className="flex items-end gap-6">
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Score</p>
@@ -135,34 +128,30 @@ export default function ExamShareCard({
             </div>
           </div>
 
-          {/* Stats row */}
           <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Time', value: formatTime(result.time_taken) },
-              { label: 'XP Earned', value: `+${result.xp_earned}` },
-              { label: 'Questions', value: `${result.total}Q` },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="rounded-xl bg-white/4 border border-white/6 px-3 py-3 text-center"
-              >
-                <p className="text-xs text-slate-500 mb-1">{label}</p>
-                <p className="text-sm font-semibold text-white">{value}</p>
-              </div>
-            ))}
+            <div className="rounded-xl bg-white/4 border border-white/6 px-3 py-3 text-center">
+              <p className="text-xs text-slate-500 mb-1">Time</p>
+              <p className="text-sm font-semibold text-white">{formatTime(result.time_taken)}</p>
+            </div>
+            <div className="rounded-xl bg-white/4 border border-white/6 px-3 py-3 text-center">
+              <p className="text-xs text-slate-500 mb-1">XP Earned</p>
+              <p className="text-sm font-semibold text-white">+{result.xp_earned}</p>
+            </div>
+            <div className="rounded-xl bg-white/4 border border-white/6 px-3 py-3 text-center">
+              <p className="text-xs text-slate-500 mb-1">Questions</p>
+              <p className="text-sm font-semibold text-white">{result.total}Q</p>
+            </div>
           </div>
 
-          {/* User name if available */}
           {result.user_name && (
             <p className="text-xs text-slate-500 text-center">
-              by <span className="text-slate-300">{result.user_name}</span>
+              by{' '}
+              <span className="text-slate-300">{result.user_name}</span>
             </p>
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 pb-6 space-y-3">
-          {/* Share buttons */}
           <div className="flex gap-2">
             <button
               onClick={handleCopy}
@@ -186,16 +175,16 @@ export default function ExamShareCard({
             </button>
           </div>
 
-          {/* Signup CTA — shown on public /results page only */}
           {showSignupCta && (
             
               href="/auth/signup"
-              className="block w-full text-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 text-sm transition-colors duration-200 mt-1"
+              className="block w-full text-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 text-sm transition-colors duration-200"
             >
               Challenge them on Shadecode →
-        </a>
+            </a>
           )}
         </div>
       </div>
     </div>
-  )}
+  )
+}
