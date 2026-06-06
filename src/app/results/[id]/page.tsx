@@ -10,7 +10,7 @@ interface Props {
 }
 
 async function getResult(id: string): Promise<ExamResult | null> {
-  const supabase = await createClient()
+  const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from('exam_results')
     .select('*')
