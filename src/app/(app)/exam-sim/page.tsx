@@ -605,19 +605,21 @@ export default function ExamSimulation() {
               🔥 Share your result
             </p>
             <ExamShareCard
-              result={{
-                id:         resultId,
-                user_name:  null,
-                subject,
-                topic:      topic || null,
-                difficulty: DIFFICULTY_DISPLAY[difficulty],
-                score:      results.totalScore,
-                total:      results.maxScore,
-                time_taken: results.timeTaken,
-                xp_earned:  calculateXP(pct, difficulty),
-                grade,
-                created_at: new Date().toISOString(),
-              }}
+              // AFTER
+result={{
+  id:             resultId,
+  user_name:      null,
+  subject,
+  topic:          topic || null,
+  difficulty:     DIFFICULTY_DISPLAY[difficulty],
+  score:          results.totalScore,
+  total:          results.maxScore,
+  question_count: questionCount,
+  time_taken:     results.timeTaken,
+  xp_earned:      calculateXP(pct, difficulty),
+  grade,
+  created_at:     new Date().toISOString(),
+}}
               shareUrl={`/results/${resultId}`}
             />
           </div>
