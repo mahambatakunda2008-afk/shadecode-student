@@ -1,7 +1,6 @@
 "use client";
 
 import Cortex from "@/components/cortex/Cortex";
-import DailyChallenge from "@/components/DailyChallenge";
 import RevisionQueue from "@/components/RevisionQueue";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
