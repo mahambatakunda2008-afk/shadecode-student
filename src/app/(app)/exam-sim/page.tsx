@@ -69,6 +69,13 @@ interface ExamResults {
   timeTaken: number;
 }
 
+interface ChallengeContext {
+  id:         string;
+  name:       string;
+  percentage: number;
+  grade:      string;
+}
+
 type Step = "setup" | "exam" | "marking" | "results";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -146,9 +153,8 @@ export default function ExamSimulation() {
   const [userId,        setUserIdState]     = useState("");
   const [expandedQ,     setExpandedQ]       = useState<number | null>(null);
   const [activeTab,     setActiveTab]       = useState<"overview" | "review">("overview");
-
-  // ── NEW: result ID for share URL ─────────────────────────────────────
-  const [resultId, setResultId] = useState<string | null>(null);
+  const [resultId,      setResultId]        = useState<string | null>(null);
+  const [challengeCtx,  setChallengeCtx]    = useState<ChallengeContext | null>(null);
 
   // ── Synced setters ─────────────────────────────────────────────────────
   const setSubject = (v: string) => { subjectRef.current = v; setSubjectState(v); };
@@ -175,6 +181,41 @@ export default function ExamSimulation() {
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
     })();
+  }, []);
+
+  // ── Challenge mode: read URL params on mount ──────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cid    = params.get("cid");
+    if (!cid) return;
+
+    const sub    = params.get("sub");
+    const dif    = params.get("dif");
+    const cnt    = params.get("cnt");
+    const cpct   = params.get("cpct");
+    const cgrade = params.get("cgrade");
+    const cname  = params.get("cname") ?? "Your challenger";
+
+    if (sub) setSubject(decodeURIComponent(sub));
+    if (cnt) setQuestionCount(Number(cnt));
+    if (dif) {
+      const decoded = decodeURIComponent(dif);
+      const idx = DIFFICULTIES.findIndex(
+        d =>
+          d.label === decoded ||
+          (decoded === "O-Level"    && d.label === "Ordinary") ||
+          (decoded === "A-Level"    && d.label === "Advanced") ||
+          (decoded === "University" && d.label === "Challenge")
+      );
+      if (idx >= 0) setDifficulty(idx);
+    }
+
+    setChallengeCtx({
+      id:         cid,
+      name:       decodeURIComponent(cname),
+      percentage: Number(cpct ?? 0),
+      grade:      cgrade ?? "?",
+    });
   }, []);
 
   // ── saveAnswer ────────────────────────────────────────────────────────
@@ -278,7 +319,6 @@ export default function ExamSimulation() {
           message: insertError.message,
         });
       } else if (insertData?.id) {
-        // Store ID so results page can build the share URL
         setResultId(String(insertData.id));
       }
 
@@ -291,9 +331,27 @@ export default function ExamSimulation() {
       }
     }
 
+    // ── Save challenge attempt (fire-and-forget) ───────────────────────
+    const currentChallenge = challengeCtx;
+    if (currentChallenge?.id) {
+      fetch("/api/challenge/attempt", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id:          currentChallenge.id,
+          percentage:            data.percentage,
+          total_score:           data.totalScore,
+          max_score:             data.maxScore,
+          time_taken:            latestTotalTime - latestTimeLeft,
+          grade:                 getGrade(data.percentage),
+          challenger_percentage: currentChallenge.percentage,
+        }),
+      }).catch(() => {/* non-fatal */});
+    }
+
     setStep("results");
     setMarking(false);
-  }, []);
+  }, [challengeCtx]);
 
   // ── Timer ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -319,7 +377,7 @@ export default function ExamSimulation() {
   const timerColor  = timePercent > 50 ? "#22c55e" : timePercent > 20 ? "#f59e0b" : "#ef4444";
   const timerPulse  = timePercent <= 20;
 
-  const card: React.CSSProperties  = { background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: 16 };
+  const card:  React.CSSProperties = { background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: 16 };
   const input: React.CSSProperties = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "12px 14px", color: "var(--foreground)", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
 
   // ── Navigation ────────────────────────────────────────────────────────
@@ -342,7 +400,12 @@ export default function ExamSimulation() {
       const res = await fetch("/api/exam/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, topic: topic.trim() || null, difficulty: DIFFICULTIES[difficulty].value, questionCount }),
+        body: JSON.stringify({
+          subject,
+          topic:        topic.trim() || null,
+          difficulty:   DIFFICULTIES[difficulty].value,
+          questionCount,
+        }),
       });
       const data = await res.json();
       if (!data.questions) throw new Error("No questions generated");
@@ -374,7 +437,8 @@ export default function ExamSimulation() {
     setResults(null);
     setExpandedQ(null);
     setActiveTab("overview");
-    setResultId(null); // ← clear share state
+    setResultId(null);
+    setChallengeCtx(null);
   };
 
   /* ══════════════════════════════════════════════════════
@@ -387,17 +451,39 @@ export default function ExamSimulation() {
         <p style={{ color: "var(--muted-foreground)", fontSize: 14 }}>Cortex-generated exams with live marking 🧠</p>
       </div>
 
+      {/* Challenge banner */}
+      {challengeCtx && (
+        <div style={{ borderRadius: 14, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#fb923c", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 3px" }}>
+              🔥 Challenge Mode
+            </p>
+            <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>
+              Beat <strong style={{ color: "#f1f5f9" }}>{challengeCtx.name}</strong>&apos;s{" "}
+              <strong style={{ color: "#fb923c" }}>{challengeCtx.percentage}%</strong>{" "}
+              (Grade {challengeCtx.grade})
+            </p>
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: "#fb923c" }}>
+            {challengeCtx.percentage}%
+          </div>
+        </div>
+      )}
+
+      {/* Subject */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 12 }}>Subject</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setSubject(s)} style={{ padding: "8px 14px", borderRadius: 999, border: subject === s ? "1px solid var(--primary)" : "1px solid transparent", background: subject === s ? "rgba(99,102,241,0.15)" : "var(--muted)", color: subject === s ? "var(--primary)" : "var(--foreground)", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
+            <button key={s} onClick={() => setSubject(s)}
+              style={{ padding: "8px 14px", borderRadius: 999, border: subject === s ? "1px solid var(--primary)" : "1px solid transparent", background: subject === s ? "rgba(99,102,241,0.15)" : "var(--muted)", color: subject === s ? "var(--primary)" : "var(--foreground)", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
               {s}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Topic */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>
           Topic{" "}
@@ -406,11 +492,13 @@ export default function ExamSimulation() {
         <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="Leave blank for mixed topics..." style={input} />
       </div>
 
+      {/* Difficulty */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>Difficulty</p>
         <div style={{ display: "flex", gap: 10 }}>
           {DIFFICULTIES.map((d, i) => (
-            <button key={d.label} onClick={() => setDifficulty(i)} style={{ flex: 1, padding: "14px 10px", borderRadius: 12, border: difficulty === i ? `1px solid ${d.color}` : "1px solid transparent", background: difficulty === i ? `${d.color}20` : "var(--muted)", color: difficulty === i ? d.color : "var(--foreground)", fontWeight: 700, cursor: "pointer", textAlign: "center" }}>
+            <button key={d.label} onClick={() => setDifficulty(i)}
+              style={{ flex: 1, padding: "14px 10px", borderRadius: 12, border: difficulty === i ? `1px solid ${d.color}` : "1px solid transparent", background: difficulty === i ? `${d.color}20` : "var(--muted)", color: difficulty === i ? d.color : "var(--foreground)", fontWeight: 700, cursor: "pointer", textAlign: "center" }}>
               <p style={{ margin: 0, fontSize: 14 }}>{d.label}</p>
               <p style={{ margin: "3px 0 0", fontSize: 11, opacity: 0.7 }}>{DIFFICULTY_DISPLAY[i]}</p>
             </button>
@@ -418,11 +506,13 @@ export default function ExamSimulation() {
         </div>
       </div>
 
+      {/* Question count */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>Number of Questions</p>
         <div style={{ display: "flex", gap: 10 }}>
           {QUESTION_COUNTS.map(n => (
-            <button key={n} onClick={() => setQuestionCount(n)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: questionCount === n ? "1px solid var(--primary)" : "1px solid transparent", background: questionCount === n ? "rgba(99,102,241,0.15)" : "var(--muted)", color: questionCount === n ? "var(--primary)" : "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>
+            <button key={n} onClick={() => setQuestionCount(n)}
+              style={{ flex: 1, padding: "14px", borderRadius: 12, border: questionCount === n ? "1px solid var(--primary)" : "1px solid transparent", background: questionCount === n ? "rgba(99,102,241,0.15)" : "var(--muted)", color: questionCount === n ? "var(--primary)" : "var(--foreground)", fontWeight: 700, cursor: "pointer" }}>
               {n}
             </button>
           ))}
@@ -432,8 +522,9 @@ export default function ExamSimulation() {
         </p>
       </div>
 
-      <button onClick={generateExam} disabled={!subject || generating} style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: "pointer", opacity: !subject || generating ? 0.5 : 1 }}>
-        {generating ? "Generating exam…" : "Start Exam →"}
+      <button onClick={generateExam} disabled={!subject || generating}
+        style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: "pointer", opacity: !subject || generating ? 0.5 : 1 }}>
+        {generating ? "Generating exam…" : challengeCtx ? `Accept Challenge →` : "Start Exam →"}
       </button>
     </div>
   );
@@ -448,15 +539,24 @@ export default function ExamSimulation() {
         .pulse-timer { animation: timerPulse 0.8s ease infinite; }
       `}</style>
 
+      {/* Sticky top bar */}
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--background)", padding: "14px 16px", borderBottom: "1px solid var(--card-border)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
-            <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{subject}</p>
+            <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>
+              {subject}
+              {challengeCtx && (
+                <span style={{ marginLeft: 8, fontSize: 11, color: "#fb923c", fontWeight: 600 }}>
+                  🔥 vs {challengeCtx.name}
+                </span>
+              )}
+            </p>
             <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
               Q{currentQState + 1}/{questions.length} · {DIFFICULTIES[difficulty].label}
             </p>
           </div>
-          <div className={timerPulse ? "pulse-timer" : ""} style={{ display: "flex", alignItems: "center", gap: 6, background: `${timerColor}15`, border: `1px solid ${timerColor}40`, borderRadius: 12, padding: "8px 14px" }}>
+          <div className={timerPulse ? "pulse-timer" : ""}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: `${timerColor}15`, border: `1px solid ${timerColor}40`, borderRadius: 12, padding: "8px 14px" }}>
             <Clock size={14} color={timerColor} />
             <span style={{ fontWeight: 900, fontSize: 18, color: timerColor, fontVariantNumeric: "tabular-nums" }}>
               {formatTime(timeLeft)}
@@ -468,6 +568,7 @@ export default function ExamSimulation() {
         </div>
       </div>
 
+      {/* Question content */}
       <div style={{ padding: "20px 16px" }}>
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -479,7 +580,8 @@ export default function ExamSimulation() {
               {q.marks} mark{q.marks !== 1 ? "s" : ""}
             </span>
           </div>
-          <div style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
+          <div style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }}
+            dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
         </div>
 
         {q.type === "multiple_choice" && q.options && (
@@ -497,10 +599,14 @@ export default function ExamSimulation() {
         )}
 
         {(q.type === "short_answer" || q.type === "structured") && (
-          <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)} rows={q.type === "structured" ? 8 : 4} placeholder="Write your answer here..." style={{ ...input, resize: "vertical", lineHeight: 1.6 }} />
+          <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)}
+            rows={q.type === "structured" ? 8 : 4}
+            placeholder="Write your answer here..."
+            style={{ ...input, resize: "vertical", lineHeight: 1.6 }} />
         )}
       </div>
 
+      {/* Fixed bottom nav */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1000, background: "var(--background)", borderTop: "1px solid var(--card-border)", padding: "14px 16px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
@@ -550,7 +656,9 @@ export default function ExamSimulation() {
       <div style={{ fontSize: 56, animation: "spin 2s linear infinite" }}>🧠</div>
       <div style={{ textAlign: "center" }}>
         <h2 style={{ fontSize: 22, fontWeight: 900, margin: "0 0 8px" }}>Cortex is marking…</h2>
-        <p style={{ color: "var(--muted-foreground)", fontSize: 14, animation: "pulse 1.5s ease infinite" }}>Analysing your answers</p>
+        <p style={{ color: "var(--muted-foreground)", fontSize: 14, animation: "pulse 1.5s ease infinite" }}>
+          Analysing your answers
+        </p>
       </div>
     </div>
   );
@@ -584,11 +692,11 @@ export default function ExamSimulation() {
           </p>
           <h1 style={{ fontSize: 56, fontWeight: 900, color: gc, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
           <p style={{ fontSize: 28, fontWeight: 800, color: "#f1f5f9", margin: "0 0 24px" }}>Grade {grade}</p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 0, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap" }}>
             {[
-              { val: `${results.totalScore}/${results.maxScore}`, label: "Score",    color: gc },
-              { val: timeTakenFmt,                                label: "Time",     color: "#60a5fa" },
-              { val: `${answeredCount}/${questions.length}`,      label: "Answered", color: "#a78bfa" },
+              { val: `${results.totalScore}/${results.maxScore}`, label: "Score",    color: gc         },
+              { val: timeTakenFmt,                                label: "Time",     color: "#60a5fa"  },
+              { val: `${answeredCount}/${questions.length}`,      label: "Answered", color: "#a78bfa"  },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center", padding: "0 20px", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
                 <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
@@ -598,28 +706,61 @@ export default function ExamSimulation() {
           </div>
         </div>
 
-        {/* ── SHARE CARD ───────────────────────────────────────────────── */}
+        {/* ── Challenge comparison ──────────────────────────────────────── */}
+        {challengeCtx && (() => {
+          const userPct  = results.percentage;
+          const theirPct = challengeCtx.percentage;
+          const won      = userPct > theirPct;
+          const tied     = userPct === theirPct;
+          const diff     = Math.abs(userPct - theirPct);
+          const banner   = won
+            ? { emoji: "🏆", text: `You beat ${challengeCtx.name} by ${diff}%!`,       color: "#34d399", bg: "rgba(52,211,153,0.06)",  border: "rgba(52,211,153,0.2)"  }
+            : tied
+            ? { emoji: "🤝", text: `You tied with ${challengeCtx.name}!`,               color: "#60a5fa", bg: "rgba(96,165,250,0.06)",  border: "rgba(96,165,250,0.2)"  }
+            : { emoji: "💪", text: `${challengeCtx.name} won this round — rematch?`,    color: "#f87171", bg: "rgba(248,113,113,0.06)", border: "rgba(248,113,113,0.2)" };
+
+          return (
+            <div style={{ borderRadius: 18, background: banner.bg, border: `1px solid ${banner.border}`, padding: "20px 22px", marginBottom: 20, animation: "fadeUp .4s ease .1s both" }}>
+              <p style={{ fontSize: 20, fontWeight: 900, color: banner.color, margin: "0 0 14px", textAlign: "center" }}>
+                {banner.emoji} {banner.text}
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1, textAlign: "center", background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 10px", border: won ? `1px solid ${banner.color}40` : "1px solid rgba(255,255,255,0.06)" }}>
+                  <p style={{ fontSize: 11, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>You</p>
+                  <p style={{ fontSize: 36, fontWeight: 900, color: gc, margin: 0 }}>{userPct}%</p>
+                  <p style={{ fontSize: 13, color: "#64748b", margin: "3px 0 0" }}>Grade {grade}</p>
+                </div>
+                <div style={{ flex: 1, textAlign: "center", background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "14px 10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p style={{ fontSize: 11, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>{challengeCtx.name}</p>
+                  <p style={{ fontSize: 36, fontWeight: 900, color: gradeColor(theirPct), margin: 0 }}>{theirPct}%</p>
+                  <p style={{ fontSize: 13, color: "#64748b", margin: "3px 0 0" }}>Grade {challengeCtx.grade}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Share card ────────────────────────────────────────────────── */}
         {resultId && (
-          <div style={{ marginBottom: 24, animation: "fadeUp .5s ease .1s both" }}>
+          <div style={{ marginBottom: 24, animation: "fadeUp .5s ease .15s both" }}>
             <p style={{ fontSize: 12, color: "#475569", textAlign: "center", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
               🔥 Share your result
             </p>
             <ExamShareCard
-              // AFTER
-result={{
-  id:             resultId,
-  user_name:      null,
-  subject,
-  topic:          topic || null,
-  difficulty:     DIFFICULTY_DISPLAY[difficulty],
-  score:          results.totalScore,
-  total:          results.maxScore,
-  question_count: questionCount,
-  time_taken:     results.timeTaken,
-  xp_earned:      calculateXP(pct, difficulty),
-  grade,
-  created_at:     new Date().toISOString(),
-}}
+              result={{
+                id:             resultId,
+                user_name:      null,
+                subject,
+                topic:          topic || null,
+                difficulty:     DIFFICULTY_DISPLAY[difficulty],
+                score:          results.totalScore,
+                total:          results.maxScore,
+                question_count: questionCount,
+                time_taken:     results.timeTaken,
+                xp_earned:      calculateXP(pct, difficulty),
+                grade,
+                created_at:     new Date().toISOString(),
+              }}
               shareUrl={`/results/${resultId}`}
             />
           </div>
@@ -763,7 +904,8 @@ result={{
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-          <button onClick={resetExam} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          <button onClick={resetExam}
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={15} /> New Exam
           </button>
           <button
@@ -776,8 +918,7 @@ result={{
                 setTopic(topic);
               }, 0);
             }}
-            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.1))", border: "1px solid rgba(99,102,241,0.3)", color: "#a78bfa", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
-          >
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.1))", border: "1px solid rgba(99,102,241,0.3)", color: "#a78bfa", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <Flame size={15} /> Retake Same
           </button>
         </div>
