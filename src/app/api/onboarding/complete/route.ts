@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initializeLearningPath } from "@/lib/learning-path";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseClient();
+    const supabase = await createSupabaseServerClient();
 
     const {
       data: { user },
