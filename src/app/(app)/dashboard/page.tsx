@@ -631,9 +631,6 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* ── DailyChallenge (preserved exactly) ────────────────────────── */}
-      <DailyChallenge userId={currentUser} />
-
       {/* ── Today Panel ───────────────────────────────────────────────── */}
       <TodayPanel tasks={tasks} examResults={examResults} router={router} />
 
