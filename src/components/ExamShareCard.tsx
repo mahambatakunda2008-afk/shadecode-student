@@ -177,7 +177,7 @@ export default function ExamShareCard({
 
           {showSignupCta && (
             
-              href="/auth/signup"
+             <a href="/auth/signup"
               className="block w-full text-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 text-sm transition-colors duration-200"
             >
               Challenge them on Shadecode →
