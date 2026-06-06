@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { log } from "@/lib/observability";
+import ExamShareCard from "@/components/ExamShareCard";
 import {
   CheckCircle2, XCircle, AlertCircle, Trophy,
   Clock, RotateCcw, ChevronDown, ChevronUp, Flame,
@@ -24,6 +25,8 @@ const DIFFICULTIES = [
   { label: "Advanced",  value: "A-Level standard",                             color: "#f59e0b" },
   { label: "Challenge", value: "beyond A-Level, university entrance standard", color: "#ef4444" },
 ];
+
+const DIFFICULTY_DISPLAY = ["O-Level", "A-Level", "University"] as const;
 
 const QUESTION_COUNTS = [5, 10, 15, 20];
 
@@ -57,7 +60,7 @@ interface Result {
 interface ExamResults {
   totalScore: number;
   maxScore: number;
-  percentage: number;   // 0–100 — this is what gets stored in exam_results.score
+  percentage: number;
   grade: string;
   weakAreas: string[];
   strongAreas: string[];
@@ -101,23 +104,19 @@ function formatTime(s: number) {
   return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
+function calculateXP(percentage: number, diffIndex: number): number {
+  const multiplier = diffIndex === 2 ? 2 : diffIndex === 1 ? 1.5 : 1;
+  return Math.round((percentage / 100) * 100 * multiplier);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ExamSimulation() {
   const router = useRouter();
 
-  // ── Interval ref ────────────────────────────────────────────────────────
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ── Submission mutex ───────────────────────────────────────────────────
-  // useRef is synchronous — two rapid calls both see the updated value
-  // immediately, unlike useState which batches re-renders.
+  const intervalRef     = useRef<NodeJS.Timeout | null>(null);
   const isSubmittingRef = useRef(false);
 
-  // ── Ref mirrors of all mutable exam state ─────────────────────────────
-  // handleSubmitExam is useCallback([], []) — it never closes over state.
-  // All exam state is read from these refs so timer-triggered auto-submit
-  // always uses the latest values regardless of closure age.
   const userIdRef        = useRef<string>("");
   const answersRef       = useRef<Answer[]>([]);
   const questionsRef     = useRef<Question[]>([]);
@@ -129,7 +128,6 @@ export default function ExamSimulation() {
   const difficultyRef    = useRef<number>(0);
   const currentQRef      = useRef<number>(0);
 
-  // ── State ───────────────────────────────────────────────────────────────
   const [step,          setStep]            = useState<Step>("setup");
   const [subject,       setSubjectState]    = useState("");
   const [topic,         setTopicState]      = useState("");
@@ -137,11 +135,7 @@ export default function ExamSimulation() {
   const [questionCount, setQuestionCount]   = useState(10);
   const [questions,     setQuestionsState]  = useState<Question[]>([]);
   const [answers,       setAnswersState]    = useState<Answer[]>([]);
-
-  // currentQState drives rendering; currentQRef drives closures.
-  // Both updated together via setCurrentQ().
   const [currentQState, _setCurrentQState]  = useState(0);
-
   const [currentAnswer, setCurrentAnswerState] = useState("");
   const [timeLeft,      setTimeLeftState]   = useState(0);
   const [totalTime,     setTotalTimeState]  = useState(0);
@@ -153,49 +147,28 @@ export default function ExamSimulation() {
   const [expandedQ,     setExpandedQ]       = useState<number | null>(null);
   const [activeTab,     setActiveTab]       = useState<"overview" | "review">("overview");
 
+  // ── NEW: result ID for share URL ─────────────────────────────────────
+  const [resultId, setResultId] = useState<string | null>(null);
+
   // ── Synced setters ─────────────────────────────────────────────────────
-  const setSubject = (v: string) => {
-    subjectRef.current = v; setSubjectState(v);
-  };
-  const setTopic = (v: string) => {
-    topicRef.current = v; setTopicState(v);
-  };
-  const setDifficulty = (v: number) => {
-    difficultyRef.current = v; setDifficultyState(v);
-  };
-  const setUserId = (v: string) => {
-    userIdRef.current = v; setUserIdState(v);
-  };
-  const setCurrentQ = (v: number) => {
-    currentQRef.current = v; _setCurrentQState(v);
-  };
+  const setSubject = (v: string) => { subjectRef.current = v; setSubjectState(v); };
+  const setTopic   = (v: string) => { topicRef.current   = v; setTopicState(v); };
+  const setDifficulty = (v: number) => { difficultyRef.current = v; setDifficultyState(v); };
+  const setUserId  = (v: string) => { userIdRef.current  = v; setUserIdState(v); };
+  const setCurrentQ = (v: number) => { currentQRef.current = v; _setCurrentQState(v); };
   const setAnswers = (fn: (prev: Answer[]) => Answer[]) => {
-    setAnswersState(prev => {
-      const next = fn(prev);
-      answersRef.current = next;
-      return next;
-    });
+    setAnswersState(prev => { const next = fn(prev); answersRef.current = next; return next; });
   };
-  const setQuestions = (v: Question[]) => {
-    questionsRef.current = v; setQuestionsState(v);
-  };
-  const setCurrentAnswer = (v: string) => {
-    currentAnswerRef.current = v; setCurrentAnswerState(v);
-  };
+  const setQuestions = (v: Question[]) => { questionsRef.current = v; setQuestionsState(v); };
+  const setCurrentAnswer = (v: string) => { currentAnswerRef.current = v; setCurrentAnswerState(v); };
   const setTimeLeft = (fn: (prev: number) => number) => {
-    setTimeLeftState(prev => {
-      const next = fn(prev);
-      timeLeftRef.current = next;
-      return next;
-    });
+    setTimeLeftState(prev => { const next = fn(prev); timeLeftRef.current = next; return next; });
   };
-  const setTotalTime = (v: number) => {
-    totalTimeRef.current = v; setTotalTimeState(v);
-  };
+  const setTotalTime = (v: number) => { totalTimeRef.current = v; setTotalTimeState(v); };
 
   const q = questions[currentQState];
 
-  // ── Auth ─────────────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       const { data: { user } } = await createClient().auth.getUser();
@@ -204,7 +177,7 @@ export default function ExamSimulation() {
     })();
   }, []);
 
-  // ── saveAnswer — reads from refs, safe in any closure ─────────────────
+  // ── saveAnswer ────────────────────────────────────────────────────────
   const saveAnswer = useCallback(() => {
     const currentQuestion = questionsRef.current[currentQRef.current];
     if (!currentQuestion) return;
@@ -222,26 +195,15 @@ export default function ExamSimulation() {
   }, [qStartTime]);
 
   // ── handleSubmitExam ──────────────────────────────────────────────────
-  // Reads exclusively from refs. useCallback([], []) = stable identity.
-  // isSubmittingRef mutex prevents concurrent execution from button + timer.
   const handleSubmitExam = useCallback(async () => {
-    // ── Mutex: synchronous, checked before any async work ──────────────
     if (isSubmittingRef.current) {
-      log.examDuplicateBlocked({
-        userId:  userIdRef.current,
-        subject: subjectRef.current,
-      });
+      log.examDuplicateBlocked({ userId: userIdRef.current, subject: subjectRef.current });
       return;
     }
     isSubmittingRef.current = true;
 
-    // Stop the timer immediately
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
 
-    // Snapshot all state from refs — never stale
     const latestAnswers    = answersRef.current;
     const latestQuestions  = questionsRef.current;
     const latestUserId     = userIdRef.current;
@@ -254,7 +216,6 @@ export default function ExamSimulation() {
     setStep("marking");
     setMarking(true);
 
-    // ── AI marking call ────────────────────────────────────────────────
     let data: ExamResults;
     try {
       const res = await fetch("/api/exam/mark", {
@@ -272,22 +233,13 @@ export default function ExamSimulation() {
 
       if (!res.ok) {
         const errorText = await res.text().catch(() => "(no body)");
-        log.examMarkingFailed({
-          userId:  latestUserId,
-          subject: latestSubject,
-          status:  res.status,
-          error:   errorText.slice(0, 300),
-        });
+        log.examMarkingFailed({ userId: latestUserId, subject: latestSubject, status: res.status, error: errorText.slice(0, 300) });
         throw new Error(`Marking API returned ${res.status}`);
       }
 
       data = await res.json();
     } catch (err) {
-      log.examMarkingFailed({
-        userId:  latestUserId,
-        subject: latestSubject,
-        error:   String(err),
-      });
+      log.examMarkingFailed({ userId: latestUserId, subject: latestSubject, error: String(err) });
       alert("Failed to mark exam. Please try again.");
       isSubmittingRef.current = false;
       setStep("exam");
@@ -297,26 +249,26 @@ export default function ExamSimulation() {
 
     setResults(data);
 
-    // ── Persist to Supabase ────────────────────────────────────────────
+    // ── Persist + capture ID for share URL ────────────────────────────
     if (latestUserId) {
       const timeTaken    = latestTotalTime - latestTimeLeft;
       const correctCount = data.results?.filter(r => r.correct).length ?? 0;
 
-      const { error: insertError } = await createClient()
+      const { data: insertData, error: insertError } = await createClient()
         .from("exam_results")
         .insert({
           user_id:         latestUserId,
           subject:         latestSubject,
           topic:           latestTopic || null,
           difficulty:      DIFFICULTIES[latestDifficulty].label,
-          // score = percentage 0–100. Never store raw marks here.
           score:           data.percentage,
           total_questions: latestQuestions.length,
           correct_answers: correctCount,
           weak_areas:      data.weakAreas ?? [],
           time_taken:      timeTaken,
-          // created_at omitted — DB DEFAULT now()
-        });
+        })
+        .select("id")
+        .single();
 
       if (insertError) {
         log.examInsertFailed({
@@ -325,33 +277,27 @@ export default function ExamSimulation() {
           code:    insertError.code,
           message: insertError.message,
         });
-        // Non-fatal: results page still renders. User is not shown a DB error.
+      } else if (insertData?.id) {
+        // Store ID so results page can build the share URL
+        setResultId(String(insertData.id));
       }
 
-      // ── Revision queue hook ──────────────────────────────────────────
-      // Fire-and-forget via dynamic import — never blocks the results render.
       if (!insertError && (data.weakAreas?.length ?? 0) > 0) {
         import("@/lib/revisionQueue").then(({ upsertWeakAreas }) => {
           upsertWeakAreas(latestUserId, latestSubject, data.weakAreas);
         }).catch(err => {
-          log.revisionUpsertFailed({
-            userId:  latestUserId,
-            topic:   "(hook)",
-            subject: latestSubject,
-            message: String(err),
-          });
+          log.revisionUpsertFailed({ userId: latestUserId, topic: "(hook)", subject: latestSubject, message: String(err) });
         });
       }
     }
 
     setStep("results");
     setMarking(false);
-  }, []); // stable — reads everything from refs
+  }, []);
 
   // ── Timer ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (step !== "exam") return;
-
     intervalRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -364,12 +310,8 @@ export default function ExamSimulation() {
         return prev - 1;
       });
     }, 1000);
-
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
     };
   }, [step, handleSubmitExam, saveAnswer]);
 
@@ -384,33 +326,23 @@ export default function ExamSimulation() {
   const goToQuestion = (index: number) => {
     saveAnswer();
     setCurrentQ(index);
-    const existing = answersRef.current.find(
-      a => a.questionId === questionsRef.current[index]?.id
-    );
+    const existing = answersRef.current.find(a => a.questionId === questionsRef.current[index]?.id);
     setCurrentAnswer(existing?.answer || "");
     setQStartTime(Date.now());
   };
 
-  const onSubmitClick = () => {
-    saveAnswer();
-    handleSubmitExam();
-  };
+  const onSubmitClick = () => { saveAnswer(); handleSubmitExam(); };
 
   // ── Generate ──────────────────────────────────────────────────────────
   const generateExam = async () => {
     if (!subject) return;
     setGenerating(true);
-    isSubmittingRef.current = false; // reset mutex for new session
+    isSubmittingRef.current = false;
     try {
       const res = await fetch("/api/exam/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject,
-          topic:        topic.trim() || null,
-          difficulty:   DIFFICULTIES[difficulty].value,
-          questionCount,
-        }),
+        body: JSON.stringify({ subject, topic: topic.trim() || null, difficulty: DIFFICULTIES[difficulty].value, questionCount }),
       });
       const data = await res.json();
       if (!data.questions) throw new Error("No questions generated");
@@ -442,6 +374,7 @@ export default function ExamSimulation() {
     setResults(null);
     setExpandedQ(null);
     setActiveTab("overview");
+    setResultId(null); // ← clear share state
   };
 
   /* ══════════════════════════════════════════════════════
@@ -454,7 +387,6 @@ export default function ExamSimulation() {
         <p style={{ color: "var(--muted-foreground)", fontSize: 14 }}>Cortex-generated exams with live marking 🧠</p>
       </div>
 
-      {/* Subject */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 12 }}>Subject</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -466,36 +398,26 @@ export default function ExamSimulation() {
         </div>
       </div>
 
-      {/* Topic */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>
           Topic{" "}
           <span style={{ fontWeight: 400, color: "var(--muted-foreground)", fontSize: 13 }}>(optional)</span>
         </p>
-        <input
-          value={topic}
-          onChange={e => setTopic(e.target.value)}
-          placeholder="Leave blank for mixed topics..."
-          style={input}
-        />
+        <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="Leave blank for mixed topics..." style={input} />
       </div>
 
-      {/* Difficulty */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>Difficulty</p>
         <div style={{ display: "flex", gap: 10 }}>
           {DIFFICULTIES.map((d, i) => (
             <button key={d.label} onClick={() => setDifficulty(i)} style={{ flex: 1, padding: "14px 10px", borderRadius: 12, border: difficulty === i ? `1px solid ${d.color}` : "1px solid transparent", background: difficulty === i ? `${d.color}20` : "var(--muted)", color: difficulty === i ? d.color : "var(--foreground)", fontWeight: 700, cursor: "pointer", textAlign: "center" }}>
               <p style={{ margin: 0, fontSize: 14 }}>{d.label}</p>
-              <p style={{ margin: "3px 0 0", fontSize: 11, opacity: 0.7 }}>
-                {i === 0 ? "O-Level" : i === 1 ? "A-Level" : "University"}
-              </p>
+              <p style={{ margin: "3px 0 0", fontSize: 11, opacity: 0.7 }}>{DIFFICULTY_DISPLAY[i]}</p>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Question count */}
       <div style={card}>
         <p style={{ fontWeight: 700, marginBottom: 10 }}>Number of Questions</p>
         <div style={{ display: "flex", gap: 10 }}>
@@ -510,11 +432,7 @@ export default function ExamSimulation() {
         </p>
       </div>
 
-      <button
-        onClick={generateExam}
-        disabled={!subject || generating}
-        style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: "pointer", opacity: !subject || generating ? 0.5 : 1 }}
-      >
+      <button onClick={generateExam} disabled={!subject || generating} style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: "pointer", opacity: !subject || generating ? 0.5 : 1 }}>
         {generating ? "Generating exam…" : "Start Exam →"}
       </button>
     </div>
@@ -530,7 +448,6 @@ export default function ExamSimulation() {
         .pulse-timer { animation: timerPulse 0.8s ease infinite; }
       `}</style>
 
-      {/* Sticky top bar */}
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--background)", padding: "14px 16px", borderBottom: "1px solid var(--card-border)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
@@ -551,7 +468,6 @@ export default function ExamSimulation() {
         </div>
       </div>
 
-      {/* Question content */}
       <div style={{ padding: "20px 16px" }}>
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -566,7 +482,6 @@ export default function ExamSimulation() {
           <div style={{ fontSize: 16, lineHeight: 1.7, fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: renderMath(q.question) }} />
         </div>
 
-        {/* MCQ */}
         {q.type === "multiple_choice" && q.options && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {q.options.map((opt, i) => (
@@ -581,22 +496,13 @@ export default function ExamSimulation() {
           </div>
         )}
 
-        {/* Short answer / Structured */}
         {(q.type === "short_answer" || q.type === "structured") && (
-          <textarea
-            value={currentAnswer}
-            onChange={e => setCurrentAnswer(e.target.value)}
-            rows={q.type === "structured" ? 8 : 4}
-            placeholder="Write your answer here..."
-            style={{ ...input, resize: "vertical", lineHeight: 1.6 }}
-          />
+          <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)} rows={q.type === "structured" ? 8 : 4} placeholder="Write your answer here..." style={{ ...input, resize: "vertical", lineHeight: 1.6 }} />
         )}
       </div>
 
-      {/* Fixed bottom nav */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1000, background: "var(--background)", borderTop: "1px solid var(--card-border)", padding: "14px 16px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
-          {/* Question dots */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
             {questions.map((_, i) => {
               const answered = answersRef.current.some(a => a.questionId === questions[i]?.id && a.answer);
@@ -608,7 +514,6 @@ export default function ExamSimulation() {
               );
             })}
           </div>
-
           <div style={{ display: "flex", gap: 10 }}>
             {currentQState > 0 && (
               <button onClick={() => goToQuestion(currentQState - 1)} disabled={marking}
@@ -645,9 +550,7 @@ export default function ExamSimulation() {
       <div style={{ fontSize: 56, animation: "spin 2s linear infinite" }}>🧠</div>
       <div style={{ textAlign: "center" }}>
         <h2 style={{ fontSize: 22, fontWeight: 900, margin: "0 0 8px" }}>Cortex is marking…</h2>
-        <p style={{ color: "var(--muted-foreground)", fontSize: 14, animation: "pulse 1.5s ease infinite" }}>
-          Analysing your answers
-        </p>
+        <p style={{ color: "var(--muted-foreground)", fontSize: 14, animation: "pulse 1.5s ease infinite" }}>Analysing your answers</p>
       </div>
     </div>
   );
@@ -694,6 +597,31 @@ export default function ExamSimulation() {
             ))}
           </div>
         </div>
+
+        {/* ── SHARE CARD ───────────────────────────────────────────────── */}
+        {resultId && (
+          <div style={{ marginBottom: 24, animation: "fadeUp .5s ease .1s both" }}>
+            <p style={{ fontSize: 12, color: "#475569", textAlign: "center", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+              🔥 Share your result
+            </p>
+            <ExamShareCard
+              result={{
+                id:         resultId,
+                user_name:  null,
+                subject,
+                topic:      topic || null,
+                difficulty: DIFFICULTY_DISPLAY[difficulty],
+                score:      results.totalScore,
+                total:      results.maxScore,
+                time_taken: results.timeTaken,
+                xp_earned:  calculateXP(pct, difficulty),
+                grade,
+                created_at: new Date().toISOString(),
+              }}
+              shareUrl={`/results/${resultId}`}
+            />
+          </div>
+        )}
 
         {/* Weak / Strong areas */}
         {(results.weakAreas?.length > 0 || results.strongAreas?.length > 0) && (
