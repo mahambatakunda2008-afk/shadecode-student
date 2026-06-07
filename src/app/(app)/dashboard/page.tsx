@@ -10,6 +10,8 @@ import Tour from "@/components/shared/Tour";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { log } from "@/lib/observability";
 import { RevisionItem } from "@/lib/revisionQueue";
+import { TourProvider } from '@/context/TourContext';
+import { ProductTour } from '@/components/tour/ProductTour';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -429,6 +431,10 @@ const primaryBtn: React.CSSProperties = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+   <TourProvider
+      hasCompletedTour={false}
+      onboardingComplete={false}
+    >
   const [profile,        setProfile]        = useState<Profile | null>(null);
   const [subjects,       setSubjects]       = useState<Subject[]>([]);
   const [tasks,          setTasks]          = useState<Task[]>([]);
@@ -700,5 +706,7 @@ export default function Dashboard() {
         />
       )}
     </div>
+     <ProductTour />
+    </TourProvider>
   );
 }
