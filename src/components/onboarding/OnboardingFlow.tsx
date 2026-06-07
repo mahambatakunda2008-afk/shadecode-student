@@ -1,241 +1,98 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import type {
-  OnboardingData,
-  OnboardingStep,
-  EducationLevel,
-  LearningGoal,
-  SubjectInterest,
-} from "@/types/onboarding";
+import { useState }               from 'react';
+import { useRouter }              from 'next/navigation';
+import { OnboardingProgress }     from './OnboardingProgress';
+import { WelcomeStep }            from './steps/WelcomeStep';
+import { SubjectsStep }           from './steps/SubjectsStep';
+import { GoalsStep }              from './steps/GoalsStep';
+import { ConfirmStep }            from './steps/ConfirmStep';
+import { completeOnboarding }     from '@/lib/actions/onboarding';
+import type { OnboardingFormData } from '@/types';
 
-// ─── Step components ──────────────────────────────────────────────────────────
+const STEP_LABELS = ['Profile', 'Subjects', 'Goals', 'Confirm'] as const;
+const TOTAL       = STEP_LABELS.length;
 
-import { StepWelcome } from "./steps/StepWelcome";
-import { StepEducation } from "./steps/StepEducation";
-import { StepGoal } from "./steps/StepGoal";
-import { StepInterests } from "./steps/StepInterests";
-import { StepExplanation } from "./steps/StepExplanation";
-import { StepFinish } from "./steps/StepFinish";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const TOTAL_STEPS = 6;
-
-const STEP_LABELS: Record<OnboardingStep, string> = {
-  1: "Welcome",
-  2: "Education",
-  3: "Goal",
-  4: "Interests",
-  5: "How it works",
-  6: "Finishing up",
+const DEFAULTS: Partial<OnboardingFormData> = {
+  subjects:         [],
+  dailyGoalMinutes: 30,
+  studyStyle:       'flexible',
 };
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function OnboardingFlow() {
   const router = useRouter();
 
-  const [step, setStep] = useState<OnboardingStep>(1);
-  const [direction, setDirection] = useState<1 | -1>(1);
+  const [step,         setStep]         = useState(1);
+  const [formData,     setFormData]     = useState<Partial<OnboardingFormData>>(DEFAULTS);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError,  setSubmitError]  = useState<string | null>(null);
 
-  const [data, setData] = useState<OnboardingData>({
-    education_level: null,
-    learning_goal: null,
-    subject_interests: [],
-  });
+  const update = (patch: Partial<OnboardingFormData>) =>
+    setFormData(prev => ({ ...prev, ...patch }));
 
-  const goNext = useCallback(() => {
-    setDirection(1);
-    setStep((s) => Math.min(s + 1, TOTAL_STEPS) as OnboardingStep);
-  }, []);
+  const next = () => setStep(s => Math.min(s + 1, TOTAL));
+  const back = () => setStep(s => Math.max(s - 1, 1));
 
-  const goBack = useCallback(() => {
-    setDirection(-1);
-    setStep((s) => Math.max(s - 1, 1) as OnboardingStep);
-  }, []);
-
-  const setEducation = useCallback((value: EducationLevel) => {
-    setData((d) => ({ ...d, education_level: value }));
-  }, []);
-
-  const setGoal = useCallback((value: LearningGoal) => {
-    setData((d) => ({ ...d, learning_goal: value }));
-  }, []);
-
-  const toggleInterest = useCallback((value: SubjectInterest) => {
-    setData((d) => {
-      const current = d.subject_interests;
-      return {
-        ...d,
-        subject_interests: current.includes(value)
-          ? current.filter((i) => i !== value)
-          : [...current, value],
-      };
-    });
-  }, []);
-
-  const handleComplete = useCallback(async () => {
-    if (!data.education_level || !data.learning_goal) return;
-
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
-
     try {
-      const res = await fetch("/api/onboarding/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.error ?? "Something went wrong");
-      }
-
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : "Failed to save your profile"
-      );
+      await completeOnboarding(formData as OnboardingFormData);
+      /**
+       * Redirect to dashboard.
+       * TourProvider on the dashboard reads onboardingCompleted=true, tourCompleted=false
+       * from the DB and calls startTour() automatically after a short delay.
+       */
+      router.push('/dashboard');
+    } catch {
+      setSubmitError('Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
-  }, [data, router]);
-
-  // ─── Animation variants ─────────────────────────────────────────────────────
-
-  const variants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 60 : -60,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (dir: number) => ({
-      x: dir > 0 ? -60 : 60,
-      opacity: 0,
-    }),
   };
 
-  // ─── Step rendering ─────────────────────────────────────────────────────────
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return <StepWelcome onNext={goNext} />;
-      case 2:
-        return (
-          <StepEducation
-            selected={data.education_level}
-            onChange={setEducation}
-            onNext={goNext}
-            onBack={goBack}
-          />
-        );
-      case 3:
-        return (
-          <StepGoal
-            selected={data.learning_goal}
-            onChange={setGoal}
-            onNext={goNext}
-            onBack={goBack}
-          />
-        );
-      case 4:
-        return (
-          <StepInterests
-            selected={data.subject_interests}
-            onToggle={toggleInterest}
-            onNext={goNext}
-            onBack={goBack}
-          />
-        );
-      case 5:
-        return (
-          <StepExplanation
-            data={data}
-            onNext={goNext}
-            onBack={goBack}
-          />
-        );
-      case 6:
-        return (
-          <StepFinish
-            data={data}
-            isSubmitting={isSubmitting}
-            error={submitError}
-            onComplete={handleComplete}
-            onBack={goBack}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  // ─── Progress bar ───────────────────────────────────────────────────────────
-
-  const progress = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
+  const common = { data: formData, onUpdate: update };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Progress header */}
-      <div className="mb-8">
-        {/* Step labels */}
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-xs text-zinc-500 font-mono tracking-widest uppercase">
-            Step {step} of {TOTAL_STEPS}
-          </span>
-          <span className="text-xs text-zinc-500">
-            {STEP_LABELS[step]}
-          </span>
+    <div style={{ width: '100%', maxWidth: 440, margin: '0 auto' }}>
+      {/* Wordmark */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 36 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(124,58,237,0.2)', color: 'rgb(167,139,250)',
+          fontSize: 12, fontWeight: 700,
+        }}>
+          S
         </div>
-
-        {/* Progress track */}
-        <div className="h-px bg-zinc-800 w-full rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-indigo-500 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          />
-        </div>
-
-        {/* Step dots */}
-        <div className="flex justify-between mt-2">
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
-            <div
-              key={s}
-              className={`w-1 h-1 rounded-full transition-colors duration-300 ${
-                s <= step ? "bg-indigo-500" : "bg-zinc-700"
-              }`}
-            />
-          ))}
-        </div>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>
+          Shadecode Student
+        </span>
       </div>
 
-      {/* Step content */}
-      <div className="relative overflow-hidden">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={step}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-          >
-            {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+      <OnboardingProgress currentStep={step} totalSteps={TOTAL} labels={STEP_LABELS} />
+
+      {/* Step card — keyed so React remounts on step change, triggering fade-in */}
+      <div
+        key={step}
+        style={{
+          borderRadius: 16, padding: 24,
+          background:   'rgba(255,255,255,0.03)',
+          border:       '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
+        {step === 1 && <WelcomeStep   {...common} onNext={next} />}
+        {step === 2 && <SubjectsStep  {...common} onNext={next} onBack={back} />}
+        {step === 3 && <GoalsStep     {...common} onNext={next} onBack={back} />}
+        {step === 4 && (
+          <ConfirmStep
+            {...common}
+            onNext={next}
+            onBack={back}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            error={submitError}
+          />
+        )}
       </div>
     </div>
   );
