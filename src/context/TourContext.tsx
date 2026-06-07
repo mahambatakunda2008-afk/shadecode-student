@@ -10,168 +10,159 @@ import {
   type ReactNode,
 } from 'react';
 import { TOUR_STEPS, TOUR_STORAGE_KEY, TOUR_VERSION } from '@/lib/tour-steps';
-import type { TourContextValue, TourRect } from '@/types/tour';
+import { completeTour as completeTourAction }          from '@/lib/actions/onboarding';
+import type { TourContextValue, TourRect }             from '@/types';
 
 const TourContext = createContext<TourContextValue | null>(null);
 
 interface TourProviderProps {
-  children: ReactNode;
-  /** Pass `true` if the DB flag shows tour already completed — skips showing entirely */
-  hasCompletedTour?: boolean;
-  /** Set true once onboarding is done to auto-trigger the tour */
-  onboardingComplete?: boolean;
+  children:            ReactNode;
+  /**
+   * Comes from the DB via the server component.
+   * true  = user already finished the tour — never show again.
+   * false = show tour once onboarding is confirmed complete.
+   */
+  tourCompleted:       boolean;
+  /**
+   * true once the onboarding server action has run successfully.
+   * Triggers auto-start if tour hasn't been seen yet.
+   */
+  onboardingCompleted: boolean;
 }
 
 export function TourProvider({
   children,
-  hasCompletedTour = false,
-  onboardingComplete = false,
+  tourCompleted,
+  onboardingCompleted,
 }: TourProviderProps) {
-  const [isActive, setIsActive] = useState(false);
+  const [isActive,    setIsActive]    = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [targetRect, setTargetRect] = useState<TourRect | null>(null);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [targetRect,  setTargetRect]  = useState<TourRect | null>(null);
+  const scrollTimer                   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ─── Persistence helpers ───────────────────────────────────────────────────
+  // ── localStorage fast-path ─────────────────────────────────────────────────
+  // Prevents the 700ms auto-start delay from flashing on a hard refresh
+  // when the user has already completed the tour in a previous session.
 
-  const isStoredComplete = useCallback((): boolean => {
+  const isLocallyComplete = useCallback((): boolean => {
     try {
       const raw = localStorage.getItem(TOUR_STORAGE_KEY);
       if (!raw) return false;
       const { version, completed } = JSON.parse(raw) as {
-        version: string;
-        completed: boolean;
+        version: string; completed: boolean;
       };
       return completed && version === TOUR_VERSION;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   }, []);
 
-  const persistComplete = useCallback(async () => {
+  const markLocallyComplete = useCallback(() => {
     try {
       localStorage.setItem(
         TOUR_STORAGE_KEY,
         JSON.stringify({ completed: true, version: TOUR_VERSION, ts: Date.now() }),
       );
-      // Best-effort DB write — fail silently on the client
-      await fetch('/api/user/complete-tour', { method: 'POST' }).catch(() => null);
-    } catch {
-      // localStorage unavailable (private mode edge case) — still safe
-    }
+    } catch { /* private-mode browsers — safe to ignore */ }
   }, []);
 
-  // ─── Element targeting ─────────────────────────────────────────────────────
+  // ── Element targeting ──────────────────────────────────────────────────────
 
-  const resolveTargetRect = useCallback((stepIndex: number) => {
-    const step = TOUR_STEPS[stepIndex];
-    if (!step?.targetSelector) {
-      setTargetRect(null);
-      return;
-    }
+  const resolveRect = useCallback((stepIndex: number) => {
+    const selector = TOUR_STEPS[stepIndex]?.targetSelector;
+    if (!selector) { setTargetRect(null); return; }
 
-    const el = document.querySelector<HTMLElement>(
-      `[data-tour-target="${step.targetSelector}"]`,
-    );
-
-    if (!el) {
-      setTargetRect(null);
-      return;
-    }
+    const el = document.querySelector<HTMLElement>(`[data-tour-target="${selector}"]`);
+    if (!el)       { setTargetRect(null); return; }
 
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Wait for scroll to settle before measuring
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
       const r = el.getBoundingClientRect();
       setTargetRect({ x: r.left, y: r.top, width: r.width, height: r.height });
     }, 320);
   }, []);
 
-  // Re-measure on window resize / scroll
   useEffect(() => {
     if (!isActive) return;
-    const refresh = () => resolveTargetRect(currentStep);
+    const refresh = () => resolveRect(currentStep);
     window.addEventListener('resize', refresh, { passive: true });
     window.addEventListener('scroll', refresh, { passive: true });
     return () => {
       window.removeEventListener('resize', refresh);
       window.removeEventListener('scroll', refresh);
     };
-  }, [isActive, currentStep, resolveTargetRect]);
+  }, [isActive, currentStep, resolveRect]);
 
-  // Resolve target whenever step changes
   useEffect(() => {
-    if (isActive) resolveTargetRect(currentStep);
-  }, [isActive, currentStep, resolveTargetRect]);
+    if (isActive) resolveRect(currentStep);
+  }, [isActive, currentStep, resolveRect]);
 
-  // ─── Tour lifecycle ────────────────────────────────────────────────────────
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   const startTour = useCallback(() => {
-    if (hasCompletedTour || isStoredComplete()) return;
+    if (tourCompleted || isLocallyComplete()) return;
     setCurrentStep(0);
     setIsActive(true);
     document.body.style.overflow = 'hidden';
-  }, [hasCompletedTour, isStoredComplete]);
+  }, [tourCompleted, isLocallyComplete]);
 
-  const endTour = useCallback(
-    (persist: boolean) => {
-      setIsActive(false);
-      setTargetRect(null);
-      document.body.style.overflow = '';
-      if (persist) persistComplete();
-    },
-    [persistComplete],
-  );
+  const endTour = useCallback((persist: boolean) => {
+    setIsActive(false);
+    setTargetRect(null);
+    document.body.style.overflow = '';
+    if (persist) {
+      markLocallyComplete();
+      completeTourAction().catch(() => null); // best-effort DB write
+    }
+  }, [markLocallyComplete]);
 
   const nextStep = useCallback(() => {
     if (currentStep < TOUR_STEPS.length - 1) {
-      setCurrentStep((s) => s + 1);
+      setCurrentStep(s => s + 1);
     } else {
       endTour(true);
     }
   }, [currentStep, endTour]);
 
-  const prevStep = useCallback(() => {
-    if (currentStep > 0) setCurrentStep((s) => s - 1);
+  const prevStep  = useCallback(() => {
+    if (currentStep > 0) setCurrentStep(s => s - 1);
   }, [currentStep]);
 
-  const skipTour = useCallback(() => endTour(true), [endTour]);
+  const skipTour  = useCallback(() => endTour(true), [endTour]);
 
-  // Auto-start once onboarding completes (only if not already done)
+  // ── Auto-start: new user lands on dashboard for the first time ─────────────
+
   useEffect(() => {
-    if (onboardingComplete && !hasCompletedTour && !isStoredComplete()) {
-      const t = setTimeout(startTour, 600); // small delay feels natural
+    if (onboardingCompleted && !tourCompleted && !isLocallyComplete()) {
+      const t = setTimeout(startTour, 700);
       return () => clearTimeout(t);
     }
-  }, [onboardingComplete, hasCompletedTour, isStoredComplete, startTour]);
+  }, [onboardingCompleted, tourCompleted, isLocallyComplete, startTour]);
 
-  // Keyboard shortcuts
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!isActive) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') skipTour();
+    const handle = (e: KeyboardEvent) => {
+      if (e.key === 'Escape')     skipTour();
       if (e.key === 'ArrowRight') nextStep();
-      if (e.key === 'ArrowLeft') prevStep();
+      if (e.key === 'ArrowLeft')  prevStep();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
   }, [isActive, skipTour, nextStep, prevStep]);
 
-  // Cleanup timer on unmount
-  useEffect(
-    () => () => {
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-      document.body.style.overflow = '';
-    },
-    [],
-  );
+  // ── Cleanup ────────────────────────────────────────────────────────────────
+
+  useEffect(() => () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    document.body.style.overflow = '';
+  }, []);
 
   const value: TourContextValue = {
     isActive,
     currentStep,
-    totalSteps: TOUR_STEPS.length,
+    totalSteps:      TOUR_STEPS.length,
     currentStepData: TOUR_STEPS[currentStep],
     targetRect,
     startTour,
