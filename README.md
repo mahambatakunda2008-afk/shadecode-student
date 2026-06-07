@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+ Shadecode Student
 
-## Getting Started
+An AI-powered learning companion that turns studying into a guided conversation, not a memory grind.
 
-First, run the development server:
+Shadecode Student is a next-generation learning platform that helps students understand faster, revise smarter, and stay consistent — powered by intelligent AI assistance woven directly into the learning experience.
 
-```bash
+It doesn’t just show you information.
+It helps you build understanding step by step.
+
+ Why this exists
+
+Most study tools fall into two extremes:
+
+ Too rigid: textbooks, PDFs, static notes
+ Too chaotic: distractions, shallow learning apps
+
+Shadecode Student exists in the middle — where learning becomes interactive, focused, and adaptive.
+
+It’s designed for students who don’t just want to cover content, but actually understand it deeply and retain it longer.
+
+ What makes it different
+
+Instead of dumping information, Shadecode Student behaves like a thinking partner:
+
+It explains concepts in real time
+It adapts to your level of understanding
+It helps you revise what you’re about to forget
+It keeps learning structured without feeling rigid
+
+Think of it as a study system with a brain inside it 🧠
+
+ Core Features
+ AI-powered explanations tailored to context
+ Subject-based learning modules
+ Smart revision queue (spaced repetition style thinking)
+ Learning progress tracking
+ Interactive study flows instead of static pages
+ Focus-first UI designed for deep work
+ How it works
+Pick a subject or topic
+Ask questions or start a lesson
+The AI guides you through understanding step-by-step
+Key ideas are automatically reinforced in revision cycles
+You retain knowledge without brute memorization
+ Tech Stack
+Frontend: Next.js (React)
+Language: TypeScript
+Backend: Supabase (Auth + Database)
+AI Layer: LLM-powered learning assistant
+UI: Component-based modern interface system
+ Getting Started
+1. Clone the project
+git clone https://github.com/your-username/shadecode-student.git
+cd shadecode-student
+2. Install dependencies
+npm install
+3. Configure environment
+
+Create a .env.local file:
+
+NEXT_PUBLIC_SUPABASE_URL=your-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
+4. Run the app
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+http://localhost:3000
+ The philosophy behind it
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Shadecode Student is built on a simple idea:
 
-## Learn More
+“Students don’t fail because they can’t learn — they fail because they’re not guided through understanding.”
 
-To learn more about Next.js, take a look at the following resources:
+So instead of acting like a tool, it acts like a learning companion that thinks with you, not just for you.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ Project Structure
+/components   → UI system
+/lib          → utilities + Supabase client
+/pages        → routes and screens
+/hooks        → custom React hooks
+/styles       → global styling
+ Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The system is still evolving. Next steps include:
 
-## Deploy on Vercel
+ Voice-based AI tutor
+ Exportable notes + revision packs
+ Smarter spaced repetition engine
+ Gamified learning progression
+ Mobile APK / PWA version
+ Offline learning mode
+ Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Ideas are welcome — especially ones that improve learning clarity or engagement.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Fork the repo
+Create a feature branch
+Submit a pull request License
+
+MIT — build on it, remix it, improve it.
+
+ Closing thought
+
+Shadecode Student isn’t trying to replace studying.
+
+It’s trying to make studying feel less like resistance… and more like momentum.
