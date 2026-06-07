@@ -4,7 +4,7 @@ import { useState }               from 'react';
 import { useRouter }              from 'next/navigation';
 import { OnboardingProgress }     from './OnboardingProgress';
 import { WelcomeStep }            from './steps/WelcomeStep';
-import { SubjectsStep }           from './steps/SubjectStep';
+import { SubjectStep }           from './steps/SubjectStep';
 import { GoalsStep }              from './steps/GoalsStep';
 import { ConfirmStep }            from './steps/ConfirmStep';
 import { completeOnboarding }     from '@/lib/actions/onboarding';
