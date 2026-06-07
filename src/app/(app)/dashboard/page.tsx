@@ -431,10 +431,7 @@ const primaryBtn: React.CSSProperties = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-   <TourProvider
-      hasCompletedTour={false}
-      onboardingComplete={false}
-    >
+  
   const [profile,        setProfile]        = useState<Profile | null>(null);
   const [subjects,       setSubjects]       = useState<Subject[]>([]);
   const [tasks,          setTasks]          = useState<Task[]>([]);
@@ -587,6 +584,10 @@ export default function Dashboard() {
   const insight = generateInsight(examResults, focusSessions, tasks, revisionItems);
 
   return (
+     <TourProvider
+      hasCompletedTour={false}
+      onboardingComplete={false}
+    >
     <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* ── Header + sign out (preserved exactly) ──────────────────────── */}
