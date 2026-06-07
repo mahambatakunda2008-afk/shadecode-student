@@ -1,4 +1,4 @@
-import type { TourStep } from ./src/types/tour';
+import type { TourStep } from '../types/tour';
 
 export const TOUR_STEPS: TourStep[] = [
   {
