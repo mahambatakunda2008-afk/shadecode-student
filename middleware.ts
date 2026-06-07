@@ -1,103 +1,97 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { NextResponse }   from 'next/server';
+import type { NextRequest } from 'next/server';
 
 /**
- * Middleware responsibilities:
- * 1. Refresh Supabase auth session
- * 2. Redirect unauthenticated users away from protected routes
- * 3. Redirect authenticated users who haven't completed onboarding
- * 4. Redirect already-onboarded users away from /onboarding
+ * Middleware — edge-runtime route guard
+ * ──────────────────────────────────────
+ * State machine:
+ *
+ *   Unauthenticated              → /login
+ *   Authenticated, not onboarded → /onboarding   (unless already there)
+ *   Authenticated, onboarded     → /dashboard    (if they hit /onboarding again)
+ *   Everything else              → pass through
+ *
+ * Auth detection
+ * ──────────────
+ * Checks session cookies set by your auth provider.
+ * Uncomment the adapter that matches your stack.
  */
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+// ── Routes that bypass all checks ────────────────────────────────────────────
+const PUBLIC_PREFIXES = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/api/auth',      // NextAuth callback routes
+  '/_next',
+  '/favicon',
+  '/images',
+  '/fonts',
+];
 
-  // Refresh session — do NOT use getSession() here; use getUser() for security
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+function isPublic(path: string): boolean {
+  return PUBLIC_PREFIXES.some(p => path.startsWith(p));
+}
 
-  const { pathname } = request.nextUrl;
+// ── Auth check (edge-compatible, no DB) ───────────────────────────────────────
+function hasSession(req: NextRequest): boolean {
+  // NextAuth — HTTP
+  if (req.cookies.get('next-auth.session-token'))         return true;
+  // NextAuth — HTTPS (production)
+  if (req.cookies.get('__Secure-next-auth.session-token')) return true;
 
-  // ─── Public routes (no auth required) ─────────────────────────────────────
-  const isPublicRoute =
-    pathname.startsWith("/auth") ||
-    pathname === "/" ||
-    pathname.startsWith("/api/");
+  // Supabase — uncomment if using Supabase Auth
+  // if (req.cookies.get('sb-access-token'))               return true;
 
-  if (isPublicRoute) {
-    return supabaseResponse;
+  // Custom JWT
+  // if (req.cookies.get('auth_token'))                    return true;
+
+  // Clerk handles its own middleware — if using Clerk, replace this entire
+  // file with Clerk's `authMiddleware` from @clerk/nextjs.
+
+  return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function middleware(req: NextRequest): NextResponse {
+  const { pathname } = req.nextUrl;
+
+  if (isPublic(pathname)) return NextResponse.next();
+
+  const authed             = hasSession(req);
+  const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
+  const onOnboarding       = pathname.startsWith('/onboarding');
+
+  // Not authenticated → login
+  if (!authed) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(url);
   }
 
-  // ─── Not authenticated → send to login ────────────────────────────────────
-  if (!user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/auth/login";
-    return NextResponse.redirect(loginUrl);
+  // Authenticated but onboarding pending → force into /onboarding
+  if (!onboardingComplete && !onOnboarding) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/onboarding';
+    return NextResponse.redirect(url);
   }
 
-  // ─── Authenticated — check onboarding ─────────────────────────────────────
-
-  // Don't check onboarding on the onboarding route itself
-  if (pathname === "/onboarding") {
-    return supabaseResponse;
+  // Already onboarded but somehow hitting /onboarding again → dashboard
+  if (onboardingComplete && onOnboarding) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
   }
 
-  // Only gate the main app routes
-  const isAppRoute =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/exam-sim") ||
-    pathname.startsWith("/focus") ||
-    pathname.startsWith("/analytics") ||
-    pathname.startsWith("/learn") ||
-    pathname.startsWith("/settings");
-
-  if (isAppRoute) {
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("onboarding_completed")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!profile?.onboarding_completed) {
-      const onboardingUrl = request.nextUrl.clone();
-      onboardingUrl.pathname = "/onboarding";
-      return NextResponse.redirect(onboardingUrl);
-    }
-  }
-
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico, sitemap.xml, robots.txt
-     * - public assets
-     */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Match all except: api/auth callbacks, Next.js internals, static files
+    '/((?!api/auth|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 };
