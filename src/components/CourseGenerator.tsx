@@ -74,13 +74,27 @@ export default function CourseGenerator() {
                 <div className="flex gap-2 items-center">
                   <div className="font-medium">Lesson {idx + 1}.</div>
                   <input className="flex-1 p-1 border rounded" value={ls.title} onChange={(e) => {
-                    const copy = { ...result };
+                    const copy = JSON.parse(JSON.stringify(result));
                     copy.preview.lessons[idx].title = e.target.value;
                     setResult(copy);
                   }} />
                   <div className="text-sm text-gray-500 px-2">{ls.difficulty}</div>
+                  <div className="flex flex-col gap-1">
+                    <button type="button" onClick={() => {
+                      const copy = JSON.parse(JSON.stringify(result));
+                      if (idx > 0) { const a = copy.preview.lessons[idx-1]; copy.preview.lessons[idx-1] = copy.preview.lessons[idx]; copy.preview.lessons[idx] = a; setResult(copy); }
+                    }} className="text-xs px-2 py-1 bg-gray-100 rounded">↑</button>
+                    <button type="button" onClick={() => {
+                      const copy = JSON.parse(JSON.stringify(result));
+                      if (idx < copy.preview.lessons.length - 1) { const a = copy.preview.lessons[idx+1]; copy.preview.lessons[idx+1] = copy.preview.lessons[idx]; copy.preview.lessons[idx] = a; setResult(copy); }
+                    }} className="text-xs px-2 py-1 bg-gray-100 rounded">↓</button>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-700 mt-1">{ls.summary}</div>
+                <textarea value={ls.summary} onChange={(e) => {
+                  const copy = JSON.parse(JSON.stringify(result));
+                  copy.preview.lessons[idx].summary = e.target.value;
+                  setResult(copy);
+                }} className="w-full mt-2 p-2 border rounded text-sm" rows={3} />
                 {ls.prerequisites && ls.prerequisites.length > 0 && (
                   <div className="text-xs text-gray-600 mt-1">Prerequisites: {ls.prerequisites.join(', ')}</div>
                 )}
