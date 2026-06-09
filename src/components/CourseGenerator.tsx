@@ -13,15 +13,36 @@ export default function CourseGenerator() {
     setLoading(true);
     setResult(null);
     try {
+      // First request a preview (no persistence)
+      const previewRes = await fetch('/api/learn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'course_preview', topic, goal, level }),
+      });
+      const previewData = await previewRes.json();
+      if (previewData?.success && previewData.draft) {
+        setResult({ preview: previewData.draft });
+      } else {
+        setResult({ error: 'Preview failed', raw: previewData });
+      }
+    } catch (err) {
+      setResult({ error: 'Request failed' });
+    } finally { setLoading(false); }
+  }
+
+  async function handleSave() {
+    if (!confirm('Save generated course into your account?')) return;
+    setLoading(true);
+    try {
       const res = await fetch('/api/learn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'course', topic, goal, level }),
       });
       const data = await res.json();
-      setResult(data);
+      setResult({ saved: data });
     } catch (err) {
-      setResult({ error: 'Request failed' });
+      setResult({ error: 'Save failed' });
     } finally { setLoading(false); }
   }
 

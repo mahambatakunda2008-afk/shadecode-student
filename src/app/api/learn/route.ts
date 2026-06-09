@@ -353,6 +353,20 @@ export async function POST(req: Request) {
     const { type, subject, topic, difficulty, goal, level } = body;
 
     // Support creating a single lesson or generating a full course
+    if (type === "course_preview") {
+      if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
+      try {
+        const token = getBearerToken(req);
+        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { generateCourseDraft } = await import('@/lib/cortex/generateCourse');
+        const draft = await generateCourseDraft(token, { topic, goal, level });
+        return NextResponse.json({ success: true, draft });
+      } catch (e) {
+        console.error('[learn] course preview error:', e);
+        return NextResponse.json({ error: 'Course preview failed' }, { status: 500 });
+      }
+    }
+
     if (type === "course") {
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
       // Delegate to cortex generator utility
