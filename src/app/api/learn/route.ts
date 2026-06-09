@@ -350,7 +350,23 @@ export async function POST(req: Request) {
 
     const { supabase, user } = auth;
     const body = await req.json();
-    const { type, subject, topic, difficulty } = body;
+    const { type, subject, topic, difficulty, goal, level } = body;
+
+    // Support creating a single lesson or generating a full course
+    if (type === "course") {
+      if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
+      // Delegate to cortex generator utility
+      try {
+        const token = getBearerToken(req);
+        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { generateCourseForUser } = await import('@/lib/cortex/generateCourse');
+        const result = await generateCourseForUser(token, { topic, goal, level });
+        return NextResponse.json({ success: true, course: result });
+      } catch (e) {
+        console.error('[learn] course generation error:', e);
+        return NextResponse.json({ error: 'Course generation failed' }, { status: 500 });
+      }
+    }
 
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     if (!subject || !topic) return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
