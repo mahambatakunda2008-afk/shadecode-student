@@ -70,6 +70,13 @@ export interface CortexSnapshot {
   weakestSubjects?: string[];
   strongestSubjects?: string[];
 
+  // Curriculum integration (optional, backwards compatible)
+  curriculumCompletionPercent?: number;
+  currentLesson?: { id: string; title: string } | null;
+  recommendedNextLesson?: { id: string; title: string } | null;
+  completedLessonCount?: number;
+  lockedLessonCount?: number;
+
   lastExamScore?: number;
   lastExamSubject?: string;
 }
