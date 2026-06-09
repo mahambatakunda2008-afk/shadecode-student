@@ -74,6 +74,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             return {
                 response,
                 nextAction: "continue_learning",
+                updatedState: { snapshot },
             };
         }
 
@@ -88,6 +89,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             return {
                 response: result.feedback,
                 nextAction: "adjust_difficulty",
+                updatedState: { snapshot },
             };
         }
 
@@ -98,6 +100,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
 
             return {
                 response: "Got it. I’m adjusting your learning path.",
+                updatedState: { snapshot },
             };
         }
 
@@ -105,12 +108,14 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             return {
                 response: "Exam mode activated. Good luck.",
                 nextAction: "lock_learning_mode",
+                updatedState: { snapshot },
             };
         }
 
         default:
             return {
                 response: "Unknown cortex action.",
+                updatedState: { snapshot },
             };
     }
 }

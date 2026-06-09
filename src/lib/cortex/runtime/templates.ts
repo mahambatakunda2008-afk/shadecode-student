@@ -86,6 +86,14 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
     return "Study activity is concentrated within a single subject.";
   }
 
+  // Curriculum-aware deterministic insight (fallback)
+  if ((snapshot as any).curriculumCompletionPercent !== undefined) {
+    const pct = (snapshot as any).curriculumCompletionPercent;
+    const current = (snapshot as any).currentLesson?.title ?? null;
+    const next = (snapshot as any).recommendedNextLesson?.title ?? null;
+    return `Curriculum progress: ${pct}%${current ? ` — current: ${current}` : ''}${next ? ` — recommended next: ${next}` : ''}`;
+  }
+
   // Curriculum-aware short insights (only if curriculum fields exist)
   const completion = (snapshot as any).curriculumCompletionPercent;
   const recommended = (snapshot as any).recommendedNextLesson?.title;
