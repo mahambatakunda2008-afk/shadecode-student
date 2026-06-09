@@ -382,6 +382,71 @@ export async function POST(req: Request) {
       }
     }
 
+    if (type === "course_save") {
+      // Persist a user-provided draft (from preview) into learn_lessons and lesson_prerequisites
+      const draft = body.draft;
+      if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) {
+        return NextResponse.json({ error: 'Invalid draft' }, { status: 400 });
+      }
+
+      // Find or create subject for this topic
+      const subjName = topic && topic.length > 0 && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`);
+      let subjectId: string | null = null;
+      try {
+        const { data: existing } = await supabase.from('subjects').select('id').eq('user_id', user.id).eq('name', subjName).maybeSingle();
+        if (existing?.id) subjectId = existing.id;
+        else {
+          const { data: insertedSub, error: insertSubErr } = await supabase.from('subjects').insert({ user_id: user.id, name: subjName }).select('id').single();
+          if (insertSubErr) console.error('Failed to create subject:', insertSubErr);
+          subjectId = insertedSub?.id ?? null;
+        }
+      } catch (e) { console.error('[learn] subject creation error:', e); }
+
+      if (!subjectId) return NextResponse.json({ error: 'Failed to resolve subject' }, { status: 500 });
+
+      // Prepare lessons
+      const lessonsToInsert = draft.lessons.map((l: any) => ({
+        user_id: user.id,
+        subject_id: subjectId,
+        title: (l.title ?? l.summary ?? 'Untitled').toString().slice(0,255),
+        description: (l.summary ?? '').toString().slice(0,1000),
+        difficulty: (l.difficulty === 'hard' ? 'hard' : l.difficulty === 'medium' ? 'medium' : 'easy'),
+        blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: 'text', content: l.summary ?? '' }],
+        progress: 0,
+      }));
+
+      const { data: insertedLessons, error: insertLessonsError } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
+      if (insertLessonsError) console.error('Failed to insert lessons:', insertLessonsError);
+
+      const titleToId = new Map();
+      (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id));
+
+      // Insert prerequisites mapping by matching titles to created IDs
+      const prereqInserts: any[] = [];
+      for (const l of draft.lessons) {
+        const insertedId = titleToId.get((l.title ?? l.summary ?? '').toString().slice(0,255));
+        if (!insertedId) continue;
+        const prereqs = Array.isArray(l.prerequisites) ? l.prerequisites : [];
+        for (const pTitle of prereqs) {
+          const pid = titleToId.get(pTitle.toString().slice(0,255));
+          if (pid && pid !== insertedId) {
+            prereqInserts.push({ lesson_id: insertedId, prerequisite_lesson_id: pid });
+          }
+        }
+      }
+
+      if (prereqInserts.length > 0) {
+        try { await supabase.from('lesson_prerequisites').insert(prereqInserts); } catch (e) { console.error('prereq insert error:', e); }
+      }
+
+      // Optionally create/update learning path
+      try {
+        await supabase.from('learning_paths').upsert({ user_id: user.id, title: draft.title ?? subjName, description: draft.description ?? '', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      } catch (e) { }
+
+      return NextResponse.json({ success: true, lessonsInserted: (insertedLessons ?? []).length });
+    }
+
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     if (!subject || !topic) return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });
 

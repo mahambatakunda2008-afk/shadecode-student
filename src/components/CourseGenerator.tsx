@@ -64,10 +64,41 @@ export default function CourseGenerator() {
       </label>
       <button disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? 'Generating...' : 'Generate Course'}</button>
 
-      {result && (
+      {result?.preview && (
         <div className="mt-4">
-          <pre className="text-sm bg-gray-50 p-3 rounded overflow-auto">{JSON.stringify(result, null, 2)}</pre>
+          <h4 className="font-semibold mb-2">Preview: {result.preview.title}</h4>
+          <div className="space-y-3 max-h-96 overflow-auto">
+            {result.preview.lessons.map((ls: any, idx: number) => (
+              <div key={idx} className="p-2 border rounded">
+                <div className="flex gap-2 items-center">
+                  <div className="font-medium">Lesson {idx + 1}.</div>
+                  <input className="flex-1 p-1 border rounded" value={ls.title} onChange={(e) => {
+                    const copy = { ...result };
+                    copy.preview.lessons[idx].title = e.target.value;
+                    setResult(copy);
+                  }} />
+                  <div className="text-sm text-gray-500 px-2">{ls.difficulty}</div>
+                </div>
+                <div className="text-sm text-gray-700 mt-1">{ls.summary}</div>
+                {ls.prerequisites && ls.prerequisites.length > 0 && (
+                  <div className="text-xs text-gray-600 mt-1">Prerequisites: {ls.prerequisites.join(', ')}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button onClick={handleSave} disabled={loading} className="px-3 py-1 bg-green-600 text-white rounded">{loading ? 'Saving...' : 'Save to my account'}</button>
+            <button onClick={() => setResult(null)} className="px-3 py-1 border rounded">Close</button>
+          </div>
         </div>
+      )}
+
+      {result?.saved && (
+        <div className="mt-4 text-sm text-green-700">Saved: {JSON.stringify(result.saved)}</div>
+      )}
+
+      {result && !result.preview && !result.saved && (
+        <div className="mt-4 text-sm text-red-600">{JSON.stringify(result)}</div>
       )}
     </form>
   );
