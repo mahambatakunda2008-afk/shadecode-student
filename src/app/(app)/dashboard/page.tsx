@@ -1,6 +1,7 @@
 "use client";
 
 import Cortex from "@/components/cortex/Cortex";
+import DailyChallenge from "@/components/DailyChallenge";
 import RevisionQueue from "@/components/RevisionQueue";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +13,8 @@ import { log } from "@/lib/observability";
 import { RevisionItem } from "@/lib/revisionQueue";
 import { TourProvider } from '@/context/TourContext';
 import { ProductTour } from '@/components/tour/ProductTour';
+import CurriculumProgressCard from '@/components/CurriculumProgressCard';
+import LearningJourney from '@/components/LearningJourney';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -635,6 +638,9 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* ── Daily Challenge ────────────────────────────────────────── */}
+      <DailyChallenge />
+
       {/* ── Today Panel ───────────────────────────────────────────────── */}
       <TodayPanel tasks={tasks} examResults={examResults} router={router} />
 
@@ -686,6 +692,12 @@ export default function Dashboard() {
           style={{ background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)", borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
           📊 Analytics
         </button>
+      </div>
+
+      {/* ── Curriculum widgets ────────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "12px" }}>
+        <CurriculumProgressCard />
+        <LearningJourney />
       </div>
 
       {/* ── Cortex component (preserved exactly) ──────────────────────── */}
