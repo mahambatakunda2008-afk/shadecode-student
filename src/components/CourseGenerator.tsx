@@ -109,7 +109,19 @@ export default function CourseGenerator() {
       )}
 
       {result?.saved && (
-        <div className="mt-4 text-sm text-green-700">Saved: {JSON.stringify(result.saved)}</div>
+        <div className="mt-4 text-sm text-green-700">
+          <div>Saved: {JSON.stringify(result.saved)}</div>
+          {result.saved.unmappedPrereqs && result.saved.unmappedPrereqs.length > 0 && (
+            <div className="mt-2 text-sm text-yellow-700">
+              <div className="font-medium">Unmapped prerequisites (please review):</div>
+              <ul className="list-disc pl-5">
+                {result.saved.unmappedPrereqs.map((u: any, i: number) => (
+                  <li key={i}>{u.lessonTitle} → missing: {u.missingPrereq}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
 
       {result && !result.preview && !result.saved && (
