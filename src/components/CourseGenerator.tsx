@@ -34,10 +34,11 @@ export default function CourseGenerator() {
     if (!confirm('Save generated course into your account?')) return;
     setLoading(true);
     try {
+      // Send edited draft to save endpoint
       const res = await fetch('/api/learn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'course', topic, goal, level }),
+        body: JSON.stringify({ type: 'course_save', topic, goal, level, draft: result.preview }),
       });
       const data = await res.json();
       setResult({ saved: data });

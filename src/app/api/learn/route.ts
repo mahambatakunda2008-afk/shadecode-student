@@ -423,20 +423,36 @@ export async function POST(req: Request) {
 
       // Insert prerequisites mapping by matching titles to created IDs
       const prereqInserts: any[] = [];
+      const unmappedPrereqs: Array<{ lessonTitle: string; missingPrereq: string }> = [];
+
       for (const l of draft.lessons) {
-        const insertedId = titleToId.get((l.title ?? l.summary ?? '').toString().slice(0,255));
+        const lessonTitleKey = (l.title ?? l.summary ?? '').toString().slice(0,255);
+        const insertedId = titleToId.get(lessonTitleKey);
         if (!insertedId) continue;
         const prereqs = Array.isArray(l.prerequisites) ? l.prerequisites : [];
         for (const pTitle of prereqs) {
-          const pid = titleToId.get(pTitle.toString().slice(0,255));
+          const pKey = pTitle.toString().slice(0,255);
+          const pid = titleToId.get(pKey);
           if (pid && pid !== insertedId) {
             prereqInserts.push({ lesson_id: insertedId, prerequisite_lesson_id: pid });
+          } else {
+            unmappedPrereqs.push({ lessonTitle: lessonTitleKey, missingPrereq: pKey });
           }
         }
       }
 
-      if (prereqInserts.length > 0) {
-        try { await supabase.from('lesson_prerequisites').insert(prereqInserts); } catch (e) { console.error('prereq insert error:', e); }
+      // Deduplicate inserts
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (const r of prereqInserts) {
+        const k = `${r.lesson_id}:${r.prerequisite_lesson_id}`;
+        if (!seen.has(k)) { seen.add(k); deduped.push(r); }
+      }
+
+      if (deduped.length > 0) {
+        try {
+          await supabase.from('lesson_prerequisites').insert(deduped);
+        } catch (e) { console.error('prereq insert error:', e); }
       }
 
       // Optionally create/update learning path
@@ -444,7 +460,7 @@ export async function POST(req: Request) {
         await supabase.from('learning_paths').upsert({ user_id: user.id, title: draft.title ?? subjName, description: draft.description ?? '', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
       } catch (e) { }
 
-      return NextResponse.json({ success: true, lessonsInserted: (insertedLessons ?? []).length });
+      return NextResponse.json({ success: true, lessonsInserted: (insertedLessons ?? []).length, unmappedPrereqs });
     }
 
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
