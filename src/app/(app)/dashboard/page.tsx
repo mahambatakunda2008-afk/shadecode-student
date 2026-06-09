@@ -697,7 +697,9 @@ export default function Dashboard() {
       {/* ── Curriculum widgets ────────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "12px" }}>
         <CurriculumProgressCard />
-        <LearningJourney />
+        <div className="hidden md:block">
+          <LearningJourney />
+        </div>
       </div>
 
       {/* ── Cortex component (preserved exactly) ──────────────────────── */}

@@ -196,7 +196,9 @@ export default function LearnPageClient() {
           <aside style={{ width: 340 }}>
             <CurriculumProgressCard />
             <div style={{ height: 16 }} />
-            <LearningJourney />
+            <div className="hidden md:block">
+              <LearningJourney />
+            </div>
           </aside>
         </div>
       </div>

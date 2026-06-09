@@ -583,7 +583,7 @@ export default function Cortex({ userId, trigger }: CortexProps) {
         </div>
 
         {/* Compact learning journey for card view */}
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 12 }} className="hidden md:block">
           <LearningJourney />
         </div>
       </div>
