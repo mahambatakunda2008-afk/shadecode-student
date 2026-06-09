@@ -17,6 +17,8 @@ import {
   setCachedCortexInsight,
 } from "@/lib/cortex/runtime/cache";
 import { CortexEvent, CortexSnapshot } from "@/lib/cortex/types";
+import CurriculumProgressCard from '@/components/CurriculumProgressCard';
+import LearningJourney from '@/components/LearningJourney';
 
 interface CortexProps {
   userId: string;
@@ -442,6 +444,11 @@ export default function Cortex({ userId, trigger }: CortexProps) {
               </div>
             ))
           )}
+
+          {/* Curriculum card in sidebar */}
+          <div style={{ marginTop: 12 }}>
+            <CurriculumProgressCard />
+          </div>
         </div>
 
         {processing && (
@@ -573,6 +580,11 @@ export default function Cortex({ userId, trigger }: CortexProps) {
               </div>
             ))
           )}
+        </div>
+
+        {/* Compact learning journey for card view */}
+        <div style={{ marginTop: 12 }}>
+          <LearningJourney />
         </div>
       </div>
     </>
