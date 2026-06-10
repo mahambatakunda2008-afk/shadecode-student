@@ -75,6 +75,14 @@ export async function updateProjectProgress(projectId: string, progress: number)
       const newMeta = { ...(data.metadata ?? {}), progress, updated_at: new Date().toISOString() };
       await supabase.from('insights').update({ metadata: newMeta, content: `Progress ${progress}%` }).eq('id', data.id);
     }
+
+    // Emit Cortex event for project progress
+    try {
+      const { emitEvent } = await import('../../cortex/eventEmitter');
+      emitEvent({ type: 'feature_opportunity', signal: 'project_progress', module: 'projects', severity: 'low', hint: `project ${projectId} progress ${progress}%` });
+    } catch (evErr) {
+      // ignore
+    }
   } catch (e) {
     console.error('[projects] update progress failed:', e?.message ?? e);
   }
@@ -100,6 +108,12 @@ export async function completeProject(projectId: string) {
     } else {
       await supabase.from('insights').insert({ user_id: user.id, title: `project:${projectId}:progress`, content: `Project ${projectId} completed`, metadata: { projectId, progress: 100, completed_at: new Date().toISOString(), status: 'completed' } });
     }
+
+    // Emit Cortex event for project completion
+    try {
+      const { emitEvent } = await import('../../cortex/eventEmitter');
+      emitEvent({ type: 'feature_opportunity', signal: 'project_completed', module: 'projects', severity: 'medium', hint: `project ${projectId} completed by user ${user.id}` });
+    } catch (evErr) {}
   } catch (e) {
     console.error('[projects] mark complete insight failed:', e?.message ?? e);
   }
