@@ -14,7 +14,10 @@ export type CortexEventType =
   | "timetable.saved"
   | "exam.completed"
   | "exam.question.answered"
-  | "exam.marking.completed";
+  | "exam.marking.completed"
+  | "project.started"
+  | "project.progress"
+  | "project.completed";
 /* ─────────────────────────────────────────────
    CONTEXT FOR AI INSIGHTS (ENGINE USE)
 ───────────────────────────────────────────── */
@@ -28,7 +31,8 @@ export type CortexEventSource =
   | "dashboard"
   | "tasks"
   | "timetable"
-  | "exam";
+  | "exam"
+  | "projects";
 
 export interface CortexEventData {
   [key: string]: boolean | number | string | null | undefined;
@@ -76,6 +80,10 @@ export interface CortexSnapshot {
   recommendedNextLesson?: { id: string; title: string } | null;
   completedLessonCount?: number;
   lockedLessonCount?: number;
+  totalProjects?: number;
+  activeProjectCount?: number;
+  completedProjectCount?: number;
+  recommendedProject?: { id: string; title: string; progress: number; status: string; xpReward: number } | null;
 
   lastExamScore?: number;
   lastExamSubject?: string;

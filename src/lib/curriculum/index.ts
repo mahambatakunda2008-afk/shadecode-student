@@ -16,6 +16,16 @@ export type CurriculumState = {
   lockedLessons: LessonRow[];
   allLessons: LessonRow[];
   completionPercent: number; // 0-100
+  totalProjects?: number;
+  activeProjectCount?: number;
+  completedProjectCount?: number;
+  recommendedProject?: {
+    id: string;
+    title: string;
+    progress: number;
+    status: string;
+    xpReward: number;
+  } | null;
 };
 
 /**
@@ -202,7 +212,28 @@ export async function getCurriculumState(userId?: string) {
     }
   }
 
-  return computeCurriculumState(lessons, prereqRows);
+  const state = computeCurriculumState(lessons, prereqRows);
+
+  try {
+    const { getProjectSummary } = await import("@/lib/projects");
+    const projectSummary = await getProjectSummary(userId, supabase);
+    state.totalProjects = projectSummary.totalProjects;
+    state.activeProjectCount = projectSummary.activeProjectCount;
+    state.completedProjectCount = projectSummary.completedProjectCount;
+    state.recommendedProject = projectSummary.recommendedProject
+      ? {
+          id: projectSummary.recommendedProject.id,
+          title: projectSummary.recommendedProject.title,
+          progress: projectSummary.recommendedProject.progress,
+          status: projectSummary.recommendedProject.status,
+          xpReward: projectSummary.recommendedProject.xpReward,
+        }
+      : null;
+  } catch (projectError) {
+    console.error("[curriculum] failed to load project summary:", projectError);
+  }
+
+  return state;
 }
 
 export async function isLessonUnlocked(lessonId: string, userId?: string) {

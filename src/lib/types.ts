@@ -19,13 +19,17 @@ export type CortexEventType =
   | "timetable.saved"
   | "exam.completed"
   | "exam.question.answered"
-  | "exam.marking.completed";
+  | "exam.marking.completed"
+  | "project.started"
+  | "project.progress"
+  | "project.completed";
 
 export type CortexEventSource =
   | "dashboard"
   | "tasks"
   | "timetable"
-  | "exam";
+  | "exam"
+  | "projects";
 
 export interface CortexEventData {
   [key: string]: string | number | boolean | null | undefined;

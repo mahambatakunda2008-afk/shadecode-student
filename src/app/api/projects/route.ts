@@ -5,10 +5,29 @@ export async function GET(request: Request) {
   try {
     const items = await listProjects();
     return NextResponse.json({ success: true, projects: items });
-  } catch (e) {
+  } catch (e: any) {
+    if (e?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('[projects] list GET failed:', e);
     return NextResponse.json({ error: 'Failed to list projects' }, { status: 500 });
   }
+}
+
+function projectActionError(error: any) {
+  const message = error?.message || 'Failed';
+  if (message === 'Unauthorized') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (message === 'Project not found') {
+    return NextResponse.json({ error: message }, { status: 404 });
+  }
+  if (message.includes('locked') || message.includes('required lesson')) {
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
+
+  console.error('[projects] POST failed:', error);
+  return NextResponse.json({ error: 'Failed' }, { status: 500 });
 }
 
 export async function POST(request: Request) {
@@ -48,7 +67,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
   } catch (e) {
-    console.error('[projects] POST failed:', e);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return projectActionError(e);
   }
 }

@@ -62,7 +62,19 @@ function clampProgress(v: number | null): number {
   return Math.min(100, Math.max(0, Math.round(v)));
 }
 
-function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
+type LessonProjectLink = {
+  id: string;
+  title: string;
+  status: string;
+  progress: number;
+  xpReward: number;
+};
+
+function toLearnLesson(
+  row: LearnLessonRow,
+  subjectById: Map<string, string>,
+  linkedProjectsByLesson = new Map<string, LessonProjectLink[]>()
+) {
   const progress = clampProgress(row.progress);
   return {
     id: row.id, subjectId: row.subject_id,
@@ -72,7 +84,35 @@ function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) {
     progress, completed: progress >= 100,
     updated_at: row.updated_at ?? undefined,
     blocks: row.blocks ?? undefined,
+    linkedProjects: linkedProjectsByLesson.get(row.id) ?? [],
   };
+}
+
+async function getLinkedProjectsByLesson(supabase: SupabaseClient, userId: string) {
+  try {
+    const { listProjects } = await import("@/lib/projects");
+    const projects = await listProjects(userId, supabase);
+    const linkedProjectsByLesson = new Map<string, LessonProjectLink[]>();
+
+    for (const project of projects) {
+      for (const lessonId of project.requiredLessons) {
+        const current = linkedProjectsByLesson.get(lessonId) ?? [];
+        current.push({
+          id: project.id,
+          title: project.title,
+          status: project.status,
+          progress: project.progress,
+          xpReward: project.xpReward,
+        });
+        linkedProjectsByLesson.set(lessonId, current);
+      }
+    }
+
+    return linkedProjectsByLesson;
+  } catch (error) {
+    console.error("[learn] linked projects failed:", error);
+    return new Map<string, LessonProjectLink[]>();
+  }
 }
 
 function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): LearnSubject[] {
@@ -297,6 +337,7 @@ export async function GET(req: Request) {
     };
 
     if (lessonId) {
+      const linkedProjectsByLesson = await getLinkedProjectsByLesson(supabase, user.id);
       const { data: lessonData, error: lessonError } = await supabase
         .from("learn_lessons")
         .select("id, subject_id, title, description, difficulty, progress, updated_at, blocks")
@@ -310,7 +351,7 @@ export async function GET(req: Request) {
       }
       if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
 
-      const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) };
+      const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById, linkedProjectsByLesson) };
       return NextResponse.json(response);
     }
 
@@ -327,10 +368,11 @@ export async function GET(req: Request) {
 
     const allLessons = (allLessonData ?? []) as LearnLessonRow[];
     const filtered   = subjectId === "all" ? allLessons : allLessons.filter(l => l.subject_id === subjectId);
+    const linkedProjectsByLesson = await getLinkedProjectsByLesson(supabase, user.id);
 
     const response: LearnListResponse = {
       subjects: buildSubjectTabs(subjects, allLessons),
-      lessons:  filtered.map(l => toLearnLesson(l, subjectById)),
+      lessons:  filtered.map(l => toLearnLesson(l, subjectById, linkedProjectsByLesson)),
       summary,
     };
     return NextResponse.json(response);

@@ -8,7 +8,7 @@ import {
   ArrowLeft, Sparkles, BookOpen, Zap, Dna, Globe,
   FlaskConical, Calculator, Brain, Code2, TrendingUp,
   Languages, Music, Palette, CheckCircle2, Clock,
-  HelpCircle, ArrowRight,
+  HelpCircle, ArrowRight, Trophy,
 } from "lucide-react";
 
 type SubjectTheme = {
@@ -45,6 +45,7 @@ interface Lesson {
   id: string; title: string; subject: string; description: string;
   difficulty: string; progress: number; completed: boolean;
   blocks?: LessonBlock[]; updated_at?: string;
+  linkedProjects?: Array<{ id: string; title: string; status: string; progress: number; xpReward: number }>;
 }
 
 function BlockCard({ block }: { block: LessonBlock }) {
@@ -161,6 +162,30 @@ export default function LessonDetailPage() {
             </div>
           </div>
         </div>
+
+        {lesson.linkedProjects && lesson.linkedProjects.length > 0 && (
+          <div style={{ marginBottom: 28, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Trophy size={15} color="#fbbf24" />
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc", margin: 0 }}>Linked projects</h2>
+            </div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {lesson.linkedProjects.map((project) => (
+                <Link
+                  key={project.id}
+                  href={`/projects/${encodeURIComponent(project.id)}`}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(15,23,42,0.35)", textDecoration: "none" }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.title}</p>
+                    <p style={{ fontSize: 12, color: "#64748b", margin: "3px 0 0", textTransform: "capitalize" }}>{project.status} - {project.progress}%</p>
+                  </div>
+                  <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#fbbf24" }}>+{project.xpReward} XP</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       )}
 
       <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", padding: "32px 16px 60px" }}>

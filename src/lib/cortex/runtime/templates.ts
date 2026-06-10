@@ -70,6 +70,23 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
     return "Recent task completion increased overall study progress levels.";
   }
 
+  if (latestEvent?.type === "project.started") {
+    const title = String(latestEvent.data?.title ?? "a project");
+    return `Project work started: ${title}. This shifts the next learning step from consuming lessons to building.`;
+  }
+
+  if (latestEvent?.type === "project.progress") {
+    const title = String(latestEvent.data?.title ?? "Project");
+    const progress = Number(latestEvent.data?.progress ?? 0);
+    return `${title} is now ${progress}% complete. Keep connecting the build back to the required lessons.`;
+  }
+
+  if (latestEvent?.type === "project.completed") {
+    const title = String(latestEvent.data?.title ?? "Project");
+    const xp = Number(latestEvent.data?.xpReward ?? 0);
+    return `${title} completed${xp > 0 ? ` for ${xp} XP` : ""}. Practical work is now part of this learning path.`;
+  }
+
   if (snapshot.totalTasks === 0) {
     return "No task activity is currently available for analysis.";
   }
@@ -91,7 +108,8 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
     const pct = (snapshot as any).curriculumCompletionPercent;
     const current = (snapshot as any).currentLesson?.title ?? null;
     const next = (snapshot as any).recommendedNextLesson?.title ?? null;
-    return `Curriculum progress: ${pct}%${current ? ` — current: ${current}` : ''}${next ? ` — recommended next: ${next}` : ''}`;
+    const project = (snapshot as any).recommendedProject?.title ?? null;
+    return `Curriculum progress: ${pct}%${current ? ` - current: ${current}` : ''}${next ? ` - recommended next: ${next}` : ''}${project ? ` - build next: ${project}` : ''}`;
   }
 
   // Curriculum-aware short insights (only if curriculum fields exist)
@@ -100,6 +118,7 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
   const current = (snapshot as any).currentLesson?.title;
   const lockedCount = (snapshot as any).lockedLessonCount;
   const completedLessonCount = (snapshot as any).completedLessonCount;
+  const recommendedProject = (snapshot as any).recommendedProject?.title;
 
   // Many locked lessons → recommend prerequisites
   if (typeof lockedCount === "number" && lockedCount > 3) {
@@ -127,11 +146,19 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
     if (recommended) {
       return `Your next recommended lesson is ${recommended}.`;
     }
+
+    if (recommendedProject) {
+      return `Your next recommended build project is ${recommendedProject}.`;
+    }
   }
 
   // If we know a recommended lesson but have no completion number, mention it
   if (recommended) {
     return `Your next recommended lesson is ${recommended}.`;
+  }
+
+  if (recommendedProject) {
+    return `Your next recommended build project is ${recommendedProject}.`;
   }
 
   // Fallback to previous behavior

@@ -70,7 +70,7 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   });
 
   const loadSnapshot = useEffectEvent(async (): Promise<CortexSnapshot | null> => {
-    const [{ data: tasks }, { data: profile }, { data: subjects }] = await Promise.all([
+    const [{ data: tasks }, { data: profile }, { data: subjects }, curriculumResponse] = await Promise.all([
       supabase
         .from("tasks")
         .select("id, title, completed")
@@ -79,6 +79,7 @@ export default function Cortex({ userId, trigger }: CortexProps) {
         .limit(20),
       supabase.from("profiles").select("streak, level, xp").eq("id", userId).single(),
       supabase.from("subjects").select("name").eq("user_id", userId),
+      fetch("/api/curriculum").then((response) => response.json()).catch(() => null),
     ]);
 
     if (!tasks || !profile) {
@@ -89,6 +90,8 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     const typedSubjects = (subjects ?? []) as SubjectRecord[];
     const completedTasks = typedTasks.filter((task) => task.completed);
 
+    const curriculumState = curriculumResponse?.state ?? null;
+
     return {
       streak: Number(profile.streak ?? 0),
       level: Number(profile.level ?? 1),
@@ -98,6 +101,19 @@ export default function Cortex({ userId, trigger }: CortexProps) {
       pendingTasks: typedTasks.length - completedTasks.length,
       subjects: typedSubjects.map((subject) => subject.name),
       recentTaskTitles: typedTasks.slice(0, 5).map((task) => task.title),
+      curriculumCompletionPercent: curriculumState?.completionPercent,
+      currentLesson: curriculumState?.currentLesson
+        ? { id: curriculumState.currentLesson.id, title: curriculumState.currentLesson.title }
+        : null,
+      recommendedNextLesson: curriculumState?.recommendedNextLesson
+        ? { id: curriculumState.recommendedNextLesson.id, title: curriculumState.recommendedNextLesson.title }
+        : null,
+      completedLessonCount: curriculumState?.completedLessons?.length,
+      lockedLessonCount: curriculumState?.lockedLessons?.length,
+      totalProjects: curriculumState?.totalProjects,
+      activeProjectCount: curriculumState?.activeProjectCount,
+      completedProjectCount: curriculumState?.completedProjectCount,
+      recommendedProject: curriculumState?.recommendedProject,
     };
   });
 

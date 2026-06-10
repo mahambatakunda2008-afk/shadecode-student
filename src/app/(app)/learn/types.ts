@@ -73,6 +73,13 @@ export interface LearnLesson {
   difficulty: LessonDifficulty;
   progress: number;
   completed: boolean;
+  linkedProjects?: Array<{
+    id: string;
+    title: string;
+    status: string;
+    progress: number;
+    xpReward: number;
+  }>;
 }
 
 export interface LearnSummary {
