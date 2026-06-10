@@ -86,5 +86,54 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
     return "Study activity is concentrated within a single subject.";
   }
 
+  // Curriculum-aware deterministic insight (fallback)
+  if ((snapshot as any).curriculumCompletionPercent !== undefined) {
+    const pct = (snapshot as any).curriculumCompletionPercent;
+    const current = (snapshot as any).currentLesson?.title ?? null;
+    const next = (snapshot as any).recommendedNextLesson?.title ?? null;
+    return `Curriculum progress: ${pct}%${current ? ` — current: ${current}` : ''}${next ? ` — recommended next: ${next}` : ''}`;
+  }
+
+  // Curriculum-aware short insights (only if curriculum fields exist)
+  const completion = (snapshot as any).curriculumCompletionPercent;
+  const recommended = (snapshot as any).recommendedNextLesson?.title;
+  const current = (snapshot as any).currentLesson?.title;
+  const lockedCount = (snapshot as any).lockedLessonCount;
+  const completedLessonCount = (snapshot as any).completedLessonCount;
+
+  // Many locked lessons → recommend prerequisites
+  if (typeof lockedCount === "number" && lockedCount > 3) {
+    return "Several lessons remain locked. Completing prerequisite topics will unlock more content.";
+  }
+
+  if (typeof completion === "number") {
+    if (completion < 50) {
+      // Low completion → progression focus
+      if (recommended) {
+        return `You have completed ${completion}% of your curriculum. Continue with ${recommended}.`;
+      }
+      if (current) {
+        return `You have completed ${completion}% of your curriculum. Continue with ${current}.`;
+      }
+      return `You have completed ${completion}% of your curriculum. Focus on progressing through unlocked lessons.`;
+    }
+
+    if (completion >= 80) {
+      // Near completion → mastery and revision
+      return `You have completed ${completion}% of your curriculum. Prioritize mastery and revision.`;
+    }
+
+    // Mid-range: mention recommended lesson if available
+    if (recommended) {
+      return `Your next recommended lesson is ${recommended}.`;
+    }
+  }
+
+  // If we know a recommended lesson but have no completion number, mention it
+  if (recommended) {
+    return `Your next recommended lesson is ${recommended}.`;
+  }
+
+  // Fallback to previous behavior
   return null;
 }

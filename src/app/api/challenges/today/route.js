@@ -1,71 +1,171 @@
-// src/app/api/challenges/today/route.js
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+function daysUntil(date) {
+  const target = new Date(date);
+  const now = new Date();
+
+  target.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+
+  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
 }
 
-const defaultChallenge = {
-  id: 'daily-default',
-  title: 'Focus Sprint: 30 Minutes',
-  description: 'Dedicate 30 uninterrupted minutes to your hardest subject today.',
-  xp_reward: 50,
-};
+function generateChallenge({
+  subjects = [],
+  tasks = [],
+  exams = [],
+}) {
+  const upcomingExam = exams.find((exam) => {
+    const date = exam.exam_date || exam.date;
+    if (!date) return false;
+
+    const days = daysUntil(date);
+    return days >= 0 && days <= 7;
+  });
+
+  if (upcomingExam) {
+    return {
+      title: "Exam Sprint",
+      description: `Revise ${upcomingExam.subject || "your upcoming subject"} for 20 minutes.`,
+      xp_reward: 75,
+      difficulty: "medium",
+      reason: "exam_priority",
+      explanation:
+        "Cortex detected an exam approaching soon and prioritised revision."
+    };
+  }
+
+  const overdueTask = tasks.find((task) => {
+    if (task.completed) return false;
+    if (!task.due_date) return false;
+
+    return new Date(task.due_date) < new Date();
+  });
+
+  if (overdueTask) {
+    return {
+      title: "Task Recovery",
+      description: `Complete: ${overdueTask.title}`,
+      xp_reward: 60,
+      difficulty: "medium",
+      reason: "overdue_task",
+      explanation:
+        "You have overdue work that Cortex believes should be cleared first."
+    };
+  }
+
+  if (subjects.length) {
+    const weakestSubject = [...subjects].sort(
+      (a, b) =>
+        (a.activity_count || 0) -
+        (b.activity_count || 0)
+    )[0];
+
+    return {
+      title: "Strengthen Weakness",
+      description: `Study ${weakestSubject.name || "this subject"} for 15 minutes.`,
+      xp_reward: 50,
+      difficulty: "easy",
+      reason: "weak_subject",
+      explanation:
+        `${weakestSubject.name || "This subject"} has received less attention recently.`
+    };
+  }
+
+  return {
+    title: "Momentum Builder",
+    description: "Complete one focused study session today.",
+    xp_reward: 40,
+    difficulty: "easy",
+    reason: "fallback",
+    explanation:
+      "No strong learning signal was detected today."
+  };
+}
 
 export async function GET() {
   try {
-    const supabase = getSupabase();
-    const today = new Date().toISOString().split('T')[0];
+    // Get authenticated user from session cookie
+    const authClient = await createSupabaseServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user) {
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data: existing } = await supabase
+      .from("daily_challenges")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .maybeSingle();
+
+    if (existing) {
+      return Response.json({
+        challenge: {
+          id: existing.id,
+          ...existing.challenge,
+        },
+        completed: existing.completed,
+      });
+    }
+
+    const [{ data: subjects }, { data: tasks }, { data: exams }] =
+      await Promise.all([
+        supabase.from("subjects").select("*"),
+        supabase.from("tasks").select("*"),
+        supabase.from("exams").select("*"),
+      ]);
+
+    const challenge = generateChallenge({
+      subjects: subjects || [],
+      tasks: tasks || [],
+      exams: exams || [],
+    });
 
     const { data, error } = await supabase
-      .from('daily_challenges')
-      .select('*')
-      .eq('date', today)
-      .limit(1)
+      .from("daily_challenges")
+      .insert({
+        user_id: userId,
+        date: today,
+        challenge,
+        completed: false,
+      })
+      .select()
       .single();
 
-    const challenge = (!error && data) ? data : defaultChallenge;
-    return NextResponse.json({ challenge });
+    if (error) throw error;
+
+    return Response.json({
+      challenge: {
+        id: data.id,
+        ...challenge,
+      },
+      completed: false,
+    });
   } catch (err) {
-    console.error('GET /api/challenges/today error:', err);
-    return NextResponse.json({ challenge: defaultChallenge });
-  }
-}
+    console.error(err);
 
-export async function POST(req) {
-  try {
-    const supabase = getSupabase();
-    const { userId, xpReward } = await req.json();
-
-    if (!userId || typeof xpReward !== 'number') {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('xp, level')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    const newXp = (profile.xp || 0) + xpReward;
-    const newLevel = Math.floor(newXp / 100) + 1;
-
-    await supabase
-      .from('profiles')
-      .update({ xp: newXp, level: newLevel })
-      .eq('id', userId);
-
-    return NextResponse.json({ success: true, newXp, newLevel });
-  } catch (err) {
-    console.error('POST /api/challenges/today error:', err);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    return Response.json(
+      {
+        error: "Failed to fetch challenge",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

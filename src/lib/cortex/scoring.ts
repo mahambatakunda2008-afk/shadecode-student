@@ -3,9 +3,9 @@
 import { StudentState } from "./engine";
 
 export function computeLeaderboardScore(u: StudentState) {
-  return (
+  return Math.round(
     u.weekly_xp +
-    u.level * 50 +
-    u.streak * 20
+    u.level * 25 +
+    u.streak * 10
   );
 }

@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
 
     const educationLevel = body.education_level as EducationLevel;
     const learningGoal = body.learning_goal as LearningGoal;
-    const subjectInterests = (body.subject_interests ?? []) as SubjectInterest[];
+    let subjectInterests = (body.subject_interests ?? []) as SubjectInterest[];
+    const goals = (body.goals ?? []) as string[] | undefined;
 
     if (!educationLevel || !learningGoal) {
       return NextResponse.json(
@@ -29,30 +30,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert user profile
-    const { error: profileError } = await supabase
-      .from("user_profiles")
-      .upsert(
-        {
-          user_id: user.id,
-          education_level: educationLevel,
-          learning_goal: learningGoal,
-          subject_interests: subjectInterests,
-          onboarding_completed: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+    // Detect user country (from request headers or body) to optionally localize onboarding
+    const detectedCountry = (body.country as string) ??
+      request.headers.get('x-vercel-ip-country') ??
+      request.headers.get('cf-ipcountry') ??
+      request.headers.get('x-country') ?? null;
 
-    if (profileError) {
-      console.error("[onboarding] profile upsert error:", profileError);
-      return NextResponse.json(
-        { error: "Failed to save profile" },
-        { status: 500 }
-      );
+    // Apply localization boosts (optional)
+    try {
+      const { lookupLocalization } = await import('@/lib/localization/curriculumMap');
+      const loc = lookupLocalization(detectedCountry ?? undefined);
+      // Merge recommended boosts into subjectInterests (preserve order, dedupe, cap at 6)
+      if (loc?.recommendedBoosts && loc.recommendedBoosts.length > 0) {
+        const combined = [...loc.recommendedBoosts, ...subjectInterests];
+        const unique = Array.from(new Set(combined));
+        subjectInterests = unique.slice(0, 6) as SubjectInterest[];
+      }
+
+      // Upsert user profile with localization metadata
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            education_level: educationLevel,
+            learning_goal: learningGoal,
+            subject_interests: subjectInterests,
+            onboarding_completed: true,
+            country_code: loc?.countryCode ?? null,
+            exam_board: loc?.examBoard ?? null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (profileError) {
+        console.error('[onboarding] profile upsert error:', profileError);
+        return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
+      }
+    } catch (e) {
+      // Fallback: upsert without localization fields
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            education_level: educationLevel,
+            learning_goal: learningGoal,
+            subject_interests: subjectInterests,
+            onboarding_completed: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (profileError) {
+        console.error('[onboarding] profile upsert error (fallback):', profileError);
+        return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
+      }
     }
 
-    // Initialize learning path
+
+    // Initialize learning path (uses possibly-localized subjectInterests)
     const learningPathData = initializeLearningPath(
       user.id,
       educationLevel,
@@ -78,7 +117,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Generate lightweight recommendations and starter lesson. Non-blocking but include result in response.
+    try {
+      const { generateOnboardingRecommendations } = await import('@/lib/onboardingRecommendations');
+      const rec = await generateOnboardingRecommendations(user.id, goals, educationLevel, subjectInterests);
+      return NextResponse.json({ success: true, recommendations: rec });
+    } catch (e) {
+      console.error('[onboarding] recommendation error:', e);
+      return NextResponse.json({ success: true });
+    }
   } catch (err) {
     console.error("[onboarding] unexpected error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

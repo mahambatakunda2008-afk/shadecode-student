@@ -11,6 +11,8 @@ import {
   Music, Palette, Code2, TrendingUp, Flame, Languages,
 } from "lucide-react";
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
+import CurriculumProgressCard from '@/components/CurriculumProgressCard';
+import LearningJourney from '@/components/LearningJourney';
 
 type SubjectTheme = {
   hex: string; bg: string; border: string; text: string;
@@ -162,31 +164,43 @@ export default function LearnPageClient() {
 
       {/* UI unchanged — your full UI stays exactly as-is */}
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
+          <main>
+            <h1>AI Learn</h1>
 
-        <h1>AI Learn</h1>
+            {/* GENERATION CONTROLS (unchanged visually) */}
+            <div>
+              <input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Enter topic..."
+              />
 
-        {/* GENERATION CONTROLS (unchanged visually) */}
-        <div>
-          <input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Enter topic..."
-          />
+              <button onClick={generate} disabled={generating}>
+                {generating ? "Generating..." : "Generate Lesson"}
+              </button>
 
-          <button onClick={generate} disabled={generating}>
-            {generating ? "Generating..." : "Generate Lesson"}
-          </button>
+              {genErr && <p style={{ color: "red" }}>{genErr}</p>}
+            </div>
 
-          {genErr && <p style={{ color: "red" }}>{genErr}</p>}
+            {savingRevision && (
+              <p style={{ fontSize: 12, color: "#888" }}>
+                Saving to revision system...
+              </p>
+            )}
+
+            {/* The rest of the learn page content remains unchanged and will appear below */}
+          </main>
+
+          <aside style={{ width: 340 }}>
+            <CurriculumProgressCard />
+            <div style={{ height: 16 }} />
+            <div className="hidden md:block">
+              <LearningJourney />
+            </div>
+          </aside>
         </div>
-
-        {savingRevision && (
-          <p style={{ fontSize: 12, color: "#888" }}>
-            Saving to revision system...
-          </p>
-        )}
-
       </div>
     </div>
   );

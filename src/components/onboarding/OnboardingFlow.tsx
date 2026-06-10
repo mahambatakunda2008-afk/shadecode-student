@@ -7,14 +7,15 @@ import { WelcomeStep }            from './steps/WelcomeStep';
 import { SubjectStep }           from './steps/SubjectStep';
 import { GoalsStep }              from './steps/GoalsStep';
 import { ConfirmStep }            from './steps/ConfirmStep';
-import { completeOnboarding }     from '@/lib/actions/onboarding';
+import { StepGoalSelection }      from './steps/StepGoalSelection';
 import type { OnboardingFormData } from '@/types';
 
-const STEP_LABELS = ['Profile', 'Subjects', 'Goals', 'Confirm'] as const;
+const STEP_LABELS = ['Profile', 'Subjects', 'Goals', 'Daily', 'Confirm'] as const;
 const TOTAL       = STEP_LABELS.length;
 
-const DEFAULTS: Partial<OnboardingFormData> = {
+const DEFAULTS: Partial<any> = {
   subjects:         [],
+  goals:            [],
   dailyGoalMinutes: 30,
   studyStyle:       'flexible',
 };
@@ -23,11 +24,12 @@ export function OnboardingFlow() {
   const router = useRouter();
 
   const [step,         setStep]         = useState(1);
-  const [formData,     setFormData]     = useState<Partial<OnboardingFormData>>(DEFAULTS);
+  const [formData,     setFormData]     = useState<Partial<any>>(DEFAULTS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError,  setSubmitError]  = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<any | null>(null);
 
-  const update = (patch: Partial<OnboardingFormData>) =>
+  const update = (patch: Partial<any>) =>
     setFormData(prev => ({ ...prev, ...patch }));
 
   const next = () => setStep(s => Math.min(s + 1, TOTAL));
@@ -37,15 +39,25 @@ export function OnboardingFlow() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await completeOnboarding(formData as OnboardingFormData);
-      /**
-       * Redirect to dashboard.
-       * TourProvider on the dashboard reads onboardingCompleted=true, tourCompleted=false
-       * from the DB and calls startTour() automatically after a short delay.
-       */
-      router.push('/dashboard');
-    } catch {
-      setSubmitError('Something went wrong. Please try again.');
+      const res = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? 'Failed');
+      // If recommendations returned, surface them briefly before redirect
+      if (json?.recommendations) {
+        setRecommendations(json.recommendations);
+        // Keep user on a small summary before redirecting — allow them to read the recommendation
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1800);
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -82,16 +94,33 @@ export function OnboardingFlow() {
       >
         {step === 1 && <WelcomeStep   {...common} onNext={next} />}
         {step === 2 && <SubjectsStep  {...common} onNext={next} onBack={back} />}
-        {step === 3 && <GoalsStep     {...common} onNext={next} onBack={back} />}
-        {step === 4 && (
-          <ConfirmStep
-            {...common}
-            onNext={next}
-            onBack={back}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            error={submitError}
-          />
+        {step === 3 && <StepGoalSelection {...common} onNext={next} onBack={back} />}
+        {step === 4 && <GoalsStep     {...common} onNext={next} onBack={back} />}
+        {step === 5 && (
+          <>
+            <ConfirmStep
+              {...common}
+              onNext={next}
+              onBack={back}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              error={submitError}
+            />
+            {recommendations && (
+              <div style={{ marginTop: 12, padding: 12, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Recommended next course</div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{recommendations.suggestedCourse?.title}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{recommendations.suggestedCourse?.summary}</div>
+                {recommendations.firstLesson && (
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>First lesson</div>
+                    <div style={{ fontSize: 13 }}>{recommendations.firstLesson.title}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{recommendations.firstLesson.description}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

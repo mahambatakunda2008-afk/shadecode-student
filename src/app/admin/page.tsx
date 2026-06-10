@@ -8,6 +8,11 @@ export default function AdminPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(true);
+  const [adminToken, setAdminToken] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
   const fetchFeedback = async () => {
     try {
       const { data } = await supabase
@@ -23,13 +28,26 @@ export default function AdminPage() {
     }
   };
 
+  const fetchDrafts = async () => {
+    setDraftsLoading(true);
+    try {
+      const res = await fetch('/api/cortex?action=get_drafts');
+      const arr = await res.json();
+      setDrafts(Array.isArray(arr) ? arr : []);
+    } catch (e) { console.error(e); setDrafts([]); }
+    setDraftsLoading(false);
+  };
+
   useEffect(() => {
     fetchFeedback();
 
     // SIMPLE POLLING (NO SUPABASE REALTIME SETUP NEEDED)
     const interval = setInterval(() => {
       fetchFeedback();
+      fetchDrafts();
     }, 5000);
+
+    fetchDrafts();
 
     return () => clearInterval(interval);
   }, []);
@@ -46,6 +64,24 @@ export default function AdminPage() {
     padding: 12,
     marginBottom: 10,
     background: "white",
+  };
+
+  const approve = async (id: string) => {
+    if (!adminToken) { alert('Enter admin token'); return; }
+    setBusyId(id);
+    try {
+      const res = await fetch('/api/cortex?action=approve_draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Approve failed');
+      alert('Approved');
+      fetchDrafts();
+    } catch (e: any) {
+      alert('Approve failed: ' + (e?.message || e));
+    } finally { setBusyId(null); }
   };
 
   return (
@@ -84,6 +120,31 @@ export default function AdminPage() {
           ))
         )}
       </div>
+
+      <section style={{ marginTop: 40 }}>
+        <h2>Generated Course Drafts</h2>
+        <div style={{ marginBottom: 8 }}>
+          <input placeholder="Admin token" value={adminToken} onChange={e => setAdminToken(e.target.value)} style={{ padding: 8, width: 360 }} />
+        </div>
+        {draftsLoading ? <p>Loading drafts...</p> : drafts.length === 0 ? <p>No drafts found.</p> : (
+          drafts.map(d => (
+            <div key={d.id} style={{ border: '1px solid #eee', padding: 12, marginBottom: 10 }}>
+              <div style={{ fontWeight: 700 }}>{d.draft?.title ?? 'Untitled'}</div>
+              <div style={{ color: 'gray', fontSize: 12 }}>{d.created_at} — user: {d.user_id ?? d.userId ?? 'unknown'}</div>
+              <p>{d.draft?.description}</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => approve(d.id)} disabled={busyId === d.id}>Approve</button>
+              </div>
+              {d.moderationIssues && d.moderationIssues.length > 0 && (
+                <div style={{ marginTop: 8, color: 'orange' }}>
+                  <strong>Moderation issues:</strong>
+                  <ul>{d.moderationIssues.map((m: any, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </section>
     </div>
   );
 }

@@ -350,7 +350,119 @@ export async function POST(req: Request) {
 
     const { supabase, user } = auth;
     const body = await req.json();
-    const { type, subject, topic, difficulty } = body;
+    const { type, subject, topic, difficulty, goal, level } = body;
+
+    // Support creating a single lesson or generating a full course
+    if (type === "course_preview") {
+      if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
+      try {
+        const token = getBearerToken(req);
+        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { generateCourseDraft } = await import('@/lib/cortex/generateCourse');
+        const draft = await generateCourseDraft(token, { topic, goal, level });
+
+        return NextResponse.json({ success: true, draft });
+      } catch (e) {
+        console.error('[learn] course preview error:', e);
+        return NextResponse.json({ error: 'Course preview failed' }, { status: 500 });
+      }
+    }
+
+    if (type === "course") {
+      if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
+      // Delegate to cortex generator utility
+      try {
+        const token = getBearerToken(req);
+        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const { generateCourseForUser } = await import('@/lib/cortex/generateCourse');
+        const result = await generateCourseForUser(token, { topic, goal, level });
+        return NextResponse.json({ success: true, course: result });
+      } catch (e) {
+        console.error('[learn] course generation error:', e);
+        return NextResponse.json({ error: 'Course generation failed' }, { status: 500 });
+      }
+    }
+
+    if (type === "course_save") {
+      // Persist a user-provided draft (from preview) into learn_lessons and lesson_prerequisites
+      const draft = body.draft;
+      if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) {
+        return NextResponse.json({ error: 'Invalid draft' }, { status: 400 });
+      }
+
+      // Find or create subject for this topic
+      const subjName = topic && topic.length > 0 && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`);
+      let subjectId: string | null = null;
+      try {
+        const { data: existing } = await supabase.from('subjects').select('id').eq('user_id', user.id).eq('name', subjName).maybeSingle();
+        if (existing?.id) subjectId = existing.id;
+        else {
+          const { data: insertedSub, error: insertSubErr } = await supabase.from('subjects').insert({ user_id: user.id, name: subjName }).select('id').single();
+          if (insertSubErr) console.error('Failed to create subject:', insertSubErr);
+          subjectId = insertedSub?.id ?? null;
+        }
+      } catch (e) { console.error('[learn] subject creation error:', e); }
+
+      if (!subjectId) return NextResponse.json({ error: 'Failed to resolve subject' }, { status: 500 });
+
+      // Prepare lessons
+      const lessonsToInsert = draft.lessons.map((l: any) => ({
+        user_id: user.id,
+        subject_id: subjectId,
+        title: (l.title ?? l.summary ?? 'Untitled').toString().slice(0,255),
+        description: (l.summary ?? '').toString().slice(0,1000),
+        difficulty: (l.difficulty === 'hard' ? 'hard' : l.difficulty === 'medium' ? 'medium' : 'easy'),
+        blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: 'text', content: l.summary ?? '' }],
+        progress: 0,
+      }));
+
+      const { data: insertedLessons, error: insertLessonsError } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
+      if (insertLessonsError) console.error('Failed to insert lessons:', insertLessonsError);
+
+      const titleToId = new Map();
+      (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id));
+
+      // Insert prerequisites mapping by matching titles to created IDs
+      const prereqInserts: any[] = [];
+      const unmappedPrereqs: Array<{ lessonTitle: string; missingPrereq: string }> = [];
+
+      for (const l of draft.lessons) {
+        const lessonTitleKey = (l.title ?? l.summary ?? '').toString().slice(0,255);
+        const insertedId = titleToId.get(lessonTitleKey);
+        if (!insertedId) continue;
+        const prereqs = Array.isArray(l.prerequisites) ? l.prerequisites : [];
+        for (const pTitle of prereqs) {
+          const pKey = pTitle.toString().slice(0,255);
+          const pid = titleToId.get(pKey);
+          if (pid && pid !== insertedId) {
+            prereqInserts.push({ lesson_id: insertedId, prerequisite_lesson_id: pid });
+          } else {
+            unmappedPrereqs.push({ lessonTitle: lessonTitleKey, missingPrereq: pKey });
+          }
+        }
+      }
+
+      // Deduplicate inserts
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (const r of prereqInserts) {
+        const k = `${r.lesson_id}:${r.prerequisite_lesson_id}`;
+        if (!seen.has(k)) { seen.add(k); deduped.push(r); }
+      }
+
+      if (deduped.length > 0) {
+        try {
+          await supabase.from('lesson_prerequisites').insert(deduped);
+        } catch (e) { console.error('prereq insert error:', e); }
+      }
+
+      // Optionally create/update learning path
+      try {
+        await supabase.from('learning_paths').upsert({ user_id: user.id, title: draft.title ?? subjName, description: draft.description ?? '', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      } catch (e) { }
+
+      return NextResponse.json({ success: true, lessonsInserted: (insertedLessons ?? []).length, unmappedPrereqs });
+    }
 
     if (type !== "lesson") return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     if (!subject || !topic) return NextResponse.json({ error: "Missing subject or topic" }, { status: 400 });

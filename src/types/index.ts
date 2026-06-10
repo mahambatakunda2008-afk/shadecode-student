@@ -7,6 +7,7 @@ export interface OnboardingFormData {
   displayName:      string;
   studyLevel:       StudyLevel;
   subjects:         string[];
+  goals?:           string[];
   dailyGoalMinutes: number;
   studyStyle:       StudyStyle;
 }

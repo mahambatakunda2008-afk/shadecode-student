@@ -1,6 +1,7 @@
 import { getMemory, updateMemory } from "./memory";
 import { scoreAnswer } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
+import { getCurriculumState } from "@/lib/curriculum";
 
 export type CortexInput = {
     userId: string;
@@ -18,10 +19,44 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
     const memory = await getMemory(input.userId);
 
     // 1. Understand context
+    // Fetch curriculum state once per Cortex request and adapt it into a lightweight summary.
+    let curriculumState = null;
+    try {
+      curriculumState = await getCurriculumState(input.userId);
+    } catch (e) {
+      // Keep behavior safe if curriculum fetch fails
+      console.error("[cortex] failed to fetch curriculum state:", e);
+      curriculumState = null;
+    }
+
+    // Build a minimal snapshot that merges memory-derived fields and optional curriculum fields
+    const snapshot: any = {
+      streak: memory.streak,
+      level: memory.level,
+      xp: (memory as any).xp ?? 0,
+      totalTasks: (memory as any).totalTasks ?? 0,
+      completedTasks: (memory as any).completedTasks ?? 0,
+      pendingTasks: ((memory as any).totalTasks ?? 0) - ((memory as any).completedTasks ?? 0),
+      subjects: (memory as any).subjects ?? [],
+    };
+
+    if (curriculumState) {
+      snapshot.curriculumCompletionPercent = curriculumState.completionPercent;
+      snapshot.currentLesson = curriculumState.currentLesson
+        ? { id: curriculumState.currentLesson.id, title: curriculumState.currentLesson.title }
+        : null;
+      snapshot.recommendedNextLesson = curriculumState.recommendedNextLesson
+        ? { id: curriculumState.recommendedNextLesson.id, title: curriculumState.recommendedNextLesson.title }
+        : null;
+      snapshot.completedLessonCount = curriculumState.completedLessons.length;
+      snapshot.lockedLessonCount = curriculumState.lockedLessons.length;
+    }
+
     const context = {
         level: memory.level,
         streak: memory.streak,
         weakTopics: memory.weakTopics,
+        snapshot,
     };
 
     // 2. Route intent (SINGLE DECISION POINT)
@@ -39,6 +74,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             return {
                 response,
                 nextAction: "continue_learning",
+                updatedState: { snapshot },
             };
         }
 
@@ -53,6 +89,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             return {
                 response: result.feedback,
                 nextAction: "adjust_difficulty",
+                updatedState: { snapshot },
             };
         }
 
@@ -63,6 +100,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
 
             return {
                 response: "Got it. I’m adjusting your learning path.",
+                updatedState: { snapshot },
             };
         }
 
@@ -70,12 +108,14 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             return {
                 response: "Exam mode activated. Good luck.",
                 nextAction: "lock_learning_mode",
+                updatedState: { snapshot },
             };
         }
 
         default:
             return {
                 response: "Unknown cortex action.",
+                updatedState: { snapshot },
             };
     }
 }
