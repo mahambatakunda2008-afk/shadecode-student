@@ -360,6 +360,7 @@ export async function POST(req: Request) {
         if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { generateCourseDraft } = await import('@/lib/cortex/generateCourse');
         const draft = await generateCourseDraft(token, { topic, goal, level });
+
         return NextResponse.json({ success: true, draft });
       } catch (e) {
         console.error('[learn] course preview error:', e);

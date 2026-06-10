@@ -9,7 +9,7 @@ function getSupabaseAdmin() {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
-async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
+export let aiCaller = async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
   // Minimal AI caller reusing available providers
   if (process.env.OPENAI_API_KEY) {
     try {
@@ -38,7 +38,30 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
     } catch (err) { console.error("[AI] Cloudflare failed:", err); }
   }
   return null;
+};
+
+export function setAiCaller(fn: (prompt: string, maxTokens?: number) => Promise<string | null>) {
+  aiCaller = fn;
 }
+
+function moderateDraft(draft: any) {
+  const issues: string[] = [];
+  const banned = ["fuck","shit","bitch","idiot","sex"];
+  const text = (JSON.stringify(draft) || "").toLowerCase();
+  for (const b of banned) if (text.includes(b)) issues.push(`Profanity detected: ${b}`);
+  // Links may indicate external content — flag for review
+  if (/https?:\/\//.test(text)) issues.push("Contains external links — review for safety");
+  // Size checks
+  if ((draft.lessons?.length ?? 0) > 40) issues.push("Large number of lessons (>40) — consider reducing");
+  // Short content checks
+  for (const l of (draft.lessons ?? [])) {
+    if ((l.summary ?? "").length < 10) issues.push(`Lesson '${l.title}' summary too short`);
+    const blocks = l.blocks ?? [];
+    if (blocks.length === 0) issues.push(`Lesson '${l.title}' has no content blocks`);
+  }
+  return issues;
+}
+
 
 function safeParseJSON(raw: string): any | null {
   let text = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
@@ -69,9 +92,28 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
   const goal = params.goal;
   const level = params.level ?? 'beginner';
 
+  // Cooldown check: prevent frequent generation (1 hour)
+  try {
+    const { data: profileData } = await supabase.from('user_profiles').select('last_course_generated_at').eq('user_id', user.id).maybeSingle();
+    const last = profileData?.last_course_generated_at;
+    if (last) {
+      const lastTs = new Date(last).getTime();
+      const now = Date.now();
+      const elapsed = now - lastTs;
+      const hour = 1000 * 60 * 60;
+      if (elapsed < hour) {
+        const mins = Math.ceil((hour - elapsed) / (1000 * 60));
+        throw new Error(`Cooldown: please wait ${mins} minutes before generating another course.`);
+      }
+    }
+  } catch (e) {
+    // Ignore DB errors for cooldown check but surface explicit message
+    if (e instanceof Error && e.message.startsWith('Cooldown')) throw e;
+  }
+
   const prompt = `You are an expert curriculum designer. Produce a compact JSON course for topic: "${topic}", goal: "${goal}", level: "${level}". Return an object with title, description, lessons (array with title, summary, difficulty, estimatedMinutes, blocks, prerequisites), projects, checkpoints, assessments.`;
 
-  const raw = await callAI(prompt, 4000);
+  const raw = await aiCaller(prompt, 4000);
   if (!raw) throw new Error('AI unavailable');
   const parsed = safeParseJSON(raw);
   if (!parsed || !Array.isArray(parsed.lessons) || parsed.lessons.length === 0) throw new Error('Invalid course structure');
@@ -86,7 +128,24 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
     prerequisites: Array.isArray(l.prerequisites) ? l.prerequisites.map((p: any) => p.toString().slice(0,255)) : [],
   }));
 
-  return { title: parsed.title ?? topic, description: parsed.description ?? '', lessons: parsed.lessons, projects: parsed.projects ?? [], checkpoints: parsed.checkpoints ?? [], assessments: parsed.assessments ?? [] };
+  // Moderation: lightweight checks
+  const moderationIssues = moderateDraft({ title: parsed.title, description: parsed.description, lessons: parsed.lessons });
+
+  // Persist draft into generated_course_drafts (if table exists)
+  try {
+    await supabase.from('generated_course_drafts').insert({ user_id: user.id, draft: { title: parsed.title ?? topic, description: parsed.description ?? '', lessons: parsed.lessons, projects: parsed.projects ?? [], checkpoints: parsed.checkpoints ?? [], assessments: parsed.assessments ?? [] }, moderation_issues: moderationIssues }).select('id');
+  } catch (e) {
+    // ignore if table not present or insert fails
+    console.error('[generateCourse] failed to persist draft to DB:', e?.message ?? e);
+  }
+
+  // Update last_course_generated_at to enforce cooldown
+  try {
+    await supabase.from('user_profiles').update({ last_course_generated_at: new Date().toISOString() }).eq('user_id', user.id);
+  } catch {}
+
+  return { title: parsed.title ?? topic, description: parsed.description ?? '', lessons: parsed.lessons, projects: parsed.projects ?? [], checkpoints: parsed.checkpoints ?? [], assessments: parsed.assessments ?? [], moderationIssues };
+
 }
 
 export async function generateCourseForUser(userToken: string, params: { topic: string; goal: string; level?: string }) {
@@ -132,8 +191,15 @@ export async function generateCourseForUser(userToken: string, params: { topic: 
       if (pid && pid !== insertedId) prereqInserts.push({ lesson_id: insertedId, prerequisite_lesson_id: pid });
     }
   }
-  if (prereqInserts.length > 0) {
-    await supabase.from('lesson_prerequisites').insert(prereqInserts);
+  // dedupe
+  const seen = new Set<string>();
+  const deduped: any[] = [];
+  for (const r of prereqInserts) {
+    const key = `${r.lesson_id}::${r.prerequisite_lesson_id}`;
+    if (!seen.has(key)) { seen.add(key); deduped.push(r); }
+  }
+  if (deduped.length > 0) {
+    try { await supabase.from('lesson_prerequisites').insert(deduped); } catch (e) { console.error('Failed inserting prereqs', e); }
   }
 
   // Optionally create learning_path entry
@@ -141,6 +207,12 @@ export async function generateCourseForUser(userToken: string, params: { topic: 
     await supabase.from('learning_paths').upsert({ user_id: user.id, title: draft.title ?? subjName, description: draft.description ?? '', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
   } catch {}
 
-  return { title: draft.title ?? subjName, lessonsInserted: (inserted.data ?? []).length };
+  // Update last_course_generated_at after persistence
+  try {
+    await supabase.from('user_profiles').update({ last_course_generated_at: new Date().toISOString() }).eq('user_id', user.id);
+  } catch {}
+
+  return { title: draft.title ?? subjName, lessonsInserted: (inserted.data ?? []).length, moderationIssues: (draft as any).moderationIssues ?? [] };
 }
+
 

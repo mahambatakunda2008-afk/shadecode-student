@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     const educationLevel = body.education_level as EducationLevel;
     const learningGoal = body.learning_goal as LearningGoal;
     let subjectInterests = (body.subject_interests ?? []) as SubjectInterest[];
+    const goals = (body.goals ?? []) as string[] | undefined;
 
     if (!educationLevel || !learningGoal) {
       return NextResponse.json(
@@ -89,13 +90,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (profileError) {
-      console.error("[onboarding] profile upsert error:", profileError);
-      return NextResponse.json(
-        { error: "Failed to save profile" },
-        { status: 500 }
-      );
-    }
 
     // Initialize learning path (uses possibly-localized subjectInterests)
     const learningPathData = initializeLearningPath(
@@ -123,7 +117,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Generate lightweight recommendations and starter lesson. Non-blocking but include result in response.
+    try {
+      const { generateOnboardingRecommendations } = await import('@/lib/onboardingRecommendations');
+      const rec = await generateOnboardingRecommendations(user.id, goals, educationLevel, subjectInterests);
+      return NextResponse.json({ success: true, recommendations: rec });
+    } catch (e) {
+      console.error('[onboarding] recommendation error:', e);
+      return NextResponse.json({ success: true });
+    }
   } catch (err) {
     console.error("[onboarding] unexpected error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
