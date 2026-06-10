@@ -1,6 +1,6 @@
 import { getMemory, updateMemory } from "./memory";
-import { scoreAnswer } from "./tools/scoring";
-import { generateTutoringResponse } from "./tools/tutor";
+import { scoreAnswer } from "./scoring";
+import { generateTutoringResponse } from "./tutor";
 import { getCurriculumState } from "@/lib/curriculum";
 
 export type CortexInput = {

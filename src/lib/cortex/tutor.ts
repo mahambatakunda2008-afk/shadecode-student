@@ -24,3 +24,8 @@ export function cortexTutor(session: StudySession) {
     message: "Keep steady progress.",
   };
 }
+
+// Backwards-compatible placeholder used by CortexCore
+export async function generateTutoringResponse(topic: string, context: any): Promise<string> {
+  return `Let\'s work on ${topic}. Based on your progress, focus on small practice tasks.`;
+}
