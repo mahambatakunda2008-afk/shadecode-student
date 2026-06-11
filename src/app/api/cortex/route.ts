@@ -124,8 +124,29 @@ export async function POST(req: Request) {
     }
     }
 
+    const body = await req.json().catch(() => ({}));
+
+    // Behavioral insight path — used by the dashboard Cortex component, which
+    // posts { requestType: "behavior.insight", payload: { userId, events, snapshot } }.
+    if (body?.requestType) {
+      try {
+        const { cortexAI } = await import("@/lib/cortex/runtime/ai-gateway");
+        const result = await cortexAI(body.requestType, body.payload);
+        return Response.json({
+          insight: result.data?.insight ?? null,
+          provider: result.provider,
+          cached: result.cached,
+        });
+      } catch (e) {
+        // Non-fatal: the client falls back to deterministic insights.
+        return Response.json(
+          { insight: null, error: e instanceof Error ? e.message : "cortex_ai_failed" },
+          { status: 200 }
+        );
+      }
+    }
+
     // Fallback: preserve existing Cortex POST behavior
-    const body = await req.json();
     const { userId, type, payload } = body;
 
     if (!userId || !type) {

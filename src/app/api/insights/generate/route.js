@@ -16,11 +16,11 @@ export async function POST() {
     "Cortex observed you are actively using Shadecode Student! Keep going.";
 
   const { data, error } = await supabase
-    .from("insights")
+    .from("cortex_insights")
     .insert([
       {
         user_id: user.id,
-        content: defaultInsight,
+        insight: defaultInsight,
       },
     ])
     .select();

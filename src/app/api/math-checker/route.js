@@ -82,21 +82,13 @@ Be thorough. Analyse every visible step. If the working is incomplete or skips s
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
 
-      // 1. Save insight
-      await supabase.from('insights').insert({
-        content: result.cortexInsight,
-        title: `${subject} — ${topic}: ${result.problem}`,
-        metadata: {
-          score: result.score,
-          correct: result.correct,
-          errorType: result.errorType,
-          steps: result.steps,
-          topic,
-          subject,
-          question,
-        },
-        generated_at: new Date().toISOString(),
-      });
+      // 1. Save insight (canonical cortex_insights store; requires a user)
+      if (userId && result.cortexInsight) {
+        await supabase.from('cortex_insights').insert({
+          user_id: userId,
+          insight: result.cortexInsight,
+        });
+      }
 
       // 2. Auto-create review task if score is low and we have a userId
       if (result.score < 60 && userId) {

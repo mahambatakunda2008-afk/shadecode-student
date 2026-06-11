@@ -25,12 +25,10 @@ export async function generateInsight(userId, eventType, eventData = {}) {
 
   try {
     const { data, error } = await supabase
-      .from('insights')
+      .from('cortex_insights')
       .insert({
         user_id: userId,
-        insight_text: insightText,
-        event_type: eventType,
-        event_data: eventData,
+        insight: insightText,
       })
       .select();
 

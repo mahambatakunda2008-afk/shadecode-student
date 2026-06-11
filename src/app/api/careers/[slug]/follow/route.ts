@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCareerBySlug } from '@/lib/careers';
 import { followCareer, unfollowCareer } from '@/lib/careers/user';
 
-export async function POST(request: Request, { params }: { params: { slug: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: { slug: strin
   try {
     const body = await request.json().catch(() => ({}));
     const action = typeof body?.action === 'string' ? body.action : 'follow';
-    const slug = params.slug;
+    const { slug } = await params;
 
     const careerResult = await getCareerBySlug(slug);
     if (!careerResult || !careerResult.career) {
