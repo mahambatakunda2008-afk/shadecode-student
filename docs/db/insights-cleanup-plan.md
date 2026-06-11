@@ -49,24 +49,29 @@ service-role connection (RLS otherwise hides rows). It reports:
 - `cortex_duplicate_groups` / `legacy_duplicate_groups` — possible duplicates
 - detail listings of duplicate groups in each table
 
-### Live results
+### Live results (production, service-role read, 2026-06-11)
 
-> _To be filled in by running `A_audit_insights.sql` with the service-role key._
->
-> | metric | value |
-> |---|---|
-> | cortex_insights_rows | _pending_ |
-> | legacy_insights_rows | _pending_ |
-> | rows_to_backfill | _pending_ |
-> | legacy_rows_orphan_user | _pending_ |
-> | legacy_rows_blank_text | _pending_ |
-> | cortex_duplicate_groups | _pending_ |
-> | legacy_duplicate_groups | _pending_ |
+| metric | value |
+|---|---|
+| cortex_insights_rows | **115** (29 distinct users) |
+| legacy_insights_rows | **0** (table exists but is empty) |
+| rows_to_backfill | **0** |
+| legacy_rows_orphan_user | 0 |
+| legacy_rows_blank_text | 0 |
+| cortex_duplicate_groups | **0** |
+| legacy_duplicate_groups | 0 |
 
-**Migration impact estimate:** the backfill touches at most `rows_to_backfill`
-rows, all `INSERT`s into `cortex_insights` (no updates, no deletes, no locks on
-hot paths). The legacy table is snapshotted once; no application code reads
-either table during the operation except the canonical one (unchanged contract).
+**Key finding: the legacy `public.insights` table is empty.** All historical
+insight data (115 rows across 29 users, no duplicates, no blanks) already lives
+in `cortex_insights`. There is therefore **nothing to migrate** — the operation
+is effectively a safe drop of an empty, orphaned table.
+
+**Migration impact estimate:** the backfill inserts **0 rows** (it still creates
+an empty `insights_archive` snapshot for symmetry/rollback). The drop removes an
+empty table. No application code reads either table except the canonical one
+(unchanged contract). Risk: minimal. The backfill + verification + snapshot
+machinery below is retained so the procedure is correct even if rows are written
+to the legacy table before you run it.
 
 ---
 
