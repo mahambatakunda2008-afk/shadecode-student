@@ -1,11 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-
 export async function POST(req: Request) {
   try {
     const { type, message, userId } = await req.json();
 
+    const resend = new Resend(process.env.RESEND_API_KEY!);
     const email = await resend.emails.send({
       from: "Shadecode <onboarding@resend.dev>",
       to: process.env.FEEDBACK_EMAIL!,

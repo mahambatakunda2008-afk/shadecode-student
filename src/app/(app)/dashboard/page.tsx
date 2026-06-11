@@ -587,7 +587,7 @@ export default function Dashboard() {
   const insight = generateInsight(examResults, focusSessions, tasks, revisionItems);
 
   return (
-    <TourProvider onboardingComplete={false}>
+    <TourProvider onboardingCompleted={false} tourCompleted={false}>
     <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* ── Header + sign out (preserved exactly) ──────────────────────── */}

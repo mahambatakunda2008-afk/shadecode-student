@@ -3,8 +3,6 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 export async function POST(req) {
   try {
     const formData = await req.formData();
@@ -22,6 +20,7 @@ export async function POST(req) {
     const base64 = Buffer.from(bytes).toString('base64');
     const mimeType = imageFile.type || 'image/jpeg';
 
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
     let result = null;
 
@@ -82,21 +81,13 @@ Be thorough. Analyse every visible step. If the working is incomplete or skips s
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
 
-      // 1. Save insight
-      await supabase.from('insights').insert({
-        content: result.cortexInsight,
-        title: `${subject} — ${topic}: ${result.problem}`,
-        metadata: {
-          score: result.score,
-          correct: result.correct,
-          errorType: result.errorType,
-          steps: result.steps,
-          topic,
-          subject,
-          question,
-        },
-        generated_at: new Date().toISOString(),
-      });
+      // 1. Save insight (canonical cortex_insights store; requires a user)
+      if (userId && result.cortexInsight) {
+        await supabase.from('cortex_insights').insert({
+          user_id: userId,
+          insight: result.cortexInsight,
+        });
+      }
 
       // 2. Auto-create review task if score is low and we have a userId
       if (result.score < 60 && userId) {

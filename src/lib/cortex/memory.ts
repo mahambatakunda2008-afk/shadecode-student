@@ -406,3 +406,51 @@ export class CortexMemory {
     this.entries = [];
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Per-user Cortex memory (lightweight learning state)
+
+   CortexCore (lib/cortex/core.ts) reads/writes a small per-user state object
+   while routing learn/practice/feedback intents. This is the in-memory backing
+   store for that state — replace with a DB-backed implementation later without
+   changing the getMemory/updateMemory contract.
+─────────────────────────────────────────────────────────────────────────── */
+
+export interface CortexUserMemory {
+  level: number;
+  streak: number;
+  xp: number;
+  totalTasks: number;
+  completedTasks: number;
+  subjects: string[];
+  weakTopics: string[];
+  lastTopic?: string;
+  lastScore?: number;
+  feedback?: unknown;
+}
+
+const DEFAULT_USER_MEMORY: CortexUserMemory = {
+  level: 1,
+  streak: 0,
+  xp: 0,
+  totalTasks: 0,
+  completedTasks: 0,
+  subjects: [],
+  weakTopics: [],
+};
+
+const userMemoryStore = new Map<string, CortexUserMemory>();
+
+export async function getMemory(userId: string): Promise<CortexUserMemory> {
+  return { ...DEFAULT_USER_MEMORY, ...userMemoryStore.get(userId) };
+}
+
+export async function updateMemory(
+  userId: string,
+  patch: Partial<CortexUserMemory>
+): Promise<CortexUserMemory> {
+  const current = userMemoryStore.get(userId) ?? { ...DEFAULT_USER_MEMORY };
+  const updated: CortexUserMemory = { ...current, ...patch };
+  userMemoryStore.set(userId, updated);
+  return updated;
+}

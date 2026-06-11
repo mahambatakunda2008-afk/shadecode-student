@@ -29,17 +29,15 @@ export async function generateOnboardingRecommendations(userId: string, goals: s
 
   const selectedGoals = (goals ?? []) as string[];
 
-  // Persist goals as an insight (no schema change required)
+  // Persist goals as a canonical Cortex insight.
   try {
-    await supabase.from('insights').insert({
+    await supabase.from('cortex_insights').insert({
       user_id: userId,
-      title: 'Onboarding goals',
-      content: `User selected onboarding goals: ${selectedGoals.join(', ')}`,
-      metadata: { goals: selectedGoals, source: 'onboarding' },
+      insight: `Onboarding goals selected: ${selectedGoals.join(', ') || 'none'}.`,
     });
   } catch (e) {
     // Non-fatal: don't block onboarding
-    console.error('[onboarding] failed to persist goals insight:', e?.message ?? e);
+    console.error('[onboarding] failed to persist goals insight:', e instanceof Error ? e.message : e);
   }
 
   // Build merged recommended subject list: prefer explicit interests, then goal-mapped subjects
@@ -68,7 +66,7 @@ export async function generateOnboardingRecommendations(userId: string, goals: s
       subjectId = inserted?.id ?? null;
     }
   } catch (e) {
-    console.error('[onboarding] subject ensure failed:', e?.message ?? e);
+    console.error('[onboarding] subject ensure failed:', e instanceof Error ? e.message : e);
   }
 
   // Create starter lesson (non-blocking)
@@ -88,7 +86,7 @@ export async function generateOnboardingRecommendations(userId: string, goals: s
       firstLesson = lesson ?? { title, description };
     }
   } catch (e) {
-    console.error('[onboarding] starter lesson create failed:', e?.message ?? e);
+    console.error('[onboarding] starter lesson create failed:', e instanceof Error ? e.message : e);
   }
 
   return {

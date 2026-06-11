@@ -1,10 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabaseClient";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 function daysUntil(date) {
   const target = new Date(date);
@@ -91,6 +86,7 @@ function generateChallenge({
 
 export async function GET() {
   try {
+    const supabase = createServerClient();
     // Get authenticated user from session cookie
     const authClient = await createSupabaseServerClient();
     const { data: { user } } = await authClient.auth.getUser();

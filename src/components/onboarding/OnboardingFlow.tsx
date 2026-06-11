@@ -4,16 +4,23 @@ import { useState }               from 'react';
 import { useRouter }              from 'next/navigation';
 import { OnboardingProgress }     from './OnboardingProgress';
 import { WelcomeStep }            from './steps/WelcomeStep';
-import { SubjectStep }           from './steps/SubjectStep';
+import { SubjectsStep }           from './steps/SubjectStep';
 import { GoalsStep }              from './steps/GoalsStep';
 import { ConfirmStep }            from './steps/ConfirmStep';
 import { StepGoalSelection }      from './steps/StepGoalSelection';
+import { mapOnboardingFormData }  from '@/lib/onboarding/mapFormData';
 import type { OnboardingFormData } from '@/types';
+
+interface OnboardingRecommendations {
+  recommendedSubjects?: string[];
+  suggestedCourse?: { title?: string; summary?: string };
+  firstLesson?: { title?: string; description?: string } | null;
+}
 
 const STEP_LABELS = ['Profile', 'Subjects', 'Goals', 'Daily', 'Confirm'] as const;
 const TOTAL       = STEP_LABELS.length;
 
-const DEFAULTS: Partial<any> = {
+const DEFAULTS: Partial<OnboardingFormData> = {
   subjects:         [],
   goals:            [],
   dailyGoalMinutes: 30,
@@ -24,12 +31,12 @@ export function OnboardingFlow() {
   const router = useRouter();
 
   const [step,         setStep]         = useState(1);
-  const [formData,     setFormData]     = useState<Partial<any>>(DEFAULTS);
+  const [formData,     setFormData]     = useState<Partial<OnboardingFormData>>(DEFAULTS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError,  setSubmitError]  = useState<string | null>(null);
-  const [recommendations, setRecommendations] = useState<any | null>(null);
+  const [recommendations, setRecommendations] = useState<OnboardingRecommendations | null>(null);
 
-  const update = (patch: Partial<any>) =>
+  const update = (patch: Partial<OnboardingFormData>) =>
     setFormData(prev => ({ ...prev, ...patch }));
 
   const next = () => setStep(s => Math.min(s + 1, TOTAL));
@@ -42,7 +49,7 @@ export function OnboardingFlow() {
       const res = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(mapOnboardingFormData(formData)),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? 'Failed');
