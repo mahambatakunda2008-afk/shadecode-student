@@ -23,7 +23,7 @@ const PUBLIC_PREFIXES = [
   '/signup',
   '/forgot-password',
   '/reset-password',
-  '/api/auth',      // NextAuth callback routes
+  '/api',           // Route handlers authenticate themselves and return JSON
   '/_next',
   '/favicon',
   '/images',
@@ -36,19 +36,17 @@ function isPublic(path: string): boolean {
 
 // ── Auth check (edge-compatible, no DB) ───────────────────────────────────────
 function hasSession(req: NextRequest): boolean {
-  // NextAuth — HTTP
-  if (req.cookies.get('next-auth.session-token'))         return true;
-  // NextAuth — HTTPS (production)
+  // Supabase Auth (@supabase/ssr) — cookies are named
+  // `sb-<project-ref>-auth-token`, optionally chunked (`.0`, `.1`, ...).
+  for (const cookie of req.cookies.getAll()) {
+    if (/^sb-.+-auth-token(\.\d+)?$/.test(cookie.name) && cookie.value) {
+      return true;
+    }
+  }
+
+  // Legacy NextAuth fallbacks
+  if (req.cookies.get('next-auth.session-token'))          return true;
   if (req.cookies.get('__Secure-next-auth.session-token')) return true;
-
-  // Supabase — uncomment if using Supabase Auth
-  // if (req.cookies.get('sb-access-token'))               return true;
-
-  // Custom JWT
-  // if (req.cookies.get('auth_token'))                    return true;
-
-  // Clerk handles its own middleware — if using Clerk, replace this entire
-  // file with Clerk's `authMiddleware` from @clerk/nextjs.
 
   return false;
 }

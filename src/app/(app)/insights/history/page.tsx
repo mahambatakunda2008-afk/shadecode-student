@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface Insight {
   id: string;
-  insight_text: string;
+  insight: string;
   created_at: string;
 }
 
@@ -121,7 +121,7 @@ function InsightCard({ insight }: { insight: Insight }) {
       <div className="flex-1 min-w-0">
         <p className="text-[13px] text-white/75 leading-relaxed">
           <span className="text-indigo-400 font-semibold">Cortex: </span>
-          {insight.insight_text}
+          {insight.insight}
         </p>
         <div className="flex items-center gap-1.5 mt-2">
           <Clock className="w-3 h-3 text-white/20" />

@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initializeLearningPath } from "@/lib/learning-path";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
+
+const ONBOARDING_COOKIE = "onboarding_complete";
+const ONBOARDING_COOKIE_OPTIONS = {
+  path: "/",
+  httpOnly: true,
+  sameSite: "lax" as const,
+  maxAge: 60 * 60 * 24 * 365,
+  secure: process.env.NODE_ENV === "production",
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -116,6 +126,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Edge-readable flag so middleware / server guards stop re-routing to /onboarding.
+    const jar = await cookies();
+    jar.set(ONBOARDING_COOKIE, "1", ONBOARDING_COOKIE_OPTIONS);
 
     // Generate lightweight recommendations and starter lesson. Non-blocking but include result in response.
     try {

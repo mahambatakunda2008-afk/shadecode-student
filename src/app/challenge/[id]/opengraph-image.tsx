@@ -12,13 +12,14 @@ const GRADE_COLORS: Record<string, string> = {
   'C': '#facc15',  'D': '#fb923c', 'E': '#f97316', 'U': '#f87171',
 }
 
-export default async function OGImage({ params }: { params: { id: string } }) {
+export default async function OGImage({ params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createSupabaseServerClient()
     const { data: c } = await supabase
       .from('challenges')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!c) throw new Error('not found')
@@ -68,7 +69,7 @@ export default async function OGImage({ params }: { params: { id: string } }) {
 
         {/* CTA strip */}
         <div style={{ marginTop: 44, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 12, padding: '16px 26px', color: '#a5b4fc', fontSize: 17, fontWeight: 600 }}>
-          Accept at shadecodestudent.vercel.app/challenge/{params.id} →
+          Accept at shadecodestudent.vercel.app/challenge/{id} →
         </div>
       </div>,
       { ...size }

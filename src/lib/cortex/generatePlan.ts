@@ -4,7 +4,12 @@ export function generateStudyPlan(snapshot: CortexSnapshot) {
   const weak = snapshot.weakestSubjects ?? [];
 
   // Base tasks derived from weakest subjects (fallback behavior preserved)
-  const tasks = weak.flatMap((subject) => [
+  const tasks: {
+    title: string;
+    priority: string;
+    estimatedMinutes: number;
+    lessonId?: string;
+  }[] = weak.flatMap((subject) => [
     {
       title: `Revise core concepts in ${subject}`,
       priority: "high",

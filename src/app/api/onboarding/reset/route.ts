@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST() {
@@ -23,6 +24,10 @@ export async function POST() {
       console.error("[onboarding] reset error:", error);
       return NextResponse.json({ error: "Failed to reset" }, { status: 500 });
     }
+
+    // Clear the edge-readable flag so guards route the user back into /onboarding.
+    const jar = await cookies();
+    jar.delete("onboarding_complete");
 
     return NextResponse.json({ success: true });
   } catch (err) {

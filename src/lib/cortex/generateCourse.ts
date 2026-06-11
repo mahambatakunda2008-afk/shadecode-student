@@ -136,7 +136,7 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
     await supabase.from('generated_course_drafts').insert({ user_id: user.id, draft: { title: parsed.title ?? topic, description: parsed.description ?? '', lessons: parsed.lessons, projects: parsed.projects ?? [], checkpoints: parsed.checkpoints ?? [], assessments: parsed.assessments ?? [] }, moderation_issues: moderationIssues }).select('id');
   } catch (e) {
     // ignore if table not present or insert fails
-    console.error('[generateCourse] failed to persist draft to DB:', e?.message ?? e);
+    console.error('[generateCourse] failed to persist draft to DB:', e instanceof Error ? e.message : e);
   }
 
   // Update last_course_generated_at to enforce cooldown

@@ -1,8 +1,6 @@
 import { getCareerBySlug } from '@/lib/careers';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-
-const FollowCareerButton = dynamic(() => import('@/components/FollowCareerButton'), { ssr: false });
+import FollowCareerButton from '@/components/FollowCareerButton';
 
 export default async function CareerDetailPage({ params }: any) {
   const slug = params.slug;

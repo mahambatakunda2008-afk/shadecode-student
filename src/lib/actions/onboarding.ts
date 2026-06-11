@@ -1,139 +1,95 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import type { OnboardingFormData } from '@/types/onboarding';
+import type { OnboardingFormData } from '@/types';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { mapOnboardingFormData } from '@/lib/onboarding/mapFormData';
+import { initializeLearningPath } from '@/lib/learning-path';
 
-// ── Uncomment your adapter ────────────────────────────────────────────────────
-// import { getServerSession } from 'next-auth';
-// import { authOptions }      from '@/lib/auth';
-// import { prisma }           from '@/lib/prisma';
+const ONBOARDING_COOKIE = 'onboarding_complete';
+const ONBOARDING_COOKIE_OPTIONS = {
+  path:     '/',
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  maxAge:   60 * 60 * 24 * 365,
+  secure:   process.env.NODE_ENV === 'production',
+};
 
-// ── Supabase ──────────────────────────────────────────────────────────────────
-// import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-
-// ── Clerk ─────────────────────────────────────────────────────────────────────
-// import { auth } from '@clerk/nextjs/server';
-
-// ─────────────────────────────────────────────────────────────────────────────
-
+/**
+ * Server-action variant of the onboarding completion flow. Mirrors
+ * /api/onboarding/complete: persists the canonical profile + learning path and
+ * sets the edge-readable cookie that the middleware and server guards check.
+ */
 export async function completeOnboarding(data: OnboardingFormData): Promise<void> {
+  const supabase = await createSupabaseServerClient();
 
-  // ── 1. Resolve authenticated userId ────────────────────────────────────────
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  // NextAuth:
-  // const session = await getServerSession(authOptions);
-  // if (!session?.user?.id) throw new Error('Unauthenticated');
-  // const userId = session.user.id;
+  if (authError || !user) {
+    throw new Error('Unauthenticated');
+  }
 
-  // Clerk:
-  // const { userId } = auth();
-  // if (!userId) throw new Error('Unauthenticated');
+  const { education_level, learning_goal, subject_interests } =
+    mapOnboardingFormData(data);
 
-  // Supabase:
-  // const supabase = createServerActionClient({ cookies });
-  // const { data: { session } } = await supabase.auth.getSession();
-  // if (!session?.user) throw new Error('Unauthenticated');
-  // const userId = session.user.id;
+  const { error: profileError } = await supabase.from('user_profiles').upsert(
+    {
+      user_id: user.id,
+      education_level,
+      learning_goal,
+      subject_interests,
+      onboarding_completed: true,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' }
+  );
 
-  // STUB:
-  const userId = 'REPLACE_WITH_REAL_USER_ID';
+  if (profileError) {
+    throw new Error(profileError.message);
+  }
 
-  // ── 2. Upsert UserProfile ───────────────────────────────────────────────────
+  const learningPathData = initializeLearningPath(
+    user.id,
+    education_level,
+    learning_goal,
+    subject_interests
+  );
 
-  // Prisma:
-  // await prisma.userProfile.upsert({
-  //   where:  { userId },
-  //   update: {
-  //     displayName:         data.displayName,
-  //     studyLevel:          data.studyLevel,
-  //     subjects:            data.subjects,
-  //     dailyGoalMinutes:    data.dailyGoalMinutes,
-  //     studyStyle:          data.studyStyle,
-  //     onboardingCompleted: true,
-  //     tourCompleted:       false,
-  //   },
-  //   create: {
-  //     userId,
-  //     displayName:         data.displayName,
-  //     studyLevel:          data.studyLevel,
-  //     subjects:            data.subjects,
-  //     dailyGoalMinutes:    data.dailyGoalMinutes,
-  //     studyStyle:          data.studyStyle,
-  //     onboardingCompleted: true,
-  //     tourCompleted:       false,
-  //   },
-  // });
+  const { error: pathError } = await supabase.from('learning_paths').upsert(
+    { ...learningPathData, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  );
 
-  // Supabase:
-  // await supabase.from('profiles').upsert({
-  //   id:                   userId,
-  //   display_name:         data.displayName,
-  //   study_level:          data.studyLevel,
-  //   subjects:             data.subjects,
-  //   daily_goal_minutes:   data.dailyGoalMinutes,
-  //   study_style:          data.studyStyle,
-  //   onboarding_completed: true,
-  //   tour_completed:       false,
-  // });
-
-  // ── 3. Seed initial LearningPath ────────────────────────────────────────────
-
-  // Prisma:
-  // await prisma.learningPath.create({
-  //   data: {
-  //     userId,
-  //     subjects: data.subjects,
-  //     level:    data.studyLevel,
-  //   },
-  // });
-
-  // Supabase:
-  // await supabase.from('learning_paths').insert({
-  //   user_id:  userId,
-  //   subjects: data.subjects,
-  //   level:    data.studyLevel,
-  // });
-
-  // ── 4. Set edge-readable cookie so middleware never re-routes this user ─────
+  if (pathError) {
+    throw new Error(pathError.message);
+  }
 
   const jar = await cookies();
-  jar.set('onboarding_complete', '1', {
-    path:     '/',
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge:   60 * 60 * 24 * 365,
-    secure:   process.env.NODE_ENV === 'production',
-  });
+  jar.set(ONBOARDING_COOKIE, '1', ONBOARDING_COOKIE_OPTIONS);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Best-effort tour completion flag. localStorage is the primary guard on the
+ * client (see TourContext), so this never throws.
+ */
 export async function completeTour(): Promise<void> {
   try {
-    // NextAuth + Prisma:
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user?.id) return;
-    // await prisma.userProfile.update({
-    //   where: { userId: session.user.id },
-    //   data:  { tourCompleted: true },
-    // });
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
 
-    // Supabase:
-    // const supabase = createServerActionClient({ cookies });
-    // const { data: { session } } = await supabase.auth.getSession();
-    // if (!session?.user) return;
-    // await supabase.from('profiles')
-    //   .update({ tour_completed: true })
-    //   .eq('id', session.user.id);
-
-    // Clerk + Prisma:
-    // const { userId } = auth();
-    // if (!userId) return;
-    // await prisma.userProfile.update({
-    //   where: { userId },
-    //   data:  { tourCompleted: true },
-    // });
+    await supabase
+      .from('user_profiles')
+      .update({ tour_completed: true, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id);
   } catch {
-    // Never throw — tour completion must not crash the UI
+    // Never throw — tour completion must not crash the UI.
   }
 }
