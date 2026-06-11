@@ -1,13 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@/lib/supabaseClient";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 export async function POST(req) {
   try {
+    const supabase = createServerClient();
     const body = await req.json();
     const challengeId = body?.challengeId;
 
