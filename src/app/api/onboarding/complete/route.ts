@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
             learning_goal: learningGoal,
             subject_interests: subjectInterests,
             onboarding_completed: true,
-            updated_at: new Date().toISOString(),
           },
           { onConflict: 'user_id' }
         );
