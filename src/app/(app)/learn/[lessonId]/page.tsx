@@ -162,8 +162,9 @@ export default function LessonDetailPage() {
             </div>
           </div>
         </div>
+      )}
 
-        {lesson.linkedProjects && lesson.linkedProjects.length > 0 && (
+      {lesson.linkedProjects && lesson.linkedProjects.length > 0 && (
           <div style={{ marginBottom: 28, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <Trophy size={15} color="#fbbf24" />

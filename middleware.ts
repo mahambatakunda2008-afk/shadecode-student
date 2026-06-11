@@ -1,29 +1,26 @@
-import { NextResponse }   from 'next/server';
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Middleware — edge-runtime route guard
  * ──────────────────────────────────────
  * State machine:
  *
- *   Unauthenticated              → /login
+ *   Unauthenticated              → /auth/login
  *   Authenticated, not onboarded → /onboarding   (unless already there)
  *   Authenticated, onboarded     → /dashboard    (if they hit /onboarding again)
  *   Everything else              → pass through
  *
  * Auth detection
  * ──────────────
- * Checks session cookies set by your auth provider.
- * Uncomment the adapter that matches your stack.
+ * Uses Supabase SSR client to validate session tokens.
  */
 
 // ── Routes that bypass all checks ────────────────────────────────────────────
 const PUBLIC_PREFIXES = [
-  '/login',
-  '/signup',
-  '/forgot-password',
-  '/reset-password',
-  '/api/auth',      // NextAuth callback routes
+  '/auth',
+  '/api/auth',
   '/_next',
   '/favicon',
   '/images',
@@ -34,40 +31,38 @@ function isPublic(path: string): boolean {
   return PUBLIC_PREFIXES.some(p => path.startsWith(p));
 }
 
-// ── Auth check (edge-compatible, no DB) ───────────────────────────────────────
-function hasSession(req: NextRequest): boolean {
-  // NextAuth — HTTP
-  if (req.cookies.get('next-auth.session-token'))         return true;
-  // NextAuth — HTTPS (production)
-  if (req.cookies.get('__Secure-next-auth.session-token')) return true;
-
-  // Supabase — uncomment if using Supabase Auth
-  // if (req.cookies.get('sb-access-token'))               return true;
-
-  // Custom JWT
-  // if (req.cookies.get('auth_token'))                    return true;
-
-  // Clerk handles its own middleware — if using Clerk, replace this entire
-  // file with Clerk's `authMiddleware` from @clerk/nextjs.
-
-  return false;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function middleware(req: NextRequest): NextResponse {
+export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
   if (isPublic(pathname)) return NextResponse.next();
 
-  const authed             = hasSession(req);
-  const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
-  const onOnboarding       = pathname.startsWith('/onboarding');
+  // Create Supabase client for middleware
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+      },
+    }
+  );
 
-  // Not authenticated → login
-  if (!authed) {
+  // Check authentication
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
+  const onOnboarding = pathname.startsWith('/onboarding');
+
+  // Not authenticated → /auth/login
+  if (!user) {
     const url = req.nextUrl.clone();
-    url.pathname = '/login';
+    url.pathname = '/auth/login';
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }
