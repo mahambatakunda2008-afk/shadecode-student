@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDown, ChevronUp, RefreshCw, Zap, Globe, Eye, GraduationCap } from "lucide-react";
-import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle } from "@/lib/socratic/types";
+import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "@/lib/socratic/types";
 import { generateSocraticResponse, TutoringRequest } from "@/lib/socratic/tutoringEngine";
 
 interface SocraticTutorProps {
@@ -10,10 +10,11 @@ interface SocraticTutorProps {
   subject: string;
   topic: string;
   initialQuestion?: string;
+  lessonContext?: LessonContext;
   onClose?: () => void;
 }
 
-export default function SocraticTutor({ userId, subject, topic, initialQuestion, onClose }: SocraticTutorProps) {
+export default function SocraticTutor({ userId, subject, topic, initialQuestion, lessonContext, onClose }: SocraticTutorProps) {
   const [session, setSession] = useState<TutoringSession | null>(null);
   const [input, setInput] = useState(initialQuestion || "");
   const [loading, setLoading] = useState(false);
@@ -72,6 +73,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         topic,
         question: input,
         previousContext: newConversation,
+        lessonContext,
       };
 
       const response = await generateSocraticResponse(request);
@@ -142,6 +144,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         question: lastStudentMessage.content,
         previousContext: session.conversation,
         explanationStyle: style,
+        lessonContext,
       };
 
       const response = await generateSocraticResponse(request);

@@ -6,7 +6,7 @@
  * AI-powered tutoring that guides students through learning rather than giving answers
  */
 
-import { TutoringRequest, TutoringResponse, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle } from "./types";
+import { TutoringRequest, TutoringResponse, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "./types";
 import { getMemory } from "@/lib/cortex/memory";
 
 export type { TutoringRequest, TutoringResponse };
@@ -15,7 +15,7 @@ export type { TutoringRequest, TutoringResponse };
  * Generate a Socratic tutoring response that guides rather than answers
  */
 export async function generateSocraticResponse(request: TutoringRequest): Promise<TutoringResponse> {
-  const { userId, subject, topic, question, studentLevel = "intermediate", previousContext = [], explanationStyle } = request;
+  const { userId, subject, topic, question, studentLevel = "intermediate", previousContext = [], explanationStyle, lessonContext } = request;
 
   // Get student's learning memory for personalization
   const memory = await getMemory(userId);
@@ -41,6 +41,17 @@ export async function generateSocraticResponse(request: TutoringRequest): Promis
         studentLevel,
         explanationStyle,
         previousContext,
+        lessonContext,
+      })
+    : lessonContext
+    ? generateLessonAwareMessage({
+        question,
+        topic,
+        subject,
+        studentLevel,
+        lessonContext,
+        previousContext,
+        isWeakArea,
       })
     : generateGuidedMessage({
         question,
@@ -91,6 +102,17 @@ interface StyledExplanationInput {
   studentLevel: "beginner" | "intermediate" | "advanced";
   explanationStyle: ExplanationStyle;
   previousContext: TutoringMessage[];
+  lessonContext?: LessonContext;
+}
+
+interface LessonAwareMessageInput {
+  question: string;
+  topic: string;
+  subject: string;
+  studentLevel: "beginner" | "intermediate" | "advanced";
+  lessonContext: LessonContext;
+  previousContext: TutoringMessage[];
+  isWeakArea: boolean;
 }
 
 function generateStyledExplanation(input: StyledExplanationInput): TutoringMessage {
@@ -125,6 +147,46 @@ function generateStyledExplanation(input: StyledExplanationInput): TutoringMessa
     timestamp: new Date().toISOString(),
     metadata: {
       explanationStyle,
+    },
+  };
+}
+
+function generateLessonAwareMessage(input: LessonAwareMessageInput): TutoringMessage {
+  const { question, topic, subject, studentLevel, lessonContext, previousContext, isWeakArea } = input;
+
+  let content = "";
+  let type: "question" | "hint" | "guidance" | "feedback" | "explanation" | "reinforcement" = "guidance";
+
+  // Analyze the question to determine the best response
+  const lowerQuestion = question.toLowerCase();
+
+  if (lowerQuestion.includes("example") || lowerQuestion.includes("can you give")) {
+    content = generateLessonExample(lessonContext, question, studentLevel);
+    type = "explanation";
+  } else if (lowerQuestion.includes("practice") || lowerQuestion.includes("question") || lowerQuestion.includes("quiz")) {
+    content = generatePracticeQuestion(lessonContext, topic, studentLevel);
+    type = "guidance";
+  } else if (lowerQuestion.includes("prerequisite") || lowerQuestion.includes("before") || lowerQuestion.includes("need to know")) {
+    content = generatePrerequisiteSuggestions(lessonContext, subject);
+    type = "guidance";
+  } else if (lowerQuestion.includes("explain") || lowerQuestion.includes("what is") || lowerQuestion.includes("how does")) {
+    content = generateLessonExplanation(lessonContext, question, studentLevel);
+    type = "explanation";
+  } else {
+    // Default lesson-aware response
+    content = generateLessonContextualResponse(lessonContext, question, studentLevel, isWeakArea);
+    type = "guidance";
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    role: "tutor",
+    content,
+    type,
+    timestamp: new Date().toISOString(),
+    metadata: {
+      confidence: isWeakArea ? 0.9 : 0.8,
+      lessonId: lessonContext.lessonId,
     },
   };
 }
@@ -493,6 +555,81 @@ function generateExamFocusedExplanation(topic: string, question: string, student
     `From an exam perspective, ${topic} is a common topic. Examiners often test this by asking you to identify key principles and apply them. For your question, focus on the standard method first.`,
     `In exam settings, ${topic} typically appears in both calculation and explanation questions. The key is to show your working clearly and state any assumptions you make.`,
     `For exam success with ${topic}, remember these common pitfalls: rushing through calculations, forgetting units, and not showing your reasoning. Your question requires careful attention to detail.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+// Lesson-aware response generators
+function generateLessonExample(lessonContext: LessonContext, question: string, studentLevel: "beginner" | "intermediate" | "advanced"): string {
+  const topic = lessonContext.title;
+  const subject = lessonContext.subject;
+
+  const examples: Record<string, string[]> = {
+    Mathematics: [
+      `Here's an example from ${topic}: If we're working with this concept, imagine you have a practical scenario. For instance, calculating the area of a room to determine how much paint you need.`,
+      `Let me give you an example related to ${topic}. Consider a real-world situation where you'd apply this - like budgeting for groceries or calculating travel time.`,
+    ],
+    Physics: [
+      `Here's an example from ${topic}: Think about a ball rolling down a hill. The concepts we're discussing explain why it accelerates and how energy transforms.`,
+      `For ${topic}, consider this example: When you push a shopping cart, the force you apply relates to how fast it moves - that's the principle in action.`,
+    ],
+    Chemistry: [
+      `Here's an example from ${topic}: Think about mixing baking soda and vinegar. The reaction you see demonstrates the concept we're learning about.`,
+      `For ${topic}, consider how rust forms on iron. This everyday process illustrates the chemical principles we're discussing.`,
+    ],
+    Biology: [
+      `Here's an example from ${topic}: Think about how your body responds to exercise. Your heart rate increases and muscles work harder - that's ${topic} in action.`,
+      `For ${topic}, consider how plants grow toward light. This natural behavior demonstrates the biological principle we're studying.`,
+    ],
+    default: [
+      `Here's an example from ${topic}: Think about how this concept applies to everyday situations. For instance, making decisions or solving problems.`,
+      `Let me give you an example related to ${topic}. Consider a scenario where you'd use this knowledge in real life.`,
+    ],
+  };
+
+  const subjectExamples = examples[subject] || examples.default;
+  return subjectExamples[Math.floor(Math.random() * subjectExamples.length)];
+}
+
+function generatePracticeQuestion(lessonContext: LessonContext, topic: string, studentLevel: "beginner" | "intermediate" | "advanced"): string {
+  const difficulty = studentLevel === "beginner" ? "basic" : studentLevel === "intermediate" ? "intermediate" : "advanced";
+
+  const templates = [
+    `Here's a ${difficulty} practice question for ${lessonContext.title}: Try applying what you've learned to solve this problem. Think through the steps before checking your answer.`,
+    `Let's test your understanding of ${lessonContext.title} with a ${difficulty} question: This will help reinforce the key concepts from the lesson.`,
+    `Here's a practice question to check your progress on ${lessonContext.title}: Take your time and use the lesson content as a reference if needed.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generatePrerequisiteSuggestions(lessonContext: LessonContext, subject: string): string {
+  const templates = [
+    `Before diving deeper into ${lessonContext.title}, it would be helpful to review: basic concepts in ${subject}, foundational terminology, and any related topics you've covered earlier.`,
+    `To get the most out of ${lessonContext.title}, I recommend reviewing these prerequisites: fundamental ${subject} concepts, related mathematical skills, and previous lessons in this sequence.`,
+    `For ${lessonContext.title}, make sure you're comfortable with: the basics of ${subject}, key terminology, and the concepts from the previous lessons. This will make the current material much easier to understand.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generateLessonExplanation(lessonContext: LessonContext, question: string, studentLevel: "beginner" | "intermediate" | "advanced"): string {
+  const content = lessonContext.content || lessonContext.description || lessonContext.blocks?.map(b => b.content).join(" ") || "";
+
+  const templates = [
+    `Based on this lesson about ${lessonContext.title}, here's an explanation: ${content.substring(0, 200)}... Let me know if you'd like me to elaborate on any specific part.`,
+    `From the lesson content on ${lessonContext.title}, the key idea is: ${content.substring(0, 150)}... Would you like me to break this down further?`,
+    `Looking at ${lessonContext.title}, the lesson explains that ${content.substring(0, 180)}... I can provide more details on any aspect you're curious about.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generateLessonContextualResponse(lessonContext: LessonContext, question: string, studentLevel: "beginner" | "intermediate" | "advanced", isWeakArea: boolean): string {
+  const weakAreaAdjustment = isWeakArea ? "Since this is a challenging topic for you, " : "";
+  const levelAdjustment = studentLevel === "beginner" ? "Let's start with the basics. " : studentLevel === "advanced" ? "Let's dive deeper. " : "";
+
+  const templates = [
+    `${levelAdjustment}${weakAreaAdjustment}Based on the lesson "${lessonContext.title}", I can help you understand this better. The lesson covers key concepts that relate to your question. What specific aspect would you like to explore?`,
+    `${levelAdjustment}${weakAreaAdjustment}Looking at the lesson content for ${lessonContext.title}, there are several relevant points. Would you like me to explain a specific concept, give you an example, or provide a practice question?`,
+    `${levelAdjustment}${weakAreaAdjustment}From this lesson on ${lessonContext.title}, I can see how this connects to your question. The lesson provides the foundation for understanding this. Shall I break it down step by step?`,
   ];
   return templates[Math.floor(Math.random() * templates.length)];
 }

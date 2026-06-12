@@ -31,6 +31,8 @@ export interface TutoringMessage {
     conceptId?: string;
     errorType?: string;
     confidence?: number;
+    explanationStyle?: ExplanationStyle;
+    lessonId?: string;
   };
 }
 
@@ -66,6 +68,18 @@ export interface ConceptReinforcement {
 
 export type ExplanationStyle = "simpler" | "detailed" | "real-world" | "analogy" | "exam-focused";
 
+export interface LessonContext {
+  lessonId: string;
+  title: string;
+  subject: string;
+  description?: string;
+  content?: string;
+  blocks?: Array<{ type: string; content: string }>;
+  difficulty?: string;
+  completed?: boolean;
+  progress?: number;
+}
+
 export interface TutoringRequest {
   userId: string;
   subject: string;
@@ -74,6 +88,7 @@ export interface TutoringRequest {
   studentLevel?: "beginner" | "intermediate" | "advanced";
   previousContext?: TutoringMessage[];
   explanationStyle?: ExplanationStyle;
+  lessonContext?: LessonContext;
 }
 
 export interface TutoringResponse {

@@ -279,6 +279,16 @@ export default function LessonDetailPage() {
               userId={currentUser || ""}
               subject={lesson.subject}
               topic={lesson.title}
+              lessonContext={{
+                lessonId: lesson.id,
+                title: lesson.title,
+                subject: lesson.subject,
+                description: lesson.description,
+                blocks: lesson.blocks,
+                difficulty: lesson.difficulty,
+                completed: lesson.completed,
+                progress: lesson.progress,
+              }}
               onClose={() => setShowTutor(false)}
             />
           </div>
