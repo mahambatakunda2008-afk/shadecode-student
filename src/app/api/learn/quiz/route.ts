@@ -18,7 +18,7 @@ function getBearerToken(req: Request): string | null {
 }
 
 async function callAI(prompt: string): Promise<string | null> {
-  const TIMEOUT_MS = 30000; // 30 second timeout per provider
+  const TIMEOUT_MS = 15000; // 15 second timeout per provider
 
   async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT_MS): Promise<Response> {
     const controller = new AbortController();
@@ -41,7 +41,7 @@ async function callAI(prompt: string): Promise<string | null> {
       console.log("[Quiz AI] Trying Cloudflare Workers AI...");
       const res = await fetchWithTimeout(
         `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-        { method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 2000 }) }
+        { method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 1500 }) }
       );
       const d = await res.json();
       const t = typeof d?.result?.response === "string" ? d.result.response : null;
@@ -58,7 +58,7 @@ async function callAI(prompt: string): Promise<string | null> {
       const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: 2000, response_format: { type: "json_object" } }),
+        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: 1500, response_format: { type: "json_object" } }),
       });
       const d = await res.json();
       const t = d.choices?.[0]?.message?.content;
@@ -76,7 +76,7 @@ async function callAI(prompt: string): Promise<string | null> {
         console.log(`[Quiz AI] Trying Gemini (${model})...`);
         const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 2000, responseMimeType: "application/json" } }),
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 1500, responseMimeType: "application/json" } }),
         });
         const d = await res.json();
         const t = d?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -94,7 +94,7 @@ async function callAI(prompt: string): Promise<string | null> {
       const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app" },
-        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }], max_tokens: 2000 }),
+        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }], max_tokens: 1500 }),
       });
       const d = await res.json();
       const t = d.choices?.[0]?.message?.content;

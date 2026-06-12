@@ -136,8 +136,8 @@ function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | 
 
 // ── AI providers ──────────────────────────────────────────────────────────────
 
-async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
-  const TIMEOUT_MS = 30000; // 30 second timeout per provider
+async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> {
+  const TIMEOUT_MS = 15000; // 15 second timeout per provider
 
   async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT_MS): Promise<Response> {
     const controller = new AbortController();
