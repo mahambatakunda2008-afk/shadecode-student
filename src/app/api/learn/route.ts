@@ -137,11 +137,29 @@ function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | 
 // ── AI providers ──────────────────────────────────────────────────────────────
 
 async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
+  const TIMEOUT_MS = 30000; // 30 second timeout per provider
+
+  async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT_MS): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeout}ms`);
+      }
+      throw err;
+    }
+  }
 
   // 1. Cloudflare Workers AI
   if (process.env.CLOUDFLARE_API_TOKEN) {
     try {
-      const res = await fetch(
+      console.log("[AI] Trying Cloudflare Workers AI...");
+      const res = await fetchWithTimeout(
         `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
         {
           method: "POST",
@@ -153,14 +171,18 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
       const text = typeof data?.result?.response === "string"
         ? data.result.response
         : JSON.stringify(data?.result?.response ?? "");
-      if (text && text.length > 20) return text;
+      if (text && text.length > 20) {
+        console.log("[AI] Cloudflare Workers AI succeeded");
+        return text;
+      }
     } catch (err) { console.error("[AI] Cloudflare failed:", err); }
   }
 
   // 2. OpenAI (JSON mode)
   if (process.env.OPENAI_API_KEY) {
     try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      console.log("[AI] Trying OpenAI...");
+      const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -172,7 +194,10 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
       });
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
-      if (text && text.length > 20) return text;
+      if (text && text.length > 20) {
+        console.log("[AI] OpenAI succeeded");
+        return text;
+      }
     } catch (err) { console.error("[AI] OpenAI failed:", err); }
   }
 
@@ -186,7 +211,8 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
   for (const key of geminiKeys) {
     for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
       try {
-        const res = await fetch(
+        console.log(`[AI] Trying Gemini (${model})...`);
+        const res = await fetchWithTimeout(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
           {
             method: "POST",
@@ -199,7 +225,10 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
         );
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.length > 20) return text;
+        if (text && text.length > 20) {
+          console.log(`[AI] Gemini (${model}) succeeded`);
+          return text;
+        }
       } catch (err) { console.error(`[AI] Gemini (${model}) failed:`, err); }
     }
   }
@@ -207,7 +236,8 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
   // 4. OpenRouter — free Llama fallback
   if (process.env.OPENROUTER_API_KEY) {
     try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      console.log("[AI] Trying OpenRouter...");
+      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -223,7 +253,10 @@ async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> 
       });
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
-      if (text && text.length > 20) return text;
+      if (text && text.length > 20) {
+        console.log("[AI] OpenRouter succeeded");
+        return text;
+      }
     } catch (err) { console.error("[AI] OpenRouter failed:", err); }
   }
 
