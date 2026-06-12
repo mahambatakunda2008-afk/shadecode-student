@@ -6,7 +6,7 @@
  * AI-powered tutoring that guides students through learning rather than giving answers
  */
 
-import { TutoringRequest, TutoringResponse, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement } from "./types";
+import { TutoringRequest, TutoringResponse, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle } from "./types";
 import { getMemory } from "@/lib/cortex/memory";
 
 export type { TutoringRequest, TutoringResponse };
@@ -15,7 +15,7 @@ export type { TutoringRequest, TutoringResponse };
  * Generate a Socratic tutoring response that guides rather than answers
  */
 export async function generateSocraticResponse(request: TutoringRequest): Promise<TutoringResponse> {
-  const { userId, subject, topic, question, studentLevel = "intermediate", previousContext = [] } = request;
+  const { userId, subject, topic, question, studentLevel = "intermediate", previousContext = [], explanationStyle } = request;
 
   // Get student's learning memory for personalization
   const memory = await getMemory(userId);
@@ -33,15 +33,24 @@ export async function generateSocraticResponse(request: TutoringRequest): Promis
   const errorAnalysis = lastStudentMessage ? analyzeStudentResponse(lastStudentMessage.content, topic) : undefined;
 
   // Generate the main tutoring message
-  const message = generateGuidedMessage({
-    question,
-    topic,
-    subject,
-    studentLevel,
-    isWeakArea,
-    previousContext,
-    errorAnalysis,
-  });
+  const message = explanationStyle
+    ? generateStyledExplanation({
+        question,
+        topic,
+        subject,
+        studentLevel,
+        explanationStyle,
+        previousContext,
+      })
+    : generateGuidedMessage({
+        question,
+        topic,
+        subject,
+        studentLevel,
+        isWeakArea,
+        previousContext,
+        errorAnalysis,
+      });
 
   // Generate progressive hints
   const hints = generateHints(question, topic, studentLevel);
@@ -73,6 +82,51 @@ interface GuidedMessageInput {
   isWeakArea: boolean;
   previousContext: TutoringMessage[];
   errorAnalysis?: ErrorAnalysis;
+}
+
+interface StyledExplanationInput {
+  question: string;
+  topic: string;
+  subject: string;
+  studentLevel: "beginner" | "intermediate" | "advanced";
+  explanationStyle: ExplanationStyle;
+  previousContext: TutoringMessage[];
+}
+
+function generateStyledExplanation(input: StyledExplanationInput): TutoringMessage {
+  const { question, topic, subject, studentLevel, explanationStyle, previousContext } = input;
+
+  let content = "";
+  let type: "question" | "hint" | "guidance" | "feedback" | "explanation" | "reinforcement" = "explanation";
+
+  switch (explanationStyle) {
+    case "simpler":
+      content = generateSimplerExplanation(topic, question, studentLevel);
+      break;
+    case "detailed":
+      content = generateDetailedExplanation(topic, question, studentLevel);
+      break;
+    case "real-world":
+      content = generateRealWorldExample(topic, question, subject);
+      break;
+    case "analogy":
+      content = generateVisualAnalogy(topic, question, subject);
+      break;
+    case "exam-focused":
+      content = generateExamFocusedExplanation(topic, question, studentLevel);
+      break;
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    role: "tutor",
+    content,
+    type,
+    timestamp: new Date().toISOString(),
+    metadata: {
+      explanationStyle,
+    },
+  };
 }
 
 function generateGuidedMessage(input: GuidedMessageInput): TutoringMessage {
@@ -357,4 +411,88 @@ function isComplexQuestion(question: string): boolean {
 
   return complexityIndicators.some(indicator => question.toLowerCase().includes(indicator)) ||
          question.split(/[?.!]/).length > 2;
+}
+
+// Explanation style generators
+function generateSimplerExplanation(topic: string, question: string, studentLevel: "beginner" | "intermediate" | "advanced"): string {
+  const templates = [
+    `Let me break this down in simpler terms. Think of ${topic} like building blocks - you start with the basics and build up. ${question} is asking about one of these fundamental blocks.`,
+    `Here's a simpler way to think about ${topic}. Imagine you're explaining this to someone who's never heard of it before. The key idea is...`,
+    `Let's simplify this. ${topic} is really about understanding how things relate to each other. For your question, focus on the main relationship first.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generateDetailedExplanation(topic: string, question: string, studentLevel: "beginner" | "intermediate" | "advanced"): string {
+  const templates = [
+    `Let me give you a more detailed explanation of ${topic}. There are several key aspects to consider: first, the underlying principles; second, how they apply to your specific question; and third, the implications of the answer.`,
+    `Here's a comprehensive breakdown of ${topic}. This concept involves multiple interconnected parts. Let's go through each one systematically to address your question.`,
+    `Let's dive deeper into ${topic}. To fully understand this, we need to consider the theoretical framework, practical applications, and how they relate to your specific question.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generateRealWorldExample(topic: string, question: string, subject: string): string {
+  const examples: Record<string, string[]> = {
+    Mathematics: [
+      `Think about ${topic} like planning a trip. You need to calculate distances, time, and costs - that's exactly what this concept helps you do.`,
+      `${topic} is like cooking. You follow a recipe (formula) with specific ingredients (values) to get a result.`,
+    ],
+    Physics: [
+      `${topic} is like riding a bicycle. The harder you pedal (force), the faster you go (acceleration), but you also need to balance (equilibrium).`,
+      `Think of ${topic} like water flowing through pipes. The pressure (voltage) pushes the water (current) through the pipes (resistance).`,
+    ],
+    Chemistry: [
+      `${topic} is like baking. When you mix ingredients (reactants), they transform into something new (products) with specific conditions.`,
+      `Think about ${topic} like a crowded room. Molecules are like people moving around, sometimes bumping into each other and reacting.`,
+    ],
+    Biology: [
+      `${topic} is like a factory. Different departments (organelles) work together to produce products (proteins) with specific functions.`,
+      `Think of ${topic} like a city. Each cell is like a building with its own purpose, but they all work together to keep the city running.`,
+    ],
+    default: [
+      `Think about ${topic} in everyday life. It's similar to how we make decisions - we consider options, weigh consequences, and choose the best path.`,
+      `${topic} is like solving a puzzle. You have pieces of information and need to figure out how they fit together to see the big picture.`,
+    ],
+  };
+
+  const subjectExamples = examples[subject] || examples.default;
+  return subjectExamples[Math.floor(Math.random() * subjectExamples.length)];
+}
+
+function generateVisualAnalogy(topic: string, question: string, subject: string): string {
+  const analogies: Record<string, string[]> = {
+    Mathematics: [
+      `Visualize ${topic} as a number line. Imagine points moving along this line - that's what's happening in your question.`,
+      `Think of ${topic} like a graph. The relationship between variables creates a pattern you can see and measure.`,
+    ],
+    Physics: [
+      `Picture ${topic} as a seesaw. When one side goes up, the other goes down - that's the balance we're looking at.`,
+      `Imagine ${topic} like a spring. When you stretch it, it wants to return to its original shape - that's the force at work.`,
+    ],
+    Chemistry: [
+      `Visualize ${topic} like LEGO blocks. Different pieces (atoms) connect in specific ways to build structures (molecules).`,
+      `Think of ${topic} like a dance floor. Particles move around and sometimes pair up when they find the right partner.`,
+    ],
+    Biology: [
+      `Picture ${topic} like a lock and key. Only the right key (substrate) fits into the lock (enzyme) to make something happen.`,
+      `Imagine ${topic} like a tree. The roots (foundations) support the branches (complex systems) that grow from them.`,
+    ],
+    default: [
+      `Visualize ${topic} as a journey. You start at one point and follow a path to reach your destination.`,
+      `Think of ${topic} like a map. You need to understand the terrain to navigate to the right answer.`,
+    ],
+  };
+
+  const subjectAnalogies = analogies[subject] || analogies.default;
+  return subjectAnalogies[Math.floor(Math.random() * subjectAnalogies.length)];
+}
+
+function generateExamFocusedExplanation(topic: string, question: string, studentLevel: "beginner" | "intermediate" | "advanced"): string {
+  const templates = [
+    `From an exam perspective, ${topic} is a common topic. Examiners often test this by asking you to identify key principles and apply them. For your question, focus on the standard method first.`,
+    `In exam settings, ${topic} typically appears in both calculation and explanation questions. The key is to show your working clearly and state any assumptions you make.`,
+    `For exam success with ${topic}, remember these common pitfalls: rushing through calculations, forgetting units, and not showing your reasoning. Your question requires careful attention to detail.`,
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
 }

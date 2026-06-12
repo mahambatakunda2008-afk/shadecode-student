@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDown, ChevronUp } from "lucide-react";
-import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement } from "@/lib/socratic/types";
+import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDown, ChevronUp, RefreshCw, Zap, Globe, Eye, GraduationCap } from "lucide-react";
+import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle } from "@/lib/socratic/types";
 import { generateSocraticResponse, TutoringRequest } from "@/lib/socratic/tutoringEngine";
 
 interface SocraticTutorProps {
@@ -126,6 +126,44 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
     }
   };
 
+  const handleRequestExplanation = async (style: ExplanationStyle) => {
+    if (!session || !session.conversation.length || loading) return;
+
+    const lastStudentMessage = [...session.conversation].filter(m => m.role === "student").pop();
+    if (!lastStudentMessage) return;
+
+    setLoading(true);
+
+    try {
+      const request: TutoringRequest = {
+        userId,
+        subject,
+        topic,
+        question: lastStudentMessage.content,
+        previousContext: session.conversation,
+        explanationStyle: style,
+      };
+
+      const response = await generateSocraticResponse(request);
+
+      const tutorMessage: TutoringMessage = {
+        ...response.message,
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+      };
+
+      setSession(prev => prev ? {
+        ...prev,
+        conversation: [...prev.conversation, tutorMessage],
+        updatedAt: new Date().toISOString(),
+      } : null);
+    } catch (err) {
+      console.error("Failed to generate explanation:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -204,6 +242,102 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
           >
             <Lightbulb size={14} />
             {currentHintLevel === 0 ? "Get Hint" : `Next Hint (${currentHintLevel}/4)`}
+          </button>
+        </div>
+      )}
+
+      {/* Explanation Style Buttons */}
+      {session && session.conversation.length > 0 && !loading && (
+        <div style={{ padding: "12px 16px", borderTop: "1px solid var(--card-border)", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button
+            onClick={() => handleRequestExplanation("simpler")}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "rgba(34,197,94,0.1)",
+              border: "1px solid rgba(34,197,94,0.3)",
+              color: "#22c55e",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <RefreshCw size={12} /> Simpler
+          </button>
+          <button
+            onClick={() => handleRequestExplanation("detailed")}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "rgba(59,130,246,0.1)",
+              border: "1px solid rgba(59,130,246,0.3)",
+              color: "#3b82f6",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <List size={12} /> Detailed
+          </button>
+          <button
+            onClick={() => handleRequestExplanation("real-world")}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "rgba(245,158,11,0.1)",
+              border: "1px solid rgba(245,158,11,0.3)",
+              color: "#f59e0b",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Globe size={12} /> Real World
+          </button>
+          <button
+            onClick={() => handleRequestExplanation("analogy")}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "rgba(168,85,247,0.1)",
+              border: "1px solid rgba(168,85,247,0.3)",
+              color: "#a855f7",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Eye size={12} /> Analogy
+          </button>
+          <button
+            onClick={() => handleRequestExplanation("exam-focused")}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "rgba(236,72,153,0.1)",
+              border: "1px solid rgba(236,72,153,0.3)",
+              color: "#ec4899",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <GraduationCap size={12} /> Exam
           </button>
         </div>
       )}

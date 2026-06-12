@@ -64,6 +64,8 @@ export interface ConceptReinforcement {
   masteryLevel: number; // 0-100
 }
 
+export type ExplanationStyle = "simpler" | "detailed" | "real-world" | "analogy" | "exam-focused";
+
 export interface TutoringRequest {
   userId: string;
   subject: string;
@@ -71,6 +73,7 @@ export interface TutoringRequest {
   question: string;
   studentLevel?: "beginner" | "intermediate" | "advanced";
   previousContext?: TutoringMessage[];
+  explanationStyle?: ExplanationStyle;
 }
 
 export interface TutoringResponse {
