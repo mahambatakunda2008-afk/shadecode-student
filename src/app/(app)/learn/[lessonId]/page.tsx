@@ -8,8 +8,9 @@ import {
   ArrowLeft, Sparkles, BookOpen, Zap, Dna, Globe,
   FlaskConical, Calculator, Brain, Code2, TrendingUp,
   Languages, Music, Palette, CheckCircle2, Clock,
-  HelpCircle, ArrowRight,
+  HelpCircle, ArrowRight, MessageSquare,
 } from "lucide-react";
+import SocraticTutor from "@/components/SocraticTutor";
 
 type SubjectTheme = {
   hex: string; bg: string; border: string; text: string;
@@ -77,6 +78,8 @@ export default function LessonDetailPage() {
   const [completing,   setCompleting]   = useState(false);
   const [showToast,    setShowToast]    = useState(false);
   const [accessToken,  setAccessToken]  = useState<string | null>(null);
+  const [showTutor,    setShowTutor]    = useState(false);
+  const [currentUser,  setCurrentUser]  = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -84,6 +87,7 @@ export default function LessonDetailPage() {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { router.push("/login"); return; }
       setAccessToken(session.access_token);
+      setCurrentUser(session.user.id);
       try {
         const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
         if (!r.ok) throw new Error();
@@ -238,6 +242,12 @@ export default function LessonDetailPage() {
                 style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #2563eb)", border: "none", borderRadius: 16, color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "filter .15s", boxShadow: "0 0 20px rgba(109,40,217,0.3)" }}>
                 <HelpCircle size={17} /> Test Yourself <ArrowRight size={14} />
               </Link>
+
+              {/* Socratic Tutor */}
+              <button onClick={() => setShowTutor(true)}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}>
+                <MessageSquare size={17} /> Ask Tutor
+              </button>
             </div>
           </div>
         ) : (
@@ -260,6 +270,20 @@ export default function LessonDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Socratic Tutor Modal */}
+      {showTutor && lesson && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}>
+          <div style={{ width: "100%", maxWidth: 700, height: "80vh", background: "#0f0f24", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, overflow: "hidden" }}>
+            <SocraticTutor
+              userId={currentUser || ""}
+              subject={lesson.subject}
+              topic={lesson.title}
+              onClose={() => setShowTutor(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
