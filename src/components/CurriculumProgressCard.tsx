@@ -1,112 +1,154 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ProgressBar from "@/components/ProgressBar";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { BookOpen, ChevronRight, CheckCircle2, Lock } from "lucide-react";
 import type { CurriculumState } from "@/lib/curriculum";
 
 type Props = {
-  // Optional server-provided snapshot to avoid client fetch when embedding server-side
   initialState?: CurriculumState | null;
 };
 
 export default function CurriculumProgressCard({ initialState = null }: Props) {
-  const [state, setState] = useState<CurriculumState | null | undefined>(initialState);
+  const [state,   setState]   = useState<CurriculumState | null | undefined>(initialState);
   const [loading, setLoading] = useState(initialState === null);
 
   useEffect(() => {
-    if (initialState !== null) return; // server provided
-
+    if (initialState !== null) return;
     let mounted = true;
     setLoading(true);
     fetch("/api/curriculum")
       .then((r) => r.json())
-      .then((data) => {
-        if (!mounted) return;
-        setState(data?.state ?? null);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setState(null);
-      })
-      .finally(() => mounted && setLoading(false));
-
-    return () => {
-      mounted = false;
-    };
+      .then((data) => { if (mounted) setState(data?.state ?? null); })
+      .catch(()   => { if (mounted) setState(null); })
+      .finally(()  => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
   }, [initialState]);
 
-  // Loading skeleton
-  if (loading) {
-    return (
-      <div className="w-full max-w-md mx-auto p-4 bg-card rounded-lg shadow-sm animate-pulse">
-        <div className="h-5 bg-gray-700 rounded w-1/3 mb-4" />
-        <div className="h-3 bg-gray-700 rounded mb-2" />
-        <div className="h-3 bg-gray-700 rounded mb-6" />
-        <div className="flex gap-3">
-          <div className="flex-1 h-10 bg-gray-700 rounded" />
-          <div className="flex-1 h-10 bg-gray-700 rounded" />
-        </div>
+  /* ── Loading skeleton ── */
+  if (loading) return (
+    <div style={card}>
+      <div style={{ height: 14, width: "45%", borderRadius: 6, background: "rgba(255,255,255,0.06)", marginBottom: 16 }} />
+      <div style={{ height: 6,  width: "100%", borderRadius: 999, background: "rgba(255,255,255,0.06)", marginBottom: 18 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {[0,1,2,3].map(i => <div key={i} style={{ height: 36, borderRadius: 8, background: "rgba(255,255,255,0.04)" }} />)}
       </div>
-    );
-  }
+    </div>
+  );
 
-  // Empty state (no curriculum data available)
-  if (!state) {
-    return (
-      <div className="w-full max-w-md mx-auto p-4 bg-card rounded-lg shadow-sm">
-        <h3 className="text-sm font-semibold mb-2">Curriculum Progress</h3>
-        <p className="text-xs text-muted-foreground">No curriculum data available. Visit Learn to get started.</p>
-        <div className="mt-4">
-          <Button variant="outline" size="sm">Open Learn</Button>
-        </div>
+  /* ── Empty state ── */
+  if (!state) return (
+    <div style={card}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <BookOpen size={14} color="#475569" />
+        <span style={heading}>Curriculum Progress</span>
       </div>
-    );
-  }
+      <p style={muted}>No curriculum data yet. Generate your first lesson to get started.</p>
+      <Link href="/learn" style={ghostBtn}>Open Learn</Link>
+    </div>
+  );
 
-  const percent = state.completionPercent ?? state?.completionPercent ?? 0; // compatibility
-  const currentTitle = state.currentLesson?.title ?? null;
-  const recommendedTitle = state.recommendedNextLesson?.title ?? null;
-  const completedCount = state.completedLessons?.length ?? 0;
-  const lockedCount = state.lockedLessons?.length ?? 0;
+  const percent       = state.completionPercent ?? 0;
+  const currentTitle  = state.currentLesson?.title ?? null;
+  const recommended   = state.recommendedNextLesson?.title ?? null;
+  const completed     = state.completedLessons?.length ?? 0;
+  const locked        = state.lockedLessons?.length ?? 0;
 
   return (
-    <div className="w-full max-w-md mx-auto p-4 bg-card rounded-lg shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">Curriculum Progress</h3>
-        <span className="text-xs text-muted-foreground">{percent}%</span>
+    <div style={card}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <BookOpen size={13} color="#c4b5fd" />
+          </div>
+          <span style={heading}>Curriculum Progress</span>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 800, color: "#a78bfa" }}>{percent}%</span>
       </div>
 
-      <div className="mb-3">
-        <ProgressBar value={percent} max={100} />
+      {/* Progress bar */}
+      <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 18 }}>
+        <div style={{ height: "100%", width: `${percent}%`, borderRadius: 999, background: "linear-gradient(90deg, #7c3aed, #6366f1)", transition: "width .6s ease" }} />
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <div>
-          <p className="text-xs text-muted-foreground">Current lesson</p>
-          <p className="text-sm font-medium">{currentTitle ?? "—"}</p>
-        </div>
-
-        <div>
-          <p className="text-xs text-muted-foreground">Recommended next</p>
-          <p className="text-sm font-medium">{recommendedTitle ?? "—"}</p>
-        </div>
-
-        <div>
-          <p className="text-xs text-muted-foreground">Completed lessons</p>
-          <p className="text-sm font-medium">{completedCount}</p>
-        </div>
-
-        <div>
-          <p className="text-xs text-muted-foreground">Locked lessons</p>
-          <p className="text-sm font-medium">{lockedCount}</p>
-        </div>
+      {/* Stats grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+        <Stat label="Current lesson"   value={currentTitle ?? "—"} />
+        <Stat label="Recommended next" value={recommended  ?? "—"} />
+        <Stat label="Completed"        value={String(completed)} accent="#10b981" icon={<CheckCircle2 size={11} color="#10b981" />} />
+        <Stat label="Locked"           value={String(locked)}    accent="#475569" icon={<Lock size={11} color="#475569" />} />
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <Button variant="default" size="sm">Open Curriculum</Button>
-        <Button variant="ghost" size="sm">View Learn</Button>
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <Link href="/curriculum" style={primaryBtn}>Open Curriculum</Link>
+        <Link href="/learn"      style={ghostBtn}>View Learn</Link>
       </div>
     </div>
   );
 }
+
+function Stat({ label, value, accent, icon }: { label: string; value: string; accent?: string; icon?: React.ReactNode }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 12px" }}>
+      <p style={{ fontSize: 10, color: "#475569", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        {icon}
+        <p style={{ fontSize: 12, fontWeight: 700, color: accent ?? "#e2e8f0", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Shared styles ── */
+const card: React.CSSProperties = {
+  background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 18,
+  padding: 20,
+  color: "#fff",
+};
+
+const heading: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#e2e8f0",
+};
+
+const muted: React.CSSProperties = {
+  fontSize: 12,
+  color: "#475569",
+  margin: "0 0 14px",
+  lineHeight: 1.6,
+};
+
+const primaryBtn: React.CSSProperties = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "8px 0",
+  borderRadius: 10,
+  background: "rgba(139,92,246,0.15)",
+  border: "1px solid rgba(139,92,246,0.3)",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#c4b5fd",
+  textDecoration: "none",
+};
+
+const ghostBtn: React.CSSProperties = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "8px 0",
+  borderRadius: 10,
+  background: "rgba(255,255,255,0.03)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#64748b",
+  textDecoration: "none",
+};

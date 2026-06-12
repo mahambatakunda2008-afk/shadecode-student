@@ -1,15 +1,21 @@
 interface ProgressBarProps {
   value: number;
   max: number;
+  color?: string;
 }
 
-export default function ProgressBar({ value, max }: ProgressBarProps) {
+export default function ProgressBar({ value, max, color }: ProgressBarProps) {
   const percent = Math.min((value / max) * 100, 100);
   return (
-    <div className="w-full bg-gray-700 rounded h-3 overflow-hidden">
+    <div style={{ width: "100%", height: 6, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
       <div
-        className="bg-purple-600 h-3 transition-all duration-500"
-        style={{ width: `${percent}%` }}
+        style={{
+          height: "100%",
+          width: `${percent}%`,
+          borderRadius: 999,
+          background: color ?? "linear-gradient(90deg, #7c3aed, #6366f1)",
+          transition: "width 0.5s ease",
+        }}
       />
     </div>
   );
