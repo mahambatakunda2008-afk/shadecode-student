@@ -182,11 +182,24 @@ STRICT RULES:
 - Output ONLY the JSON object, nothing else`;
 
     const raw    = await callAI(prompt);
-    if (!raw) return NextResponse.json({ error: "AI unavailable" }, { status: 503 });
+    console.log("[Quiz] AI response length:", raw?.length ?? 0);
+    
+    if (!raw) {
+      console.error("[Quiz] AI returned null/empty");
+      return NextResponse.json({ error: "AI unavailable - all providers failed or timed out" }, { status: 503 });
+    }
+
+    console.log("[Quiz] Raw AI response (first 500 chars):", raw.slice(0, 500));
 
     const parsed = safeParseJSON(raw);
-    if (!parsed?.questions?.length) return NextResponse.json({ error: "Failed to generate quiz" }, { status: 500 });
+    console.log("[Quiz] Parsed result:", parsed ? "success" : "failed");
+    
+    if (!parsed?.questions?.length) {
+      console.error("[Quiz] No questions in parsed result, parsed:", parsed);
+      return NextResponse.json({ error: "Failed to generate quiz - AI returned invalid format" }, { status: 500 });
+    }
 
+    console.log("[Quiz] Generated", parsed.questions.length, "questions");
     return NextResponse.json({ questions: parsed.questions.slice(0, 5) });
 
   } catch (err) {
