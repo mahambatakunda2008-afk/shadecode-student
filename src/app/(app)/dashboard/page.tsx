@@ -5,6 +5,7 @@ import DailyChallenge from "@/components/DailyChallenge";
 import RevisionQueue from "@/components/RevisionQueue";
 import CortexMemoryInsights from "@/components/CortexMemoryInsights";
 import WeakAreasPanel from "@/components/WeakAreasPanel";
+import StudyGoalInput from "@/components/StudyGoalInput";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -446,6 +447,7 @@ export default function Dashboard() {
   const [loading,        setLoading]        = useState(true);
   const [cortexTrigger,  setCortexTrigger]  = useState(0);
   const [showTour,       setShowTour]       = useState(false);
+  const [showStudyPlan,  setShowStudyPlan]  = useState(false);
 
   const router  = useRouter();
   const [supabase] = useState(() => createClient());
@@ -691,7 +693,7 @@ export default function Dashboard() {
       />
 
       {/* ── Quick actions ─────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
         <button onClick={() => router.push("/learn")}
           style={{ background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)", borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
           🤖 AI Learn
@@ -699,6 +701,10 @@ export default function Dashboard() {
         <button onClick={() => router.push("/analytics")}
           style={{ background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--card-border)", borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
           📊 Analytics
+        </button>
+        <button onClick={() => setShowStudyPlan(true)}
+          style={{ background: "var(--primary)", color: "white", border: "none", borderRadius: "10px", padding: "10px 14px", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
+          📅 Study Plan
         </button>
       </div>
 
@@ -714,6 +720,25 @@ export default function Dashboard() {
       <div id="cortex-card">
         <Cortex userId={currentUser} trigger={cortexTrigger} />
       </div>
+
+      {/* ── Study Plan Modal ─────────────────────────────────────────── */}
+      {showStudyPlan && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}>
+          <div style={{ background: "var(--card)", borderRadius: 12, padding: 24, maxWidth: 500, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ fontSize: "20px", fontWeight: 800, margin: 0 }}>Create Study Plan</h2>
+              <button onClick={() => setShowStudyPlan(false)} style={{ background: "transparent", border: "none", fontSize: "24px", cursor: "pointer", color: "var(--muted-foreground)" }}>×</button>
+            </div>
+            <StudyGoalInput
+              onSubmit={(goals) => {
+                console.log("Study goals:", goals);
+                setShowStudyPlan(false);
+              }}
+              onCancel={() => setShowStudyPlan(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Tour (preserved exactly) ───────────────────────────────────── */}
       {showTour && (
