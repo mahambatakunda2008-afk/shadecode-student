@@ -8,9 +8,10 @@ import {
   ArrowLeft, Sparkles, BookOpen, Zap, Dna, Globe,
   FlaskConical, Calculator, Brain, Code2, TrendingUp,
   Languages, Music, Palette, CheckCircle2, Clock,
-  HelpCircle, ArrowRight, MessageSquare,
+  HelpCircle, ArrowRight, MessageSquare, Download,
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
+import { downloadManager } from "@/lib/offline/downloadManager";
 
 type SubjectTheme = {
   hex: string; bg: string; border: string; text: string;
@@ -80,6 +81,8 @@ export default function LessonDetailPage() {
   const [accessToken,  setAccessToken]  = useState<string | null>(null);
   const [showTutor,    setShowTutor]    = useState(false);
   const [currentUser,  setCurrentUser]  = useState<string>("");
+  const [downloading,  setDownloading]  = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -97,6 +100,47 @@ export default function LessonDetailPage() {
       finally   { setLoading(false); }
     })();
   }, [lessonId]);
+
+  // Sync offline progress when online
+  useEffect(() => {
+    const handleOnline = async () => {
+      if (currentUser) {
+        try {
+          await downloadManager.syncProgress(currentUser);
+        } catch (error) {
+          console.error("Failed to sync progress:", error);
+        }
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [currentUser]);
+
+  async function handleDownload() {
+    if (!lesson || downloading) return;
+
+    setDownloading(true);
+    setDownloadProgress(0);
+
+    try {
+      await downloadManager.downloadAll(
+        lesson.id,
+        lesson,
+        undefined, // notes - can be added later
+        undefined, // quiz - can be added later
+        (progress) => setDownloadProgress(progress)
+      );
+
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setDownloading(false);
+      setDownloadProgress(0);
+    }
+  }
 
   async function markComplete() {
     if (!lesson || !accessToken || completing) return;
@@ -247,6 +291,16 @@ export default function LessonDetailPage() {
               <button onClick={() => setShowTutor(true)}
                 style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}>
                 <MessageSquare size={17} /> Ask Tutor
+              </button>
+
+              {/* Download */}
+              <button onClick={handleDownload} disabled={downloading}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: downloading ? "rgba(245,158,11,0.1)" : "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,146,60,0.15))", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 16, cursor: downloading ? "not-allowed" : "pointer", color: "#f59e0b", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}>
+                {downloading ? (
+                  <><div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(245,158,11,0.3)", borderTopColor: "#f59e0b", animation: "spin 0.8s linear infinite" }} />{downloadProgress}%</>
+                ) : (
+                  <><Download size={17} /> Download</>
+                )}
               </button>
             </div>
           </div>
