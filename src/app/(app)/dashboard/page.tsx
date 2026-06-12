@@ -3,6 +3,7 @@
 import Cortex from "@/components/cortex/Cortex";
 import DailyChallenge from "@/components/DailyChallenge";
 import RevisionQueue from "@/components/RevisionQueue";
+import CortexMemoryInsights from "@/components/CortexMemoryInsights";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -637,6 +638,9 @@ export default function Dashboard() {
           {insight}
         </p>
       </div>
+
+      {/* ── Cortex Memory Insights ─────────────────────────────────────── */}
+      <CortexMemoryInsights />
 
       {/* ── Daily Challenge ────────────────────────────────────────── */}
       <DailyChallenge />

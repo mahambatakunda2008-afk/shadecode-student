@@ -408,13 +408,14 @@ export class CortexMemory {
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Per-user Cortex memory (lightweight learning state)
+   Per-user Cortex memory (persistent learning state)
 
    CortexCore (lib/cortex/core.ts) reads/writes a small per-user state object
-   while routing learn/practice/feedback intents. This is the in-memory backing
-   store for that state — replace with a DB-backed implementation later without
-   changing the getMemory/updateMemory contract.
+   while routing learn/practice/feedback intents. This is now backed by the
+   cortex_memory table in Supabase for persistent long-term learning patterns.
 ─────────────────────────────────────────────────────────────────────────── */
+
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface CortexUserMemory {
   level: number;
@@ -424,9 +425,25 @@ export interface CortexUserMemory {
   completedTasks: number;
   subjects: string[];
   weakTopics: string[];
+  weakSubjects?: string[];
   lastTopic?: string;
   lastScore?: number;
   feedback?: unknown;
+  
+  // Extended persistent memory fields
+  frequentlyStudiedSubjects?: string[];
+  strongSubjects?: string[];
+  preferredStudyHours?: number[];
+  averageSessionDuration?: number;
+  totalStudySessions?: number;
+  examScores?: Array<{ score: number; subject: string; date: string }>;
+  averageExamScore?: number;
+  longestStreak?: number;
+  totalLessonsCompleted?: number;
+  totalStudyTimeMinutes?: number;
+  lastStudyDate?: string;
+  learningInsight?: string;
+  recommendationInsight?: string;
 }
 
 const DEFAULT_USER_MEMORY: CortexUserMemory = {
@@ -437,20 +454,113 @@ const DEFAULT_USER_MEMORY: CortexUserMemory = {
   completedTasks: 0,
   subjects: [],
   weakTopics: [],
+  frequentlyStudiedSubjects: [],
+  strongSubjects: [],
+  preferredStudyHours: [],
+  averageSessionDuration: 0,
+  totalStudySessions: 0,
+  examScores: [],
+  averageExamScore: 0,
+  longestStreak: 0,
+  totalLessonsCompleted: 0,
+  totalStudyTimeMinutes: 0,
 };
 
-const userMemoryStore = new Map<string, CortexUserMemory>();
-
 export async function getMemory(userId: string): Promise<CortexUserMemory> {
-  return { ...DEFAULT_USER_MEMORY, ...userMemoryStore.get(userId) };
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("cortex_memory")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (error || !data) {
+      // Return default if no record exists
+      return { ...DEFAULT_USER_MEMORY };
+    }
+
+    // Map database fields to memory interface
+    return {
+      level: (data as any).level ?? DEFAULT_USER_MEMORY.level,
+      streak: (data as any).current_streak ?? DEFAULT_USER_MEMORY.streak,
+      xp: 0, // XP is stored in user_profiles, not cortex_memory
+      totalTasks: 0, // Tasks are stored elsewhere
+      completedTasks: (data as any).total_lessons_completed ?? 0,
+      subjects: (data as any).frequently_studied_subjects ?? [],
+      weakTopics: (data as any).weak_subjects ?? [],
+      lastTopic: undefined,
+      lastScore: (data as any).average_exam_score ?? undefined,
+      feedback: undefined,
+      frequentlyStudiedSubjects: (data as any).frequently_studied_subjects ?? [],
+      strongSubjects: (data as any).strong_subjects ?? [],
+      preferredStudyHours: (data as any).preferred_study_hours ?? [],
+      averageSessionDuration: (data as any).average_session_duration_minutes ?? 0,
+      totalStudySessions: (data as any).total_study_sessions ?? 0,
+      examScores: (data as any).exam_scores ?? [],
+      averageExamScore: (data as any).average_exam_score ?? 0,
+      longestStreak: (data as any).longest_streak ?? 0,
+      totalLessonsCompleted: (data as any).total_lessons_completed ?? 0,
+      totalStudyTimeMinutes: (data as any).total_study_time_minutes ?? 0,
+      lastStudyDate: (data as any).last_study_date ?? undefined,
+      learningInsight: (data as any).learning_insight ?? undefined,
+      recommendationInsight: (data as any).recommendation_insight ?? undefined,
+    };
+  } catch (err) {
+    console.error("[cortex memory] failed to get memory:", err);
+    return { ...DEFAULT_USER_MEMORY };
+  }
 }
 
 export async function updateMemory(
   userId: string,
   patch: Partial<CortexUserMemory>
 ): Promise<CortexUserMemory> {
-  const current = userMemoryStore.get(userId) ?? { ...DEFAULT_USER_MEMORY };
-  const updated: CortexUserMemory = { ...current, ...patch };
-  userMemoryStore.set(userId, updated);
-  return updated;
+  try {
+    const supabase = await createSupabaseServerClient();
+    
+    // Build update object mapping interface to database columns
+    const updateData: any = {};
+    
+    if (patch.level !== undefined) updateData.level = patch.level;
+    if (patch.streak !== undefined) updateData.current_streak = patch.streak;
+    if (patch.subjects !== undefined) updateData.frequently_studied_subjects = patch.subjects;
+    if (patch.weakTopics !== undefined) updateData.weak_subjects = patch.weakTopics;
+    if (patch.frequentlyStudiedSubjects !== undefined) updateData.frequently_studied_subjects = patch.frequentlyStudiedSubjects;
+    if (patch.strongSubjects !== undefined) updateData.strong_subjects = patch.strongSubjects;
+    if (patch.preferredStudyHours !== undefined) updateData.preferred_study_hours = patch.preferredStudyHours;
+    if (patch.averageSessionDuration !== undefined) updateData.average_session_duration_minutes = patch.averageSessionDuration;
+    if (patch.totalStudySessions !== undefined) updateData.total_study_sessions = patch.totalStudySessions;
+    if (patch.examScores !== undefined) updateData.exam_scores = patch.examScores;
+    if (patch.averageExamScore !== undefined) updateData.average_exam_score = patch.averageExamScore;
+    if (patch.longestStreak !== undefined) updateData.longest_streak = patch.longestStreak;
+    if (patch.totalLessonsCompleted !== undefined) updateData.total_lessons_completed = patch.totalLessonsCompleted;
+    if (patch.totalStudyTimeMinutes !== undefined) updateData.total_study_time_minutes = patch.totalStudyTimeMinutes;
+    if (patch.lastStudyDate !== undefined) updateData.last_study_date = patch.lastStudyDate;
+    if (patch.learningInsight !== undefined) updateData.learning_insight = patch.learningInsight;
+    if (patch.recommendationInsight !== undefined) updateData.recommendation_insight = patch.recommendationInsight;
+
+    // Try upsert (update if exists, insert if not)
+    const { data, error } = await supabase
+      .from("cortex_memory")
+      .upsert({
+        user_id: userId,
+        ...updateData,
+      }, {
+        onConflict: "user_id",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[cortex memory] failed to update memory:", error);
+      // Return current memory even if update fails
+      return await getMemory(userId);
+    }
+
+    return await getMemory(userId);
+  } catch (err) {
+    console.error("[cortex memory] failed to update memory:", err);
+    return await getMemory(userId);
+  }
 }

@@ -2,6 +2,7 @@ import { getMemory, updateMemory } from "./memory";
 import { scoreAnswer } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
+import { trackStudySession, trackExamResult, updateStreak, generateLearningInsight, generateRecommendation } from "./memoryTracker";
 
 export type CortexInput = {
     userId: string;
@@ -38,6 +39,16 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       completedTasks: (memory as any).completedTasks ?? 0,
       pendingTasks: ((memory as any).totalTasks ?? 0) - ((memory as any).completedTasks ?? 0),
       subjects: (memory as any).subjects ?? [],
+      // Add persistent memory insights
+      frequentlyStudiedSubjects: memory.frequentlyStudiedSubjects,
+      strongSubjects: memory.strongSubjects,
+      weakSubjects: memory.weakSubjects,
+      averageSessionDuration: memory.averageSessionDuration,
+      totalStudySessions: memory.totalStudySessions,
+      averageExamScore: memory.averageExamScore,
+      longestStreak: memory.longestStreak,
+      totalLessonsCompleted: memory.totalLessonsCompleted,
+      totalStudyTimeMinutes: memory.totalStudyTimeMinutes,
     };
 
     if (curriculumState) {
@@ -56,6 +67,8 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
         level: memory.level,
         streak: memory.streak,
         weakTopics: memory.weakTopics,
+        weakSubjects: memory.weakSubjects,
+        strongSubjects: memory.strongSubjects,
         snapshot,
     };
 
@@ -66,6 +79,20 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
                 input.payload.topic,
                 context
             );
+
+            // Track study session for persistent memory
+            if (input.payload.subjectId && input.payload.subjectName) {
+                await trackStudySession({
+                    userId: input.userId,
+                    subjectId: input.payload.subjectId,
+                    subjectName: input.payload.subjectName,
+                    durationMinutes: input.payload.durationMinutes || 15,
+                    completedAt: new Date().toISOString(),
+                });
+            }
+
+            // Update streak
+            await updateStreak(input.userId, true);
 
             await updateMemory(input.userId, {
                 lastTopic: input.payload.topic,
@@ -93,21 +120,31 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
             };
         }
 
+        case "exam": {
+            // Track exam result for persistent memory
+            if (input.payload.subject && input.payload.score !== undefined) {
+                await trackExamResult({
+                    userId: input.userId,
+                    subject: input.payload.subject,
+                    score: input.payload.score,
+                    completedAt: new Date().toISOString(),
+                });
+            }
+
+            return {
+                response: "Exam mode activated. Good luck.",
+                nextAction: "lock_learning_mode",
+                updatedState: { snapshot },
+            };
+        }
+
         case "feedback": {
             await updateMemory(input.userId, {
                 feedback: input.payload,
             });
 
             return {
-                response: "Got it. I’m adjusting your learning path.",
-                updatedState: { snapshot },
-            };
-        }
-
-        case "exam": {
-            return {
-                response: "Exam mode activated. Good luck.",
-                nextAction: "lock_learning_mode",
+                response: "Got it. I'm adjusting your learning path.",
                 updatedState: { snapshot },
             };
         }
