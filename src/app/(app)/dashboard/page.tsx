@@ -4,6 +4,7 @@ import Cortex from "@/components/cortex/Cortex";
 import DailyChallenge from "@/components/DailyChallenge";
 import RevisionQueue from "@/components/RevisionQueue";
 import CortexMemoryInsights from "@/components/CortexMemoryInsights";
+import WeakAreasPanel from "@/components/WeakAreasPanel";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -641,6 +642,9 @@ export default function Dashboard() {
 
       {/* ── Cortex Memory Insights ─────────────────────────────────────── */}
       <CortexMemoryInsights />
+
+      {/* ── Weak Areas Panel ─────────────────────────────────────────── */}
+      <WeakAreasPanel />
 
       {/* ── Daily Challenge ────────────────────────────────────────── */}
       <DailyChallenge />
