@@ -11,6 +11,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { BandwidthProvider } from "@/contexts/BandwidthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -76,9 +77,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <OfflineShell />
-        <PWAInstallPrompt />
+        <BandwidthProvider>
+          {children}
+          <OfflineShell />
+          <PWAInstallPrompt />
+        </BandwidthProvider>
       </body>
     </html>
   );

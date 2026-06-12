@@ -1,9 +1,10 @@
 // Shadecode Student Service Worker
-// Provides offline support and caching strategies
+// Provides offline support and caching strategies with low-bandwidth mode
 
 const CACHE_NAME = 'shadecode-student-v1';
 const STATIC_CACHE_NAME = 'shadecode-static-v1';
 const DYNAMIC_CACHE_NAME = 'shadecode-dynamic-v1';
+const LOW_BANDWIDTH_CACHE_NAME = 'shadecode-low-bandwidth-v1';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -19,6 +20,9 @@ const CACHE_ROUTES = [
   '/curriculum',
   '/learn',
 ];
+
+// Low-bandwidth mode flag
+let lowBandwidthMode = false;
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -41,7 +45,9 @@ self.addEventListener('activate', (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
+            if (cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== DYNAMIC_CACHE_NAME && 
+                cacheName !== LOW_BANDWIDTH_CACHE_NAME) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -52,6 +58,14 @@ self.addEventListener('activate', (event) => {
         return self.clients.claim();
       })
   );
+});
+
+// Listen for messages from clients (e.g., low-bandwidth mode toggle)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SET_LOW_BANDWIDTH_MODE') {
+    lowBandwidthMode = event.data.enabled;
+    console.log('[SW] Low-bandwidth mode:', lowBandwidthMode);
+  }
 });
 
 // Fetch event - implement caching strategies
@@ -69,9 +83,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Check for low-bandwidth mode header
+  const isLowBandwidthRequest = request.headers.get('X-Low-Bandwidth') === 'true';
+
   // Cache dashboard and curriculum pages with Network First strategy
   if (CACHE_ROUTES.some(route => url.pathname.startsWith(route))) {
-    event.respondWith(networkFirstStrategy(request));
+    event.respondWith(networkFirstStrategy(request, isLowBandwidthRequest));
     return;
   }
 
@@ -82,19 +99,35 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Default: Network First with fallback
-  event.respondWith(networkFirstStrategy(request));
+  event.respondWith(networkFirstStrategy(request, isLowBandwidthRequest));
 });
 
 // Network First strategy - try network, fallback to cache
-async function networkFirstStrategy(request) {
-  const cache = await caches.open(DYNAMIC_CACHE_NAME);
+async function networkFirstStrategy(request, isLowBandwidth = false) {
+  const cacheName = isLowBandwidth ? LOW_BANDWIDTH_CACHE_NAME : DYNAMIC_CACHE_NAME;
+  const cache = await caches.open(cacheName);
   
   try {
+    // In low-bandwidth mode, try cache first
+    if (isLowBandwidth || lowBandwidthMode) {
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        console.log('[SW] Serving from cache (low-bandwidth):', request.url);
+        return cachedResponse;
+      }
+    }
+
     const networkResponse = await fetch(request);
     
     // Cache successful responses
     if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+      // In low-bandwidth mode, only cache small responses
+      const contentLength = networkResponse.headers.get('content-length');
+      const isSmall = !contentLength || parseInt(contentLength) < 100 * 1024; // 100KB
+      
+      if (!isLowBandwidth || isSmall) {
+        cache.put(request, networkResponse.clone());
+      }
     }
     
     return networkResponse;
