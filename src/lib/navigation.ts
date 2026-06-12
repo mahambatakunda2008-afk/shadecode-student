@@ -33,6 +33,7 @@ export const NAV_ITEMS = {
   exams: { href: "/exams", label: "Exams", icon: BookOpen, badge: "2d", urgent: true },
   examSim: { href: "/exam-sim", label: "Exam Sim", icon: Gamepad2 },
   learn: { href: "/learn", label: "Learn", icon: Brain },
+  curriculum: { href: "/curriculum", label: "Curriculum", icon: BookOpen },
   mathChecker: { href: "/math-checker", label: "Math", icon: Calculator },
   timetable: { href: "/timetable", label: "Timetable", icon: Calendar },
   analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
@@ -53,7 +54,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   },
   {
     group: "Tools",
-    items: [NAV_ITEMS.learn, NAV_ITEMS.mathChecker],
+    items: [NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.mathChecker],
   },
   {
     group: "Progress",
@@ -73,6 +74,7 @@ export const BOTTOM_PRIMARY: NavItem[] = [
 export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.timetable,
   NAV_ITEMS.exams,
+  NAV_ITEMS.curriculum,
   NAV_ITEMS.mathChecker,
   NAV_ITEMS.analytics,
   NAV_ITEMS.leaderboard,
