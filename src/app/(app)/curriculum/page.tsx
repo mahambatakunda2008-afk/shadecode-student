@@ -7,8 +7,11 @@ import CurriculumProgressCard from "@/components/CurriculumProgressCard";
 import LearningJourney from "@/components/LearningJourney";
 import type { CurriculumState, LessonRow } from "@/lib/curriculum";
 
+interface Subject { id: string; name: string; }
+
 export default function CurriculumPage() {
   const [state, setState] = useState<CurriculumState | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +20,15 @@ export default function CurriculumPage() {
     setLoading(true);
     setError(null);
 
-    fetch("/api/curriculum")
-      .then((res) => res.json())
-      .then((data) => {
-        if (mounted) setState(data?.state ?? null);
+    Promise.all([
+      fetch("/api/curriculum").then((res) => res.json()),
+      fetch("/api/learn").then((res) => res.json()),
+    ])
+      .then(([curriculumData, learnData]) => {
+        if (mounted) {
+          setState(curriculumData?.state ?? null);
+          setSubjects(learnData?.subjects ?? []);
+        }
       })
       .catch((err) => {
         if (mounted) setError(err instanceof Error ? err.message : "Failed to load curriculum");
@@ -164,7 +172,7 @@ export default function CurriculumPage() {
         </div>
 
         {/* Progress by Subject */}
-        <SubjectProgressSection lessons={allLessons} />
+        <SubjectProgressSection lessons={allLessons} subjects={subjects} />
       </div>
     </div>
   );
@@ -229,7 +237,13 @@ function RecommendedLessonCard({ lesson }: { lesson: LessonRow }) {
   );
 }
 
-function SubjectProgressSection({ lessons }: { lessons: LessonRow[] }) {
+function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; subjects: Subject[] }) {
+  // Create mapping from subject ID to subject name
+  const subjectNameMap = subjects.reduce((acc, subject) => {
+    acc[subject.id] = subject.name;
+    return acc;
+  }, {} as Record<string, string>);
+
   // Group lessons by subject_id
   const subjectGroups = lessons.reduce((acc, lesson) => {
     const subjectId = lesson.subject_id;
@@ -251,10 +265,11 @@ function SubjectProgressSection({ lessons }: { lessons: LessonRow[] }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {Object.entries(subjectGroups).map(([subjectId, data]) => {
             const percent = Math.round((data.completed / data.lessons.length) * 100);
+            const subjectName = subjectNameMap[subjectId] || `Subject ${subjectId}`;
             return (
               <div key={subjectId}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>Subject {subjectId}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{subjectName}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{percent}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
