@@ -67,10 +67,10 @@ export default function NextActionDashboard() {
             .limit(5),
         ]);
 
-        if (intelligenceData?.success && intelligenceData?.data) {
-          setIntelligence(intelligenceData.data as any);
+        if (intelligenceData) {
+          setIntelligence(intelligenceData as any);
         } else {
-          setError(intelligenceData?.error || "Failed to load intelligence data");
+          setError("Failed to load intelligence data");
         }
 
         if (tasksData?.data) {
