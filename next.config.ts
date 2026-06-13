@@ -10,7 +10,6 @@ const nextConfig = withPWA({
   reloadOnOnline: true,
   swSrc: "public/sw.js",
   workboxOptions: {
-    disable: process.env.NODE_ENV === "development",
     runtimeCaching: [
       {
         urlPattern: /^https?.*/,
