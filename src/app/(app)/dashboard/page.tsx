@@ -1,23 +1,10 @@
 "use client";
 
-import Cortex from "@/components/cortex/Cortex";
-import DailyChallenge from "@/components/DailyChallenge";
-import RevisionQueue from "@/components/RevisionQueue";
-import CortexMemoryInsights from "@/components/CortexMemoryInsights";
-import WeakAreasPanel from "@/components/WeakAreasPanel";
-import StudyGoalInput from "@/components/StudyGoalInput";
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { updateStreak } from "@/lib/utils/streak";
-import Tour from "@/components/shared/Tour";
-import { emitCortexEvent } from "@/lib/cortex/events/emit";
-import { log } from "@/lib/observability";
-import { RevisionItem } from "@/lib/revisionQueue";
-import { TourProvider } from '@/context/TourContext';
-import { ProductTour } from '@/components/tour/ProductTour';
-import CurriculumProgressCard from '@/components/CurriculumProgressCard';
-import LearningJourney from '@/components/LearningJourney';
+import NextActionDashboard from "@/components/dashboard/NextActionDashboard";
+
+export default function Dashboard() {
+  return <NextActionDashboard />;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
