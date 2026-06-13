@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
+import { emitExamCompleted } from "@/lib/events";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -250,6 +251,19 @@ ${qaText}
           grade,
         },
       });
+
+      // Emit unified event
+      await emitExamCompleted(userId, {
+        examId: crypto.randomUUID(),
+        subject,
+        topic: difficulty,
+        score: percentage,
+        totalMarks: maxScore,
+        grade,
+        weakAreas: markingData.weakAreas || [],
+        strongAreas: markingData.strongAreas || [],
+        timeSpent: timeTaken,
+      }, "exam");
     }
 
     /* ─────────────────────────────

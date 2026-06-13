@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
+import { emitStudySessionStarted, emitStudySessionFinished } from "@/lib/events";
 
 interface Subject {
   id: string;
@@ -125,6 +126,23 @@ export default function Tasks() {
       source: "tasks",
       data: { taskId: task.id, subjectId: task.subject_id, title: task.title },
     });
+
+    // Emit unified event
+    const subject = subjects.find(s => s.id === task.subject_id);
+    await emitStudySessionFinished(userId, {
+      sessionId: crypto.randomUUID(),
+      subject: subject?.name || "Unknown",
+      activityType: "revision",
+      duration: 10,
+      xpEarned: 10,
+      activities: [{
+        type: "task",
+        itemId: task.id,
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        duration: 10,
+      }],
+    }, "tasks");
   };
 
   const deleteTask = async (taskId: string) => {
