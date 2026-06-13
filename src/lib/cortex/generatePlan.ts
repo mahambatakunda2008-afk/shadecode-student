@@ -1,5 +1,6 @@
 import type { CortexSnapshot } from "@/lib/types";
 import { recommendationEngine, RecommendationEngineInput, GoalInput, CareerInterestInput } from "@/lib/recommendation-engine";
+import { getCareerMapping, getCareerSubjects } from "@/lib/careers/mapping";
 
 /**
  * Convert CortexSnapshot to RecommendationEngineInput
@@ -87,8 +88,21 @@ function snapshotToEngineInput(snapshot: CortexSnapshot, userId: string): Recomm
   // Build goals (empty for now)
   const goals: GoalInput[] = [];
 
-  // Build career interests (empty for now)
+  // Build career interests from snapshot if available
   const careerInterests: CareerInterestInput[] = [];
+  if ((snapshot as any).careerInterests) {
+    for (const career of (snapshot as any).careerInterests) {
+      const mapping = getCareerMapping(career.id || career);
+      if (mapping) {
+        careerInterests.push({
+          careerId: mapping.careerId,
+          careerName: mapping.careerName,
+          recommendedSubjects: getCareerSubjects(mapping.careerId),
+          recommendedCourses: [],
+        });
+      }
+    }
+  }
 
   return {
     userId,

@@ -9,12 +9,14 @@ import { getZIMSECCurriculum } from "./zimsec";
 import { getCambridgeCurriculum } from "./cambridge";
 import { analyzeCurriculumCoverage } from "./coverage";
 import { recommendationEngine, RecommendationEngineInput, GoalInput, CareerInterestInput } from "@/lib/recommendation-engine";
+import { getCareerMapping, getSubjectPriority, getCareerSubjects } from "@/lib/careers/mapping";
 
 export function calculateExamReadiness(
   studentProgress: StudentProgress,
   timeToExam: number = 30 // days
 ): ExamReadiness {
   const { subject, board, level, topicProgress } = studentProgress;
+  const careerIds = (studentProgress as any).careerIds;
   
   // Get curriculum
   const curriculum = board === "ZIMSEC" 
@@ -31,7 +33,7 @@ export function calculateExamReadiness(
   
   topics.forEach(topic => {
     const progress = topicProgress[topic.id];
-    const readiness = calculateTopicReadiness(topic, progress);
+    const readiness = calculateTopicReadiness(topic, progress, careerIds);
     topicReadiness[topic.id] = readiness;
   });
   
@@ -61,7 +63,8 @@ export function calculateExamReadiness(
     coverage,
     topicReadiness,
     timeToExam,
-    overallScore
+    overallScore,
+    careerIds
   );
   
   return {
@@ -78,7 +81,7 @@ export function calculateExamReadiness(
   };
 }
 
-function calculateTopicReadiness(topic: CurriculumTopic, progress?: any): TopicReadiness {
+function calculateTopicReadiness(topic: CurriculumTopic, progress?: any, careerIds?: string[]): TopicReadiness {
   const score = progress ? progress.score : 0;
   const attempts = progress ? progress.attempts : 0;
   const timeSpent = progress ? progress.timeSpent : 0;
@@ -103,12 +106,13 @@ function calculateTopicReadiness(topic: CurriculumTopic, progress?: any): TopicR
   // Calculate confidence based on attempts and consistency
   const confidence = calculateTopicConfidence(adjustedScore, attempts);
   
-  // Generate recommended actions
+  // Generate recommended actions (with career context if available)
   const recommendedActions = generateTopicRecommendedActions(
     topic,
     adjustedScore,
     readiness,
-    confidence
+    confidence,
+    careerIds
   );
   
   return {
@@ -142,7 +146,8 @@ function generateTopicRecommendedActions(
   topic: CurriculumTopic,
   score: number,
   readiness: string,
-  confidence: number
+  confidence: number,
+  careerIds?: string[]
 ): string[] {
   const actions: string[] = [];
   
@@ -170,6 +175,20 @@ function generateTopicRecommendedActions(
   
   if (confidence < 70) {
     actions.push(`Increase practice frequency to build confidence`);
+  }
+
+  // Add career-aligned actions if career interests are provided
+  if (careerIds && careerIds.length > 0) {
+    for (const careerId of careerIds) {
+      const mapping = getCareerMapping(careerId);
+      if (mapping && mapping.requiredSubjects.includes(topic.subject)) {
+        actions.push(`This topic is required for ${mapping.careerName} - prioritize mastery`);
+        break;
+      } else if (mapping && mapping.recommendedSubjects.includes(topic.subject)) {
+        actions.push(`This topic supports your ${mapping.careerName} career goals`);
+        break;
+      }
+    }
   }
   
   return actions;
@@ -237,7 +256,8 @@ function generateRecommendations(
   coverage: any,
   topicReadiness: Record<string, TopicReadiness>,
   timeToExam: number,
-  overallScore: number
+  overallScore: number,
+  careerIds?: string[]
 ): string[] {
   const recommendations: string[] = [];
   
@@ -260,6 +280,17 @@ function generateRecommendations(
   
   if (weakTopics.length > 0) {
     recommendations.push(`Address ${weakTopics.length} weak topic${weakTopics.length > 1 ? 's' : ''} urgently`);
+  }
+  
+  // Career-aligned recommendations
+  if (careerIds && careerIds.length > 0) {
+    for (const careerId of careerIds) {
+      const mapping = getCareerMapping(careerId);
+      if (mapping) {
+        recommendations.push(`Prioritize ${mapping.requiredSubjects.join(" and ")} for ${mapping.careerName} career`);
+        break;
+      }
+    }
   }
   
   // Time-based recommendations
@@ -371,7 +402,23 @@ export async function generateCurriculumRecommendations(
       };
 
       const goals: GoalInput[] = [];
+      
+      // Build career interests from studentProgress if available
       const careerInterests: CareerInterestInput[] = [];
+      const careerIds = (studentProgress as any).careerIds;
+      if (careerIds && careerIds.length > 0) {
+        for (const careerId of careerIds) {
+          const mapping = getCareerMapping(careerId);
+          if (mapping) {
+            careerInterests.push({
+              careerId: mapping.careerId,
+              careerName: mapping.careerName,
+              recommendedSubjects: getCareerSubjects(mapping.careerId),
+              recommendedCourses: [],
+            });
+          }
+        }
+      }
 
       const input: RecommendationEngineInput = {
         userId,

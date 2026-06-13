@@ -17,6 +17,7 @@ import {
   RecommendationContext,
   WeakAreaInput,
 } from "./types";
+import { getSubjectPriority, getMaxSubjectPriority } from "@/lib/careers/mapping";
 
 const CACHE_TTL = 600; // 10 minutes
 
@@ -152,10 +153,11 @@ export class RecommendationEngine {
       score += 30;
     }
 
-    // Career-aligned lessons get priority
-    const careerSubjects = input.careerInterests.flatMap(c => c.recommendedSubjects);
-    if (careerSubjects.includes(lesson.subject)) {
-      score += 20;
+    // Career-aligned lessons get priority (enhanced with mapping)
+    const careerIds = input.careerInterests.map(c => c.careerId);
+    if (careerIds.length > 0) {
+      const careerPriority = getMaxSubjectPriority(careerIds, lesson.subject);
+      score += careerPriority * 2; // Scale priority (1-10) to (2-20)
     }
 
     // Weak subject lessons get priority
@@ -197,10 +199,11 @@ export class RecommendationEngine {
       score += 10;
     }
 
-    // Career-aligned weak areas get priority
-    const careerSubjects = input.careerInterests.flatMap(c => c.recommendedSubjects);
-    if (careerSubjects.includes(weakArea.subject)) {
-      score += 15;
+    // Career-aligned weak areas get priority (enhanced with mapping)
+    const careerIds = input.careerInterests.map(c => c.careerId);
+    if (careerIds.length > 0) {
+      const careerPriority = getMaxSubjectPriority(careerIds, weakArea.subject);
+      score += careerPriority * 1.5; // Scale priority (1-10) to (1.5-15)
     }
 
     // High exam frequency topics get priority
@@ -227,9 +230,12 @@ export class RecommendationEngine {
       factors.push({ factor: "in_progress", weight: 30, value: lesson.progress / 100 });
     }
 
-    const careerSubjects = input.careerInterests.flatMap(c => c.recommendedSubjects);
-    if (careerSubjects.includes(lesson.subject)) {
-      factors.push({ factor: "career_aligned", weight: 20, value: 1 });
+    const careerIds = input.careerInterests.map(c => c.careerId);
+    if (careerIds.length > 0) {
+      const careerPriority = getMaxSubjectPriority(careerIds, lesson.subject);
+      if (careerPriority > 0) {
+        factors.push({ factor: "career_aligned", weight: careerPriority * 2, value: careerPriority / 10 });
+      }
     }
 
     const weakSubjects = input.weakAreas.map(w => w.subject);
@@ -265,9 +271,12 @@ export class RecommendationEngine {
       factors.push({ factor: "upcoming_exam", weight: 10, value: 1 });
     }
 
-    const careerSubjects = input.careerInterests.flatMap(c => c.recommendedSubjects);
-    if (careerSubjects.includes(weakArea.subject)) {
-      factors.push({ factor: "career_aligned", weight: 15, value: 1 });
+    const careerIds = input.careerInterests.map(c => c.careerId);
+    if (careerIds.length > 0) {
+      const careerPriority = getMaxSubjectPriority(careerIds, weakArea.subject);
+      if (careerPriority > 0) {
+        factors.push({ factor: "career_aligned", weight: careerPriority * 1.5, value: careerPriority / 10 });
+      }
     }
 
     return factors;
