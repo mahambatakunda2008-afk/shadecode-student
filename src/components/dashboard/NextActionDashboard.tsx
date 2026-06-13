@@ -198,7 +198,7 @@ export default function NextActionDashboard() {
               </div>
             }
             actionLabel="Start Lesson"
-            onAction={() => router.push(`/learn/${progress.curriculum.recommendedNextLesson.id}`)}
+            onAction={() => router.push(`/learn/${progress.curriculum.recommendedNextLesson?.id}`)}
           />
         )}
 
