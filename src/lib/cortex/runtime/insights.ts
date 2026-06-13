@@ -12,7 +12,7 @@
  * `insights.content` / `insights.insight_text` conventions.
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { resolveDeterministicInsight } from "@/lib/cortex/runtime/templates";
 import type { CortexInsightContext } from "@/lib/cortex/types";
 
@@ -39,7 +39,7 @@ export async function listInsights(
   userId: string,
   limit = 100
 ): Promise<CanonicalInsight[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from(CORTEX_INSIGHTS_TABLE)
     .select("id, insight, created_at")
@@ -66,7 +66,7 @@ export async function createInsight(
     throw new Error("insight text is required");
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from(CORTEX_INSIGHTS_TABLE)
     .insert({ user_id: userId, insight: text })

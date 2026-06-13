@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 export type LessonRow = {
   id: string;
@@ -158,7 +158,7 @@ export function computeCurriculumState(
 }
 
 export async function getCurriculumState(userId?: string) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createClient();
 
   if (!userId) {
     // Try auth session

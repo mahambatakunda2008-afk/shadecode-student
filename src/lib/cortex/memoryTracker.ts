@@ -12,7 +12,7 @@
  */
 
 import { getMemory, updateMemory } from "./memory";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 interface StudySession {
   userId: string;

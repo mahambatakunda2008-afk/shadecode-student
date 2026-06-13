@@ -415,7 +415,7 @@ export class CortexMemory {
    cortex_memory table in Supabase for persistent long-term learning patterns.
 ─────────────────────────────────────────────────────────────────────────── */
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 export interface CortexUserMemory {
   level: number;
@@ -468,7 +468,7 @@ const DEFAULT_USER_MEMORY: CortexUserMemory = {
 
 export async function getMemory(userId: string): Promise<CortexUserMemory> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createClient();
     const { data, error } = await supabase
       .from("cortex_memory")
       .select("*")
@@ -517,7 +517,7 @@ export async function updateMemory(
   patch: Partial<CortexUserMemory>
 ): Promise<CortexUserMemory> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createClient();
     
     // Build update object mapping interface to database columns
     const updateData: any = {};
