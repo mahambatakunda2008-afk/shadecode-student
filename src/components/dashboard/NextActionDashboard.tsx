@@ -143,7 +143,7 @@ export default function NextActionDashboard() {
         />
         <StatCard
           label="Weak Areas"
-          value={intel.weakAreas.length}
+          value={intel.weakAreas.length.toString()}
           icon="⚠️"
           color="#f59e0b"
         />
