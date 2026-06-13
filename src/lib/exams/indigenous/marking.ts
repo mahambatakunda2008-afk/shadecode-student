@@ -259,7 +259,6 @@ export function markIndigenousExam(
     percentage,
     grade,
     feedback,
-    feedbackInLanguage,
     questionResults,
     completedAt: new Date().toISOString(),
   };
