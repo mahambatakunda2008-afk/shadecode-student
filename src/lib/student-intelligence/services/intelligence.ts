@@ -17,6 +17,7 @@ import {
   Insight,
   ServiceResponse,
 } from "../types";
+import { getRecommendationsFromEngine } from "./intelligence-integration";
 
 const CACHE_TTL = 900; // 15 minutes
 
@@ -80,7 +81,12 @@ export class IntelligenceEngine {
    */
   async getRecommendations(userId: string): Promise<Recommendation[]> {
     try {
-      // Get data from all services
+      // Use the new Recommendation Engine
+      return await getRecommendationsFromEngine(userId);
+    } catch (error) {
+      console.error("[IntelligenceEngine] Error getting recommendations from engine:", error);
+      
+      // Fallback to old logic if engine fails
       const progress = await progressService.getProgress(userId);
       const performance = await performanceService.getPerformance(userId);
       const activity = await activityService.getActivity(userId);
@@ -174,9 +180,6 @@ export class IntelligenceEngine {
       });
 
       return recommendations.slice(0, 5); // Return top 5 recommendations
-    } catch (error) {
-      console.error("[IntelligenceEngine] Error getting recommendations:", error);
-      return [];
     }
   }
 

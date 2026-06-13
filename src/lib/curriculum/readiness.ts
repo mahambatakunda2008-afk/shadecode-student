@@ -8,6 +8,7 @@ import { ExamReadiness, TopicReadiness, StudentProgress, CurriculumTopic } from 
 import { getZIMSECCurriculum } from "./zimsec";
 import { getCambridgeCurriculum } from "./cambridge";
 import { analyzeCurriculumCoverage } from "./coverage";
+import { recommendationEngine, RecommendationEngineInput, GoalInput, CareerInterestInput } from "@/lib/recommendation-engine";
 
 export function calculateExamReadiness(
   studentProgress: StudentProgress,
@@ -292,4 +293,137 @@ function generateRecommendations(
   }
   
   return recommendations;
+}
+
+/**
+ * Generate curriculum recommendations using the Recommendation Engine
+ * This provides more sophisticated recommendations based on multiple factors
+ */
+export async function generateCurriculumRecommendations(
+  studentProgress: StudentProgress,
+  timeToExam: number = 30,
+  userId?: string
+): Promise<string[]> {
+  // If userId is provided, try to use the Recommendation Engine
+  if (userId) {
+    try {
+      // Build Recommendation Engine input from curriculum progress
+      const weakAreas = Object.entries(studentProgress.topicProgress)
+        .filter(([_, progress]) => progress.score < 60)
+        .map(([topicId, progress], index) => ({
+          topicId,
+          topic: topicId, // TODO: Get actual topic name
+          subject: studentProgress.subject,
+          severity: (progress.score < 40 ? "critical" : progress.score < 50 ? "high" : "medium") as "critical" | "high" | "medium" | "low",
+          score: progress.score,
+          lastAssessed: new Date().toISOString(),
+          recommendedActions: [
+            "Review fundamentals",
+            "Practice exercises",
+            "Take quiz",
+          ],
+          estimatedTimeToImprove: Math.ceil((60 - progress.score) / 10),
+        }));
+
+      const curriculumProgress = {
+        overallCompletion: 0, // TODO: Calculate from topicProgress
+        curriculum: {
+          totalLessons: 0,
+          completedLessons: 0,
+          inProgressLessons: 0,
+          lockedLessons: 0,
+          completionPercentage: 0,
+          weightedCompletion: 0,
+          currentLesson: null,
+          recommendedNextLesson: null,
+        },
+        lessons: [],
+        subjects: [],
+      };
+
+      const examReadiness = {
+        subject: studentProgress.subject,
+        board: studentProgress.board,
+        level: studentProgress.level,
+        overallScore: 0, // TODO: Calculate from topicProgress
+        readinessLevel: "Intermediate" as const,
+        predictedGrade: "B",
+        confidence: 50,
+        timeToExam,
+        topicReadiness: {},
+      };
+
+      const studyActivity = {
+        sessions: [],
+        timeSpent: {},
+        patterns: {
+          mostActiveTime: "10:00",
+          mostActiveDay: "Monday",
+          averageDailyStudyTime: 0,
+          studyFrequency: 0,
+          consistencyScore: 50,
+        },
+        streak: {
+          currentStreak: 0,
+          longestStreak: 0,
+          lastStudyDate: new Date().toISOString(),
+        },
+      };
+
+      const goals: GoalInput[] = [];
+      const careerInterests: CareerInterestInput[] = [];
+
+      const input: RecommendationEngineInput = {
+        userId,
+        curriculumProgress,
+        weakAreas,
+        examReadiness,
+        studyActivity,
+        goals,
+        careerInterests,
+      };
+
+      const output = await recommendationEngine.generateRecommendations(input);
+      
+      // Convert engine output to string recommendations
+      const recommendations: string[] = [];
+      
+      if (output.recommendedLesson.lessonId !== "unknown") {
+        recommendations.push(`Focus on lesson: ${output.recommendedLesson.lessonTitle}`);
+      }
+      
+      if (output.recommendedRevisionTopic.topicId !== "none") {
+        recommendations.push(`Revise topic: ${output.recommendedRevisionTopic.topic}`);
+        output.recommendedRevisionTopic.recommendedActions.forEach(action => {
+          recommendations.push(action);
+        });
+      }
+      
+      if (output.recommendedExamPractice.practiceType !== "mixed") {
+        recommendations.push(`Practice: ${output.recommendedExamPractice.topic} (${output.recommendedExamPractice.practiceType})`);
+      }
+      
+      recommendations.push(output.recommendedStudyAction.action);
+      
+      return recommendations;
+    } catch (error) {
+      console.error("[generateCurriculumRecommendations] Error using recommendation engine:", error);
+      // Fall back to old logic
+    }
+  }
+
+  // Fallback to old logic
+  const coverage = analyzeCurriculumCoverage(studentProgress);
+  const curriculum = studentProgress.board === "ZIMSEC" 
+    ? getZIMSECCurriculum(studentProgress.subject, studentProgress.level)
+    : getCambridgeCurriculum(studentProgress.subject, studentProgress.level);
+  
+  const topicReadiness: Record<string, TopicReadiness> = {};
+  curriculum.topics.forEach(topic => {
+    const progress = studentProgress.topicProgress[topic.id];
+    topicReadiness[topic.id] = calculateTopicReadiness(topic, progress);
+  });
+  
+  const overallScore = 0; // TODO: Calculate from topicReadiness
+  return generateRecommendations(coverage, topicReadiness, timeToExam, overallScore);
 }
