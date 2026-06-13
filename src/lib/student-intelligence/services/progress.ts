@@ -4,7 +4,7 @@
  * Progress aggregation service
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { computeCurriculumState, getCurriculumState } from "@/lib/curriculum";
 import { getMemory } from "@/lib/cortex/memory";
 import {
@@ -105,7 +105,7 @@ export class ProgressService {
    */
   async getLessonProgress(userId: string, lessonId?: string): Promise<LessonProgress[]> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       let query = supabase
         .from("learn_lessons")
@@ -189,7 +189,7 @@ export class ProgressService {
    */
   async updateProgress(userId: string, progress: Partial<LessonProgress>): Promise<void> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       if (progress.lessonId && progress.progress !== undefined) {
         const { error } = await supabase

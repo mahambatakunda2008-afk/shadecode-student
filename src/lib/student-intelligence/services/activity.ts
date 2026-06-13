@@ -4,7 +4,7 @@
  * Activity aggregation service
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { getMemory } from "@/lib/cortex/memory";
 import {
   StudentActivity,
@@ -76,7 +76,7 @@ export class ActivityService {
    */
   async getStudySessions(userId: string, limit: number = 30): Promise<StudySession[]> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       // TODO: Implement study sessions table
       // For now, return empty array
@@ -197,7 +197,7 @@ export class ActivityService {
    */
   async getStreakInfo(userId: string): Promise<StreakInfo> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       // Get latest challenge for streak info
       const { data: challenge, error } = await supabase
@@ -228,7 +228,7 @@ export class ActivityService {
    */
   async recordSession(userId: string, session: StudySession): Promise<void> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       // TODO: Implement study sessions table
       // For now, just invalidate cache

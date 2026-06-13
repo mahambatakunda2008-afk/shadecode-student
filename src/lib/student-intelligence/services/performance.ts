@@ -4,7 +4,7 @@
  * Performance aggregation service
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { getMemory } from "@/lib/cortex/memory";
 import {
   StudentPerformance,
@@ -75,7 +75,7 @@ export class PerformanceService {
    */
   async getExamPerformance(userId: string): Promise<ExamPerformance[]> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       // TODO: Implement exam results table
       // For now, return empty array
@@ -91,7 +91,7 @@ export class PerformanceService {
    */
   async getQuizPerformance(userId: string): Promise<QuizPerformance[]> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       // TODO: Implement quiz results tracking
       // For now, return empty array
@@ -107,7 +107,7 @@ export class PerformanceService {
    */
   async getChallengePerformance(userId: string): Promise<ChallengePerformance[]> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       const { data: challenges, error } = await supabase
         .from("daily_challenges")
@@ -170,7 +170,7 @@ export class PerformanceService {
    */
   async addExamResult(userId: string, result: ExamPerformance): Promise<void> {
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createClient();
 
       // TODO: Implement exam results table
       // For now, just invalidate cache
