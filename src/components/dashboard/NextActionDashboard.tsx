@@ -319,7 +319,7 @@ export default function NextActionDashboard() {
 }
 
 function PrimaryActionCard({ recommendation, router }: { recommendation: any; router: any }) {
-  const priorityColor = {
+  const priorityColor: Record<string, string> = {
     critical: "#ef4444",
     high: "#f59e0b",
     medium: "#6366f1",
