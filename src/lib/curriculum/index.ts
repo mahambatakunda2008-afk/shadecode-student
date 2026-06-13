@@ -228,3 +228,10 @@ export async function getPathCompletion(userId?: string) {
   if (!s) return { completionPercent: 0, total: 0, completed: 0 };
   return { completionPercent: s.completionPercent, total: s.allLessons.length, completed: s.completedLessons.length };
 }
+
+// Export curriculum intelligence layer
+export * from "./types";
+export * from "./zimsec";
+export * from "./cambridge";
+export * from "./coverage";
+export * from "./readiness";
