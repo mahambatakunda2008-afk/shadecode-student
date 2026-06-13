@@ -19,6 +19,7 @@ const SHONA_IDIOMS: Idiom[] = [
   },
   {
     id: "shona-idiom-2",
+    language: "shona",
     phrase: "Mwana asakura haatauriri",
     literalMeaning: "A child who doesn't cry doesn't get fed",
     figurativeMeaning: "You must speak up or ask for what you need",
@@ -28,6 +29,7 @@ const SHONA_IDIOMS: Idiom[] = [
   },
   {
     id: "shona-idiom-3",
+    language: "shona",
     phrase: "Chinhu chakapfuma icho",
     literalMeaning: "That which is expensive is good",
     figurativeMeaning: "Quality comes at a price; you get what you pay for",
@@ -50,6 +52,7 @@ const NDEBELE_IDIOMS: Idiom[] = [
   },
   {
     id: "ndebele-idiom-2",
+    language: "ndebele",
     phrase: "Umntwana angakali aziwa",
     literalMeaning: "A child who doesn't cry is not known",
     figurativeMeaning: "You must speak up or ask for what you need",
@@ -59,6 +62,7 @@ const NDEBELE_IDIOMS: Idiom[] = [
   },
   {
     id: "ndebele-idiom-3",
+    language: "ndebele",
     phrase: "Into embi yimpilo",
     literalMeaning: "That which is expensive is life",
     figurativeMeaning: "Quality comes at a price; you get what you pay for",
@@ -80,6 +84,7 @@ const SHONA_PROVERBS: Proverb[] = [
   },
   {
     id: "shona-proverb-2",
+    language: "shona",
     proverb: "Gudo rinopa kunze, richarama mukati",
     meaning: "A baboon gives outside but is hungry inside",
     context: "People may appear generous while suffering internally",
@@ -88,6 +93,7 @@ const SHONA_PROVERBS: Proverb[] = [
   },
   {
     id: "shona-proverb-3",
+    language: "shona",
     proverb: "Chawana hachina kuti",
     meaning: "What you find has no owner",
     context: "Finders keepers (with cultural nuances)",
@@ -96,6 +102,7 @@ const SHONA_PROVERBS: Proverb[] = [
   },
   {
     id: "shona-proverb-4",
+    language: "shona",
     proverb: "Mwana akakura amamwa epasi",
     meaning: "When a child grows up, they eat the earth",
     context: "Children eventually become independent and face life's challenges",
@@ -104,6 +111,7 @@ const SHONA_PROVERBS: Proverb[] = [
   },
   {
     id: "shona-proverb-5",
+    language: "shona",
     proverb: "Rume rwa guru rimaruramwe",
     meaning: "The thigh of a great one is never lonely",
     context: "Great people always have followers/supporters",
@@ -124,6 +132,7 @@ const NDEBELE_PROVERBS: Proverb[] = [
   },
   {
     id: "ndebele-proverb-2",
+    language: "ndebele",
     proverb: "Impundzi yodla ngaphandle, ihlala ingenala",
     meaning: "A baboon eats outside but remains hungry inside",
     context: "People may appear generous while suffering internally",
@@ -132,6 +141,7 @@ const NDEBELE_PROVERBS: Proverb[] = [
   },
   {
     id: "ndebele-proverb-3",
+    language: "ndebele",
     proverb: "Othunyelwe akalahlwa",
     meaning: "What is sent/found is not forgotten",
     context: "Finders keepers (with cultural nuances)",
@@ -140,6 +150,7 @@ const NDEBELE_PROVERBS: Proverb[] = [
   },
   {
     id: "ndebele-proverb-4",
+    language: "ndebele",
     proverb: "Umntana omkhulu udla umhlabathi",
     meaning: "When a child grows up, they eat the earth",
     context: "Children eventually become independent and face life's challenges",
@@ -148,6 +159,7 @@ const NDEBELE_PROVERBS: Proverb[] = [
   },
   {
     id: "ndebele-proverb-5",
+    language: "ndebele",
     proverb: "Isiqu somkhulu asisoli",
     meaning: "The heart of a great one is never lonely",
     context: "Great people always have followers/supporters",
