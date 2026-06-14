@@ -23,13 +23,28 @@ export function BandwidthProvider({ children }: { children: ReactNode }) {
       setBandwidthInfo(info);
     });
 
+    // Listen to online/offline events to update bandwidth info
+    const handleOnline = () => {
+      setBandwidthInfo(bandwidthDetector.getInfo());
+    };
+    const handleOffline = () => {
+      setBandwidthInfo(bandwidthDetector.getInfo());
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     // Check localStorage for saved preference
     const savedPreference = localStorage.getItem("lowBandwidthMode");
     if (savedPreference === "true") {
       setLowBandwidthMode(true);
     }
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, []);
 
   const handleSetLowBandwidthMode = (enabled: boolean) => {

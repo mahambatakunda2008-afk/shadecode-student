@@ -1,9 +1,10 @@
 "use client";
 
 import { WifiOff, RefreshCw } from "lucide-react";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 export default function OfflineShell() {
-  const isOnline = typeof window !== "undefined" && navigator.onLine;
+  const isOnline = useOnlineStatus();
 
   if (isOnline) return null;
 
