@@ -19,24 +19,6 @@ const SHONA_GRAMMAR_TOPICS = [
   "demonstratives",
 ];
 
-function generateShonaGrammarLesson(topic: string, difficulty: DifficultyLevel): GrammarLesson {
-  const lessonId = crypto.randomUUID();
-  
-  const lessonContent = getShonaGrammarContent(topic, difficulty);
-  
-  return {
-    id: lessonId,
-    language: "shona",
-    title: lessonContent.title,
-    topic,
-    difficulty,
-    explanation: lessonContent.explanation,
-    examples: lessonContent.examples,
-    exercises: lessonContent.exercises,
-    culturalContext: lessonContent.culturalContext,
-  };
-}
-
 function getShonaGrammarContent(topic: string, difficulty: DifficultyLevel) {
   const contentMap: Record<string, any> = {
     "noun-classes": {
@@ -161,7 +143,21 @@ Example: Munhu akabva (The person is tall) - the adjective 'kabva' agrees with C
 }
 
 export function generateShonaGrammarLesson(topic: string, difficulty: DifficultyLevel = "intermediate"): GrammarLesson {
-  return generateShonaGrammarLesson(topic, difficulty);
+  const lessonId = crypto.randomUUID();
+  
+  const lessonContent = getShonaGrammarContent(topic, difficulty);
+  
+  return {
+    id: lessonId,
+    language: "shona",
+    title: lessonContent.title,
+    topic,
+    difficulty,
+    explanation: lessonContent.explanation,
+    examples: lessonContent.examples,
+    exercises: lessonContent.exercises,
+    culturalContext: lessonContent.culturalContext,
+  };
 }
 
 export function getShonaGrammarTopics(): string[] {
