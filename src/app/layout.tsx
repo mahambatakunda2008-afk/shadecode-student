@@ -1,10 +1,4 @@
 // src/app/layout.tsx
-//
-// Root layout — wraps the entire Next.js app.
-// Keep this as minimal as possible.
-// All auth/sidebar/provider logic lives in route group layouts:
-//   - (public)/layout.tsx → landing, auth pages
-//   - (app)/layout.tsx    → authenticated app pages
 
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -12,6 +6,11 @@ import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
+import { ThemeContextProvider } from "@/contexts/ThemeContext";
+import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
+import Header from "@/components/ui/Header";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,14 +73,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <BandwidthProvider>
-          {children}
-          <OfflineShell />
-          <PWAInstallPrompt />
-        </BandwidthProvider>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ThemeContextProvider>
+          <MuiThemeProvider>
+            <Header />
+            <BandwidthProvider>
+              {children}
+              <OfflineShell />
+              <PWAInstallPrompt />
+              <Analytics />
+              <SpeedInsights />
+            </BandwidthProvider>
+          </MuiThemeProvider>
+        </ThemeContextProvider>
       </body>
     </html>
   );

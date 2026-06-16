@@ -16,6 +16,7 @@ const BandwidthContext = createContext<BandwidthContextType | undefined>(undefin
 export function BandwidthProvider({ children }: { children: ReactNode }) {
   const [bandwidthInfo, setBandwidthInfo] = useState<BandwidthInfo>(bandwidthDetector.getInfo());
   const [lowBandwidthMode, setLowBandwidthMode] = useState(false);
+  const [isOffline, setIsOffline] = useState(bandwidthDetector.isOffline());
 
   useEffect(() => {
     // Subscribe to bandwidth changes
@@ -23,12 +24,14 @@ export function BandwidthProvider({ children }: { children: ReactNode }) {
       setBandwidthInfo(info);
     });
 
-    // Listen to online/offline events to update bandwidth info
+    // Listen to online/offline events to update bandwidth info and offline state
     const handleOnline = () => {
       setBandwidthInfo(bandwidthDetector.getInfo());
+      setIsOffline(false);
     };
     const handleOffline = () => {
       setBandwidthInfo(bandwidthDetector.getInfo());
+      setIsOffline(true);
     };
 
     window.addEventListener("online", handleOnline);
@@ -53,7 +56,6 @@ export function BandwidthProvider({ children }: { children: ReactNode }) {
   };
 
   const isLowBandwidth = bandwidthDetector.isLowBandwidth() || lowBandwidthMode;
-  const isOffline = bandwidthDetector.isOffline();
 
   return (
     <BandwidthContext.Provider

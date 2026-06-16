@@ -1,7 +1,15 @@
 import { CortexCore } from "@/lib/cortex/core";
 import fs from 'fs';
 import path from 'path';
+import { log } from "@/lib/observability";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { requirePermission } from '@/lib/auth/rbac';
+import { 
+  cortexApproveDraftSchema, 
+  cortexRequestSchema,
+  validateRequestBody,
+  createValidationErrorResponse 
+} from '@/lib/validation/schemas';
 
 const DRAFTS_DIR = path.join(process.cwd(), 'src', 'app', 'api', 'cortex', 'generate-course');
 const DRAFTS_FILE = path.join(DRAFTS_DIR, 'drafts.json');
@@ -38,20 +46,48 @@ export async function GET(req: Request) {
     }
     return new Response(JSON.stringify({ error: 'unsupported_action' }), { status: 400 });
   } catch (e: any) {
+    log.apiFailure({ route: "/api/cortex", method: "GET", error: e.message || String(e) });
     return new Response(JSON.stringify({ error: e.message || 'failed' }), { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
+  let body: any = null;
   try {
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || '';
 
     if (action === 'approve_draft') {
+      // Check authorization using RBAC (new) or admin token (legacy for backward compatibility)
+      const authHeader = req.headers.get('authorization');
       const adminToken = req.headers.get('x-admin-token') || '';
-      if (!process.env.ADMIN_REVIEW_TOKEN || adminToken !== process.env.ADMIN_REVIEW_TOKEN) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
-      const body = await req.json().catch(() => ({}));
-      const id = body.id;
+      
+      // Try RBAC first (preferred method)
+      if (authHeader?.startsWith('Bearer ')) {
+        const permissionCheck = await requirePermission(req, 'approve_drafts');
+        if (permissionCheck) return permissionCheck;
+      } 
+      // Fallback to legacy admin token for backward compatibility
+      else if (!process.env.ADMIN_REVIEW_TOKEN || adminToken !== process.env.ADMIN_REVIEW_TOKEN) {
+        return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+      }
+      
+      body = await req.json().catch(() => ({}));
+      
+      // Validate request body
+      const validation = validateRequestBody(body, cortexApproveDraftSchema);
+      if (!validation.success) {
+        return new Response(JSON.stringify({ 
+          error: 'Validation failed', 
+          details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        }), { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
+        });
+      }
+      
+      const id = validation.data?.id;
+      let userId: string | undefined = undefined;
 
     try {
       const supabase = getSupabaseAdmin();
@@ -67,7 +103,7 @@ export async function POST(req: Request) {
       }
 
       if (!entry || !entry.draft) return new Response(JSON.stringify({ error: 'invalid_entry' }), { status: 400 });
-      const userId = entry.user_id || entry.userId;
+      userId = entry.user_id || entry.userId;
       if (!userId) throw new Error('Missing user id on draft');
 
       const subjName = (entry.draft.title && entry.draft.title.length <= 60) ? entry.draft.title : `Generated Course`;
@@ -120,11 +156,12 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ ok: true, result: { lessonsInserted: (insertedLessons ?? []).length } }), { status: 200 });
     } catch (e: any) {
       console.error('approve error', e);
+      log.cortexFailure({ stage: "approve_draft", error: e.message || String(e), userId });
       return new Response(JSON.stringify({ error: e.message || String(e) }), { status: 500 });
     }
     }
 
-    const body = await req.json().catch(() => ({}));
+    body = await req.json().catch(() => ({}));
 
     // Behavioral insight path — used by the dashboard Cortex component, which
     // posts { requestType: "behavior.insight", payload: { userId, events, snapshot } }.
@@ -139,6 +176,11 @@ export async function POST(req: Request) {
         });
       } catch (e) {
         // Non-fatal: the client falls back to deterministic insights.
+        log.cortexFailure({
+          stage: "behavior.insight",
+          error: e instanceof Error ? e.message : "cortex_ai_failed",
+          userId: body?.payload?.userId,
+        });
         return Response.json(
           { insight: null, error: e instanceof Error ? e.message : "cortex_ai_failed" },
           { status: 200 }
@@ -149,7 +191,21 @@ export async function POST(req: Request) {
     // Fallback: preserve existing Cortex POST behavior
     const { userId, type, payload } = body;
 
-    if (!userId || !type) {
+    // Validate request body
+    const validation = validateRequestBody({ userId, type, payload }, cortexRequestSchema);
+    if (!validation.success || !validation.data) {
+      return new Response(JSON.stringify({ 
+        error: 'Validation failed', 
+        details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+
+    const { userId: validatedUserId, type: validatedType, payload: validatedPayload } = validation.data;
+
+    if (!validatedUserId || !validatedType) {
       return Response.json(
         { error: "Missing userId or type" },
         { status: 400 }
@@ -157,7 +213,7 @@ export async function POST(req: Request) {
     }
 
     // Lightweight career API hooks
-    if (type === 'careers.list') {
+    if (validatedType === 'careers.list') {
       try {
         const { listCareers } = await import('@/lib/careers');
         const careers = await listCareers();
@@ -165,25 +221,30 @@ export async function POST(req: Request) {
       } catch (e: any) { return Response.json({ error: e.message || 'failed' }, { status: 500 }); }
     }
 
-    if (type === 'careers.get') {
+    if (validatedType === 'careers.get') {
       try {
-        const slug = payload?.slug;
+        const slug = validatedPayload?.slug;
         if (!slug) return Response.json({ error: 'missing slug' }, { status: 400 });
         const { getCareerBySlug } = await import('@/lib/careers');
-        const res = await getCareerBySlug(slug);
+        const res = await getCareerBySlug(slug as string);
         if (!res) return Response.json({ error: 'not found' }, { status: 404 });
         return Response.json({ success: true, ...res });
       } catch (e: any) { return Response.json({ error: e.message || 'failed' }, { status: 500 }); }
     }
 
     const result = await CortexCore({
-      userId,
-      type,
-      payload,
+      userId: validatedUserId,
+      type: validatedType as any,
+      payload: validatedPayload,
     });
 
     return Response.json(result);
   } catch (err: any) {
+    log.cortexFailure({
+      stage: "CortexCore",
+      error: err.message || "Cortex failure",
+      userId: body?.userId,
+    });
     return Response.json(
       { error: err.message || "Cortex failure" },
       { status: 500 }

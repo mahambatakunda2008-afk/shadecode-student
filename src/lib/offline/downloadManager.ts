@@ -5,6 +5,7 @@
  */
 
 import { offlineStorage, OfflineLesson, OfflineNotes, OfflineQuiz, OfflineProgress } from "./storage";
+import { log } from "@/lib/observability";
 
 export interface DownloadProgress {
   lessonId: string;
@@ -295,6 +296,12 @@ class DownloadManager {
         await offlineStorage.markProgressSynced(progress.lessonId);
       } catch (error) {
         console.error("Failed to sync progress:", error);
+        log.offlineSyncFailed({
+          userId,
+          operation: "syncProgress",
+          table: "learn_lessons_progress",
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
   }

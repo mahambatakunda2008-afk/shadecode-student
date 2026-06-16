@@ -4,6 +4,7 @@ import {
   type SupabaseClient,
   type User,
 } from "@supabase/supabase-js";
+import { log } from "@/lib/observability";
 
 import type {
   LearnDetailResponse,
@@ -12,6 +13,14 @@ import type {
   LearnSubject,
   LessonDifficulty,
 } from "@/app/(app)/learn/types";
+
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { 
+  learnCoursePreviewSchema,
+  learnGenerateLessonSchema,
+  validateRequestBody 
+} from '@/lib/validation/schemas';
+import { logAIUsage } from "@/lib/ai/tracker";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -136,7 +145,7 @@ function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | 
 
 // ── AI providers ──────────────────────────────────────────────────────────────
 
-async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> {
+async function callAI(prompt: string, maxTokens = 2000, userId?: string, subfeature = 'generate_lesson'): Promise<string | null> {
   const TIMEOUT_MS = 15000; // 15 second timeout per provider
 
   async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT_MS): Promise<Response> {
@@ -155,8 +164,11 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
     }
   }
 
+  const promptTokens = Math.ceil(prompt.length / 4); // Rough estimate
+
   // 1. Cloudflare Workers AI
   if (process.env.CLOUDFLARE_API_TOKEN) {
+    const startTime = Date.now();
     try {
       console.log("[AI] Trying Cloudflare Workers AI...");
       const res = await fetchWithTimeout(
@@ -172,14 +184,52 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
         ? data.result.response
         : JSON.stringify(data?.result?.response ?? "");
       if (text && text.length > 20) {
+        const latencyMs = Date.now() - startTime;
+        const completionTokens = Math.ceil(text.length / 4);
+        
+        // Log successful request
+        await logAIUsage({
+          userId,
+          feature: 'lesson_assistant',
+          subfeature,
+          provider: 'cloudflare',
+          model: 'llama-3.3-70b-instruct-fp8-fast',
+          promptTokens,
+          completionTokens,
+          latencyMs,
+          success: true,
+          requestMetadata: { promptLength: prompt.length, maxTokens },
+        });
+        
         console.log("[AI] Cloudflare Workers AI succeeded");
         return text;
       }
-    } catch (err) { console.error("[AI] Cloudflare failed:", err); }
+    } catch (err) {
+      const latencyMs = Date.now() - startTime;
+      
+      // Log failed request
+      await logAIUsage({
+        userId,
+        feature: 'lesson_assistant',
+        subfeature,
+        provider: 'cloudflare',
+        model: 'llama-3.3-70b-instruct-fp8-fast',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorCode: err instanceof Error ? err.constructor.name : 'UNKNOWN',
+        requestMetadata: { promptLength: prompt.length, maxTokens },
+      });
+      
+      console.error("[AI] Cloudflare failed:", err);
+    }
   }
 
   // 2. OpenAI (JSON mode)
   if (process.env.OPENAI_API_KEY) {
+    const startTime = Date.now();
     try {
       console.log("[AI] Trying OpenAI...");
       const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
@@ -195,10 +245,47 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
       if (text && text.length > 20) {
+        const latencyMs = Date.now() - startTime;
+        const completionTokens = Math.ceil(text.length / 4);
+        
+        // Log successful request
+        await logAIUsage({
+          userId,
+          feature: 'lesson_assistant',
+          subfeature,
+          provider: 'openai',
+          model: 'gpt-4o-mini',
+          promptTokens,
+          completionTokens,
+          latencyMs,
+          success: true,
+          requestMetadata: { promptLength: prompt.length, maxTokens },
+        });
+        
         console.log("[AI] OpenAI succeeded");
         return text;
       }
-    } catch (err) { console.error("[AI] OpenAI failed:", err); }
+    } catch (err) {
+      const latencyMs = Date.now() - startTime;
+      
+      // Log failed request
+      await logAIUsage({
+        userId,
+        feature: 'lesson_assistant',
+        subfeature,
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorCode: err instanceof Error ? err.constructor.name : 'UNKNOWN',
+        requestMetadata: { promptLength: prompt.length, maxTokens },
+      });
+      
+      console.error("[AI] OpenAI failed:", err);
+    }
   }
 
   // 3. Gemini — all keys × both models
@@ -210,6 +297,7 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
 
   for (const key of geminiKeys) {
     for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+      const startTime = Date.now();
       try {
         console.log(`[AI] Trying Gemini (${model})...`);
         const res = await fetchWithTimeout(
@@ -226,15 +314,53 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text && text.length > 20) {
+          const latencyMs = Date.now() - startTime;
+          const completionTokens = Math.ceil(text.length / 4);
+          
+          // Log successful request
+          await logAIUsage({
+            userId,
+            feature: 'lesson_assistant',
+            subfeature,
+            provider: 'gemini',
+            model,
+            promptTokens,
+            completionTokens,
+            latencyMs,
+            success: true,
+            requestMetadata: { promptLength: prompt.length, maxTokens },
+          });
+          
           console.log(`[AI] Gemini (${model}) succeeded`);
           return text;
         }
-      } catch (err) { console.error(`[AI] Gemini (${model}) failed:`, err); }
+      } catch (err) {
+        const latencyMs = Date.now() - startTime;
+        
+        // Log failed request
+        await logAIUsage({
+          userId,
+          feature: 'lesson_assistant',
+          subfeature,
+          provider: 'gemini',
+          model,
+          promptTokens,
+          completionTokens: 0,
+          latencyMs,
+          success: false,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          errorCode: err instanceof Error ? err.constructor.name : 'UNKNOWN',
+          requestMetadata: { promptLength: prompt.length, maxTokens },
+        });
+        
+        console.error(`[AI] Gemini (${model}) failed:`, err);
+      }
     }
   }
 
   // 4. OpenRouter — free Llama fallback
   if (process.env.OPENROUTER_API_KEY) {
+    const startTime = Date.now();
     try {
       console.log("[AI] Trying OpenRouter...");
       const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
@@ -254,10 +380,47 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string | null> 
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
       if (text && text.length > 20) {
+        const latencyMs = Date.now() - startTime;
+        const completionTokens = Math.ceil(text.length / 4);
+        
+        // Log successful request
+        await logAIUsage({
+          userId,
+          feature: 'lesson_assistant',
+          subfeature,
+          provider: 'openrouter',
+          model: 'llama-3.3-70b-instruct',
+          promptTokens,
+          completionTokens,
+          latencyMs,
+          success: true,
+          requestMetadata: { promptLength: prompt.length, maxTokens },
+        });
+        
         console.log("[AI] OpenRouter succeeded");
         return text;
       }
-    } catch (err) { console.error("[AI] OpenRouter failed:", err); }
+    } catch (err) {
+      const latencyMs = Date.now() - startTime;
+      
+      // Log failed request
+      await logAIUsage({
+        userId,
+        feature: 'lesson_assistant',
+        subfeature,
+        provider: 'openrouter',
+        model: 'llama-3.3-70b-instruct',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorCode: err instanceof Error ? err.constructor.name : 'UNKNOWN',
+        requestMetadata: { promptLength: prompt.length, maxTokens },
+      });
+      
+      console.error("[AI] OpenRouter failed:", err);
+    }
   }
 
   console.error("[AI] All providers exhausted.");
@@ -301,8 +464,9 @@ STRICT RULES:
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 export async function GET(req: Request) {
+  let auth: any = null;
   try {
-    const auth = await authenticateRequest(req);
+    auth = await authenticateRequest(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const url       = new URL(req.url);
@@ -368,8 +532,9 @@ export async function GET(req: Request) {
     };
     return NextResponse.json(response);
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Learn GET error:", err);
+    log.apiFailure({ route: "/api/learn", method: "GET", error: err.message || String(err), userId: auth?.user?.id });
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
@@ -377,13 +542,37 @@ export async function GET(req: Request) {
 // ── POST ──────────────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
+  let auth: any = null;
   try {
-    const auth = await authenticateRequest(req);
+    // Apply rate limiting for AI-powered endpoint
+    const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
+    if (rateLimitCheck) return rateLimitCheck;
+
+    auth = await authenticateRequest(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { supabase, user } = auth;
     const body = await req.json();
     const { type, subject, topic, difficulty, goal, level } = body;
+
+    // Validate request body based on type
+    if (type === "course_preview") {
+      const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema);
+      if (!validation.success) {
+        return NextResponse.json({ 
+          error: 'Validation failed', 
+          details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        }, { status: 400 });
+      }
+    } else if (type === "generate_lesson") {
+      const validation = validateRequestBody({ subject, topic, difficulty }, learnGenerateLessonSchema);
+      if (!validation.success) {
+        return NextResponse.json({ 
+          error: 'Validation failed', 
+          details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+        }, { status: 400 });
+      }
+    }
 
     // Support creating a single lesson or generating a full course
     if (type === "course_preview") {
@@ -395,8 +584,9 @@ export async function POST(req: Request) {
         const draft = await generateCourseDraft(token, { topic, goal, level });
 
         return NextResponse.json({ success: true, draft });
-      } catch (e) {
+      } catch (e: any) {
         console.error('[learn] course preview error:', e);
+        log.cortexFailure({ userId: user.id, stage: "course_preview", error: e.message || String(e) });
         return NextResponse.json({ error: 'Course preview failed' }, { status: 500 });
       }
     }
@@ -410,8 +600,9 @@ export async function POST(req: Request) {
         const { generateCourseForUser } = await import('@/lib/cortex/generateCourse');
         const result = await generateCourseForUser(token, { topic, goal, level });
         return NextResponse.json({ success: true, course: result });
-      } catch (e) {
+      } catch (e: any) {
         console.error('[learn] course generation error:', e);
+        log.cortexFailure({ userId: user.id, stage: "course_generation", error: e.message || String(e) });
         return NextResponse.json({ error: 'Course generation failed' }, { status: 500 });
       }
     }
@@ -504,9 +695,16 @@ export async function POST(req: Request) {
     const validDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
 
     const prompt = buildLessonPrompt(subject, topic, validDifficulty);
-    const raw    = await callAI(prompt);
+    const raw    = await callAI(prompt, 2000, user.id, 'generate_lesson');
 
     if (!raw) {
+      log.lessonGenerationFailed({
+        userId: user.id,
+        subject,
+        topic,
+        difficulty: validDifficulty,
+        error: "All AI providers exhausted",
+      });
       return NextResponse.json({
         title:  `${topic} — Lesson Unavailable`,
         blocks: [{ type: "text", content: "All AI providers are currently unavailable. Please try again in a moment." }],
@@ -516,6 +714,13 @@ export async function POST(req: Request) {
     const parsed = safeParseJSON(raw);
 
     if (!parsed?.blocks?.length) {
+      log.lessonGenerationFailed({
+        userId: user.id,
+        subject,
+        topic,
+        difficulty: validDifficulty,
+        error: `AI returned invalid JSON: ${raw.slice(0, 300)}`,
+      });
       return NextResponse.json({
         title:  topic,
         blocks: [{ type: "text", content: "The AI returned content that couldn't be parsed. Please try again or rephrase the topic." }],
@@ -549,6 +754,13 @@ export async function POST(req: Request) {
 
       if (insertError) {
         console.error("Failed to save lesson:", insertError);
+        log.lessonGenerationFailed({
+          userId: user.id,
+          subject,
+          topic,
+          difficulty: validDifficulty,
+          error: `Failed to save generated lesson to DB: ${insertError.message}`,
+        });
       } else {
         savedId = inserted.id;
         // XP scales with difficulty
@@ -559,8 +771,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ id: savedId, title: parsed.title ?? topic, blocks: parsed.blocks });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Learn POST error:", err);
+    log.apiFailure({ route: "/api/learn", method: "POST", error: err.message || String(err), userId: auth?.user?.id });
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

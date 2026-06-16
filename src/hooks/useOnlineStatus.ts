@@ -38,6 +38,8 @@ export function useOnlineStatus() {
     const updateStatus = () => {
       // When browser reports online, verify with actual network ping
       if (navigator.onLine) {
+        // Set to true immediately during verification to prevent banner flash
+        setIsOnline(true);
         // Debounce verification to avoid rapid pings
         clearTimeout(verificationTimeout);
         verificationTimeout = setTimeout(verifyNetwork, 500);
@@ -60,5 +62,5 @@ export function useOnlineStatus() {
     };
   }, []);
 
-  return isOnline && !isVerifying;
+  return isOnline;
 }

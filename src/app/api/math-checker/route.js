@@ -2,15 +2,34 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { mathCheckerSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { logAIUsage } from "@/lib/ai/tracker";
 
 export async function POST(req) {
   try {
+    // Apply rate limiting for AI-powered endpoint
+    const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
+    if (rateLimitCheck) return rateLimitCheck;
+
     const formData = await req.formData();
     const imageFile = formData.get('image');
     const topic = formData.get('topic') || '';
     const subject = formData.get('subject') || '';
     const question = formData.get('question') || '';
     const userId = formData.get('userId') || '';
+
+    // Validate form data
+    const validation = validateRequestBody({ topic, subject, question, userId }, mathCheckerSchema);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ 
+        error: 'Validation failed', 
+        details: validation.details?.issues.map(e => ({ field: e.path.join('.'), message: e.message }))
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
 
     if (!imageFile) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
@@ -23,12 +42,11 @@ export async function POST(req) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
     let result = null;
+    let successfulModel = null;
 
     for (const modelName of models) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-
-        const prompt = `You are Cortex, a neutral mathematical analysis system inside Shadecode Student.
+      const startTime = Date.now();
+      const prompt = `You are Cortex, a neutral mathematical analysis system inside Shadecode Student.
 
 The student has just studied the topic: "${topic}" in ${subject || 'their subject'}.
 ${question ? `The specific question they are solving is: "${question}"` : 'They were asked to solve a problem on paper and show their full working.'}
@@ -53,6 +71,11 @@ Respond ONLY with valid JSON in this exact format, no other text:
 
 Be thorough. Analyse every visible step. If the working is incomplete or skips steps, note exactly which steps are missing.`;
 
+      const promptTokens = Math.ceil(prompt.length / 4); // Rough estimate
+
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+
         const response = await model.generateContent([
           prompt,
           { inlineData: { mimeType, data: base64 } },
@@ -63,8 +86,54 @@ Be thorough. Analyse every visible step. If the working is incomplete or skips s
         if (!jsonMatch) throw new Error('No JSON in response');
 
         result = JSON.parse(jsonMatch[0]);
+        successfulModel = modelName;
+        const latencyMs = Date.now() - startTime;
+        const completionTokens = Math.ceil(text.length / 4); // Rough estimate
+
+        // Log successful request
+        await logAIUsage({
+          userId,
+          feature: 'homework_helper',
+          subfeature: 'math_checker',
+          provider: 'gemini',
+          model: modelName,
+          promptTokens,
+          completionTokens,
+          latencyMs,
+          success: true,
+          requestMetadata: { 
+            topic, 
+            subject, 
+            hasQuestion: !!question,
+            imageSize: bytes.length 
+          },
+        });
+
         break;
       } catch (err) {
+        const latencyMs = Date.now() - startTime;
+        
+        // Log failed request
+        await logAIUsage({
+          userId,
+          feature: 'homework_helper',
+          subfeature: 'math_checker',
+          provider: 'gemini',
+          model: modelName,
+          promptTokens,
+          completionTokens: 0,
+          latencyMs,
+          success: false,
+          errorMessage: err.message,
+          errorCode: err.constructor.name,
+          requestMetadata: { 
+            topic, 
+            subject, 
+            hasQuestion: !!question,
+            imageSize: bytes.length 
+          },
+        });
+
         console.error(`Model ${modelName} failed:`, err.message);
         continue;
       }

@@ -16,6 +16,7 @@ import {
   CortexBehaviorSummaryPayload,
   CortexStructuredValue,
 } from "@/lib/cortex/types";
+import { logAIUsage } from "@/lib/ai/tracker";
 
 const inflightRequests = new Map<string, Promise<CortexAIResponse>>();
 
@@ -118,49 +119,131 @@ function buildCacheKey<T extends CortexAIRequestType>(
   return createCortexCacheKey(`${requestType}:${normalizeUserId(payload.userId)}`, fingerprint);
 }
 
-async function requestGeminiInsight(summary: string) {
+async function requestGeminiInsight(summary: string, userId?: string) {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: buildBehaviorPrompt(summary),
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 120,
-          temperature: 0.2,
+  const startTime = Date.now();
+  const prompt = buildBehaviorPrompt(summary);
+  const promptTokens = Math.ceil(prompt.length / 4); // Rough estimate: 1 token ≈ 4 characters
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 120,
+            temperature: 0.2,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      const latencyMs = Date.now() - startTime;
+      
+      // Log failed request
+      await logAIUsage({
+        userId,
+        feature: 'cortex',
+        subfeature: 'behavior_insight',
+        provider: 'gemini',
+        model: 'gemini-2.5-flash',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: `Gemini request failed: ${response.status} ${errorBody}`,
+        errorCode: response.status.toString(),
+        requestMetadata: { promptLength: prompt.length },
+      });
+      
+      throw new Error(`Gemini request failed: ${response.status} ${errorBody}`);
     }
-  );
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Gemini request failed: ${response.status} ${errorBody}`);
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (typeof text !== "string" || !text.trim()) {
+      const latencyMs = Date.now() - startTime;
+      
+      // Log failed request
+      await logAIUsage({
+        userId,
+        feature: 'cortex',
+        subfeature: 'behavior_insight',
+        provider: 'gemini',
+        model: 'gemini-2.5-flash',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: 'Gemini returned an empty Cortex response',
+        errorCode: 'EMPTY_RESPONSE',
+        requestMetadata: { promptLength: prompt.length },
+      });
+      
+      throw new Error("Gemini returned an empty Cortex response.");
+    }
+
+    const latencyMs = Date.now() - startTime;
+    const completionTokens = Math.ceil(text.length / 4); // Rough estimate
+
+    // Log successful request
+    await logAIUsage({
+      userId,
+      feature: 'cortex',
+      subfeature: 'behavior_insight',
+      provider: 'gemini',
+      model: 'gemini-2.5-flash',
+      promptTokens,
+      completionTokens,
+      latencyMs,
+      success: true,
+      requestMetadata: { promptLength: prompt.length, responseLength: text.length },
+      responseMetadata: { model: data.modelVersion },
+    });
+
+    return extractInsightFromJson(text);
+  } catch (error: unknown) {
+    const latencyMs = Date.now() - startTime;
+    
+    // Log error if not already logged above
+    if (!(error instanceof Error && (error.message.includes('Gemini request failed') || error.message.includes('empty Cortex response')))) {
+      await logAIUsage({
+        userId,
+        feature: 'cortex',
+        subfeature: 'behavior_insight',
+        provider: 'gemini',
+        model: 'gemini-2.5-flash',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorCode: error instanceof Error ? error.constructor.name : 'UNKNOWN',
+        requestMetadata: { promptLength: prompt.length },
+      });
+    }
+    
+    throw error;
   }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (typeof text !== "string" || !text.trim()) {
-    throw new Error("Gemini returned an empty Cortex response.");
-  }
-
-  return extractInsightFromJson(text);
 }
 
 async function executeBehaviorInsight(
@@ -190,7 +273,8 @@ async function executeBehaviorInsight(
   }
 
   const remoteInsight = await requestGeminiInsight(
-    buildBehaviorSummary(payload.snapshot, payload.events ?? [])
+    buildBehaviorSummary(payload.snapshot, payload.events ?? []),
+    payload.userId
   );
 
   const result: CortexAIResponse<"behavior.insight"> = {
@@ -213,7 +297,10 @@ async function executeBehaviorSummary(
   fingerprint: string,
   cacheKey: string
 ): Promise<CortexAIResponse<"behavior.summary">> {
-  const remoteInsight = await requestGeminiInsight(payload.behaviorSummary.trim());
+  const remoteInsight = await requestGeminiInsight(
+    payload.behaviorSummary.trim(),
+    payload.userId
+  );
 
   const result: CortexAIResponse<"behavior.summary"> = {
     requestType: "behavior.summary",

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { learnQuizSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -127,6 +129,10 @@ function safeParseJSON(raw: string) {
 
 export async function POST(req: Request) {
   try {
+    // Apply rate limiting for AI-powered endpoint
+    const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
+    if (rateLimitCheck) return rateLimitCheck;
+
     const token = getBearerToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -134,8 +140,18 @@ export async function POST(req: Request) {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { lessonId } = await req.json();
-    if (!lessonId) return NextResponse.json({ error: "Missing lessonId" }, { status: 400 });
+    const body = await req.json();
+    
+    // Validate request body
+    const validation = validateRequestBody(body, learnQuizSchema);
+    if (!validation.success || !validation.data) {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message }))
+      }, { status: 400 });
+    }
+
+    const { lessonId } = validation.data;
 
     const { data: lesson, error: lessonErr } = await supabase
       .from("learn_lessons")

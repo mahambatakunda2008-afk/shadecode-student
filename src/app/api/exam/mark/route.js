@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
 import { emitExamCompleted } from "@/lib/events";
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { logAIUsage } from "@/lib/ai/tracker";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -8,9 +11,12 @@ const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
    AI CALL PIPELINE (ROBUST FALLBACK CHAIN)
 ───────────────────────────────────────────── */
 
-async function callAI(prompt) {
+async function callAI(prompt, userId) {
+  const promptTokens = Math.ceil(prompt.length / 4);
+
   /* 1. Cloudflare */
   if (process.env.CLOUDFLARE_API_TOKEN) {
+    const startTime = Date.now();
     try {
       const res = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
@@ -29,14 +35,50 @@ async function callAI(prompt) {
 
       const data = await res.json();
       const text = data?.result?.response;
-      if (text) return text;
+      if (text) {
+        const latencyMs = Date.now() - startTime;
+        const completionTokens = Math.ceil(text.length / 4);
+        
+        await logAIUsage({
+          userId,
+          feature: 'exam_sim',
+          subfeature: 'mark_exam',
+          provider: 'cloudflare',
+          model: 'llama-3.3-70b-instruct-fp8-fast',
+          promptTokens,
+          completionTokens,
+          latencyMs,
+          success: true,
+          requestMetadata: { promptLength: prompt.length, maxTokens: 3000 },
+        });
+        
+        return text;
+      }
     } catch (err) {
+      const latencyMs = Date.now() - startTime;
+      
+      await logAIUsage({
+        userId,
+        feature: 'exam_sim',
+        subfeature: 'mark_exam',
+        provider: 'cloudflare',
+        model: 'llama-3.3-70b-instruct-fp8-fast',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: err.message,
+        errorCode: err.constructor.name,
+        requestMetadata: { promptLength: prompt.length, maxTokens: 3000 },
+      });
+      
       console.error("Cloudflare failed:", err);
     }
   }
 
   /* 2. OpenAI */
   if (process.env.OPENAI_API_KEY) {
+    const startTime = Date.now();
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -53,8 +95,44 @@ async function callAI(prompt) {
       });
 
       const data = await res.json();
-      return data?.choices?.[0]?.message?.content || null;
+      const text = data?.choices?.[0]?.message?.content;
+      if (text) {
+        const latencyMs = Date.now() - startTime;
+        const completionTokens = Math.ceil(text.length / 4);
+        
+        await logAIUsage({
+          userId,
+          feature: 'exam_sim',
+          subfeature: 'mark_exam',
+          provider: 'openai',
+          model: 'gpt-4o-mini',
+          promptTokens,
+          completionTokens,
+          latencyMs,
+          success: true,
+          requestMetadata: { promptLength: prompt.length, maxTokens: 3000 },
+        });
+        
+        return text;
+      }
     } catch (err) {
+      const latencyMs = Date.now() - startTime;
+      
+      await logAIUsage({
+        userId,
+        feature: 'exam_sim',
+        subfeature: 'mark_exam',
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        promptTokens,
+        completionTokens: 0,
+        latencyMs,
+        success: false,
+        errorMessage: err.message,
+        errorCode: err.constructor.name,
+        requestMetadata: { promptLength: prompt.length, maxTokens: 3000 },
+      });
+      
       console.error("OpenAI failed:", err);
     }
   }
@@ -68,6 +146,7 @@ async function callAI(prompt) {
 
   for (const key of geminiKeys) {
     for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+      const startTime = Date.now();
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -82,8 +161,43 @@ async function callAI(prompt) {
 
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
+        if (text) {
+          const latencyMs = Date.now() - startTime;
+          const completionTokens = Math.ceil(text.length / 4);
+          
+          await logAIUsage({
+            userId,
+            feature: 'exam_sim',
+            subfeature: 'mark_exam',
+            provider: 'gemini',
+            model,
+            promptTokens,
+            completionTokens,
+            latencyMs,
+            success: true,
+            requestMetadata: { promptLength: prompt.length, maxTokens: 3000 },
+          });
+          
+          return text;
+        }
       } catch (err) {
+        const latencyMs = Date.now() - startTime;
+        
+        await logAIUsage({
+          userId,
+          feature: 'exam_sim',
+          subfeature: 'mark_exam',
+          provider: 'gemini',
+          model,
+          promptTokens,
+          completionTokens: 0,
+          latencyMs,
+          success: false,
+          errorMessage: err.message,
+          errorCode: err.constructor.name,
+          requestMetadata: { promptLength: prompt.length, maxTokens: 3000 },
+        });
+        
         console.error(`Gemini ${model} failed:`, err);
       }
     }
@@ -112,6 +226,24 @@ function getGrade(p) {
 
 export async function POST(req) {
   try {
+    // Apply rate limiting for AI-powered endpoint
+    const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
+    if (rateLimitCheck) return rateLimitCheck;
+
+    const body = await req.json();
+    
+    // Validate request body
+    const validation = validateRequestBody(body, examMarkSchema);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ 
+        error: 'Validation failed', 
+        details: validation.details?.issues.map(e => ({ field: e.path.join('.'), message: e.message }))
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+
     const {
       subject,
       difficulty,
@@ -119,7 +251,7 @@ export async function POST(req) {
       answers,
       timeTaken,
       userId,
-    } = await req.json();
+    } = validation.data;
 
     if (!subject || !questions || !answers) {
       return NextResponse.json(
@@ -185,7 +317,7 @@ ${qaText}
        CALL AI
     ───────────────────────────── */
 
-    const text = await callAI(prompt);
+    const text = await callAI(prompt, userId);
 
     if (!text) {
       return NextResponse.json(
