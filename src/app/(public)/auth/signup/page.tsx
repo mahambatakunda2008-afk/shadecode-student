@@ -27,13 +27,24 @@ export default function SignUp() {
     }
 
     if (data.user) {
-      await supabase.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").insert({
         id: data.user.id,
         username,
         level: 1,
         xp: 0,
         streak: 0,
       });
+
+      if (profileError) {
+        setError(profileError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Set a temporary flag to indicate user is in onboarding flow
+      // This prevents redirect loops and helps middleware understand user state
+      document.cookie = "onboarding_started=1; path=/; max-age=3600";
+      
       router.push("/onboarding");
     }
 

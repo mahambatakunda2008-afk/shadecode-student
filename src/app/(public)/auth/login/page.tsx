@@ -25,7 +25,22 @@ export default function Login() {
       return;
     }
 
-    router.push("/dashboard");
+    // Check if user has completed onboarding before redirecting
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    const onboardingComplete = profile?.onboarding_completed === true;
+
+    // Redirect to appropriate destination based on onboarding status
+    if (onboardingComplete) {
+      router.push("/dashboard");
+    } else {
+      router.push("/onboarding");
+    }
+
     setLoading(false);
   };
 

@@ -1,34 +1,36 @@
-"use client";
-
-import React, { useEffect, useMemo, useState } from "react";
-import { CATALOG, type Course, type CourseCategory } from "@/lib/catalog";
-import ProgressBar from "@/components/ProgressBar";
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
+// src/components/CourseCatalog.tsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { CATALOG, type Course, type CourseCategory } from '@/lib/catalog';
+import ProgressBar from '@/components/ProgressBar';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import { Box, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 export default function CourseCatalog() {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<"all" | CourseCategory | "all">("all");
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<'all' | CourseCategory>('all');
   const [enrolled, setEnrolled] = useState<Record<string, boolean>>({});
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [loadingProgress, setLoadingProgress] = useState(false);
+  const [previewCourse, setPreviewCourse] = useState<Course | null>(null);
 
-  // Load enrolled set from localStorage (fallback) and from server when authenticated
+  // Load enrolled from localStorage
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("catalog.enrolled");
+      const raw = localStorage.getItem('catalog.enrolled');
       if (raw) setEnrolled(JSON.parse(raw));
     } catch {}
   }, []);
 
-  // Sync to localStorage
+  // Sync enrolled to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem("catalog.enrolled", JSON.stringify(enrolled));
+      localStorage.setItem('catalog.enrolled', JSON.stringify(enrolled));
     } catch {}
   }, [enrolled]);
 
-  // Load server enrollments if authenticated and also fetch learn progress
+  // Load server enrollments and progress
   useEffect(() => {
     let mounted = true;
     async function load() {
@@ -42,41 +44,45 @@ export default function CourseCatalog() {
           return;
         }
         const token = session.access_token;
-
-        // Fetch enrollments from server
+        // Enrollments
         try {
           const er = await fetch('/api/catalog/enroll');
           if (er.ok) {
             const ed = await er.json();
-            if (mounted && ed?.enrolled) setEnrolled((prev) => ({ ...prev, ...Object.fromEntries(ed.enrolled.map((id: string) => [id, true])) }));
+            if (mounted && ed?.enrolled) {
+              setEnrolled(prev => ({ ...prev, ...Object.fromEntries(ed.enrolled.map((id: string) => [id, true])) }));
+            }
           }
-        } catch (e) { /* ignore */ }
-
-        // Fetch lessons/progress
-        const r = await fetch("/api/learn", { headers: { Authorization: `Bearer ${token}` } });
-        if (!r.ok) { setProgressMap({}); setLoadingProgress(false); return; }
+        } catch {}
+        // Progress
+        const r = await fetch('/api/learn', { headers: { Authorization: `Bearer ${token}` } });
+        if (!r.ok) {
+          setProgressMap({});
+          setLoadingProgress(false);
+          return;
+        }
         const d = await r.json();
         const lessons = d.lessons ?? [];
-        // compute avg progress per subject title
         const bySubject: Record<string, { sum: number; count: number }> = {};
         for (const l of lessons) {
-          const subj = l.subject ?? l.subjectId ?? "Unknown";
+          const subj = l.subject ?? l.subjectId ?? 'Unknown';
           bySubject[subj] = bySubject[subj] ?? { sum: 0, count: 0 };
-          bySubject[subj].sum += (l.progress ?? 0);
+          bySubject[subj].sum += l.progress ?? 0;
           bySubject[subj].count += 1;
         }
         const map: Record<string, number> = {};
         for (const c of CATALOG) {
-          // match by exact title ↔ subject name (best-effort)
-          const s = Object.keys(bySubject).find((k) => k.toLowerCase() === c.title.toLowerCase());
-          if (s) {
-            map[c.id] = Math.round(bySubject[s].sum / Math.max(1, bySubject[s].count));
+          const match = Object.keys(bySubject).find(k => k.toLowerCase() === c.title.toLowerCase());
+          if (match) {
+            map[c.id] = Math.round(bySubject[match].sum / Math.max(1, bySubject[match].count));
           }
         }
         if (mounted) setProgressMap(map);
       } catch (e) {
-        console.error("Failed to load progress:", e);
-      } finally { if (mounted) setLoadingProgress(false); }
+        console.error('Failed to load progress:', e);
+      } finally {
+        if (mounted) setLoadingProgress(false);
+      }
     }
     load();
     return () => { mounted = false; };
@@ -84,12 +90,12 @@ export default function CourseCatalog() {
 
   const categories = useMemo(() => {
     const set = new Set<CourseCategory>(CATALOG.map(c => c.category));
-    return ["all", ...Array.from(set)] as ("all" | CourseCategory)[];
+    return ['all', ...Array.from(set)] as ('all' | CourseCategory)[];
   }, []);
 
   const filtered = useMemo(() => {
-    return CATALOG.filter((c) => {
-      if (category !== "all" && c.category !== category) return false;
+    return CATALOG.filter(c => {
+      if (category !== 'all' && c.category !== category) return false;
       if (!query) return true;
       const q = query.toLowerCase();
       return c.title.toLowerCase().includes(q) || c.shortDescription.toLowerCase().includes(q);
@@ -97,15 +103,11 @@ export default function CourseCatalog() {
   }, [query, category]);
 
   async function toggleEnroll(id: string) {
-    // optimistic local update
-    setEnrolled((prev) => ({ ...prev, [id]: !prev[id] }));
-
-    // if authenticated, persist to server
+    setEnrolled(prev => ({ ...prev, [id]: !prev[id] }));
     try {
       const sb = createClient();
       const { data: { session } } = await sb.auth.getSession();
       if (!session) return;
-
       const token = session.access_token;
       const res = await fetch('/api/catalog/enroll', {
         method: 'POST',
@@ -115,83 +117,74 @@ export default function CourseCatalog() {
       if (res.ok) {
         const j = await res.json();
         const setObj = Object.fromEntries((j.enrolled ?? []).map((c: string) => [c, true]));
-        setEnrolled((prev) => ({ ...prev, ...setObj }));
+        setEnrolled(prev => ({ ...prev, ...setObj }));
       }
-    } catch (e) {
-      // ignore server errors, keep local state
-    }
+    } catch {}
   }
 
-  const [previewCourse, setPreviewCourse] = useState<Course | null>(null);
-
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <div className="flex gap-3 mb-4">
-        <input aria-label="Search courses" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search courses" className="flex-1 px-3 py-2 rounded border bg-background" />
-        <select value={category} onChange={(e) => setCategory(e.target.value as any)} className="px-3 py-2 rounded border bg-background">
-          {categories.map((cat) => (
-            <option key={String(cat)} value={String(cat)}>{String(cat)}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {filtered.map((course) => (
-          <div key={course.id} className="p-3 bg-card rounded-lg border border-card-border">
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold">{course.title}</h4>
-                  <span className="text-xs text-muted-foreground">{course.category}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{course.shortDescription}</p>
-
-                <div className="mt-3">
-                  <div className="text-xs text-muted-foreground">Progress</div>
-                  <div className="mt-1">
-                    <ProgressBar value={progressMap[course.id] ?? 0} max={100} />
-                    <div className="text-xs mt-1">{loadingProgress ? "Loading..." : `${progressMap[course.id] ?? 0}%`}</div>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" variant={enrolled[course.id] ? "outline" : "default"} onClick={() => toggleEnroll(course.id)}>
-                    {enrolled[course.id] ? "Enrolled" : "Enroll"}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setPreviewCourse(course)}>
-                    Preview
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+    <Box sx={{ p: 2, maxWidth: 'lg', mx: 'auto' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <TextField label="Search courses" value={query} onChange={e => setQuery(e.target.value)} size="small" fullWidth />
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel id="category-label">Category</InputLabel>
+          <Select labelId="category-label" value={category} label="Category" onChange={e => setCategory(e.target.value as any)}>
+            {categories.map(cat => (
+              <MenuItem key={String(cat)} value={String(cat)}>{String(cat)}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <Grid container spacing={2}>
+        {filtered.map(course => (
+          <Grid item xs={12} sm={6} key={course.id}>
+            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, border: 1, borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="subtitle1" fontWeight="medium">{course.title}</Typography>
+                <Typography variant="caption" color="text.secondary">{course.category}</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{course.shortDescription}</Typography>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="caption" color="text.secondary">Progress</Typography>
+                <ProgressBar value={progressMap[course.id] ?? 0} max={100} />
+                <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>
+                  {loadingProgress ? 'Loading...' : `${progressMap[course.id] ?? 0}%`}
+                </Typography>
+              </Box>
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Button size="sm" variant={enrolled[course.id] ? 'outline' : 'default'} onClick={() => toggleEnroll(course.id)}>
+                  {enrolled[course.id] ? 'Enrolled' : 'Enroll'}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setPreviewCourse(course)}>
+                  Preview
+                </Button>
+              </Box>
+            </Box>
+          </Grid>
         ))}
-      </div>
-
-      {/* Preview modal */}
-      {previewCourse && (
-        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)' }} onClick={() => setPreviewCourse(null)} />
-          <div style={{ background: 'var(--background)', padding: 16, borderRadius: 8, width: '90%', maxWidth: 640, zIndex: 70 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0 }}>{previewCourse.title}</h3>
-              <button onClick={() => setPreviewCourse(null)} style={{ border: 'none', background: 'none', color: 'var(--muted-foreground)' }}>Close</button>
-            </div>
-            <p style={{ color: 'var(--muted-foreground)' }}>{previewCourse.shortDescription}</p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <div>Lessons: {previewCourse.lessons}</div>
-              <div>XP est: {previewCourse.xpEstimate ?? 0}</div>
-              <div>Category: {previewCourse.category}</div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <Button size="sm" variant={enrolled[previewCourse.id] ? 'outline' : 'default'} onClick={() => toggleEnroll(previewCourse.id)}>
-                {enrolled[previewCourse.id] ? 'Enrolled' : 'Enroll'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
+      </Grid>
+      {/* Preview Dialog */}
+      <Dialog open={!!previewCourse} onClose={() => setPreviewCourse(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {previewCourse?.title}
+          <IconButton edge="end" onClick={() => setPreviewCourse(null)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" gutterBottom>{previewCourse?.shortDescription}</Typography>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Typography variant="caption">Lessons: {previewCourse?.lessons}</Typography>
+            <Typography variant="caption">XP est: {previewCourse?.xpEstimate ?? 0}</Typography>
+            <Typography variant="caption">Category: {previewCourse?.category}</Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button size="sm" variant={previewCourse && enrolled[previewCourse.id] ? 'outline' : 'default'} onClick={() => previewCourse && toggleEnroll(previewCourse.id)}>
+            {previewCourse && enrolled[previewCourse.id] ? 'Enrolled' : 'Enroll'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

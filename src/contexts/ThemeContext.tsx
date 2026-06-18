@@ -1,33 +1,36 @@
 // src/contexts/ThemeContext.tsx
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
 
-interface ThemeContextProps {
+export interface ThemeContextProps {
   darkMode: boolean;
   toggleDarkMode: () => void;
 }
 
 export const ThemeContext = createContext<ThemeContextProps>({
   darkMode: false,
-  toggleDarkMode: () => {}
+  toggleDarkMode: () => {},
 });
 
-export const ThemeContextProvider = ({ children }: { children: ReactNode }) => {
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
-  // Initialize from local storage or system preference
+  // Initialize from cookie or system preference
   useEffect(() => {
-    const stored = localStorage.getItem('darkMode');
-    if (stored !== null) {
-      setDarkMode(stored === 'true');
+    const cookie = Cookies.get('darkMode');
+    if (cookie !== undefined) {
+      setDarkMode(cookie === 'true');
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setDarkMode(prefersDark);
     }
   }, []);
 
-  // Sync with localStorage and html class
+  // Sync to localStorage and cookie
   useEffect(() => {
     localStorage.setItem('darkMode', String(darkMode));
+    Cookies.set('darkMode', String(darkMode), { expires: 365 });
+    
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {

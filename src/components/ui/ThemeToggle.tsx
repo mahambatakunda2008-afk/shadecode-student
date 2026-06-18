@@ -1,4 +1,8 @@
+// src/components/ui/ThemeToggle.tsx
 import { useEffect, useState } from 'react';
+import { IconButton } from '@mui/material';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
 
 export const ThemeToggle = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -25,12 +29,8 @@ export const ThemeToggle = () => {
   };
 
   return (
-    <button
-      onClick={toggle}
-      className="p-2 rounded-md hover:bg-muted transition-colors"
-      aria-label="Toggle dark mode"
-    >
-      {theme === 'light' ? '🌙' : '☀️'}
-    </button>
+    <IconButton onClick={toggle} aria-label="Toggle dark mode" size="large">
+      {theme === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+    </IconButton>
   );
 };

@@ -139,14 +139,10 @@ async function networkFirstStrategy(request, isLowBandwidth = false) {
       return cachedResponse;
     }
     
-    // Return offline shell if no cache
-    return new Response('Offline - No cached content available', {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: new Headers({
-        'Content-Type': 'text/plain',
-      }),
-    });
+    // Don't return a custom 503 response - let the error propagate naturally
+    // This prevents false offline detection by the useOnlineStatus hook
+    // The browser will handle the network error appropriately
+    throw error;
   }
 }
 

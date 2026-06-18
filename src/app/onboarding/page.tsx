@@ -10,7 +10,15 @@ import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
  */
 export default async function OnboardingPage() {
   const jar = await cookies();
-  if (jar.get('onboarding_complete')?.value === '1') redirect('/dashboard');
+  
+  // Check if onboarding is complete
+  if (jar.get('onboarding_complete')?.value === '1') {
+    console.log('[OnboardingPage] User already completed onboarding, redirecting to dashboard');
+    redirect('/dashboard');
+  }
 
+  // Log onboarding page access for debugging
+  console.log('[OnboardingPage] User accessing onboarding page');
+  
   return <OnboardingFlow />;
 }

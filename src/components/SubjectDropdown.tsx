@@ -1,3 +1,6 @@
+import React from 'react';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+
 interface SubjectDropdownProps {
   subjects: string[];
   selected: string;
@@ -6,14 +9,21 @@ interface SubjectDropdownProps {
 
 export default function SubjectDropdown({ subjects, selected, onSelect }: SubjectDropdownProps) {
   return (
-    <select
-      className="bg-gray-700 p-2 rounded w-full"
-      value={selected}
-      onChange={(e) => onSelect(e.target.value)}
-    >
-      {subjects.map((s) => (
-        <option key={s} value={s}>{s}</option>
-      ))}
-    </select>
+    <FormControl fullWidth variant="outlined" sx={{ mt: 1 }}>
+      <InputLabel id="subject-select-label">Subject</InputLabel>
+      <Select
+        labelId="subject-select-label"
+        value={selected}
+        label="Subject"
+        onChange={(e) => onSelect(e.target.value as string)}
+        sx={{ backgroundColor: 'background.paper' }}
+      >
+        {subjects.map((s) => (
+          <MenuItem key={s} value={s}>
+            {s}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
   );
 }

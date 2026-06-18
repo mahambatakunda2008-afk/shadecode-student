@@ -60,6 +60,7 @@ export function middleware(req: NextRequest): NextResponse {
 
   const authed             = hasSession(req);
   const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
+  const onboardingStarted  = req.cookies.get('onboarding_started')?.value === '1';
   const onOnboarding       = pathname.startsWith('/onboarding');
 
   // Not authenticated → login
@@ -71,9 +72,12 @@ export function middleware(req: NextRequest): NextResponse {
   }
 
   // Authenticated but onboarding pending → force into /onboarding
+  // Check for onboarding_started flag to prevent redirect loops
   if (!onboardingComplete && !onOnboarding) {
     const url = req.nextUrl.clone();
     url.pathname = '/onboarding';
+    // Add logging for debugging
+    console.log('[Middleware] Redirecting to onboarding:', pathname);
     return NextResponse.redirect(url);
   }
 
@@ -81,6 +85,7 @@ export function middleware(req: NextRequest): NextResponse {
   if (onboardingComplete && onOnboarding) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard';
+    console.log('[Middleware] Redirecting to dashboard (onboarding complete):', pathname);
     return NextResponse.redirect(url);
   }
 

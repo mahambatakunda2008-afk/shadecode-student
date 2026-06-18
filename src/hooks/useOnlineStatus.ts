@@ -25,11 +25,21 @@ export function useOnlineStatus() {
         if (response.ok) {
           setIsOnline(true);
         } else {
-          setIsOnline(false);
+          // Distinguish between network errors and HTTP errors
+          // HTTP errors (404, 500, etc.) don't mean we're offline
+          // Only actual network failures should trigger offline mode
+          // If we got a response (even an error one), we're online
+          setIsOnline(true);
         }
       } catch (error) {
-        // If ping fails, treat as offline
-        setIsOnline(false);
+        // Only treat actual network errors (no connection) as offline
+        // This catches TypeError for failed fetches, CORS issues, etc.
+        if (error instanceof TypeError) {
+          setIsOnline(false);
+        } else {
+          // Other errors might be server-side issues, not offline
+          setIsOnline(true);
+        }
       } finally {
         setIsVerifying(false);
       }

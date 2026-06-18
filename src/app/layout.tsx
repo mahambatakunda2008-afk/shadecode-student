@@ -1,7 +1,11 @@
 // src/app/layout.tsx
+//
+// Root layout — wraps the entire Next.js app. Keep this minimal. All auth/sidebar/provider logic lives in route group layouts:
+//   - (public)/layout.tsx → landing, auth pages
+//   - (app)/layout.tsx → main app
 
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -12,14 +16,9 @@ import Header from "@/components/ui/Header";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -73,7 +72,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${inter.variable} antialiased`}>
         <ThemeContextProvider>
           <MuiThemeProvider>
             <Header />
@@ -90,3 +89,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+

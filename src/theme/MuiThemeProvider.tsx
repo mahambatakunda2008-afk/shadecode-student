@@ -8,6 +8,8 @@ export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
+      primary: { main: '#6366f1' },
+      secondary: { main: '#f59e0b' },
     },
     // You can extend the theme here with custom colors if desired
   });
