@@ -56,7 +56,14 @@ export default function Login() {
   };
 
   return (
-    <div style={{ padding: "60px 24px 24px", display: "flex", flexDirection: "column", gap: "32px" }}>
+    <>
+      <style>{`
+        input::placeholder {
+          color: var(--muted-foreground);
+          opacity: 0.7;
+        }
+      `}</style>
+      <div style={{ padding: "60px 24px 24px", display: "flex", flexDirection: "column", gap: "32px" }}>
       <div>
         <p style={{ color: "var(--primary)", fontSize: "13px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase" }}>
           Shadecode Student
@@ -117,5 +124,6 @@ export default function Login() {
         </Link>
       </p>
     </div>
+    </>
   );
 }
