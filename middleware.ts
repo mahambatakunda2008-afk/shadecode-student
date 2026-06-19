@@ -66,7 +66,7 @@ export function middleware(req: NextRequest): NextResponse {
   // Not authenticated → login
   if (!authed) {
     const url = req.nextUrl.clone();
-    url.pathname = '/login';
+    url.pathname = '/auth/login';
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }

@@ -44,29 +44,6 @@
   --primary:          #6366f1;
   --primary-hover:    #4f52d4;
   --primary-glow:     rgba(99, 102, 241, 0.30);
-}
-
-  /* ── Colour palette ──────────────────────────────────────────── */
-  --background:       #0a0a0f;
-  --foreground:       #f0f0ff;
-  --card:             #12121a;
-  --card-border:      #1e1e2e;
-
-  --primary:          #6366f1;
-  --primary-hover:    #4f52d4;
-  --primary-glow:     rgba(99, 102, 241, 0.30);
-
-  --success:          #22c55e;
-  --success-glow:     rgba(34, 197, 94, 0.20);
-
-  --warning:          #f59e0b;
-  --warning-glow:     rgba(245, 158, 11, 0.20);
-
-  --danger:           #ef4444;
-  --danger-glow:      rgba(239, 68, 68, 0.20);
-
-  --muted:            #2a2a3a;
-  --muted-foreground: #888aaa;
 
   /* ── Spacing — 8px base grid ─────────────────────────────────── */
   --space-1:   4px;    /*  4 */
