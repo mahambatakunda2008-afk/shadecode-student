@@ -1,3 +1,5 @@
+"use client";
+
 // src/contexts/ThemeContext.tsx
 import React, { createContext, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
@@ -12,7 +14,8 @@ export const ThemeContext = createContext<ThemeContextProps>({
   toggleDarkMode: () => {},
 });
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+// Exported as ThemeContextProvider for consistency with imports
+export const ThemeContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
   // Initialize from cookie or system preference
@@ -30,7 +33,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('darkMode', String(darkMode));
     Cookies.set('darkMode', String(darkMode), { expires: 365 });
-    
+
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {

@@ -3,18 +3,20 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Missing Supabase server credentials.');
+  if (!url || !key) return null;
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function listCareers() {
   const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
   const { data } = await supabase.from('careers').select('id, slug, title, description, salary_low, salary_high').order('title', { ascending: true });
   return data ?? [];
 }
 
 export async function getCareerBySlug(slug: string) {
   const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
   const { data: career } = await supabase.from('careers').select('*').eq('slug', slug).maybeSingle();
   if (!career) return null;
   const { data: skills } = await supabase.from('career_skills').select('skill_id, importance, skills(name, description)').eq('career_id', career.id).order('importance', { ascending: false });

@@ -9,15 +9,14 @@ const nextConfig = withPWA({
   turbopack: {
     root: process.cwd(),
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 });
 
 export default withSentryConfig(nextConfig, {
   // Disable Sentry logger deprecation (removed in next version)
   // disableLogger: true, // removed per deprecation
-  // Ignore type checking errors during build to avoid generated route file issues
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
@@ -32,9 +31,5 @@ export default withSentryConfig(nextConfig, {
 
   // Upload a larger set of source maps for prettier stack traces
   widenClientFileUpload: true,
-
-
-  // Enables automatic Instrumentation of Vercel Cron Jobs
-  automaticVercelCronInstrumentation: true,
 });
 

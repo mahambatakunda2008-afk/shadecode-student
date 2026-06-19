@@ -1,3 +1,5 @@
+"use client";
+
 // src/components/CourseCatalog.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { CATALOG, type Course, type CourseCategory } from '@/lib/catalog';

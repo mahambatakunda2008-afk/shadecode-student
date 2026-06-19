@@ -1,6 +1,9 @@
+"use client";
+
 // src/theme/MuiThemeProvider.tsx
 import React, { ReactNode, useContext } from 'react';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeContext } from '@/contexts/ThemeContext';
 
 export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
