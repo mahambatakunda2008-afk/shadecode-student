@@ -83,7 +83,7 @@ export function OnboardingFlow() {
         }}>
           S
         </div>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted-foreground)' }}>
           Shadecode Student
         </span>
       </div>
