@@ -19,6 +19,7 @@ import type { NextRequest } from 'next/server';
 
 // ── Routes that bypass all checks ────────────────────────────────────────────
 const PUBLIC_PREFIXES = [
+  '/',              // Landing page
   '/auth',          // Auth pages (login, signup, etc.)
   '/api',           // Route handlers authenticate themselves and return JSON
   '/_next',
