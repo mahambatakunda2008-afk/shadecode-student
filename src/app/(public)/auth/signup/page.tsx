@@ -74,7 +74,7 @@ export default function SignUp() {
     border: "1px solid var(--card-border)",
     borderRadius: "10px",
     padding: "14px 16px",
-    color: "var(--foreground)",
+    color: "#e2e8f0",
     fontSize: "15px",
     outline: "none",
     caretColor: "var(--primary)",
