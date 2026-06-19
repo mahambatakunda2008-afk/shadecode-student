@@ -17,6 +17,18 @@ export default function Login() {
     setLoading(true);
     setError("");
 
+    // Client-side validation
+    if (!email.trim()) {
+      setError("Email is required");
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setError("Password is required");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
@@ -53,6 +65,7 @@ export default function Login() {
     color: "var(--foreground)",
     fontSize: "15px",
     outline: "none",
+    caretColor: "var(--primary)",
   };
 
   return (

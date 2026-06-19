@@ -18,6 +18,23 @@ export default function SignUp() {
     setLoading(true);
     setError("");
 
+    // Client-side validation
+    if (!username.trim()) {
+      setError("Username is required");
+      setLoading(false);
+      return;
+    }
+    if (!email.trim()) {
+      setError("Email is required");
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setError("Password is required");
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
@@ -60,6 +77,7 @@ export default function SignUp() {
     color: "var(--foreground)",
     fontSize: "15px",
     outline: "none",
+    caretColor: "var(--primary)",
   };
 
   return (
