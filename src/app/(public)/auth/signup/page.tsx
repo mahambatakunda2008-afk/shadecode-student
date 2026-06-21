@@ -44,13 +44,13 @@ export default function SignUp() {
     }
 
     if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         username,
         level: 1,
         xp: 0,
         streak: 0,
-      });
+      }, { onConflict: 'id' });
 
       if (profileError) {
         setError(profileError.message);
