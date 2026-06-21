@@ -29,7 +29,7 @@ const PUBLIC_PREFIXES = [
 ];
 
 function isPublic(path: string): boolean {
-  return PUBLIC_PREFIXES.some(p => path.startsWith(p));
+  return PUBLIC_PREFIXES.some(p => p === '/' ? path === '/' : path.startsWith(p));
 }
 
 // ── Auth check (edge-compatible, no DB) ───────────────────────────────────────
@@ -58,8 +58,15 @@ export function middleware(req: NextRequest): NextResponse {
 
   const authed             = hasSession(req);
   const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
-  const onboardingStarted  = req.cookies.get('onboarding_started')?.value === '1';
   const onOnboarding       = pathname.startsWith('/onboarding');
+
+  console.log({
+    route: pathname,
+    profileExists: undefined,
+    onboardingCompleted: onboardingComplete,
+    tourCompleted: undefined,
+    userId: undefined,
+  });
 
   // Not authenticated → login
   if (!authed) {

@@ -83,6 +83,26 @@ export default function LessonDetailPage() {
   const [currentUser,  setCurrentUser]  = useState<string>("");
   const [downloading,  setDownloading]  = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [autoSaving,   setAutoSaving]   = useState(false);
+  const [lastSavedProgress, setLastSavedProgress] = useState<number>(0);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close tutor modal
+      if (e.key === 'Escape' && showTutor) {
+        setShowTutor(false);
+      }
+      // Ctrl/Cmd + Enter to mark complete
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && lesson && !lesson.completed && !completing) {
+        e.preventDefault();
+        markComplete();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showTutor, lesson, completing]);
 
   useEffect(() => {
     (async () => {
@@ -96,6 +116,18 @@ export default function LessonDetailPage() {
         if (!r.ok) throw new Error();
         const d = await r.json();
         setLesson(d.lesson ?? null);
+        setLastSavedProgress(d.lesson?.progress ?? 0);
+
+        // Restore scroll position for incomplete lessons
+        if (d.lesson && !d.lesson.completed && d.lesson.progress > 0 && d.lesson.progress < 100) {
+          // Get saved scroll position from localStorage
+          const savedScroll = localStorage.getItem(`lesson_scroll_${lessonId}`);
+          if (savedScroll) {
+            setTimeout(() => {
+              window.scrollTo({ top: parseInt(savedScroll), behavior: 'smooth' });
+            }, 100);
+          }
+        }
       } catch { setError("Couldn't load this lesson."); }
       finally   { setLoading(false); }
     })();
@@ -116,6 +148,50 @@ export default function LessonDetailPage() {
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
   }, [currentUser]);
+
+  // Auto-save progress based on scroll position
+  useEffect(() => {
+    if (!lesson || lesson.completed || lesson.progress >= 100) return;
+
+    let saveTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = Math.min(100, Math.round((scrollTop / docHeight) * 100));
+      
+      // Save scroll position to localStorage for resume capability
+      localStorage.setItem(`lesson_scroll_${lessonId}`, String(scrollTop));
+      
+      // Only save if progress increased by at least 5%
+      if (scrollPercent > lastSavedProgress + 5) {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+          if (!accessToken || autoSaving) return;
+          setAutoSaving(true);
+          try {
+            const newProgress = Math.min(100, scrollPercent);
+            await fetch("/api/learn", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+              body: JSON.stringify({ lessonId: lesson.id, progress: newProgress }),
+            });
+            setLesson(prev => prev ? { ...prev, progress: newProgress } : prev);
+            setLastSavedProgress(newProgress);
+          } catch (error) {
+            console.error("Auto-save failed:", error);
+          } finally {
+            setAutoSaving(false);
+          }
+        }, 1000); // Debounce saves
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(saveTimeout);
+    };
+  }, [lesson, accessToken, lastSavedProgress, autoSaving, lessonId]);
 
   async function handleDownload() {
     if (!lesson || downloading) return;
@@ -243,7 +319,15 @@ export default function LessonDetailPage() {
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
                 <span style={{ fontSize: 12, color: "#475569" }}>Progress</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: lesson.completed ? "#34d399" : t.text }}>{lesson.progress}%</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {autoSaving && (
+                    <span style={{ fontSize: 10, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", border: "1px solid rgba(100,116,139,0.3)", borderTopColor: "#64748b", animation: "spin 0.8s linear infinite" }} />
+                      Saving...
+                    </span>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 600, color: lesson.completed ? "#34d399" : t.text }}>{lesson.progress}%</span>
+                </div>
               </div>
               <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${lesson.progress}%`, background: lesson.completed ? "linear-gradient(90deg, #10b981, #34d399)" : `linear-gradient(90deg, ${t.hex}, ${t.hex}88)`, borderRadius: 999, transition: "width .8s ease" }} />
@@ -267,12 +351,14 @@ export default function LessonDetailPage() {
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
               {/* Mark complete */}
               {lesson.completed ? (
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 16, fontSize: 14, fontWeight: 600, color: "#34d399" }}>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 16, fontSize: 14, fontWeight: 600, color: "#34d399" }} role="status" aria-label="Lesson completed">
                   <CheckCircle2 size={17} /> Completed · +{earnedXP} XP
                 </div>
               ) : (
                 <button onClick={markComplete} disabled={completing} className="complete-btn"
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: completing ? "rgba(52,211,153,0.06)" : "linear-gradient(135deg, rgba(16,185,129,0.25), rgba(52,211,153,0.15))", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 16, cursor: completing ? "not-allowed" : "pointer", color: "#34d399", fontSize: 14, fontWeight: 700, transition: "all .2s" }}>
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: completing ? "rgba(52,211,153,0.06)" : "linear-gradient(135deg, rgba(16,185,129,0.25), rgba(52,211,153,0.15))", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 16, cursor: completing ? "not-allowed" : "pointer", color: "#34d399", fontSize: 14, fontWeight: 700, transition: "all .2s" }}
+                  aria-label={`Mark lesson as complete and earn ${earnedXP} XP`}
+                  aria-disabled={completing}>
                   {completing ? (
                     <><div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(52,211,153,0.3)", borderTopColor: "#34d399", animation: "spin 0.8s linear infinite" }} />Saving…</>
                   ) : (
@@ -283,19 +369,25 @@ export default function LessonDetailPage() {
 
               {/* Take quiz */}
               <Link href={`/learn/${lessonId}/quiz`} className="quiz-btn"
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #2563eb)", border: "none", borderRadius: 16, color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "filter .15s", boxShadow: "0 0 20px rgba(109,40,217,0.3)" }}>
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #2563eb)", border: "none", borderRadius: 16, color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "filter .15s", boxShadow: "0 0 20px rgba(109,40,217,0.3)" }}
+                aria-label="Take quiz to test your knowledge">
                 <HelpCircle size={17} /> Test Yourself <ArrowRight size={14} />
               </Link>
 
               {/* Socratic Tutor */}
               <button onClick={() => setShowTutor(true)}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}>
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}
+                aria-label="Open Socratic Tutor to ask questions about this lesson"
+                aria-expanded={showTutor}
+                aria-controls="tutor-modal">
                 <MessageSquare size={17} /> Ask Tutor
               </button>
 
               {/* Download */}
               <button onClick={handleDownload} disabled={downloading}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: downloading ? "rgba(245,158,11,0.1)" : "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,146,60,0.15))", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 16, cursor: downloading ? "not-allowed" : "pointer", color: "#f59e0b", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}>
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: downloading ? "rgba(245,158,11,0.1)" : "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,146,60,0.15))", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 16, cursor: downloading ? "not-allowed" : "pointer", color: "#f59e0b", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}
+                aria-label={downloading ? `Downloading lesson content ${downloadProgress}% complete` : "Download lesson for offline access"}
+                aria-disabled={downloading}>
                 {downloading ? (
                   <><div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(245,158,11,0.3)", borderTopColor: "#f59e0b", animation: "spin 0.8s linear infinite" }} />{downloadProgress}%</>
                 ) : (

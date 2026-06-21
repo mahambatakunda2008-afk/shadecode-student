@@ -249,6 +249,7 @@ export interface SystemAdapter {
   getPerformance(userId: string): Promise<Partial<StudentPerformance>>;
   getActivity(userId: string): Promise<Partial<StudentActivity>>;
   getIntelligence(userId: string): Promise<Partial<StudentIntelligenceData>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   onEvent(event: any): Promise<void>;
 }
 

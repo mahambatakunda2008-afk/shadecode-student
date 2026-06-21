@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { setOnboardingComplete } from "@/lib/onboarding";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -38,16 +39,21 @@ export default function Login() {
     }
 
     // Check if user has completed onboarding before redirecting
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("onboarding_completed")
-      .eq("id", (await supabase.auth.getUser()).data.user?.id)
-      .single();
+      .eq("user_id", user?.id)
+      .maybeSingle();
 
     const onboardingComplete = profile?.onboarding_completed === true;
 
     // Redirect to appropriate destination based on onboarding status
     if (onboardingComplete) {
+      setOnboardingComplete();
       router.push("/dashboard");
     } else {
       router.push("/onboarding");

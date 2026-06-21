@@ -12,7 +12,6 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
 import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
-import Header from "@/components/ui/Header";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -75,7 +74,6 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <ThemeContextProvider>
           <MuiThemeProvider>
-            <Header />
             <BandwidthProvider>
               {children}
               <OfflineShell />
@@ -89,5 +87,4 @@ export default function RootLayout({
     </html>
   );
 }
-
 

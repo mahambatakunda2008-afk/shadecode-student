@@ -53,17 +53,26 @@ function calcStyle(rect: TourRect | null, pos: TourPosition): CSSProperties {
 }
 
 export function TourCard({ step, currentStep, totalSteps, targetRect, onNext, onPrev, onSkip, isLastStep }: Props) {
-  const [style,   setStyle]   = useState<CSSProperties>({});
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (saved) return saved;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return prefersDark ? 'dark' : 'light';
+  });
+  const [style, setStyle] = useState<CSSProperties>({});
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(false);
     const t = setTimeout(() => {
       setStyle(calcStyle(targetRect, step.position));
       setVisible(true);
     }, 80);
     return () => clearTimeout(t);
   }, [targetRect, step.position, currentStep]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   useEffect(() => {
     const refresh = () => setStyle(calcStyle(targetRect, step.position));

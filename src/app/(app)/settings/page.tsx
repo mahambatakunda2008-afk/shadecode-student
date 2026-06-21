@@ -1,8 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  LogOut,
+  MessageSquare,
+  Monitor,
+  Moon,
+  Save,
+  Shield,
+  Sparkles,
+  Sun,
+  UserRound,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useTheme, type ThemeMode } from "@/contexts/ThemeContext";
+import { ResetOnboarding } from "@/components/settings/ResetOnboarding";
 
 export default function Settings() {
   const [username, setUsername] = useState("");
@@ -10,14 +26,22 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [userId, setUserId] = useState("");
   const router = useRouter();
   const [supabase] = useState(() => createClient());
-  const [userId, setUserId] = useState("");
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/auth/login"); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/auth/login");
+        return;
+      }
+
       setUserId(user.id);
       setEmail(user.email || "");
 
@@ -30,6 +54,7 @@ export default function Settings() {
       setUsername(profile?.username || "");
       setLoading(false);
     };
+
     init();
   }, [router, supabase]);
 
@@ -41,13 +66,14 @@ export default function Settings() {
   const saveUsername = async () => {
     if (!username.trim()) return;
     setSaving(true);
+
     const { error } = await supabase
       .from("profiles")
       .update({ username: username.trim() })
       .eq("id", userId);
+
     setSaving(false);
-    if (!error) showToast("Username updated ✓");
-    else showToast("Failed to update username");
+    showToast(error ? "Failed to update username" : "Profile saved");
   };
 
   const handleSignOut = async () => {
@@ -55,148 +81,247 @@ export default function Settings() {
     router.push("/");
   };
 
-  const cardStyle = {
-    background: "var(--card)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "12px",
-    padding: "16px",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    background: "var(--muted)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    color: "var(--foreground)",
-    fontSize: "14px",
-    outline: "none",
-    boxSizing: "border-box" as const,
-  };
-
-  const primaryBtn = {
-    background: "var(--primary)",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    padding: "10px 16px",
-    fontWeight: 700,
-    fontSize: "14px",
-    cursor: "pointer",
-    boxShadow: "0 0 12px var(--primary-glow)",
-  };
-
-  if (loading) return (
-    <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--muted-foreground)" }}>
-      Loading...
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="ssc-page">
+        <div className="ssc-skeleton h-8 w-48" />
+        <div className="ssc-skeleton h-40 w-full" />
+        <div className="ssc-skeleton h-32 w-full" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-
+    <div className="ssc-page">
       {toast && (
-        <div style={{
-          position: "fixed", top: "24px", left: "50%", transform: "translateX(-50%)",
-          background: "var(--primary)", color: "white", padding: "10px 20px",
-          borderRadius: "99px", fontWeight: 700, fontSize: "14px", zIndex: 100,
-          boxShadow: "0 0 20px var(--primary-glow)",
-        }}>
+        <div className="fixed left-1/2 top-6 z-[10000] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] shadow-[var(--shadow-lg)]">
+          <Check size={16} className="text-[var(--accent)]" />
           {toast}
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <h1 style={{ fontSize: "28px", fontWeight: 800 }}>Settings</h1>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginTop: "4px" }}>
-          Manage your account
-        </p>
-      </div>
-
-      {/* Profile */}
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: "12px" }}>Profile</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div>
-            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "4px" }}>Username</p>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Your username"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "4px" }}>Email</p>
-            <input
-              value={email}
-              disabled
-              style={{ ...inputStyle, opacity: 0.5, cursor: "not-allowed" }}
-            />
-          </div>
-          <button onClick={saveUsername} disabled={saving} style={{ ...primaryBtn, opacity: saving ? 0.6 : 1 }}>
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+      <section className="ssc-page-header">
+        <div>
+          <p className="ssc-kicker">Control center</p>
+          <h1>Settings</h1>
+          <p className="ssc-subtitle">
+            Tune your account, appearance, onboarding, and feedback preferences.
+          </p>
         </div>
-      </div>
+        <button onClick={saveUsername} disabled={saving} className="ssc-button">
+          <Save size={18} />
+          {saving ? "Saving" : "Save profile"}
+        </button>
+      </section>
 
-      {/* About */}
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: "12px" }}>About</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {[
-            { label: "App", value: "Shadecode Student" },
-            { label: "Version", value: "1.0.0" },
-            { label: "Built by", value: "Takunda Mahamba" },
-            { label: "Studio", value: "Shadecode" },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--card-border)" }}>
-              <p style={{ fontSize: "14px", color: "var(--muted-foreground)" }}>{label}</p>
-              <p style={{ fontSize: "14px", fontWeight: 500 }}>{value}</p>
+      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="ssc-card p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]">
+              <UserRound size={22} />
             </div>
-          ))}
-        </div>
-      </div>
+            <div>
+              <h2 className="text-xl">Profile</h2>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                This is how Shadecode identifies your workspace.
+              </p>
+            </div>
+          </div>
 
-      {/* Feedback link */}
-      <div
-        onClick={() => router.push("/feedback")}
-        style={{
-          ...cardStyle,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "20px" }}>💬</span>
-          <div>
-            <p style={{ fontWeight: 600, fontSize: "14px" }}>Send Feedback</p>
-            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginTop: "2px" }}>Report bugs or suggest features</p>
+          <div className="grid gap-4">
+            <label className="grid gap-2">
+              <span className="ssc-label">Username</span>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Your username"
+                className="ssc-input"
+              />
+            </label>
+
+            <label className="grid gap-2">
+              <span className="ssc-label">Email</span>
+              <input value={email} disabled className="ssc-input" />
+            </label>
           </div>
         </div>
-        <span style={{ color: "var(--muted-foreground)" }}>→</span>
-      </div>
 
-      {/* Sign out */}
-      <button
-        onClick={handleSignOut}
-        style={{
-          background: "rgba(239,68,68,0.08)",
-          border: "1px solid rgba(239,68,68,0.2)",
-          borderRadius: "12px",
-          padding: "14px",
-          color: "#ef4444",
-          fontWeight: 700,
-          fontSize: "14px",
-          cursor: "pointer",
-          width: "100%",
-        }}
-      >
-        Sign Out
+        <div className="ssc-card p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <Sparkles size={22} />
+            </div>
+            <div>
+              <h2 className="text-xl">Appearance</h2>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                Theme applies globally across pages, modals, and overlays.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <ThemeChoice
+              label="Light"
+              description="Clean study canvas"
+              icon={<Sun size={20} />}
+              active={theme === "light"}
+              onClick={() => setTheme("light")}
+            />
+            <ThemeChoice
+              label="Dark"
+              description="Deep focus mode"
+              icon={<Moon size={20} />}
+              active={theme === "dark"}
+              onClick={() => setTheme("dark")}
+            />
+          </div>
+
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4">
+            <Monitor size={18} className="text-[var(--muted-foreground)]" />
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Current mode:{" "}
+              <span className="font-semibold text-[var(--foreground)]">
+                {theme === "dark" ? "Dark" : "Light"}
+              </span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <ActionCard
+          icon={<MessageSquare size={21} />}
+          title="Send feedback"
+          description="Report bugs or suggest improvements."
+          onClick={() => router.push("/feedback")}
+        />
+        <InfoCard
+          icon={<Shield size={21} />}
+          title="Workspace"
+          rows={[
+            ["App", "Shadecode Student"],
+            ["Version", "1.0.0"],
+            ["Studio", "Shadecode"],
+          ]}
+        />
+        <div className="ssc-card p-5">
+          <ResetOnboarding />
+        </div>
+      </section>
+
+      <button onClick={handleSignOut} className="ssc-button ssc-button-danger">
+        <LogOut size={18} />
+        Sign out
       </button>
+    </div>
+  );
+}
+
+function ThemeChoice({
+  label,
+  description,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="ssc-card-interactive flex min-h-[112px] flex-col items-start justify-between p-4 text-left"
+      style={{
+        borderColor: active
+          ? "color-mix(in srgb, var(--primary) 54%, var(--card-border))"
+          : "var(--card-border)",
+      }}
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-2)] text-[var(--primary)]">
+        {icon}
+      </span>
+      <span>
+        <span className="flex items-center gap-2 font-semibold">
+          {label}
+          {active && <Check size={15} className="text-[var(--accent)]" />}
+        </span>
+        <span className="mt-1 block text-xs text-[var(--muted-foreground)]">
+          {description}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ActionCard({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="ssc-card-interactive flex items-center justify-between p-5 text-left"
+    >
+      <span className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]">
+          {icon}
+        </span>
+        <span>
+          <span className="block font-semibold">{title}</span>
+          <span className="text-sm text-[var(--muted-foreground)]">
+            {description}
+          </span>
+        </span>
+      </span>
+      <ArrowRight size={18} className="text-[var(--muted-foreground)]" />
+    </button>
+  );
+}
+
+function InfoCard({
+  icon,
+  title,
+  rows,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  rows: Array<[string, string]>;
+}) {
+  return (
+    <div className="ssc-card p-5">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-2)] text-[var(--primary)]">
+          {icon}
+        </span>
+        <h2 className="text-lg">{title}</h2>
+      </div>
+      <div className="grid gap-2">
+        {rows.map(([label, value]) => (
+          <div
+            key={label}
+            className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-3 py-2"
+          >
+            <span className="text-sm text-[var(--muted-foreground)]">
+              {label}
+            </span>
+            <span className="flex items-center gap-1 text-sm font-semibold">
+              {value}
+              <ChevronRight size={14} className="text-[var(--muted-foreground)]" />
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

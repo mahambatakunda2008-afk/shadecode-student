@@ -9,6 +9,7 @@ import { GoalsStep }              from './steps/GoalsStep';
 import { ConfirmStep }            from './steps/ConfirmStep';
 import { StepGoalSelection }      from './steps/StepGoalSelection';
 import { mapOnboardingFormData }  from '@/lib/onboarding/mapFormData';
+import { setOnboardingComplete }  from '@/lib/onboarding';
 import type { OnboardingFormData } from '@/types';
 
 interface OnboardingRecommendations {
@@ -53,6 +54,7 @@ export function OnboardingFlow() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error ?? 'Failed');
+      setOnboardingComplete();
       // If recommendations returned, surface them briefly before redirect
       if (json?.recommendations) {
         setRecommendations(json.recommendations);

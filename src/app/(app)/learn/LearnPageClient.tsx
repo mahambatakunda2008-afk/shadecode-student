@@ -65,6 +65,16 @@ function ago(iso: string): string {
   return `${Math.floor(d / 30)}mo ago`;
 }
 
+function getGenerationStepText(step: number): string {
+  switch (step) {
+    case 1: return "Analyzing topic...";
+    case 2: return "Gathering content...";
+    case 3: return "Structuring lesson...";
+    case 4: return "Finalizing...";
+    default: return "Generating...";
+  }
+}
+
 /* ─────────────────────────────────────────
    COMPONENT
 ───────────────────────────────────────── */
@@ -86,6 +96,8 @@ export default function LearnPageClient() {
   const [generating, setGenerating] = useState(false);
   const [genErr,     setGenErr]     = useState<string | null>(null);
   const [savingRevision, setSavingRevision] = useState(false);
+  const [genStep,    setGenStep]    = useState(0);
+  const [genStartTime, setGenStartTime] = useState<number>(0);
 
   useEffect(() => {
     const s = searchParams.get("subject");
@@ -138,20 +150,34 @@ export default function LearnPageClient() {
     if (!subject || !topic.trim() || !token) return;
     setGenerating(true);
     setGenErr(null);
+    setGenStep(1);
+    setGenStartTime(Date.now());
+    
     try {
+      // Simulate step progression for better UX
+      setGenStep(1); // Analyzing topic
+      await new Promise(r => setTimeout(r, 500));
+      
+      setGenStep(2); // Gathering content
       const r = await fetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ type: "lesson", subject, topic: topic.trim(), difficulty }),
       });
+      
+      setGenStep(3); // Structuring lesson
       const d = await r.json();
 
       if (d?.id) {
+        setGenStep(4); // Finalizing
+        await new Promise(r => setTimeout(r, 300));
         router.push(`/learn/${d.id}`);
         return;
       }
 
       if (d?.title && Array.isArray(d?.blocks)) {
+        setGenStep(4); // Finalizing
+        await new Promise(r => setTimeout(r, 300));
         sessionStorage.setItem("unsaved_lesson", JSON.stringify({ ...d, subject }));
         await saveToRevision({ title: d.title, content: JSON.stringify(d.blocks), subject });
         router.push("/learn/preview");
@@ -163,6 +189,7 @@ export default function LearnPageClient() {
       setGenErr("Generation failed. Please try again.");
     } finally {
       setGenerating(false);
+      setGenStep(0);
     }
   }
 
@@ -351,7 +378,7 @@ export default function LearnPageClient() {
                 {generating ? (
                   <>
                     <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.7s linear infinite" }} />
-                    {savingRevision ? "Saving to revisions…" : "Generating…"}
+                    {savingRevision ? "Saving to revisions…" : getGenerationStepText(genStep)}
                   </>
                 ) : (
                   <>
@@ -359,6 +386,37 @@ export default function LearnPageClient() {
                   </>
                 )}
               </button>
+
+              {/* Generation progress steps */}
+              {generating && (
+                <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 12 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { step: 1, label: "Analyzing topic" },
+                      { step: 2, label: "Gathering content" },
+                      { step: 3, label: "Structuring lesson" },
+                      { step: 4, label: "Finalizing" },
+                    ].map(({ step, label }) => (
+                      <div key={step} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{
+                          width: 16, height: 16, borderRadius: "50%",
+                          background: genStep >= step ? "#8b5cf6" : "rgba(255,255,255,0.1)",
+                          border: genStep >= step ? "none" : "1px solid rgba(255,255,255,0.2)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "background .3s, border .3s"
+                        }}>
+                          {genStep > step && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />}
+                          {genStep === step && <div style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite" }} />}
+                        </div>
+                        <span style={{ fontSize: 12, color: genStep >= step ? "#e2e8f0" : "#475569", fontWeight: genStep === step ? 600 : 400 }}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 11, color: "#64748b" }}>
+                    Estimated time: ~10-15 seconds
+                  </div>
+                </div>
+              )}
 
               {/* Error */}
               {genErr && (

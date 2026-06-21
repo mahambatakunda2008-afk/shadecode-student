@@ -53,6 +53,13 @@ export default function AppLayout({
 
         // 🧭 ONBOARDING CHECK
         const onboarded = getOnboardingStatus();
+        console.log({
+          route: "(app)",
+          profileExists: undefined,
+          onboardingCompleted: onboarded,
+          tourCompleted: undefined,
+          userId: user.id,
+        });
 
         if (!onboarded) {
           router.replace("/onboarding");
@@ -96,7 +103,7 @@ export default function AppLayout({
 
   return (
     <UserProvider>
-      <div className="relative h-screen flex bg-[#0a0a10] text-white overflow-hidden">
+      <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
         {/* Desktop Sidebar Wrapper */}
         <aside className="hidden md:flex md:w-[240px] md:flex-shrink-0">
           <Sidebar />

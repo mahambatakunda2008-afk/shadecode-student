@@ -28,7 +28,8 @@ export interface Achievement {
   icon: string;
 }
 
-export interface RichAchievement extends Achievement {}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export type RichAchievement = Achievement;
 
 export interface UserStats {
   tasksCompleted: number;

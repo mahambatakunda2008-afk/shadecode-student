@@ -1,8 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  BookOpenCheck,
+  BrainCircuit,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardList,
+  Flame,
+  LineChart,
+  Loader2,
+  Sparkles,
+  Target,
+  Trophy,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { getStudentIntelligence } from "@/lib/student-intelligence";
 import { CircularProgress } from "./CircularProgress";
 
@@ -38,7 +54,8 @@ interface StudentIntelligenceData {
 }
 
 export default function NextActionDashboard() {
-  const [intelligence, setIntelligence] = useState<StudentIntelligenceData | null>(null);
+  const [intelligence, setIntelligence] =
+    useState<StudentIntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingAssessments, setUpcomingAssessments] = useState<any[]>([]);
@@ -49,7 +66,10 @@ export default function NextActionDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
         if (!user) {
           router.push("/auth/login");
           return;
@@ -87,14 +107,22 @@ export default function NextActionDashboard() {
     fetchData();
   }, [router, supabase]);
 
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
+  if (loading) return <DashboardSkeleton />;
 
   if (error || !intelligence) {
     return (
-      <div style={{ padding: "32px 24px" }}>
-        <p style={{ color: "var(--muted-foreground)" }}>Error loading dashboard: {error}</p>
+      <div className="ssc-page">
+        <div className="ssc-card flex items-center gap-4 p-5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--danger-soft)] text-[var(--danger)]">
+            <AlertTriangle size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl">Dashboard unavailable</h1>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              {error ?? "We could not load your learning intelligence."}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -105,308 +133,279 @@ export default function NextActionDashboard() {
   const topInsight = intel.insights[0];
 
   return (
-    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Header */}
-      <div>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "13px", marginBottom: "4px" }}>
-          Welcome back
-        </p>
-        <h1 style={{ fontSize: "32px", fontWeight: 800, margin: 0 }}>
-          What should I do next?
-        </h1>
-      </div>
-
-      {/* Primary Action Card */}
-      {topRecommendation && (
-        <PrimaryActionCard recommendation={topRecommendation} router={router} />
-      )}
-
-      {/* Stats Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-        <StatCard
-          label="Study Streak"
-          value={`${activity.streak.currentStreak} days`}
-          icon="🔥"
-          color="#fb923c"
-        />
-        <StatCard
-          label="Overall Progress"
-          value={`${progress.overallCompletion}%`}
-          icon="📊"
-          color="#6366f1"
-        />
-        <StatCard
-          label="Average Score"
-          value={`${Math.round(performance.trends.averageScore)}%`}
-          icon="📈"
-          color="#22c55e"
-        />
-        <StatCard
-          label="Weak Areas"
-          value={intel.weakAreas.length.toString()}
-          icon="⚠️"
-          color="#f59e0b"
-        />
-      </div>
-
-      {/* Exam Readiness Score */}
-      {intelligence.examReadiness && (
-        <SectionCard
-          title="Exam Readiness"
-          icon="🎯"
-          content={
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <CircularProgress
-                value={intelligence.examReadiness.overallScore}
-                max={100}
-                size={80}
-                color={intelligence.examReadiness.overallScore >= 70 ? "#22c55e" : intelligence.examReadiness.overallScore >= 50 ? "#f59e0b" : "#ef4444"}
-                label={`${Math.round(intelligence.examReadiness.overallScore)}%`}
-                sublabel="ready"
-              />
-              <div>
-                <p style={{ fontSize: "16px", fontWeight: 600, marginBottom: "4px" }}>
-                  {intelligence.examReadiness.readinessLevel}
-                </p>
-                <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "4px" }}>
-                  Predicted Grade: {intelligence.examReadiness.predictedGrade}
-                </p>
-                <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
-                  {intelligence.examReadiness.timeToExam} days to exam
-                </p>
-              </div>
+    <div className="ssc-page-full dashboard-main">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <section className="ssc-page-header">
+          <div>
+            <p className="ssc-kicker">AI learning OS</p>
+            <h1>What should I do next?</h1>
+            <p className="ssc-subtitle">
+              Your dashboard prioritizes the next action that will move your
+              score, consistency, and exam readiness forward.
+            </p>
+          </div>
+          <div className="ssc-card hidden items-center gap-3 px-4 py-3 md:flex">
+            <BrainCircuit size={20} className="text-[var(--primary)]" />
+            <div>
+              <p className="text-sm font-semibold">Cortex is active</p>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Recommendations refresh with your progress.
+              </p>
             </div>
-          }
-        />
-      )}
+          </div>
+        </section>
 
-      {/* Secondary Sections */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "16px" }}>
-        {/* Recommended Lesson */}
-        {progress.curriculum.recommendedNextLesson && (
-          <SectionCard
-            title="Recommended Lesson"
-            icon="📖"
-            content={
-              <div>
-                <p style={{ fontSize: "16px", fontWeight: 600, marginBottom: "4px" }}>
-                  {progress.curriculum.recommendedNextLesson.title}
-                </p>
-                <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
-                  Continue with this lesson to make progress
-                </p>
-              </div>
-            }
-            actionLabel="Start Lesson"
-            onAction={() => router.push(`/learn/${progress.curriculum.recommendedNextLesson?.id}`)}
+        {topRecommendation ? (
+          <PrimaryActionCard
+            recommendation={topRecommendation}
+            onAction={() => router.push("/learn")}
           />
-        )}
-
-        {/* Weakest Topic */}
-        {topWeakArea && (
-          <SectionCard
-            title="Weakest Topic"
-            icon="🎯"
-            content={
-              <div>
-                <p style={{ fontSize: "16px", fontWeight: 600, marginBottom: "4px" }}>
-                  {topWeakArea.topic}
-                </p>
-                <p style={{ fontSize: "13px", color: "var(--muted-foreground)" }}>
-                  Severity: {topWeakArea.severity} · Score: {topWeakArea.score}%
-                </p>
-              </div>
-            }
-            actionLabel="Start Revision"
+        ) : (
+          <EmptyState
+            icon={<Sparkles size={24} />}
+            title="You are caught up"
+            description="No urgent recommendations right now. Keep learning or review your progress."
+            actionLabel="Browse lessons"
             onAction={() => router.push("/learn")}
           />
         )}
 
-        {/* Cortex Insight */}
-        {topInsight && (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label="Study streak"
+            value={`${activity.streak.currentStreak} days`}
+            icon={<Flame size={20} />}
+            tone="warning"
+          />
+          <StatCard
+            label="Overall progress"
+            value={`${progress.overallCompletion}%`}
+            icon={<BarChart3 size={20} />}
+            tone="primary"
+          />
+          <StatCard
+            label="Average score"
+            value={`${Math.round(performance.trends.averageScore)}%`}
+            icon={<LineChart size={20} />}
+            tone="accent"
+          />
+          <StatCard
+            label="Weak areas"
+            value={intel.weakAreas.length.toString()}
+            icon={<AlertTriangle size={20} />}
+            tone="danger"
+          />
+        </section>
+
+        {intelligence.examReadiness && (
           <SectionCard
-            title="Cortex Insight"
-            icon="🔮"
+            title="Exam readiness"
+            icon={<Target size={18} />}
             content={
-              <div>
-                <p style={{ fontSize: "14px", lineHeight: 1.5 }}>
-                  {topInsight.content}
-                </p>
+              <div className="flex items-center gap-5">
+                <CircularProgress
+                  value={intelligence.examReadiness.overallScore}
+                  max={100}
+                  size={86}
+                  color={readinessColor(intelligence.examReadiness.overallScore)}
+                  label={`${Math.round(intelligence.examReadiness.overallScore)}%`}
+                  sublabel="ready"
+                />
+                <div>
+                  <h3>{intelligence.examReadiness.readinessLevel}</h3>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    Predicted Grade:{" "}
+                    <span className="font-semibold text-[var(--foreground)]">
+                      {intelligence.examReadiness.predictedGrade}
+                    </span>
+                  </p>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    {intelligence.examReadiness.timeToExam} days to exam
+                  </p>
+                </div>
               </div>
             }
-            actionLabel="View Insights"
-            onAction={() => router.push("/insights")}
           />
         )}
-      </div>
 
-      {/* All Recommendations */}
-      {intel.recommendations.length > 1 && (
-        <SectionCard
-          title="Today's Study Plan"
-          icon="📋"
-          content={
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {intel.recommendations.slice(1, 5).map((rec, index) => (
-                <div
-                  key={rec.id || index}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "12px",
-                    background: "var(--muted)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <span style={{ fontSize: "18px" }}>{getPriorityIcon(rec.priority)}</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>
-                      {rec.title}
-                    </p>
-                    <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0 }}>
-                      {rec.description}
-                    </p>
-                  </div>
-                  <span style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
-                    {rec.estimatedTime}m
-                  </span>
+        <section className="grid gap-4 lg:grid-cols-3">
+          {progress.curriculum.recommendedNextLesson && (
+            <SectionCard
+              title="Recommended lesson"
+              icon={<BookOpenCheck size={18} />}
+              content={
+                <div>
+                  <h3>{progress.curriculum.recommendedNextLesson.title}</h3>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    Continue with this lesson to make progress.
+                  </p>
                 </div>
-              ))}
-            </div>
-          }
-        />
-      )}
+              }
+              actionLabel="Start lesson"
+              onAction={() =>
+                router.push(
+                  `/learn/${progress.curriculum.recommendedNextLesson?.id}`
+                )
+              }
+            />
+          )}
 
-      {/* Upcoming Assessments */}
-      {upcomingAssessments.length > 0 && (
-        <SectionCard
-          title="Upcoming Assessments"
-          icon="📅"
-          content={
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {upcomingAssessments.slice(0, 3).map((task) => (
-                <div
-                  key={task.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "12px",
-                    background: "var(--muted)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <span style={{ fontSize: "18px" }}>{task.completed ? "✅" : "⏰"}</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>
-                      {task.title || "Untitled Task"}
-                    </p>
-                    <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0 }}>
-                      {task.due_date ? new Date(task.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "No date"}
+          {topWeakArea && (
+            <SectionCard
+              title="Weakest topic"
+              icon={<Target size={18} />}
+              content={
+                <div>
+                  <h3>{topWeakArea.topic}</h3>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    Severity: {topWeakArea.severity} · Score:{" "}
+                    {topWeakArea.score}%
+                  </p>
+                </div>
+              }
+              actionLabel="Start revision"
+              onAction={() => router.push("/learn")}
+            />
+          )}
+
+          {topInsight && (
+            <SectionCard
+              title="Cortex insight"
+              icon={<BrainCircuit size={18} />}
+              content={
+                <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+                  {topInsight.content}
                 </p>
-                  </div>
+              }
+              actionLabel="View insights"
+              onAction={() => router.push("/insights")}
+            />
+          )}
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          {intel.recommendations.length > 1 && (
+            <SectionCard
+              title="Today's study plan"
+              icon={<ClipboardList size={18} />}
+              content={
+                <div className="grid gap-2">
+                  {intel.recommendations.slice(1, 5).map((rec, index) => (
+                    <PlanRow key={rec.id || index} recommendation={rec} />
+                  ))}
                 </div>
-              ))}
-            </div>
-          }
-          actionLabel="View All Tasks"
-          onAction={() => router.push("/tasks")}
-        />
-      )}
+              }
+            />
+          )}
+
+          {upcomingAssessments.length > 0 ? (
+            <SectionCard
+              title="Upcoming assessments"
+              icon={<CalendarClock size={18} />}
+              content={
+                <div className="grid gap-2">
+                  {upcomingAssessments.slice(0, 3).map((task) => (
+                    <AssessmentRow key={task.id} task={task} />
+                  ))}
+                </div>
+              }
+              actionLabel="View all tasks"
+              onAction={() => router.push("/tasks")}
+            />
+          ) : (
+            <EmptyState
+              icon={<Trophy size={24} />}
+              title="No upcoming assessments"
+              description="Your schedule is clear. Add tasks when you get new deadlines."
+              actionLabel="Open tasks"
+              onAction={() => router.push("/tasks")}
+            />
+          )}
+        </section>
+      </div>
     </div>
   );
 }
 
-function PrimaryActionCard({ recommendation, router }: { recommendation: any; router: any }) {
-  const priorityColor = {
-    critical: "#ef4444",
-    high: "#f59e0b",
-    medium: "#6366f1",
-    low: "#94a3b8",
-  }[recommendation.priority as string] || "#6366f1";
+function PrimaryActionCard({
+  recommendation,
+  onAction,
+}: {
+  recommendation: any;
+  onAction: () => void;
+}) {
+  const tone = priorityTone(recommendation.priority);
 
   return (
-    <div
-      style={{
-        background: `linear-gradient(135deg, ${priorityColor}15, ${priorityColor}05)`,
-        border: `1px solid ${priorityColor}30`,
-        borderRadius: "16px",
-        padding: "24px",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <section className="ssc-card-interactive relative overflow-hidden p-6 md:p-7">
       <div
-        style={{
-          position: "absolute",
-          top: "-50%",
-          right: "-50%",
-          width: "200%",
-          height: "200%",
-          background: `radial-gradient(circle, ${priorityColor}10 0%, transparent 70%)`,
-          pointerEvents: "none",
-        }}
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ background: tone.color }}
       />
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-          <span style={{ fontSize: "20px" }}>✨</span>
-          <span
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: priorityColor,
-            }}
-          >
-            {recommendation.priority} Priority
-          </span>
+      <div className="relative z-10 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-2xl"
+              style={{
+                background: tone.soft,
+                color: tone.color,
+              }}
+            >
+              <Sparkles size={19} />
+            </span>
+            <span className="ssc-label" style={{ color: tone.color }}>
+              {recommendation.priority} priority
+            </span>
+          </div>
+          <h2 className="max-w-3xl text-2xl md:text-3xl">
+            {recommendation.title}
+          </h2>
+          <p className="mt-3 max-w-3xl text-[15px] leading-7 text-[var(--muted-foreground)]">
+            {recommendation.description}
+          </p>
         </div>
-        <h2 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 8px 0" }}>
-          {recommendation.title}
-        </h2>
-        <p style={{ fontSize: "15px", color: "var(--muted-foreground)", margin: "0 0 16px 0", lineHeight: 1.5 }}>
-          {recommendation.description}
-        </p>
-        <button
-          onClick={() => router.push("/learn")}
-          style={{
-            background: priorityColor,
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            padding: "12px 24px",
-            fontWeight: 700,
-            fontSize: "14px",
-            cursor: "pointer",
-            boxShadow: `0 0 12px ${priorityColor}40`,
-          }}
-        >
-          {recommendation.action} →
+        <button onClick={onAction} className="ssc-button">
+          {recommendation.action ?? "Start"}
+          <ArrowRight size={18} />
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
-function StatCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
+function StatCard({
+  label,
+  value,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+  tone: "primary" | "accent" | "warning" | "danger";
+}) {
+  const styles = {
+    primary: ["var(--primary-glow)", "var(--primary)"],
+    accent: ["var(--accent-soft)", "var(--accent)"],
+    warning: ["var(--warning-soft)", "var(--warning)"],
+    danger: ["var(--danger-soft)", "var(--danger)"],
+  }[tone];
+
   return (
-    <div
-      style={{
-        background: "var(--card)",
-        border: "1px solid var(--card-border)",
-        borderRadius: "12px",
-        padding: "16px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-        <span style={{ fontSize: "18px" }}>{icon}</span>
-        <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)", margin: 0 }}>
-          {label}
-        </p>
+    <div className="ssc-card-interactive p-5">
+      <div className="mb-5 flex items-center justify-between">
+        <p className="ssc-label">{label}</p>
+        <span
+          className="flex h-10 w-10 items-center justify-center rounded-2xl"
+          style={{ background: styles[0], color: styles[1] }}
+        >
+          {icon}
+        </span>
       </div>
-      <p style={{ fontSize: "28px", fontWeight: 800, color, margin: 0, lineHeight: 1 }}>{value}</p>
+      <p className="text-3xl font-black leading-none" style={{ color: styles[1] }}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -419,71 +418,162 @@ function SectionCard({
   onAction,
 }: {
   title: string;
-  icon: string;
-  content: React.ReactNode;
+  icon: ReactNode;
+  content: ReactNode;
   actionLabel?: string;
   onAction?: () => void;
 }) {
   return (
-    <div
-      style={{
-        background: "var(--card)",
-        border: "1px solid var(--card-border)",
-        borderRadius: "12px",
-        padding: "16px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-        <span style={{ fontSize: "18px" }}>{icon}</span>
-        <p style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)", margin: 0 }}>
-          {title}
-        </p>
+    <div className="ssc-card flex flex-col gap-4 p-5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--surface-2)] text-[var(--primary)]">
+          {icon}
+        </span>
+        <p className="ssc-label">{title}</p>
       </div>
-      <div style={{ marginBottom: actionLabel ? "12px" : 0 }}>{content}</div>
+      <div className="flex-1">{content}</div>
       {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          style={{
-            background: "var(--primary)",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            padding: "8px 16px",
-            fontWeight: 600,
-            fontSize: "13px",
-            cursor: "pointer",
-            width: "100%",
-          }}
-        >
-          {actionLabel} →
+        <button onClick={onAction} className="ssc-button ssc-button-secondary w-full">
+          {actionLabel}
+          <ArrowRight size={16} />
         </button>
       )}
     </div>
   );
 }
 
-function getPriorityIcon(priority: string): string {
-  const icons = {
-    critical: "🔴",
-    high: "🟠",
-    medium: "🟡",
-    low: "⚪",
+function EmptyState({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="ssc-card flex flex-col items-start gap-4 p-5">
+      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        {icon}
+      </span>
+      <div>
+        <h3>{title}</h3>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          {description}
+        </p>
+      </div>
+      <button onClick={onAction} className="ssc-button ssc-button-secondary">
+        {actionLabel}
+        <ArrowRight size={16} />
+      </button>
+    </div>
+  );
+}
+
+function PlanRow({ recommendation }: { recommendation: any }) {
+  const tone = priorityTone(recommendation.priority);
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] p-3">
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+        style={{ background: tone.soft, color: tone.color }}
+      >
+        {tone.icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">{recommendation.title}</p>
+        <p className="truncate text-xs text-[var(--muted-foreground)]">
+          {recommendation.description}
+        </p>
+      </div>
+      <span className="text-xs font-semibold text-[var(--muted-foreground)]">
+        {recommendation.estimatedTime}m
+      </span>
+    </div>
+  );
+}
+
+function AssessmentRow({ task }: { task: any }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] p-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]">
+        {task.completed ? <CheckCircle2 size={18} /> : <CalendarClock size={18} />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">
+          {task.title || "Untitled task"}
+        </p>
+        <p className="text-xs text-[var(--muted-foreground)]">
+          {task.due_date
+            ? new Date(task.due_date).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+              })
+            : "No date"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function priorityTone(priority: string) {
+  const tones = {
+    critical: {
+      color: "var(--danger)",
+      soft: "var(--danger-soft)",
+      icon: <AlertTriangle size={18} />,
+    },
+    high: {
+      color: "var(--warning)",
+      soft: "var(--warning-soft)",
+      icon: <Target size={18} />,
+    },
+    medium: {
+      color: "var(--primary)",
+      soft: "var(--primary-glow)",
+      icon: <Sparkles size={18} />,
+    },
+    low: {
+      color: "var(--muted-foreground)",
+      soft: "var(--surface-2)",
+      icon: <CheckCircle2 size={18} />,
+    },
   };
-  return icons[priority as keyof typeof icons] || "⚪";
+
+  return tones[priority as keyof typeof tones] ?? tones.low;
+}
+
+function readinessColor(value: number) {
+  if (value >= 70) return "var(--accent)";
+  if (value >= 50) return "var(--warning)";
+  return "var(--danger)";
 }
 
 function DashboardSkeleton() {
   return (
-    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div>
-        <div style={{ height: "13px", width: "80px", background: "var(--muted)", borderRadius: "4px", marginBottom: "8px" }} />
-        <div style={{ height: "32px", width: "200px", background: "var(--muted)", borderRadius: "8px" }} />
-      </div>
-      <div style={{ height: "120px", background: "var(--muted)", borderRadius: "16px" }} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} style={{ height: "100px", background: "var(--muted)", borderRadius: "12px" }} />
-        ))}
+    <div className="ssc-page-full dashboard-main">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <div>
+          <div className="ssc-skeleton mb-3 h-3 w-32" />
+          <div className="ssc-skeleton h-10 w-80 max-w-full" />
+          <div className="ssc-skeleton mt-3 h-4 w-[520px] max-w-full" />
+        </div>
+        <div className="ssc-skeleton h-44 w-full rounded-[var(--radius-lg)]" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="ssc-skeleton h-32 rounded-[var(--radius-lg)]" />
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="ssc-skeleton h-40 rounded-[var(--radius-lg)]" />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,51 +1,99 @@
 "use client";
 
-// src/contexts/ThemeContext.tsx
-import React, { createContext, useEffect, useState } from 'react';
-import Cookies from 'js-cookie';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+export type ThemeMode = "light" | "dark";
 
 export interface ThemeContextProps {
+  theme: ThemeMode;
   darkMode: boolean;
+  setTheme: (theme: ThemeMode) => void;
   toggleDarkMode: () => void;
 }
 
+const STORAGE_KEY = "theme";
+
 export const ThemeContext = createContext<ThemeContextProps>({
-  darkMode: false,
+  theme: "dark",
+  darkMode: true,
+  setTheme: () => {},
   toggleDarkMode: () => {},
 });
 
-// Exported as ThemeContextProvider for consistency with imports
-export const ThemeContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+function getInitialTheme(): ThemeMode {
+  if (typeof window === "undefined") return "dark";
 
-  // Initialize from cookie or system preference
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+  if (saved === "light" || saved === "dark") return saved;
+
+  const legacy = window.localStorage.getItem("darkMode");
+  if (legacy === "true") return "dark";
+  if (legacy === "false") return "light";
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+function applyTheme(theme: ThemeMode) {
+  const root = document.documentElement;
+  root.classList.toggle("dark", theme === "dark");
+  root.dataset.theme = theme;
+  root.style.colorScheme = theme;
+}
+
+export const ThemeContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    const cookie = Cookies.get('darkMode');
-    if (cookie !== undefined) {
-      setDarkMode(cookie === 'true');
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDark);
-    }
+    const initial = getInitialTheme();
+    setThemeState(initial);
+    applyTheme(initial);
+    setMounted(true);
   }, []);
 
-  // Sync to localStorage and cookie
-  useEffect(() => {
-    localStorage.setItem('darkMode', String(darkMode));
-    Cookies.set('darkMode', String(darkMode), { expires: 365 });
+  const setTheme = useCallback((nextTheme: ThemeMode) => {
+    setThemeState(nextTheme);
+    window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    window.localStorage.setItem("darkMode", String(nextTheme === "dark"));
+    applyTheme(nextTheme);
+  }, []);
 
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+  const toggleDarkMode = useCallback(() => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  }, [setTheme, theme]);
 
-  const toggleDarkMode = () => setDarkMode(prev => !prev);
+  const value = useMemo(
+    () => ({
+      theme,
+      darkMode: theme === "dark",
+      setTheme,
+      toggleDarkMode,
+    }),
+    [setTheme, theme, toggleDarkMode]
+  );
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      {children}
+    <ThemeContext.Provider value={value}>
+      <div className={mounted ? "ssc-theme-ready" : "ssc-theme-ready"}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   );
 };
+
+export function useTheme() {
+  return useContext(ThemeContext);
+}

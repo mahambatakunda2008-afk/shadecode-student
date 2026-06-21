@@ -32,7 +32,7 @@ export function BottomNav() {
     <>
       {/* ── Bottom tab bar ──────────────────────────────────────────── */}
       <nav
-        className="w-full bg-[#0e0e18]/96 backdrop-blur-2xl border-t border-white/[0.07] flex items-stretch"
+        className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)]/95 shadow-[var(--shadow-lg)] backdrop-blur-2xl"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {BOTTOM_PRIMARY.map(({ href, label, icon: Icon, badge, urgent }) => {
@@ -47,13 +47,13 @@ export function BottomNav() {
               <div
                 className={cn(
                   "relative w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
-                  active ? "bg-indigo-500/[0.18]" : "bg-transparent"
+                  active ? "bg-[var(--primary-glow)]" : "bg-transparent"
                 )}
               >
                 <Icon
                   className={cn(
                     "w-[20px] h-[20px] transition-all duration-200",
-                    active ? "text-indigo-400" : "text-white/[0.3]"
+                    active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
                   )}
                   strokeWidth={active ? 2.2 : 1.8}
                 />
@@ -64,8 +64,8 @@ export function BottomNav() {
                       "min-w-[15px] h-[15px] px-[3px] rounded-full",
                       "text-[8px] font-bold flex items-center justify-center leading-none",
                       urgent
-                        ? "bg-red-500 text-white"
-                        : "bg-indigo-500 text-white"
+                        ? "bg-[var(--danger)] text-white"
+                        : "bg-[var(--primary)] text-white"
                     )}
                   >
                     {badge}
@@ -76,7 +76,7 @@ export function BottomNav() {
               <span
                 className={cn(
                   "text-[10px] font-medium leading-none transition-colors duration-200",
-                  active ? "text-indigo-400" : "text-white/[0.26]"
+                  active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
                 )}
               >
                 {label}
@@ -93,13 +93,13 @@ export function BottomNav() {
           <div
             className={cn(
               "w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
-              anyMoreActive || open ? "bg-indigo-500/[0.18]" : "bg-transparent"
+              anyMoreActive || open ? "bg-[var(--primary-glow)]" : "bg-transparent"
             )}
           >
             <MoreHorizontal
               className={cn(
                 "w-[20px] h-[20px] transition-colors duration-200",
-                anyMoreActive || open ? "text-indigo-400" : "text-white/[0.3]"
+                anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
               )}
               strokeWidth={1.8}
             />
@@ -107,7 +107,7 @@ export function BottomNav() {
           <span
             className={cn(
               "text-[10px] font-medium leading-none transition-colors duration-200",
-              anyMoreActive || open ? "text-indigo-400" : "text-white/[0.26]"
+              anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
             )}
           >
             More
@@ -118,7 +118,7 @@ export function BottomNav() {
       {/* ── Backdrop ────────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[9998] bg-black/45 backdrop-blur-sm"
           style={{ animation: "ssc-fadeIn 0.15s ease forwards" }}
           onClick={() => setOpen(false)}
         />
@@ -127,7 +127,7 @@ export function BottomNav() {
       {/* ── More drawer ─────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#0d0d17]/98 backdrop-blur-2xl border-t border-white/[0.07] rounded-t-[22px]"
+          className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[22px] border-t border-[var(--card-border)] bg-[var(--surface)]/98 shadow-[var(--shadow-lg)] backdrop-blur-2xl"
           style={{
             animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
             paddingBottom:
@@ -135,18 +135,18 @@ export function BottomNav() {
           }}
         >
           {/* Drag handle */}
-          <div className="w-8 h-[3px] bg-white/[0.1] rounded-full mx-auto mt-[14px] mb-[18px]" />
+          <div className="w-8 h-[3px] bg-[var(--surface-3)] rounded-full mx-auto mt-[14px] mb-[18px]" />
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 mb-[18px]">
-            <span className="text-[14px] font-semibold text-white/70 tracking-[-0.01em]">
+            <span className="text-[14px] font-semibold text-[var(--foreground)]">
               More
             </span>
             <button
               onClick={() => setOpen(false)}
-              className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center hover:bg-white/[0.1] active:bg-white/[0.14] transition-colors cursor-pointer"
+              className="ssc-icon-button h-7 w-7 rounded-full"
             >
-              <X className="w-[14px] h-[14px] text-white/[0.45]" />
+              <X className="w-[14px] h-[14px]" />
             </button>
           </div>
 
@@ -162,8 +162,8 @@ export function BottomNav() {
                     "relative flex flex-col items-center justify-center gap-2",
                     "py-[18px] px-2 rounded-2xl border transition-all duration-150",
                     active
-                      ? "bg-indigo-500/[0.12] border-indigo-500/[0.22]"
-                      : "bg-white/[0.025] border-white/[0.05] active:bg-white/[0.06]"
+                      ? "bg-[var(--primary-glow)] border-[var(--primary)]/30"
+                      : "bg-[var(--surface-2)] border-[var(--card-border)] active:bg-[var(--surface-3)]"
                   )}
                 >
                   {badge && (
@@ -173,8 +173,8 @@ export function BottomNav() {
                         "min-w-[16px] h-4 px-1 rounded-full",
                         "text-[8px] font-bold flex items-center justify-center leading-none",
                         urgent
-                          ? "bg-red-500/[0.15] text-red-400"
-                          : "bg-indigo-500/[0.15] text-indigo-400"
+                          ? "bg-[var(--danger-soft)] text-[var(--danger)]"
+                          : "bg-[var(--primary-glow)] text-[var(--primary)]"
                       )}
                     >
                       {badge}
@@ -183,14 +183,14 @@ export function BottomNav() {
                   <Icon
                     className={cn(
                       "w-[21px] h-[21px] transition-colors duration-150",
-                      active ? "text-indigo-400" : "text-white/[0.42]"
+                      active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
                     )}
                     strokeWidth={active ? 2.2 : 1.8}
                   />
                   <span
                     className={cn(
                       "text-[11px] font-medium text-center leading-tight",
-                      active ? "text-indigo-300" : "text-white/[0.48]"
+                      active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
                     )}
                   >
                     {label}

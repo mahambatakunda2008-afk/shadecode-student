@@ -56,11 +56,11 @@ export function Sidebar() {
       // Typography
       "text-[13px] leading-none",
       // Transition
-      "transition-all duration-150 outline-none",
+      "transition-all duration-200 outline-none",
       // State
       active
-        ? "bg-indigo-500/[0.1] text-white font-semibold"
-        : "font-medium text-white/[0.42] hover:text-white/80 hover:bg-white/[0.04]"
+        ? "bg-[var(--primary-glow)] text-[var(--foreground)] font-semibold shadow-sm"
+        : "font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]"
     );
   }
 
@@ -69,13 +69,13 @@ export function Sidebar() {
       // 18px icon per design spec
       "w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150",
       active
-        ? "text-indigo-400"
-        : "text-white/[0.28] group-hover:text-white/55"
+        ? "text-[var(--primary)]"
+        : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
     );
   }
 
   return (
-    <aside className="flex flex-col h-full w-full bg-[#0e0e18] border-r border-white/[0.06] overflow-hidden">
+    <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]/90 backdrop-blur-2xl">
 
       {/* ── Brand ─────────────────────────────────────────────────────────── */}
       {/* 16px padding all sides — on the 8px scale */}
@@ -92,43 +92,43 @@ export function Sidebar() {
           </span>
         </div>
         <div className="flex flex-col gap-[3px]">
-          <span className="text-[13px] font-semibold text-white leading-none tracking-[-0.01em]">
+          <span className="text-[13px] font-semibold text-[var(--foreground)] leading-none">
             Shadecode
           </span>
-          <span className="text-[11px] text-white/[0.28] leading-none">
+          <span className="text-[11px] text-[var(--muted-foreground)] leading-none">
             Student
           </span>
         </div>
       </div>
 
       {/* Separator */}
-      <div className="mx-4 border-t border-white/[0.06] mb-3 flex-shrink-0" />
+      <div className="mx-4 mb-3 flex-shrink-0 border-t border-[var(--card-border)]" />
 
       {/* ── User identity card ────────────────────────────────────────────── */}
       {/* 12px horizontal margin, 12px internal padding — on the 8px scale */}
       {profile && (
-        <div className="mx-3 mb-3 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] flex-shrink-0">
+        <div className="mx-3 mb-3 flex-shrink-0 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 shadow-sm">
           <div className="flex items-center gap-2.5 mb-2">
             {/* Avatar: 28px = 4px border + 24px content — harmonizes with 8px grid */}
-            <div className="w-7 h-7 rounded-full bg-indigo-500/[0.18] border border-indigo-500/[0.28] flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] font-bold text-indigo-400">
+            <div className="w-7 h-7 rounded-full bg-[var(--primary-glow)] border border-[var(--card-border)] flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-bold text-[var(--primary)]">
                 {initials}
               </span>
             </div>
             {/* Name + level */}
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-white/85 truncate leading-none">
+              <p className="text-[12px] font-semibold text-[var(--foreground)] truncate leading-none">
                 {firstName}
               </p>
-              <p className="text-[11px] text-white/[0.28] mt-[3px] leading-none">
+              <p className="text-[11px] text-[var(--muted-foreground)] mt-[3px] leading-none">
                 Level {profile.level}
               </p>
             </div>
             {/* Streak */}
             {profile.streak > 0 && (
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Flame className="w-3 h-3 text-orange-400" />
-                <span className="text-[11px] font-bold text-orange-400 tabular-nums leading-none">
+                <Flame className="w-3 h-3 text-[var(--warning)]" />
+                <span className="text-[11px] font-bold text-[var(--warning)] tabular-nums leading-none">
                   {profile.streak}
                 </span>
               </div>
@@ -136,18 +136,18 @@ export function Sidebar() {
           </div>
           {/* XP progress bar — 4px track */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-[3px] rounded-full bg-white/[0.07] overflow-hidden">
+            <div className="flex-1 h-[3px] rounded-full bg-[var(--surface-3)] overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
                   width: `${xpPercent}%`,
-                  background: "linear-gradient(90deg, #6366f1, #818cf8)",
+                  background: "linear-gradient(90deg, var(--primary), var(--accent))",
                 }}
               />
             </div>
-            <span className="text-[10px] text-white/[0.22] leading-none tabular-nums flex-shrink-0">
+            <span className="text-[10px] text-[var(--muted-foreground)] leading-none tabular-nums flex-shrink-0">
               {profile.xp}
-              <span className="text-white/[0.12]">/{profile.xp_to_next_level}</span>
+              <span className="opacity-50">/{profile.xp_to_next_level}</span>
             </span>
           </div>
         </div>
@@ -159,7 +159,7 @@ export function Sidebar() {
         {SIDEBAR_GROUPS.map((section) => (
           <div key={section.group}>
             {/* Section label: 11px per spec, uppercase, muted */}
-            <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-white/[0.22] px-3 mb-2 select-none">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--muted-foreground)] px-3 mb-2 select-none">
               {section.group}
             </p>
 
@@ -177,7 +177,7 @@ export function Sidebar() {
                     {/* Full-height, clipped by overflow-hidden + rounded-[9px] */}
                     {active && (
                       <span
-                        className="absolute left-0 inset-y-0 w-[2px] bg-indigo-500"
+                        className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]"
                         aria-hidden="true"
                       />
                     )}
@@ -197,8 +197,8 @@ export function Sidebar() {
                         className={cn(
                           "px-[6px] py-[3px] rounded-md text-[10px] font-bold leading-none tabular-nums",
                           urgent
-                            ? "bg-red-500/[0.12] text-red-400 border border-red-500/[0.18]"
-                            : "bg-indigo-500/[0.12] text-indigo-400/80 border border-indigo-500/[0.18]"
+                            ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]"
+                            : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]"
                         )}
                       >
                         {badge}
@@ -214,7 +214,7 @@ export function Sidebar() {
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       {/* 16px bottom, 8px top, separated by a hairline border */}
-      <div className="flex-shrink-0 px-3 pb-4 pt-3 border-t border-white/[0.05] flex flex-col gap-[2px]">
+      <div className="flex-shrink-0 px-3 pb-4 pt-3 border-t border-[var(--card-border)] flex flex-col gap-[2px]">
 
         {/* Settings — same component density as nav items */}
         <Link
@@ -223,7 +223,7 @@ export function Sidebar() {
         >
           {isRouteActive(pathname, NAV_ITEMS.settings.href) && (
             <span
-              className="absolute left-0 inset-y-0 w-[2px] bg-indigo-500"
+              className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]"
               aria-hidden="true"
             />
           )}
@@ -242,12 +242,12 @@ export function Sidebar() {
           className={cn(
             "group relative flex items-center gap-2.5",
             "min-h-[40px] px-3 py-[11px] rounded-[9px] w-full text-left cursor-pointer",
-            "text-[13px] font-medium leading-none transition-all duration-150",
-            "text-white/[0.3] hover:text-red-400/75 hover:bg-red-500/[0.06]"
+            "text-[13px] font-medium leading-none transition-all duration-200",
+            "text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]"
           )}
         >
           <LogOut
-            className="w-[18px] h-[18px] flex-shrink-0 text-white/[0.22] group-hover:text-red-400/60 transition-colors duration-150"
+            className="w-[18px] h-[18px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150"
             strokeWidth={1.8}
           />
           <span>Sign out</span>

@@ -1,83 +1,43 @@
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
 /**
- * lib/user-profile.ts
- * ────────────────────
- * Server-side helper — safely fetches the current user's profile flags.
- * Returns null when unauthenticated or profile doesn't exist yet.
+ * Server-side helper for the dashboard tour gate.
  *
- * Used by the dashboard layout to pass onboardingCompleted / tourCompleted
- * to TourProvider so the tour auto-starts for brand-new users.
+ * user_profiles is the canonical onboarding state store:
+ * - onboarding_completed controls access to the dashboard experience.
+ * - tour_completed controls whether the dashboard tour auto-starts.
  */
-
-// ── Prisma + NextAuth ─────────────────────────────────────────────────────────
-// import { getServerSession } from 'next-auth';
-// import { authOptions }      from '@/lib/auth';
-// import { prisma }           from '@/lib/prisma';
-
-// ── Prisma + Clerk ────────────────────────────────────────────────────────────
-// import { auth } from '@clerk/nextjs/server';
-// import { prisma } from '@/lib/prisma';
-
-// ── Supabase ──────────────────────────────────────────────────────────────────
-// import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-// import { cookies } from 'next/headers';
-
 export interface UserProfileFlags {
-  userId:               string;
-  displayName:          string;
-  onboardingCompleted:  boolean;
-  tourCompleted:        boolean;
+  userId:              string;
+  displayName:         string;
+  onboardingCompleted: boolean;
+  tourCompleted:       boolean;
 }
 
 export async function getUserProfileFlags(): Promise<UserProfileFlags | null> {
   try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    // ── NextAuth + Prisma ───────────────────────────────────────────────────
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user?.id) return null;
-    //
-    // const profile = await prisma.userProfile.findUnique({
-    //   where:  { userId: session.user.id },
-    //   select: {
-    //     userId:              true,
-    //     displayName:         true,
-    //     onboardingCompleted: true,
-    //     tourCompleted:       true,
-    //   },
-    // });
-    // return profile;
+    if (authError || !user) return null;
 
-    // ── Clerk + Prisma ──────────────────────────────────────────────────────
-    // const { userId } = auth();
-    // if (!userId) return null;
-    //
-    // const profile = await prisma.userProfile.findUnique({
-    //   where:  { userId },
-    //   select: { userId: true, displayName: true, onboardingCompleted: true, tourCompleted: true },
-    // });
-    // return profile;
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('user_id, onboarding_completed, tour_completed')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    // ── Supabase ─────────────────────────────────────────────────────────────
-    // const supabase = createServerComponentClient({ cookies });
-    // const { data: { session } } = await supabase.auth.getSession();
-    // if (!session?.user) return null;
-    //
-    // const { data } = await supabase
-    //   .from('profiles')
-    //   .select('id, display_name, onboarding_completed, tour_completed')
-    //   .eq('id', session.user.id)
-    //   .single();
-    //
-    // if (!data) return null;
-    // return {
-    //   userId:              data.id,
-    //   displayName:         data.display_name,
-    //   onboardingCompleted: data.onboarding_completed,
-    //   tourCompleted:       data.tour_completed,
-    // };
+    if (error || !data) return null;
 
-    // ── STUB — replace with real adapter above ────────────────────────────────
-    return null;
-
+    return {
+      userId:              data.user_id,
+      displayName:         user.user_metadata?.username ?? user.email ?? '',
+      onboardingCompleted: data.onboarding_completed === true,
+      tourCompleted:       data.tour_completed === true,
+    };
   } catch {
     return null;
   }

@@ -42,6 +42,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const onboardingCompleted = profile?.onboardingCompleted ?? false;
   const tourCompleted       = profile?.tourCompleted       ?? false;
 
+  console.log({
+    route: '/dashboard',
+    profileExists: profile !== null,
+    onboardingCompleted,
+    tourCompleted,
+    userId: profile?.userId,
+  });
+
   return (
     <TourProvider
       onboardingCompleted={onboardingCompleted}
