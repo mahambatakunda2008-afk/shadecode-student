@@ -230,6 +230,18 @@ export default function LearnPageClient() {
         .subj-card:hover                    { transform: translateY(-2px); border-color: rgba(255,255,255,0.12) !important; }
         .topic-input:focus                  { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.08); }
         .quick-link:hover                   { background: rgba(255,255,255,0.06) !important; }
+
+        @media (max-width: 767px) {
+          .learn-main-container { padding: 16px !important; }
+          .learn-layout-grid { grid-template-columns: 1fr !important; }
+          .learn-sidebar { position: static !important; width: 100% !important; }
+          .learn-stats-grid { grid-template-columns: 1fr !important; }
+          .learn-quick-links { grid-template-columns: 1fr !important; }
+          .learn-subject-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; }
+          .curriculum-card { padding: 16px !important; }
+          .curriculum-stats-grid { gap: 8 !important; margin-bottom: 12 !important; }
+          .curriculum-stat { padding: 8px 10px !important; }
+        }
       `}</style>
 
       {/* Ambient glow */}
@@ -237,10 +249,10 @@ export default function LearnPageClient() {
         <div style={{ position: "absolute", top: -120, left: "35%", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(109,40,217,0.1) 0%, transparent 65%)", borderRadius: "50%" }} />
       </div>
 
-      <div style={{ position: "relative", maxWidth: 1120, margin: "0 auto", padding: "32px 24px" }}>
+      <div className="learn-main-container" style={{ position: "relative", maxWidth: 1120, margin: "0 auto", padding: "32px 24px" }}>
 
         {/* ── Two-column layout ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 28, alignItems: "start" }}>
+        <div className="learn-layout-grid" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 28, alignItems: "start" }}>
 
           {/* ═══════════════════════════════════
               LEFT COLUMN — Main content
@@ -262,7 +274,7 @@ export default function LearnPageClient() {
 
             {/* ── Stats bar ── */}
             {summary && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24, animation: "fadeUp .4s ease" }}>
+              <div className="learn-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24, animation: "fadeUp .4s ease" }}>
                 {[
                   { icon: <Zap size={14} color="#fbbf24" />, label: "XP", value: `${summary.currentXP} / ${summary.xpGoal}` },
                   { icon: <Flame size={14} color="#f97316" />, label: "Streak", value: `${summary.currentStreak}d` },
@@ -428,7 +440,7 @@ export default function LearnPageClient() {
             </div>
 
             {/* ── Quick links ── */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24, animation: "fadeUp .4s ease .1s both" }}>
+            <div className="learn-quick-links" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24, animation: "fadeUp .4s ease .1s both" }}>
               {[
                 { href: "/learn/history",  icon: <Clock size={15} color="#94a3b8" />,  label: "Lesson History" },
                 { href: "/learn/subjects", icon: <BookOpen size={15} color="#94a3b8" />, label: "Subjects" },
@@ -537,7 +549,7 @@ export default function LearnPageClient() {
                   </Link>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                <div className="learn-subject-cards" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
                   {subjects.map(s => {
                     const t    = theme(s.name);
                     const Icon = t.icon;
@@ -589,12 +601,9 @@ export default function LearnPageClient() {
           {/* ═══════════════════════════════════
               RIGHT COLUMN — Sidebar
           ═══════════════════════════════════ */}
-          <aside style={{ width: 340, position: "sticky", top: 24 }}>
+          <aside className="learn-sidebar" style={{ width: 340, position: "sticky", top: 24 }}>
             <CurriculumProgressCard />
             <div style={{ height: 16 }} />
-            <div className="hidden md:block">
-              <LearningJourney />
-            </div>
           </aside>
 
         </div>

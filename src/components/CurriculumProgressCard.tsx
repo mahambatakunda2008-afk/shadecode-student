@@ -27,7 +27,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
 
   /* ── Loading skeleton ── */
   if (loading) return (
-    <div style={card}>
+    <div className="curriculum-card" style={card}>
       <div style={{ height: 14, width: "45%", borderRadius: 6, background: "rgba(255,255,255,0.06)", marginBottom: 16 }} />
       <div style={{ height: 6,  width: "100%", borderRadius: 999, background: "rgba(255,255,255,0.06)", marginBottom: 18 }} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -38,7 +38,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
 
   /* ── Empty state ── */
   if (!state) return (
-    <div style={card}>
+    <div className="curriculum-card" style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <BookOpen size={14} color="#475569" />
         <span style={heading}>Curriculum Progress</span>
@@ -55,7 +55,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
   const locked        = state.lockedLessons?.length ?? 0;
 
   return (
-    <div style={card}>
+    <div className="curriculum-card" style={card}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -73,7 +73,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
       </div>
 
       {/* Stats grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+      <div className="curriculum-stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
         <Stat label="Current lesson"   value={currentTitle ?? "—"} />
         <Stat label="Recommended next" value={recommended  ?? "—"} />
         <Stat label="Completed"        value={String(completed)} accent="#10b981" icon={<CheckCircle2 size={11} color="#10b981" />} />
@@ -91,7 +91,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
 
 function Stat({ label, value, accent, icon }: { label: string; value: string; accent?: string; icon?: React.ReactNode }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 12px" }}>
+    <div className="curriculum-stat" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 12px" }}>
       <p style={{ fontSize: 10, color: "#475569", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
         {icon}
@@ -108,6 +108,11 @@ const card: React.CSSProperties = {
   borderRadius: 18,
   padding: 20,
   color: "#fff",
+};
+
+const cardMobile: React.CSSProperties = {
+  ...card,
+  padding: 16,
 };
 
 const heading: React.CSSProperties = {

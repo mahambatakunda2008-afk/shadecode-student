@@ -608,34 +608,34 @@ This audit provides a comprehensive inventory of the Shadecode Student codebase,
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Frontend Layer                          │
-│  (Next.js App Router + React Components)                   │
+│  (Next.js App Router + React Components)                    │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    API Layer                                │
-│  (Next.js API Routes)                                      │
+│  (Next.js API Routes)                                       │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 Business Logic Layer                         │
+│                 Business Logic Layer                        │
 │  (src/lib - Various modules)                                │
 │  - Cortex Intelligence                                      │
 │  - Curriculum Management                                    │
-│  - Exam System                                             │
+│  - Exam System                                              │
 │  - Career Management                                        │
-│  - Study Planning                                          │
-│  - AI Integration                                          │
+│  - Study Planning                                           │
+│  - AI Integration                                           │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  Data Layer                                  │
+│                  Data Layer                                 │
 │  (Supabase Database + IndexedDB)                            │
 │  - User Profiles                                            │
 │  - Lessons & Curriculum                                     │
-│  - Cortex Intelligence                                     │
+│  - Cortex Intelligence                                      │
 │  - Careers & Skills                                         │
 │  - Challenges & Achievements                                │
 └─────────────────────────────────────────────────────────────┘
