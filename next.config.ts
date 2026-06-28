@@ -12,10 +12,6 @@ const nextConfig = withPWA({
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Edge compatibility: ensure output is properly configured
-  output: 'standalone',
-  // Ensure proper browser compatibility
-  swcMinify: true,
   // Optimize for modern browsers including Edge
   experimental: {
     optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],

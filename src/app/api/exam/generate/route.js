@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { logAIUsage } from "@/lib/ai/tracker";
-import { createServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -310,7 +310,7 @@ Rules:
     let examId = null;
     if (userId) {
       try {
-        const supabase = await createServerClient();
+        const supabase = await createSupabaseServerClient();
         const examData = {
           user_id: userId,
           subject: subject,
