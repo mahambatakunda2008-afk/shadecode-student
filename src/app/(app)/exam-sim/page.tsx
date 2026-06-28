@@ -185,6 +185,8 @@ export default function ExamSimulation() {
 
   // ── Challenge mode: read URL params on mount ──────────────────────────
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    
     const params = new URLSearchParams(window.location.search);
     const cid    = params.get("cid");
     if (!cid) return;
@@ -405,6 +407,7 @@ export default function ExamSimulation() {
           topic:        topic.trim() || null,
           difficulty:   DIFFICULTIES[difficulty].value,
           questionCount,
+          userId:       userId,
         }),
       });
       const data = await res.json();

@@ -72,6 +72,7 @@ export const examGenerateSchema = z.object({
   topic: z.string().max(500, 'Topic too long').optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   questionCount: z.number().int().min(1, 'At least 1 question required').max(50, 'Maximum 50 questions').default(10),
+  userId: z.string().uuid('Invalid user ID').optional(),
 });
 
 // ============================================================================

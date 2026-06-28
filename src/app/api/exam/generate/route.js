@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { logAIUsage } from "@/lib/ai/tracker";
+import { createServerClient } from "@/lib/supabase/server";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -247,7 +248,7 @@ export async function POST(req) {
       });
     }
 
-    const { subject, topic, difficulty, questionCount } = validation.data;
+    const { subject, topic, difficulty, questionCount, userId } = validation.data;
 
     const prompt = `You are an expert ${subject} examiner generating an exam paper.
 
@@ -297,14 +298,55 @@ Rules:
 - For MCQ, only include options array
 - Write all math in plain text not LaTeX`;
 
-    const text = await callAI(prompt, null);
+    const text = await callAI(prompt, userId);
     if (!text) return NextResponse.json({ error: "All AI models unavailable. Try again shortly." }, { status: 503 });
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
     const data = JSON.parse(jsonMatch[0]);
-    return NextResponse.json(data);
+    
+    // Store generated exam in Supabase if userId is provided
+    let examId = null;
+    if (userId) {
+      try {
+        const supabase = await createServerClient();
+        const examData = {
+          user_id: userId,
+          subject: subject,
+          topic: topic || null,
+          difficulty: difficulty,
+          questions: data.questions,
+          question_count: questionCount,
+          created_at: new Date().toISOString()
+        };
+        
+        const { data: insertedExam, error: insertError } = await supabase
+          .from('exams')
+          .insert(examData)
+          .select('id')
+          .single();
+        
+        if (insertError) {
+          console.error("Failed to store exam in Supabase:", insertError);
+        } else {
+          examId = insertedExam.id;
+        }
+      } catch (dbError) {
+        console.error("Database error during exam storage:", dbError);
+      }
+    }
+    
+    return NextResponse.json({
+      exam_id: examId,
+      questions: data.questions,
+      metadata: {
+        subject,
+        topic,
+        difficulty,
+        question_count: questionCount
+      }
+    });
   } catch (err) {
     console.error("Exam generation error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
