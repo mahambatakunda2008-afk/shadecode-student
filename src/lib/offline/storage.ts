@@ -49,6 +49,16 @@ export interface OfflineProgress {
   synced: boolean;
 }
 
+export interface OfflineTask {
+  id: string;
+  subject_id: string;
+  title: string;
+  completed: boolean;
+  lastUpdated: string;
+  lastSyncedAt?: string;
+  synced: boolean;
+}
+
 class OfflineStorage {
   private db: IDBDatabase | null = null;
 
@@ -89,6 +99,12 @@ class OfflineStorage {
           const progressStore = db.createObjectStore("progress", { keyPath: "lessonId" });
           progressStore.createIndex("userId", "userId", { unique: false });
           progressStore.createIndex("synced", "synced", { unique: false });
+        }
+
+        // Tasks store
+        if (!db.objectStoreNames.contains("tasks")) {
+          const tasksStore = db.createObjectStore("tasks", { keyPath: "id" });
+          tasksStore.createIndex("synced", "synced", { unique: false });
         }
       };
     });
@@ -233,6 +249,64 @@ class OfflineStorage {
       progress.synced = true;
       progress.lastSyncedAt = new Date().toISOString();
       await this.saveProgress(progress);
+    }
+  }
+
+  async saveTask(task: OfflineTask): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["tasks"], "readwrite");
+      const store = transaction.objectStore("tasks");
+      const request = store.put(task);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
+    });
+  }
+
+  async getTask(id: string): Promise<OfflineTask | null> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["tasks"], "readonly");
+      const store = transaction.objectStore("tasks");
+      const request = store.get(id);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || null);
+    });
+  }
+
+  async getAllTasks(): Promise<OfflineTask[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["tasks"], "readonly");
+      const store = transaction.objectStore("tasks");
+      const request = store.getAll();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || []);
+    });
+  }
+
+  async getUnsyncedTasks(): Promise<OfflineTask[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["tasks"], "readonly");
+      const store = transaction.objectStore("tasks");
+      const index = store.index("synced");
+      const request = index.getAll("false");
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || []);
+    });
+  }
+
+  async markTaskSynced(taskId: string): Promise<void> {
+    const task = await this.getTask(taskId);
+    if (task) {
+      task.synced = true;
+      task.lastSyncedAt = new Date().toISOString();
+      await this.saveTask(task);
     }
   }
 

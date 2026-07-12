@@ -21,6 +21,7 @@ import {
   validateRequestBody 
 } from '@/lib/validation/schemas';
 import { logAIUsage } from "@/lib/ai/tracker";
+import { awardXPBySource } from "@/lib/xp/manager";
 
 const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
 
@@ -763,9 +764,8 @@ export async function POST(req: Request) {
         });
       } else {
         savedId = inserted.id;
-        // XP scales with difficulty
-        const xpAmount = validDifficulty === "hard" ? 30 : validDifficulty === "medium" ? 25 : 20;
-        try { await supabase.rpc("increment_xp", { user_id: user.id, amount: xpAmount }); } catch {}
+        // Award XP using centralized manager
+        await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
       }
     }
 
@@ -806,7 +806,8 @@ export async function PATCH(req: Request) {
     }
 
     if (clamped === 100) {
-      try { await supabase.rpc("increment_xp", { user_id: user.id, amount: 35 }); } catch {}
+      // Award XP for lesson completion using centralized manager
+      await awardXPBySource(user.id, "lesson_completion");
     }
 
     return NextResponse.json({ success: true, progress: clamped });

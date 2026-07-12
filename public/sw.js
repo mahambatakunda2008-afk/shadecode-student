@@ -21,6 +21,14 @@ const CACHE_ROUTES = [
   '/learn',
 ];
 
+// API routes to cache for offline access
+const API_CACHE_ROUTES = [
+  '/api/tasks',
+  '/api/learn',
+  '/api/timetable',
+  '/api/achievements',
+];
+
 // Low-bandwidth mode flag
 let lowBandwidthMode = false;
 
@@ -89,6 +97,12 @@ self.addEventListener('fetch', (event) => {
   // Cache dashboard and curriculum pages with Network First strategy
   if (CACHE_ROUTES.some(route => url.pathname.startsWith(route))) {
     event.respondWith(networkFirstStrategy(request, isLowBandwidthRequest));
+    return;
+  }
+
+  // Cache API routes with Stale While Revalidate strategy
+  if (API_CACHE_ROUTES.some(route => url.pathname.startsWith(route))) {
+    event.respondWith(staleWhileRevalidateStrategy(request));
     return;
   }
 
@@ -161,6 +175,39 @@ async function cacheFirstStrategy(request) {
     return networkResponse;
   } catch (error) {
     console.log('[SW] Network failed for cache-first:', request.url);
+    throw error;
+  }
+}
+
+// Stale While Revalidate strategy - serve from cache, update in background
+async function staleWhileRevalidateStrategy(request) {
+  const cache = await caches.open(DYNAMIC_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+  
+  // Always try to fetch in background to update cache
+  const networkPromise = fetch(request)
+    .then(networkResponse => {
+      if (networkResponse.ok) {
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    })
+    .catch(error => {
+      console.log('[SW] Network failed for SWR:', request.url);
+      return null;
+    });
+  
+  // Return cached response immediately if available
+  if (cachedResponse) {
+    // Don't wait for network, return cached version
+    return cachedResponse;
+  }
+  
+  // If no cache, wait for network
+  try {
+    return await networkPromise;
+  } catch (error) {
+    console.log('[SW] Both cache and network failed for SWR:', request.url);
     throw error;
   }
 }

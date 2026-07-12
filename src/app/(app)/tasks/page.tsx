@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { emitStudySessionStarted, emitStudySessionFinished } from "@/lib/events";
+import { awardXPClient } from "@/lib/xp/manager";
 
 interface Subject {
   id: string;
@@ -100,34 +101,17 @@ export default function Tasks() {
     if (task.completed || !userId) return;
     await supabase.from("tasks").update({ completed: true }).eq("id", task.id);
 
-    const newXp = xp + 10;
-    const newLevel = Math.floor(newXp / 100) + 1;
-    await supabase.from("profiles").update({ xp: newXp, level: newLevel }).eq("id", userId);
-
+    // Award XP using centralized manager
+    const result = await awardXPClient(userId, { amount: 10, source: "task_completion" });
+    
     setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: true } : t));
-    setXp(newXp);
-    setLevel(newLevel);
-    showToast("+10 XP 🔥");
+    if (result.success) {
+      setXp(result.xp);
+      setLevel(result.level);
+      showToast("+10 XP 🔥");
+    }
 
-    // Check achievements
-    const completedCount = tasks.filter(t => t.completed).length + 1;
-    if (completedCount === 1) {
-      await supabase.from("achievements").insert({ user_id: userId, title: "First Completion 🎯" });
-    }
-    if (completedCount === 5) {
-      await supabase.from("achievements").insert({ user_id: userId, title: "On A Roll 🔥" });
-    }
-    if (completedCount === 10) {
-      await supabase.from("achievements").insert({ user_id: userId, title: "Study Machine ⚡" });
-    }
-    emitCortexEvent({
-      userId,
-      type: "task.completed",
-      source: "tasks",
-      data: { taskId: task.id, subjectId: task.subject_id, title: task.title },
-    });
-
-    // Emit unified event
+    // Emit unified event for achievement tracking (handled by AchievementsEventHandler)
     const subject = subjects.find(s => s.id === task.subject_id);
     await emitStudySessionFinished(userId, {
       sessionId: crypto.randomUUID(),
@@ -143,6 +127,13 @@ export default function Tasks() {
         duration: 10,
       }],
     }, "tasks");
+
+    emitCortexEvent({
+      userId,
+      type: "task.completed",
+      source: "tasks",
+      data: { taskId: task.id, subjectId: task.subject_id, title: task.title },
+    });
   };
 
   const deleteTask = async (taskId: string) => {

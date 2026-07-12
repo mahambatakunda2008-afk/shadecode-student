@@ -35,6 +35,10 @@ interface OfflineSnapshot {
   completedTasks: number;
   pendingTasks: number;
   subjects: string[];
+  weakSubjects?: string[];
+  strongSubjects?: string[];
+  averageExamScore?: number;
+  totalStudyMinutes?: number;
 }
 
 export function generateOfflineInsight(snapshot: OfflineSnapshot): string {
@@ -46,13 +50,39 @@ export function generateOfflineInsight(snapshot: OfflineSnapshot): string {
     subjects,
     xp,
     level,
+    weakSubjects,
+    strongSubjects,
+    averageExamScore,
+    totalStudyMinutes,
   } = snapshot;
 
   const completionRate = totalTasks > 0
     ? Math.round((completedTasks / totalTasks) * 100)
     : 0;
 
-  // Priority-ordered rules — first match wins
+  // Intelligence-driven rules
+  if (weakSubjects && weakSubjects.length > 0) {
+    const weakAreas = weakSubjects.slice(0, 2).join(" and ");
+    return `Focus on strengthening ${weakAreas} — identified as priority improvement areas.`;
+  }
+
+  if (strongSubjects && strongSubjects.length >= 2) {
+    return `Strong performance in ${strongSubjects.slice(0, 2).join(" and ")} — consider deeper challenges.`;
+  }
+
+  if (averageExamScore && averageExamScore < 50 && totalTasks >= 5) {
+    return `Average exam score is ${averageExamScore}%. Increase practice frequency to improve results.`;
+  }
+
+  if (averageExamScore && averageExamScore >= 80) {
+    return `Excellent exam performance at ${averageExamScore}% average. Maintain current study rhythm.`;
+  }
+
+  if (totalStudyMinutes && totalStudyMinutes >= 600) {
+    const hours = Math.round(totalStudyMinutes / 60);
+    return `${hours} total study hours logged — strong dedication detected across subjects.`;
+  }
+
   if (streak >= 14) {
     return `Study streak now spans ${streak} consecutive active days.`;
   }
@@ -98,6 +128,28 @@ export function generateOfflineInsight(snapshot: OfflineSnapshot): string {
   }
 
   return `${completedTasks} of ${totalTasks} tasks completed at Level ${level} with ${xp} XP total.`;
+}
+
+export function generateOfflineRecommendation(snapshot: OfflineSnapshot): string {
+  const { weakSubjects, strongSubjects, pendingTasks, subjects, streak, completedTasks, totalTasks } = snapshot;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  if (weakSubjects && weakSubjects.length > 0) {
+    return `Study ${weakSubjects[0]} to strengthen your understanding.`;
+  }
+  if (pendingTasks > 0 && completionRate < 50) {
+    return `Complete ${Math.min(pendingTasks, 3)} task${Math.min(pendingTasks, 3) !== 1 ? "s" : ""} to improve your completion rate.`;
+  }
+  if (subjects.length === 0) {
+    return "Add a subject to begin your learning journey.";
+  }
+  if (streak === 0) {
+    return `Start with ${subjects[0]} to build a new study streak.`;
+  }
+  if (strongSubjects && strongSubjects.length > 0) {
+    return `Continue with ${strongSubjects[0]} to maintain momentum.`;
+  }
+  return subjects.length > 0 ? `Review ${subjects[0]} fundamentals.` : "Start learning today!";
 }
 
 // ── Offline queue for writes ───────────────────────────────────────────────────
