@@ -22,12 +22,12 @@ export async function POST(req) {
     // Validate form data
     const validation = validateRequestBody({ topic, subject, question, userId }, mathCheckerSchema);
     if (!validation.success) {
-      return new Response(JSON.stringify({ 
-        error: 'Validation failed', 
+      return new Response(JSON.stringify({
+        error: 'Validation failed',
         details: validation.details?.issues.map(e => ({ field: e.path.join('.'), message: e.message }))
-      }), { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
       });
     }
 
@@ -40,18 +40,24 @@ export async function POST(req) {
     const mimeType = imageFile.type || 'image/jpeg';
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+    const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
     let result = null;
     let successfulModel = null;
 
     for (const modelName of models) {
       const startTime = Date.now();
+      // Ensure base64 is clean
+      const base64 = Buffer.from(bytes).toString('base64');
+      // Ensure prompt specifically asks for no markdown
+
       const prompt = `You are Cortex, a neutral mathematical analysis system inside Shadecode Student.
+     
 
 The student has just studied the topic: "${topic}" in ${subject || 'their subject'}.
 ${question ? `The specific question they are solving is: "${question}"` : 'They were asked to solve a problem on paper and show their full working.'}
 
 Analyse this student's handwritten working carefully. Do not encourage or motivate — only observe and reflect what the working shows about their understanding.
+Respond ONLY with valid JSON. No markdown blocks.
 
 Respond ONLY with valid JSON in this exact format, no other text:
 {
@@ -101,18 +107,18 @@ Be thorough. Analyse every visible step. If the working is incomplete or skips s
           completionTokens,
           latencyMs,
           success: true,
-          requestMetadata: { 
-            topic, 
-            subject, 
+          requestMetadata: {
+            topic,
+            subject,
             hasQuestion: !!question,
-            imageSize: bytes.length 
+            imageSize: bytes.length
           },
         });
 
         break;
       } catch (err) {
         const latencyMs = Date.now() - startTime;
-        
+
         // Log failed request
         await logAIUsage({
           userId,
@@ -126,11 +132,11 @@ Be thorough. Analyse every visible step. If the working is incomplete or skips s
           success: false,
           errorMessage: err.message,
           errorCode: err.constructor.name,
-          requestMetadata: { 
-            topic, 
-            subject, 
+          requestMetadata: {
+            topic,
+            subject,
             hasQuestion: !!question,
-            imageSize: bytes.length 
+            imageSize: bytes.length
           },
         });
 
