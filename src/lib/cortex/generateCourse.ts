@@ -1,6 +1,5 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-
-const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
+import { callAI as sharedCallAI } from "@/lib/ai";
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -9,35 +8,10 @@ function getSupabaseAdmin() {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+// Delegates to the shared provider chain (Cloudflare -> OpenAI -> Gemini -> OpenRouter,
+// with real timeouts and usage tracking) instead of maintaining its own partial copy.
 export let aiCaller = async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
-  // Minimal AI caller reusing available providers
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
-      });
-      const data = await res.json();
-      const text = data.choices?.[0]?.message?.content;
-      if (text && text.length > 20) return text;
-    } catch (err) { console.error("[AI] OpenAI failed:", err); }
-  }
-  // Fallback: Cloudflare
-  if (process.env.CLOUDFLARE_API_TOKEN) {
-    try {
-      const sup = CF_ACCOUNT;
-      const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${sup}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
-      });
-      const data = await res.json();
-      const text = typeof data?.result?.response === "string" ? data.result.response : JSON.stringify(data?.result?.response ?? "");
-      if (text && text.length > 20) return text;
-    } catch (err) { console.error("[AI] Cloudflare failed:", err); }
-  }
-  return null;
+  return sharedCallAI(prompt, maxTokens, { feature: "course_generation", subfeature: "generate_course" });
 };
 
 export function setAiCaller(fn: (prompt: string, maxTokens?: number) => Promise<string | null>) {

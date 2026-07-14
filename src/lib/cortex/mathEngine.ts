@@ -84,8 +84,8 @@ ${levelContext}
 
 Solve this problem:`;
 
-    const response = await callAI(prompt, 3000);
-    if (!response) return null;
+    const response = await callAI(prompt, 3000, { userId, feature: "math_engine", subfeature: "solve_problem" });
+    if (!response) return fallbackSolution(problem, subject);
 
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackSolution(problem, subject);

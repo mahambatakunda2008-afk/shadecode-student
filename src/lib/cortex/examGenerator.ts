@@ -90,8 +90,8 @@ ${studentContext}
 
 Generate the exam:`;
 
-    const response = await callAI(prompt, 6000);
-    if (!response) return null;
+    const response = await callAI(prompt, 6000, { userId, feature: "exam_sim", subfeature: "generate_exam" });
+    if (!response) return fallbackExam(subject, difficulty, questionCount);
 
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackExam(subject, difficulty, questionCount);
