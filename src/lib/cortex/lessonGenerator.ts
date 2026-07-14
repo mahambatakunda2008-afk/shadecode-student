@@ -73,8 +73,8 @@ Total lessons completed: ${memory.totalLessonsCompleted ?? 0}`;
 
     const prompt = `${LESSON_SYSTEM_PROMPT}\n\nSubject: ${subject}\nTopic: ${topic}\nTarget difficulty: ${difficulty}\n\nStudent context:\n${studentContext}\n\nGenerate the lesson:`;
 
-    const response = await callAI(prompt, 4000);
-    if (!response) return null;
+    const response = await callAI(prompt, 4000, { userId, feature: "lesson_assistant", subfeature: "generate_lesson" });
+    if (!response) return fallbackLesson(subject, topic, difficulty);
 
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackLesson(subject, topic, difficulty);

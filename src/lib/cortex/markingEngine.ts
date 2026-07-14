@@ -73,8 +73,8 @@ ${studentAnswer}
 
 Mark this answer:`;
 
-    const response = await callAI(prompt, 1000);
-    if (!response) return null;
+    const response = await callAI(prompt, 1000, { feature: "exam_sim", subfeature: "mark_answer" });
+    if (!response) return fallbackMark(question.id, question.marks, studentAnswer);
 
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackMark(question.id, question.marks, studentAnswer);

@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { learnQuizSchema, validateRequestBody } from "@/lib/validation/schemas";
-
-const CF_ACCOUNT = "6a119f6052c02197d301e50f0d4a56cc";
+import { callAI } from "@/lib/ai";
 
 function getSupabaseAdmin() {
   return createSupabaseClient(
@@ -19,97 +18,6 @@ function getBearerToken(req: Request): string | null {
   return h.slice(7).trim() || null;
 }
 
-async function callAI(prompt: string): Promise<string | null> {
-  const TIMEOUT_MS = 15000; // 15 second timeout per provider
-
-  async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT_MS): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err instanceof Error && err.name === 'AbortError') {
-        throw new Error(`Request timeout after ${timeout}ms`);
-      }
-      throw err;
-    }
-  }
-
-  if (process.env.CLOUDFLARE_API_TOKEN) {
-    try {
-      console.log("[Quiz AI] Trying Cloudflare Workers AI...");
-      const res = await fetchWithTimeout(
-        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`,
-        { method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 1500 }) }
-      );
-      const d = await res.json();
-      const t = typeof d?.result?.response === "string" ? d.result.response : null;
-      if (t && t.length > 20) {
-        console.log("[Quiz AI] Cloudflare Workers AI succeeded");
-        return t;
-      }
-    } catch (err) { console.error("[Quiz AI] Cloudflare failed:", err); }
-  }
-
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      console.log("[Quiz AI] Trying OpenAI...");
-      const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: 1500, response_format: { type: "json_object" } }),
-      });
-      const d = await res.json();
-      const t = d.choices?.[0]?.message?.content;
-      if (t && t.length > 20) {
-        console.log("[Quiz AI] OpenAI succeeded");
-        return t;
-      }
-    } catch (err) { console.error("[Quiz AI] OpenAI failed:", err); }
-  }
-
-  const keys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  for (const key of keys) {
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
-      try {
-        console.log(`[Quiz AI] Trying Gemini (${model})...`);
-        const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 1500, responseMimeType: "application/json" } }),
-        });
-        const d = await res.json();
-        const t = d?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (t && t.length > 20) {
-          console.log(`[Quiz AI] Gemini (${model}) succeeded`);
-          return t;
-        }
-      } catch (err) { console.error(`[Quiz AI] Gemini (${model}) failed:`, err); }
-    }
-  }
-
-  if (process.env.OPENROUTER_API_KEY) {
-    try {
-      console.log("[Quiz AI] Trying OpenRouter...");
-      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app" },
-        body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }], max_tokens: 1500 }),
-      });
-      const d = await res.json();
-      const t = d.choices?.[0]?.message?.content;
-      if (t && t.length > 20) {
-        console.log("[Quiz AI] OpenRouter succeeded");
-        return t;
-      }
-    } catch (err) { console.error("[Quiz AI] OpenRouter failed:", err); }
-  }
-
-  console.error("[Quiz AI] All providers exhausted.");
-  return null;
-}
 
 function safeParseJSON(raw: string) {
   const candidates = [
@@ -197,7 +105,7 @@ STRICT RULES:
 - Do NOT use LaTeX backslashes. Use plain text math (x^2, sin(x), etc.)
 - Output ONLY the JSON object, nothing else`;
 
-    const raw    = await callAI(prompt);
+    const raw    = await callAI(prompt, 2000, { userId: user.id, feature: "lesson_assistant", subfeature: "quiz" });
     console.log("[Quiz] AI response length:", raw?.length ?? 0);
     
     if (!raw) {
