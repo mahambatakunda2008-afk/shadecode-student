@@ -1,10 +1,12 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient } from '@supabase/ssr'
 
-export const supabaseBrowser = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-// Backward-compatible alias — all pages import createClient
+// Exporting as 'createClient' to match your existing imports in 50+ files
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
 
-// Factory alias — pages call createClient() expecting a function
-export const createClient = () => supabaseBrowser;
+// Keeping this for modern standard
+export const createSupabaseBrowserClient = createClient;
