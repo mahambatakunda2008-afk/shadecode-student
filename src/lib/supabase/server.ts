@@ -16,7 +16,7 @@ export async function createSupabaseServerClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
-          } catch { /* Safe to ignore in middleware/SSR */ }
+          } catch { /* Ignore set calls in read-only RSC */ }
         },
       },
     }

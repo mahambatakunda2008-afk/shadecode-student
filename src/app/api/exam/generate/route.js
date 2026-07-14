@@ -28,7 +28,8 @@ async function callAI(prompt) {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (geminiKey) {
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+      // Change this line in your callAI function
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt + " Output strict JSON." }] }] }),
