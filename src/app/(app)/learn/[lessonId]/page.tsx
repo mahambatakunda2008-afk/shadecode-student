@@ -31,7 +31,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme { return THEMES[name] ?? THEMES.default; }
@@ -63,7 +63,7 @@ function BlockCard({ block }: { block: LessonBlock }) {
       <p style={{ fontSize: 14, lineHeight: 1.75, color: "#cbd5e1", margin: 0, fontFamily: block.type === "math" ? "monospace" : undefined }}>{block.content}</p>
     </div>
   );
-  return <p style={{ fontSize: 14, lineHeight: 1.85, color: "#94a3b8", margin: 0 }}>{block.content}</p>;
+  return <p style={{ fontSize: 14, lineHeight: 1.85, color: "var(--muted-foreground)", margin: 0 }}>{block.content}</p>;
 }
 
 function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 : 20; }
@@ -252,7 +252,7 @@ export default function LessonDetailPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ position: "relative", width: 36, height: 36 }}>
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
@@ -262,8 +262,8 @@ export default function LessonDetailPage() {
   );
 
   if (error || !lesson) return (
-    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <p style={{ color: "#f87171", fontSize: 14 }}>{error ?? "Lesson not found."}</p>
+    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <p style={{ color: "var(--danger)", fontSize: 14 }}>{error ?? "Lesson not found."}</p>
       <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
         {error && accessToken && (
           <button onClick={() => loadLesson(accessToken)} style={{ background: "transparent", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 8, padding: "6px 14px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
@@ -282,7 +282,7 @@ export default function LessonDetailPage() {
   const earnedXP  = xpForDiff(lesson.difficulty);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
       <style>{`
         @keyframes spin       { to { transform: rotate(360deg) } }
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: translateY(0) } }
@@ -313,14 +313,14 @@ export default function LessonDetailPage() {
 
       <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", padding: "32px 16px 60px" }}>
 
-        <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, textDecoration: "none", marginBottom: 28 }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#94a3b8")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#475569")}>
+        <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none", marginBottom: 28 }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--muted-foreground)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "var(--muted-foreground)")}>
           <ArrowLeft size={15} /> Back to Learn
         </Link>
 
         {/* ── Header card ── */}
-        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, marginBottom: 28, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--card-border)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, marginBottom: 28, boxShadow: "inset 0 1px 0 var(--card-border)" }}>
           <div style={{ height: 3, background: `linear-gradient(90deg, ${t.hex}, ${t.hex}44)` }} />
           <div style={{ padding: "24px 28px" }}>
             <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
@@ -328,7 +328,7 @@ export default function LessonDetailPage() {
                 <Icon size={15} color={t.text} />
               </div>
               <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{lesson.subject}</span>
-              <span style={{ color: "#334155" }}>·</span>
+              <span style={{ color: "var(--muted-foreground)" }}>·</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: d.text, background: d.bg, border: `1px solid ${d.border}`, borderRadius: 999, padding: "3px 10px" }}>{d.label}</span>
               {lesson.completed && (
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#34d399", background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 999, padding: "3px 10px" }}>
@@ -338,22 +338,22 @@ export default function LessonDetailPage() {
             </div>
 
             <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", lineHeight: 1.3 }}>{lesson.title}</h1>
-            {lesson.description && <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 18px", lineHeight: 1.6 }}>{lesson.description}</p>}
+            {lesson.description && <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 18px", lineHeight: 1.6 }}>{lesson.description}</p>}
 
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-                <span style={{ fontSize: 12, color: "#475569" }}>Progress</span>
+                <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Progress</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {autoSaving && (
-                    <span style={{ fontSize: 10, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", border: "1px solid rgba(100,116,139,0.3)", borderTopColor: "#64748b", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontSize: 10, color: "var(--muted-foreground)", display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", border: "1px solid rgba(100,116,139,0.3)", borderTopColor: "var(--muted-foreground)", animation: "spin 0.8s linear infinite" }} />
                       Saving...
                     </span>
                   )}
                   <span style={{ fontSize: 12, fontWeight: 600, color: lesson.completed ? "#34d399" : t.text }}>{lesson.progress}%</span>
                 </div>
               </div>
-              <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+              <div style={{ height: 6, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${lesson.progress}%`, background: lesson.completed ? "linear-gradient(90deg, #10b981, #34d399)" : `linear-gradient(90deg, ${t.hex}, ${t.hex}88)`, borderRadius: 999, transition: "width .8s ease" }} />
               </div>
             </div>
@@ -421,12 +421,12 @@ export default function LessonDetailPage() {
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: "52px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20 }}>
-            <div style={{ width: 50, height: 50, borderRadius: 15, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-              <BookOpen size={21} color="#334155" />
+          <div style={{ textAlign: "center", padding: "52px 24px", background: "var(--card-border)", border: "1px solid var(--card-border)", borderRadius: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 15, background: "var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <BookOpen size={21} color="var(--muted-foreground)" />
             </div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "#475569", margin: "0 0 6px" }}>No content yet</p>
-            <p style={{ fontSize: 13, color: "#334155", margin: "0 0 20px" }}>This lesson was saved before content generation was added.</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--muted-foreground)", margin: "0 0 6px" }}>No content yet</p>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 20px" }}>This lesson was saved before content generation was added.</p>
             <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "9px 16px", textDecoration: "none" }}>
               Generate a new lesson
             </Link>
@@ -434,7 +434,7 @@ export default function LessonDetailPage() {
         )}
 
         {lesson.updated_at && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "#334155", fontSize: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 12 }}>
             <Clock size={11} />
             Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
           </div>
@@ -444,7 +444,7 @@ export default function LessonDetailPage() {
       {/* Socratic Tutor Modal */}
       {showTutor && lesson && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}>
-          <div style={{ width: "100%", maxWidth: 700, height: "80vh", background: "#0f0f24", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ width: "100%", maxWidth: 700, height: "80vh", background: "#0f0f24", border: "1px solid var(--card-border)", borderRadius: 16, overflow: "hidden" }}>
             <SocraticTutor
               userId={currentUser || ""}
               subject={lesson.subject}
