@@ -413,7 +413,7 @@ export async function POST(req: Request) {
     const validDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
 
     const prompt = buildLessonPrompt(subject, topic, validDifficulty);
-    const raw    = await callAI(prompt, 2000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson" });
+    const raw    = await callAI(prompt, 4000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson" });
 
     if (!raw) {
       log.lessonGenerationFailed({
@@ -423,10 +423,10 @@ export async function POST(req: Request) {
         difficulty: validDifficulty,
         error: "All AI providers exhausted",
       });
-      return NextResponse.json({
-        title:  `${topic} — Lesson Unavailable`,
-        blocks: [{ type: "text", content: "All AI providers are currently unavailable. Please try again in a moment." }],
-      });
+      return NextResponse.json(
+        { error: "All AI providers are currently unavailable. Please try again in a moment." },
+        { status: 503 }
+      );
     }
 
     const parsed = safeParseJSON(raw);
@@ -439,28 +439,45 @@ export async function POST(req: Request) {
         difficulty: validDifficulty,
         error: `AI returned invalid JSON: ${raw.slice(0, 300)}`,
       });
-      return NextResponse.json({
-        title:  topic,
-        blocks: [{ type: "text", content: "The AI returned content that couldn't be parsed. Please try again or rephrase the topic." }],
-      });
+      return NextResponse.json(
+        { error: "Couldn't generate a lesson on that topic. Please try again or rephrase it." },
+        { status: 422 }
+      );
     }
 
-    // Find subject_id
-    const { data: subjectRow } = await supabase
+    // Find or create subject_id (mirrors the auto-create pattern used by
+    // the course_save branch above -- previously this only SELECTed, so
+    // any lesson generated for a brand-new subject had no subject_id to
+    // save against and fell through to the {id: null, ...} preview path,
+    // even on a fully successful generation).
+    let subjectId: string | null = null;
+    const { data: existingSubject } = await supabase
       .from("subjects")
       .select("id")
       .eq("user_id", user.id)
       .eq("name", subject)
       .maybeSingle();
 
+    if (existingSubject?.id) {
+      subjectId = existingSubject.id;
+    } else {
+      const { data: newSubject, error: subjectInsertError } = await supabase
+        .from("subjects")
+        .insert({ user_id: user.id, name: subject })
+        .select("id")
+        .single();
+      if (subjectInsertError) console.error("[learn] Failed to auto-create subject:", subjectInsertError);
+      subjectId = newSubject?.id ?? null;
+    }
+
     let savedId: string | null = null;
 
-    if (subjectRow?.id) {
+    if (subjectId) {
       const { data: inserted, error: insertError } = await supabase
         .from("learn_lessons")
         .insert({
           user_id:     user.id,
-          subject_id:  subjectRow.id,
+          subject_id:  subjectId,
           title:       parsed.title ?? topic,
           description: `AI-generated ${validDifficulty} lesson on ${topic}`,
           difficulty:  validDifficulty,
@@ -484,6 +501,13 @@ export async function POST(req: Request) {
         // Award XP using centralized manager
         await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
       }
+    }
+
+    if (!savedId) {
+      return NextResponse.json(
+        { error: "The lesson was generated but couldn't be saved. Please try again." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ id: savedId, title: parsed.title ?? topic, blocks: parsed.blocks });

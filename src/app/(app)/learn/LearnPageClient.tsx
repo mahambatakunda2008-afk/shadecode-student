@@ -168,19 +168,15 @@ export default function LearnPageClient() {
       setGenStep(3); // Structuring lesson
       const d = await r.json();
 
+      if (!r.ok || d?.error) {
+        setGenErr(d?.error || "Couldn't generate the lesson. Try a different topic.");
+        return;
+      }
+
       if (d?.id) {
         setGenStep(4); // Finalizing
         await new Promise(r => setTimeout(r, 300));
         router.push(`/learn/${d.id}`);
-        return;
-      }
-
-      if (d?.title && Array.isArray(d?.blocks)) {
-        setGenStep(4); // Finalizing
-        await new Promise(r => setTimeout(r, 300));
-        sessionStorage.setItem("unsaved_lesson", JSON.stringify({ ...d, subject }));
-        await saveToRevision({ title: d.title, content: JSON.stringify(d.blocks), subject });
-        router.push("/learn/preview");
         return;
       }
 
