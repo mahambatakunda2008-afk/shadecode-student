@@ -37,7 +37,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme {
@@ -200,7 +200,7 @@ export default function LearnPageClient() {
      LOADING
   ───────────────────────────────────────── */
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ position: "relative", width: 36, height: 36 }}>
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.15)" }} />
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
@@ -213,19 +213,19 @@ export default function LearnPageClient() {
      RENDER
   ───────────────────────────────────────── */
   return (
-    <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
 
         .learn-gen-btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
         .learn-gen-btn:disabled             { opacity: 0.5; cursor: not-allowed; }
-        .subj-pill:hover                    { border-color: rgba(255,255,255,0.2) !important; color: #e2e8f0 !important; }
+        .subj-pill:hover                    { border-color: var(--card-border) !important; color: #e2e8f0 !important; }
         .diff-btn:hover                     { filter: brightness(1.1); }
-        .lesson-row:hover                   { background: rgba(255,255,255,0.03) !important; }
-        .subj-card:hover                    { transform: translateY(-2px); border-color: rgba(255,255,255,0.12) !important; }
+        .lesson-row:hover                   { background: var(--card-border) !important; }
+        .subj-card:hover                    { transform: translateY(-2px); border-color: var(--card-border) !important; }
         .topic-input:focus                  { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.08); }
-        .quick-link:hover                   { background: rgba(255,255,255,0.06) !important; }
+        .quick-link:hover                   { background: var(--card-border) !important; }
 
         @media (max-width: 767px) {
           .learn-main-container { padding: 16px !important; }
@@ -263,7 +263,7 @@ export default function LearnPageClient() {
                 </div>
                 <div>
                   <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: "#f1f5f9" }}>AI Learn</h1>
-                  <p style={{ fontSize: 12, color: "#475569", margin: 0 }}>Generate lessons, study smarter</p>
+                  <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>Generate lessons, study smarter</p>
                 </div>
               </div>
             </div>
@@ -276,12 +276,12 @@ export default function LearnPageClient() {
                   { icon: <Flame size={14} color="#f97316" />, label: "Streak", value: `${summary.currentStreak}d` },
                   { icon: <Star size={14} color="#a78bfa" />, label: "Level", value: summary.level },
                 ].map(({ icon, label, value }) => (
-                  <div key={label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div key={label} style={{ background: "var(--card-border)", border: "1px solid var(--card-border)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: "var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {icon}
                     </div>
                     <div>
-                      <p style={{ fontSize: 11, color: "#475569", margin: 0, fontWeight: 600 }}>{label}</p>
+                      <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: 0, fontWeight: 600 }}>{label}</p>
                       <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "#e2e8f0" }}>{value}</p>
                     </div>
                   </div>
@@ -300,7 +300,7 @@ export default function LearnPageClient() {
               {/* Subject pills */}
               {subjects.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Subject</p>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Subject</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {subjects.map(s => {
                       const t      = theme(s.name);
@@ -313,9 +313,9 @@ export default function LearnPageClient() {
                           style={{
                             fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 999,
                             border: "1px solid", cursor: "pointer", transition: "all .15s",
-                            background: active ? t.bg : "rgba(255,255,255,0.03)",
-                            borderColor: active ? t.border : "rgba(255,255,255,0.08)",
-                            color: active ? t.text : "#475569",
+                            background: active ? t.bg : "var(--card-border)",
+                            borderColor: active ? t.border : "var(--card-border)",
+                            color: active ? t.text : "var(--muted-foreground)",
                           }}
                         >
                           {s.name}
@@ -328,7 +328,7 @@ export default function LearnPageClient() {
 
               {/* Topic input */}
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Topic</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Topic</p>
                 <input
                   className="topic-input"
                   type="text"
@@ -339,7 +339,7 @@ export default function LearnPageClient() {
                   disabled={!subject}
                   style={{
                     width: "100%", boxSizing: "border-box",
-                    background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(0,0,0,0.35)", border: "1px solid var(--card-border)",
                     borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#f1f5f9",
                     outline: "none", transition: "border-color .15s, box-shadow .15s",
                     opacity: subject ? 1 : 0.5,
@@ -349,7 +349,7 @@ export default function LearnPageClient() {
 
               {/* Difficulty */}
               <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Difficulty</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Difficulty</p>
                 <div style={{ display: "flex", gap: 8 }}>
                   {DIFFICULTIES.map(d => (
                     <button
@@ -359,12 +359,12 @@ export default function LearnPageClient() {
                       style={{
                         flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid",
                         cursor: "pointer", transition: "all .15s", textAlign: "center",
-                        background: difficulty === d.value ? d.bg : "rgba(255,255,255,0.03)",
-                        borderColor: difficulty === d.value ? d.border : "rgba(255,255,255,0.08)",
+                        background: difficulty === d.value ? d.bg : "var(--card-border)",
+                        borderColor: difficulty === d.value ? d.border : "var(--card-border)",
                       }}
                     >
-                      <p style={{ fontSize: 12, fontWeight: 700, color: difficulty === d.value ? d.color : "#475569", margin: 0 }}>{d.label}</p>
-                      <p style={{ fontSize: 10, color: difficulty === d.value ? d.color : "#334155", margin: "2px 0 0", opacity: 0.8 }}>{d.desc}</p>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: difficulty === d.value ? d.color : "var(--muted-foreground)", margin: 0 }}>{d.label}</p>
+                      <p style={{ fontSize: 10, color: difficulty === d.value ? d.color : "var(--muted-foreground)", margin: "2px 0 0", opacity: 0.8 }}>{d.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -385,7 +385,7 @@ export default function LearnPageClient() {
               >
                 {generating ? (
                   <>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.7s linear infinite" }} />
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--card-border)", borderTopColor: "#fff", animation: "spin 0.7s linear infinite" }} />
                     {savingRevision ? "Saving to revisions…" : getGenerationStepText(genStep)}
                   </>
                 ) : (
@@ -408,19 +408,19 @@ export default function LearnPageClient() {
                       <div key={step} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <div style={{
                           width: 16, height: 16, borderRadius: "50%",
-                          background: genStep >= step ? "#8b5cf6" : "rgba(255,255,255,0.1)",
-                          border: genStep >= step ? "none" : "1px solid rgba(255,255,255,0.2)",
+                          background: genStep >= step ? "#8b5cf6" : "var(--card-border)",
+                          border: genStep >= step ? "none" : "1px solid var(--card-border)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           transition: "background .3s, border .3s"
                         }}>
                           {genStep > step && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />}
-                          {genStep === step && <div style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite" }} />}
+                          {genStep === step && <div style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid var(--card-border)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite" }} />}
                         </div>
-                        <span style={{ fontSize: 12, color: genStep >= step ? "#e2e8f0" : "#475569", fontWeight: genStep === step ? 600 : 400 }}>{label}</span>
+                        <span style={{ fontSize: 12, color: genStep >= step ? "#e2e8f0" : "var(--muted-foreground)", fontWeight: genStep === step ? 600 : 400 }}>{label}</span>
                       </div>
                     ))}
                   </div>
-                  <div style={{ marginTop: 8, fontSize: 11, color: "#64748b" }}>
+                  <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted-foreground)" }}>
                     Estimated time: ~10-15 seconds
                   </div>
                 </div>
@@ -429,8 +429,8 @@ export default function LearnPageClient() {
               {/* Error */}
               {genErr && (
                 <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10 }}>
-                  <AlertCircle size={14} color="#f87171" />
-                  <p style={{ fontSize: 13, color: "#f87171", margin: 0 }}>{genErr}</p>
+                  <AlertCircle size={14} color="var(--danger)" />
+                  <p style={{ fontSize: 13, color: "var(--danger)", margin: 0 }}>{genErr}</p>
                 </div>
               )}
             </div>
@@ -438,9 +438,9 @@ export default function LearnPageClient() {
             {/* ── Quick links ── */}
             <div className="learn-quick-links" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24, animation: "fadeUp .4s ease .1s both" }}>
               {[
-                { href: "/learn/history",  icon: <Clock size={15} color="#94a3b8" />,  label: "Lesson History" },
-                { href: "/learn/subjects", icon: <BookOpen size={15} color="#94a3b8" />, label: "Subjects" },
-                { href: "/learn/study",    icon: <Brain size={15} color="#94a3b8" />,   label: "Focus Session" },
+                { href: "/learn/history",  icon: <Clock size={15} color="var(--muted-foreground)" />,  label: "Lesson History" },
+                { href: "/learn/subjects", icon: <BookOpen size={15} color="var(--muted-foreground)" />, label: "Subjects" },
+                { href: "/learn/study",    icon: <Brain size={15} color="var(--muted-foreground)" />,   label: "Focus Session" },
               ].map(({ href, icon, label }) => (
                 <Link
                   key={href}
@@ -449,8 +449,8 @@ export default function LearnPageClient() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
                     padding: "11px 0", borderRadius: 12,
-                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-                    fontSize: 12, fontWeight: 600, color: "#64748b", textDecoration: "none",
+                    background: "var(--card-border)", border: "1px solid var(--card-border)",
+                    fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)", textDecoration: "none",
                     transition: "background .15s",
                   }}
                 >
@@ -462,7 +462,7 @@ export default function LearnPageClient() {
             {/* ── Error state ── */}
             {error && (
               <div style={{ padding: "20px 24px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 16, marginBottom: 24 }}>
-                <p style={{ fontSize: 13, color: "#f87171", margin: 0 }}>{error}</p>
+                <p style={{ fontSize: 13, color: "var(--danger)", margin: 0 }}>{error}</p>
               </div>
             )}
 
@@ -471,15 +471,15 @@ export default function LearnPageClient() {
               <div style={{ animation: "fadeUp .4s ease .15s both" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Clock size={14} color="#475569" />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>Recent Lessons</span>
+                    <Clock size={14} color="var(--muted-foreground)" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted-foreground)" }}>Recent Lessons</span>
                   </div>
                   <Link href="/learn/history" style={{ fontSize: 12, color: "#6366f1", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
                     View all <ArrowRight size={12} />
                   </Link>
                 </div>
 
-                <div style={{ background: "linear-gradient(160deg, #111128 0%, #0e0e1e 100%)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, overflow: "hidden" }}>
+                <div style={{ background: "linear-gradient(160deg, #111128 0%, #0e0e1e 100%)", border: "1px solid var(--card-border)", borderRadius: 18, overflow: "hidden" }}>
                   {recentLessons.map((l, i) => {
                     const t    = theme(l.subject);
                     const Icon = t.icon;
@@ -493,7 +493,7 @@ export default function LearnPageClient() {
                         style={{
                           display: "flex", alignItems: "center", gap: 14, padding: "14px 20px",
                           textDecoration: "none", color: "#fff", transition: "background .15s",
-                          borderBottom: i < recentLessons.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                          borderBottom: i < recentLessons.length - 1 ? "1px solid var(--card-border)" : "none",
                           position: "relative",
                         }}
                       >
@@ -512,19 +512,19 @@ export default function LearnPageClient() {
 
                         {/* Title + meta */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: l.completed ? "#94a3b8" : "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
-                          <p style={{ fontSize: 11, color: "#475569", margin: "2px 0 0" }}>{l.subject}{date ? ` · ${ago(date)}` : ""}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: l.completed ? "var(--muted-foreground)" : "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
+                          <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>{l.subject}{date ? ` · ${ago(date)}` : ""}</p>
                         </div>
 
                         {/* Progress bar */}
                         <div style={{ width: 52, flexShrink: 0 }}>
-                          <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+                          <div style={{ height: 3, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
                             <div style={{ height: "100%", width: `${l.progress}%`, background: l.completed ? "#10b981" : t.hex, borderRadius: 999 }} />
                           </div>
-                          <p style={{ fontSize: 10, color: "#334155", margin: "3px 0 0", textAlign: "right" }}>{l.progress}%</p>
+                          <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "3px 0 0", textAlign: "right" }}>{l.progress}%</p>
                         </div>
 
-                        <ChevronRight size={14} color="#334155" style={{ flexShrink: 0 }} />
+                        <ChevronRight size={14} color="var(--muted-foreground)" style={{ flexShrink: 0 }} />
                       </Link>
                     );
                   })}
@@ -537,8 +537,8 @@ export default function LearnPageClient() {
               <div style={{ marginTop: 28, animation: "fadeUp .4s ease .2s both" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <BookOpen size={14} color="#475569" />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>Your Subjects</span>
+                    <BookOpen size={14} color="var(--muted-foreground)" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted-foreground)" }}>Your Subjects</span>
                   </div>
                   <Link href="/learn/subjects" style={{ fontSize: 12, color: "#6366f1", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
                     Manage <ArrowRight size={12} />
@@ -557,7 +557,7 @@ export default function LearnPageClient() {
                         style={{
                           display: "block", textDecoration: "none",
                           background: "linear-gradient(150deg, #121228 0%, #0e0e20 100%)",
-                          border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16,
+                          border: "1px solid var(--card-border)", borderRadius: 16,
                           padding: "18px 20px", transition: "transform .2s, border-color .2s",
                         }}
                         onClick={e => { e.preventDefault(); setSubject(s.name); window.scrollTo({ top: 0, behavior: "smooth" }); }}
@@ -568,11 +568,11 @@ export default function LearnPageClient() {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
-                            <p style={{ fontSize: 11, color: "#475569", margin: "2px 0 0" }}>
+                            <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
                               {s.lessonCount} lesson{s.lessonCount !== 1 ? "s" : ""}
                             </p>
                           </div>
-                          <ChevronRight size={14} color="#334155" />
+                          <ChevronRight size={14} color="var(--muted-foreground)" />
                         </div>
                       </Link>
                     );
@@ -587,8 +587,8 @@ export default function LearnPageClient() {
                 <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                   <BookOpen size={24} color="#8b5cf6" />
                 </div>
-                <p style={{ fontSize: 15, fontWeight: 600, color: "#475569", margin: "0 0 6px" }}>No subjects yet</p>
-                <p style={{ fontSize: 13, color: "#334155", margin: 0 }}>Complete onboarding to add subjects and start generating lessons.</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "var(--muted-foreground)", margin: "0 0 6px" }}>No subjects yet</p>
+                <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>Complete onboarding to add subjects and start generating lessons.</p>
               </div>
             )}
 

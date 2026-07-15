@@ -29,7 +29,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme {
@@ -107,7 +107,7 @@ export default function LearnHistoryPage() {
   // ── Loading ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ position: "relative", width: 36, height: 36 }}>
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
@@ -119,11 +119,11 @@ export default function LearnHistoryPage() {
   // ── Page ────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
-        .hist-row:hover  { background: rgba(255,255,255,0.025) !important; }
-        .filter-btn:hover { border-color: rgba(255,255,255,0.18) !important; color: #e2e8f0 !important; }
+        .hist-row:hover  { background: var(--card-border) !important; }
+        .filter-btn:hover { border-color: var(--card-border) !important; color: #e2e8f0 !important; }
         .search-input:focus { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
       `}</style>
 
@@ -132,9 +132,9 @@ export default function LearnHistoryPage() {
         {/* ── Header ── */}
         <div style={{ marginBottom: 32 }}>
           <Link href="/learn"
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, textDecoration: "none", marginBottom: 20 }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#94a3b8")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#475569")}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none", marginBottom: 20 }}
+            onMouseEnter={e => (e.currentTarget.style.color = "var(--muted-foreground)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "var(--muted-foreground)")}
           >
             <ArrowLeft size={14} /> Back to Learn
           </Link>
@@ -142,7 +142,7 @@ export default function LearnHistoryPage() {
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px" }}>Lesson History</h1>
-              <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
                 {lessons.length} lesson{lessons.length !== 1 ? "s" : ""} total · {completedCount} completed
               </p>
             </div>
@@ -152,9 +152,9 @@ export default function LearnHistoryPage() {
               {(["all", "done", "undone"] as const).map(v => (
                 <button key={v} onClick={() => setShowCompleted(v)}
                   style={{ fontSize: 11, fontWeight: 600, padding: "5px 12px", borderRadius: 8, border: "1px solid", cursor: "pointer", transition: "all .15s",
-                    background: showCompleted === v ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.03)",
-                    borderColor: showCompleted === v ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)",
-                    color: showCompleted === v ? "#c4b5fd" : "#475569",
+                    background: showCompleted === v ? "rgba(139,92,246,0.15)" : "var(--card-border)",
+                    borderColor: showCompleted === v ? "rgba(139,92,246,0.4)" : "var(--card-border)",
+                    color: showCompleted === v ? "#c4b5fd" : "var(--muted-foreground)",
                   }}>
                   {v === "all" ? "All" : v === "done" ? "✓ Completed" : "In Progress"}
                 </button>
@@ -165,14 +165,14 @@ export default function LearnHistoryPage() {
 
         {/* ── Search ── */}
         <div style={{ position: "relative", marginBottom: 16 }}>
-          <Search size={15} color="#475569" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <Search size={15} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
           <input
             type="text"
             placeholder="Search lessons or subjects…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="search-input"
-            style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "11px 14px 11px 42px", fontSize: 14, color: "#fff", outline: "none", transition: "border-color .15s", boxSizing: "border-box" }}
+            style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--card-border)", borderRadius: 12, padding: "11px 14px 11px 42px", fontSize: 14, color: "#fff", outline: "none", transition: "border-color .15s", boxSizing: "border-box" }}
           />
         </div>
 
@@ -185,9 +185,9 @@ export default function LearnHistoryPage() {
               <button key={s} onClick={() => setActiveSubject(s)}
                 className="filter-btn"
                 style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 999, border: "1px solid", cursor: "pointer", transition: "all .15s", whiteSpace: "nowrap",
-                  background: active ? (t ? t.bg : "rgba(139,92,246,0.15)") : "rgba(255,255,255,0.03)",
-                  borderColor: active ? (t ? t.border : "rgba(139,92,246,0.4)") : "rgba(255,255,255,0.08)",
-                  color: active ? (t ? t.text : "#c4b5fd") : "#475569",
+                  background: active ? (t ? t.bg : "rgba(139,92,246,0.15)") : "var(--card-border)",
+                  borderColor: active ? (t ? t.border : "rgba(139,92,246,0.4)") : "var(--card-border)",
+                  color: active ? (t ? t.text : "#c4b5fd") : "var(--muted-foreground)",
                 }}>
                 {s === "all" ? "All subjects" : s}
               </button>
@@ -209,9 +209,9 @@ export default function LearnHistoryPage() {
               <button key={v} onClick={() => setActiveDifficulty(v)}
                 className="filter-btn"
                 style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, border: "1px solid", cursor: "pointer", transition: "all .15s",
-                  background: active ? (d ? d.bg : "rgba(255,255,255,0.06)") : "rgba(255,255,255,0.03)",
-                  borderColor: active ? (d ? d.border : "rgba(255,255,255,0.2)") : "rgba(255,255,255,0.08)",
-                  color: active ? (d ? d.text : "#e2e8f0") : "#475569",
+                  background: active ? (d ? d.bg : "var(--card-border)") : "var(--card-border)",
+                  borderColor: active ? (d ? d.border : "var(--card-border)") : "var(--card-border)",
+                  color: active ? (d ? d.text : "#e2e8f0") : "var(--muted-foreground)",
                 }}>
                 {label}
               </button>
@@ -221,21 +221,21 @@ export default function LearnHistoryPage() {
 
         {/* ── Error ── */}
         {error && (
-          <p style={{ color: "#f87171", fontSize: 13, textAlign: "center", padding: "40px 0" }}>{error}</p>
+          <p style={{ color: "var(--danger)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>{error}</p>
         )}
 
         {/* ── Lesson list ── */}
         {!error && (
-          <div style={{ background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden" }}>
+          <div style={{ background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)", border: "1px solid var(--card-border)", borderRadius: 20, overflow: "hidden" }}>
             {filtered.length === 0 ? (
               <div style={{ padding: "56px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Filter size={20} color="#334155" />
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: "var(--card-border)", border: "1px solid var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Filter size={20} color="var(--muted-foreground)" />
                 </div>
-                <p style={{ fontSize: 14, color: "#475569", margin: 0, fontWeight: 500 }}>
+                <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, fontWeight: 500 }}>
                   {lessons.length === 0 ? "No lessons yet" : "No lessons match your filters"}
                 </p>
-                <p style={{ fontSize: 12, color: "#334155", margin: 0 }}>
+                <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>
                   {lessons.length === 0 ? "Generate your first one on the Learn page" : "Try adjusting your search or filters"}
                 </p>
                 {lessons.length === 0 && (
@@ -256,7 +256,7 @@ export default function LearnHistoryPage() {
                     key={l.id}
                     href={`/learn/${l.id}`}
                     className="hist-row"
-                    style={{ position: "relative", display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", textDecoration: "none", color: "#fff", borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none", transition: "background .15s" }}
+                    style={{ position: "relative", display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", textDecoration: "none", color: "#fff", borderBottom: i < filtered.length - 1 ? "1px solid var(--card-border)" : "none", transition: "background .15s" }}
                   >
                     {/* Left colour bar */}
                     <div style={{ position: "absolute", left: 0, top: 14, bottom: 14, width: 3, borderRadius: "0 3px 3px 0", background: t.hex, opacity: l.completed ? 1 : 0.5 }} />
@@ -265,7 +265,7 @@ export default function LearnHistoryPage() {
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: t.bg, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
                       <Icon size={17} color={t.text} />
                       {l.completed && (
-                        <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: "#10b981", border: "2px solid #09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: "#10b981", border: "2px solid var(--background)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <CheckCircle2 size={8} color="#fff" />
                         </div>
                       )}
@@ -273,16 +273,16 @@ export default function LearnHistoryPage() {
 
                     {/* Title + meta */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: l.completed ? "#94a3b8" : "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
-                      <p style={{ fontSize: 12, color: "#475569", margin: "3px 0 0" }}>{l.subject} · {ago(date)}</p>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: l.completed ? "var(--muted-foreground)" : "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
+                      <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "3px 0 0" }}>{l.subject} · {ago(date)}</p>
                     </div>
 
                     {/* Progress */}
                     <div style={{ width: 60, flexShrink: 0 }}>
-                      <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: 4, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${l.progress}%`, background: l.completed ? "#10b981" : t.hex, borderRadius: 999 }} />
                       </div>
-                      <p style={{ fontSize: 10, color: "#475569", margin: "4px 0 0", textAlign: "right" }}>{l.progress}%</p>
+                      <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "4px 0 0", textAlign: "right" }}>{l.progress}%</p>
                     </div>
 
                     {/* Difficulty badge */}
@@ -290,7 +290,7 @@ export default function LearnHistoryPage() {
                       {d.label}
                     </span>
 
-                    <ChevronRight size={15} color="#334155" style={{ flexShrink: 0 }} />
+                    <ChevronRight size={15} color="var(--muted-foreground)" style={{ flexShrink: 0 }} />
                   </Link>
                 );
               })
@@ -300,7 +300,7 @@ export default function LearnHistoryPage() {
 
         {/* Results count */}
         {filtered.length > 0 && (
-          <p style={{ fontSize: 12, color: "#334155", textAlign: "center", marginTop: 16 }}>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", textAlign: "center", marginTop: 16 }}>
             Showing {filtered.length} of {lessons.length} lessons
           </p>
         )}
