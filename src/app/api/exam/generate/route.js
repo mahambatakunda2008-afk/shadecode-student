@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { callAI } from "@/lib/ai";
+import { generateExam } from "@/lib/cortex/examGenerator";
 
-export const runtime = 'edge'; // Massive performance boost
-
+// NOTE: this used to have its own separate prompt + JSON parsing + no
+// fallback content, entirely independent from src/lib/cortex/examGenerator.ts
+// (which the /api/cortex/generate-exam route already used). That meant this
+// route -- the one exam-sim/page.tsx actually calls -- had no fallback exam
+// to fall back on when the AI providers failed, unlike the other path.
+// Delegating to the shared generator fixes that: on AI failure this now
+// returns a usable fallback exam instead of a hard error.
 export async function POST(req) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
@@ -13,32 +18,40 @@ export async function POST(req) {
 
     const body = await req.json();
     const validation = validateRequestBody(body, examGenerateSchema);
-    if (!validation.success) return NextResponse.json({ error: 'Validation failed' }, { status: 400 });
+    if (!validation.success) {
+      const firstIssue = validation.details?.issues?.[0];
+      const detail = firstIssue ? `${firstIssue.path?.join(".")}: ${firstIssue.message}` : "Please check your exam settings and try again.";
+      return NextResponse.json({ error: detail }, { status: 400 });
+    }
 
     const { subject, topic, difficulty, questionCount, userId } = validation.data;
 
-    const prompt = `You are an expert ${subject} examiner. Generate exactly ${questionCount} questions in JSON format.
-    Structure: {"questions": [{"id": 1, "type": "multiple_choice", "question": "...", "options": ["A)","B)","C)","D)"], "marks": 1}]}.
-    Difficulty: ${difficulty}. Topic: ${topic}. Use plain text for math, no LaTeX. Respond ONLY with JSON.`;
-
-    const text = await callAI(prompt, 6000, { userId, feature: "exam_sim", subfeature: "generate_exam" });
-    if (!text) return NextResponse.json({ error: "Service temporarily unavailable. Please try again." }, { status: 503 });
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const json = JSON.parse(jsonMatch[0]);
-
-    // Background save (don't await, keep response fast)
-    if (userId) {
-      createSupabaseServerClient().then(supabase => {
-        supabase.from('exams').insert({
-          user_id: userId, subject, difficulty, questions: json.questions
-        }).then(() => console.log("Exam Saved"));
-      });
+    if (!userId) {
+      return NextResponse.json({ error: "You need to be signed in to generate an exam." }, { status: 401 });
     }
 
-    return NextResponse.json({ questions: json.questions, metadata: { subject, topic } });
+    const topics = topic ? [topic] : [subject];
+    const exam = await generateExam(subject, topics, difficulty, questionCount, userId);
+
+    if (!exam) {
+      // generateExam() only returns null on a genuinely unexpected internal
+      // error (its own AI-failure path already falls back to fallbackExam()
+      // above this) -- so if we're here, something deeper broke.
+      return NextResponse.json({ error: "Couldn't generate this exam right now. Please try again in a moment." }, { status: 503 });
+    }
+
+    // Background save (don't await, keep response fast)
+    createSupabaseServerClient().then(supabase => {
+      supabase.from('exams').insert({
+        user_id: userId, subject, difficulty, questions: exam.questions
+      }).then(({ error }) => {
+        if (error) console.error("[exam/generate] Background save failed:", error.message);
+      });
+    });
+
+    return NextResponse.json({ questions: exam.questions, metadata: { subject, topic: topic ?? subject } });
   } catch (err) {
-    console.error("Critical Route Failure:", err.message);
-    return NextResponse.json({ error: "Service temporarily unavailable. Please try again." }, { status: 500 });
+    console.error("[exam/generate] Critical route failure:", err);
+    return NextResponse.json({ error: "Something went wrong generating this exam. Please try again." }, { status: 500 });
   }
 }
