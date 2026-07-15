@@ -111,27 +111,44 @@ export default function LessonDetailPage() {
       if (!session) { router.push("/login"); return; }
       setAccessToken(session.access_token);
       setCurrentUser(session.user.id);
-      try {
-        const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-        if (!r.ok) throw new Error();
-        const d = await r.json();
-        setLesson(d.lesson ?? null);
-        setLastSavedProgress(d.lesson?.progress ?? 0);
-
-        // Restore scroll position for incomplete lessons
-        if (d.lesson && !d.lesson.completed && d.lesson.progress > 0 && d.lesson.progress < 100) {
-          // Get saved scroll position from localStorage
-          const savedScroll = localStorage.getItem(`lesson_scroll_${lessonId}`);
-          if (savedScroll) {
-            setTimeout(() => {
-              window.scrollTo({ top: parseInt(savedScroll), behavior: 'smooth' });
-            }, 100);
-          }
-        }
-      } catch { setError("Couldn't load this lesson."); }
-      finally   { setLoading(false); }
+      await loadLesson(session.access_token);
     })();
   }, [lessonId]);
+
+  const loadLesson = async (token: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) {
+        let message = "Couldn't load this lesson.";
+        try {
+          const body = await r.json();
+          if (body?.error) message = body.error;
+        } catch { /* response wasn't JSON, keep default message */ }
+        throw new Error(message);
+      }
+      const d = await r.json();
+      setLesson(d.lesson ?? null);
+      setLastSavedProgress(d.lesson?.progress ?? 0);
+
+      // Restore scroll position for incomplete lessons
+      if (d.lesson && !d.lesson.completed && d.lesson.progress > 0 && d.lesson.progress < 100) {
+        // Get saved scroll position from localStorage
+        const savedScroll = localStorage.getItem(`lesson_scroll_${lessonId}`);
+        if (savedScroll) {
+          setTimeout(() => {
+            window.scrollTo({ top: parseInt(savedScroll), behavior: 'smooth' });
+          }, 100);
+        }
+      }
+    } catch (err) {
+      console.error("[lesson] Failed to load lesson:", lessonId, err);
+      setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Sync offline progress when online
   useEffect(() => {
@@ -247,7 +264,14 @@ export default function LessonDetailPage() {
   if (error || !lesson) return (
     <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
       <p style={{ color: "#f87171", fontSize: 14 }}>{error ?? "Lesson not found."}</p>
-      <Link href="/learn" style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none" }}>← Back to Learn</Link>
+      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+        {error && accessToken && (
+          <button onClick={() => loadLesson(accessToken)} style={{ background: "transparent", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 8, padding: "6px 14px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            Retry
+          </button>
+        )}
+        <Link href="/learn" style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none" }}>← Back to Learn</Link>
+      </div>
     </div>
   );
 

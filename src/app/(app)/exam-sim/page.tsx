@@ -148,6 +148,7 @@ export default function ExamSimulation() {
   const [totalTime,     setTotalTimeState]  = useState(0);
   const [qStartTime,    setQStartTime]      = useState(Date.now());
   const [generating,    setGenerating]      = useState(false);
+  const [genError,      setGenError]        = useState<string | null>(null);
   const [marking,       setMarking]         = useState(false);
   const [results,       setResults]         = useState<ExamResults | null>(null);
   const [userId,        setUserIdState]     = useState("");
@@ -411,7 +412,8 @@ export default function ExamSimulation() {
         }),
       });
       const data = await res.json();
-      if (!data.questions) throw new Error("No questions generated");
+      if (!res.ok || !data.questions) throw new Error(data.error || "No questions were generated.");
+      setGenError(null);
       setQuestions(data.questions);
       setCurrentQ(0);
       setCurrentAnswer("");
@@ -422,8 +424,8 @@ export default function ExamSimulation() {
       setQStartTime(Date.now());
       setStep("exam");
     } catch (err) {
-      console.error(err);
-      alert("Failed to generate exam. Please try again.");
+      console.error("[exam-sim] generateExam failed:", err);
+      setGenError(err instanceof Error ? err.message : "Couldn't generate this exam. Please try again.");
     } finally {
       setGenerating(false);
     }
@@ -524,6 +526,15 @@ export default function ExamSimulation() {
           ⏱ Time limit: {questionCount * 2} minutes
         </p>
       </div>
+
+      {genError && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderRadius: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "#f87171" }}>{genError}</p>
+          <button onClick={generateExam} style={{ flexShrink: 0, background: "transparent", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "6px 12px", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       <button onClick={generateExam} disabled={!subject || generating}
         style={{ background: "var(--primary)", border: "none", borderRadius: 14, padding: "16px", fontWeight: 800, fontSize: 16, color: "white", cursor: "pointer", opacity: !subject || generating ? 0.5 : 1 }}>
