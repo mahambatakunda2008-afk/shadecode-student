@@ -26,6 +26,11 @@ const DIFFICULTIES = [
   { label: "Challenge", value: "beyond A-Level, university entrance standard", color: "#ef4444" },
 ];
 
+// The API's difficulty field is a strict easy|medium|hard enum (used for
+// AI cost tuning and marking logic) -- it's separate from the curriculum-
+// specific label above, which stays in the prompt via `topic` context.
+const DIFFICULTY_API_VALUES = ["easy", "medium", "hard"] as const;
+
 const DIFFICULTY_DISPLAY = ["O-Level", "A-Level", "University"] as const;
 
 const QUESTION_COUNTS = [5, 10, 15, 20];
@@ -400,13 +405,17 @@ export default function ExamSimulation() {
     setGenerating(true);
     isSubmittingRef.current = false;
     try {
+      const curriculumLevel = DIFFICULTIES[difficulty].value;
+      const topicWithLevel = topic.trim()
+        ? `${topic.trim()} (${curriculumLevel})`
+        : `${subject} (${curriculumLevel})`;
       const res = await fetch("/api/exam/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject,
-          topic:        topic.trim() || null,
-          difficulty:   DIFFICULTIES[difficulty].value,
+          topic:        topicWithLevel,
+          difficulty:   DIFFICULTY_API_VALUES[difficulty],
           questionCount,
           userId:       userId,
         }),
