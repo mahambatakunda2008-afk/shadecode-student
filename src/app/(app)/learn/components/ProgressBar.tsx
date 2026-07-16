@@ -26,7 +26,7 @@ export default function ProgressBar({
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={safeValue}
-      className={cn("h-2 overflow-hidden rounded-full bg-slate-100", className)}
+      className={cn("h-2 overflow-hidden rounded-full bg-[var(--muted)]", className)}
       role="progressbar"
     >
       <div
