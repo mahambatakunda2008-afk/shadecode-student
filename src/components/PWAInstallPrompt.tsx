@@ -79,7 +79,7 @@ export default function PWAInstallPrompt() {
           right: 12,
           background: "transparent",
           border: "none",
-          color: "#94a3b8",
+          color: "var(--muted-foreground)",
           cursor: "pointer",
           padding: 4,
           borderRadius: 4,
@@ -117,7 +117,7 @@ export default function PWAInstallPrompt() {
           </h3>
           <p style={{
             fontSize: 12,
-            color: "#94a3b8",
+            color: "var(--muted-foreground)",
             margin: 0,
           }}>
             Get offline access and a better experience

@@ -225,7 +225,7 @@ export default function StudyGoalInput({ onSubmit, onCancel, initialGoals }: Stu
                     padding: "4px",
                     borderRadius: "6px",
                     background: "transparent",
-                    color: "#ef4444",
+                    color: "var(--danger)",
                     border: "none",
                     cursor: "pointer",
                   }}

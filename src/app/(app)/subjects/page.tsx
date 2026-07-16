@@ -72,7 +72,7 @@ export default function SubjectsPage() {
   // ── Loading ─────────────────────────────────────────────────────────────────
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#09091a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ position: "relative", width: 36, height: 36 }}>
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
@@ -84,10 +84,10 @@ export default function SubjectsPage() {
   // ── Page ────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09091a", color: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", color: "#fff" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
-        .subj-card:hover { transform: translateY(-3px) !important; border-color: rgba(255,255,255,0.14) !important; }
+        .subj-card:hover { transform: translateY(-3px) !important; border-color: var(--card-border) !important; }
         .gen-btn:hover   { filter: brightness(1.12); }
       `}</style>
 
@@ -101,17 +101,17 @@ export default function SubjectsPage() {
         {/* ── Header ── */}
         <div style={{ marginBottom: 32 }}>
           <Link href="/learn"
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, textDecoration: "none", marginBottom: 20 }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#94a3b8")}
-            onMouseLeave={e => (e.currentTarget.style.color = "#475569")}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none", marginBottom: 20 }}
+            onMouseEnter={e => (e.currentTarget.style.color = "var(--muted-foreground)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "var(--muted-foreground)")}
           >
             <ArrowLeft size={14} /> Back to Learn
           </Link>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px" }}>Your Subjects</h1>
-              <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--foreground)", margin: "0 0 4px" }}>Your Subjects</h1>
+              <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
                 {subjects.length} subject{subjects.length !== 1 ? "s" : ""} · click any to generate a lesson
               </p>
             </div>
@@ -120,17 +120,17 @@ export default function SubjectsPage() {
 
         {/* ── Error ── */}
         {error && (
-          <p style={{ color: "#f87171", fontSize: 14, textAlign: "center", padding: "60px 0" }}>{error}</p>
+          <p style={{ color: "var(--danger)", fontSize: 14, textAlign: "center", padding: "60px 0" }}>{error}</p>
         )}
 
         {/* ── Empty state ── */}
         {!error && subjects.length === 0 && (
           <div style={{ textAlign: "center", padding: "72px 24px" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <BookOpen size={24} color="#334155" />
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <BookOpen size={24} color="var(--muted-foreground)" />
             </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: "#475569", margin: "0 0 6px" }}>No subjects yet</p>
-            <p style={{ fontSize: 13, color: "#334155", margin: "0 0 24px" }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: "var(--muted-foreground)", margin: "0 0 6px" }}>No subjects yet</p>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 24px" }}>
               Add subjects during onboarding or from your profile settings.
             </p>
             <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "10px 18px", textDecoration: "none" }}>
@@ -150,7 +150,7 @@ export default function SubjectsPage() {
                 <div
                   key={s.id}
                   className="subj-card"
-                  style={{ background: "linear-gradient(150deg, #131330 0%, #0f0f24 100%)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "24px", transition: "transform .2s, border-color .2s", display: "flex", flexDirection: "column", gap: 0 }}
+                  style={{ background: "linear-gradient(150deg, #131330 0%, #0f0f24 100%)", border: "1px solid var(--card-border)", borderRadius: 20, padding: "24px", transition: "transform .2s, border-color .2s", display: "flex", flexDirection: "column", gap: 0 }}
                 >
                   {/* Icon + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
@@ -158,15 +158,15 @@ export default function SubjectsPage() {
                       <Icon size={22} color={t.text} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
-                      <p style={{ fontSize: 12, color: "#475569", margin: "3px 0 0" }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: "var(--foreground)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
+                      <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "3px 0 0" }}>
                         {s.lessonCount} lesson{s.lessonCount !== 1 ? "s" : ""}
                       </p>
                     </div>
                   </div>
 
                   {/* Divider */}
-                  <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 16 }} />
+                  <div style={{ height: 1, background: "var(--card-border)", marginBottom: 16 }} />
 
                   {/* Actions */}
                   <div style={{ display: "flex", gap: 8 }}>
@@ -182,11 +182,11 @@ export default function SubjectsPage() {
                     {/* View lessons for this subject */}
                     <Link
                       href={`/learn/history?subject=${encodeURIComponent(s.name)}`}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "9px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", textDecoration: "none", transition: "filter .15s", cursor: "pointer" }}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "9px 12px", borderRadius: 10, background: "var(--card-border)", border: "1px solid var(--card-border)", textDecoration: "none", transition: "filter .15s", cursor: "pointer" }}
                       onMouseEnter={e => (e.currentTarget.style.filter = "brightness(1.15)")}
                       onMouseLeave={e => (e.currentTarget.style.filter = "brightness(1)")}
                     >
-                      <ChevronRight size={14} color="#64748b" />
+                      <ChevronRight size={14} color="var(--muted-foreground)" />
                     </Link>
                   </div>
                 </div>

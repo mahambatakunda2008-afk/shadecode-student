@@ -47,10 +47,10 @@ export default function CurriculumPage() {
     return (
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ height: 28, width: "30%", borderRadius: 8, background: "rgba(255,255,255,0.06)", marginBottom: 24 }} />
+          <div style={{ height: 28, width: "30%", borderRadius: 8, background: "var(--card-border)", marginBottom: 24 }} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            <div style={{ height: 200, borderRadius: 18, background: "rgba(255,255,255,0.03)" }} />
-            <div style={{ height: 200, borderRadius: 18, background: "rgba(255,255,255,0.03)" }} />
+            <div style={{ height: 200, borderRadius: 18, background: "var(--card-border)" }} />
+            <div style={{ height: 200, borderRadius: 18, background: "var(--card-border)" }} />
           </div>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function CurriculumPage() {
     return (
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginBottom: 12 }}>Curriculum</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 12 }}>Curriculum</h1>
           <div style={{ padding: 20, borderRadius: 18, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
             <p style={{ color: "#fca5a5", margin: 0 }}>{error}</p>
           </div>
@@ -76,13 +76,13 @@ export default function CurriculumPage() {
     return (
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginBottom: 12 }}>Curriculum</h1>
-          <div style={{ padding: 40, borderRadius: 18, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 12 }}>Curriculum</h1>
+          <div style={{ padding: 40, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)", textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
               <BookOpen size={32} color="#a78bfa" />
             </div>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#e2e8f0", marginBottom: 8 }}>No curriculum yet</h2>
-            <p style={{ fontSize: 14, color: "#64748b", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--card-border)", marginBottom: 8 }}>No curriculum yet</h2>
+            <p style={{ fontSize: 14, color: "var(--muted-foreground)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>
               Generate your first lesson to start building your personalized learning path.
             </p>
             <Link
@@ -117,8 +117,8 @@ export default function CurriculumPage() {
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0", marginBottom: 8 }}>Curriculum</h1>
-          <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 8 }}>Curriculum</h1>
+          <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0 }}>
             Track your learning progress and see your recommended path
           </p>
         </div>
@@ -140,8 +140,8 @@ export default function CurriculumPage() {
           <StatCard
             label="Remaining"
             value={String(allLessons.length - completedLessons.length)}
-            icon={<Lock size={20} color="#64748b" />}
-            accent="#64748b"
+            icon={<Lock size={20} color="var(--muted-foreground)" />}
+            accent="var(--muted-foreground)"
           />
           <StatCard
             label="Total Lessons"
@@ -180,9 +180,9 @@ export default function CurriculumPage() {
 
 function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: React.ReactNode; accent: string }) {
   return (
-    <div style={{ padding: 20, borderRadius: 18, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+    <div style={{ padding: 20, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
         {icon}
       </div>
       <p style={{ fontSize: 28, fontWeight: 700, color: accent, margin: 0 }}>{value}</p>
@@ -200,15 +200,15 @@ function RecommendedLessonCard({ lesson }: { lesson: LessonRow }) {
         <span style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>Recommended Next</span>
       </div>
 
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", marginBottom: 8 }}>{lesson.title}</h3>
+      <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--card-border)", marginBottom: 8 }}>{lesson.title}</h3>
       
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Clock size={14} color="#64748b" />
-          <span style={{ fontSize: 12, color: "#64748b" }}>~15 min</span>
+          <Clock size={14} color="var(--muted-foreground)" />
+          <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>~15 min</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: lesson.difficulty === "hard" ? "#f87171" : lesson.difficulty === "medium" ? "#fbbf24" : "#10b981" }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: lesson.difficulty === "hard" ? "var(--danger)" : lesson.difficulty === "medium" ? "#fbbf24" : "#10b981" }}>
             {lesson.difficulty || "Medium"}
           </span>
         </div>
@@ -256,11 +256,11 @@ function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; s
   }, {} as Record<string, { lessons: LessonRow[]; completed: number }>);
 
   return (
-    <div style={{ padding: 24, borderRadius: 18, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0", marginBottom: 16 }}>Progress by Subject</h3>
+    <div style={{ padding: 24, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--card-border)", marginBottom: 16 }}>Progress by Subject</h3>
       
       {Object.keys(subjectGroups).length === 0 ? (
-        <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>No subject data available</p>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0 }}>No subject data available</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {Object.entries(subjectGroups).map(([subjectId, data]) => {
@@ -269,13 +269,13 @@ function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; s
             return (
               <div key={subjectId}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{subjectName}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--card-border)" }}>{subjectName}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{percent}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 999, background: "var(--card-border)", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${percent}%`, borderRadius: 999, background: "linear-gradient(90deg, #7c3aed, #6366f1)", transition: "width 0.5s ease" }} />
                 </div>
-                <p style={{ fontSize: 12, color: "#64748b", margin: "4px 0 0" }}>
+                <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "4px 0 0" }}>
                   {data.completed} of {data.lessons.length} lessons completed
                 </p>
               </div>

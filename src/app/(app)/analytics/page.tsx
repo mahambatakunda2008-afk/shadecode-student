@@ -42,13 +42,13 @@ function getGrade(score: number): { grade: string; color: string } {
   if (score >= 60) return { grade: "C",  color: "#6366f1" };
   if (score >= 50) return { grade: "D",  color: "#8b5cf6" };
   if (score >= 40) return { grade: "E",  color: "#f59e0b" };
-  return { grade: "U", color: "#ef4444" };
+  return { grade: "U", color: "var(--danger)" };
 }
 
 function getTrendIcon(trend: string): { icon: string; color: string } {
   if (trend === "improving") return { icon: "↑", color: "#22c55e" };
-  if (trend === "declining") return { icon: "↓", color: "#ef4444" };
-  return { icon: "→", color: "#94a3b8" };
+  if (trend === "declining") return { icon: "↓", color: "var(--danger)" };
+  return { icon: "→", color: "var(--muted-foreground)" };
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -334,14 +334,14 @@ export default function Analytics() {
           {/* Weak areas */}
           {topWeakAreas.length > 0 && (
             <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "12px", padding: "16px" }}>
-              <p style={{ fontWeight: 700, marginBottom: "10px", fontSize: "14px", color: "#ef4444" }}>
+              <p style={{ fontWeight: 700, marginBottom: "10px", fontSize: "14px", color: "var(--danger)" }}>
                 ⚠ Areas needing attention
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {topWeakAreas.map(([area, count]) => (
                   <div key={area} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <p style={{ fontSize: "13px", color: "var(--foreground)", margin: 0 }}>{area}</p>
-                    <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 600 }}>
+                    <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: "rgba(239,68,68,0.1)", color: "var(--danger)", fontWeight: 600 }}>
                       {count}x
                     </span>
                   </div>

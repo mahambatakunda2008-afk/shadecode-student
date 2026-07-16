@@ -12,7 +12,7 @@ export default function OfflineShell() {
     <div style={{
       position: "fixed",
       inset: 0,
-      background: "#0f0f24",
+      background: "var(--surface)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -46,7 +46,7 @@ export default function OfflineShell() {
 
       <p style={{
         fontSize: 14,
-        color: "#94a3b8",
+        color: "var(--muted-foreground)",
         margin: "0 0 24px",
         textAlign: "center",
         maxWidth: 300,
@@ -79,7 +79,7 @@ export default function OfflineShell() {
 
       <p style={{
         fontSize: 12,
-        color: "#64748b",
+        color: "var(--muted-foreground)",
         margin: "24px 0 0",
         textAlign: "center",
       }}>

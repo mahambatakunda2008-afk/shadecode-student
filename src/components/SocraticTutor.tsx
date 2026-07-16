@@ -403,7 +403,7 @@ function MessageBubble({ message }: { message: TutoringMessage }) {
     question: "#6366f1",
     hint: "#f59e0b",
     guidance: "#22c55e",
-    feedback: "#ef4444",
+    feedback: "#f87171",
     explanation: "#8b5cf6",
     reinforcement: "#06b6d4",
   };
@@ -429,7 +429,7 @@ function MessageBubble({ message }: { message: TutoringMessage }) {
       >
         {isTutor && message.type !== "hint" && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            {message.type === "feedback" && <AlertCircle size={12} color="#ef4444" />}
+            {message.type === "feedback" && <AlertCircle size={12} color="var(--danger)" />}
             {message.type === "guidance" && <List size={12} color="#22c55e" />}
             {message.type === "explanation" && <BookOpen size={12} color="#8b5cf6" />}
             <span style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", color }}>

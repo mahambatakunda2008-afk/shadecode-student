@@ -10,7 +10,7 @@ function PriorityBar({ priority }: { priority: number }) {
   const capped = Math.min(priority, MAX_PRIORITY_DISPLAY);
   const pct    = (capped / MAX_PRIORITY_DISPLAY) * 100;
   const color  =
-    priority >= 4 ? "#ef4444" :
+    priority >= 4 ? "#f87171" :
     priority >= 2 ? "#f59e0b" :
     "#6366f1";
 
@@ -79,7 +79,7 @@ export default function RevisionQueue({ userId }: { userId: string }) {
         <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", margin: 0 }}>
           Revision Queue
         </p>
-        <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
+        <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: "rgba(239,68,68,0.1)", color: "var(--danger)" }}>
           {items.length} pending
         </span>
       </div>
