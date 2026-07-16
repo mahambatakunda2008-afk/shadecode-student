@@ -91,11 +91,11 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
 
 function Stat({ label, value, accent, icon }: { label: string; value: string; accent?: string; icon?: React.ReactNode }) {
   return (
-    <div className="curriculum-stat" style={{ background: "var(--card-border)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "10px 12px" }}>
+    <div className="curriculum-stat" style={{ background: "var(--surface-2)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "10px 12px" }}>
       <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
         {icon}
-        <p style={{ fontSize: 12, fontWeight: 700, color: accent ?? "var(--card-border)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+        <p style={{ fontSize: 12, fontWeight: 700, color: accent ?? "var(--foreground)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
       </div>
     </div>
   );
@@ -103,11 +103,11 @@ function Stat({ label, value, accent, icon }: { label: string; value: string; ac
 
 /* ── Shared styles ── */
 const card: React.CSSProperties = {
-  background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)",
+  background: "var(--card)",
   border: "1px solid var(--card-border)",
   borderRadius: 18,
   padding: 20,
-  color: "#fff",
+  color: "var(--foreground)",
 };
 
 const cardMobile: React.CSSProperties = {
@@ -118,7 +118,7 @@ const cardMobile: React.CSSProperties = {
 const heading: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
-  color: "var(--card-border)",
+  color: "var(--foreground)",
 };
 
 const muted: React.CSSProperties = {
@@ -150,7 +150,7 @@ const ghostBtn: React.CSSProperties = {
   justifyContent: "center",
   padding: "8px 0",
   borderRadius: 10,
-  background: "var(--card-border)",
+  background: "var(--muted)",
   border: "1px solid var(--card-border)",
   fontSize: 12,
   fontWeight: 600,

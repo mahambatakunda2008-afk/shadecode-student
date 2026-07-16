@@ -46,7 +46,7 @@ export default function LessonCard({ lesson }: LessonCardProps) {
 
   return (
     <Link
-      className="group relative flex min-h-[220px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/70 transition duration-200 hover:-translate-y-1 hover:scale-[1.015] hover:border-sky-200 hover:shadow-xl hover:shadow-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
+      className="group relative flex min-h-[220px] flex-col overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm shadow-slate-200/70 transition duration-200 hover:-translate-y-1 hover:scale-[1.015] hover:border-sky-200 hover:shadow-xl hover:shadow-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
       href={`/learn/${encodeURIComponent(lesson.id)}`}
     >
       <div className={cn("absolute inset-x-0 top-0 h-1", difficulty.accent)} />
@@ -58,7 +58,7 @@ export default function LessonCard({ lesson }: LessonCardProps) {
       )}
 
       <div className="flex items-start justify-between gap-3 pr-10">
-        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-sky-50 text-sky-700 transition group-hover:bg-sky-100">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--muted)] text-sky-600 transition group-hover:bg-sky-100">
           <BookOpenCheck className="h-5 w-5" />
         </div>
 
@@ -76,16 +76,16 @@ export default function LessonCard({ lesson }: LessonCardProps) {
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-600">
           {lesson.subject}
         </p>
-        <h3 className="mt-2 text-lg font-black leading-tight text-slate-950">
+        <h3 className="mt-2 text-lg font-black leading-tight text-[var(--foreground)]">
           {lesson.title}
         </h3>
-        <p className="mt-2 line-clamp-3 text-sm font-medium leading-6 text-slate-600">
+        <p className="mt-2 line-clamp-3 text-sm font-medium leading-6 text-[var(--muted-foreground)]">
           {lesson.description || "No description has been added yet."}
         </p>
       </div>
 
       <div className="mt-auto pt-5">
-        <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-500">
+        <div className="mb-2 flex items-center justify-between text-xs font-bold text-[var(--muted-foreground)]">
           <span>{lesson.completed ? "Completed" : "In progress"}</span>
           <span>{lesson.progress}%</span>
         </div>
