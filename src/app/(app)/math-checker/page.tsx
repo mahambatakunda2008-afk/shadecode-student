@@ -220,7 +220,7 @@ export default function MathCheckerPage() {
       {/* Error */}
       {error && (
         <div style={{ ...cardStyle, border: "1px solid rgba(239,68,68,0.3)" }}>
-          <p style={{ color: "#ef4444", fontSize: "13px" }}>{error}</p>
+          <p style={{ color: "var(--danger)", fontSize: "13px" }}>{error}</p>
         </div>
       )}
 
@@ -234,7 +234,7 @@ export default function MathCheckerPage() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "1.3rem", fontWeight: 700,
                 background: result.score >= 80 ? "rgba(34,197,94,0.15)" : result.score >= 50 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)",
-                color: result.score >= 80 ? "#22c55e" : result.score >= 50 ? "#f59e0b" : "#ef4444",
+                color: result.score >= 80 ? "#22c55e" : result.score >= 50 ? "#f59e0b" : "var(--danger)",
                 border: `2px solid ${result.score >= 80 ? "rgba(34,197,94,0.3)" : result.score >= 50 ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)"}`,
               }}>
                 {result.score}%
@@ -244,7 +244,7 @@ export default function MathCheckerPage() {
                 <span style={{
                   fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "20px",
                   background: result.correct ? "rgba(34,197,94,0.15)" : result.score > 40 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)",
-                  color: result.correct ? "#22c55e" : result.score > 40 ? "#f59e0b" : "#ef4444",
+                  color: result.correct ? "#22c55e" : result.score > 40 ? "#f59e0b" : "var(--danger)",
                 }}>
                   {result.correct ? "Correct" : result.score > 40 ? "Partially correct" : "Needs work"}
                 </span>
@@ -268,14 +268,14 @@ export default function MathCheckerPage() {
                 <div key={i} style={{
                   background: "var(--muted)", borderRadius: "8px", padding: "10px 12px",
                   marginBottom: "6px", fontSize: "13px",
-                  borderLeft: `3px solid ${step.status === "correct" ? "#22c55e" : step.status === "incorrect" ? "#ef4444" : "#f59e0b"}`,
+                  borderLeft: `3px solid ${step.status === "correct" ? "#22c55e" : step.status === "incorrect" ? "var(--danger)" : "#f59e0b"}`,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                     <span style={{ color: "var(--muted-foreground)", fontSize: "11px" }}>Step {i + 1}</span>
                     <span style={{
                       fontSize: "10px", fontWeight: 600, padding: "1px 6px", borderRadius: "20px",
                       background: step.status === "correct" ? "rgba(34,197,94,0.15)" : step.status === "incorrect" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)",
-                      color: step.status === "correct" ? "#22c55e" : step.status === "incorrect" ? "#ef4444" : "#f59e0b",
+                      color: step.status === "correct" ? "#22c55e" : step.status === "incorrect" ? "var(--danger)" : "#f59e0b",
                     }}>
                       {step.status}
                     </span>

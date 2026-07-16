@@ -99,7 +99,7 @@ export default function CortexMemoryInsights() {
             )}
             {memory.weakSubjects?.length > 0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444" }} />
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--danger)" }} />
                 <p style={{ fontSize: "12", margin: 0 }}>Focus: {memory.weakSubjects.join(", ")}</p>
               </div>
             )}

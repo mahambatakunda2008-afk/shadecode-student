@@ -115,10 +115,10 @@ export default function WeakAreasPanel() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <AlertTriangle size={16} color="#ef4444" />
+            <AlertTriangle size={16} color="var(--danger)" />
           </div>
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#ef4444", margin: 0 }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--danger)", margin: 0 }}>
               Weak Areas
             </p>
             <p style={{ fontSize: "10px", color: "var(--muted-foreground)", margin: 0 }}>
@@ -179,7 +179,7 @@ function RiskIndicatorBadge({ riskIndicators }: { riskIndicators: { highRisk: nu
   let color = "#22c55e";
   let label = "Low Risk";
   if (riskIndicators.highRisk > 0) {
-    color = "#ef4444";
+    color = "#f87171";
     label = "High Risk";
   } else if (riskIndicators.mediumRisk > 0) {
     color = "#f59e0b";
@@ -197,7 +197,7 @@ function RiskBadge({ level, count }: { level: "high" | "medium" | "low"; count: 
   if (count === 0) return null;
 
   const colors = {
-    high: "#ef4444",
+    high: "#f87171",
     medium: "#f59e0b",
     low: "#22c55e",
   };
@@ -221,7 +221,7 @@ function RiskBadge({ level, count }: { level: "high" | "medium" | "low"; count: 
 
 function WeakAreaCard({ area, rank }: { area: WeakArea; rank: number }) {
   const riskColors = {
-    high: "#ef4444",
+    high: "#f87171",
     medium: "#f59e0b",
     low: "#22c55e",
   };

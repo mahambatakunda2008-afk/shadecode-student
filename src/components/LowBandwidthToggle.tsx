@@ -13,7 +13,7 @@ export default function LowBandwidthToggle() {
   };
 
   const getBandwidthColor = () => {
-    if (isOffline) return "#ef4444";
+    if (isOffline) return "var(--danger)";
     if (bandwidthInfo.level === "low") return "#f59e0b";
     if (bandwidthInfo.level === "medium") return "#3b82f6";
     return "#22c55e";
@@ -27,7 +27,7 @@ export default function LowBandwidthToggle() {
         gap: 8,
         padding: "8px 12px",
         background: "rgba(0,0,0,0.3)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        border: "1px solid var(--card-border)",
         borderRadius: 8,
       }}
     >
@@ -50,9 +50,9 @@ export default function LowBandwidthToggle() {
         style={{
           padding: "4px 8px",
           borderRadius: 6,
-          background: lowBandwidthMode ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)",
-          border: lowBandwidthMode ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(255,255,255,0.1)",
-          color: lowBandwidthMode ? "#f59e0b" : "#94a3b8",
+          background: lowBandwidthMode ? "rgba(245,158,11,0.2)" : "var(--card-border)",
+          border: lowBandwidthMode ? "1px solid rgba(245,158,11,0.3)" : "1px solid var(--card-border)",
+          color: lowBandwidthMode ? "#f59e0b" : "var(--muted-foreground)",
           fontSize: 11,
           fontWeight: 600,
           cursor: "pointer",

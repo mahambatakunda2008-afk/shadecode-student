@@ -292,7 +292,7 @@ export default function FocusTimer() {
             border: isRunning ? "1px solid rgba(239,68,68,0.3)" : "none",
             borderRadius: "12px",
             padding: "14px",
-            color: isRunning ? "#ef4444" : "white",
+            color: isRunning ? "var(--danger)" : "white",
             fontSize: "16px",
             fontWeight: 800,
             cursor: "pointer",

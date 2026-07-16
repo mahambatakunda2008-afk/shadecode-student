@@ -61,11 +61,11 @@ export default function LazyImage({
         style={{
           width: props.width || "100%",
           height: props.height || "auto",
-          background: placeholder || "#f1f5f9",
+          background: placeholder || "var(--foreground)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#64748b",
+          color: "var(--muted-foreground)",
           fontSize: 12,
           ...props.style,
         }}
@@ -114,11 +114,11 @@ export default function LazyImage({
           style={{
             width: props.width || "100%",
             height: props.height || "auto",
-            background: "#f1f5f9",
+            background: "var(--foreground)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#64748b",
+            color: "var(--muted-foreground)",
             fontSize: 12,
             ...props.style,
           }}

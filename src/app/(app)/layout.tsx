@@ -95,7 +95,7 @@ export default function AppLayout({
   // 🔄 LOADING STATE (never infinite because we always resolve or redirect)
   if (!ready) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0a10]">
+      <div className="flex h-screen items-center justify-center bg-[var(--background)]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-500" />
       </div>
     );

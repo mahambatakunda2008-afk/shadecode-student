@@ -28,10 +28,10 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
   /* ── Loading skeleton ── */
   if (loading) return (
     <div className="curriculum-card" style={card}>
-      <div style={{ height: 14, width: "45%", borderRadius: 6, background: "rgba(255,255,255,0.06)", marginBottom: 16 }} />
-      <div style={{ height: 6,  width: "100%", borderRadius: 999, background: "rgba(255,255,255,0.06)", marginBottom: 18 }} />
+      <div style={{ height: 14, width: "45%", borderRadius: 6, background: "var(--card-border)", marginBottom: 16 }} />
+      <div style={{ height: 6,  width: "100%", borderRadius: 999, background: "var(--card-border)", marginBottom: 18 }} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {[0,1,2,3].map(i => <div key={i} style={{ height: 36, borderRadius: 8, background: "rgba(255,255,255,0.04)" }} />)}
+        {[0,1,2,3].map(i => <div key={i} style={{ height: 36, borderRadius: 8, background: "var(--card-border)" }} />)}
       </div>
     </div>
   );
@@ -40,7 +40,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
   if (!state) return (
     <div className="curriculum-card" style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <BookOpen size={14} color="#475569" />
+        <BookOpen size={14} color="var(--muted-foreground)" />
         <span style={heading}>Curriculum Progress</span>
       </div>
       <p style={muted}>No curriculum data yet. Generate your first lesson to get started.</p>
@@ -68,7 +68,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 18 }}>
+      <div style={{ height: 6, borderRadius: 999, background: "var(--card-border)", overflow: "hidden", marginBottom: 18 }}>
         <div style={{ height: "100%", width: `${percent}%`, borderRadius: 999, background: "linear-gradient(90deg, #7c3aed, #6366f1)", transition: "width .6s ease" }} />
       </div>
 
@@ -77,7 +77,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
         <Stat label="Current lesson"   value={currentTitle ?? "—"} />
         <Stat label="Recommended next" value={recommended  ?? "—"} />
         <Stat label="Completed"        value={String(completed)} accent="#10b981" icon={<CheckCircle2 size={11} color="#10b981" />} />
-        <Stat label="Locked"           value={String(locked)}    accent="#475569" icon={<Lock size={11} color="#475569" />} />
+        <Stat label="Locked"           value={String(locked)}    accent="var(--muted-foreground)" icon={<Lock size={11} color="var(--muted-foreground)" />} />
       </div>
 
       {/* Actions */}
@@ -91,11 +91,11 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
 
 function Stat({ label, value, accent, icon }: { label: string; value: string; accent?: string; icon?: React.ReactNode }) {
   return (
-    <div className="curriculum-stat" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 12px" }}>
-      <p style={{ fontSize: 10, color: "#475569", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+    <div className="curriculum-stat" style={{ background: "var(--card-border)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "10px 12px" }}>
+      <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
         {icon}
-        <p style={{ fontSize: 12, fontWeight: 700, color: accent ?? "#e2e8f0", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+        <p style={{ fontSize: 12, fontWeight: 700, color: accent ?? "var(--card-border)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
       </div>
     </div>
   );
@@ -104,7 +104,7 @@ function Stat({ label, value, accent, icon }: { label: string; value: string; ac
 /* ── Shared styles ── */
 const card: React.CSSProperties = {
   background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid var(--card-border)",
   borderRadius: 18,
   padding: 20,
   color: "#fff",
@@ -118,12 +118,12 @@ const cardMobile: React.CSSProperties = {
 const heading: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
-  color: "#e2e8f0",
+  color: "var(--card-border)",
 };
 
 const muted: React.CSSProperties = {
   fontSize: 12,
-  color: "#475569",
+  color: "var(--muted-foreground)",
   margin: "0 0 14px",
   lineHeight: 1.6,
 };
@@ -150,10 +150,10 @@ const ghostBtn: React.CSSProperties = {
   justifyContent: "center",
   padding: "8px 0",
   borderRadius: 10,
-  background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "var(--card-border)",
+  border: "1px solid var(--card-border)",
   fontSize: 12,
   fontWeight: 600,
-  color: "#64748b",
+  color: "var(--muted-foreground)",
   textDecoration: "none",
 };

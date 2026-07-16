@@ -21,7 +21,7 @@ interface SubjectRecord {
 
 // Subject color palette
 const SUBJECT_COLORS = [
-  "#6366f1", "#22c55e", "#f59e0b", "#ef4444",
+  "#6366f1", "#22c55e", "#f59e0b", "var(--danger)",
   "#06b6d4", "#8b5cf6", "#ec4899", "#14b8a6",
   "#f97316", "#84cc16",
 ];

@@ -7,7 +7,7 @@ interface ProgressBarProps {
 export default function ProgressBar({ value, max, color }: ProgressBarProps) {
   const percent = Math.min((value / max) * 100, 100);
   return (
-    <div style={{ width: "100%", height: 6, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+    <div style={{ width: "100%", height: 6, borderRadius: 999, background: "var(--card-border)", overflow: "hidden" }}>
       <div
         style={{
           height: "100%",

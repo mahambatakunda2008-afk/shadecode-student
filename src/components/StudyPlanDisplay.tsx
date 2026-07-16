@@ -117,10 +117,10 @@ export default function StudyPlanDisplay({ plan, completedSessions = [], onSessi
         <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <AlertTriangle size={18} color="#ef4444" />
+              <AlertTriangle size={18} color="var(--danger)" />
               <p style={{ fontSize: "14px", fontWeight: 700, margin: 0 }}>Catch-up Needed</p>
             </div>
-            <span style={{ padding: "2px 8px", borderRadius: "20px", background: "#ef4444", color: "white", fontSize: "11px", fontWeight: 600 }}>
+            <span style={{ padding: "2px 8px", borderRadius: "20px", background: "var(--danger)", color: "white", fontSize: "11px", fontWeight: 600 }}>
               {plan.catchUpRecommendations.length} items
             </span>
           </div>
@@ -131,7 +131,7 @@ export default function StudyPlanDisplay({ plan, completedSessions = [], onSessi
             {plan.catchUpRecommendations.length > 3 && !showCatchUp && (
               <button
                 onClick={() => setShowCatchUp(true)}
-                style={{ padding: "8px", background: "transparent", border: "none", color: "#ef4444", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "8px", background: "transparent", border: "none", color: "var(--danger)", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
               >
                 View all {plan.catchUpRecommendations.length} recommendations
               </button>
@@ -227,7 +227,7 @@ function SessionCard({ session, isCompleted, onComplete }: { session: StudySessi
     learn: "#6366f1",
     practice: "#22c55e",
     revision: "#f59e0b",
-    exam: "#ef4444",
+    exam: "#f87171",
     catchup: "#8b5cf6",
   };
 
@@ -276,7 +276,7 @@ function CatchUpCard({ recommendation }: { recommendation: CatchUpRecommendation
     <div style={{ padding: 10, borderRadius: 8, background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <p style={{ fontSize: "13px", fontWeight: 600, margin: 0 }}>{recommendation.subject}</p>
-        <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "#ef4444", color: "white", fontWeight: 600 }}>
+        <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "20px", background: "var(--danger)", color: "white", fontWeight: 600 }}>
           {recommendation.estimatedDurationMinutes}m
         </span>
       </div>
@@ -287,7 +287,7 @@ function CatchUpCard({ recommendation }: { recommendation: CatchUpRecommendation
 
 function RevisionBlockCard({ block }: { block: RevisionBlock }) {
   const priorityColors: Record<string, string> = {
-    high: "#ef4444",
+    high: "#f87171",
     medium: "#f59e0b",
     low: "#22c55e",
   };

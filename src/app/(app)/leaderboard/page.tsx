@@ -133,7 +133,7 @@ export default function LeaderboardPage() {
       };
     if (rank === 2)
       return {
-        color: "#cbd5e1",
+        color: "var(--muted-foreground)",
         bg: "rgba(203,213,225,0.08)",
         border: "1px solid rgba(203,213,225,0.18)",
         icon: <Medal size={18} />,
@@ -238,8 +238,8 @@ export default function LeaderboardPage() {
             gap: "8px",
             padding: "12px 18px",
             borderRadius: "16px",
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.03)",
+            border: "1px solid var(--card-border)",
+            background: "var(--card-border)",
             color: "white",
             cursor: "pointer",
             fontWeight: 700,
@@ -293,8 +293,8 @@ export default function LeaderboardPage() {
             padding: "90px 24px",
             textAlign: "center",
             borderRadius: "28px",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "var(--card-border)",
+            border: "1px solid var(--card-border)",
           }}
         >
           <h2 style={{ fontSize: "34px", fontWeight: 900, marginBottom: "14px" }}>
@@ -341,7 +341,7 @@ export default function LeaderboardPage() {
                         width: actualRank === 1 ? "88px" : "74px",
                         height: actualRank === 1 ? "88px" : "74px",
                         borderRadius: "50%",
-                        background: isCurrentUser ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.06)",
+                        background: isCurrentUser ? "rgba(99,102,241,0.35)" : "var(--card-border)",
                         margin: "0 auto 14px",
                         display: "flex",
                         alignItems: "center",
@@ -370,8 +370,8 @@ export default function LeaderboardPage() {
           {/* FULL LIST */}
           <div
             style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              background: "var(--card-border)",
+              border: "1px solid var(--card-border)",
               borderRadius: "28px",
               overflow: "hidden",
             }}
@@ -391,7 +391,7 @@ export default function LeaderboardPage() {
                     padding: "18px 20px",
                     borderBottom:
                       index !== entries.length - 1
-                        ? "1px solid rgba(255,255,255,0.04)"
+                        ? "1px solid var(--card-border)"
                         : "none",
                     background: isCurrentUser ? "rgba(99,102,241,0.08)" : "transparent",
                   }}
@@ -407,7 +407,7 @@ export default function LeaderboardPage() {
                       width: "52px",
                       height: "52px",
                       borderRadius: "50%",
-                      background: isCurrentUser ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)",
+                      background: isCurrentUser ? "rgba(99,102,241,0.3)" : "var(--card-border)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

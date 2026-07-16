@@ -57,7 +57,7 @@ function getDifficultyColor(difficulty: Difficulty) {
       return "#22c55e";
 
     case "hard":
-      return "#ef4444";
+      return "var(--danger)";
 
     default:
       return "#6366f1";
@@ -475,7 +475,7 @@ export default function StudyPage() {
               borderRadius: "999px",
               overflow: "hidden",
               background:
-                "rgba(255,255,255,0.05)",
+                "var(--card-border)",
             }}
           >
             <div
@@ -487,7 +487,7 @@ export default function StudyPage() {
                     ? "#22c55e"
                     : session.focusScore > 40
                     ? "#f59e0b"
-                    : "#ef4444",
+                    : "var(--danger)",
                 transition: "0.3s",
               }}
             />
@@ -780,7 +780,7 @@ export default function StudyPage() {
                 padding: "12px",
                 borderRadius: "12px",
                 border: "none",
-                background: "#ef4444",
+                background: "var(--danger)",
                 color: "white",
                 fontWeight: 700,
                 cursor: "pointer",
@@ -930,9 +930,9 @@ function MetricCard({
     <div
       style={{
         background:
-          "rgba(255,255,255,0.03)",
+          "var(--card-border)",
         border:
-          "1px solid rgba(255,255,255,0.05)",
+          "1px solid var(--card-border)",
         borderRadius: "18px",
         padding: "18px",
       }}
