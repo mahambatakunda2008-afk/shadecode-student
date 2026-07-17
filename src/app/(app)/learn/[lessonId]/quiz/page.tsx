@@ -120,7 +120,7 @@ export default function QuizPage() {
         </div>
       </div>
       <div style={{ textAlign: "center" }}>
-        <p style={{ color: "var(--card-border)", fontSize: 15, fontWeight: 600, margin: 0 }}>
+        <p style={{ color: "var(--foreground)", fontSize: 15, fontWeight: 600, margin: 0 }}>
           {phase === "generating" ? "Building your quiz…" : "Loading…"}
         </p>
         <p style={{ color: "var(--muted-foreground)", fontSize: 12, margin: "4px 0 0", animation: "pulse 1.5s ease infinite" }}>

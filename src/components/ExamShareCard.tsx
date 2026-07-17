@@ -135,11 +135,11 @@ export default function ExamShareCard({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="relative rounded-2xl border border-white/10 bg-[#0f0f14] overflow-hidden shadow-2xl">
+      <div className="relative rounded-2xl border border-[var(--card-border)] bg-[var(--card)] overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/8 via-transparent to-purple-600/8 pointer-events-none" />
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-white/5">
+        <div className="px-6 pt-6 pb-4 border-b border-[var(--card-border)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold tracking-widest text-indigo-400 uppercase">
               ◈ Shadecode Student
@@ -153,26 +153,26 @@ export default function ExamShareCard({
         {/* Body */}
         <div className="px-6 py-6 space-y-6">
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Subject</p>
-            <p className="text-xl font-bold text-white">
+            <p className="text-xs text-[var(--muted-foreground)] uppercase tracking-wider mb-1">Subject</p>
+            <p className="text-xl font-bold text-[var(--foreground)]">
               {result.subject}
               {result.topic && (
-                <span className="text-slate-400 font-normal text-base ml-2">· {result.topic}</span>
+                <span className="text-[var(--muted-foreground)] font-normal text-base ml-2">· {result.topic}</span>
               )}
             </p>
           </div>
 
           <div className="flex items-end gap-6">
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Score</p>
-              <p className="text-5xl font-black text-white">
+              <p className="text-xs text-[var(--muted-foreground)] uppercase tracking-wider mb-1">Score</p>
+              <p className="text-5xl font-black text-[var(--foreground)]">
                 {result.score}
-                <span className="text-2xl text-slate-500 font-semibold">/{result.total}</span>
+                <span className="text-2xl text-[var(--muted-foreground)] font-semibold">/{result.total}</span>
               </p>
-              <p className="text-sm text-slate-400 mt-1">{percentage}%</p>
+              <p className="text-sm text-[var(--muted-foreground)] mt-1">{percentage}%</p>
             </div>
             <div className="ml-auto text-right">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Grade</p>
+              <p className="text-xs text-[var(--muted-foreground)] uppercase tracking-wider mb-1">Grade</p>
               <p className={cn('text-6xl font-black', gradeColor)}>{result.grade}</p>
             </div>
           </div>
@@ -183,16 +183,16 @@ export default function ExamShareCard({
               { label: 'XP Earned', value: `+${result.xp_earned}`       },
               { label: 'Questions', value: `${result.question_count}Q`   },
             ].map(({ label, value }) => (
-              <div key={label} className="rounded-xl bg-white/4 border border-white/6 px-3 py-3 text-center">
-                <p className="text-xs text-slate-500 mb-1">{label}</p>
-                <p className="text-sm font-semibold text-white">{value}</p>
+              <div key={label} className="rounded-xl bg-[var(--surface-2)] border border-[var(--card-border)] px-3 py-3 text-center">
+                <p className="text-xs text-[var(--muted-foreground)] mb-1">{label}</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">{value}</p>
               </div>
             ))}
           </div>
 
           {result.user_name && (
-            <p className="text-xs text-slate-500 text-center">
-              by <span className="text-slate-300">{result.user_name}</span>
+            <p className="text-xs text-[var(--muted-foreground)] text-center">
+              by <span className="text-[var(--muted-foreground)]">{result.user_name}</span>
             </p>
           )}
         </div>
@@ -208,7 +208,7 @@ export default function ExamShareCard({
                 'flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 border',
                 copiedResult
                   ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                  : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
+                  : 'bg-[var(--surface-2)] border-[var(--card-border)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
               )}
             >
               {copiedResult ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -226,9 +226,9 @@ export default function ExamShareCard({
 
           {/* ── Challenge divider ── */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-white/8" />
-            <span className="text-xs text-slate-600 font-medium">or</span>
-            <div className="flex-1 h-px bg-white/8" />
+            <div className="flex-1 h-px bg-[var(--card-border)]" />
+            <span className="text-xs text-[var(--muted-foreground)] font-medium">or</span>
+            <div className="flex-1 h-px bg-[var(--card-border)]" />
           </div>
 
           {/* ── Challenge section ── */}
@@ -249,7 +249,7 @@ export default function ExamShareCard({
                 <Swords className="w-3.5 h-3.5 text-orange-400" />
                 <p className="text-xs font-bold text-orange-400 uppercase tracking-wider">Challenge Link Ready</p>
               </div>
-              <p className="text-xs text-slate-500 truncate font-mono bg-white/4 rounded-lg px-3 py-2">
+              <p className="text-xs text-[var(--muted-foreground)] truncate font-mono bg-[var(--surface-2)] rounded-lg px-3 py-2">
                 {fullChallengeUrl}
               </p>
               <div className="flex gap-2">
@@ -259,7 +259,7 @@ export default function ExamShareCard({
                     'flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-200 border',
                     copiedChallenge
                       ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                      : 'bg-[var(--surface-2)] border-[var(--card-border)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]'
                   )}
                 >
                   {copiedChallenge ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}

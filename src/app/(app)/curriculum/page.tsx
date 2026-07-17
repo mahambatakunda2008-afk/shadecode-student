@@ -62,7 +62,7 @@ export default function CurriculumPage() {
     return (
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 12 }}>Curriculum</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)", marginBottom: 12 }}>Curriculum</h1>
           <div style={{ padding: 20, borderRadius: 18, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
             <p style={{ color: "#fca5a5", margin: 0 }}>{error}</p>
           </div>
@@ -76,12 +76,12 @@ export default function CurriculumPage() {
     return (
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 12 }}>Curriculum</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)", marginBottom: 12 }}>Curriculum</h1>
           <div style={{ padding: 40, borderRadius: 18, background: "var(--surface-2)", border: "1px solid var(--card-border)", textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
               <BookOpen size={32} color="#a78bfa" />
             </div>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--card-border)", marginBottom: 8 }}>No curriculum yet</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>No curriculum yet</h2>
             <p style={{ fontSize: 14, color: "var(--muted-foreground)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>
               Generate your first lesson to start building your personalized learning path.
             </p>
@@ -117,7 +117,7 @@ export default function CurriculumPage() {
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 8 }}>Curriculum</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)", marginBottom: 8 }}>Curriculum</h1>
           <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0 }}>
             Track your learning progress and see your recommended path
           </p>
@@ -200,7 +200,7 @@ function RecommendedLessonCard({ lesson }: { lesson: LessonRow }) {
         <span style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>Recommended Next</span>
       </div>
 
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--card-border)", marginBottom: 8 }}>{lesson.title}</h3>
+      <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", marginBottom: 8 }}>{lesson.title}</h3>
       
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -257,7 +257,7 @@ function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; s
 
   return (
     <div style={{ padding: 24, borderRadius: 18, background: "var(--surface-2)", border: "1px solid var(--card-border)" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--card-border)", marginBottom: 16 }}>Progress by Subject</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", marginBottom: 16 }}>Progress by Subject</h3>
       
       {Object.keys(subjectGroups).length === 0 ? (
         <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0 }}>No subject data available</p>
@@ -269,7 +269,7 @@ function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; s
             return (
               <div key={subjectId}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--card-border)" }}>{subjectName}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}>{subjectName}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{percent}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden" }}>

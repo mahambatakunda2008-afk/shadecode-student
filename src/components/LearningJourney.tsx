@@ -202,7 +202,7 @@ const card: React.CSSProperties = {
 const headingStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
-  color: "var(--card-border)",
+  color: "var(--foreground)",
 };
 
 const primaryBtn: React.CSSProperties = {

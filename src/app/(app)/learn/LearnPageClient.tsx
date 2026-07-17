@@ -220,7 +220,7 @@ export default function LearnPageClient() {
 
         .learn-gen-btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
         .learn-gen-btn:disabled             { opacity: 0.5; cursor: not-allowed; }
-        .subj-pill:hover                    { border-color: var(--card-border) !important; color: var(--card-border) !important; }
+        .subj-pill:hover                    { border-color: var(--card-border) !important; color: var(--foreground) !important; }
         .diff-btn:hover                     { filter: brightness(1.1); }
         .lesson-row:hover                   { background: var(--card-border) !important; }
         .subj-card:hover                    { transform: translateY(-2px); border-color: var(--card-border) !important; }
@@ -282,7 +282,7 @@ export default function LearnPageClient() {
                     </div>
                     <div>
                       <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: 0, fontWeight: 600 }}>{label}</p>
-                      <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--card-border)" }}>{value}</p>
+                      <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--foreground)" }}>{value}</p>
                     </div>
                   </div>
                 ))}
@@ -339,7 +339,7 @@ export default function LearnPageClient() {
                   disabled={!subject}
                   style={{
                     width: "100%", boxSizing: "border-box",
-                    background: "rgba(0,0,0,0.35)", border: "1px solid var(--card-border)",
+                    background: "var(--surface-2)", border: "1px solid var(--card-border)",
                     borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "var(--foreground)",
                     outline: "none", transition: "border-color .15s, box-shadow .15s",
                     opacity: subject ? 1 : 0.5,
