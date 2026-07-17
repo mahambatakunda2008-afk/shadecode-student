@@ -152,7 +152,7 @@ export default function LearnHistoryPage() {
               {(["all", "done", "undone"] as const).map(v => (
                 <button key={v} onClick={() => setShowCompleted(v)}
                   style={{ fontSize: 11, fontWeight: 600, padding: "5px 12px", borderRadius: 8, border: "1px solid", cursor: "pointer", transition: "all .15s",
-                    background: showCompleted === v ? "rgba(139,92,246,0.15)" : "var(--card-border)",
+                    background: showCompleted === v ? "rgba(139,92,246,0.15)" : "var(--surface-2)",
                     borderColor: showCompleted === v ? "rgba(139,92,246,0.4)" : "var(--card-border)",
                     color: showCompleted === v ? "#c4b5fd" : "var(--muted-foreground)",
                   }}>
@@ -185,7 +185,7 @@ export default function LearnHistoryPage() {
               <button key={s} onClick={() => setActiveSubject(s)}
                 className="filter-btn"
                 style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 999, border: "1px solid", cursor: "pointer", transition: "all .15s", whiteSpace: "nowrap",
-                  background: active ? (t ? t.bg : "rgba(139,92,246,0.15)") : "var(--card-border)",
+                  background: active ? (t ? t.bg : "rgba(139,92,246,0.15)") : "var(--surface-2)",
                   borderColor: active ? (t ? t.border : "rgba(139,92,246,0.4)") : "var(--card-border)",
                   color: active ? (t ? t.text : "#c4b5fd") : "var(--muted-foreground)",
                 }}>
@@ -209,7 +209,7 @@ export default function LearnHistoryPage() {
               <button key={v} onClick={() => setActiveDifficulty(v)}
                 className="filter-btn"
                 style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, border: "1px solid", cursor: "pointer", transition: "all .15s",
-                  background: active ? (d ? d.bg : "var(--card-border)") : "var(--card-border)",
+                  background: active ? (d ? d.bg : "var(--surface-2)") : "var(--surface-2)",
                   borderColor: active ? (d ? d.border : "var(--card-border)") : "var(--card-border)",
                   color: active ? (d ? d.text : "var(--foreground)") : "var(--muted-foreground)",
                 }}>
