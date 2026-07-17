@@ -50,7 +50,7 @@ export default function LowBandwidthToggle() {
         style={{
           padding: "4px 8px",
           borderRadius: 6,
-          background: lowBandwidthMode ? "rgba(245,158,11,0.2)" : "var(--card-border)",
+          background: lowBandwidthMode ? "rgba(245,158,11,0.2)" : "var(--surface-2)",
           border: lowBandwidthMode ? "1px solid rgba(245,158,11,0.3)" : "1px solid var(--card-border)",
           color: lowBandwidthMode ? "#f59e0b" : "var(--muted-foreground)",
           fontSize: 11,

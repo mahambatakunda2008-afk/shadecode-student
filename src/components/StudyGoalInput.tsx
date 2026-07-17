@@ -209,7 +209,7 @@ export default function StudyGoalInput({ onSubmit, onCancel, initialGoals }: Stu
                   style={{
                     padding: "4px 10px",
                     borderRadius: "6px",
-                    background: prioritySubjects.includes(subject) ? "#6366f1" : "var(--card-border)",
+                    background: prioritySubjects.includes(subject) ? "#6366f1" : "var(--surface-2)",
                     color: prioritySubjects.includes(subject) ? "white" : "var(--muted-foreground)",
                     border: "none",
                     fontSize: "11px",

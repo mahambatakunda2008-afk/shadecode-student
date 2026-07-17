@@ -706,7 +706,7 @@ export default function ExamSimulation() {
         `}</style>
 
         {/* Score hero */}
-        <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: `radial-gradient(ellipse at 70% 0%, ${gc}22 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
+        <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: `radial-gradient(ellipse at 70% 0%, ${gc}22 0%, transparent 55%), var(--card)`, padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", background: `${gc}18`, border: `2px solid ${gc}40`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
             <Trophy size={32} color={gc} />
           </div>
@@ -748,12 +748,12 @@ export default function ExamSimulation() {
                 {banner.emoji} {banner.text}
               </p>
               <div style={{ display: "flex", gap: 12 }}>
-                <div style={{ flex: 1, textAlign: "center", background: "var(--card-border)", borderRadius: 12, padding: "14px 10px", border: won ? `1px solid ${banner.color}40` : "1px solid var(--card-border)" }}>
+                <div style={{ flex: 1, textAlign: "center", background: "var(--surface-2)", borderRadius: 12, padding: "14px 10px", border: won ? `1px solid ${banner.color}40` : "1px solid var(--card-border)" }}>
                   <p style={{ fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>You</p>
                   <p style={{ fontSize: 36, fontWeight: 900, color: gc, margin: 0 }}>{userPct}%</p>
                   <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "3px 0 0" }}>Grade {grade}</p>
                 </div>
-                <div style={{ flex: 1, textAlign: "center", background: "var(--card-border)", borderRadius: 12, padding: "14px 10px", border: "1px solid var(--card-border)" }}>
+                <div style={{ flex: 1, textAlign: "center", background: "var(--surface-2)", borderRadius: 12, padding: "14px 10px", border: "1px solid var(--card-border)" }}>
                   <p style={{ fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>{challengeCtx.name}</p>
                   <p style={{ fontSize: 36, fontWeight: 900, color: gradeColor(theirPct), margin: 0 }}>{theirPct}%</p>
                   <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "3px 0 0" }}>Grade {challengeCtx.grade}</p>
@@ -843,7 +843,7 @@ export default function ExamSimulation() {
         {activeTab === "overview" && (
           <div style={{ animation: "fadeUp .3s ease" }}>
             {results.results && (
-              <div style={{ borderRadius: 18, background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)", border: "1px solid var(--card-border)", overflow: "hidden" }}>
+              <div style={{ borderRadius: 18, background: "var(--card)", border: "1px solid var(--card-border)", overflow: "hidden" }}>
                 {Object.entries(
                   results.results.reduce<Record<string, { score: number; max: number }>>((acc, r) => {
                     const t = r.topic || "General";
@@ -861,7 +861,7 @@ export default function ExamSimulation() {
                         <p style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>{topicKey}</p>
                         <span style={{ fontSize: 12, fontWeight: 700, color: tc }}>{topicPct}%</span>
                       </div>
-                      <div style={{ height: 5, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: 5, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
                         <div style={{ width: `${topicPct}%`, height: "100%", background: tc, borderRadius: 999, transition: "width .6s ease" }} />
                       </div>
                     </div>
@@ -901,7 +901,7 @@ export default function ExamSimulation() {
                   </button>
                   {isOpen && (
                     <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ background: "var(--card-border)", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ background: "var(--surface-2)", borderRadius: 10, padding: "12px 14px" }}>
                         <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Your Answer</p>
                         <p style={{ fontSize: 13, color: r.correct ? "#34d399" : "var(--danger)", margin: 0, lineHeight: 1.5 }}>
                           {userAns?.answer || "No answer given"}
@@ -913,7 +913,7 @@ export default function ExamSimulation() {
                           <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.6 }}>{r.modelAnswer}</p>
                         </div>
                       )}
-                      <div style={{ background: "var(--card-border)", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ background: "var(--surface-2)", borderRadius: 10, padding: "12px 14px" }}>
                         <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Feedback</p>
                         <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{r.feedback}</p>
                       </div>
@@ -928,7 +928,7 @@ export default function ExamSimulation() {
         {/* Actions */}
         <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
           <button onClick={resetExam}
-            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "var(--card-border)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={15} /> New Exam
           </button>
           <button

@@ -47,10 +47,10 @@ export default function CurriculumPage() {
     return (
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ height: 28, width: "30%", borderRadius: 8, background: "var(--card-border)", marginBottom: 24 }} />
+          <div style={{ height: 28, width: "30%", borderRadius: 8, background: "var(--surface-2)", marginBottom: 24 }} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            <div style={{ height: 200, borderRadius: 18, background: "var(--card-border)" }} />
-            <div style={{ height: 200, borderRadius: 18, background: "var(--card-border)" }} />
+            <div style={{ height: 200, borderRadius: 18, background: "var(--surface-2)" }} />
+            <div style={{ height: 200, borderRadius: 18, background: "var(--surface-2)" }} />
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function CurriculumPage() {
       <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--card-border)", marginBottom: 12 }}>Curriculum</h1>
-          <div style={{ padding: 40, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)", textAlign: "center" }}>
+          <div style={{ padding: 40, borderRadius: 18, background: "var(--surface-2)", border: "1px solid var(--card-border)", textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
               <BookOpen size={32} color="#a78bfa" />
             </div>
@@ -180,7 +180,7 @@ export default function CurriculumPage() {
 
 function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: React.ReactNode; accent: string }) {
   return (
-    <div style={{ padding: 20, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)" }}>
+    <div style={{ padding: 20, borderRadius: 18, background: "var(--surface-2)", border: "1px solid var(--card-border)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
         {icon}
@@ -192,7 +192,7 @@ function StatCard({ label, value, icon, accent }: { label: string; value: string
 
 function RecommendedLessonCard({ lesson }: { lesson: LessonRow }) {
   return (
-    <div style={{ padding: 24, borderRadius: 18, background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)", border: "1px solid rgba(139,92,246,0.2)" }}>
+    <div style={{ padding: 24, borderRadius: 18, background: "var(--card)", border: "1px solid rgba(139,92,246,0.2)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Zap size={16} color="#c4b5fd" />
@@ -256,7 +256,7 @@ function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; s
   }, {} as Record<string, { lessons: LessonRow[]; completed: number }>);
 
   return (
-    <div style={{ padding: 24, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)" }}>
+    <div style={{ padding: 24, borderRadius: 18, background: "var(--surface-2)", border: "1px solid var(--card-border)" }}>
       <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--card-border)", marginBottom: 16 }}>Progress by Subject</h3>
       
       {Object.keys(subjectGroups).length === 0 ? (
@@ -272,7 +272,7 @@ function SubjectProgressSection({ lessons, subjects }: { lessons: LessonRow[]; s
                   <span style={{ fontSize: 14, fontWeight: 600, color: "var(--card-border)" }}>{subjectName}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{percent}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "var(--card-border)", overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${percent}%`, borderRadius: 999, background: "linear-gradient(90deg, #7c3aed, #6366f1)", transition: "width 0.5s ease" }} />
                 </div>
                 <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "4px 0 0" }}>

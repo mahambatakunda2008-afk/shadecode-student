@@ -29,14 +29,14 @@ export default function LearningJourney({ initialState = null }: Props) {
   /* ── Loading skeleton ── */
   if (loading) return (
     <div style={card}>
-      <div style={{ height: 14, width: "40%", borderRadius: 6, background: "var(--card-border)", marginBottom: 16 }} />
-      <div style={{ height: 6, width: "100%", borderRadius: 999, background: "var(--card-border)", marginBottom: 18 }} />
+      <div style={{ height: 14, width: "40%", borderRadius: 6, background: "var(--surface-2)", marginBottom: 16 }} />
+      <div style={{ height: 6, width: "100%", borderRadius: 999, background: "var(--surface-2)", marginBottom: 18 }} />
       {[0,1,2,3].map(i => (
         <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--card-border)", flexShrink: 0 }} />
+          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--surface-2)", flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
-            <div style={{ height: 11, width: "70%", borderRadius: 4, background: "var(--card-border)", marginBottom: 5 }} />
-            <div style={{ height: 9, width: "40%", borderRadius: 4, background: "var(--card-border)" }} />
+            <div style={{ height: 11, width: "70%", borderRadius: 4, background: "var(--surface-2)", marginBottom: 5 }} />
+            <div style={{ height: 9, width: "40%", borderRadius: 4, background: "var(--surface-2)" }} />
           </div>
         </div>
       ))}
@@ -85,7 +85,7 @@ export default function LearningJourney({ initialState = null }: Props) {
       </div>
 
       {/* ── Progress bar ── */}
-      <div style={{ height: 5, borderRadius: 999, background: "var(--card-border)", overflow: "hidden", marginBottom: 20 }}>
+      <div style={{ height: 5, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden", marginBottom: 20 }}>
         <div style={{ height: "100%", width: `${completion}%`, borderRadius: 999, background: "linear-gradient(90deg, #f59e0b, #fbbf24)", transition: "width .6s ease" }} />
       </div>
 
@@ -104,7 +104,7 @@ export default function LearningJourney({ initialState = null }: Props) {
       {/* ── Timeline ── */}
       <div style={{ position: "relative" }}>
         {/* Vertical line */}
-        <div style={{ position: "absolute", left: 13, top: 8, bottom: 8, width: 1, background: "var(--card-border)" }} />
+        <div style={{ position: "absolute", left: 13, top: 8, bottom: 8, width: 1, background: "var(--surface-2)" }} />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {lessons.length === 0 && (
@@ -174,7 +174,7 @@ export default function LearningJourney({ initialState = null }: Props) {
         {hasMore && (
           <button
             onClick={() => setExpanded(e => !e)}
-            style={{ marginTop: 12, width: "100%", padding: "7px 0", borderRadius: 10, background: "var(--card-border)", border: "1px solid var(--card-border)", fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", cursor: "pointer" }}
+            style={{ marginTop: 12, width: "100%", padding: "7px 0", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--card-border)", fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", cursor: "pointer" }}
           >
             {expanded ? "Show less" : `Show ${lessons.length - COLLAPSE_AT} more`}
           </button>
@@ -192,7 +192,7 @@ export default function LearningJourney({ initialState = null }: Props) {
 
 /* ── Shared styles ── */
 const card: React.CSSProperties = {
-  background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)",
+  background: "var(--card)",
   border: "1px solid var(--card-border)",
   borderRadius: 18,
   padding: 20,
@@ -227,7 +227,7 @@ const ghostBtn: React.CSSProperties = {
   justifyContent: "center",
   padding: "8px 0",
   borderRadius: 10,
-  background: "var(--card-border)",
+  background: "var(--surface-2)",
   border: "1px solid var(--card-border)",
   fontSize: 12,
   fontWeight: 600,

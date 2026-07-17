@@ -28,10 +28,10 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
   /* ── Loading skeleton ── */
   if (loading) return (
     <div className="curriculum-card" style={card}>
-      <div style={{ height: 14, width: "45%", borderRadius: 6, background: "var(--card-border)", marginBottom: 16 }} />
-      <div style={{ height: 6,  width: "100%", borderRadius: 999, background: "var(--card-border)", marginBottom: 18 }} />
+      <div style={{ height: 14, width: "45%", borderRadius: 6, background: "var(--surface-2)", marginBottom: 16 }} />
+      <div style={{ height: 6,  width: "100%", borderRadius: 999, background: "var(--surface-2)", marginBottom: 18 }} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {[0,1,2,3].map(i => <div key={i} style={{ height: 36, borderRadius: 8, background: "var(--card-border)" }} />)}
+        {[0,1,2,3].map(i => <div key={i} style={{ height: 36, borderRadius: 8, background: "var(--surface-2)" }} />)}
       </div>
     </div>
   );
@@ -68,7 +68,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: 6, borderRadius: 999, background: "var(--card-border)", overflow: "hidden", marginBottom: 18 }}>
+      <div style={{ height: 6, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden", marginBottom: 18 }}>
         <div style={{ height: "100%", width: `${percent}%`, borderRadius: 999, background: "linear-gradient(90deg, #7c3aed, #6366f1)", transition: "width .6s ease" }} />
       </div>
 

@@ -28,7 +28,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme {
@@ -126,7 +126,7 @@ export default function SubjectsPage() {
         {/* ── Empty state ── */}
         {!error && subjects.length === 0 && (
           <div style={{ textAlign: "center", padding: "72px 24px" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 18, background: "var(--card-border)", border: "1px solid var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: "var(--surface-2)", border: "1px solid var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <BookOpen size={24} color="var(--muted-foreground)" />
             </div>
             <p style={{ fontSize: 15, fontWeight: 600, color: "var(--muted-foreground)", margin: "0 0 6px" }}>No subjects yet</p>
@@ -166,7 +166,7 @@ export default function SubjectsPage() {
                   </div>
 
                   {/* Divider */}
-                  <div style={{ height: 1, background: "var(--card-border)", marginBottom: 16 }} />
+                  <div style={{ height: 1, background: "var(--surface-2)", marginBottom: 16 }} />
 
                   {/* Actions */}
                   <div style={{ display: "flex", gap: 8 }}>
@@ -182,7 +182,7 @@ export default function SubjectsPage() {
                     {/* View lessons for this subject */}
                     <Link
                       href={`/learn/history?subject=${encodeURIComponent(s.name)}`}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "9px 12px", borderRadius: 10, background: "var(--card-border)", border: "1px solid var(--card-border)", textDecoration: "none", transition: "filter .15s", cursor: "pointer" }}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "9px 12px", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--card-border)", textDecoration: "none", transition: "filter .15s", cursor: "pointer" }}
                       onMouseEnter={e => (e.currentTarget.style.filter = "brightness(1.15)")}
                       onMouseLeave={e => (e.currentTarget.style.filter = "brightness(1)")}
                     >
