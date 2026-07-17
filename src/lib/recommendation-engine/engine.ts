@@ -73,13 +73,7 @@ export class RecommendationEngine {
    * Invalidate cache for a user
    */
   async invalidateCache(userId: string): Promise<void> {
-    const keysToDelete: string[] = [];
-    this.cache.forEach((_, key) => {
-      if (key.startsWith(`usil:${userId}:`)) {
-        keysToDelete.push(key);
-      }
-    });
-    keysToDelete.forEach(key => this.cache.delete(key));
+    this.cache.delete(`usil:${userId}`);
   }
 
   /**
@@ -658,7 +652,7 @@ export class RecommendationEngine {
    * Get cache key
    */
   private getCacheKey(input: RecommendationEngineInput): string {
-    return `usil:${input.userId}:${Date.now()}`;
+    return `usil:${input.userId}`;
   }
 
   /**

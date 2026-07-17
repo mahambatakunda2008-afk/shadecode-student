@@ -2,20 +2,18 @@
  * /lib/recommendation-engine/__tests__/engine.test.ts
  *
  * Recommendation Engine - Tests
- *
- * Note: These tests require Jest to be set up in the project.
- * If Jest is not configured, these tests will need to be adapted
- * to the project's testing framework.
  */
 
-// TODO: Set up Jest or adapt to project's testing framework
-// For now, this file serves as a template for tests
-
-/*
-import { recommendationEngine, RecommendationEngineInput } from "../engine";
+import { describe, it, expect, beforeEach } from "vitest";
+import { recommendationEngine } from "../engine";
+import type { RecommendationEngineInput } from "../types";
 
 describe("Recommendation Engine", () => {
   const testUserId = "test-user-123";
+
+  beforeEach(async () => {
+    await recommendationEngine.invalidateCache(testUserId);
+  });
 
   const mockInput: RecommendationEngineInput = {
     userId: testUserId,
@@ -31,10 +29,32 @@ describe("Recommendation Engine", () => {
         currentLesson: { id: "lesson-1", title: "Lesson 1" },
         recommendedNextLesson: { id: "lesson-2", title: "Lesson 2" },
       },
-      lessons: [],
+      lessons: [
+        {
+          lessonId: "lesson-2",
+          lessonTitle: "Lesson 2",
+          subject: "Mathematics",
+          progress: 0,
+          completed: false,
+          lastAttempted: new Date().toISOString(),
+          timeSpent: 0,
+          attempts: 0,
+        },
+      ],
       subjects: [],
     },
-    weakAreas: [],
+    weakAreas: [
+      {
+        topicId: "topic-1",
+        topic: "Algebra",
+        subject: "Mathematics",
+        severity: "medium",
+        score: 55,
+        lastAssessed: new Date().toISOString(),
+        recommendedActions: ["Practice more equations"],
+        estimatedTimeToImprove: 40,
+      },
+    ],
     examReadiness: {
       subject: "Mathematics",
       board: "ZIMSEC",
@@ -142,14 +162,14 @@ describe("Recommendation Engine", () => {
 
   describe("Priority Calculation", () => {
     it("should prioritize weak areas with critical severity", async () => {
-      const inputWithCriticalWeakAreas = {
+      const inputWithCriticalWeakAreas: RecommendationEngineInput = {
         ...mockInput,
         weakAreas: [
           {
             topicId: "topic-1",
             topic: "Algebra",
             subject: "Mathematics",
-            severity: "critical",
+            severity: "critical" as const,
             score: 20,
             lastAssessed: new Date().toISOString(),
             recommendedActions: [],
@@ -166,6 +186,7 @@ describe("Recommendation Engine", () => {
     it("should prioritize lessons with low completion", async () => {
       const inputWithLowCompletion = {
         ...mockInput,
+        weakAreas: [],
         curriculumProgress: {
           ...mockInput.curriculumProgress,
           overallCompletion: 20,
@@ -192,4 +213,3 @@ describe("Recommendation Engine", () => {
     });
   });
 });
-*/

@@ -220,5 +220,19 @@ export const log = {
     message: `API failure at ${context.method} ${context.route} (Status: ${context.status ?? "unknown"}) — ${context.error}`,
     context,
   }),
+
+  // Revision queue
+  revisionInvalidInput: (context: {
+    userId: string;
+    subject: string;
+    rawInput: unknown;
+    reason: string;
+  }) => emit({
+    level: "warn",
+    domain: "Revision",
+    event: "revision_invalid_input",
+    message: `Invalid revision input for user ${context.userId} — ${context.subject}: ${context.reason}`,
+    context,
+  }),
 };
 

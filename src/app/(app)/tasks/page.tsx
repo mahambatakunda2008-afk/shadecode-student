@@ -102,7 +102,7 @@ export default function Tasks() {
     await supabase.from("tasks").update({ completed: true }).eq("id", task.id);
 
     // Award XP using centralized manager
-    const result = await awardXPClient(userId, { amount: 10, source: "task_completion" });
+    const result = await awardXPClient(userId, { amount: 10 });
     
     setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: true } : t));
     if (result.success) {

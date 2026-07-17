@@ -3,10 +3,14 @@
  *
  * Integration tests for Unified Student Intelligence Layer
  *
- * Note: These tests require Jest to be set up in the project.
- * If Jest is not configured, these tests will need to be adapted
- * to the project's testing framework.
+ * Not yet written -- tracked as explicit TODOs so `vitest run` reports
+ * them as pending work instead of erroring with "no test suite found".
  */
 
-// TODO: Set up Jest or adapt to project's testing framework
-// For now, this file serves as a template for integration tests
+import { describe, it } from "vitest";
+
+describe("Student Intelligence Layer (integration)", () => {
+  it.todo("aggregates curriculum progress, weak areas, and exam readiness into a single profile");
+  it.todo("recomputes the profile when underlying curriculum data changes");
+  it.todo("handles a brand-new user with no history gracefully");
+});
