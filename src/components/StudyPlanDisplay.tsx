@@ -327,7 +327,7 @@ function WeekCard({ schedule, isCurrent, isExpanded, onToggle, completedSessions
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0 }}>{weekProgress}%</p>
-          <div style={{ width: 60, height: 4, borderRadius: 2, background: "var(--card-border)" }}>
+          <div style={{ width: 60, height: 4, borderRadius: 2, background: "var(--surface-2)" }}>
             <div style={{ width: `${weekProgress}%`, height: "100%", background: "#6366f1", borderRadius: 2 }} />
           </div>
         </div>

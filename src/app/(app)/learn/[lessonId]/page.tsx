@@ -31,7 +31,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme { return THEMES[name] ?? THEMES.default; }
@@ -60,7 +60,7 @@ function BlockCard({ block }: { block: LessonBlock }) {
     <div style={{ position: "relative", background: c.bg, border: `1px solid ${c.border}`, borderRadius: 16, padding: "18px 20px 18px 24px", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: c.accent, borderRadius: "16px 0 0 16px" }} />
       <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.textColor, margin: "0 0 8px" }}>{c.emoji} {c.label}</p>
-      <p style={{ fontSize: 14, lineHeight: 1.75, color: "#cbd5e1", margin: 0, fontFamily: block.type === "math" ? "monospace" : undefined }}>{block.content}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.75, color: "var(--muted-foreground)", margin: 0, fontFamily: block.type === "math" ? "monospace" : undefined }}>{block.content}</p>
     </div>
   );
   return <p style={{ fontSize: 14, lineHeight: 1.85, color: "var(--muted-foreground)", margin: 0 }}>{block.content}</p>;
@@ -320,7 +320,7 @@ export default function LessonDetailPage() {
         </Link>
 
         {/* ── Header card ── */}
-        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--card-border)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)`, marginBottom: 28, boxShadow: "inset 0 1px 0 var(--card-border)" }}>
+        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--card-border)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), var(--card)`, marginBottom: 28, boxShadow: "inset 0 1px 0 var(--card-border)" }}>
           <div style={{ height: 3, background: `linear-gradient(90deg, ${t.hex}, ${t.hex}44)` }} />
           <div style={{ padding: "24px 28px" }}>
             <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
@@ -337,7 +337,7 @@ export default function LessonDetailPage() {
               )}
             </div>
 
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", lineHeight: 1.3 }}>{lesson.title}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--foreground)", margin: "0 0 8px", lineHeight: 1.3 }}>{lesson.title}</h1>
             {lesson.description && <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 18px", lineHeight: 1.6 }}>{lesson.description}</p>}
 
             <div>
@@ -353,7 +353,7 @@ export default function LessonDetailPage() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: lesson.completed ? "#34d399" : t.text }}>{lesson.progress}%</span>
                 </div>
               </div>
-              <div style={{ height: 6, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
+              <div style={{ height: 6, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${lesson.progress}%`, background: lesson.completed ? "linear-gradient(90deg, #10b981, #34d399)" : `linear-gradient(90deg, ${t.hex}, ${t.hex}88)`, borderRadius: 999, transition: "width .8s ease" }} />
               </div>
             </div>
@@ -421,8 +421,8 @@ export default function LessonDetailPage() {
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: "52px 24px", background: "var(--card-border)", border: "1px solid var(--card-border)", borderRadius: 20 }}>
-            <div style={{ width: 50, height: 50, borderRadius: 15, background: "var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+          <div style={{ textAlign: "center", padding: "52px 24px", background: "var(--surface-2)", border: "1px solid var(--card-border)", borderRadius: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 15, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
               <BookOpen size={21} color="var(--muted-foreground)" />
             </div>
             <p style={{ fontSize: 14, fontWeight: 600, color: "var(--muted-foreground)", margin: "0 0 6px" }}>No content yet</p>

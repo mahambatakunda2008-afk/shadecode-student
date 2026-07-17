@@ -120,7 +120,7 @@ export default function QuizPage() {
         </div>
       </div>
       <div style={{ textAlign: "center" }}>
-        <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 600, margin: 0 }}>
+        <p style={{ color: "var(--card-border)", fontSize: 15, fontWeight: 600, margin: 0 }}>
           {phase === "generating" ? "Building your quiz…" : "Loading…"}
         </p>
         <p style={{ color: "var(--muted-foreground)", fontSize: 12, margin: "4px 0 0", animation: "pulse 1.5s ease infinite" }}>
@@ -151,13 +151,13 @@ export default function QuizPage() {
         </Link>
 
         {/* Score hero */}
-        <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), linear-gradient(160deg, #131330 0%, #0f0f24 100%)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
+        <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), var(--card)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
           <div style={{ width: 68, height: 68, borderRadius: "50%", background: pct >= 80 ? "rgba(251,191,36,0.15)" : "rgba(139,92,246,0.15)", border: `2px solid ${pct >= 80 ? "rgba(251,191,36,0.35)" : "rgba(139,92,246,0.35)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
             <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#a78bfa"} />
           </div>
           <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Quiz Complete</p>
           <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
-          <p style={{ fontSize: 18, fontWeight: 700, color: "#f1f5f9", margin: "0 0 24px" }}>{grade.label}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{grade.label}</p>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24 }}>
             {[
@@ -185,7 +185,7 @@ export default function QuizPage() {
               <div key={q.id} style={{ borderRadius: 16, border: `1px solid ${isCorrect ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, background: isCorrect ? "rgba(52,211,153,0.05)" : "rgba(248,113,113,0.05)", padding: "16px 18px", animation: `fadeUp .3s ease ${i * 0.07}s both` }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
                   {isCorrect ? <CheckCircle2 size={16} color="#34d399" style={{ flexShrink: 0, marginTop: 2 }} /> : <XCircle size={16} color="var(--danger)" style={{ flexShrink: 0, marginTop: 2 }} />}
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9", margin: 0, lineHeight: 1.5 }}>Q{i + 1}. {q.question}</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", margin: 0, lineHeight: 1.5 }}>Q{i + 1}. {q.question}</p>
                 </div>
 
                 <div style={{ paddingLeft: 26, display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
@@ -202,7 +202,7 @@ export default function QuizPage() {
                 </div>
 
                 <div style={{ paddingLeft: 26 }}>
-                  <div style={{ background: "var(--card-border)", borderRadius: 10, padding: "10px 14px" }}>
+                  <div style={{ background: "var(--surface-2)", borderRadius: 10, padding: "10px 14px" }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 5px" }}>Explanation</p>
                     <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{q.explanation}</p>
                   </div>
@@ -214,7 +214,7 @@ export default function QuizPage() {
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--card-border)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={15} /> Retake
           </button>
           <Link href={`/learn/${lessonId}`} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #7c3aed, #2563eb)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
@@ -252,7 +252,7 @@ export default function QuizPage() {
               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted-foreground)" }}>{current + 1} / {questions.length}</span>
             </div>
           </div>
-          <div style={{ height: 4, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
+          <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg, #7c3aed, #2563eb)", borderRadius: 999, transition: "width .4s ease" }} />
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function QuizPage() {
           {/* Question */}
           <div style={{ marginBottom: 24 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 10px" }}>Question {current + 1}</p>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#f1f5f9", margin: 0, lineHeight: 1.55 }}>{q.question}</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: 0, lineHeight: 1.55 }}>{q.question}</h2>
           </div>
 
           {/* Options */}
@@ -272,7 +272,7 @@ export default function QuizPage() {
             {q.options.map((opt, i) => {
               let bg     = "var(--card-border)";
               let border = "var(--card-border)";
-              let color  = "#cbd5e1";
+              let color  = "var(--muted-foreground)";
 
               if (confirmed) {
                 if (i === q.correctIndex)                             { bg = "rgba(52,211,153,0.12)";  border = "rgba(52,211,153,0.4)";  color = "#34d399"; }

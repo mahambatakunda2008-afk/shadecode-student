@@ -37,7 +37,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme {
@@ -220,7 +220,7 @@ export default function LearnPageClient() {
 
         .learn-gen-btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
         .learn-gen-btn:disabled             { opacity: 0.5; cursor: not-allowed; }
-        .subj-pill:hover                    { border-color: var(--card-border) !important; color: #e2e8f0 !important; }
+        .subj-pill:hover                    { border-color: var(--card-border) !important; color: var(--card-border) !important; }
         .diff-btn:hover                     { filter: brightness(1.1); }
         .lesson-row:hover                   { background: var(--card-border) !important; }
         .subj-card:hover                    { transform: translateY(-2px); border-color: var(--card-border) !important; }
@@ -262,7 +262,7 @@ export default function LearnPageClient() {
                   <Sparkles size={17} color="#c4b5fd" />
                 </div>
                 <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: "#f1f5f9" }}>AI Learn</h1>
+                  <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: "var(--foreground)" }}>AI Learn</h1>
                   <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>Generate lessons, study smarter</p>
                 </div>
               </div>
@@ -276,13 +276,13 @@ export default function LearnPageClient() {
                   { icon: <Flame size={14} color="#f97316" />, label: "Streak", value: `${summary.currentStreak}d` },
                   { icon: <Star size={14} color="#a78bfa" />, label: "Level", value: summary.level },
                 ].map(({ icon, label, value }) => (
-                  <div key={label} style={{ background: "var(--card-border)", border: "1px solid var(--card-border)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: "var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div key={label} style={{ background: "var(--surface-2)", border: "1px solid var(--card-border)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {icon}
                     </div>
                     <div>
                       <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: 0, fontWeight: 600 }}>{label}</p>
-                      <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "#e2e8f0" }}>{value}</p>
+                      <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--card-border)" }}>{value}</p>
                     </div>
                   </div>
                 ))}
@@ -340,7 +340,7 @@ export default function LearnPageClient() {
                   style={{
                     width: "100%", boxSizing: "border-box",
                     background: "rgba(0,0,0,0.35)", border: "1px solid var(--card-border)",
-                    borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#f1f5f9",
+                    borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "var(--foreground)",
                     outline: "none", transition: "border-color .15s, box-shadow .15s",
                     opacity: subject ? 1 : 0.5,
                   }}
@@ -416,7 +416,7 @@ export default function LearnPageClient() {
                           {genStep > step && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />}
                           {genStep === step && <div style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid var(--card-border)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite" }} />}
                         </div>
-                        <span style={{ fontSize: 12, color: genStep >= step ? "#e2e8f0" : "var(--muted-foreground)", fontWeight: genStep === step ? 600 : 400 }}>{label}</span>
+                        <span style={{ fontSize: 12, color: genStep >= step ? "var(--card-border)" : "var(--muted-foreground)", fontWeight: genStep === step ? 600 : 400 }}>{label}</span>
                       </div>
                     ))}
                   </div>
@@ -449,7 +449,7 @@ export default function LearnPageClient() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
                     padding: "11px 0", borderRadius: 12,
-                    background: "var(--card-border)", border: "1px solid var(--card-border)",
+                    background: "var(--surface-2)", border: "1px solid var(--card-border)",
                     fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)", textDecoration: "none",
                     transition: "background .15s",
                   }}
@@ -479,7 +479,7 @@ export default function LearnPageClient() {
                   </Link>
                 </div>
 
-                <div style={{ background: "linear-gradient(160deg, #111128 0%, #0e0e1e 100%)", border: "1px solid var(--card-border)", borderRadius: 18, overflow: "hidden" }}>
+                <div style={{ background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 18, overflow: "hidden" }}>
                   {recentLessons.map((l, i) => {
                     const t    = theme(l.subject);
                     const Icon = t.icon;
@@ -512,13 +512,13 @@ export default function LearnPageClient() {
 
                         {/* Title + meta */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: l.completed ? "var(--muted-foreground)" : "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: l.completed ? "var(--muted-foreground)" : "var(--foreground)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
                           <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>{l.subject}{date ? ` · ${ago(date)}` : ""}</p>
                         </div>
 
                         {/* Progress bar */}
                         <div style={{ width: 52, flexShrink: 0 }}>
-                          <div style={{ height: 3, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
+                          <div style={{ height: 3, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
                             <div style={{ height: "100%", width: `${l.progress}%`, background: l.completed ? "#10b981" : t.hex, borderRadius: 999 }} />
                           </div>
                           <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "3px 0 0", textAlign: "right" }}>{l.progress}%</p>
@@ -556,7 +556,7 @@ export default function LearnPageClient() {
                         className="subj-card"
                         style={{
                           display: "block", textDecoration: "none",
-                          background: "linear-gradient(150deg, #121228 0%, #0e0e20 100%)",
+                          background: "var(--card)",
                           border: "1px solid var(--card-border)", borderRadius: 16,
                           padding: "18px 20px", transition: "transform .2s, border-color .2s",
                         }}
@@ -567,7 +567,7 @@ export default function LearnPageClient() {
                             <Icon size={18} color={t.text} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
                             <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
                               {s.lessonCount} lesson{s.lessonCount !== 1 ? "s" : ""}
                             </p>

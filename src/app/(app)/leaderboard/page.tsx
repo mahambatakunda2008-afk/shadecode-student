@@ -239,7 +239,7 @@ export default function LeaderboardPage() {
             padding: "12px 18px",
             borderRadius: "16px",
             border: "1px solid var(--card-border)",
-            background: "var(--card-border)",
+            background: "var(--surface-2)",
             color: "white",
             cursor: "pointer",
             fontWeight: 700,
@@ -293,7 +293,7 @@ export default function LeaderboardPage() {
             padding: "90px 24px",
             textAlign: "center",
             borderRadius: "28px",
-            background: "var(--card-border)",
+            background: "var(--surface-2)",
             border: "1px solid var(--card-border)",
           }}
         >
@@ -370,7 +370,7 @@ export default function LeaderboardPage() {
           {/* FULL LIST */}
           <div
             style={{
-              background: "var(--card-border)",
+              background: "var(--surface-2)",
               border: "1px solid var(--card-border)",
               borderRadius: "28px",
               overflow: "hidden",

@@ -29,7 +29,7 @@ const THEMES: Record<string, SubjectTheme> = {
   Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
   Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
   Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "#64748b", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "#94a3b8", icon: BookOpen     },
+  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
 };
 
 function theme(name: string): SubjectTheme {
@@ -123,7 +123,7 @@ export default function LearnHistoryPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         .hist-row:hover  { background: var(--card-border) !important; }
-        .filter-btn:hover { border-color: var(--card-border) !important; color: #e2e8f0 !important; }
+        .filter-btn:hover { border-color: var(--card-border) !important; color: var(--card-border) !important; }
         .search-input:focus { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
       `}</style>
 
@@ -141,7 +141,7 @@ export default function LearnHistoryPage() {
 
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
             <div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 4px" }}>Lesson History</h1>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--foreground)", margin: "0 0 4px" }}>Lesson History</h1>
               <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
                 {lessons.length} lesson{lessons.length !== 1 ? "s" : ""} total · {completedCount} completed
               </p>
@@ -211,7 +211,7 @@ export default function LearnHistoryPage() {
                 style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, border: "1px solid", cursor: "pointer", transition: "all .15s",
                   background: active ? (d ? d.bg : "var(--card-border)") : "var(--card-border)",
                   borderColor: active ? (d ? d.border : "var(--card-border)") : "var(--card-border)",
-                  color: active ? (d ? d.text : "#e2e8f0") : "var(--muted-foreground)",
+                  color: active ? (d ? d.text : "var(--card-border)") : "var(--muted-foreground)",
                 }}>
                 {label}
               </button>
@@ -226,10 +226,10 @@ export default function LearnHistoryPage() {
 
         {/* ── Lesson list ── */}
         {!error && (
-          <div style={{ background: "linear-gradient(160deg, #12122a 0%, #0e0e20 100%)", border: "1px solid var(--card-border)", borderRadius: 20, overflow: "hidden" }}>
+          <div style={{ background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 20, overflow: "hidden" }}>
             {filtered.length === 0 ? (
               <div style={{ padding: "56px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: "var(--card-border)", border: "1px solid var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Filter size={20} color="var(--muted-foreground)" />
                 </div>
                 <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, fontWeight: 500 }}>
@@ -273,13 +273,13 @@ export default function LearnHistoryPage() {
 
                     {/* Title + meta */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: l.completed ? "var(--muted-foreground)" : "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: l.completed ? "var(--muted-foreground)" : "var(--foreground)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</p>
                       <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "3px 0 0" }}>{l.subject} · {ago(date)}</p>
                     </div>
 
                     {/* Progress */}
                     <div style={{ width: 60, flexShrink: 0 }}>
-                      <div style={{ height: 4, background: "var(--card-border)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${l.progress}%`, background: l.completed ? "#10b981" : t.hex, borderRadius: 999 }} />
                       </div>
                       <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "4px 0 0", textAlign: "right" }}>{l.progress}%</p>
