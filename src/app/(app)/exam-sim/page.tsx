@@ -833,7 +833,7 @@ export default function ExamSimulation() {
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {(["overview", "review"] as const).map(tab => (
             <button key={tab} className="result-tab" onClick={() => setActiveTab(tab)}
-              style={{ background: activeTab === tab ? "rgba(99,102,241,0.15)" : "var(--card-border)", borderColor: activeTab === tab ? "rgba(99,102,241,0.4)" : "var(--card-border)", color: activeTab === tab ? "#a78bfa" : "var(--muted-foreground)", cursor: "pointer", padding: "9px 20px", borderRadius: 10, border: "1px solid", fontWeight: 600, fontSize: 13, transition: "all .15s" }}>
+              style={{ background: activeTab === tab ? "rgba(99,102,241,0.15)" : "var(--surface-2)", borderColor: activeTab === tab ? "rgba(99,102,241,0.4)" : "var(--card-border)", color: activeTab === tab ? "#a78bfa" : "var(--muted-foreground)", cursor: "pointer", padding: "9px 20px", borderRadius: 10, border: "1px solid", fontWeight: 600, fontSize: 13, transition: "all .15s" }}>
               {tab === "overview" ? "Overview" : `Review All (${results.results?.length ?? 0})`}
             </button>
           ))}

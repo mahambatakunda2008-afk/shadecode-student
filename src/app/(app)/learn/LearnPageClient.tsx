@@ -313,7 +313,7 @@ export default function LearnPageClient() {
                           style={{
                             fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 999,
                             border: "1px solid", cursor: "pointer", transition: "all .15s",
-                            background: active ? t.bg : "var(--card-border)",
+                            background: active ? t.bg : "var(--surface-2)",
                             borderColor: active ? t.border : "var(--card-border)",
                             color: active ? t.text : "var(--muted-foreground)",
                           }}
@@ -359,7 +359,7 @@ export default function LearnPageClient() {
                       style={{
                         flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid",
                         cursor: "pointer", transition: "all .15s", textAlign: "center",
-                        background: difficulty === d.value ? d.bg : "var(--card-border)",
+                        background: difficulty === d.value ? d.bg : "var(--surface-2)",
                         borderColor: difficulty === d.value ? d.border : "var(--card-border)",
                       }}
                     >
