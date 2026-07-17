@@ -10,7 +10,7 @@
  * - Add metadata automatically
  */
 
-import { StructuredLesson, createExplanationTemplate, TEMPLATE_PRESETS } from "./templates";
+import { StructuredLesson, Section, createExplanationTemplate, TEMPLATE_PRESETS } from "./templates";
 import { validateLessonStructure, sanitizeLesson } from "./validators";
 
 export interface ContentBuilderConfig {
@@ -257,14 +257,14 @@ export function enrichContent(lesson: StructuredLesson, resources: Resource[]): 
  */
 export function chunkContent(lesson: StructuredLesson, maxChunkSize: number = 3): StructuredLesson[] {
   const chunks: StructuredLesson[] = [];
-  let currentChunk = { ...lesson, content: { ...lesson.content, explanation: [] } };
+  let currentChunk = { ...lesson, content: { ...lesson.content, explanation: [] as Section[] } };
 
   for (const section of lesson.content.explanation) {
     currentChunk.content.explanation.push(section);
 
     if (currentChunk.content.explanation.length >= maxChunkSize) {
       chunks.push(currentChunk);
-      currentChunk = { ...lesson, content: { ...lesson.content, explanation: [] } };
+      currentChunk = { ...lesson, content: { ...lesson.content, explanation: [] as Section[] } };
     }
   }
 

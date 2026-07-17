@@ -139,10 +139,10 @@ export default function CourseCatalog() {
       </Box>
       <Grid container spacing={2}>
         {filtered.map(course => (
-          <Grid item xs={12} sm={6} key={course.id}>
+          <Grid key={course.id} size={{ xs: 12, sm: 6 }}>
             <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, border: 1, borderColor: 'divider' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle1" fontWeight="medium">{course.title}</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: "medium" }}>{course.title}</Typography>
                 <Typography variant="caption" color="text.secondary">{course.category}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{course.shortDescription}</Typography>

@@ -49,7 +49,12 @@ export async function awardXP(userId: string, award: { amount: number }) {
     amount: award.amount,
   });
   if (error) console.error("[XP] increment_xp failed:", error.message, { userId, amount: award.amount });
-  return { success: !error, xp: data?.[0]?.xp ?? 0 };
+  return {
+    success: !error,
+    xp: data?.[0]?.xp ?? 0,
+    level: data?.[0]?.level ?? 1,
+    streak: data?.[0]?.streak ?? 0,
+  };
 }
 
 // 2. awardXPBySource: RESTORED export
@@ -68,7 +73,12 @@ export async function awardXPClient(userId: string, award: { amount: number }) {
     amount: award.amount,
   });
   if (error) console.error("[XP] increment_xp failed (client):", error.message, { userId, amount: award.amount });
-  return { success: !error, xp: data?.[0]?.xp ?? 0 };
+  return {
+    success: !error,
+    xp: data?.[0]?.xp ?? 0,
+    level: data?.[0]?.level ?? 1,
+    streak: data?.[0]?.streak ?? 0,
+  };
 }
 
 export function calculateLevel(xp: number) { return Math.floor(xp / 100) + 1; }

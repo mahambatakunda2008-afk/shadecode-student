@@ -10,7 +10,7 @@
 
 import { NextResponse, NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { generateLesson } from "@/lib/cortex/lessonGenerator";
+import { callAI } from "@/lib/ai";
 import { buildLessonContent } from "@/lib/cortex/contentBuilder";
 import { createExplanationTemplate, createPracticeTemplate, createQuizTemplate } from "@/lib/cortex/templates";
 import { getCache, generateCacheKey, shouldCache } from "@/lib/cortex/cache";
@@ -112,8 +112,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
         template = createExplanationTemplate(topic, level);
     }
 
-    // Call existing generator
-    const aiResponse = await generateLesson(subject || topic, topic, user.id);
+    // Call AI directly for raw text -- buildLessonContent does its own
+    // parsing/structuring below, it needs unprocessed text, not the
+    // already-structured GeneratedLesson object generateLesson() returns.
+    const prompt = `Write a ${level}-level ${format} lesson on "${topic}"${subject ? ` for the subject ${subject}` : ""}. Return detailed educational content covering the topic thoroughly, including examples where relevant.`;
+    const aiResponse = await callAI(prompt, 4000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_template" });
 
     if (!aiResponse) {
       return NextResponse.json(
