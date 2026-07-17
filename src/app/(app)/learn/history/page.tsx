@@ -123,7 +123,7 @@ export default function LearnHistoryPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         .hist-row:hover  { background: var(--card-border) !important; }
-        .filter-btn:hover { border-color: var(--card-border) !important; color: var(--card-border) !important; }
+        .filter-btn:hover { border-color: var(--card-border) !important; color: var(--foreground) !important; }
         .search-input:focus { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
       `}</style>
 
@@ -172,7 +172,7 @@ export default function LearnHistoryPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="search-input"
-            style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid var(--card-border)", borderRadius: 12, padding: "11px 14px 11px 42px", fontSize: 14, color: "#fff", outline: "none", transition: "border-color .15s", boxSizing: "border-box" }}
+            style={{ width: "100%", background: "var(--surface-2)", border: "1px solid var(--card-border)", borderRadius: 12, padding: "11px 14px 11px 42px", fontSize: 14, color: "var(--foreground)", outline: "none", transition: "border-color .15s", boxSizing: "border-box" }}
           />
         </div>
 
@@ -211,7 +211,7 @@ export default function LearnHistoryPage() {
                 style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, border: "1px solid", cursor: "pointer", transition: "all .15s",
                   background: active ? (d ? d.bg : "var(--card-border)") : "var(--card-border)",
                   borderColor: active ? (d ? d.border : "var(--card-border)") : "var(--card-border)",
-                  color: active ? (d ? d.text : "var(--card-border)") : "var(--muted-foreground)",
+                  color: active ? (d ? d.text : "var(--foreground)") : "var(--muted-foreground)",
                 }}>
                 {label}
               </button>
@@ -256,7 +256,7 @@ export default function LearnHistoryPage() {
                     key={l.id}
                     href={`/learn/${l.id}`}
                     className="hist-row"
-                    style={{ position: "relative", display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", textDecoration: "none", color: "#fff", borderBottom: i < filtered.length - 1 ? "1px solid var(--card-border)" : "none", transition: "background .15s" }}
+                    style={{ position: "relative", display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", textDecoration: "none", color: "var(--foreground)", borderBottom: i < filtered.length - 1 ? "1px solid var(--card-border)" : "none", transition: "background .15s" }}
                   >
                     {/* Left colour bar */}
                     <div style={{ position: "absolute", left: 0, top: 14, bottom: 14, width: 3, borderRadius: "0 3px 3px 0", background: t.hex, opacity: l.completed ? 1 : 0.5 }} />

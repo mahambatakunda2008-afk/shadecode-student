@@ -26,7 +26,7 @@ export default function LowBandwidthToggle() {
         alignItems: "center",
         gap: 8,
         padding: "8px 12px",
-        background: "rgba(0,0,0,0.3)",
+        background: "var(--surface-2)",
         border: "1px solid var(--card-border)",
         borderRadius: 8,
       }}
