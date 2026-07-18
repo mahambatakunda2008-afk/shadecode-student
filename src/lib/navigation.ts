@@ -11,6 +11,8 @@ import {
   Calendar,
   Gamepad2,
   Settings,
+  Award,
+  GraduationCap,
 } from "lucide-react";
 
 export interface NavItem {
@@ -39,6 +41,8 @@ export const NAV_ITEMS = {
   analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
   leaderboard: { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   cortex: { href: "/insights/history", label: "Cortex", icon: BrainCircuit },
+  study: { href: "/study", label: "Study Session", icon: GraduationCap },
+  achievements: { href: "/achievements", label: "Achievements", icon: Award },
   settings: { href: "/settings", label: "Settings", icon: Settings },
 };
 
@@ -46,7 +50,7 @@ export const NAV_ITEMS = {
 export const SIDEBAR_GROUPS: NavGroup[] = [
   {
     group: "Core",
-    items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.timetable],
+    items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.study, NAV_ITEMS.timetable],
   },
   {
     group: "Practice",
@@ -58,7 +62,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   },
   {
     group: "Progress",
-    items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.cortex],
+    items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.achievements, NAV_ITEMS.cortex],
   },
 ];
 
@@ -73,11 +77,13 @@ export const BOTTOM_PRIMARY: NavItem[] = [
 
 export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.timetable,
+  NAV_ITEMS.study,
   NAV_ITEMS.exams,
   NAV_ITEMS.curriculum,
   NAV_ITEMS.mathChecker,
   NAV_ITEMS.analytics,
   NAV_ITEMS.leaderboard,
+  NAV_ITEMS.achievements,
   NAV_ITEMS.cortex,
   NAV_ITEMS.settings,
 ];

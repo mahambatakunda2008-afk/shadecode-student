@@ -5,10 +5,10 @@ import { useAchievements } from "@/hooks/useAchievements";
 import { Trophy, Lock, Sparkles, Star, Flame, Medal, Crown, Loader2 } from "lucide-react";
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
-  common: { bg: "bg-slate-800/50", border: "border-slate-700", text: "text-slate-300", glow: "shadow-slate-500/20" },
-  rare: { bg: "bg-blue-900/30", border: "border-blue-700", text: "text-blue-300", glow: "shadow-blue-500/20" },
-  epic: { bg: "bg-purple-900/30", border: "border-purple-700", text: "text-purple-300", glow: "shadow-purple-500/20" },
-  legendary: { bg: "bg-amber-900/30", border: "border-amber-600", text: "text-amber-300", glow: "shadow-amber-500/30" },
+  common: { bg: "bg-[var(--surface-2)]", border: "border-[var(--card-border)]", text: "text-[var(--muted-foreground)]", glow: "shadow-slate-500/20" },
+  rare: { bg: "bg-blue-500/10", border: "border-blue-500/30", text: "text-blue-500", glow: "shadow-blue-500/20" },
+  epic: { bg: "bg-purple-500/10", border: "border-purple-500/30", text: "text-purple-500", glow: "shadow-purple-500/20" },
+  legendary: { bg: "bg-amber-500/10", border: "border-amber-500/40", text: "text-amber-500", glow: "shadow-amber-500/30" },
 };
 
 const RARITY_ICONS: Record<string, React.ReactNode> = {
@@ -42,24 +42,24 @@ export default function AchievementsPage() {
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-[var(--foreground)] flex items-center gap-2">
           <Trophy className="w-6 h-6 text-amber-400" />
           Achievements
         </h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <p className="text-[var(--muted-foreground)] text-sm mt-1">
           Track your progress and unlock rewards as you learn
         </p>
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+      <div className="bg-[var(--card)] rounded-xl p-4 border border-[var(--card-border)]">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-slate-400">Progress</span>
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm text-[var(--muted-foreground)]">Progress</span>
+          <span className="text-sm font-medium text-[var(--foreground)]">
             {totalUnlocked} / {totalAchievements} unlocked
           </span>
         </div>
-        <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-3 bg-[var(--muted)] rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -93,7 +93,7 @@ export default function AchievementsPage() {
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               filter === f.key
                 ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                : "bg-[var(--surface-2)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
             }`}
           >
             {f.label}
@@ -111,12 +111,12 @@ export default function AchievementsPage() {
               className={`relative rounded-xl p-4 border transition-all duration-300 ${
                 achievement.unlocked
                   ? `${c.bg} ${c.border} ${c.glow} shadow-lg`
-                  : "bg-slate-800/30 border-slate-800 opacity-60"
+                  : "bg-[var(--surface-2)] border-[var(--card-border)] opacity-60"
               }`}
             >
               {!achievement.unlocked && (
-                <div className="absolute inset-0 bg-slate-900/40 rounded-xl flex items-center justify-center z-10">
-                  <Lock className="w-8 h-8 text-slate-600" />
+                <div className="absolute inset-0 bg-[var(--background)]/60 rounded-xl flex items-center justify-center z-10">
+                  <Lock className="w-8 h-8 text-[var(--muted-foreground)]" />
                 </div>
               )}
 
@@ -126,14 +126,14 @@ export default function AchievementsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-white text-sm truncate">
+                    <span className="font-semibold text-[var(--foreground)] text-sm truncate">
                       {achievement.title}
                     </span>
                     {achievement.unlocked && (
                       <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                  <p className="text-xs text-[var(--muted-foreground)] mt-0.5 line-clamp-2">
                     {achievement.description}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
@@ -152,7 +152,7 @@ export default function AchievementsPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-slate-500">
+        <div className="text-center py-12 text-[var(--muted-foreground)]">
           <Trophy className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>No achievements match this filter</p>
         </div>
