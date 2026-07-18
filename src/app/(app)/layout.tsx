@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 import { UserProvider } from "@/contexts/UserContext";
+import { AchievementsProvider } from "@/contexts/AchievementsContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { AchievementToast } from "@/components/AchievementToast";
 import { getOnboardingStatus } from "@/lib/onboarding";
 import { useSession } from "@/hooks/useSession";
 
@@ -103,6 +105,7 @@ export default function AppLayout({
 
   return (
     <UserProvider>
+      <AchievementsProvider>
       <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
         {/* Desktop Sidebar Wrapper */}
         <aside className="hidden md:flex md:w-[240px] md:flex-shrink-0">
@@ -118,7 +121,12 @@ export default function AppLayout({
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]">
           <BottomNav />
         </div>
+
+        {/* Achievement unlock notifications -- fixed-position, renders
+            nothing until useAchievements' newUnlocked has an entry */}
+        <AchievementToast />
       </div>
+      </AchievementsProvider>
     </UserProvider>
   );
 }

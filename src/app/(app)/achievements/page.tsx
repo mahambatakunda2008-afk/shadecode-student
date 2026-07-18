@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAchievements } from "@/hooks/useAchievements";
+import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { Trophy, Lock, Sparkles, Star, Flame, Medal, Crown, Loader2 } from "lucide-react";
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
@@ -19,7 +19,7 @@ const RARITY_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function AchievementsPage() {
-  const { achievements, totalUnlocked, totalAchievements, loading, refresh } = useAchievements();
+  const { achievements, totalUnlocked, totalAchievements, loading, refresh } = useAchievementsContext();
   const [filter, setFilter] = useState<string>("all");
 
   const filtered = filter === "all"

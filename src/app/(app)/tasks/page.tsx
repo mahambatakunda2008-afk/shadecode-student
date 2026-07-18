@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { emitStudySessionStarted, emitStudySessionFinished } from "@/lib/events";
 import { awardXPClient } from "@/lib/xp/manager";
+import { useAchievementsContext } from "@/contexts/AchievementsContext";
 
 interface Subject {
   id: string;
@@ -20,6 +21,7 @@ interface Task {
 }
 
 export default function Tasks() {
+  const { checkNewAchievements } = useAchievementsContext();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newSubject, setNewSubject] = useState("");
@@ -111,7 +113,7 @@ export default function Tasks() {
       showToast("+10 XP 🔥");
     }
 
-    // Emit unified event for achievement tracking (handled by AchievementsEventHandler)
+    // Emit unified event for analytics/cortex tracking
     const subject = subjects.find(s => s.id === task.subject_id);
     await emitStudySessionFinished(userId, {
       sessionId: crypto.randomUUID(),
@@ -134,6 +136,8 @@ export default function Tasks() {
       source: "tasks",
       data: { taskId: task.id, subjectId: task.subject_id, title: task.title },
     });
+
+    checkNewAchievements();
   };
 
   const deleteTask = async (taskId: string) => {

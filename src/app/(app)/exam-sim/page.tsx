@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { log } from "@/lib/observability";
+import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import ExamShareCard from "@/components/ExamShareCard";
 import {
   CheckCircle2, XCircle, AlertCircle, Trophy,
@@ -125,6 +126,7 @@ function calculateXP(percentage: number, diffIndex: number): number {
 
 export default function ExamSimulation() {
   const router = useRouter();
+  const { checkNewAchievements } = useAchievementsContext();
 
   const intervalRef     = useRef<NodeJS.Timeout | null>(null);
   const isSubmittingRef = useRef(false);
@@ -357,9 +359,10 @@ export default function ExamSimulation() {
       }).catch(() => {/* non-fatal */});
     }
 
+    checkNewAchievements();
     setStep("results");
     setMarking(false);
-  }, [challengeCtx]);
+  }, [challengeCtx, checkNewAchievements]);
 
   // ── Timer ─────────────────────────────────────────────────────────────
   useEffect(() => {
