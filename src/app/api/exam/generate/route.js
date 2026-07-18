@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
 
 // NOTE: this used to have its own separate prompt + JSON parsing + no
@@ -16,6 +17,11 @@ export async function POST(req) {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
     if (rateLimitCheck) return rateLimitCheck;
 
+    const { user, error: authError } = await getVerifiedUser(req);
+    if (!user) {
+      return NextResponse.json({ error: authError || "You need to be signed in to generate an exam." }, { status: 401 });
+    }
+
     const body = await req.json();
     const validation = validateRequestBody(body, examGenerateSchema);
     if (!validation.success) {
@@ -24,11 +30,12 @@ export async function POST(req) {
       return NextResponse.json({ error: detail }, { status: 400 });
     }
 
-    const { subject, topic, difficulty, questionCount, userId } = validation.data;
-
-    if (!userId) {
-      return NextResponse.json({ error: "You need to be signed in to generate an exam." }, { status: 401 });
-    }
+    const { subject, topic, difficulty, questionCount } = validation.data;
+    // userId is intentionally NOT taken from validation.data -- a client-
+    // supplied userId in the request body can't be trusted (anyone could
+    // set it to any value); the server-verified session's user.id is the
+    // only trustworthy source of identity here.
+    const userId = user.id;
 
     const topics = topic ? [topic] : [subject];
     const exam = await generateExam(subject, topics, difficulty, questionCount, userId);
