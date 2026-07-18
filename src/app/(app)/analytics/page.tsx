@@ -123,9 +123,9 @@ function AnalyticsError({ onRetry }: { onRetry: () => void }) {
       <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", marginBottom: "16px" }}>
         ⚠️
       </div>
-      <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>Couldn't load analytics</p>
+      <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>Couldn&apos;t load analytics</p>
       <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "20px", maxWidth: "260px" }}>
-        This may be a connection issue. Your data is safe — try again when you're back online.
+        This may be a connection issue. Your data is safe — try again when you&apos;re back online.
       </p>
       <button onClick={onRetry} style={{ background: "var(--primary)", color: "white", border: "none", borderRadius: "10px", padding: "10px 24px", fontWeight: 700, fontSize: "13px", cursor: "pointer" }}>
         Try again

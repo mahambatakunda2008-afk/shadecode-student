@@ -151,7 +151,7 @@ export default function ExamSimulation() {
   const [currentAnswer, setCurrentAnswerState] = useState("");
   const [timeLeft,      setTimeLeftState]   = useState(0);
   const [totalTime,     setTotalTimeState]  = useState(0);
-  const [qStartTime,    setQStartTime]      = useState(Date.now());
+  const [qStartTime,    setQStartTime]      = useState(() => Date.now());
   const [generating,    setGenerating]      = useState(false);
   const [genError,      setGenError]        = useState<string | null>(null);
   const [marking,       setMarking]         = useState(false);
@@ -634,7 +634,7 @@ export default function ExamSimulation() {
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
             {questions.map((_, i) => {
-              const answered = answersRef.current.some(a => a.questionId === questions[i]?.id && a.answer);
+              const answered = answers.some(a => a.questionId === questions[i]?.id && a.answer);
               return (
                 <button key={i} onClick={() => goToQuestion(i)} disabled={marking}
                   style={{ width: 32, height: 32, borderRadius: 8, border: "none", cursor: marking ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 12, background: i === currentQState ? "var(--primary)" : answered ? "rgba(34,197,94,0.3)" : "var(--muted)", color: i === currentQState ? "white" : answered ? "#22c55e" : "var(--foreground)", opacity: marking ? 0.5 : 1 }}>
@@ -694,7 +694,7 @@ export default function ExamSimulation() {
     const grade         = getGrade(pct);
     const gc            = gradeColor(pct);
     const timeTakenFmt  = formatTime(results.timeTaken);
-    const answeredCount = answersRef.current.filter(a => a.answer.trim()).length;
+    const answeredCount = answers.filter(a => a.answer.trim()).length;
 
     return (
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 16px 80px" }}>
@@ -877,7 +877,7 @@ export default function ExamSimulation() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeUp .3s ease" }}>
             {results.results.map((r, i) => {
               const origQ   = questions.find(q => q.id === r.questionId);
-              const userAns = answersRef.current.find(a => a.questionId === r.questionId);
+              const userAns = answers.find(a => a.questionId === r.questionId);
               const isOpen  = expandedQ === i;
               return (
                 <div key={r.questionId} style={{ borderRadius: 16, border: `1px solid ${r.correct ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, background: r.correct ? "rgba(52,211,153,0.04)" : "rgba(248,113,113,0.04)", overflow: "hidden", animation: `fadeUp .3s ease ${i * 0.05}s both` }}>

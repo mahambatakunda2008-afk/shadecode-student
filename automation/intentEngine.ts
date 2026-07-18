@@ -1,4 +1,5 @@
 import { CortexEvent } from "../cortex/eventEmitter";
+import { runCodex } from "./codexRunner";
 
 export function processEvent(event: CortexEvent) {
   const spec = {
@@ -15,6 +16,5 @@ export function processEvent(event: CortexEvent) {
 
   console.log("Generated Spec:", spec);
 
-  const { runCodex } = require("./codexRunner");
   runCodex(spec);
 }

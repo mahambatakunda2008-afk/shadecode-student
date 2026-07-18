@@ -9,18 +9,19 @@ interface Props {
 }
 
 export default function MathRenderer({ content, block = true }: Props) {
+  let html: string | null = null;
   try {
-    const html = katex.renderToString(content, {
+    html = katex.renderToString(content, {
       throwOnError: false,
       displayMode: block,
     });
+  } catch {
+    html = null;
+  }
 
-    return (
-      <span
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    );
-  } catch (err) {
+  if (html === null) {
     return <span style={{ color: "red" }}>{content}</span>;
   }
+
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
 }

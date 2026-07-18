@@ -169,6 +169,7 @@ export default function StudyGoalInput({ onSubmit, onCancel, initialGoals }: Stu
           />
           <button
             onClick={handleAddSubject}
+            aria-label="Add subject"
             style={{
               padding: "10px 16px",
               borderRadius: "8px",

@@ -95,7 +95,7 @@ function buildSubjectTabs(subjects: SubjectRow[], lessons: LearnLessonRow[]): Le
 // ── JSON parser — multi-stage recovery ───────────────────────────────────────
 
 function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
-  let text = raw
+  const text = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/, "")
     .trim();
