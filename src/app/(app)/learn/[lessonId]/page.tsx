@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
 import { downloadManager } from "@/lib/offline/downloadManager";
+import { useAchievementsContext } from "@/contexts/AchievementsContext";
 
 type SubjectTheme = {
   hex: string; bg: string; border: string; text: string;
@@ -72,6 +73,7 @@ export default function LessonDetailPage() {
   const router   = useRouter();
   const params   = useParams();
   const lessonId = params?.lessonId as string;
+  const { checkNewAchievements } = useAchievementsContext();
 
   const [lesson,       setLesson]       = useState<Lesson | null>(null);
   const [loading,      setLoading]      = useState(true);
@@ -248,6 +250,7 @@ export default function LessonDetailPage() {
       setLesson(prev => prev ? { ...prev, progress: 100, completed: true } : prev);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
+      checkNewAchievements();
     } catch {} finally { setCompleting(false); }
   }
 

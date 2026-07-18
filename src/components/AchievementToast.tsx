@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAchievements } from "@/hooks/useAchievements";
+import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { X, Sparkles, Trophy, Star, Flame, Crown, Medal } from "lucide-react";
 
 const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; icon: React.ReactNode }> = {
@@ -12,7 +12,7 @@ const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; 
 };
 
 export function AchievementToast() {
-  const { newUnlocked, clearNew } = useAchievements();
+  const { newUnlocked, clearNew } = useAchievementsContext();
   const [visible, setVisible] = useState(false);
   const [current, setCurrent] = useState<typeof newUnlocked[0] | null>(null);
 
