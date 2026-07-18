@@ -540,7 +540,7 @@ export default function LearnPageClient() {
                     <BookOpen size={14} color="var(--muted-foreground)" />
                     <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted-foreground)" }}>Your Subjects</span>
                   </div>
-                  <Link href="/learn/subjects" style={{ fontSize: 12, color: "#6366f1", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
+                  <Link href="/subjects" style={{ fontSize: 12, color: "#6366f1", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, fontWeight: 600 }}>
                     Manage <ArrowRight size={12} />
                   </Link>
                 </div>
