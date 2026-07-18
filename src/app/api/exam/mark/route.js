@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
 import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
 import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
@@ -203,6 +204,44 @@ ${qaText}
         strongAreas: markingData.strongAreas || [],
         timeSpent: timeTaken,
       }, "exam");
+
+      // Actually persist this exam's score into cortex_memory.exam_scores.
+      // updateCortexFromExam() above does NOT do this -- it only emits to
+      // an in-memory (non-persistent across serverless invocations) event
+      // store and generates an AI insight string. Without this write,
+      // totalExamsCompleted (read from exam_scores.length in
+      // lib/cortex/achievements.ts) is permanently 0 for every user,
+      // which silently blocks the first_exam / exam_pro_10 / exam_master
+      // achievements from ever unlocking.
+      try {
+        const svc = createSupabaseServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+        const { data: existingMemory } = await svc
+          .from("cortex_memory")
+          .select("exam_scores")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const priorScores = Array.isArray(existingMemory?.exam_scores) ? existingMemory.exam_scores : [];
+        const newScores = [
+          ...priorScores,
+          { score: percentage, subject, date: new Date().toISOString() },
+        ];
+        const avgScore = Math.round(newScores.reduce((sum, s) => sum + s.score, 0) / newScores.length);
+
+        const { error: memoryError } = await svc
+          .from("cortex_memory")
+          .upsert(
+            { user_id: userId, exam_scores: newScores, average_exam_score: avgScore },
+            { onConflict: "user_id" }
+          );
+        if (memoryError) console.error("[exam/mark] Failed to persist exam_scores:", memoryError.message);
+      } catch (memErr) {
+        console.error("[exam/mark] cortex_memory update threw:", memErr);
+      }
     }
 
     /* ─────────────────────────────
