@@ -3,6 +3,7 @@ import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
 import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { callAI } from "@/lib/ai";
 
 /* ─────────────────────────────────────────────
@@ -29,6 +30,11 @@ export async function POST(req) {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
     if (rateLimitCheck) return rateLimitCheck;
 
+    const { user, error: authError } = await getVerifiedUser(req);
+    if (!user) {
+      return NextResponse.json({ error: authError || "You need to be signed in to mark an exam." }, { status: 401 });
+    }
+
     const body = await req.json();
     
     // Validate request body
@@ -49,8 +55,10 @@ export async function POST(req) {
       questions,
       answers,
       timeTaken,
-      userId,
     } = validation.data;
+    // userId comes from the verified session, never the request body --
+    // see exam/generate/route.js for the same fix and full rationale.
+    const userId = user.id;
 
     if (!subject || !questions || !answers) {
       return NextResponse.json(

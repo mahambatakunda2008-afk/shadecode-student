@@ -269,16 +269,19 @@ export default function ExamSimulation() {
 
     let data: ExamResults;
     try {
+      const { data: { session } } = await createClient().auth.getSession();
       const res = await fetch("/api/exam/mark", {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           subject:    latestSubject,
           difficulty: DIFFICULTIES[latestDifficulty].value,
           questions:  latestQuestions,
           answers:    latestAnswers,
           timeTaken:  latestTotalTime - latestTimeLeft,
-          userId:     latestUserId,
         }),
       });
 
@@ -412,15 +415,18 @@ export default function ExamSimulation() {
       const topicWithLevel = topic.trim()
         ? `${topic.trim()} (${curriculumLevel})`
         : `${subject} (${curriculumLevel})`;
+      const { data: { session } } = await createClient().auth.getSession();
       const res = await fetch("/api/exam/generate", {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           subject,
           topic:        topicWithLevel,
           difficulty:   DIFFICULTY_API_VALUES[difficulty],
           questionCount,
-          userId:       userId,
         }),
       });
       const data = await res.json();
