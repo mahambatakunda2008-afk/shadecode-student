@@ -43,10 +43,10 @@ export function ConfirmStep({ data, onBack, onNext, onSubmit, isSubmitting, erro
     <div style={{ opacity: in_ ? 1 : 0, transform: in_ ? 'translateY(0)' : 'translateY(10px)', transition: 'opacity 0.3s ease, transform 0.3s ease' }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>🚀</div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.92)', marginBottom: 4 }}>
-        You're all set{d.displayName ? `, ${d.displayName.split(' ')[0]}` : ''}
+        You&apos;re all set{d.displayName ? `, ${d.displayName.split(' ')[0]}` : ''}
       </h2>
       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 20 }}>
-        Review your setup, then we'll build your learning path.
+        Review your setup, then we&apos;ll build your learning path.
       </p>
 
       {/* Summary */}

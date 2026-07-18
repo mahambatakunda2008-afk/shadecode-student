@@ -54,6 +54,7 @@ function calcStyle(rect: TourRect | null, pos: TourPosition): CSSProperties {
 
 export function TourCard({ step, currentStep, totalSteps, targetRect, onNext, onPrev, onSkip, isLastStep }: Props) {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'dark';
     const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
     if (saved) return saved;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

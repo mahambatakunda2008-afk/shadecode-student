@@ -41,7 +41,7 @@ export default function OfflineShell() {
         margin: "0 0 12px",
         textAlign: "center",
       }}>
-        You're Offline
+        You&apos;re Offline
       </h1>
 
       <p style={{
@@ -83,7 +83,7 @@ export default function OfflineShell() {
         margin: "24px 0 0",
         textAlign: "center",
       }}>
-        Your progress will sync when you're back online
+        Your progress will sync when you&apos;re back online
       </p>
     </div>
   );

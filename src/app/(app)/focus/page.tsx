@@ -22,6 +22,7 @@ export default function FocusTimer() {
   const [totalFocusToday, setTotalFocusToday] = useState(0);
   const [userId, setUserId] = useState("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const handleSessionCompleteRef = useRef<() => void>(() => {});
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
@@ -65,7 +66,7 @@ export default function FocusTimer() {
             clearInterval(intervalRef.current!);
             setIsRunning(false);
             setIsFinished(true);
-            handleSessionComplete();
+            handleSessionCompleteRef.current();
             return 0;
           }
           return prev - 1;
@@ -80,7 +81,7 @@ export default function FocusTimer() {
     };
   }, [isRunning]);
 
-  const handleSessionComplete = async () => {
+  async function handleSessionComplete() {
     const focusMinutes = selectedPreset === 4 ? customMinutes : preset.minutes;
 
     // Update localStorage stats
@@ -124,7 +125,8 @@ export default function FocusTimer() {
         icon: "/icon-192.png",
       });
     }
-  };
+  }
+  useEffect(() => { handleSessionCompleteRef.current = handleSessionComplete; });
 
   const toggleTimer = () => {
     if (isFinished) {

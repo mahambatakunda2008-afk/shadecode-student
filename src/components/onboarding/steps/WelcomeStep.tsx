@@ -31,7 +31,7 @@ export function WelcomeStep({ data, onUpdate, onNext }: StepProps) {
         Welcome
       </p>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.92)', marginBottom: 4 }}>
-        Let's set up your profile
+        Let&apos;s set up your profile
       </h2>
       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 24 }}>
         Takes about 60 seconds. You can change this later.

@@ -29,7 +29,7 @@ export default async function CareerDetailPage({ params }: any) {
       </ul>
 
       <h3>Learning Roadmap</h3>
-      <p>Suggested path: learn core skills → enroll recommended courses → complete projects and assessments. Use the "Start Course" button on a course page to enroll and track progress.</p>
+      <p>Suggested path: learn core skills → enroll recommended courses → complete projects and assessments. Use the &quot;Start Course&quot; button on a course page to enroll and track progress.</p>
 
       <h3>Related Careers</h3>
       <div>{(career.related ?? []).map((rc: any, i: number) => <span key={i} style={{ marginRight: 8 }}>{rc}</span>)}</div>

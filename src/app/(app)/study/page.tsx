@@ -153,7 +153,7 @@ export default function StudyPage() {
   ========================= */
 
   const [session, setSession] =
-    useState<StudySession>({
+    useState<StudySession>(() => ({
       subject: "Mathematics",
       startTime: Date.now(),
       focusScore: 70,
@@ -161,7 +161,7 @@ export default function StudyPage() {
       completedTasks: 0,
       difficulty: "normal",
       paused: false,
-    });
+    }));
 
   const [seconds, setSeconds] = useState(0);
 

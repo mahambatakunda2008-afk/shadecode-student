@@ -22,7 +22,7 @@ export default function OfflinePage() {
     return (
       <div style={{ padding: "60px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
         <span style={{ fontSize: "4rem" }}>✅</span>
-        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>You're back online</h1>
+        <h1 style={{ fontSize: "24px", fontWeight: 800 }}>You&apos;re back online</h1>
         <Link href="/dashboard" style={{
           background: "var(--primary)", color: "white", padding: "12px 24px",
           borderRadius: "8px", textDecoration: "none", fontWeight: 700,

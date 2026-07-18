@@ -73,6 +73,7 @@ export default function PWAInstallPrompt() {
     }}>
       <button
         onClick={handleDismiss}
+        aria-label="Dismiss install prompt"
         style={{
           position: "absolute",
           top: 12,

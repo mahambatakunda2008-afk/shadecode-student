@@ -346,7 +346,7 @@ export default function Timetable() {
         <div style={cardStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
             <div>
-              <p style={{ fontWeight: 700, fontSize: "15px" }}>Today's Plan</p>
+              <p style={{ fontWeight: 700, fontSize: "15px" }}>Today&apos;s Plan</p>
               <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "2px" }}>
                 {studySessions} sessions · {totalStudyMins} min total
               </p>

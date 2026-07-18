@@ -76,7 +76,7 @@ export default function Tour({ onComplete }: TourProps) {
         }}>
           <p style={{ fontSize: "48px", marginBottom: "16px" }}>🚀</p>
           <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>
-            You're all set.
+            You&apos;re all set.
           </h2>
           <p style={{ color: "var(--muted-foreground)", fontSize: "14px", lineHeight: 1.6, marginBottom: "24px" }}>
             Your study environment is ready. Stay consistent, earn XP, and let Cortex guide your patterns.

@@ -202,7 +202,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
             <p style={{ fontSize: "3rem", marginBottom: "12px" }}>🎓</p>
             <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>Socratic Tutoring</p>
             <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "16px" }}>
-              I'll guide you through learning rather than giving answers. Ask me a question about {topic}!
+              I&apos;ll guide you through learning rather than giving answers. Ask me a question about {topic}!
             </p>
           </div>
         ) : (
@@ -368,6 +368,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() || loading}
+            aria-label="Send message"
             style={{
               padding: "12px 16px",
               borderRadius: "8px",

@@ -38,7 +38,7 @@ function moderateDraft(draft: any) {
 
 
 function safeParseJSON(raw: string): any | null {
-  let text = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+  const text = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
   try {
     const m = text.match(/\{[\s\S]*\}/);
     if (m) return JSON.parse(m[0]);

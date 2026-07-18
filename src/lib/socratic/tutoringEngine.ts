@@ -119,7 +119,7 @@ function generateStyledExplanation(input: StyledExplanationInput): TutoringMessa
   const { question, topic, subject, studentLevel, explanationStyle, previousContext } = input;
 
   let content = "";
-  let type: "question" | "hint" | "guidance" | "feedback" | "explanation" | "reinforcement" = "explanation";
+  const type: "question" | "hint" | "guidance" | "feedback" | "explanation" | "reinforcement" = "explanation";
 
   switch (explanationStyle) {
     case "simpler":
