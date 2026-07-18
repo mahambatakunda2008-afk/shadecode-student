@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getStudentIntelligence } from "@/lib/student-intelligence";
-import { CircularProgress } from "./CircularProgress";
 
 interface StudentIntelligenceData {
   progress: {
@@ -197,36 +196,15 @@ export default function NextActionDashboard() {
           />
         </section>
 
-        {intelligence.examReadiness && (
-          <SectionCard
-            title="Exam readiness"
-            icon={<Target size={18} />}
-            content={
-              <div className="flex items-center gap-5">
-                <CircularProgress
-                  value={intelligence.examReadiness.overallScore}
-                  max={100}
-                  size={86}
-                  color={readinessColor(intelligence.examReadiness.overallScore)}
-                  label={`${Math.round(intelligence.examReadiness.overallScore)}%`}
-                  sublabel="ready"
-                />
-                <div>
-                  <h3>{intelligence.examReadiness.readinessLevel}</h3>
-                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    Predicted Grade:{" "}
-                    <span className="font-semibold text-[var(--foreground)]">
-                      {intelligence.examReadiness.predictedGrade}
-                    </span>
-                  </p>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    {intelligence.examReadiness.timeToExam} days to exam
-                  </p>
-                </div>
-              </div>
-            }
-          />
-        )}
+        {/* Exam Readiness card intentionally removed: every field it showed
+            was either hardcoded (readinessLevel always "Intermediate",
+            predictedGrade always "B", timeToExam always 30) or permanently
+            zero (overallScore -- its data source, getExamPerformance(), is
+            an unimplemented "exam results table" stub that always returns
+            an empty array). Showing fabricated data as a real, personalized
+            prediction is worse than showing nothing. Re-add once
+            student-intelligence/services/performance.ts actually reads
+            real exam data and a real grade-prediction calculation exists. */}
 
         <section className="grid gap-4 lg:grid-cols-3">
           {progress.curriculum.recommendedNextLesson && (
@@ -546,12 +524,6 @@ function priorityTone(priority: string) {
   };
 
   return tones[priority as keyof typeof tones] ?? tones.low;
-}
-
-function readinessColor(value: number) {
-  if (value >= 70) return "var(--accent)";
-  if (value >= 50) return "var(--warning)";
-  return "var(--danger)";
 }
 
 function DashboardSkeleton() {
