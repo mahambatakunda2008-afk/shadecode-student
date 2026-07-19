@@ -5,8 +5,27 @@
  * awards achievements, and provides progress feedback.
  */
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
 import { awardXPBySource } from "@/lib/xp/manager";
+
+// This whole module is only ever called from server-side API routes
+// (api/achievements, api/cortex/mark-exam) acting on an explicit userId --
+// never from a genuine browser session. The browser client
+// (@/lib/supabase/client) has no session/cookies in that context, so RLS
+// silently blocked every read and write here: checkAndUnlockAchievements'
+// insert would fail (error set, so `if (!error)` never pushed the
+// achievement into newlyUnlocked), and getUserAchievements would always
+// return an empty list -- explaining why achievements never appeared to
+// unlock even after the exam-scores persistence fix. Same bug class
+// already fixed twice this session (xp/manager.ts's awardXP,
+// exam/mark/route.js's cortex_memory write).
+function createClient() {
+  return createSupabaseServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
 
 export type AchievementRarity = "common" | "rare" | "epic" | "legendary";
 

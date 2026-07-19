@@ -206,7 +206,10 @@ export default function NextActionDashboard() {
             student-intelligence/services/performance.ts actually reads
             real exam data and a real grade-prediction calculation exists. */}
 
-        <section className="grid gap-4 lg:grid-cols-3">
+        <section
+          className="grid gap-4"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
+        >
           {progress.curriculum.recommendedNextLesson && (
             <SectionCard
               title="Recommended lesson"
@@ -256,12 +259,15 @@ export default function NextActionDashboard() {
                 </p>
               }
               actionLabel="View insights"
-              onAction={() => router.push("/insights")}
+              onAction={() => router.push("/insights/history")}
             />
           )}
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-2">
+        <section
+          className="grid gap-4"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}
+        >
           {intel.recommendations.length > 1 && (
             <SectionCard
               title="Today's study plan"
@@ -343,7 +349,7 @@ function PrimaryActionCard({
             {recommendation.description}
           </p>
         </div>
-        <button onClick={onAction} className="ssc-button">
+        <button onClick={onAction} className="ssc-button w-full md:w-auto">
           {recommendation.action ?? "Start"}
           <ArrowRight size={18} />
         </button>
