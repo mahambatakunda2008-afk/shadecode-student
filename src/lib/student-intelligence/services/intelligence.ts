@@ -8,6 +8,7 @@ import { getMemory } from "@/lib/cortex/memory";
 import { progressService } from "./progress";
 import { performanceService } from "./performance";
 import { activityService } from "./activity";
+import { computeWeakAreas } from "./weakAreas";
 import {
   StudentIntelligenceData,
   Recommendation,
@@ -188,29 +189,7 @@ export class IntelligenceEngine {
    */
   async getWeakAreas(userId: string): Promise<WeakArea[]> {
     try {
-      const cortexMemory = await getMemory(userId);
-      const weakAreas: WeakArea[] = [];
-
-      if (cortexMemory.weakTopics && cortexMemory.weakTopics.length > 0) {
-        cortexMemory.weakTopics.forEach((topic, index) => {
-          weakAreas.push({
-            topicId: crypto.randomUUID(),
-            topic: topic,
-            subject: "General", // TODO: Extract subject from topic
-            severity: index < 2 ? "critical" : index < 4 ? "high" : "medium",
-            score: 0, // TODO: Get actual score
-            lastAssessed: new Date().toISOString(),
-            recommendedActions: [
-              "Review fundamentals",
-              "Practice exercises",
-              "Take quiz",
-            ],
-            estimatedTimeToImprove: 60,
-          });
-        });
-      }
-
-      return weakAreas;
+      return await computeWeakAreas(userId);
     } catch (error) {
       console.error("[IntelligenceEngine] Error getting weak areas:", error);
       return [];

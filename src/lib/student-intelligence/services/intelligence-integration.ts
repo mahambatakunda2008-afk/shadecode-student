@@ -7,7 +7,8 @@
 import { progressService } from "./progress";
 import { performanceService } from "./performance";
 import { activityService } from "./activity";
-import { getMemory } from "@/lib/cortex/memory";
+import { createClient } from "@/lib/supabase/client";
+import { computeWeakAreas } from "./weakAreas";
 import { recommendationEngine, RecommendationEngineInput, GoalInput, CareerInterestInput } from "@/lib/recommendation-engine";
 import { Recommendation } from "../types";
 
@@ -19,7 +20,6 @@ export async function buildRecommendationEngineInput(userId: string): Promise<Re
   const progress = await progressService.getProgress(userId);
   const performance = await performanceService.getPerformance(userId);
   const activity = await activityService.getActivity(userId);
-  const cortexMemory = await getMemory(userId);
 
   // Build curriculum progress input
   const curriculumProgress = {
@@ -62,23 +62,35 @@ export async function buildRecommendationEngineInput(userId: string): Promise<Re
     })) : [],
   };
 
-  // Build weak areas input
-  const weakAreas = cortexMemory.weakTopics?.map((topic, index): any => ({
-    topicId: crypto.randomUUID(),
-    topic: topic,
-    subject: "General", // TODO: Extract subject from topic
-    severity: (index < 2 ? "critical" : index < 4 ? "high" : "medium") as "critical" | "high" | "medium" | "low",
-    score: 0, // TODO: Get actual score
-    lastAssessed: new Date().toISOString(),
-    recommendedActions: [
-      "Review fundamentals",
-      "Practice exercises",
-      "Take quiz",
-    ],
-    estimatedTimeToImprove: 60,
-  })) || [];
+  // Build weak areas input -- real per-subject score, same computation
+  // used by the dashboard's weak-areas display (see weakAreas.ts).
+  const weakAreas = await computeWeakAreas(userId);
+
+  // Real nearest-upcoming-exam lookup -- previously hardcoded to 30,
+  // which permanently disabled the recommendation engine's "exam
+  // approaching, practice past papers" branch (fires on timeToExam < 30)
+  // for every single user, since 30 is never less than 30.
+  const supabase = createClient();
+  const { data: upcomingExams } = await supabase
+    .from("exams")
+    .select("exam_date")
+    .eq("user_id", userId)
+    .gte("exam_date", new Date().toISOString().split("T")[0])
+    .order("exam_date", { ascending: true })
+    .limit(1);
+
+  const nearestExamDate = upcomingExams?.[0]?.exam_date;
+  const timeToExam = nearestExamDate
+    ? Math.max(0, Math.ceil((new Date(nearestExamDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 365; // No scheduled exam -- large fallback so urgency logic never fires on fabricated data
 
   // Build exam readiness input
+  // NOTE: readinessLevel, predictedGrade, and confidence below are
+  // placeholder values that recommendation-engine/engine.ts confirmed
+  // NEVER reads (it computes its own confidence score internally from
+  // real signals) -- they're inert, unused fields on this input shape,
+  // not values driving any real logic. Building genuine grade-prediction
+  // is out of scope for this pass; flagged in the audit report.
   const examReadiness = {
     subject: "General",
     board: "ZIMSEC",
@@ -87,7 +99,7 @@ export async function buildRecommendationEngineInput(userId: string): Promise<Re
     readinessLevel: "Intermediate" as const,
     predictedGrade: "B",
     confidence: 50,
-    timeToExam: 30, // TODO: Get actual time to exam
+    timeToExam,
     topicReadiness: {},
   };
 

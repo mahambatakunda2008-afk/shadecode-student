@@ -228,9 +228,19 @@ ${qaText}
         const priorScores = Array.isArray(existingMemory?.exam_scores) ? existingMemory.exam_scores : [];
         const newScores = [
           ...priorScores,
-          { score: percentage, subject, date: new Date().toISOString() },
+          {
+            examId: crypto.randomUUID(),
+            subject,
+            score: totalScore,
+            totalMarks: maxScore,
+            percentage,
+            grade,
+            weakAreas: markingData.weakAreas || [],
+            strongAreas: markingData.strongAreas || [],
+            date: new Date().toISOString(),
+          },
         ];
-        const avgScore = Math.round(newScores.reduce((sum, s) => sum + s.score, 0) / newScores.length);
+        const avgScore = Math.round(newScores.reduce((sum, s) => sum + (s.percentage ?? s.score ?? 0), 0) / newScores.length);
 
         const { error: memoryError } = await svc
           .from("cortex_memory")
