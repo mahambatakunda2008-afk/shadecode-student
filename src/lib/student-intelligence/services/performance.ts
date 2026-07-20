@@ -77,9 +77,42 @@ export class PerformanceService {
     try {
       const supabase = createClient();
 
-      // TODO: Implement exam results table
-      // For now, return empty array
-      return [];
+      const { data, error } = await supabase
+        .from("cortex_memory")
+        .select("exam_scores")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[PerformanceService] Error getting exam performance:", error);
+        return [];
+      }
+
+      const rawScores = Array.isArray(data?.exam_scores) ? data.exam_scores : [];
+
+      const mapped: ExamPerformance[] = rawScores.map((entry: any): ExamPerformance => {
+        // Backward compatibility: entries written before exam scores were
+        // enriched with the full shape only had {score, subject, date},
+        // where `score` was itself the percentage.
+        const percentage = entry.percentage ?? entry.score ?? 0;
+        const totalMarks = entry.totalMarks ?? 100;
+        const score = entry.totalMarks !== undefined ? entry.score : percentage;
+        return {
+          examId: entry.examId ?? `legacy-${entry.date ?? Math.random()}`,
+          subject: entry.subject ?? "Unknown",
+          score,
+          totalMarks,
+          percentage,
+          grade: entry.grade ?? "",
+          date: entry.date ?? new Date().toISOString(),
+          weakAreas: Array.isArray(entry.weakAreas) ? entry.weakAreas : [],
+          strongAreas: Array.isArray(entry.strongAreas) ? entry.strongAreas : [],
+        };
+      });
+
+      // Most recent first -- calculateOverallTrend/calculateRecentAverage
+      // rely on this ordering (they slice(0, N) expecting recent exams).
+      return mapped.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     } catch (error) {
       console.error("[PerformanceService] Error getting exam performance:", error);
       return [];
@@ -158,6 +191,7 @@ export class PerformanceService {
         averageScore,
         recentAverage,
         improvementRate,
+        hasEnoughData: exams.length >= 2,
       };
     } catch (error) {
       console.error("[PerformanceService] Error getting performance trends:", error);
@@ -194,13 +228,19 @@ export class PerformanceService {
   private calculateOverallTrend(exams: ExamPerformance[]): "improving" | "stable" | "declining" {
     if (exams.length < 2) return "stable";
 
-    const recent = exams.slice(0, 5);
-    const older = exams.slice(5, 10);
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
 
-    if (older.length === 0) return "stable";
+    const last7Days = exams.filter((e) => now - new Date(e.date).getTime() <= sevenDaysMs);
+    const previous7Days = exams.filter((e) => {
+      const age = now - new Date(e.date).getTime();
+      return age > sevenDaysMs && age <= sevenDaysMs * 2;
+    });
 
-    const recentAvg = recent.reduce((sum, e) => sum + e.percentage, 0) / recent.length;
-    const olderAvg = older.reduce((sum, e) => sum + e.percentage, 0) / older.length;
+    if (last7Days.length === 0 || previous7Days.length === 0) return "stable";
+
+    const recentAvg = last7Days.reduce((sum, e) => sum + e.percentage, 0) / last7Days.length;
+    const olderAvg = previous7Days.reduce((sum, e) => sum + e.percentage, 0) / previous7Days.length;
 
     if (recentAvg > olderAvg + 5) return "improving";
     if (recentAvg < olderAvg - 5) return "declining";
@@ -274,6 +314,7 @@ export class PerformanceService {
       averageScore: 0,
       recentAverage: 0,
       improvementRate: 0,
+      hasEnoughData: false,
     };
   }
 

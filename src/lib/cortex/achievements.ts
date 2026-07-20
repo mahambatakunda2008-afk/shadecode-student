@@ -229,10 +229,11 @@ export async function getAchievements(): Promise<Achievement[]> {
 export async function getStudentStats(userId: string): Promise<StudentStats> {
   const supabase = createClient();
 
-  const [tasksRes, memoryRes, profileRes] = await Promise.all([
+  const [tasksRes, memoryRes, profileRes, subjectsRes] = await Promise.all([
     supabase.from("tasks").select("completed, created_at").eq("user_id", userId),
     supabase.from("cortex_memory").select("exam_scores, total_lessons_completed, total_study_time_minutes, longest_streak, current_streak").eq("user_id", userId).single(),
     supabase.from("profiles").select("xp, level, streak").eq("id", userId).single(),
+    supabase.from("subjects").select("id", { count: "exact", head: true }).eq("user_id", userId),
   ]);
 
   const tasks = (tasksRes.data ?? []) as Array<{ completed: boolean; created_at: string }>;
@@ -246,9 +247,10 @@ export async function getStudentStats(userId: string): Promise<StudentStats> {
     return taskDate === today;
   });
 
-  const examScores: Array<{ score: number }> = memory?.exam_scores ?? [];
+  const examScores: Array<{ score: number; percentage?: number }> = memory?.exam_scores ?? [];
+  const examPct = (e: { score: number; percentage?: number }) => e.percentage ?? e.score ?? 0;
   const avgScore = examScores.length > 0
-    ? Math.round(examScores.reduce((s: number, e: { score: number }) => s + e.score, 0) / examScores.length)
+    ? Math.round(examScores.reduce((s: number, e) => s + examPct(e), 0) / examScores.length)
     : 0;
 
   return {
@@ -258,10 +260,10 @@ export async function getStudentStats(userId: string): Promise<StudentStats> {
     currentStreak: profile?.streak ?? 0,
     longestStreak: memory?.longest_streak ?? 0,
     totalStudyMinutes: memory?.total_study_time_minutes ?? 0,
-    subjectsCount: 0,
+    subjectsCount: subjectsRes.count ?? 0,
     averageExamScore: avgScore,
     tasksCompletedToday: tasksToday.length,
-    perfectExamCount: examScores.filter((e: { score: number }) => e.score === 100).length,
+    perfectExamCount: examScores.filter((e) => examPct(e) === 100).length,
   };
 }
 

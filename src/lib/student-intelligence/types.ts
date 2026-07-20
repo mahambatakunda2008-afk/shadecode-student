@@ -120,6 +120,12 @@ export interface PerformanceTrends {
   averageScore: number;
   recentAverage: number;
   improvementRate: number;
+  /** False when there isn't enough exam history (< 2 exams, or no data
+   *  in both the last-7-days and previous-7-days windows) to say anything
+   *  meaningful about trend direction. Consumers should show an honest
+   *  "not enough data yet" state rather than treating overallTrend as a
+   *  real signal when this is false. */
+  hasEnoughData: boolean;
 }
 
 /* ─────────────────────────────────────────────
