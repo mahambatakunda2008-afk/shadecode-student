@@ -12,7 +12,15 @@
  */
 
 import { getMemory, updateMemory } from "./memory";
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
+
+function getServiceClient() {
+  return createSupabaseServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
 
 interface StudySession {
   userId: string;
@@ -155,6 +163,19 @@ export async function updateStreak(userId: string, studiedToday: boolean): Promi
     streak: currentStreak,
     longestStreak,
   });
+
+  // Also update the canonical profiles.streak field -- see comment above
+  // updateStreak's signature for why this matters.
+  try {
+    const svc = getServiceClient();
+    const { error } = await svc
+      .from("profiles")
+      .update({ streak: currentStreak })
+      .eq("id", userId);
+    if (error) console.error("[memoryTracker] Failed to sync profiles.streak:", error.message);
+  } catch (err) {
+    console.error("[memoryTracker] profiles.streak sync threw:", err);
+  }
 }
 
 /**
