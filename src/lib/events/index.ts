@@ -9,13 +9,11 @@ export * from "./types";
 export * from "./emit";
 export { CortexEventHandler } from "./handlers/CortexEventHandler";
 export { AnalyticsEventHandler } from "./handlers/AnalyticsEventHandler";
-export { AchievementsEventHandler } from "./handlers/AchievementsEventHandler";
 export { RecommendationsEventHandler } from "./handlers/RecommendationsEventHandler";
 
 import { eventPipeline } from "./EventPipeline";
 import { CortexEventHandler } from "./handlers/CortexEventHandler";
 import { AnalyticsEventHandler } from "./handlers/AnalyticsEventHandler";
-import { AchievementsEventHandler } from "./handlers/AchievementsEventHandler";
 import { RecommendationsEventHandler } from "./handlers/RecommendationsEventHandler";
 import { EventType } from "./types";
 
@@ -25,7 +23,6 @@ import { EventType } from "./types";
 export function initializeEventPipeline(): void {
   const cortexHandler = new CortexEventHandler();
   const analyticsHandler = new AnalyticsEventHandler();
-  const achievementsHandler = new AchievementsEventHandler();
   const recommendationsHandler = new RecommendationsEventHandler();
 
   const eventTypes: EventType[] = [
@@ -42,7 +39,6 @@ export function initializeEventPipeline(): void {
   eventTypes.forEach(eventType => {
     eventPipeline.subscribe(eventType, cortexHandler);
     eventPipeline.subscribe(eventType, analyticsHandler);
-    eventPipeline.subscribe(eventType, achievementsHandler);
     eventPipeline.subscribe(eventType, recommendationsHandler);
   });
 
