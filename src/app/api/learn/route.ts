@@ -23,6 +23,12 @@ import {
 import { callAI } from "@/lib/ai";
 import { awardXPBySource } from "@/lib/xp/manager";
 
+// This route's own callAI call requests 4000 tokens and can fall through
+// several provider retries -- confirmed in prod logs as one of the routes
+// hitting AbortError / "All providers exhausted" under the old flat 15s
+// per-provider timeout.
+export const maxDuration = 90;
+
 
 interface SubjectRow { id: string; name: string; }
 interface ProfileRow { xp: number | null; streak: number | null; level: number | null; }

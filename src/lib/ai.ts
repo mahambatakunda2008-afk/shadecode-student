@@ -46,6 +46,14 @@ export async function callAI(
   const { userId, feature = "ai_assistant", subfeature = "generate" } = options;
   const promptTokens = Math.ceil(prompt.length / 4);
 
+  // A flat 15s timeout was killing every provider on large generations --
+  // exam generation asks for 6000 tokens, lessons ask for 4000. At normal
+  // free-tier generation speed that routinely exceeds 15s, so every
+  // provider aborted in sequence and the chain reported "exhausted" even
+  // when the providers themselves were healthy. Scale the budget to the
+  // actual request size instead, with sane floor/ceiling.
+  const timeoutMs = Math.min(55000, Math.max(20000, maxTokens * 6));
+
   async function logResult(params: {
     provider: string;
     model: string;
@@ -90,7 +98,8 @@ export async function callAI(
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
-        }
+        },
+        timeoutMs
       );
       const data = (await res.json()) as any;
       const text = typeof data?.result?.response === "string" ? data.result.response : null;
@@ -121,7 +130,7 @@ export async function callAI(
           max_tokens: maxTokens,
           response_format: { type: "json_object" },
         }),
-      });
+      }, timeoutMs);
       const data = (await res.json()) as any;
       const text = data.choices?.[0]?.message?.content;
       if (text && text.length > 20) {
@@ -154,7 +163,8 @@ export async function callAI(
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" },
             }),
-          }
+          },
+          timeoutMs
         );
         const data = (await res.json()) as any;
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -187,7 +197,7 @@ export async function callAI(
           messages: [{ role: "user", content: prompt }],
           max_tokens: maxTokens,
         }),
-      });
+      }, timeoutMs);
       const data = (await res.json()) as any;
       const text = data.choices?.[0]?.message?.content;
       if (text && text.length > 20) {

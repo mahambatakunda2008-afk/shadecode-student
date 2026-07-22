@@ -12,6 +12,13 @@ import { generateExam } from "@/lib/cortex/examGenerator";
 // to fall back on when the AI providers failed, unlike the other path.
 // Delegating to the shared generator fixes that: on AI failure this now
 // returns a usable fallback exam instead of a hard error.
+//
+// Exam generation requests 6000 tokens per attempt and can fall through
+// several provider retries -- the default serverless timeout was killing
+// the request before the fallback chain finished, which is why this
+// "usually failed" even with a working fallback exam behind it.
+export const maxDuration = 90;
+
 export async function POST(req) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);

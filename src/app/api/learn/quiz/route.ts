@@ -4,6 +4,8 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { learnQuizSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { callAI } from "@/lib/ai";
 
+export const maxDuration = 60;
+
 function getSupabaseAdmin() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

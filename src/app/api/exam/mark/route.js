@@ -7,6 +7,12 @@ import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { callAI } from "@/lib/ai";
 
+// AI marking can call multiple provider fallbacks sequentially at up to
+// 3000 tokens each; the default serverless timeout was killing this mid
+// fallback chain before lib/ai.ts's own (now-scaled) timeouts even got a
+// chance to complete.
+export const maxDuration = 90;
+
 /* ─────────────────────────────────────────────
    GRADE SYSTEM
 ───────────────────────────────────────────── */
