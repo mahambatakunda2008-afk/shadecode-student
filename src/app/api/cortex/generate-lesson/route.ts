@@ -13,6 +13,10 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { callAI } from "@/lib/ai";
 import { buildLessonContent } from "@/lib/cortex/contentBuilder";
 import { createExplanationTemplate, createPracticeTemplate, createQuizTemplate } from "@/lib/cortex/templates";
+
+// Lesson generation requests 4000 tokens per attempt through the provider
+// fallback chain -- default serverless timeout was killing it mid-chain.
+export const maxDuration = 90;
 import { getCache, generateCacheKey, shouldCache } from "@/lib/cortex/cache";
 import { validateLessonStructure } from "@/lib/cortex/validators";
 

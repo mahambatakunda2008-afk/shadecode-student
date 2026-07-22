@@ -54,11 +54,18 @@ export default function MathCheckerPage() {
       formData.append("topic", subject);
 
       const res = await fetch("/api/math-checker", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Analysis failed");
       const data = await res.json();
+
+      if (!res.ok || data.error) {
+        // Surface the API's actual reason (unclear image, provider down,
+        // too large, etc.) instead of a single generic message that hides
+        // which stage failed.
+        throw new Error(data.error || "Analysis failed");
+      }
+
       setResult(data);
-    } catch {
-      setError("Could not analyse the image. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not analyse the image. Please try again.");
     } finally {
       setLoading(false);
     }
