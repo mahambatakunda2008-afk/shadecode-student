@@ -1,5 +1,6 @@
-import { NextResponse }   from 'next/server';
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Middleware — edge-runtime route guard
@@ -11,10 +12,21 @@ import type { NextRequest } from 'next/server';
  *   Authenticated, onboarded     → /dashboard    (if they hit /onboarding again)
  *   Everything else              → pass through
  *
- * Auth detection
- * ──────────────
- * Checks session cookies set by your auth provider.
- * Uncomment the adapter that matches your stack.
+ * Session validation & refresh
+ * ─────────────────────────────
+ * Previously this only checked whether an sb-*-auth-token COOKIE was
+ * PRESENT, never whether the session it represents was actually still
+ * valid. Supabase access tokens expire (1 hour by default); without
+ * calling supabase.auth.getUser() here -- which is what actually
+ * triggers @supabase/ssr's automatic refresh-token exchange and writes
+ * the new tokens back onto the response cookies -- an expired access
+ * token cookie just sits there unrefreshed until something finally
+ * tries to use it and gets rejected, at which point the user is bounced
+ * to login with no warning. This was the root cause of logged-in users
+ * being asked to log in again periodically. Calling getUser() here on
+ * every request keeps the session alive for as long as the refresh
+ * token remains valid, matching Supabase's documented Next.js
+ * middleware pattern.
  */
 
 // ── Routes that bypass all checks ────────────────────────────────────────────
@@ -32,69 +44,74 @@ function isPublic(path: string): boolean {
   return PUBLIC_PREFIXES.some(p => p === '/' ? path === '/' : path.startsWith(p));
 }
 
-// ── Auth check (edge-compatible, no DB) ───────────────────────────────────────
-function hasSession(req: NextRequest): boolean {
-  // Supabase Auth (@supabase/ssr) — cookies are named
-  // `sb-<project-ref>-auth-token`, optionally chunked (`.0`, `.1`, ...).
-  for (const cookie of req.cookies.getAll()) {
-    if (/^sb-.+-auth-token(\.\d+)?$/.test(cookie.name) && cookie.value) {
-      return true;
-    }
-  }
-
-  // Legacy NextAuth fallbacks
-  if (req.cookies.get('next-auth.session-token'))          return true;
-  if (req.cookies.get('__Secure-next-auth.session-token')) return true;
-
-  return false;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function middleware(req: NextRequest): NextResponse {
+export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
+  // Public routes never need a Supabase round-trip.
   if (isPublic(pathname)) return NextResponse.next();
 
-  const authed             = hasSession(req);
+  // Response object that Supabase's cookie adapter can write refreshed
+  // tokens onto. Must be created before the Supabase client and returned
+  // (or have its cookies copied onto whatever response IS returned) so a
+  // refreshed session is actually persisted to the browser.
+  let response = NextResponse.next({ request: req });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          response = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  // This call is what actually refreshes an expiring session -- not just
+  // a cookie-presence check.
+  const { data: { user } } = await supabase.auth.getUser();
+  const authed = !!user;
+
   const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
   const onOnboarding       = pathname.startsWith('/onboarding');
 
-  console.log({
-    route: pathname,
-    profileExists: undefined,
-    onboardingCompleted: onboardingComplete,
-    tourCompleted: undefined,
-    userId: undefined,
-  });
+  function redirectPreservingSession(destination: string, extraParams?: Record<string, string>) {
+    const url = req.nextUrl.clone();
+    url.pathname = destination;
+    if (extraParams) {
+      Object.entries(extraParams).forEach(([k, v]) => url.searchParams.set(k, v));
+    }
+    const redirectResponse = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+    return redirectResponse;
+  }
 
   // Not authenticated → login
   if (!authed) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/auth/login';
-    url.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(url);
+    return redirectPreservingSession('/auth/login', { redirect: pathname });
   }
 
   // Authenticated but onboarding pending → force into /onboarding
-  // Check for onboarding_started flag to prevent redirect loops
   if (!onboardingComplete && !onOnboarding) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/onboarding';
-    // Add logging for debugging
-    console.log('[Middleware] Redirecting to onboarding:', pathname);
-    return NextResponse.redirect(url);
+    return redirectPreservingSession('/onboarding');
   }
 
   // Already onboarded but somehow hitting /onboarding again → dashboard
   if (onboardingComplete && onOnboarding) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/dashboard';
-    console.log('[Middleware] Redirecting to dashboard (onboarding complete):', pathname);
-    return NextResponse.redirect(url);
+    return redirectPreservingSession('/dashboard');
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
