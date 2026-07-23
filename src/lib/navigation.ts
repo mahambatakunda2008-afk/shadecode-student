@@ -13,6 +13,7 @@ import {
   Settings,
   Award,
   GraduationCap,
+  FileText,
 } from "lucide-react";
 
 export interface NavItem {
@@ -33,6 +34,7 @@ export const NAV_ITEMS = {
   focus: { href: "/focus", label: "Focus", icon: Timer },
   tasks: { href: "/tasks", label: "Tasks", icon: CheckSquare, badge: "3", urgent: false },
   exams: { href: "/exams", label: "Exams", icon: BookOpen, badge: "2d", urgent: true },
+  examHub: { href: "/exam-hub", label: "Exam Hub", icon: FileText },
   examSim: { href: "/exam-sim", label: "Exam Sim", icon: Gamepad2 },
   learn: { href: "/learn", label: "Learn", icon: Brain },
   curriculum: { href: "/curriculum", label: "Curriculum", icon: BookOpen },
@@ -54,7 +56,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   },
   {
     group: "Practice",
-    items: [NAV_ITEMS.tasks, NAV_ITEMS.exams, NAV_ITEMS.examSim],
+    items: [NAV_ITEMS.examHub, NAV_ITEMS.tasks, NAV_ITEMS.exams, NAV_ITEMS.examSim],
   },
   {
     group: "Tools",
@@ -72,13 +74,14 @@ export const BOTTOM_PRIMARY: NavItem[] = [
   NAV_ITEMS.learn,
   NAV_ITEMS.tasks,
   NAV_ITEMS.focus,
-  NAV_ITEMS.examSim,
+  NAV_ITEMS.examHub,
 ];
 
 export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.timetable,
   NAV_ITEMS.study,
   NAV_ITEMS.exams,
+  NAV_ITEMS.examSim,
   NAV_ITEMS.curriculum,
   NAV_ITEMS.mathChecker,
   NAV_ITEMS.analytics,
