@@ -77,7 +77,7 @@ export default function PaperViewerPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
+      <div style={{ minHeight: "100vh", padding: 24 }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <div style={{ height: 28, width: "40%", borderRadius: 8, background: "var(--surface-2)", marginBottom: 20 }} />
           <div style={{ height: 600, borderRadius: 18, background: "var(--surface-2)" }} />
@@ -88,7 +88,7 @@ export default function PaperViewerPage() {
 
   if (error || !paper || !signedUrl) {
     return (
-      <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
+      <div style={{ minHeight: "100vh", padding: 24 }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <button
             onClick={() => router.back()}
@@ -96,8 +96,8 @@ export default function PaperViewerPage() {
           >
             <ArrowLeft size={16} /> Back
           </button>
-          <div style={{ padding: 20, borderRadius: 18, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
-            <p style={{ color: "#fca5a5", margin: 0 }}>{error ?? "Paper not found"}</p>
+          <div style={{ padding: 20, borderRadius: 18, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)" }}>
+            <p style={{ color: "var(--danger)", margin: 0 }}>{error ?? "Paper not found"}</p>
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function PaperViewerPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
+    <div style={{ minHeight: "100vh", padding: 24 }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <button
           onClick={() => router.back()}
@@ -130,22 +130,22 @@ export default function PaperViewerPage() {
               label={paper.state?.bookmarked ? "Bookmarked" : "Bookmark"}
               onClick={toggleBookmark}
               active={paper.state?.bookmarked}
-              accent="#f59e0b"
+              accent="var(--warning)"
               disabled={saving}
             />
             <a href={signedUrl} download onClick={handleDownload} style={{ textDecoration: "none" }}>
-              <ActionButton icon={Download} label="Download" onClick={() => {}} accent="#06b6d4" />
+              <ActionButton icon={Download} label="Download" onClick={() => {}} accent="var(--primary)" />
             </a>
             <ActionButton
               icon={CheckCircle2}
               label={paper.state?.status === "completed" ? "Completed" : "Mark complete"}
               onClick={markComplete}
               active={paper.state?.status === "completed"}
-              accent="#22c55e"
+              accent="var(--accent)"
               disabled={saving}
             />
             <a href={signedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <ActionButton icon={Maximize2} label="Full screen" onClick={() => {}} accent="#8b5cf6" />
+              <ActionButton icon={Maximize2} label="Full screen" onClick={() => {}} accent="var(--primary)" />
             </a>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function PaperViewerPage() {
             borderRadius: 18,
             overflow: "hidden",
             border: "1px solid var(--card-border)",
-            background: "#1a1a24",
+            background: "var(--surface-3)",
             height: "80vh",
           }}
         >
@@ -194,8 +194,8 @@ function ActionButton({
         gap: 6,
         padding: "8px 14px",
         borderRadius: 10,
-        background: active ? `${accent}1a` : "var(--surface-2)",
-        border: `1px solid ${active ? `${accent}55` : "var(--card-border)"}`,
+        background: active ? `color-mix(in srgb, ${accent} 14%, transparent)` : "var(--surface-2)",
+        border: `1px solid ${active ? `color-mix(in srgb, ${accent} 34%, transparent)` : "var(--card-border)"}`,
         color: active ? accent : "var(--foreground)",
         fontSize: 12,
         fontWeight: 600,
