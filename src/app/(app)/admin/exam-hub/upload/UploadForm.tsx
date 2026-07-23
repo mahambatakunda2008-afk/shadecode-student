@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { UploadCloud, CheckCircle2, XCircle } from "lucide-react";
-import { PAPER_SESSIONS, type PaperSession } from "@/lib/exam-hub/types";
+import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
 
 interface Props {
-  syllabi: { id: string; subject: string }[];
+  syllabi: { id: string; subject: string; board: string; levels: string[] }[];
 }
 
-const LEVELS = ["AS Level", "A Level"];
 const KINDS: { value: string; label: string }[] = [
   { value: "qp", label: "Question Paper" },
   { value: "ms", label: "Mark Scheme" },
@@ -18,8 +17,13 @@ const KINDS: { value: string; label: string }[] = [
 
 export default function UploadForm({ syllabi }: Props) {
   const [syllabusId, setSyllabusId] = useState(syllabi[0]?.id ?? "");
-  const [level, setLevel] = useState(LEVELS[0]);
-  const [session, setSession] = useState<PaperSession>(PAPER_SESSIONS[0]);
+  const selectedSyllabus = useMemo(() => syllabi.find((s) => s.id === syllabusId), [syllabi, syllabusId]);
+
+  const levelOptions = selectedSyllabus?.levels ?? [];
+  const sessionOptions = selectedSyllabus ? SESSIONS_BY_BOARD[selectedSyllabus.board] ?? [] : [];
+
+  const [level, setLevel] = useState(levelOptions[0] ?? "");
+  const [session, setSession] = useState(sessionOptions[0] ?? "");
   const [year, setYear] = useState(new Date().getFullYear());
   const [paperNumber, setPaperNumber] = useState(1);
   const [variant, setVariant] = useState(1);
@@ -28,6 +32,13 @@ export default function UploadForm({ syllabi }: Props) {
 
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  function handleSyllabusChange(newId: string) {
+    setSyllabusId(newId);
+    const next = syllabi.find((s) => s.id === newId);
+    setLevel(next?.levels[0] ?? "");
+    setSession(next ? SESSIONS_BY_BOARD[next.board]?.[0] ?? "" : "");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,7 +74,7 @@ export default function UploadForm({ syllabi }: Props) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
+    <div style={{ minHeight: "100vh", padding: 24 }}>
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginBottom: 4 }}>
           Upload Past Paper
@@ -74,8 +85,8 @@ export default function UploadForm({ syllabi }: Props) {
         </p>
 
         {syllabi.length === 0 && (
-          <div style={{ padding: 16, borderRadius: 14, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", marginBottom: 20 }}>
-            <p style={{ color: "#fbbf24", margin: 0, fontSize: 13 }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--warning-soft)", border: "1px solid color-mix(in srgb, var(--warning) 24%, transparent)", marginBottom: 20 }}>
+            <p style={{ color: "var(--warning)", margin: 0, fontSize: 13 }}>
               No syllabi found. Add a row to the <code>syllabi</code> table before uploading papers.
             </p>
           </div>
@@ -83,11 +94,17 @@ export default function UploadForm({ syllabi }: Props) {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Field label="Subject / Syllabus">
-            <select value={syllabusId} onChange={(e) => setSyllabusId(e.target.value)} style={selectStyle}>
-              {syllabi.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.subject} ({s.id})
-                </option>
+            <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle}>
+              {[...new Set(syllabi.map((s) => s.board))].map((board) => (
+                <optgroup key={board} label={board}>
+                  {syllabi
+                    .filter((s) => s.board === board)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.subject}
+                      </option>
+                    ))}
+                </optgroup>
               ))}
             </select>
           </Field>
@@ -95,14 +112,14 @@ export default function UploadForm({ syllabi }: Props) {
           <Row>
             <Field label="Level">
               <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle}>
-                {LEVELS.map((l) => (
+                {levelOptions.map((l) => (
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
             </Field>
             <Field label="Session">
-              <select value={session} onChange={(e) => setSession(e.target.value as PaperSession)} style={selectStyle}>
-                {PAPER_SESSIONS.map((s) => (
+              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle}>
+                {sessionOptions.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -162,8 +179,8 @@ export default function UploadForm({ syllabi }: Props) {
             style={{
               padding: "12px 20px",
               borderRadius: 12,
-              background: "#6366f1",
-              color: "#fff",
+              background: "var(--primary)",
+              color: "var(--primary-foreground)",
               fontSize: 14,
               fontWeight: 600,
               border: "none",
@@ -182,12 +199,12 @@ export default function UploadForm({ syllabi }: Props) {
                 gap: 8,
                 padding: 14,
                 borderRadius: 12,
-                background: result.ok ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-                border: `1px solid ${result.ok ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+                background: result.ok ? "var(--accent-soft)" : "var(--danger-soft)",
+                border: `1px solid color-mix(in srgb, ${result.ok ? "var(--accent)" : "var(--danger)"} 24%, transparent)`,
               }}
             >
-              {result.ok ? <CheckCircle2 size={16} color="#22c55e" /> : <XCircle size={16} color="#f87171" />}
-              <span style={{ fontSize: 13, color: result.ok ? "#86efac" : "#fca5a5" }}>{result.message}</span>
+              {result.ok ? <CheckCircle2 size={16} color="var(--accent)" /> : <XCircle size={16} color="var(--danger)" />}
+              <span style={{ fontSize: 13, color: result.ok ? "var(--accent)" : "var(--danger)" }}>{result.message}</span>
             </div>
           )}
         </form>

@@ -20,7 +20,7 @@ export default function SavedPapersPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
+    <div style={{ minHeight: "100vh", padding: 24 }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <Link
           href="/exam-hub"
@@ -34,8 +34,8 @@ export default function SavedPapersPage() {
         </h1>
 
         {error && (
-          <div style={{ padding: 16, borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", marginBottom: 20 }}>
-            <p style={{ color: "#fca5a5", margin: 0, fontSize: 13 }}>{error}</p>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)", marginBottom: 20 }}>
+            <p style={{ color: "var(--danger)", margin: 0, fontSize: 13 }}>{error}</p>
           </div>
         )}
 
@@ -56,7 +56,7 @@ export default function SavedPapersPage() {
             </p>
             <Link
               href="/exam-hub/papers"
-              style={{ display: "inline-block", padding: "10px 18px", borderRadius: 10, background: "#6366f1", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}
+              style={{ display: "inline-block", padding: "10px 18px", borderRadius: 10, background: "var(--primary)", color: "var(--primary-foreground)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}
             >
               Browse Past Papers
             </Link>
@@ -80,7 +80,7 @@ export default function SavedPapersPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <FileText size={18} color="#6366f1" />
+                  <FileText size={18} color="var(--primary)" />
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}>
                       Paper {p.paper_number} / {p.variant} — {PAPER_KIND_LABELS[p.kind]}

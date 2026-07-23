@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasUserRole } from "@/lib/auth/rbac";
+import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
 
-const VALID_LEVELS = ["AS Level", "A Level"];
-const VALID_SESSIONS = ["Feb/March", "May/June", "Oct/Nov"];
 const VALID_KINDS = ["qp", "ms", "in", "gt"];
 
 function getServiceClient() {
@@ -44,8 +43,8 @@ export async function POST(request: Request) {
     if (file.type !== "application/pdf") {
       return NextResponse.json({ error: "File must be a PDF" }, { status: 400 });
     }
-    if (!syllabusId || !VALID_LEVELS.includes(level) || !VALID_SESSIONS.includes(session)) {
-      return NextResponse.json({ error: "Invalid level or session" }, { status: 400 });
+    if (!syllabusId || !level || !session) {
+      return NextResponse.json({ error: "Missing syllabus, level, or session" }, { status: 400 });
     }
     if (!VALID_KINDS.includes(kind)) {
       return NextResponse.json({ error: "Invalid paper kind" }, { status: 400 });
@@ -56,9 +55,32 @@ export async function POST(request: Request) {
 
     const service = getServiceClient();
 
-    const { data: syllabus } = await service.from("syllabi").select("id").eq("id", syllabusId).maybeSingle();
+    // Look up the syllabus first so level/session can be validated against
+    // what that specific board actually offers — CAIE and ZIMSEC don't
+    // share level names (AS/A Level vs O-Level/A-Level) or session naming
+    // (three sittings a year vs two), so a single global whitelist would
+    // either reject valid ZIMSEC uploads or silently accept nonsense.
+    const { data: syllabus } = await service
+      .from("syllabi")
+      .select("id, board, levels")
+      .eq("id", syllabusId)
+      .maybeSingle();
+
     if (!syllabus) {
       return NextResponse.json({ error: `Unknown syllabus code: ${syllabusId}` }, { status: 400 });
+    }
+    if (!syllabus.levels.includes(level)) {
+      return NextResponse.json(
+        { error: `Invalid level for ${syllabus.board}. Expected one of: ${syllabus.levels.join(", ")}` },
+        { status: 400 }
+      );
+    }
+    const validSessions = SESSIONS_BY_BOARD[syllabus.board];
+    if (validSessions && !validSessions.includes(session)) {
+      return NextResponse.json(
+        { error: `Invalid session for ${syllabus.board}. Expected one of: ${validSessions.join(", ")}` },
+        { status: 400 }
+      );
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());

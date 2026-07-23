@@ -6,13 +6,16 @@
  */
 
 export type PaperKind = "qp" | "ms" | "in" | "gt";
-export type PaperSession = "Feb/March" | "May/June" | "Oct/Nov";
+// Session naming differs by board (CAIE: three sittings a year; ZIMSEC: two),
+// so this is a plain string rather than a fixed union — validated per-board
+// where it matters (admin upload), not globally.
+export type PaperSession = string;
 export type PaperStatus = "not_started" | "in_progress" | "completed";
 
 export interface Syllabus {
-  id: string; // e.g. "9702"
+  id: string; // e.g. "9702" or "zimsec-mathematics-o"
   subject: string;
-  board: string;
+  board: string; // "CAIE" | "ZIMSEC"
   levels: string[];
 }
 
@@ -66,4 +69,10 @@ export const PAPER_KIND_LABELS: Record<PaperKind, string> = {
   gt: "Grade Thresholds",
 };
 
-export const PAPER_SESSIONS: PaperSession[] = ["Feb/March", "May/June", "Oct/Nov"];
+export const SESSIONS_BY_BOARD: Record<string, PaperSession[]> = {
+  CAIE: ["Feb/March", "May/June", "Oct/Nov"],
+  ZIMSEC: ["June", "November"],
+};
+
+/** @deprecated Use SESSIONS_BY_BOARD[board] instead — kept only for CAIE-specific call sites. */
+export const PAPER_SESSIONS: PaperSession[] = SESSIONS_BY_BOARD.CAIE;

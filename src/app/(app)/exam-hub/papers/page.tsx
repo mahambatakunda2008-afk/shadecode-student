@@ -17,6 +17,7 @@ export default function PastPapersPage() {
   const [loadingSyllabi, setLoadingSyllabi] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [board, setBoard] = useState<string | null>(null);
   const [syllabusId, setSyllabusId] = useState<string | null>(null);
   const [level, setLevel] = useState<string | null>(null);
   const [session, setSession] = useState<string | null>(null);
@@ -70,6 +71,15 @@ export default function PastPapersPage() {
     []
   );
 
+  function selectBoard(b: string) {
+    setBoard(b);
+    setSyllabusId(null);
+    setLevel(null);
+    setSession(null);
+    setYear(null);
+    setPapers([]);
+  }
+
   function selectSyllabus(id: string) {
     setSyllabusId(id);
     setLevel(null);
@@ -102,16 +112,53 @@ export default function PastPapersPage() {
     loadPapers(syllabusId, level, session, yr);
   }
 
+  function resetTo(crumbIndex: number) {
+    // crumbs: [0]="Past Papers" -> board step, [1]=board -> subject step,
+    // [2]=subject -> level step, [3]=level -> session step, [4]=session -> year step
+    if (crumbIndex <= 0) {
+      setBoard(null);
+      setSyllabusId(null);
+      setLevel(null);
+      setSession(null);
+      setYear(null);
+      setPapers([]);
+    } else if (crumbIndex === 1) {
+      setSyllabusId(null);
+      setLevel(null);
+      setSession(null);
+      setYear(null);
+      setPapers([]);
+    } else if (crumbIndex === 2) {
+      setLevel(null);
+      setSession(null);
+      setYear(null);
+      setPapers([]);
+      if (syllabusId) loadFacets(syllabusId, null, null);
+    } else if (crumbIndex === 3) {
+      setSession(null);
+      setYear(null);
+      setPapers([]);
+      if (syllabusId && level) loadFacets(syllabusId, level, null);
+    } else if (crumbIndex === 4) {
+      setYear(null);
+      setPapers([]);
+    }
+  }
+
+  const boards = [...new Set(syllabi.map((s) => s.board))].sort();
+  const subjectsForBoard = board ? syllabi.filter((s) => s.board === board) : [];
   const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24, background: "#0e0e18" }}>
+    <div style={{ minHeight: "100vh", padding: 24 }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <Breadcrumb
+          board={board}
           subject={selectedSyllabus?.subject ?? null}
           level={level}
           session={session}
           year={year}
+          onReset={resetTo}
         />
 
         {error && (
@@ -119,24 +166,39 @@ export default function PastPapersPage() {
             style={{
               padding: 16,
               borderRadius: 14,
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.2)",
+              background: "var(--danger-soft)",
+              border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)",
               marginBottom: 20,
             }}
           >
-            <p style={{ color: "#fca5a5", margin: 0, fontSize: 13 }}>{error}</p>
+            <p style={{ color: "var(--danger)", margin: 0, fontSize: 13 }}>{error}</p>
           </div>
         )}
 
-        {/* Step 1: Subject */}
-        {!syllabusId && (
-          <Step title="Choose a subject" loading={loadingSyllabi}>
-            {syllabi.length === 0 && !loadingSyllabi ? (
-              <EmptyState message="No subjects available yet. Check back soon." />
+        {/* Step 0: Exam board */}
+        {!board && (
+          <Step title="Choose an exam board" loading={loadingSyllabi}>
+            {boards.length === 0 && !loadingSyllabi ? (
+              <EmptyState message="No exam boards available yet. Check back soon." />
             ) : (
               <Grid>
-                {syllabi.map((s) => (
-                  <OptionCard key={s.id} label={s.subject} sub={s.id} onClick={() => selectSyllabus(s.id)} />
+                {boards.map((b) => (
+                  <OptionCard key={b} label={b} onClick={() => selectBoard(b)} />
+                ))}
+              </Grid>
+            )}
+          </Step>
+        )}
+
+        {/* Step 1: Subject */}
+        {board && !syllabusId && (
+          <Step title="Choose a subject" loading={loadingSyllabi}>
+            {subjectsForBoard.length === 0 && !loadingSyllabi ? (
+              <EmptyState message="No subjects available yet for this board. Check back soon." />
+            ) : (
+              <Grid>
+                {subjectsForBoard.map((s) => (
+                  <OptionCard key={s.id} label={s.subject} sub={s.levels.join(" / ")} onClick={() => selectSyllabus(s.id)} />
                 ))}
               </Grid>
             )}
@@ -198,36 +260,49 @@ export default function PastPapersPage() {
 /* ── Sub-components ───────────────────────────────────────────────────── */
 
 function Breadcrumb({
+  board,
   subject,
   level,
   session,
   year,
+  onReset,
 }: {
+  board: string | null;
   subject: string | null;
   level: string | null;
   session: string | null;
   year: number | null;
+  onReset: (toIndex: number) => void;
 }) {
-  const crumbs = ["Past Papers", subject, level, session, year ? String(year) : null].filter(
+  const crumbs = ["Past Papers", board, subject, level, session, year ? String(year) : null].filter(
     Boolean
   ) as string[];
 
   return (
     <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
-      {crumbs.map((crumb, i) => (
-        <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              fontSize: i === crumbs.length - 1 ? 22 : 14,
-              fontWeight: i === crumbs.length - 1 ? 700 : 500,
-              color: i === crumbs.length - 1 ? "var(--foreground)" : "var(--muted-foreground)",
-            }}
-          >
-            {crumb}
+      {crumbs.map((crumb, i) => {
+        const isLast = i === crumbs.length - 1;
+        return (
+          <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={() => !isLast && onReset(i)}
+              disabled={isLast}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: isLast ? "default" : "pointer",
+                fontSize: isLast ? 22 : 14,
+                fontWeight: isLast ? 700 : 500,
+                color: isLast ? "var(--foreground)" : "var(--muted-foreground)",
+              }}
+            >
+              {crumb}
+            </button>
+            {!isLast && <ChevronRight size={14} color="var(--muted-foreground)" />}
           </span>
-          {i < crumbs.length - 1 && <ChevronRight size={14} color="var(--muted-foreground)" />}
-        </span>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -368,9 +443,9 @@ function PapersList({ papers }: { papers: PastPaperWithState[] }) {
                   }}
                 >
                   {doc.state?.status === "completed" ? (
-                    <CheckCircle2 size={13} color="#22c55e" />
+                    <CheckCircle2 size={13} color="var(--accent)" />
                   ) : doc.state?.bookmarked ? (
-                    <BookmarkCheck size={13} color="#f59e0b" />
+                    <BookmarkCheck size={13} color="var(--warning)" />
                   ) : (
                     <Bookmark size={13} color="var(--muted-foreground)" />
                   )}

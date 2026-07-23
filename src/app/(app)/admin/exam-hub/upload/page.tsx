@@ -16,7 +16,7 @@ export default async function AdminExamHubUploadPage() {
     redirect("/dashboard");
   }
 
-  const { data: syllabi } = await supabase.from("syllabi").select("id, subject").order("subject");
+  const { data: syllabi } = await supabase.from("syllabi").select("id, subject, board, levels").order("board").order("subject");
 
   return <UploadForm syllabi={syllabi ?? []} />;
 }
