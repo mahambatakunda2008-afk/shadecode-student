@@ -108,7 +108,7 @@ function buildAttempts({ base64, mimeType, userPrompt }) {
           body: JSON.stringify({
             model: 'gpt-4o-mini',
             response_format: { type: 'json_object' },
-            max_tokens: 3000,
+            max_tokens: 6000,
             messages: [
               {
                 role: 'user',
@@ -143,7 +143,7 @@ function buildAttempts({ base64, mimeType, userPrompt }) {
             model: modelName,
             generationConfig: {
               responseMimeType: 'application/json',
-              maxOutputTokens: 3000,
+              maxOutputTokens: 6000,
             },
           });
           const result = await model.generateContent([
