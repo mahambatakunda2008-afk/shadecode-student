@@ -2,13 +2,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 import { UserProvider } from "@/contexts/UserContext";
 import { AchievementsProvider } from "@/contexts/AchievementsContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import { AdminBottomNav } from "@/components/layout/AdminBottomNav";
 import { AchievementToast } from "@/components/AchievementToast";
 import { getOnboardingStatus } from "@/lib/onboarding";
 import { useSession } from "@/hooks/useSession";
@@ -19,12 +21,14 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [status, setStatus] = useState<
     "loading" | "authenticated" | "unauthenticated"
   >("loading");
 
   const [ready, setReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const supabase = useMemo(
     () =>
@@ -53,7 +57,26 @@ export default function AppLayout({
 
         setStatus("authenticated");
 
-        // 🧭 ONBOARDING CHECK
+        // 🛡️ ADMIN CHECK — admins get an admin-only shell and skip the
+        // student onboarding/dashboard flow entirely (has_role is granted
+        // to `authenticated`, so the anon-key client can call it directly).
+        const { data: adminCheck } = await supabase.rpc("has_role", {
+          user_id: user.id,
+          role_name: "admin",
+        });
+        const userIsAdmin = Boolean(adminCheck);
+        setIsAdmin(userIsAdmin);
+
+        if (userIsAdmin) {
+          if (pathname === "/dashboard" || pathname === "/onboarding") {
+            router.replace("/exam-hub");
+            return;
+          }
+          setReady(true);
+          return;
+        }
+
+        // 🧭 ONBOARDING CHECK (students only)
         const onboarded = getOnboardingStatus();
         console.log({
           route: "(app)",
@@ -92,13 +115,30 @@ export default function AppLayout({
     });
 
     return () => subscription.unsubscribe();
-  }, [router, supabase]);
+  }, [router, supabase, pathname]);
 
   // 🔄 LOADING STATE (never infinite because we always resolve or redirect)
   if (!ready) {
     return (
       <div className="flex h-screen items-center justify-center bg-[var(--background)]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-500" />
+      </div>
+    );
+  }
+
+  // 🛡️ ADMIN SHELL — no student chrome (profile, XP, streak, student nav)
+  if (isAdmin) {
+    return (
+      <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
+        <aside className="hidden md:flex md:w-[240px] md:flex-shrink-0">
+          <AdminSidebar />
+        </aside>
+        <main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0">
+          {children}
+        </main>
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]">
+          <AdminBottomNav />
+        </div>
       </div>
     );
   }

@@ -14,6 +14,7 @@ import {
   Award,
   GraduationCap,
   FileText,
+  UploadCloud,
 } from "lucide-react";
 
 export interface NavItem {
@@ -46,7 +47,18 @@ export const NAV_ITEMS = {
   study: { href: "/study", label: "Study Session", icon: GraduationCap },
   achievements: { href: "/achievements", label: "Achievements", icon: Award },
   settings: { href: "/settings", label: "Settings", icon: Settings },
+  adminUpload: { href: "/admin/exam-hub/upload", label: "Upload Papers", icon: UploadCloud },
 };
+
+// Nav shown to admin accounts instead of the full student nav — per product
+// decision, admins get an admin-only shell, not the student app with an
+// extra card bolted on.
+export const ADMIN_NAV_GROUPS: NavGroup[] = [
+  {
+    group: "Admin",
+    items: [NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.settings],
+  },
+];
 
 // Sidebar groups (all items accessible on desktop)
 export const SIDEBAR_GROUPS: NavGroup[] = [
