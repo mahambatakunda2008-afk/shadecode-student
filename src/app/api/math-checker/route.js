@@ -30,6 +30,39 @@ const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 // primary attempt.
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || '6a119f6052c02197d301e50f0d4a56cc';
 
+// CLOUDFLARE_API_2 was added alongside the original CLOUDFLARE_API_TOKEN.
+// Note: Cloudflare's Llama-3.2-vision license agreement (error 5016,
+// "User has not agreed to Llama3.2 model terms") is scoped to the
+// *account*, not the token -- a second token on the same account won't
+// bypass it on its own. What actually unblocks it below is the
+// self-healing agreeToVisionLicense() call, which fires automatically the
+// first time this error is seen, for whichever token hits it.
+const CLOUDFLARE_TOKENS = [process.env.CLOUDFLARE_API_TOKEN, process.env.CLOUDFLARE_API_2].filter(Boolean);
+
+const CF_VISION_URL = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
+
+/** Cloudflare error 5016 = account hasn't accepted Meta's Llama 3.2 license
+ * yet. Per Cloudflare's docs the fix is a one-time request with
+ * {"prompt":"agree"} to the same model. Send it automatically instead of
+ * requiring a manual curl -- this only needs to succeed once per account,
+ * ever, and is safe to call repeatedly (a no-op once already agreed). */
+async function agreeToVisionLicense(token) {
+  try {
+    await fetch(CF_VISION_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'agree' }),
+    });
+  } catch {
+    // Best-effort -- the real vision call's own error will surface if this didn't work.
+  }
+}
+
+function isLicenseError(err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('5016') || /agree|license|terms/i.test(msg);
+}
+
 const GEMINI_KEYS = [
   process.env.GEMINI_API_KEY,
   process.env.GEMINI_API_KEY_2,
@@ -101,23 +134,19 @@ function buildAttempts({ base64, mimeType, userPrompt }) {
   const attempts = [];
 
   // 1. Cloudflare Workers AI (llama-3.2-11b-vision-instruct) -- free tier,
-  // no billing required, same token already used successfully elsewhere.
-  // NOTE: the first time this model is called on an account, Cloudflare
-  // requires a one-time acceptance of Meta's license -- if every attempt
-  // here fails with an error mentioning "agree" or a license, that's why:
-  // run `curl https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai/run/@cf/meta/llama-3.2-11b-vision-instruct -X POST -H "Authorization: Bearer $CLOUDFLARE_AUTH_TOKEN" -d '{"prompt":"agree"}'`
-  // once from any machine to unlock it.
-  if (process.env.CLOUDFLARE_API_TOKEN) {
+  // no billing required. Tries every configured token. If an account
+  // hasn't accepted Meta's license yet (error 5016), automatically sends
+  // the one-time agreement and retries once -- no manual step needed.
+  for (const token of CLOUDFLARE_TOKENS) {
     attempts.push({
       provider: 'cloudflare',
       model: 'llama-3.2-11b-vision-instruct',
       run: async () => {
-        const res = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`,
-          {
+        const callVision = async () => {
+          const res = await fetch(CF_VISION_URL, {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -128,18 +157,27 @@ function buildAttempts({ base64, mimeType, userPrompt }) {
               image: `data:${mimeType};base64,${base64}`,
               max_tokens: 4000,
             }),
+          });
+          const data = await res.json();
+          if (!data?.success) {
+            throw new Error(JSON.stringify(data?.errors || data).slice(0, 300));
           }
-        );
-        const data = await res.json();
-        if (!data?.success) {
-          throw new Error(JSON.stringify(data?.errors || data).slice(0, 300));
+          const text =
+            typeof data.result === 'string'
+              ? data.result
+              : data.result?.response ?? data.result?.description;
+          if (!text) throw new Error('Cloudflare returned empty content');
+          return text;
+        };
+
+        try {
+          return await callVision();
+        } catch (err) {
+          if (!isLicenseError(err)) throw err;
+          console.error('[math-checker] Cloudflare license not yet accepted -- auto-agreeing and retrying once');
+          await agreeToVisionLicense(token);
+          return await callVision();
         }
-        const text =
-          typeof data.result === 'string'
-            ? data.result
-            : data.result?.response ?? data.result?.description;
-        if (!text) throw new Error('Cloudflare returned empty content');
-        return text;
       },
     });
   }
@@ -240,7 +278,7 @@ export async function POST(req) {
     const attempts = buildAttempts({ base64, mimeType: imageFile.type, userPrompt });
 
     if (attempts.length === 0) {
-      console.error('[math-checker] No AI provider configured (CLOUDFLARE_API_TOKEN / GEMINI_API_KEY / OPENAI_API_KEY all missing)');
+      console.error('[math-checker] No AI provider configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_API_2 / GEMINI_API_KEY / OPENAI_API_KEY all missing)');
       return NextResponse.json({ error: 'Math checker is temporarily unavailable.' }, { status: 503 });
     }
 
