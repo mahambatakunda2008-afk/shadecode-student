@@ -18,10 +18,18 @@ const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 // fallback chain"). The image route was never wired into that chain, so it
 // had a single point of failure: one provider, one key, one model.
 //
-// Confirmed in prod (Vercel runtime errors, 2026-07-22): the primary
-// GEMINI_API_KEY has `limit: 0` on the free tier for gemini-2.0-flash --
-// a structural zero-quota account issue, not a transient rate limit.
-// OpenAI is tried first for that reason.
+// Confirmed in prod (Vercel runtime errors):
+// - GEMINI_API_KEY has `limit: 0` on the free tier for gemini-2.0-flash --
+//   structural zero-quota on that account, not a transient rate limit.
+//   gemini-2.5-flash on the same account is NOT quota-blocked.
+// - OPENAI_API_KEY has no active billing (429 on every call) -- not being
+//   paid for, so it's kept as a last-resort attempt only, in case it's
+//   ever funded, but never relied on.
+// Cloudflare Workers AI is genuinely free (10k neurons/day, already
+// working elsewhere in the app via CLOUDFLARE_API_TOKEN) so it's now the
+// primary attempt.
+const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || '6a119f6052c02197d301e50f0d4a56cc';
+
 const GEMINI_KEYS = [
   process.env.GEMINI_API_KEY,
   process.env.GEMINI_API_KEY_2,
@@ -92,8 +100,79 @@ function isValidResult(json) {
 function buildAttempts({ base64, mimeType, userPrompt }) {
   const attempts = [];
 
-  // 1. OpenAI gpt-4o-mini -- vision-capable, JSON mode, most reliable
-  // structured output per lib/ai.ts's existing rationale for this model.
+  // 1. Cloudflare Workers AI (llama-3.2-11b-vision-instruct) -- free tier,
+  // no billing required, same token already used successfully elsewhere.
+  // NOTE: the first time this model is called on an account, Cloudflare
+  // requires a one-time acceptance of Meta's license -- if every attempt
+  // here fails with an error mentioning "agree" or a license, that's why:
+  // run `curl https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai/run/@cf/meta/llama-3.2-11b-vision-instruct -X POST -H "Authorization: Bearer $CLOUDFLARE_AUTH_TOKEN" -d '{"prompt":"agree"}'`
+  // once from any machine to unlock it.
+  if (process.env.CLOUDFLARE_API_TOKEN) {
+    attempts.push({
+      provider: 'cloudflare',
+      model: 'llama-3.2-11b-vision-instruct',
+      run: async () => {
+        const res = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: userPrompt },
+              ],
+              image: `data:${mimeType};base64,${base64}`,
+              max_tokens: 4000,
+            }),
+          }
+        );
+        const data = await res.json();
+        if (!data?.success) {
+          throw new Error(JSON.stringify(data?.errors || data).slice(0, 300));
+        }
+        const text =
+          typeof data.result === 'string'
+            ? data.result
+            : data.result?.response ?? data.result?.description;
+        if (!text) throw new Error('Cloudflare returned empty content');
+        return text;
+      },
+    });
+  }
+
+  // 2. Gemini -- all configured keys x both models, same rotation lib/ai.ts uses.
+  for (const key of GEMINI_KEYS) {
+    const genAI = new GoogleGenerativeAI(key);
+    for (const modelName of GEMINI_MODELS) {
+      attempts.push({
+        provider: 'gemini',
+        model: modelName,
+        run: async () => {
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: {
+              responseMimeType: 'application/json',
+              maxOutputTokens: 6000,
+            },
+          });
+          const result = await model.generateContent([
+            SYSTEM_PROMPT,
+            userPrompt,
+            { inlineData: { mimeType, data: base64 } },
+          ]);
+          return result.response.text();
+        },
+      });
+    }
+  }
+
+  // 3. OpenAI gpt-4o-mini -- last resort. Currently unfunded (429 on every
+  // call, confirmed in prod) but left wired in case that changes; never
+  // relied on.
   if (process.env.OPENAI_API_KEY) {
     attempts.push({
       provider: 'openai',
@@ -131,32 +210,6 @@ function buildAttempts({ base64, mimeType, userPrompt }) {
     });
   }
 
-  // 2. Gemini -- all configured keys x both models, same rotation lib/ai.ts uses.
-  for (const key of GEMINI_KEYS) {
-    const genAI = new GoogleGenerativeAI(key);
-    for (const modelName of GEMINI_MODELS) {
-      attempts.push({
-        provider: 'gemini',
-        model: modelName,
-        run: async () => {
-          const model = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: {
-              responseMimeType: 'application/json',
-              maxOutputTokens: 6000,
-            },
-          });
-          const result = await model.generateContent([
-            SYSTEM_PROMPT,
-            userPrompt,
-            { inlineData: { mimeType, data: base64 } },
-          ]);
-          return result.response.text();
-        },
-      });
-    }
-  }
-
   return attempts;
 }
 
@@ -187,7 +240,7 @@ export async function POST(req) {
     const attempts = buildAttempts({ base64, mimeType: imageFile.type, userPrompt });
 
     if (attempts.length === 0) {
-      console.error('[math-checker] No AI provider configured (OPENAI_API_KEY / GEMINI_API_KEY missing)');
+      console.error('[math-checker] No AI provider configured (CLOUDFLARE_API_TOKEN / GEMINI_API_KEY / OPENAI_API_KEY all missing)');
       return NextResponse.json({ error: 'Math checker is temporarily unavailable.' }, { status: 503 });
     }
 
