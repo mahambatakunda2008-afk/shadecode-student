@@ -18,8 +18,8 @@ export default function PastPapersPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [board, setBoard] = useState<string | null>(null);
-  const [syllabusId, setSyllabusId] = useState<string | null>(null);
   const [level, setLevel] = useState<string | null>(null);
+  const [syllabusId, setSyllabusId] = useState<string | null>(null);
   const [session, setSession] = useState<string | null>(null);
   const [year, setYear] = useState<number | null>(null);
 
@@ -73,29 +73,28 @@ export default function PastPapersPage() {
 
   function selectBoard(b: string) {
     setBoard(b);
-    setSyllabusId(null);
     setLevel(null);
+    setSyllabusId(null);
+    setSession(null);
+    setYear(null);
+    setPapers([]);
+  }
+
+  function selectLevel(lvl: string) {
+    setLevel(lvl);
+    setSyllabusId(null);
     setSession(null);
     setYear(null);
     setPapers([]);
   }
 
   function selectSyllabus(id: string) {
+    if (!level) return;
     setSyllabusId(id);
-    setLevel(null);
     setSession(null);
     setYear(null);
     setPapers([]);
-    loadFacets(id, null, null);
-  }
-
-  function selectLevel(lvl: string) {
-    if (!syllabusId) return;
-    setLevel(lvl);
-    setSession(null);
-    setYear(null);
-    setPapers([]);
-    loadFacets(syllabusId, lvl, null);
+    loadFacets(id, level, null);
   }
 
   function selectSession(sess: string) {
@@ -113,27 +112,26 @@ export default function PastPapersPage() {
   }
 
   function resetTo(crumbIndex: number) {
-    // crumbs: [0]="Past Papers" -> board step, [1]=board -> subject step,
-    // [2]=subject -> level step, [3]=level -> session step, [4]=session -> year step
+    // crumbs: [0]="Past Papers" -> board step, [1]=board -> level step,
+    // [2]=level -> subject step, [3]=subject -> session step, [4]=session -> year step
     if (crumbIndex <= 0) {
       setBoard(null);
-      setSyllabusId(null);
       setLevel(null);
+      setSyllabusId(null);
       setSession(null);
       setYear(null);
       setPapers([]);
     } else if (crumbIndex === 1) {
-      setSyllabusId(null);
       setLevel(null);
+      setSyllabusId(null);
       setSession(null);
       setYear(null);
       setPapers([]);
     } else if (crumbIndex === 2) {
-      setLevel(null);
+      setSyllabusId(null);
       setSession(null);
       setYear(null);
       setPapers([]);
-      if (syllabusId) loadFacets(syllabusId, null, null);
     } else if (crumbIndex === 3) {
       setSession(null);
       setYear(null);
@@ -146,7 +144,11 @@ export default function PastPapersPage() {
   }
 
   const boards = [...new Set(syllabi.map((s) => s.board))].sort();
-  const subjectsForBoard = board ? syllabi.filter((s) => s.board === board) : [];
+  const levelsForBoard = board
+    ? [...new Set(syllabi.filter((s) => s.board === board).flatMap((s) => s.levels))].sort()
+    : [];
+  const subjectsForLevel =
+    board && level ? syllabi.filter((s) => s.board === board && s.levels.includes(level)) : [];
   const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
 
   return (
@@ -154,8 +156,8 @@ export default function PastPapersPage() {
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <Breadcrumb
           board={board}
-          subject={selectedSyllabus?.subject ?? null}
           level={level}
+          subject={selectedSyllabus?.subject ?? null}
           session={session}
           year={year}
           onReset={resetTo}
@@ -190,29 +192,14 @@ export default function PastPapersPage() {
           </Step>
         )}
 
-        {/* Step 1: Subject */}
-        {board && !syllabusId && (
-          <Step title="Choose a subject" loading={loadingSyllabi}>
-            {subjectsForBoard.length === 0 && !loadingSyllabi ? (
-              <EmptyState message="No subjects available yet for this board. Check back soon." />
+        {/* Step 1: Level */}
+        {board && !level && (
+          <Step title="Choose a level" loading={loadingSyllabi}>
+            {levelsForBoard.length === 0 && !loadingSyllabi ? (
+              <EmptyState message="No levels available yet for this board. Check back soon." />
             ) : (
               <Grid>
-                {subjectsForBoard.map((s) => (
-                  <OptionCard key={s.id} label={s.subject} sub={s.levels.join(" / ")} onClick={() => selectSyllabus(s.id)} />
-                ))}
-              </Grid>
-            )}
-          </Step>
-        )}
-
-        {/* Step 2: Level */}
-        {syllabusId && !level && (
-          <Step title="Choose a level" loading={loadingFacets}>
-            {facets && facets.levels.length === 0 && !loadingFacets ? (
-              <EmptyState message="No papers uploaded for this subject yet." />
-            ) : (
-              <Grid>
-                {facets?.levels.map((lvl) => (
+                {levelsForBoard.map((lvl) => (
                   <OptionCard key={lvl} label={lvl} onClick={() => selectLevel(lvl)} />
                 ))}
               </Grid>
@@ -220,19 +207,38 @@ export default function PastPapersPage() {
           </Step>
         )}
 
+        {/* Step 2: Subject */}
+        {board && level && !syllabusId && (
+          <Step title="Choose a subject" loading={loadingSyllabi}>
+            {subjectsForLevel.length === 0 && !loadingSyllabi ? (
+              <EmptyState message="No subjects available yet for this level. Check back soon." />
+            ) : (
+              <Grid>
+                {subjectsForLevel.map((s) => (
+                  <OptionCard key={s.id} label={s.subject} onClick={() => selectSyllabus(s.id)} />
+                ))}
+              </Grid>
+            )}
+          </Step>
+        )}
+
         {/* Step 3: Session */}
-        {syllabusId && level && !session && (
+        {syllabusId && !session && (
           <Step title="Choose a session" loading={loadingFacets}>
-            <Grid>
-              {facets?.sessions.map((sess) => (
-                <OptionCard key={sess} label={sess} onClick={() => selectSession(sess)} />
-              ))}
-            </Grid>
+            {facets && facets.sessions.length === 0 && !loadingFacets ? (
+              <EmptyState message="No papers uploaded for this subject yet." />
+            ) : (
+              <Grid>
+                {facets?.sessions.map((sess) => (
+                  <OptionCard key={sess} label={sess} onClick={() => selectSession(sess)} />
+                ))}
+              </Grid>
+            )}
           </Step>
         )}
 
         {/* Step 4: Year */}
-        {syllabusId && level && session && !year && (
+        {syllabusId && session && !year && (
           <Step title="Choose a year" loading={loadingFacets}>
             <Grid>
               {facets?.years.map((yr) => (
@@ -243,7 +249,7 @@ export default function PastPapersPage() {
         )}
 
         {/* Step 5: Papers */}
-        {syllabusId && level && session && year && (
+        {syllabusId && session && year && (
           <Step title={`${session} ${year} papers`} loading={loadingPapers}>
             {papers.length === 0 && !loadingPapers ? (
               <EmptyState message="No papers uploaded for this session yet." />
@@ -261,20 +267,20 @@ export default function PastPapersPage() {
 
 function Breadcrumb({
   board,
-  subject,
   level,
+  subject,
   session,
   year,
   onReset,
 }: {
   board: string | null;
-  subject: string | null;
   level: string | null;
+  subject: string | null;
   session: string | null;
   year: number | null;
   onReset: (toIndex: number) => void;
 }) {
-  const crumbs = ["Past Papers", board, subject, level, session, year ? String(year) : null].filter(
+  const crumbs = ["Past Papers", board, level, subject, session, year ? String(year) : null].filter(
     Boolean
   ) as string[];
 
