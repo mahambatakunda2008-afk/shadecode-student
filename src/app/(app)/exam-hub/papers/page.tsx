@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronRight, FileText, Bookmark, BookmarkCheck, CheckCircle2 } from "lucide-react";
+import { ChevronRight, FileText, Bookmark, BookmarkCheck, CheckCircle2, Search, X } from "lucide-react";
 import type { PastPaperWithState, Syllabus, PaperKind } from "@/lib/exam-hub/types";
 import { PAPER_KIND_LABELS } from "@/lib/exam-hub/types";
 
@@ -16,6 +16,33 @@ export default function PastPapersPage() {
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [loadingSyllabi, setLoadingSyllabi] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [searchInput, setSearchInput] = useState("");
+  const [searchResults, setSearchResults] = useState<PastPaperWithState[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function runSearch(query: string) {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setSearching(true);
+      fetch(`/api/exam-hub/search?q=${encodeURIComponent(query)}`)
+        .then((res) => res.json())
+        .then((data) => setSearchResults(data.papers ?? []))
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearching(false));
+    }, 350); // debounced — avoids firing a request on every keystroke
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setSearchResults(null);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+  }
 
   const [board, setBoard] = useState<string | null>(null);
   const [level, setLevel] = useState<string | null>(null);
@@ -154,14 +181,49 @@ export default function PastPapersPage() {
   return (
     <div style={{ minHeight: "100vh", padding: 24 }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <Breadcrumb
-          board={board}
-          level={level}
-          subject={selectedSyllabus?.subject ?? null}
-          session={session}
-          year={year}
-          onReset={resetTo}
-        />
+        <div style={{ position: "relative", marginBottom: 20 }}>
+          <Search size={16} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
+          <input
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              runSearch(e.target.value);
+            }}
+            placeholder='Try "Physics May June 2024 Paper 42"'
+            style={{
+              width: "100%", padding: "12px 40px", borderRadius: 12,
+              background: "var(--surface-2)", border: "1px solid var(--card-border)",
+              color: "var(--foreground)", fontSize: 14,
+            }}
+          />
+          {searchInput && (
+            <button
+              onClick={clearSearch}
+              style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", display: "flex" }}
+            >
+              <X size={16} color="var(--muted-foreground)" />
+            </button>
+          )}
+        </div>
+
+        {searchResults !== null ? (
+          <Step title={searching ? "Searching..." : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`} loading={searching}>
+            {searchResults.length === 0 && !searching ? (
+              <EmptyState message="No matching papers. Try fewer or different words." />
+            ) : (
+              <PapersList papers={searchResults} />
+            )}
+          </Step>
+        ) : (
+          <>
+            <Breadcrumb
+              board={board}
+              level={level}
+              subject={selectedSyllabus?.subject ?? null}
+              session={session}
+              year={year}
+              onReset={resetTo}
+            />
 
         {error && (
           <div
@@ -257,6 +319,8 @@ export default function PastPapersPage() {
               <PapersList papers={papers} />
             )}
           </Step>
+        )}
+          </>
         )}
       </div>
     </div>
