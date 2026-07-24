@@ -14,9 +14,9 @@ DECLARE
   new_level INTEGER;
 BEGIN
   -- Get current user stats
-  SELECT xp, level, streak INTO current_xp, current_level, current_streak
-  FROM public.profiles
-  WHERE id = user_id;
+  SELECT p.xp, p.level, p.streak INTO current_xp, current_level, current_streak
+  FROM public.profiles p
+  WHERE p.id = user_id;
   
   -- Handle case where profile doesn't exist
   IF current_xp IS NULL THEN
@@ -31,12 +31,17 @@ BEGIN
   -- Calculate new level (level = floor(xp / 100) + 1)
   new_level := FLOOR(new_xp / 100) + 1;
   
-  -- Update profile
+  -- Update profile. NOTE: profiles has no updated_at column in production
+  -- (confirmed via information_schema before this function was applied) --
+  -- the original version of this migration set updated_at = NOW() here,
+  -- which is exactly why this function was never actually created: it was
+  -- written for a profiles schema that didn't match what's deployed, so
+  -- applying it as-is would have failed at CREATE FUNCTION time (or at
+  -- call time, depending on how it was run) and silently never landed.
   UPDATE public.profiles
   SET 
     xp = new_xp,
-    level = new_level,
-    updated_at = NOW()
+    level = new_level
   WHERE id = user_id;
   
   -- Return updated values
