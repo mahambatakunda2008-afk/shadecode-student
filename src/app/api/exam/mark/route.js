@@ -6,6 +6,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { callAI } from "@/lib/ai";
+import { repairAndParseJSON } from "@/lib/ai/parseJson";
 
 // AI marking can call multiple provider fallbacks sequentially at up to
 // 3000 tokens each; the default serverless timeout was killing this mid
@@ -128,32 +129,50 @@ ${qaText}
     `;
 
     /* ─────────────────────────────
-       CALL AI
+       CALL AI (with one retry if the response comes back malformed —
+       losing a student's completed exam attempt to a single bad JSON
+       token from the model is worse than one extra AI call)
     ───────────────────────────── */
 
-    const text = await callAI(prompt, 3000, { userId, feature: "exam_sim", subfeature: "mark_exam" });
-
-    if (!text) {
-      return NextResponse.json(
-        { error: "All AI models unavailable" },
-        { status: 503 }
+    function isMarkingShape(value) {
+      return (
+        value &&
+        typeof value === "object" &&
+        Array.isArray(value.results)
       );
     }
 
-    /* ─────────────────────────────
-       SAFE JSON PARSE
-    ───────────────────────────── */
+    let markingData = null;
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    for (let attempt = 1; attempt <= 2 && !markingData; attempt++) {
+      const text = await callAI(prompt, 3000, { userId, feature: "exam_sim", subfeature: "mark_exam" });
 
-    if (!jsonMatch) {
+      if (!text) {
+        if (attempt === 2) {
+          return NextResponse.json(
+            { error: "All AI models unavailable" },
+            { status: 503 }
+          );
+        }
+        continue;
+      }
+
+      markingData = repairAndParseJSON(text, isMarkingShape);
+
+      if (!markingData) {
+        console.error(
+          `[exam/mark] JSON parse/repair failed on attempt ${attempt}. Raw excerpt:`,
+          text.slice(0, 300)
+        );
+      }
+    }
+
+    if (!markingData) {
       return NextResponse.json(
-        { error: "Invalid AI response format" },
+        { error: "Marking failed after retry — please try submitting again." },
         { status: 500 }
       );
     }
-
-    const markingData = JSON.parse(jsonMatch[0]);
 
     /* ─────────────────────────────
        SCORE CALCULATION
