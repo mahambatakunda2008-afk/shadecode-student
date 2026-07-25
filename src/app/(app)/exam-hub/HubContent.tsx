@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud } from "lucide-react";
+import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users } from "lucide-react";
 
 interface HubCard {
   href: string;
@@ -45,9 +45,8 @@ const CARDS: HubCard[] = [
     href: "/exam-hub/weak-topics",
     icon: Target,
     title: "Weak Topics",
-    description: "Topics to focus on before your next exam.",
+    description: "Topics to focus on based on your completed papers.",
     accent: "var(--danger)",
-    comingSoon: true,
   },
   {
     href: "/exam-hub/recommendations",
@@ -56,6 +55,13 @@ const CARDS: HubCard[] = [
     description: "Papers picked for you based on your recent performance.",
     accent: "var(--accent)",
     comingSoon: true,
+  },
+  {
+    href: "/exam-hub/contribute",
+    icon: Users,
+    title: "Contribute a Paper",
+    description: "Share a paper others are missing and earn XP once approved.",
+    accent: "var(--warning)",
   },
 ];
 

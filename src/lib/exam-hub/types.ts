@@ -57,6 +57,33 @@ export interface UserSavedQuestion {
   created_at: string;
 }
 
+export type QuestionDifficulty = "easy" | "medium" | "hard";
+
+/** A single indexed question within a paper. Populated gradually — a
+ * paper works with zero indexed questions. */
+export interface ExamQuestion {
+  id: string;
+  paper_id: string;
+  question_number: string; // "1", "2a", "2(b)(i)" — not purely numeric
+  page_number: number | null;
+  topic_id: string | null; // matches CurriculumTopic.id
+  subtopic: string | null;
+  difficulty: QuestionDifficulty | null;
+  marks: number | null;
+  question_text: string | null;
+  created_at: string;
+}
+
+export interface UserQuestionAttempt {
+  id: string;
+  user_id: string;
+  question_id: string;
+  correct: boolean | null;
+  score: number | null;
+  time_spent_seconds: number | null;
+  attempted_at: string;
+}
+
 /** A paper joined with the requesting user's own state, if any. */
 export interface PastPaperWithState extends PastPaper {
   state: UserPastPaperState | null;

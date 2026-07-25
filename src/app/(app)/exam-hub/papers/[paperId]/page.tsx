@@ -68,7 +68,19 @@ export default function PaperViewerPage() {
   }
 
   function markComplete() {
-    patchState({ status: "completed" });
+    const input = window.prompt("Score out of 100 (optional, helps track your weak/strong topics):");
+    if (input === null) return; // cancelled
+    const trimmed = input.trim();
+    if (trimmed === "") {
+      patchState({ status: "completed" });
+      return;
+    }
+    const score = Number(trimmed);
+    if (!Number.isFinite(score) || score < 0 || score > 100) {
+      window.alert("Enter a number between 0 and 100, or leave blank to skip.");
+      return;
+    }
+    patchState({ status: "completed", score });
   }
 
   function handleDownload() {

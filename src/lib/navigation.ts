@@ -15,6 +15,7 @@ import {
   GraduationCap,
   FileText,
   UploadCloud,
+  ClipboardCheck,
 } from "lucide-react";
 
 export interface NavItem {
@@ -48,6 +49,7 @@ export const NAV_ITEMS = {
   achievements: { href: "/achievements", label: "Achievements", icon: Award },
   settings: { href: "/settings", label: "Settings", icon: Settings },
   adminUpload: { href: "/admin/exam-hub/upload", label: "Upload Papers", icon: UploadCloud },
+  adminModeration: { href: "/admin/exam-hub/moderation", label: "Moderation", icon: ClipboardCheck },
 };
 
 // Nav shown to admin accounts instead of the full student nav — per product
@@ -56,7 +58,7 @@ export const NAV_ITEMS = {
 export const ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     group: "Admin",
-    items: [NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.settings],
+    items: [NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminModeration, NAV_ITEMS.settings],
   },
 ];
 
