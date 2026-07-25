@@ -15,6 +15,9 @@ export default function PaperViewerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showScoreModal, setShowScoreModal] = useState(false);
+  const [scoreInput, setScoreInput] = useState("");
+  const [scoreError, setScoreError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -67,19 +70,29 @@ export default function PaperViewerPage() {
     patchState({ bookmarked: !paper.state?.bookmarked });
   }
 
-  function markComplete() {
-    const input = window.prompt("Score out of 100 (optional, helps track your weak/strong topics):");
-    if (input === null) return; // cancelled
-    const trimmed = input.trim();
+  function openScoreModal() {
+    setScoreInput("");
+    setScoreError(null);
+    setShowScoreModal(true);
+  }
+
+  function skipScore() {
+    setShowScoreModal(false);
+    patchState({ status: "completed" });
+  }
+
+  function submitScore() {
+    const trimmed = scoreInput.trim();
     if (trimmed === "") {
-      patchState({ status: "completed" });
+      skipScore();
       return;
     }
     const score = Number(trimmed);
     if (!Number.isFinite(score) || score < 0 || score > 100) {
-      window.alert("Enter a number between 0 and 100, or leave blank to skip.");
+      setScoreError("Enter a number between 0 and 100.");
       return;
     }
+    setShowScoreModal(false);
     patchState({ status: "completed", score });
   }
 
@@ -151,10 +164,10 @@ export default function PaperViewerPage() {
             <ActionButton
               icon={CheckCircle2}
               label={paper.state?.status === "completed" ? "Completed" : "Mark complete"}
-              onClick={markComplete}
+              onClick={paper.state?.status === "completed" ? () => {} : openScoreModal}
               active={paper.state?.status === "completed"}
               accent="var(--accent)"
-              disabled={saving}
+              disabled={saving || paper.state?.status === "completed"}
             />
             <a href={signedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
               <ActionButton icon={Maximize2} label="Full screen" onClick={() => {}} accent="var(--primary)" />
@@ -177,6 +190,74 @@ export default function PaperViewerPage() {
           <iframe src={signedUrl} title="Past paper" style={{ width: "100%", height: "100%", border: "none" }} />
         </div>
       </div>
+
+      {showScoreModal && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowScoreModal(false); }}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          }}
+        >
+          <div
+            style={{
+              width: "100%", maxWidth: 380, borderRadius: 18, padding: 24,
+              background: "var(--surface)", border: "1px solid var(--card-border)",
+              boxShadow: "var(--shadow-lg, 0 20px 40px rgba(0,0,0,0.3))",
+            }}
+          >
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", margin: "0 0 6px" }}>
+              How did it go?
+            </h2>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 18px" }}>
+              Add your score to track weak and strong topics — or skip it.
+            </p>
+
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={100}
+              autoFocus
+              value={scoreInput}
+              onChange={(e) => { setScoreInput(e.target.value); setScoreError(null); }}
+              onKeyDown={(e) => { if (e.key === "Enter") submitScore(); }}
+              placeholder="Score out of 100"
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 12, marginBottom: scoreError ? 8 : 18,
+                background: "var(--surface-2)", border: `1px solid ${scoreError ? "var(--danger)" : "var(--card-border)"}`,
+                color: "var(--foreground)", fontSize: 15, boxSizing: "border-box",
+              }}
+            />
+            {scoreError && (
+              <p style={{ fontSize: 12, color: "var(--danger)", margin: "0 0 14px" }}>{scoreError}</p>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={skipScore}
+                style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--surface-2)",
+                  border: "1px solid var(--card-border)", color: "var(--foreground)",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Skip
+              </button>
+              <button
+                onClick={submitScore}
+                style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--primary)",
+                  border: "none", color: "var(--primary-foreground)",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
