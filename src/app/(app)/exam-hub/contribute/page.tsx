@@ -141,7 +141,7 @@ export default function ContributePage() {
         </div>
         <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 24 }}>
           Have a paper, mark scheme, or examiner report others are missing? Submit it — every
-          approved contribution earns you XP. Nothing goes public until it's reviewed.
+          approved contribution earns you XP. Nothing goes public until it&apos;s reviewed.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 36 }}>
