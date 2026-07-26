@@ -9,9 +9,6 @@ const nextConfig = withPWA({
   turbopack: {
     root: process.cwd(),
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // Optimize for modern browsers including Edge
   experimental: {
     optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
