@@ -5,11 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, UploadCloud, Clock, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { SESSIONS_BY_BOARD, type Syllabus } from "@/lib/exam-hub/types";
 
-const LEVELS_BY_BOARD: Record<string, string[]> = {
-  CAIE: ["IGCSE", "AS Level", "A Level"],
-  ZIMSEC: ["O-Level", "A-Level"],
-};
-
 const UPLOAD_TYPES = [
   { value: "paper", label: "Question Paper" },
   { value: "mark_scheme", label: "Mark Scheme" },
@@ -46,7 +41,7 @@ export default function ContributePage() {
 
   const [board, setBoard] = useState("CAIE");
   const [syllabusId, setSyllabusId] = useState("");
-  const [level, setLevel] = useState(LEVELS_BY_BOARD.CAIE[0]);
+  const [level, setLevel] = useState("");
   const [session, setSession] = useState(SESSIONS_BY_BOARD.CAIE[0]);
   const [year, setYear] = useState(new Date().getFullYear());
   const [paperNumber, setPaperNumber] = useState(1);
@@ -72,20 +67,31 @@ export default function ContributePage() {
         const list: Syllabus[] = data.syllabi ?? [];
         setSyllabi(list);
         const first = list.find((s) => s.board === "CAIE");
-        if (first) setSyllabusId(first.id);
+        if (first) {
+          setSyllabusId(first.id);
+          setLevel(first.levels[0] ?? "");
+        }
       });
     loadSubmissions();
   }, [loadSubmissions]);
 
   const boards = [...new Set(syllabi.map((s) => s.board))].sort();
   const subjectsForBoard = syllabi.filter((s) => s.board === board);
+  const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
+  const levelOptions = selectedSyllabus?.levels ?? [];
 
   function handleBoardChange(b: string) {
     setBoard(b);
-    setLevel(LEVELS_BY_BOARD[b]?.[0] ?? "");
     setSession(SESSIONS_BY_BOARD[b]?.[0] ?? "");
     const first = syllabi.find((s) => s.board === b);
     setSyllabusId(first?.id ?? "");
+    setLevel(first?.levels[0] ?? "");
+  }
+
+  function handleSyllabusChange(id: string) {
+    setSyllabusId(id);
+    const next = syllabi.find((s) => s.id === id);
+    setLevel(next?.levels[0] ?? "");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -160,7 +166,7 @@ export default function ContributePage() {
               </select>
             </Field>
             <Field label="Subject">
-              <select value={syllabusId} onChange={(e) => setSyllabusId(e.target.value)} style={selectStyle}>
+              <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle}>
                 {subjectsForBoard.map((s) => <option key={s.id} value={s.id}>{s.subject}</option>)}
               </select>
             </Field>
@@ -169,7 +175,7 @@ export default function ContributePage() {
           <Row>
             <Field label="Level">
               <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle}>
-                {(LEVELS_BY_BOARD[board] ?? []).map((l) => <option key={l} value={l}>{l}</option>)}
+                {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </Field>
             <Field label="Session">
