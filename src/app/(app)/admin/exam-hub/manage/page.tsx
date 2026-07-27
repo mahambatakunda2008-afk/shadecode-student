@@ -128,9 +128,7 @@ export default function ManagePapersPage() {
                   {isEditing ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-end" }}>
                       <MiniField label="Level">
-                        <select value={draft.level ?? ""} onChange={(e) => setDraft({ ...draft, level: e.target.value })} style={miniInput}>
-                          {(p.syllabi?.levels ?? [p.level]).map((l) => <option key={l} value={l}>{l}</option>)}
-                        </select>
+                        <input value={draft.level ?? ""} onChange={(e) => setDraft({ ...draft, level: e.target.value })} style={{ ...miniInput, width: 130 }} />
                       </MiniField>
                       <MiniField label="Session">
                         <input value={draft.session ?? ""} onChange={(e) => setDraft({ ...draft, session: e.target.value })} style={{ ...miniInput, width: 100 }} />
