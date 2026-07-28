@@ -16,18 +16,21 @@ const KINDS: { value: string; label: string }[] = [
 ];
 
 export default function UploadForm({ syllabi }: Props) {
-  const [syllabusId, setSyllabusId] = useState(syllabi[0]?.id ?? "");
+  // Nothing pre-selected — a silently-defaulted subject/level/session is
+  // exactly how papers end up mistagged. Every field starts blank and the
+  // admin has to explicitly choose each one.
+  const [syllabusId, setSyllabusId] = useState("");
   const selectedSyllabus = useMemo(() => syllabi.find((s) => s.id === syllabusId), [syllabi, syllabusId]);
 
   const levelOptions = selectedSyllabus?.levels ?? [];
   const sessionOptions = selectedSyllabus ? SESSIONS_BY_BOARD[selectedSyllabus.board] ?? [] : [];
 
-  const [level, setLevel] = useState(levelOptions[0] ?? "");
-  const [session, setSession] = useState(sessionOptions[0] ?? "");
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [paperNumber, setPaperNumber] = useState(1);
-  const [variant, setVariant] = useState(1);
-  const [kind, setKind] = useState("qp");
+  const [level, setLevel] = useState("");
+  const [session, setSession] = useState("");
+  const [year, setYear] = useState("");
+  const [paperNumber, setPaperNumber] = useState("");
+  const [variant, setVariant] = useState("");
+  const [kind, setKind] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -35,15 +38,27 @@ export default function UploadForm({ syllabi }: Props) {
 
   function handleSyllabusChange(newId: string) {
     setSyllabusId(newId);
-    const next = syllabi.find((s) => s.id === newId);
-    setLevel(next?.levels[0] ?? "");
-    setSession(next ? SESSIONS_BY_BOARD[next.board]?.[0] ?? "" : "");
+    // Changing subject invalidates whatever level/session was picked for
+    // the previous one — force re-selection rather than silently carrying
+    // over a value that might not even apply to the new subject/board.
+    setLevel("");
+    setSession("");
   }
+
+  const isComplete =
+    syllabusId !== "" &&
+    level !== "" &&
+    session !== "" &&
+    year.trim() !== "" &&
+    paperNumber.trim() !== "" &&
+    variant.trim() !== "" &&
+    kind !== "" &&
+    file !== null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) {
-      setResult({ ok: false, message: "Choose a PDF file first." });
+    if (!isComplete || !file) {
+      setResult({ ok: false, message: "Fill in every field before uploading." });
       return;
     }
 
@@ -55,9 +70,9 @@ export default function UploadForm({ syllabi }: Props) {
     formData.append("syllabusId", syllabusId);
     formData.append("level", level);
     formData.append("session", session);
-    formData.append("year", String(year));
-    formData.append("paperNumber", String(paperNumber));
-    formData.append("variant", String(variant));
+    formData.append("year", year);
+    formData.append("paperNumber", paperNumber);
+    formData.append("variant", variant);
     formData.append("kind", kind);
 
     try {
@@ -65,6 +80,13 @@ export default function UploadForm({ syllabi }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
       setResult({ ok: true, message: `Uploaded: Paper ${paperNumber}/${variant} (${kind.toUpperCase()})` });
+      setSyllabusId("");
+      setLevel("");
+      setSession("");
+      setYear("");
+      setPaperNumber("");
+      setVariant("");
+      setKind("");
       setFile(null);
     } catch (err) {
       setResult({ ok: false, message: err instanceof Error ? err.message : "Upload failed" });
@@ -95,6 +117,7 @@ export default function UploadForm({ syllabi }: Props) {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Field label="Subject / Syllabus">
             <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle}>
+              <option value="" disabled>Select a subject…</option>
               {[...new Set(syllabi.map((s) => s.board))].map((board) => (
                 <optgroup key={board} label={board}>
                   {syllabi
@@ -111,14 +134,16 @@ export default function UploadForm({ syllabi }: Props) {
 
           <Row>
             <Field label="Level">
-              <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle}>
+              <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle} disabled={!selectedSyllabus}>
+                <option value="" disabled>{selectedSyllabus ? "Select a level…" : "Pick a subject first"}</option>
                 {levelOptions.map((l) => (
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
             </Field>
             <Field label="Session">
-              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle}>
+              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!selectedSyllabus}>
+                <option value="" disabled>{selectedSyllabus ? "Select a session…" : "Pick a subject first"}</option>
                 {sessionOptions.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -128,18 +153,19 @@ export default function UploadForm({ syllabi }: Props) {
 
           <Row>
             <Field label="Year">
-              <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} style={inputStyle} />
+              <input type="number" placeholder="e.g. 2025" value={year} onChange={(e) => setYear(e.target.value)} style={inputStyle} />
             </Field>
             <Field label="Paper #">
-              <input type="number" min={1} value={paperNumber} onChange={(e) => setPaperNumber(Number(e.target.value))} style={inputStyle} />
+              <input type="number" min={1} placeholder="e.g. 2" value={paperNumber} onChange={(e) => setPaperNumber(e.target.value)} style={inputStyle} />
             </Field>
             <Field label="Variant">
-              <input type="number" min={1} value={variant} onChange={(e) => setVariant(Number(e.target.value))} style={inputStyle} />
+              <input type="number" min={1} placeholder="e.g. 1" value={variant} onChange={(e) => setVariant(e.target.value)} style={inputStyle} />
             </Field>
           </Row>
 
           <Field label="Document type">
             <select value={kind} onChange={(e) => setKind(e.target.value)} style={selectStyle}>
+              <option value="" disabled>Select a document type…</option>
               {KINDS.map((k) => (
                 <option key={k.value} value={k.value}>{k.label}</option>
               ))}
@@ -175,7 +201,7 @@ export default function UploadForm({ syllabi }: Props) {
 
           <button
             type="submit"
-            disabled={submitting || syllabi.length === 0}
+            disabled={submitting || !isComplete}
             style={{
               padding: "12px 20px",
               borderRadius: 12,
@@ -184,8 +210,8 @@ export default function UploadForm({ syllabi }: Props) {
               fontSize: 14,
               fontWeight: 600,
               border: "none",
-              cursor: submitting ? "default" : "pointer",
-              opacity: submitting ? 0.7 : 1,
+              cursor: submitting || !isComplete ? "default" : "pointer",
+              opacity: submitting || !isComplete ? 0.5 : 1,
             }}
           >
             {submitting ? "Uploading..." : "Upload"}
