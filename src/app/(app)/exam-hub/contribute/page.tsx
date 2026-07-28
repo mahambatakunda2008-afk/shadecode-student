@@ -39,14 +39,17 @@ export default function ContributePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
 
-  const [board, setBoard] = useState("CAIE");
+  // Nothing pre-selected — same reasoning as the admin upload form: a
+  // silently-defaulted subject/level/session is how papers end up
+  // mistagged. Every field starts blank and the student picks each one.
+  const [board, setBoard] = useState("");
   const [syllabusId, setSyllabusId] = useState("");
   const [level, setLevel] = useState("");
-  const [session, setSession] = useState(SESSIONS_BY_BOARD.CAIE[0]);
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [paperNumber, setPaperNumber] = useState(1);
-  const [variant, setVariant] = useState(1);
-  const [uploadType, setUploadType] = useState("paper");
+  const [session, setSession] = useState("");
+  const [year, setYear] = useState("");
+  const [paperNumber, setPaperNumber] = useState("");
+  const [variant, setVariant] = useState("");
+  const [uploadType, setUploadType] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -63,41 +66,43 @@ export default function ContributePage() {
   useEffect(() => {
     fetch("/api/exam-hub/syllabi")
       .then((res) => res.json())
-      .then((data) => {
-        const list: Syllabus[] = data.syllabi ?? [];
-        setSyllabi(list);
-        const first = list.find((s) => s.board === "CAIE");
-        if (first) {
-          setSyllabusId(first.id);
-          setLevel(first.levels[0] ?? "");
-        }
-      });
+      .then((data) => setSyllabi(data.syllabi ?? []));
     loadSubmissions();
   }, [loadSubmissions]);
 
   const boards = [...new Set(syllabi.map((s) => s.board))].sort();
-  const subjectsForBoard = syllabi.filter((s) => s.board === board);
+  const subjectsForBoard = board ? syllabi.filter((s) => s.board === board) : [];
   const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
   const levelOptions = selectedSyllabus?.levels ?? [];
+  const sessionOptions = board ? SESSIONS_BY_BOARD[board] ?? [] : [];
 
   function handleBoardChange(b: string) {
     setBoard(b);
-    setSession(SESSIONS_BY_BOARD[b]?.[0] ?? "");
-    const first = syllabi.find((s) => s.board === b);
-    setSyllabusId(first?.id ?? "");
-    setLevel(first?.levels[0] ?? "");
+    setSyllabusId("");
+    setLevel("");
+    setSession("");
   }
 
   function handleSyllabusChange(id: string) {
     setSyllabusId(id);
-    const next = syllabi.find((s) => s.id === id);
-    setLevel(next?.levels[0] ?? "");
+    setLevel("");
   }
+
+  const isComplete =
+    uploadType !== "" &&
+    board !== "" &&
+    syllabusId !== "" &&
+    level !== "" &&
+    session !== "" &&
+    year.trim() !== "" &&
+    paperNumber.trim() !== "" &&
+    variant.trim() !== "" &&
+    file !== null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) {
-      setResult({ ok: false, message: "Choose a PDF file first." });
+    if (!isComplete || !file) {
+      setResult({ ok: false, message: "Fill in every field before submitting." });
       return;
     }
 
@@ -110,9 +115,9 @@ export default function ContributePage() {
     formData.append("syllabusId", syllabusId);
     formData.append("level", level);
     formData.append("session", session);
-    formData.append("year", String(year));
-    formData.append("paperNumber", String(paperNumber));
-    formData.append("variant", String(variant));
+    formData.append("year", year);
+    formData.append("paperNumber", paperNumber);
+    formData.append("variant", variant);
     formData.append("kind", KIND_BY_UPLOAD_TYPE[uploadType] ?? "qp");
 
     try {
@@ -120,6 +125,14 @@ export default function ContributePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Submission failed");
       setResult({ ok: true, message: "Submitted for review. You'll earn XP once it's approved." });
+      setBoard("");
+      setSyllabusId("");
+      setLevel("");
+      setSession("");
+      setYear("");
+      setPaperNumber("");
+      setVariant("");
+      setUploadType("");
       setFile(null);
       loadSubmissions();
     } catch (err) {
@@ -153,6 +166,7 @@ export default function ContributePage() {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 36 }}>
           <Field label="What are you contributing?">
             <select value={uploadType} onChange={(e) => setUploadType(e.target.value)} style={selectStyle}>
+              <option value="" disabled>Select…</option>
               {UPLOAD_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
@@ -162,11 +176,13 @@ export default function ContributePage() {
           <Row>
             <Field label="Board">
               <select value={board} onChange={(e) => handleBoardChange(e.target.value)} style={selectStyle}>
+                <option value="" disabled>Select a board…</option>
                 {boards.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </Field>
             <Field label="Subject">
-              <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle}>
+              <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle} disabled={!board}>
+                <option value="" disabled>{board ? "Select a subject…" : "Pick a board first"}</option>
                 {subjectsForBoard.map((s) => <option key={s.id} value={s.id}>{s.subject}</option>)}
               </select>
             </Field>
@@ -174,26 +190,28 @@ export default function ContributePage() {
 
           <Row>
             <Field label="Level">
-              <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle}>
+              <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle} disabled={!selectedSyllabus}>
+                <option value="" disabled>{selectedSyllabus ? "Select a level…" : "Pick a subject first"}</option>
                 {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </Field>
             <Field label="Session">
-              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle}>
-                {(SESSIONS_BY_BOARD[board] ?? []).map((s) => <option key={s} value={s}>{s}</option>)}
+              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!board}>
+                <option value="" disabled>{board ? "Select a session…" : "Pick a board first"}</option>
+                {sessionOptions.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
           </Row>
 
           <Row>
             <Field label="Year">
-              <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} style={selectStyle} />
+              <input type="number" placeholder="e.g. 2025" value={year} onChange={(e) => setYear(e.target.value)} style={selectStyle} />
             </Field>
             <Field label="Paper #">
-              <input type="number" min={1} value={paperNumber} onChange={(e) => setPaperNumber(Number(e.target.value))} style={selectStyle} />
+              <input type="number" min={1} placeholder="e.g. 2" value={paperNumber} onChange={(e) => setPaperNumber(e.target.value)} style={selectStyle} />
             </Field>
             <Field label="Variant">
-              <input type="number" min={1} value={variant} onChange={(e) => setVariant(Number(e.target.value))} style={selectStyle} />
+              <input type="number" min={1} placeholder="e.g. 1" value={variant} onChange={(e) => setVariant(e.target.value)} style={selectStyle} />
             </Field>
           </Row>
 
@@ -214,10 +232,10 @@ export default function ContributePage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !isComplete}
             style={{
               padding: "12px 20px", borderRadius: 12, background: "var(--primary)", color: "var(--primary-foreground)",
-              fontSize: 14, fontWeight: 600, border: "none", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1,
+              fontSize: 14, fontWeight: 600, border: "none", cursor: submitting || !isComplete ? "default" : "pointer", opacity: submitting || !isComplete ? 0.5 : 1,
             }}
           >
             {submitting ? "Submitting..." : "Submit for review"}
