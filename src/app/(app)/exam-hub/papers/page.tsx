@@ -57,7 +57,7 @@ export default function PastPapersPage() {
   const [loadingPapers, setLoadingPapers] = useState(false);
 
   useEffect(() => {
-    fetch("/api/exam-hub/syllabi")
+    fetch("/api/exam-hub/syllabi?scope=browse")
       .then((res) => res.json())
       .then((data) => setSyllabi(data.syllabi ?? []))
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load subjects"))
