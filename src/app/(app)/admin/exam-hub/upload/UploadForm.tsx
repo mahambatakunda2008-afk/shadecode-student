@@ -17,15 +17,30 @@ const KINDS: { value: string; label: string }[] = [
 
 export default function UploadForm({ syllabi }: Props) {
   // Nothing pre-selected — a silently-defaulted subject/level/session is
-  // exactly how papers end up mistagged. Every field starts blank and the
-  // admin has to explicitly choose each one.
+  // exactly how papers end up mistagged. Every field starts blank.
+  //
+  // Order is Board -> Level -> Subject (not Board -> Subject -> Level).
+  // Many subjects exist twice under the same board with the *same name*
+  // but different levels (e.g. Physics is both an IGCSE syllabus and a
+  // separate AS/A Level syllabus) — picking level first means the subject
+  // dropdown is always scoped to one level, so the duplicate never shows
+  // up in the same list at all.
+  const [board, setBoard] = useState("");
+  const [level, setLevel] = useState("");
   const [syllabusId, setSyllabusId] = useState("");
   const selectedSyllabus = useMemo(() => syllabi.find((s) => s.id === syllabusId), [syllabi, syllabusId]);
 
-  const levelOptions = selectedSyllabus?.levels ?? [];
-  const sessionOptions = selectedSyllabus ? SESSIONS_BY_BOARD[selectedSyllabus.board] ?? [] : [];
+  const boards = useMemo(() => [...new Set(syllabi.map((s) => s.board))].sort(), [syllabi]);
+  const levelOptions = useMemo(
+    () => (board ? [...new Set(syllabi.filter((s) => s.board === board).flatMap((s) => s.levels))].sort() : []),
+    [syllabi, board]
+  );
+  const subjectOptions = useMemo(
+    () => (board && level ? syllabi.filter((s) => s.board === board && s.levels.includes(level)) : []),
+    [syllabi, board, level]
+  );
+  const sessionOptions = board ? SESSIONS_BY_BOARD[board] ?? [] : [];
 
-  const [level, setLevel] = useState("");
   const [session, setSession] = useState("");
   const [year, setYear] = useState("");
   const [paperNumber, setPaperNumber] = useState("");
@@ -36,13 +51,16 @@ export default function UploadForm({ syllabi }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  function handleSyllabusChange(newId: string) {
-    setSyllabusId(newId);
-    // Changing subject invalidates whatever level/session was picked for
-    // the previous one — force re-selection rather than silently carrying
-    // over a value that might not even apply to the new subject/board.
+  function handleBoardChange(b: string) {
+    setBoard(b);
     setLevel("");
+    setSyllabusId("");
     setSession("");
+  }
+
+  function handleLevelChange(l: string) {
+    setLevel(l);
+    setSyllabusId("");
   }
 
   const isComplete =
@@ -80,8 +98,9 @@ export default function UploadForm({ syllabi }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
       setResult({ ok: true, message: `Uploaded: Paper ${paperNumber}/${variant} (${kind.toUpperCase()})` });
-      setSyllabusId("");
+      setBoard("");
       setLevel("");
+      setSyllabusId("");
       setSession("");
       setYear("");
       setPaperNumber("");
@@ -115,38 +134,41 @@ export default function UploadForm({ syllabi }: Props) {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Field label="Subject / Syllabus">
-            <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle}>
-              <option value="" disabled>Select a subject…</option>
-              {[...new Set(syllabi.map((s) => s.board))].map((board) => (
-                <optgroup key={board} label={board}>
-                  {syllabi
-                    .filter((s) => s.board === board)
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.subject}
-                      </option>
-                    ))}
-                </optgroup>
+          <Row>
+            <Field label="Board">
+              <select value={board} onChange={(e) => handleBoardChange(e.target.value)} style={selectStyle}>
+                <option value="" disabled>Select a board…</option>
+                {boards.map((b) => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </Field>
+            <Field label="Level">
+              <select value={level} onChange={(e) => handleLevelChange(e.target.value)} style={selectStyle} disabled={!board}>
+                <option value="" disabled>{board ? "Select a level…" : "Pick a board first"}</option>
+                {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </Field>
+          </Row>
+
+          <Field label="Subject">
+            <select value={syllabusId} onChange={(e) => setSyllabusId(e.target.value)} style={selectStyle} disabled={!level}>
+              <option value="" disabled>{level ? "Select a subject…" : "Pick a level first"}</option>
+              {subjectOptions.map((s) => (
+                <option key={s.id} value={s.id}>{s.subject}</option>
               ))}
             </select>
           </Field>
 
           <Row>
-            <Field label="Level">
-              <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle} disabled={!selectedSyllabus}>
-                <option value="" disabled>{selectedSyllabus ? "Select a level…" : "Pick a subject first"}</option>
-                {levelOptions.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
+            <Field label="Session">
+              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!board}>
+                <option value="" disabled>{board ? "Select a session…" : "Pick a board first"}</option>
+                {sessionOptions.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
-            <Field label="Session">
-              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!selectedSyllabus}>
-                <option value="" disabled>{selectedSyllabus ? "Select a session…" : "Pick a subject first"}</option>
-                {sessionOptions.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+            <Field label="Document type">
+              <select value={kind} onChange={(e) => setKind(e.target.value)} style={selectStyle}>
+                <option value="" disabled>Select…</option>
+                {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -162,15 +184,6 @@ export default function UploadForm({ syllabi }: Props) {
               <input type="number" min={1} placeholder="e.g. 1" value={variant} onChange={(e) => setVariant(e.target.value)} style={inputStyle} />
             </Field>
           </Row>
-
-          <Field label="Document type">
-            <select value={kind} onChange={(e) => setKind(e.target.value)} style={selectStyle}>
-              <option value="" disabled>Select a document type…</option>
-              {KINDS.map((k) => (
-                <option key={k.value} value={k.value}>{k.label}</option>
-              ))}
-            </select>
-          </Field>
 
           <Field label="PDF file">
             <label
