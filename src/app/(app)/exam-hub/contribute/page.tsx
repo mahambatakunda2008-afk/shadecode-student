@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, UploadCloud, Clock, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { SESSIONS_BY_BOARD, type Syllabus } from "@/lib/exam-hub/types";
@@ -39,12 +39,15 @@ export default function ContributePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
 
-  // Nothing pre-selected — same reasoning as the admin upload form: a
-  // silently-defaulted subject/level/session is how papers end up
-  // mistagged. Every field starts blank and the student picks each one.
+  // Nothing pre-selected. Order is Board -> Level -> Subject, not Board ->
+  // Subject -> Level — many subjects exist twice under the same board with
+  // the *same name* but different levels (e.g. Physics as both an IGCSE
+  // syllabus and a separate AS/A Level syllabus). Picking level first
+  // scopes the subject list to one level, so the duplicate never appears
+  // in the same dropdown.
   const [board, setBoard] = useState("");
-  const [syllabusId, setSyllabusId] = useState("");
   const [level, setLevel] = useState("");
+  const [syllabusId, setSyllabusId] = useState("");
   const [session, setSession] = useState("");
   const [year, setYear] = useState("");
   const [paperNumber, setPaperNumber] = useState("");
@@ -70,22 +73,27 @@ export default function ContributePage() {
     loadSubmissions();
   }, [loadSubmissions]);
 
-  const boards = [...new Set(syllabi.map((s) => s.board))].sort();
-  const subjectsForBoard = board ? syllabi.filter((s) => s.board === board) : [];
-  const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
-  const levelOptions = selectedSyllabus?.levels ?? [];
+  const boards = useMemo(() => [...new Set(syllabi.map((s) => s.board))].sort(), [syllabi]);
+  const levelOptions = useMemo(
+    () => (board ? [...new Set(syllabi.filter((s) => s.board === board).flatMap((s) => s.levels))].sort() : []),
+    [syllabi, board]
+  );
+  const subjectOptions = useMemo(
+    () => (board && level ? syllabi.filter((s) => s.board === board && s.levels.includes(level)) : []),
+    [syllabi, board, level]
+  );
   const sessionOptions = board ? SESSIONS_BY_BOARD[board] ?? [] : [];
 
   function handleBoardChange(b: string) {
     setBoard(b);
-    setSyllabusId("");
     setLevel("");
+    setSyllabusId("");
     setSession("");
   }
 
-  function handleSyllabusChange(id: string) {
-    setSyllabusId(id);
-    setLevel("");
+  function handleLevelChange(l: string) {
+    setLevel(l);
+    setSyllabusId("");
   }
 
   const isComplete =
@@ -126,8 +134,8 @@ export default function ContributePage() {
       if (!res.ok) throw new Error(data.error ?? "Submission failed");
       setResult({ ok: true, message: "Submitted for review. You'll earn XP once it's approved." });
       setBoard("");
-      setSyllabusId("");
       setLevel("");
+      setSyllabusId("");
       setSession("");
       setYear("");
       setPaperNumber("");
@@ -180,33 +188,34 @@ export default function ContributePage() {
                 {boards.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </Field>
-            <Field label="Subject">
-              <select value={syllabusId} onChange={(e) => handleSyllabusChange(e.target.value)} style={selectStyle} disabled={!board}>
-                <option value="" disabled>{board ? "Select a subject…" : "Pick a board first"}</option>
-                {subjectsForBoard.map((s) => <option key={s.id} value={s.id}>{s.subject}</option>)}
+            <Field label="Level">
+              <select value={level} onChange={(e) => handleLevelChange(e.target.value)} style={selectStyle} disabled={!board}>
+                <option value="" disabled>{board ? "Select a level…" : "Pick a board first"}</option>
+                {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </Field>
           </Row>
 
+          <Field label="Subject">
+            <select value={syllabusId} onChange={(e) => setSyllabusId(e.target.value)} style={selectStyle} disabled={!level}>
+              <option value="" disabled>{level ? "Select a subject…" : "Pick a level first"}</option>
+              {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.subject}</option>)}
+            </select>
+          </Field>
+
           <Row>
-            <Field label="Level">
-              <select value={level} onChange={(e) => setLevel(e.target.value)} style={selectStyle} disabled={!selectedSyllabus}>
-                <option value="" disabled>{selectedSyllabus ? "Select a level…" : "Pick a subject first"}</option>
-                {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </Field>
             <Field label="Session">
               <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!board}>
                 <option value="" disabled>{board ? "Select a session…" : "Pick a board first"}</option>
                 {sessionOptions.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
-          </Row>
-
-          <Row>
             <Field label="Year">
               <input type="number" placeholder="e.g. 2025" value={year} onChange={(e) => setYear(e.target.value)} style={selectStyle} />
             </Field>
+          </Row>
+
+          <Row>
             <Field label="Paper #">
               <input type="number" min={1} placeholder="e.g. 2" value={paperNumber} onChange={(e) => setPaperNumber(e.target.value)} style={selectStyle} />
             </Field>
