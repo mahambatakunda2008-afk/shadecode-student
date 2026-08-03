@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabaseClient';
-import { generateInsight } from '@/lib/cortex';
+import { recordCortexInsight } from '@/lib/cortex';
 
 export async function PUT(request, { params }) {
   const { id } = params;
@@ -34,7 +34,7 @@ export async function PUT(request, { params }) {
     }
 
     // 2. Generate an insight for the completed task
-    await generateInsight(user.id, 'task_completed', { taskId: updatedTask.id, title: updatedTask.title });
+    await recordCortexInsight(user.id, 'task_completed', { taskId: updatedTask.id, title: updatedTask.title });
 
     return new NextResponse(JSON.stringify(updatedTask), { status: 200 });
 
