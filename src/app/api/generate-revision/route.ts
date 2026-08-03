@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { generateRevisionSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { logAIUsage } from "@/lib/ai/tracker";
+import { callAI } from "@/lib/ai";
 
 export async function POST(req: Request) {
   // Apply rate limiting for AI-powered endpoint

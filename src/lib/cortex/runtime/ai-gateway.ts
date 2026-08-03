@@ -17,6 +17,7 @@ import {
   CortexStructuredValue,
 } from "@/lib/cortex/types";
 import { logAIUsage } from "@/lib/ai/tracker";
+import { fetchWithRetry } from "@/lib/fetchWithRetry";
 
 const inflightRequests = new Map<string, Promise<CortexAIResponse>>();
 
@@ -129,35 +130,25 @@ async function requestGeminiInsight(summary: string, userId?: string) {
   const promptTokens = Math.ceil(prompt.length / 4); // Rough estimate: 1 token ≈ 4 characters
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    // Use fetchWithRetry for robust network calls with timeout and retry
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    const res = await fetchWithRetry(
+      url,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            maxOutputTokens: 120,
-            temperature: 0.2,
-          },
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 120, temperature: 0.2 },
         }),
-      }
+      },
+      { timeoutMs: 45000, retries: 2 }
     );
 
-    if (!response.ok) {
-      const errorBody = await response.text();
+    if (!res.ok) {
+      const errorBody = await res.text().catch(() => '<failed-to-read-body>');
       const latencyMs = Date.now() - startTime;
-      
+
       // Log failed request
       await logAIUsage({
         userId,
@@ -169,21 +160,20 @@ async function requestGeminiInsight(summary: string, userId?: string) {
         completionTokens: 0,
         latencyMs,
         success: false,
-        errorMessage: `Gemini request failed: ${response.status} ${errorBody}`,
-        errorCode: response.status.toString(),
+        errorMessage: `Gemini request failed: ${res.status} ${errorBody}`,
+        errorCode: res.status.toString(),
         requestMetadata: { promptLength: prompt.length },
       });
-      
-      throw new Error(`Gemini request failed: ${response.status} ${errorBody}`);
+
+      throw new Error(`Gemini request failed: ${res.status} ${errorBody}`);
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const data = await res.json().catch(() => ({} as any));
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (typeof text !== "string" || !text.trim()) {
+    if (typeof text !== 'string' || !text.trim()) {
       const latencyMs = Date.now() - startTime;
-      
-      // Log failed request
+
       await logAIUsage({
         userId,
         feature: 'cortex',
@@ -198,14 +188,13 @@ async function requestGeminiInsight(summary: string, userId?: string) {
         errorCode: 'EMPTY_RESPONSE',
         requestMetadata: { promptLength: prompt.length },
       });
-      
-      throw new Error("Gemini returned an empty Cortex response.");
+
+      throw new Error('Gemini returned an empty Cortex response.');
     }
 
     const latencyMs = Date.now() - startTime;
-    const completionTokens = Math.ceil(text.length / 4); // Rough estimate
+    const completionTokens = Math.ceil(text.length / 4);
 
-    // Log successful request
     await logAIUsage({
       userId,
       feature: 'cortex',
@@ -217,14 +206,13 @@ async function requestGeminiInsight(summary: string, userId?: string) {
       latencyMs,
       success: true,
       requestMetadata: { promptLength: prompt.length, responseLength: text.length },
-      responseMetadata: { model: data.modelVersion },
+      responseMetadata: { model: (data as any)?.modelVersion },
     });
 
     return extractInsightFromJson(text);
   } catch (error: unknown) {
     const latencyMs = Date.now() - startTime;
-    
-    // Log error if not already logged above
+
     if (!(error instanceof Error && (error.message.includes('Gemini request failed') || error.message.includes('empty Cortex response')))) {
       await logAIUsage({
         userId,
@@ -241,7 +229,7 @@ async function requestGeminiInsight(summary: string, userId?: string) {
         requestMetadata: { promptLength: prompt.length },
       });
     }
-    
+
     throw error;
   }
 }
