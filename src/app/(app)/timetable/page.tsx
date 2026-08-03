@@ -56,6 +56,7 @@ export default function Timetable() {
   const [breakDuration, setBreakDuration] = useState("10");
   const [schedule, setSchedule] = useState<TimetableSlot[]>([]);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [subjectColorMap, setSubjectColorMap] = useState<Record<string, string>>({});
@@ -159,8 +160,28 @@ export default function Timetable() {
   const saveSchedule = async () => {
     if (!userId || schedule.length === 0) return;
     setLoading(true);
-    await supabase.from("timetable").delete().eq("user_id", userId);
-    await supabase.from("timetable").insert(schedule.map(slot => ({ ...slot, user_id: userId })));
+    setSaveError(null);
+
+    const { error: delErr } = await supabase.from("timetable").delete().eq("user_id", userId);
+    if (delErr) {
+      console.error("[Timetable] delete failed, aborting save:", delErr.message);
+      setSaveError("Couldn't save your timetable. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    const { error: insErr } = await supabase
+      .from("timetable")
+      .insert(schedule.map(slot => ({ ...slot, user_id: userId })));
+    if (insErr) {
+      // The old timetable is already gone at this point -- surface this
+      // loudly rather than silently claiming success over an empty table.
+      console.error("[Timetable] insert failed after delete, data lost:", insErr.message);
+      setSaveError("Your timetable failed to save and may be empty now. Please recreate it or try again.");
+      setLoading(false);
+      return;
+    }
+
     setSaved(true);
     setLoading(false);
 
@@ -361,6 +382,12 @@ export default function Timetable() {
               {saved ? "✓ Saved" : loading ? "Saving..." : "Save Plan"}
             </button>
           </div>
+
+          {saveError && (
+            <p style={{ color: "var(--danger, #ef4444)", fontSize: "13px", marginTop: "-8px", marginBottom: "12px" }}>
+              {saveError}
+            </p>
+          )}
 
           {/* Visual timeline */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
