@@ -1,7 +1,10 @@
 // src/lib/ai.ts
 //
 // Unified AI caller — the SINGLE source of truth for calling the AI
-// provider fallback chain (Cloudflare -> OpenAI -> Gemini -> OpenRouter).
+// provider fallback chain (Cloudflare -> Gemini -> OpenAI -> OpenRouter).
+// OpenAI sits after Gemini deliberately: it's unfunded and expected to
+// 429, so it shouldn't eat a timeout window on every request before the
+// chain reaches a provider that actually works.
 //
 // This consolidates what used to be 6 separate, drifting copies of this
 // logic across the codebase (src/lib/ai.ts, src/app/api/exam/generate,
@@ -113,37 +116,7 @@ export async function callAI(
     }
   }
 
-  // 2. OpenAI (JSON mode -- most reliable for structured output)
-  if (process.env.OPENAI_API_KEY) {
-    const startTime = Date.now();
-    const model = "gpt-4o-mini";
-    try {
-      const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: maxTokens,
-          response_format: { type: "json_object" },
-        }),
-      }, timeoutMs);
-      const data = (await res.json()) as any;
-      const text = data.choices?.[0]?.message?.content;
-      if (text && text.length > 20) {
-        await logResult({ provider: "openai", model, startTime, success: true, text });
-        return text;
-      }
-    } catch (err) {
-      await logResult({ provider: "openai", model, startTime, success: false, err });
-      console.error("[AI] OpenAI failed:", err);
-    }
-  }
-
-  // 3. Gemini -- all configured keys x both models
+  // 2. Gemini -- all configured keys x both models (free tier, primary fallback)
   const geminiKeys = [
     process.env.GEMINI_API_KEY,
     process.env.GEMINI_API_KEY_2,
@@ -176,6 +149,36 @@ export async function callAI(
         await logResult({ provider: "gemini", model, startTime, success: false, err });
         console.error(`[AI] Gemini (${model}) failed:`, err);
       }
+    }
+  }
+
+  // 3. OpenAI (last resort -- unfunded, expect 429s; JSON mode if it ever works)
+  if (process.env.OPENAI_API_KEY) {
+    const startTime = Date.now();
+    const model = "gpt-4o-mini";
+    try {
+      const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: maxTokens,
+          response_format: { type: "json_object" },
+        }),
+      }, timeoutMs);
+      const data = (await res.json()) as any;
+      const text = data.choices?.[0]?.message?.content;
+      if (text && text.length > 20) {
+        await logResult({ provider: "openai", model, startTime, success: true, text });
+        return text;
+      }
+    } catch (err) {
+      await logResult({ provider: "openai", model, startTime, success: false, err });
+      console.error("[AI] OpenAI failed:", err);
     }
   }
 
