@@ -123,8 +123,11 @@ export async function callAI(
     process.env.GEMINI_API_KEY_3,
   ].filter(Boolean) as string[];
 
+  // gemini-2.0-flash is permanently zero-quota on this Google account
+  // (all 3 keys share one quota pool) -- trying it is a guaranteed
+  // wasted round-trip, not a real fallback. 2.5-flash only.
   for (const key of geminiKeys) {
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+    for (const model of ["gemini-2.5-flash"]) {
       const startTime = Date.now();
       try {
         const res = await fetchWithTimeout(
