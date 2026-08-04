@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { hasUserRole } from "@/lib/auth/rbac";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -39,6 +41,12 @@ interface Anomaly {
 }
 
 export async function GET(req: Request) {
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user || !(await hasUserRole(user.id, "admin"))) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const lookbackHours = parseInt(searchParams.get('lookbackHours') || '24');
   const zScoreThreshold = parseFloat(searchParams.get('zScoreThreshold') || '3');
