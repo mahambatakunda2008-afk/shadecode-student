@@ -32,5 +32,17 @@ export default withSentryConfig(nextConfig, {
 
   // Upload a larger set of source maps for prettier stack traces
   widenClientFileUpload: true,
+
+  // authToken is not set explicitly here -- the Sentry webpack plugin
+  // reads SENTRY_AUTH_TOKEN from the environment automatically if
+  // present. As of this audit, that env var is NOT set in Vercel, so
+  // every production build logs "No auth token provided. Will not
+  // create release... Will not upload source maps." Production JS
+  // errors in Sentry currently show minified stack traces only.
+  // To fix: generate a token at
+  // https://shadecode.sentry.io/settings/auth-tokens/ (needs
+  // project:releases scope) and add it as SENTRY_AUTH_TOKEN in
+  // Vercel's environment variables. Not something this audit can do --
+  // requires access to the actual Sentry account.
 });
 
