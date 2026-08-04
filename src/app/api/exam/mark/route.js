@@ -178,10 +178,19 @@ ${qaText}
        SCORE CALCULATION
     ───────────────────────────── */
 
-    const totalScore = markingData.results.reduce(
-      (sum, r) => sum + (r.score || 0),
-      0
-    );
+    const questionMarksById = new Map(questions.map((q) => [q.id, q.marks]));
+
+    const totalScore = markingData.results.reduce((sum, r) => {
+      const maxForQuestion = questionMarksById.get(r.questionId);
+      const rawScore = r.score || 0;
+      // Clamp against a hallucinating AI grader returning a score higher
+      // than the question's own max marks (or a negative value) -- without
+      // this, percentage could exceed 100%.
+      const clampedScore = maxForQuestion !== undefined
+        ? Math.max(0, Math.min(rawScore, maxForQuestion))
+        : Math.max(0, rawScore);
+      return sum + clampedScore;
+    }, 0);
 
     const maxScore = questions.reduce(
       (sum, q) => sum + q.marks,
