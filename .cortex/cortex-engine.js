@@ -186,8 +186,11 @@ Rules:
 
   let rawText = null;
 
-  // Try Gemini models
-  const geminiModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+  // Try Gemini models. gemini-2.0-flash and gemini-2.0-flash-lite are
+  // confirmed permanently zero-quota on this account (see src/lib/ai.ts
+  // and docs/AUDIT_2026-08.md) -- trying them wastes time before reaching
+  // OpenRouter, they are not a real fallback. 2.5-flash only.
+  const geminiModels = ["gemini-2.5-flash"];
   for (const modelName of geminiModels) {
     try {
       log(`Trying model: ${modelName}...`);
@@ -310,6 +313,24 @@ async function main() {
   } catch (err) {
     log(`ERROR: ${err.message}`);
     console.error(err);
+
+    // Persist the failure where a human can actually see it -- GitHub's
+    // Actions log storage isn't reliably fetchable via API/tooling, but
+    // the step summary renders directly in the Actions UI and survives
+    // independently of log retention.
+    try {
+      const fs = require("fs");
+      if (process.env.GITHUB_STEP_SUMMARY) {
+        const recentLogs = logs.slice(-15).join("\n");
+        fs.appendFileSync(
+          process.env.GITHUB_STEP_SUMMARY,
+          `## ❌ Cortex Engine cycle failed\n\n**Error:** ${err.message}\n\n**Stack:**\n\`\`\`\n${err.stack || "(no stack)"}\n\`\`\`\n\n**Last log lines:**\n\`\`\`\n${recentLogs}\n\`\`\`\n`
+        );
+      }
+    } catch (summaryErr) {
+      console.error("Failed to write step summary:", summaryErr.message);
+    }
+
     process.exit(1);
   }
 }
