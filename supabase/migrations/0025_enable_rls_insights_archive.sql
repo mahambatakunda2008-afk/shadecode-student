@@ -1,0 +1,26 @@
+-- Six tables had no "enable row level security" statement anywhere in the
+-- migration history (confirmed by grepping every migration file
+-- case-insensitively against each table name): generated_course_drafts,
+-- generated_course_approvals, careers, skills, user_careers,
+-- insights_archive.
+--
+-- Checked the LIVE database directly before touching anything (do not
+-- assume migration files reflect reality): 5 of those 6 already had RLS
+-- enabled with well-designed policies (admin-role gating via has_role(),
+-- proper user_id scoping) -- applied directly via dashboard/SQL editor at
+-- some point without a matching migration file ever being committed. That
+-- is a migration-history / drift issue, not a live vulnerability, for:
+-- generated_course_drafts, generated_course_approvals, careers, skills,
+-- user_careers. Not touched here -- their live policies are already
+-- correct and better than a generic policy would be.
+--
+-- insights_archive was the one genuine live gap: RLS was actually
+-- disabled. It's a dormant snapshot table from the 0017 backfill
+-- migration (CREATE TABLE ... AS TABLE public.insights), confirmed zero
+-- references anywhere in src/ -- nothing in the live app queries it. It
+-- still holds real user_id + insight text and was reachable via direct
+-- PostgREST calls using the public anon key. Fixed live via
+-- Supabase:apply_migration and verified (pg_class.relrowsecurity = true).
+-- This file documents that change so the migration history matches
+-- reality going forward.
+ALTER TABLE IF EXISTS public.insights_archive ENABLE ROW LEVEL SECURITY;
