@@ -19,6 +19,7 @@ import { createExplanationTemplate, createPracticeTemplate, createQuizTemplate }
 export const maxDuration = 90;
 import { getCache, generateCacheKey, shouldCache } from "@/lib/cortex/cache";
 import { validateLessonStructure } from "@/lib/cortex/validators";
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 
 interface GenerateLessonRequest {
   subject?: string;
@@ -44,6 +45,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
   const startTime = Date.now();
 
   try {
+    const rateLimitCheck = await applyRateLimit(request, aiEndpointLimiter);
+    if (rateLimitCheck) return rateLimitCheck as NextResponse<GenerateLessonResponse>;
+
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
