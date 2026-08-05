@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-08-05 — Cortex Auto-Cycle
+
+I have successfully implemented the first task on the roadmap: the Daily Challenge Component. This involved creating the `DailyChallenge.jsx` React component and the necessary API routes (`/api/challenges/today` and `/api/challenges/complete`). The API routes now handle fetching or generating a daily challenge for the user and processing its completion, including XP award. The component provides a user-friendly interface with loading, error, and completion states, styled with Tailwind CSS.
+
+**Improvements this cycle:**
+- [HIGH] API Route to Get Today's Daily Challenge: Create an API endpoint at `/api/challenges/today` that fetches the current user's daily challenge for today's date. If no challenge exists for the user for today, a new generic challenge will be generated, inserted into the `daily_challenges` table, and returned. This ensures the Daily Challenge component always has data to display.
+- [HIGH] API Route to Complete Daily Challenge: Develop an API endpoint at `/api/challenges/complete` to handle marking a daily challenge as completed. It will receive a `challengeId`, update the `completed` status in the `daily_challenges` table, and award the corresponding XP to the user's profile in the `profiles` table.
+- [HIGH] Daily Challenge Card Component: Create `DailyChallenge.jsx` to display today's daily challenge. It will fetch challenge details from `/api/challenges/today`, show the title, description, and XP reward. A 'Complete' button will allow users to mark the challenge as done, triggering a call to `/api/challenges/complete` and updating the UI.
+
+---
