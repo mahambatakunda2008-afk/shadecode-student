@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Tags,
   Globe,
+  MessageSquare,
   Settings2,
 } from "lucide-react";
 
@@ -56,6 +57,7 @@ export const NAV_ITEMS = {
   adminQuestions: { href: "/admin/exam-hub/questions", label: "Tag Questions", icon: Tags },
   adminManage: { href: "/admin/exam-hub/manage", label: "Manage Papers", icon: Settings2 },
   adminBoards: { href: "/admin/exam-hub/boards", label: "Exam Boards", icon: Globe },
+  adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
 // Nav shown to admin accounts instead of the full student nav — per product
@@ -64,7 +66,7 @@ export const NAV_ITEMS = {
 export const ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     group: "Admin",
-    items: [NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminManage, NAV_ITEMS.adminModeration, NAV_ITEMS.adminQuestions, NAV_ITEMS.adminBoards, NAV_ITEMS.settings],
+    items: [NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminManage, NAV_ITEMS.adminModeration, NAV_ITEMS.adminQuestions, NAV_ITEMS.adminBoards, NAV_ITEMS.adminFeedback, NAV_ITEMS.settings],
   },
 ];
 
