@@ -235,7 +235,16 @@ Rules:
       });
       const data = await response.json();
       rawText = data.choices?.[0]?.message?.content;
-      if (rawText) log("Success with OpenRouter");
+      if (rawText) {
+        log("Success with OpenRouter");
+      } else {
+        // fetch() succeeded but the response didn't have the expected
+        // shape -- previously this silently fell through to "All AI
+        // models failed" with zero indication why. Log the actual
+        // response so a failure here is diagnosable without needing
+        // another log round-trip.
+        log(`OpenRouter returned no usable content. HTTP ${response.status}. Response: ${JSON.stringify(data).slice(0, 500)}`);
+      }
     } catch (err) {
       log(`OpenRouter failed: ${err.message}`);
     }
