@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-08-05 — Cortex Auto-Cycle
+
+I've started working on the Daily Challenge feature. This cycle, I've implemented the `DailyChallenge.jsx` component to display the challenge and handle its completion. I also created two crucial API routes: `/api/challenges/today` to fetch the current user's daily challenge, and `/api/challenges/complete` to mark it as done and update the user's XP in their profile. For `daily_challenges`, I've assumed a per-user daily challenge schema that tracks completion.
+
+**Improvements this cycle:**
+- [HIGH] Daily Challenge Component: Builds the `DailyChallenge.jsx` component that fetches the current user's daily challenge, displays its details, and provides a 'Complete' button to mark it done and award XP. Uses Tailwind CSS for styling to match the existing application design.
+- [HIGH] API Route: Fetch Today's Daily Challenge: Create an API endpoint `/api/challenges/today` that fetches the current user's daily challenge. It queries the `daily_challenges` table for an entry created today for the authenticated user that has not yet been completed. If no such challenge exists, it returns `null` for the challenge.
+- [HIGH] API Route: Complete Daily Challenge: Create an API endpoint `/api/challenges/complete` that marks a specified daily challenge as complete for the authenticated user and awards the associated XP. It updates the `completed` status in `daily_challenges` and increments `xp` and `weekly_xp` in the `profiles` table.
+
+---
