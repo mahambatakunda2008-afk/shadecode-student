@@ -142,7 +142,12 @@ export default function Tasks() {
 
   const deleteTask = async (taskId: string) => {
     const deletedTask = tasks.find((task) => task.id === taskId);
-    await supabase.from("tasks").delete().eq("id", taskId);
+    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+    if (error) {
+      console.error("[Tasks] delete failed:", error.message);
+      setToast("Couldn't delete that task. Please try again.");
+      return;
+    }
     setTasks(tasks.filter(t => t.id !== taskId));
 
     if (userId && deletedTask) {
@@ -157,8 +162,21 @@ export default function Tasks() {
 
   const deleteSubject = async (subjectId: string) => {
     const deletedSubject = subjects.find((subject) => subject.id === subjectId);
-    await supabase.from("tasks").delete().eq("subject_id", subjectId);
-    await supabase.from("subjects").delete().eq("id", subjectId);
+    const { error: tasksErr } = await supabase.from("tasks").delete().eq("subject_id", subjectId);
+    if (tasksErr) {
+      console.error("[Tasks] deleting subject's tasks failed, aborting:", tasksErr.message);
+      setToast("Couldn't delete that subject. Please try again.");
+      return;
+    }
+    const { error: subjectErr } = await supabase.from("subjects").delete().eq("id", subjectId);
+    if (subjectErr) {
+      // Tasks are already gone at this point -- surface loudly rather than
+      // silently leaving the subject behind with no tasks under it.
+      console.error("[Tasks] deleting subject failed after its tasks were removed:", subjectErr.message);
+      setToast("Subject's tasks were cleared but the subject itself failed to delete. Please try again.");
+      setTasks(tasks.filter(t => t.subject_id !== subjectId));
+      return;
+    }
     setSubjects(subjects.filter(s => s.id !== subjectId));
     setTasks(tasks.filter(t => t.subject_id !== subjectId));
 

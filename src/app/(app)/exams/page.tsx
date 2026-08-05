@@ -16,6 +16,7 @@ export default function Exams() {
   const [examDate, setExamDate] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -55,7 +56,13 @@ export default function Exams() {
   };
 
   const deleteExam = async (id: string) => {
-    await supabase.from("exams").delete().eq("id", id);
+    const { error } = await supabase.from("exams").delete().eq("id", id);
+    if (error) {
+      console.error("[Exams] delete failed:", error.message);
+      setDeleteError("Couldn't delete that exam. Please try again.");
+      return;
+    }
+    setDeleteError(null);
     setExams(exams.filter(e => e.id !== id));
   };
 
@@ -118,6 +125,12 @@ export default function Exams() {
           Track your upcoming exams
         </p>
       </div>
+
+      {deleteError && (
+        <div style={{ ...cardStyle, borderColor: "var(--danger, #ef4444)", color: "var(--danger, #ef4444)", fontSize: "13px" }}>
+          {deleteError}
+        </div>
+      )}
 
       {/* Add Exam */}
       <div style={cardStyle}>
