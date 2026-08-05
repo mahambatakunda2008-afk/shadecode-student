@@ -189,19 +189,32 @@ Rules:
   // Try Gemini models. gemini-2.0-flash and gemini-2.0-flash-lite are
   // confirmed permanently zero-quota on this account (see src/lib/ai.ts
   // and docs/AUDIT_2026-08.md) -- trying them wastes time before reaching
-  // OpenRouter, they are not a real fallback. 2.5-flash only.
+  // OpenRouter, they are not a real fallback. 2.5-flash only, but with a
+  // short retry: "503 Service Unavailable / high demand" is a transient
+  // Google-side condition, not a real failure, and gives up too easily
+  // on the first attempt otherwise.
   const geminiModels = ["gemini-2.5-flash"];
+  const GEMINI_RETRY_ATTEMPTS = 2;
+  const GEMINI_RETRY_DELAY_MS = 5000;
   for (const modelName of geminiModels) {
-    try {
-      log(`Trying model: ${modelName}...`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      rawText = result.response.text();
-      log(`Success with model: ${modelName}`);
-      break;
-    } catch (err) {
-      log(`Model ${modelName} failed: ${err.message}. Trying next...`);
+    for (let attempt = 1; attempt <= GEMINI_RETRY_ATTEMPTS; attempt++) {
+      try {
+        log(`Trying model: ${modelName} (attempt ${attempt}/${GEMINI_RETRY_ATTEMPTS})...`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        rawText = result.response.text();
+        log(`Success with model: ${modelName}`);
+        break;
+      } catch (err) {
+        const isTransient = /503|overloaded|high demand|unavailable/i.test(err.message);
+        log(`Model ${modelName} failed (attempt ${attempt}): ${err.message}`);
+        if (isTransient && attempt < GEMINI_RETRY_ATTEMPTS) {
+          log(`Transient error, retrying in ${GEMINI_RETRY_DELAY_MS / 1000}s...`);
+          await new Promise((resolve) => setTimeout(resolve, GEMINI_RETRY_DELAY_MS));
+        }
+      }
     }
+    if (rawText) break;
   }
 
   // Fallback to OpenRouter
