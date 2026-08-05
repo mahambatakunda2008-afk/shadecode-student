@@ -101,7 +101,12 @@ export default function Tasks() {
 
   const completeTask = async (task: Task) => {
     if (task.completed || !userId) return;
-    await supabase.from("tasks").update({ completed: true }).eq("id", task.id);
+    const { error } = await supabase.from("tasks").update({ completed: true }).eq("id", task.id);
+    if (error) {
+      console.error("[Tasks] complete failed:", error.message);
+      setToast("Couldn't mark that task complete. Please try again.");
+      return;
+    }
 
     // Award XP using centralized manager
     const result = await awardXPClient(userId, { amount: 10 });
