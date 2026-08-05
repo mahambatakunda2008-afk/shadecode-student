@@ -365,7 +365,14 @@ export async function POST(req: Request) {
       }));
 
       const { data: insertedLessons, error: insertLessonsError } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
-      if (insertLessonsError) console.error('Failed to insert lessons:', insertLessonsError);
+      if (insertLessonsError) {
+        // Previously only logged, never thrown -- execution continued and
+        // the response still returned { success: true, lessonsInserted: 0 },
+        // silently reporting success on a course generation that inserted
+        // nothing. Same bug fixed in src/app/api/cortex/route.ts.
+        console.error('Failed to insert lessons:', insertLessonsError);
+        return NextResponse.json({ success: false, error: `Failed to save lessons: ${insertLessonsError.message}` }, { status: 500 });
+      }
 
       const titleToId = new Map();
       (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id));

@@ -120,7 +120,17 @@ export async function POST(req: Request) {
 
       const lessons = Array.isArray(entry.draft.lessons) ? entry.draft.lessons : [];
       const lessonsToInsert = lessons.map((l: any) => ({ user_id: userId, subject_id: subjectId, title: (l.title ?? l.summary ?? 'Untitled').toString().slice(0,255), description: (l.summary ?? '').toString().slice(0,1000), difficulty: (l.difficulty === 'hard' ? 'hard' : l.difficulty === 'medium' ? 'medium' : 'easy'), blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: 'text', content: l.summary ?? '' }], progress: 0 }));
-      const { data: insertedLessons } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
+      const { data: insertedLessons, error: lessonsInsertError } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
+      if (lessonsInsertError) {
+        // Previously unchecked -- a failure here still fell through to
+        // marking the draft "approved" with lessonsInserted: 0 and
+        // returning { ok: true }, silently reporting success on a
+        // course approval that inserted nothing.
+        throw new Error(`Failed to insert lessons: ${lessonsInsertError.message}`);
+      }
+      if (lessonsToInsert.length > 0 && (insertedLessons ?? []).length === 0) {
+        throw new Error('Lesson insert returned no rows despite lessons being submitted');
+      }
       const titleToId = new Map();
       (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id));
 
