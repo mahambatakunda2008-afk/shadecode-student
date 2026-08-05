@@ -49,12 +49,16 @@ new AI-backed route; it's not automatic.
 
 `.github/workflows/cortex.yml` runs `.cortex/cortex-engine.js` on a
 schedule with `contents: write` + `pull-requests: write` — it can push
-commits and open PRs using its own Gemini calls, unsupervised. As of this
-writing it has a history of failing runs; a debug fix was added
-(writes actual error/stack to `$GITHUB_STEP_SUMMARY` on failure) but the
-root cause isn't yet confirmed — check the Actions tab's job summary
-directly, since that content isn't reachable via API by an agent working
-in a sandboxed environment.
+commits and open PRs using its own Gemini calls, unsupervised. Root cause
+of its failing runs was found and fixed 2026-08-05: Node 20 (the
+workflow's runtime) lacks native WebSocket support, and
+`@supabase/supabase-js`'s `createClient()` unconditionally initializes a
+Realtime client that needs it, even though this script never uses
+realtime features. Fixed by bumping to Node 22. A manual re-run after the
+fix still failed at the same step; unconfirmed whether that's a new,
+different error or a residual issue — GitHub's annotations API only ever
+surfaces generic "exit code 1" from this environment, the raw log text
+(visible directly in the Actions UI) is needed to confirm either way.
 
 ## Database
 

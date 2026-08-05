@@ -65,7 +65,7 @@ Schema and RLS policies live in `supabase/migrations/`. Apply in order via the S
 
 ## Autonomous Agent
 
-`.cortex/cortex-engine.js` runs on a schedule via `.github/workflows/cortex.yml` with `contents: write` and `pull-requests: write` permissions — it can push commits and open PRs autonomously using Gemini. Review its recent run history in the Actions tab before relying on it; it has had failing runs that weren't traced to a missing-secret cause (both `SUPABASE_SERVICE_KEY` and `SUPABASE_URL` are confirmed present as repo secrets), so the failure is a value or code-level issue that needs investigation with actual log access.
+`.cortex/cortex-engine.js` runs on a schedule via `.github/workflows/cortex.yml` with `contents: write` and `pull-requests: write` permissions — it can push commits and open PRs autonomously using Gemini. Root cause of its failing runs found and fixed 2026-08-05: Node 20 lacked native WebSocket support, and `createClient()` unconditionally initializes a Realtime client that needs it, even though this script never uses realtime features. Fixed by bumping the workflow to Node 22. A manual re-run after the fix still failed at the same step — unconfirmed whether it's a new error or a residual one without the raw log text (visible in the Actions UI, not reachable via API from outside).
 
 ## Roadmap / Vision
 
