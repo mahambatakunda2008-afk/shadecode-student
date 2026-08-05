@@ -1,167 +1,74 @@
-import { createServerClient } from "@/lib/supabaseClient";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
-function daysUntil(date) {
-  const target = new Date(date);
-  const now = new Date();
+// Initialize Supabase client (ensure these are set in your .env.local)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  target.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-}
+const challengesList = [
+  { title: 'Study for 30 minutes', description: 'Dedicate 30 minutes to any subject.', xp_reward: 50 },
+  { title: 'Complete 2 tasks', description: 'Finish any two pending tasks.', xp_reward: 75 },
+  { title: 'Review 5 topics', description: 'Revisit 5 study topics you've covered.', xp_reward: 60 },
+  { title: 'Plan your next study session', description: 'Create a new entry in your timetable.', xp_reward: 40 },
+  { title: 'Explore a new subject', description: 'Spend 15 minutes learning about a new subject.', xp_reward: 55 },
+];
 
-function generateChallenge({
-  subjects = [],
-  tasks = [],
-  exams = [],
-}) {
-  const upcomingExam = exams.find((exam) => {
-    const date = exam.exam_date || exam.date;
-    if (!date) return false;
+export async function GET(request) {
+  const { data: { user } } = await supabase.auth.getUser();
 
-    const days = daysUntil(date);
-    return days >= 0 && days <= 7;
-  });
-
-  if (upcomingExam) {
-    return {
-      title: "Exam Sprint",
-      description: `Revise ${upcomingExam.subject || "your upcoming subject"} for 20 minutes.`,
-      xp_reward: 75,
-      difficulty: "medium",
-      reason: "exam_priority",
-      explanation:
-        "Cortex detected an exam approaching soon and prioritised revision."
-    };
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const overdueTask = tasks.find((task) => {
-    if (task.completed) return false;
-    if (!task.due_date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to start of day UTC
+  const todayISO = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    return new Date(task.due_date) < new Date();
-  });
-
-  if (overdueTask) {
-    return {
-      title: "Task Recovery",
-      description: `Complete: ${overdueTask.title}`,
-      xp_reward: 60,
-      difficulty: "medium",
-      reason: "overdue_task",
-      explanation:
-        "You have overdue work that Cortex believes should be cleared first."
-    };
-  }
-
-  if (subjects.length) {
-    const weakestSubject = [...subjects].sort(
-      (a, b) =>
-        (a.activity_count || 0) -
-        (b.activity_count || 0)
-    )[0];
-
-    return {
-      title: "Strengthen Weakness",
-      description: `Study ${weakestSubject.name || "this subject"} for 15 minutes.`,
-      xp_reward: 50,
-      difficulty: "easy",
-      reason: "weak_subject",
-      explanation:
-        `${weakestSubject.name || "This subject"} has received less attention recently.`
-    };
-  }
-
-  return {
-    title: "Momentum Builder",
-    description: "Complete one focused study session today.",
-    xp_reward: 40,
-    difficulty: "easy",
-    reason: "fallback",
-    explanation:
-      "No strong learning signal was detected today."
-  };
-}
-
-export async function GET() {
   try {
-    const supabase = createServerClient();
-    // Get authenticated user from session cookie
-    const authClient = await createSupabaseServerClient();
-    const { data: { user } } = await authClient.auth.getUser();
+    // 1. Check if a challenge already exists for today for this user
+    const { data: existingChallenge, error: fetchError } = await supabase
+      .from('daily_challenges')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('challenge_date', todayISO) // Assuming challenge_date is DATE type
+      .single();
 
-    if (!user) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found
+      console.error('Error fetching daily challenge:', fetchError);
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
     }
 
-    const userId = user.id;
-
-    const today = new Date().toISOString().split("T")[0];
-
-    const { data: existing } = await supabase
-      .from("daily_challenges")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("date", today)
-      .maybeSingle();
-
-    if (existing) {
-      return Response.json({
-        challenge: {
-          id: existing.id,
-          ...existing.challenge,
-        },
-        completed: existing.completed,
-      });
+    if (existingChallenge) {
+      return NextResponse.json(existingChallenge);
     }
 
-    const [{ data: subjects }, { data: tasks }, { data: exams }] =
-      await Promise.all([
-        supabase.from("subjects").select("*"),
-        supabase.from("tasks").select("*"),
-        supabase.from("exams").select("*"),
-      ]);
+    // 2. If no challenge exists, create a new one
+    const randomChallenge = challengesList[Math.floor(Math.random() * challengesList.length)];
 
-    const challenge = generateChallenge({
-      subjects: subjects || [],
-      tasks: tasks || [],
-      exams: exams || [],
-    });
-
-    const { data, error } = await supabase
-      .from("daily_challenges")
+    const { data: newChallenge, error: insertError } = await supabase
+      .from('daily_challenges')
       .insert({
-        user_id: userId,
-        date: today,
-        challenge,
+        user_id: user.id,
+        title: randomChallenge.title,
+        description: randomChallenge.description,
+        xp_reward: randomChallenge.xp_reward,
+        challenge_date: todayISO,
         completed: false,
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (insertError) {
+      console.error('Error inserting new daily challenge:', insertError);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
 
-    return Response.json({
-      challenge: {
-        id: data.id,
-        ...challenge,
-      },
-      completed: false,
-    });
-  } catch (err) {
-    console.error(err);
+    return NextResponse.json(newChallenge);
 
-    return Response.json(
-      {
-        error: "Failed to fetch challenge",
-      },
-      {
-        status: 500,
-      }
-    );
+  } catch (error) {
+    console.error('Unexpected error in GET /api/challenges/today:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
