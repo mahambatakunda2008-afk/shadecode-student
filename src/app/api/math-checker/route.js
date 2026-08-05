@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
 // Vision + reasoning calls on multi-step problems (calculus, matrices,
 // mechanics) routinely exceed the default 10s serverless timeout. Without
@@ -253,6 +255,19 @@ function buildAttempts({ base64, mimeType, userPrompt }) {
 
 export async function POST(req) {
   try {
+    // Was completely unauthenticated and unrate-limited despite calling
+    // real vision-AI providers per request (Cloudflare, up to 6 Gemini
+    // model attempts, OpenAI) -- same class of gap fixed in
+    // cortex/verify/route.ts. Gated to match the page it's actually
+    // served from (authenticated (app) route group).
+    const supabase = await createSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const rateLimitResponse = await applyRateLimit(req, aiEndpointLimiter);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const formData = await req.formData();
     const imageFile = formData.get('image');
     // Previously only "topic" was read here — "question" was appended by

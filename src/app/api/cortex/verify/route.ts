@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
 // Reuse many patterns from math-checker route: provider rotation, vision-first
 export const maxDuration = 60;
@@ -133,6 +135,19 @@ function buildTextAttempts({ userPrompt, targetShape = 'help' }: { userPrompt: s
 
 export async function POST(req: Request) {
   try {
+    // Was completely unauthenticated and unrate-limited despite calling
+    // real vision-AI providers (Cloudflare, up to 6 Gemini model attempts,
+    // OpenAI) per request -- anyone could script requests against this to
+    // burn free-tier quota or run up cost. Gated to match the page it's
+    // actually served from (authenticated (app) route group).
+    const supabase = await createSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const rateLimitResponse = await applyRateLimit(req, aiEndpointLimiter);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const formData = await req.formData();
     const mode = (formData.get('mode') || 'check') as string;
     const subject = String(formData.get('subject') || formData.get('topic') || 'General');
