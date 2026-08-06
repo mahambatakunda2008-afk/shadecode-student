@@ -80,3 +80,13 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-08-06 — Cortex Auto-Cycle
+
+I have successfully implemented the first task on the roadmap: 'Badges & Achievements Display'. I created `src/components/BadgeDisplay.jsx` to visually present a user's earned and unearned badges in a grid, complete with placeholder icons, names, and unlock dates. To support this, I developed `src/app/api/achievements/route.js`, a secure API endpoint that retrieves the logged-in user's achievements from the Supabase `achievements` table. This foundational work sets the stage for future gamification features.
+
+**Improvements this cycle:**
+- [HIGH] Badge Display Component: Build `src/components/BadgeDisplay.jsx`. This component will fetch the current user's achievements from the `/api/achievements` endpoint. It will display all possible badges, showing earned badges with their name, icon, and unlock date, and unearned badges in a greyed-out, 'locked' state. A hardcoded list of all possible badges is used for demonstration purposes. It uses `next/image` for icons and `useState`/`useEffect` for client-side data fetching.
+- [HIGH] Achievements API Route: Create `src/app/api/achievements/route.js`. This API route will handle GET requests to retrieve the current user's unlocked achievements. It uses `@supabase/auth-helpers-nextjs` to get the authenticated user's session and `user_id`, then queries the `achievements` table for records associated with that ID, returning them as a JSON array.
+
+---
