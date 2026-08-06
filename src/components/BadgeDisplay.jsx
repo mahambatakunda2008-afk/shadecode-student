@@ -1,283 +1,94 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-// ── Badge catalog — defines all possible badges ──────────────────────────
-// Each badge has a key that maps to achievement types from the DB.
-// Badges not yet earned show as locked.
-const BADGE_CATALOG = [
-  {
-    key: "first_task",
-    name: "First Step",
-    icon: "📝",
-    description: "Complete your first task",
-    color: "#6366f1",
-  },
-  {
-    key: "streak_3",
-    name: "On Fire",
-    icon: "🔥",
-    description: "Reach a 3-day streak",
-    color: "#f59e0b",
-  },
-  {
-    key: "streak_7",
-    name: "Unstoppable",
-    icon: "⚡",
-    description: "Reach a 7-day streak",
-    color: "#fb923c",
-  },
-  {
-    key: "xp_100",
-    name: "XP Hunter",
-    icon: "💎",
-    description: "Earn 100 XP total",
-    color: "#8b5cf6",
-  },
-  {
-    key: "xp_500",
-    name: "XP Master",
-    icon: "👑",
-    description: "Earn 500 XP total",
-    color: "#eab308",
-  },
-  {
-    key: "exam_first",
-    name: "Test Taker",
-    icon: "🎯",
-    description: "Complete your first exam",
-    color: "#22c55e",
-  },
-  {
-    key: "exam_ace",
-    name: "Ace",
-    icon: "🏆",
-    description: "Score 90%+ on an exam",
-    color: "#f472b6",
-  },
-  {
-    key: "challenge_5",
-    name: "Challenger",
-    icon: "🏅",
-    description: "Complete 5 daily challenges",
-    color: "#06b6d4",
-  },
-  {
-    key: "focus_30",
-    name: "Deep Focus",
-    icon: "🧘",
-    description: "Complete a 30-min focus session",
-    color: "#14b8a6",
-  },
-  {
-    key: "subjects_3",
-    name: "Renaissance",
-    icon: "📚",
-    description: "Add 3 subjects",
-    color: "#a78bfa",
-  },
+// Placeholder for all possible badges. In a real application, this list might be fetched
+// from a configuration table or a dedicated API endpoint if dynamic badge creation is allowed.
+const ALL_POSSIBLE_BADGES = [
+  { id: 'first_login', name: 'First Step', description: 'Logged in for the first time.', icon: '🚶‍♂️' },
+  { id: 'ten_tasks_complete', name: 'Task Novice', description: 'Completed 10 tasks.', icon: '✅' },
+  { id: 'first_subject_created', name: 'New Horizon', description: 'Created your first subject.', icon: '📚' },
+  { id: 'seven_day_streak', name: 'Daily Habit', description: 'Maintained a 7-day study streak.', icon: '🔥' },
+  { id: 'study_hour_one', name: 'Apprentice Scholar', description: 'Completed 1 hour of study.', icon: '⏳' },
+  { id: 'xp_one_hundred', name: 'XP Explorer', description: 'Earned 100 XP.', icon: '✨' },
+  { id: 'three_subjects', name: 'Subject Master', description: 'Created 3 subjects.', icon: '🌟' },
+  { id: 'first_exam_scheduled', name: 'Exam Ready', description: 'Scheduled your first exam.', icon: '📝' },
+  { id: 'twenty_tasks_complete', name: 'Task Enthusiast', description: 'Completed 20 tasks.', icon: '💪' },
+  { id: 'thirty_day_streak', name: 'Streak Pro', description: 'Maintained a 30-day study streak.', icon: '🏆' },
+  { id: 'insight_first', name: 'Self-Awareness Initiate', description: 'Received your first Cortex insight.', icon: '🧠' },
+  { id: 'challenge_first', name: 'Challenger', description: 'Completed your first daily challenge.', icon: '🏅' },
 ];
 
-export default function BadgeDisplay({ compact = false }) {
-  const [earned, setEarned] = useState([]);
+const BadgeItem = ({ badge, unlockedAt }) => {
+  const isUnlocked = !!unlockedAt;
+  const unlockDate = unlockedAt ? new Date(unlockedAt).toLocaleDateString() : '';
+
+  return (
+    <div className={`p-4 border rounded-lg shadow-sm text-center transition-all duration-200 ${isUnlocked ? 'bg-white border-blue-200' : 'bg-gray-50 border-gray-200 text-gray-400 opacity-60'}`}>
+      <div className={`text-4xl mb-2 ${!isUnlocked && 'grayscale contrast-50'}`}>
+        {badge.icon}
+      </div>
+      <h3 className={`font-semibold text-lg ${!isUnlocked && 'text-gray-500'}`}>
+        {badge.name}
+      </h3>
+      <p className="text-sm text-gray-600 mb-1 leading-tight">{badge.description}</p>
+      {isUnlocked ? (
+        <p className="text-xs text-green-600 mt-2">Unlocked: {unlockDate}</p>
+      ) : (
+        <p className="text-xs text-gray-500 mt-2">Locked</p>
+      )}
+    </div>
+  );
+};
+
+export function BadgeDisplay() {
+  const [earnedAchievements, setEarnedAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        const response = await fetch('/api/achievements');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Error fetching achievements: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setEarnedAchievements(data.achievements);
+      } catch (err) {
+        console.error('Failed to fetch achievements:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAchievements();
   }, []);
 
-  async function fetchAchievements() {
-    try {
-      const res = await fetch("/api/achievements");
-      const data = await res.json();
+  if (loading) return <div className="text-center py-8 text-lg text-gray-600">Loading badges...</div>;
+  if (error) return <div className="text-center py-8 text-red-600 text-lg">Error loading achievements: {error}</div>;
 
-      if (data.achievements) {
-        setEarned(data.achievements);
-      }
-    } catch (err) {
-      console.error("Failed to load achievements:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const displayBadges = ALL_POSSIBLE_BADGES.map(possibleBadge => {
+    const earned = earnedAchievements.find(ea => ea.title === possibleBadge.id);
+    return {
+      ...possibleBadge,
+      unlockedAt: earned ? earned.unlocked_at : null,
+    };
+  });
 
-  // Match earned achievements to the catalog by key/type/name
-  function isEarned(badgeKey) {
-    return earned.find(
-      (a) =>
-        a.badge_type === badgeKey ||
-        a.type === badgeKey ||
-        a.name === badgeKey ||
-        a.key === badgeKey
-    );
-  }
-
-  // In compact mode, show only earned badges (for dashboard row)
-  const displayBadges = compact
-    ? BADGE_CATALOG.filter((b) => isEarned(b.key))
-    : BADGE_CATALOG;
-
-  // Compact mode: show nothing if no badges earned
-  if (compact && displayBadges.length === 0 && !loading) {
-    return null;
-  }
-
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-500" />
-          <span className="text-xs text-[var(--muted-foreground)]">
-            Loading achievements…
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Full grid display
-  if (!compact) {
-    return (
-      <div
-        id="badges-display"
-        className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4"
-      >
-        <p
-          className="text-xs font-bold uppercase tracking-widest mb-3"
-          style={{ color: "var(--muted-foreground)" }}
-        >
-          Achievements
-        </p>
-
-        {earned.length > 0 && (
-          <p className="text-xs mb-3" style={{ color: "var(--primary)" }}>
-            {earned.length} / {BADGE_CATALOG.length} unlocked
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-2.5">
-          {displayBadges.map((badge) => {
-            const achievement = isEarned(badge.key);
-            const unlocked = !!achievement;
-
-            return (
-              <div
-                key={badge.key}
-                id={`badge-${badge.key}`}
-                className={`relative overflow-hidden rounded-lg border p-3 transition-all duration-200 ${unlocked
-                    ? "border-white/10 bg-white/[0.03]"
-                    : "border-white/[0.04] bg-white/[0.01] opacity-40"
-                  }`}
-                style={
-                  unlocked
-                    ? {
-                      boxShadow: `0 0 12px ${badge.color}15`,
-                      borderColor: `${badge.color}25`,
-                    }
-                    : {}
-                }
-              >
-                {/* Glow for unlocked badges */}
-                {unlocked && (
-                  <div
-                    className="pointer-events-none absolute inset-0"
-                    style={{
-                      background: `radial-gradient(ellipse at 30% 20%, ${badge.color}10 0%, transparent 70%)`,
-                    }}
-                  />
-                )}
-
-                <div className="relative flex items-center gap-2.5">
-                  <span
-                    className={`text-xl ${!unlocked ? "grayscale" : ""}`}
-                    style={{ filter: unlocked ? "none" : "grayscale(100%)" }}
-                  >
-                    {unlocked ? badge.icon : "🔒"}
-                  </span>
-
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-xs font-semibold truncate"
-                      style={{
-                        color: unlocked
-                          ? "var(--foreground)"
-                          : "var(--muted-foreground)",
-                      }}
-                    >
-                      {badge.name}
-                    </p>
-                    <p
-                      className="text-[10px] truncate"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      {unlocked
-                        ? formatDate(
-                          achievement.unlocked_at ||
-                          achievement.created_at
-                        )
-                        : badge.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Compact row (for dashboard inline)
   return (
-    <div
-      id="badges-compact"
-      className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
-    >
-      <p
-        className="text-[10px] font-bold uppercase tracking-widest mr-1 flex-shrink-0"
-        style={{ color: "var(--muted-foreground)" }}
-      >
-        Badges
-      </p>
-
-      <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
-        {displayBadges.slice(0, 5).map((badge) => (
-          <span
-            key={badge.key}
-            className="text-base flex-shrink-0"
-            title={badge.name}
-          >
-            {badge.icon}
-          </span>
+    <div className="container mx-auto p-4">
+      <h2 className="text-3xl font-extrabold mb-8 text-center text-gray-800">Your Achievements</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {displayBadges.map(badge => (
+          <BadgeItem key={badge.id} badge={badge} unlockedAt={badge.unlockedAt} />
         ))}
-        {displayBadges.length > 5 && (
-          <span
-            className="text-[10px] font-semibold flex-shrink-0"
-            style={{ color: "var(--muted-foreground)" }}
-          >
-            +{displayBadges.length - 5}
-          </span>
-        )}
       </div>
-
-      <span
-        className="text-[10px] font-semibold flex-shrink-0"
-        style={{ color: "var(--primary)" }}
-      >
-        {earned.length}/{BADGE_CATALOG.length}
-      </span>
+      {displayBadges.length === 0 && (
+        <p className="text-center text-gray-500 mt-8 text-lg">No achievements defined yet. Keep studying to unlock your first badge!</p>
+      )}
     </div>
   );
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "";
-  try {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-    });
-  } catch {
-    return "";
-  }
 }
