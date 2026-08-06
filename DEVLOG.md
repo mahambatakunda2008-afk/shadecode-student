@@ -80,3 +80,14 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-08-07 — Manual Audit (Claude)
+
+Checked `tasks.md` against the live repo (same bug class as the Daily Challenge duplication from PRs #77-80). "Badges & Achievements Display" was still marked `[ ]` pending, but the feature already existed in full under a different name -- `src/app/(app)/achievements/page.tsx`, `AchievementsContext`, `useAchievements` hook, `route.ts` (17-achievement catalog with rarity tiers and XP rewards, backed by `user_achievements`), wired into exam-sim, tasks, lessons, and the app layout. Because the task was never marked done, later cycles independently rebuilt it as `BadgeDisplay.jsx` (never imported anywhere in the app) and a second, conflicting `route.js` in the same folder as `route.ts` -- silently shadowed at build time by Next.js's `.ts`-over-`.js` resolution, never executed, reading from the older orphaned `achievements` table with an incompatible badge-key schema from the real system.
+
+**Improvements this cycle:**
+- [HIGH] Delete orphaned duplicate achievement system: Removed `src/components/BadgeDisplay.jsx` (unreferenced anywhere in the app) and `src/app/api/achievements/route.js` (dead code, shadowed by `route.ts`). Confirmed both `achievements` and `user_achievements` tables already have RLS enabled before touching anything.
+- [HIGH] Mark `Badges & Achievements Display` as `[x]` in `tasks.md` with a note on what it actually shipped as, so future Cortex cycles stop re-litigating an already-complete feature.
+- [HIGH] Supabase security sweep: enabled RLS (previously fully disabled and publicly readable/writable) on `user_cortex`, `topic_mastery`, `learning_events`, `daily_focus`, `revisions`, `exam_logs`; fixed mutable `search_path` on 12 `SECURITY DEFINER` functions; added the missing `auth.uid() = user_id` ownership guard to `increment_xp`, which previously let any authenticated (or anon) caller set arbitrary XP/level on any user's account via direct RPC call -- a live leaderboard-manipulation vector.
+
+---

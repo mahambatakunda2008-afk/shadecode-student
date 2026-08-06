@@ -35,12 +35,9 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
   - Already implemented on main: `src/components/DailyChallenge.jsx` (fetches `/api/challenges/today`), `src/app/api/challenges/today/route.js`, `src/app/api/challenges/today/complete/route.js`.
   - Was still marked `[ ]` here, causing 4 separate autonomous cycles (2026-08-04/05) to independently regenerate this same feature, opening PRs #77, #78, #79, #80 -- all now redundant/superseded, closed manually. #80 additionally broke the production build (deprecated `createServerComponentClient` import from `@supabase/auth-helpers-nextjs`, and destructively rewrote the existing 167-line working `challenges/today/route.js` down to a broken 61-line version). Marking `[x]` here so future cycles don't repeat this.
 
-- [ ] 🔴 **Badges & Achievements Display**
-  - Build `src/components/BadgeDisplay.jsx` — shows earned badges in a grid
-  - Read from `achievements` table for current user
-  - Show badge icon, name, and unlock date
-  - Add a locked state for unearned badges (greyed out)
-  - File targets: `src/components/BadgeDisplay.jsx`, `src/app/api/achievements/route.js`
+- [x] 🔴 **Badges & Achievements Display**
+  - Already implemented on main under a different name: `src/app/(app)/achievements/page.tsx`, `src/contexts/AchievementsContext.tsx`, `src/hooks/useAchievements.ts`, `src/app/api/achievements/route.ts` (17-achievement catalog, rarity tiers, XP rewards, `user_achievements` table), plus `AchievementToast.tsx` for unlock notifications. Wired into exam-sim, tasks, lessons, and the app layout.
+  - Was still marked `[ ]` here, causing separate cycles to independently rebuild this as `BadgeDisplay.jsx` + a second, conflicting `route.js` in the same folder as the real `route.ts` (10-badge catalog reading straight from the older, orphaned `achievements` table, incompatible id/field shape with the real system). `route.js` was silently shadowed by `route.ts` at build time and never executed; `BadgeDisplay.jsx` was never imported anywhere. Both deleted as dead code (2026-08-07). Marking `[x]` here so future cycles don't repeat this -- same bug class as the Daily Challenge duplication above.
 
 - [ ] 🔴 **Cortex Insight History Page**
   - Build `src/app/insights/history/page.jsx`
