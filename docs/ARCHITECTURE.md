@@ -49,16 +49,20 @@ new AI-backed route; it's not automatic.
 
 `.github/workflows/cortex.yml` runs `.cortex/cortex-engine.js` on a
 schedule with `contents: write` + `pull-requests: write` — it can push
-commits and open PRs using its own Gemini calls, unsupervised. Root cause
-of its failing runs was found and fixed 2026-08-05: Node 20 (the
-workflow's runtime) lacks native WebSocket support, and
-`@supabase/supabase-js`'s `createClient()` unconditionally initializes a
-Realtime client that needs it, even though this script never uses
-realtime features. Fixed by bumping to Node 22. A manual re-run after the
-fix still failed at the same step; unconfirmed whether that's a new,
-different error or a residual issue — GitHub's annotations API only ever
-surfaces generic "exit code 1" from this environment, the raw log text
-(visible directly in the Actions UI) is needed to confirm either way.
+commits and open PRs using its own Gemini/OpenRouter calls, unsupervised.
+
+**Confirmed working as of 2026-08-05.** Three real bugs were found and
+fixed via a live-log-paste debugging loop with Takunda (raw Actions log
+text isn't reachable via API from this environment, only through the UI):
+1. Node 20 lacks native WebSocket support; `createClient()` unconditionally initializes a Realtime client that needs it even though this script never uses realtime features — fixed by bumping the workflow to Node 22.
+2. `OPENROUTER_API_KEY` existed as a repo secret but was never passed into this job's env block, so the already-coded OpenRouter fallback was silently dead — wired in.
+3. A single Gemini attempt gave up immediately on transient 503s ("high demand") — added a short retry before falling through to OpenRouter.
+
+Verified end-to-end via a real triggered run: schema discovery → data
+gathering → AI decision (via OpenRouter, since Gemini was still
+503'ing that day) → PR opened (#77). Still worth reviewing every PR it
+opens before merging — it's an unsupervised LLM writing code directly
+against `main`'s history, not a substitute for review.
 
 ## Database
 
