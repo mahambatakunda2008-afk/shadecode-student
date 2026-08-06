@@ -80,3 +80,13 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-08-06 — Cortex Auto-Cycle
+
+I focused on developing the initial Badges & Achievements Display. This involved creating an API route (`src/app/api/achievements/route.js`) to securely retrieve a user's achievements from the Supabase `achievements` table and combine them with a predefined list of all possible badges to determine their unlocked status. Concurrently, I built the `BadgeDisplay` React component (`src/components/BadgeDisplay.jsx`), which leverages this API to visually present unlocked and locked badges to the student in a grid format. This provides a foundational element for gamification and progress tracking. Please ensure `moment` and `react-icons` are installed (`npm install moment react-icons`) if not already present in the project's dependencies.
+
+**Improvements this cycle:**
+- [HIGH] Achievements API Route: Create an API route at `src/app/api/achievements/route.js` to fetch a user's earned achievements from the `achievements` table. This route will also define a comprehensive list of all possible badges and merge this with the user-specific data, providing a complete status (unlocked/locked) for each badge.
+- [HIGH] BadgeDisplay Component: Develop `src/components/BadgeDisplay.jsx`, a client-side React component. This component will fetch achievement data from the new `/api/achievements` route and render it as a grid. Each badge will display its name, a representative icon (or placeholder), and the unlock date if earned. Unearned badges will be greyed out to indicate a 'locked' state.
+
+---
