@@ -4,10 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +35,11 @@ export default function SignUp() {
     }
     if (!password) {
       setError("Password is required");
+      setLoading(false);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -115,13 +124,48 @@ export default function SignUp() {
           onChange={(e) => setEmail(e.target.value)}
           style={inputStyle}
         />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle}
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            placeholder="Password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ ...inputStyle, paddingRight: "48px" }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            style={{
+              position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", padding: "4px", cursor: "pointer",
+              color: "var(--muted-foreground)", display: "flex", alignItems: "center",
+            }}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        <div style={{ position: "relative" }}>
+          <input
+            placeholder="Confirm password"
+            type={showConfirmPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            style={{ ...inputStyle, paddingRight: "48px" }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((v) => !v)}
+            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            style={{
+              position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", padding: "4px", cursor: "pointer",
+              color: "var(--muted-foreground)", display: "flex", alignItems: "center",
+            }}
+          >
+            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
 
         {error && (
           <p style={{ color: "#ef4444", fontSize: "13px" }}>{error}</p>

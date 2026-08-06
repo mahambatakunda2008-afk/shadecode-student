@@ -24,6 +24,7 @@ export default function Settings() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
   const [userId, setUserId] = useState("");
@@ -33,26 +34,44 @@ export default function Settings() {
 
   useEffect(() => {
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
+        if (!user) {
+          router.push("/auth/login");
+          return;
+        }
+
+        setUserId(user.id);
+        setEmail(user.email || "");
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError) {
+          // .single() errors if the profile row is missing entirely (not
+          // just a normal "no data yet" case) -- still let the page render
+          // with an empty username rather than get stuck, but surface it.
+          console.error("[Settings] failed to load profile:", profileError.message);
+        }
+
+        setUsername(profile?.username || "");
+      } catch (err) {
+        // Previously this whole function had no try/catch -- any thrown
+        // exception (network failure, unexpected error from getUser() or
+        // the profile query) meant setLoading(false) was never reached,
+        // leaving the page stuck on the skeleton loader forever with no
+        // error shown and no way out.
+        console.error("[Settings] init failed:", err);
+        setLoadError("Couldn't load your settings. Please refresh the page.");
+      } finally {
+        setLoading(false);
       }
-
-      setUserId(user.id);
-      setEmail(user.email || "");
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
-
-      setUsername(profile?.username || "");
-      setLoading(false);
     };
 
     init();
@@ -87,6 +106,14 @@ export default function Settings() {
         <div className="ssc-skeleton h-8 w-48" />
         <div className="ssc-skeleton h-40 w-full" />
         <div className="ssc-skeleton h-32 w-full" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="ssc-page">
+        <p style={{ color: "#ef4444", fontSize: "14px", padding: "24px 0" }}>{loadError}</p>
       </div>
     );
   }

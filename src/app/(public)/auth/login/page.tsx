@@ -5,10 +5,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { setOnboardingComplete } from "@/lib/onboarding";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -103,13 +105,27 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           style={inputStyle}
         />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle}
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            placeholder="Password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ ...inputStyle, paddingRight: "48px" }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            style={{
+              position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", padding: "4px", cursor: "pointer",
+              color: "var(--muted-foreground)", display: "flex", alignItems: "center",
+            }}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
 
         {error && (
           <p style={{ color: "#ef4444", fontSize: "13px" }}>{error}</p>
