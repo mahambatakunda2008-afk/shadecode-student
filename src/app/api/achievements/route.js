@@ -1,36 +1,30 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const supabase = createServerComponentClient({ cookies });
 
-    if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: achievements, error } = await supabase
-      .from("achievements")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .from('achievements')
+      .select('title, unlocked_at')
+      .eq('user_id', user.id);
 
     if (error) {
-      console.error("Achievements fetch error:", error);
-      return Response.json(
-        { error: "Failed to fetch achievements" },
-        { status: 500 }
-      );
+      console.error('Error fetching achievements for user_id:', user.id, error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return Response.json({ achievements: achievements || [] });
+    return NextResponse.json({ achievements });
   } catch (err) {
-    console.error("Achievements API error:", err);
-    return Response.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Unexpected error in achievement API:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
