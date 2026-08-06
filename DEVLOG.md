@@ -80,3 +80,13 @@ I observed that the `insights` database table was not properly initialized, prev
 - [MEDIUM] Cortex Insight History Page (Placeholder): Build a basic client-side component page at `src/app/insights/history/page.jsx` that fetches and displays insights for the current user from the new `/api/cortex/insight` endpoint. This fulfills a key roadmap item and allows immediate verification of insight generation and storage. It includes basic Tailwind styling, groups insights by week, and has a placeholder for the 'most frequent pattern' summary to be implemented later.
 
 ---
+
+## 2026-08-06 — Cortex Auto-Cycle
+
+I've started working on the Badges & Achievements feature. This cycle, I implemented the API route (`/api/achievements`) to fetch a user's earned achievements and developed the `BadgeDisplay.jsx` component. The component now fetches this data and renders a comprehensive grid, showing both unlocked and locked badges to motivate students.
+
+**Improvements this cycle:**
+- [HIGH] API Route for Achievements: Create a Next.js API route at `src/app/api/achievements/route.js` that handles GET requests. This route will authenticate the user, query the `achievements` table for the logged-in user's data (title and unlocked_at), and return the results as a JSON response. This provides the necessary data for the frontend display.
+- [HIGH] Badge Display Component: Develop `src/components/BadgeDisplay.jsx` to render a grid of all possible badges. It will fetch earned achievements from the `/api/achievements` endpoint. For each badge, it will display its icon, name, and description. If a badge is earned, it will show the unlock date; otherwise, it will appear greyed out, indicating a locked state. A hardcoded list of potential badges is included to provide context for all achievements.
+
+---
