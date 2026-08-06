@@ -82,9 +82,9 @@ both, starting at `0.2.0`. Still pre-1.0 by design given open items below.
 
 | Item | Severity | Status |
 |---|---|---|
-| Cortex Engine failing runs, cause unknown | Medium | Investigated, blocked on log access; missing-secret theory explicitly ruled out |
-| No `dynamic` export anywhere in app | Low-Medium | Documented, not fixed — see reasoning below |
-| Exam marking score clamp | Low | Documented, not fixed, no observed occurrence |
+| ~~Cortex Engine failing runs, cause unknown~~ | ~~Medium~~ | **RESOLVED (2026-08-07)** — fixed and verified via PR #77; confirmed via Actions API, 7 consecutive successful runs 2026-08-05 07:08 through 2026-08-06 14:24, only failure immediately precedes the fix. No longer a release blocker. |
+| No `dynamic` export anywhere in app | Low-Medium | Verified still accurate (2026-08-07) — 0/60 route files. Still open, see reasoning below. |
+| ~~Exam marking score clamp~~ | ~~Low~~ | **RESOLVED** — confirmed live in `src/app/api/exam/mark/route.js:185-186`, clamp against hallucinating AI grader is in place. Doc was stale, not the code. |
 | Thin test coverage on API routes | Medium | Not addressed this audit |
 
 ---
@@ -120,7 +120,7 @@ both, starting at `0.2.0`. Still pre-1.0 by design given open items below.
 ---
 
 ## Recommended Release Checklist (before calling this v1.0)
-- [ ] Resolve or explicitly disable the Cortex Engine until its failure is understood
+- [x] Resolve or explicitly disable the Cortex Engine until its failure is understood — **resolved 2026-08-07**, PR #77, verified 7 consecutive successful runs
 - [ ] Decide on and either fix or formally accept the `dynamic`/static-prerendering pattern
 - [ ] Establish an accessibility baseline (even a single pass with axe/lighthouse)
 - [ ] Add at least route-level smoke tests for the highest-traffic API routes (exam/mark, learn, tasks)
@@ -132,3 +132,14 @@ both, starting at `0.2.0`. Still pre-1.0 by design given open items below.
 
 ## Suggested Milestone
 **Next target: `v0.3.0`** — closes the High-priority backlog items (Cortex Engine cause, `dynamic` decision). **`v1.0.0`** should wait until the full Release Checklist above is clear, not before — the app works for current users today, but "1.0" implies a level of operational maturity (monitoring, test coverage, resolved unknowns) that isn't there yet.
+
+---
+
+## 2026-08-07 Verification Pass (Claude)
+
+Cross-checked this report's Outstanding Risks against live repo/Actions/DB state before doing new work, since a stale "ship-blocking" item left standing would misdirect whoever reads this next.
+
+- **Cortex Engine**: this report's own text says "unresolved" in the body, but `DEVLOG.md` already had a 2026-08-05 entry confirming PR #77 fixed it. Verified independently via Actions API rather than trusting either doc: 7 consecutive green runs. Marked resolved above.
+- **Exam marking clamp**: code already has the fix; this report's "not fixed" was stale at time of reading, not wrong at time of writing (can't confirm which commit added it without full blame history).
+- **`dynamic` export gap**: re-verified, still accurate. Left open deliberately, not fixed reflexively — blanket-adding `force-dynamic` across 60 routes without checking which are safe to statically prerender risks trading one class of fragility for a caching regression. Needs a deliberate per-route pass, not a sweep.
+- Also found and fixed, separately: the achievements/badges duplication bug (same class as the Daily Challenge one from PRs #77-80) — see `DEVLOG.md` 2026-08-07 entry and commit `79f92a4`. Not something this report's audit scope would have caught, since it required diffing `.cortex/tasks.md` against actual wired-up pages rather than reviewing code in isolation.
