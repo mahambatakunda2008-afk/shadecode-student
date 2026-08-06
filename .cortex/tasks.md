@@ -31,12 +31,9 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 
 ## 🔴 Phase 1 — Frontend Features (Do Now)
 
-- [ ] 🔴 **Daily Challenge Component**
-  - Build `src/components/DailyChallenge.jsx` — shows today's challenge card
-  - Fetch from `/api/challenges/today` endpoint
-  - Show challenge title, description, XP reward, and a "Complete" button
-  - On completion, call API to award XP and mark challenge done
-  - Use Tailwind for styling, match existing app design
+- [x] 🔴 **Daily Challenge Component**
+  - Already implemented on main: `src/components/DailyChallenge.jsx` (fetches `/api/challenges/today`), `src/app/api/challenges/today/route.js`, `src/app/api/challenges/today/complete/route.js`.
+  - Was still marked `[ ]` here, causing 4 separate autonomous cycles (2026-08-04/05) to independently regenerate this same feature, opening PRs #77, #78, #79, #80 -- all now redundant/superseded, closed manually. #80 additionally broke the production build (deprecated `createServerComponentClient` import from `@supabase/auth-helpers-nextjs`, and destructively rewrote the existing 167-line working `challenges/today/route.js` down to a broken 61-line version). Marking `[x]` here so future cycles don't repeat this.
 
 - [ ] 🔴 **Badges & Achievements Display**
   - Build `src/components/BadgeDisplay.jsx` — shows earned badges in a grid
