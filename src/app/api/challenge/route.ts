@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('username, full_name')
+        .select('username, display_name')
         .eq('id', user.id)
         .single()
-      challenger_name = profile?.username ?? profile?.full_name ?? null
+      challenger_name = profile?.username ?? profile?.display_name ?? null
     }
 
     const { data, error } = await supabase
