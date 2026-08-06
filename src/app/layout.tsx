@@ -46,11 +46,20 @@ export const metadata: Metadata = {
     siteName: "Shadecode Student",
     title: "Shadecode Student",
     description: "AI-powered learning platform for students.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Shadecode Student — AI-powered learning platform for Cambridge & ZIMSEC students",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Shadecode Student",
     description: "AI-powered learning platform for students.",
+    images: ["/og-image.png"],
   },
   appleWebApp: {
     capable: true,
