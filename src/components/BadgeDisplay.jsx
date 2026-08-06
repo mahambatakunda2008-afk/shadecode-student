@@ -1,283 +1,78 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import { FaAward, FaLock } from 'react-icons/fa'; // Requires 'react-icons' package
+import moment from 'moment'; // Requires 'moment' package for date formatting
 
-// ── Badge catalog — defines all possible badges ──────────────────────────
-// Each badge has a key that maps to achievement types from the DB.
-// Badges not yet earned show as locked.
-const BADGE_CATALOG = [
-  {
-    key: "first_task",
-    name: "First Step",
-    icon: "📝",
-    description: "Complete your first task",
-    color: "#6366f1",
-  },
-  {
-    key: "streak_3",
-    name: "On Fire",
-    icon: "🔥",
-    description: "Reach a 3-day streak",
-    color: "#f59e0b",
-  },
-  {
-    key: "streak_7",
-    name: "Unstoppable",
-    icon: "⚡",
-    description: "Reach a 7-day streak",
-    color: "#fb923c",
-  },
-  {
-    key: "xp_100",
-    name: "XP Hunter",
-    icon: "💎",
-    description: "Earn 100 XP total",
-    color: "#8b5cf6",
-  },
-  {
-    key: "xp_500",
-    name: "XP Master",
-    icon: "👑",
-    description: "Earn 500 XP total",
-    color: "#eab308",
-  },
-  {
-    key: "exam_first",
-    name: "Test Taker",
-    icon: "🎯",
-    description: "Complete your first exam",
-    color: "#22c55e",
-  },
-  {
-    key: "exam_ace",
-    name: "Ace",
-    icon: "🏆",
-    description: "Score 90%+ on an exam",
-    color: "#f472b6",
-  },
-  {
-    key: "challenge_5",
-    name: "Challenger",
-    icon: "🏅",
-    description: "Complete 5 daily challenges",
-    color: "#06b6d4",
-  },
-  {
-    key: "focus_30",
-    name: "Deep Focus",
-    icon: "🧘",
-    description: "Complete a 30-min focus session",
-    color: "#14b8a6",
-  },
-  {
-    key: "subjects_3",
-    name: "Renaissance",
-    icon: "📚",
-    description: "Add 3 subjects",
-    color: "#a78bfa",
-  },
-];
-
-export default function BadgeDisplay({ compact = false }) {
-  const [earned, setEarned] = useState([]);
+export default function BadgeDisplay() {
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAchievements();
+    async function fetchBadges() {
+      try {
+        const response = await fetch('/api/achievements');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setBadges(data.badges);
+      } catch (e) {
+        setError(e.message);
+        console.error("Failed to fetch badges:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBadges();
   }, []);
 
-  async function fetchAchievements() {
-    try {
-      const res = await fetch("/api/achievements");
-      const data = await res.json();
-
-      if (data.achievements) {
-        setEarned(data.achievements);
-      }
-    } catch (err) {
-      console.error("Failed to load achievements:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Match earned achievements to the catalog by key/type/name
-  function isEarned(badgeKey) {
-    return earned.find(
-      (a) =>
-        a.badge_type === badgeKey ||
-        a.type === badgeKey ||
-        a.name === badgeKey ||
-        a.key === badgeKey
-    );
-  }
-
-  // In compact mode, show only earned badges (for dashboard row)
-  const displayBadges = compact
-    ? BADGE_CATALOG.filter((b) => isEarned(b.key))
-    : BADGE_CATALOG;
-
-  // Compact mode: show nothing if no badges earned
-  if (compact && displayBadges.length === 0 && !loading) {
-    return null;
-  }
-
   if (loading) {
-    return (
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-500" />
-          <span className="text-xs text-[var(--muted-foreground)]">
-            Loading achievements…
-          </span>
-        </div>
-      </div>
-    );
+    return <div className="text-center py-8 text-gray-600 dark:text-gray-300">Loading badges...</div>;
   }
 
-  // Full grid display
-  if (!compact) {
-    return (
-      <div
-        id="badges-display"
-        className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4"
-      >
-        <p
-          className="text-xs font-bold uppercase tracking-widest mb-3"
-          style={{ color: "var(--muted-foreground)" }}
-        >
-          Achievements
-        </p>
-
-        {earned.length > 0 && (
-          <p className="text-xs mb-3" style={{ color: "var(--primary)" }}>
-            {earned.length} / {BADGE_CATALOG.length} unlocked
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-2.5">
-          {displayBadges.map((badge) => {
-            const achievement = isEarned(badge.key);
-            const unlocked = !!achievement;
-
-            return (
-              <div
-                key={badge.key}
-                id={`badge-${badge.key}`}
-                className={`relative overflow-hidden rounded-lg border p-3 transition-all duration-200 ${unlocked
-                    ? "border-white/10 bg-white/[0.03]"
-                    : "border-white/[0.04] bg-white/[0.01] opacity-40"
-                  }`}
-                style={
-                  unlocked
-                    ? {
-                      boxShadow: `0 0 12px ${badge.color}15`,
-                      borderColor: `${badge.color}25`,
-                    }
-                    : {}
-                }
-              >
-                {/* Glow for unlocked badges */}
-                {unlocked && (
-                  <div
-                    className="pointer-events-none absolute inset-0"
-                    style={{
-                      background: `radial-gradient(ellipse at 30% 20%, ${badge.color}10 0%, transparent 70%)`,
-                    }}
-                  />
-                )}
-
-                <div className="relative flex items-center gap-2.5">
-                  <span
-                    className={`text-xl ${!unlocked ? "grayscale" : ""}`}
-                    style={{ filter: unlocked ? "none" : "grayscale(100%)" }}
-                  >
-                    {unlocked ? badge.icon : "🔒"}
-                  </span>
-
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-xs font-semibold truncate"
-                      style={{
-                        color: unlocked
-                          ? "var(--foreground)"
-                          : "var(--muted-foreground)",
-                      }}
-                    >
-                      {badge.name}
-                    </p>
-                    <p
-                      className="text-[10px] truncate"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      {unlocked
-                        ? formatDate(
-                          achievement.unlocked_at ||
-                          achievement.created_at
-                        )
-                        : badge.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
+  if (error) {
+    return <div className="text-center py-8 text-red-500">Error: {error}</div>;
   }
 
-  // Compact row (for dashboard inline)
   return (
-    <div
-      id="badges-compact"
-      className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
-    >
-      <p
-        className="text-[10px] font-bold uppercase tracking-widest mr-1 flex-shrink-0"
-        style={{ color: "var(--muted-foreground)" }}
-      >
-        Badges
-      </p>
-
-      <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
-        {displayBadges.slice(0, 5).map((badge) => (
-          <span
-            key={badge.key}
-            className="text-base flex-shrink-0"
-            title={badge.name}
-          >
-            {badge.icon}
-          </span>
-        ))}
-        {displayBadges.length > 5 && (
-          <span
-            className="text-[10px] font-semibold flex-shrink-0"
-            style={{ color: "var(--muted-foreground)" }}
-          >
-            +{displayBadges.length - 5}
-          </span>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Your Badges</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {badges.length > 0 ? (
+          badges.map((badge) => (
+            <div
+              key={badge.id}
+              className={`
+                relative flex flex-col items-center justify-center p-4 rounded-lg shadow-md min-h-[160px]
+                ${badge.unlocked
+                  ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 opacity-60'
+                }
+                transition-all duration-300 transform hover:scale-105
+              `}
+            >
+              {badge.unlocked ? (
+                <FaAward className="text-5xl mb-2" />
+              ) : (
+                <FaLock className="text-5xl mb-2" />
+              )}
+              <h3 className="font-semibold text-lg text-center mt-2 break-words max-w-full leading-tight">
+                {badge.title}
+              </h3>
+              {badge.unlocked && badge.unlocked_at && (
+                <p className="text-sm mt-1">Unlocked: {moment(badge.unlocked_at).format('MMM DD, YYYY')}</p>
+              )}
+              {!badge.unlocked && (
+                  <p className="text-sm mt-1">Locked</p>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="col-span-full text-center text-gray-600 dark:text-gray-300 mt-8">No badges found yet. Keep studying!</p>
         )}
       </div>
-
-      <span
-        className="text-[10px] font-semibold flex-shrink-0"
-        style={{ color: "var(--primary)" }}
-      >
-        {earned.length}/{BADGE_CATALOG.length}
-      </span>
     </div>
   );
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "";
-  try {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-    });
-  } catch {
-    return "";
-  }
 }
