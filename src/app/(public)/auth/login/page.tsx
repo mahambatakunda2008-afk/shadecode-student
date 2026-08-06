@@ -70,7 +70,7 @@ export default function Login() {
     border: "1px solid var(--card-border)",
     borderRadius: "10px",
     padding: "14px 16px",
-    color: "#0f172a",
+    color: "var(--foreground)",
     fontSize: "15px",
     outline: "none",
     caretColor: "var(--primary)",
