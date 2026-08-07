@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMemory } from "@/lib/cortex/memory";
 import { generateLearningInsight, generateRecommendation } from "@/lib/cortex/memoryTracker";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const supabase = await createSupabaseServerClient();

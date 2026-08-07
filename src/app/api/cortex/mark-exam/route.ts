@@ -6,6 +6,8 @@ import { awardXPBySource } from "@/lib/xp/manager";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { checkAndUnlockAchievements } from "@/lib/cortex/achievements";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();

@@ -3,6 +3,8 @@
 import { NextResponse } from "next/server";
 import { cortexAnalyze } from "@/lib/cortex/engine";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: any) {
   const state = await req.json();
 

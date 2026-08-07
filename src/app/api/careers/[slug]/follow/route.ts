@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCareerBySlug } from '@/lib/careers';
 import { followCareer, unfollowCareer } from '@/lib/careers/user';
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();

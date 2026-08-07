@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasUserRole } from "@/lib/auth/rbac";
 
+export const dynamic = "force-dynamic";
+
 const CONTRIBUTOR_XP_REWARD = 50;
 
 function getServiceClient() {

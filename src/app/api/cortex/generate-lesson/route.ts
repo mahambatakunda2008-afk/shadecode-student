@@ -21,6 +21,8 @@ import { getCache, generateCacheKey, shouldCache } from "@/lib/cortex/cache";
 import { validateLessonStructure } from "@/lib/cortex/validators";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 
+export const dynamic = "force-dynamic";
+
 interface GenerateLessonRequest {
   subject?: string;
   topic: string;

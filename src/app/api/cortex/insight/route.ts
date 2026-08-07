@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { listInsights, createInsight } from "@/lib/cortex/runtime/insights";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/cortex/insight
  * Returns the authenticated user's Cortex insights (newest first).

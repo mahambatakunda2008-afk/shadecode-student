@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initializeLearningPath } from "@/lib/learning-path";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 
+export const dynamic = "force-dynamic";
+
 const ONBOARDING_COOKIE = "onboarding_complete";
 const ONBOARDING_COOKIE_OPTIONS = {
   path: "/",

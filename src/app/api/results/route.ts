@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+export const dynamic = "force-dynamic";
+
 export type ExamResultPayload = {
   subject: string
   topic?: string

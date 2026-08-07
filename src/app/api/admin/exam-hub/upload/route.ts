@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasUserRole } from "@/lib/auth/rbac";
 import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
 
+export const dynamic = "force-dynamic";
+
 const VALID_KINDS = ["qp", "ms", "in", "gt"];
 
 function getServiceClient() {

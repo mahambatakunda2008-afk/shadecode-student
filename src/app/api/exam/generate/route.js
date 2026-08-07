@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
 
+export const dynamic = "force-dynamic";
+
 // NOTE: this used to have its own separate prompt + JSON parsing + no
 // fallback content, entirely independent from src/lib/cortex/examGenerator.ts
 // (which the /api/cortex/generate-exam route already used). That meant this

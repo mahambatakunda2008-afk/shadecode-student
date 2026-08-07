@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurriculumState } from "@/lib/curriculum";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const supabase = await createSupabaseServerClient();

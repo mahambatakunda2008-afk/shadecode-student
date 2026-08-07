@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasUserRole } from "@/lib/auth/rbac";
 import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
 
+export const dynamic = "force-dynamic";
+
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

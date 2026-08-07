@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabaseClient";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 function daysUntil(date) {
   const target = new Date(date);
   const now = new Date();

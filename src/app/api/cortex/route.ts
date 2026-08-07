@@ -11,6 +11,8 @@ import {
   createValidationErrorResponse 
 } from '@/lib/validation/schemas';
 
+export const dynamic = "force-dynamic";
+
 const DRAFTS_DIR = path.join(process.cwd(), 'src', 'app', 'api', 'cortex', 'generate-course');
 const DRAFTS_FILE = path.join(DRAFTS_DIR, 'drafts.json');
 

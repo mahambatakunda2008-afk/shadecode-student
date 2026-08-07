@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 import { applyRateLimit, authLimiter } from "@/lib/rate-limit/limiter";
 
+export const dynamic = "force-dynamic";
+
 const VALID_TYPES = new Set(["bug", "feature", "general"]);
 const MAX_MESSAGE_LENGTH = 5000;
 

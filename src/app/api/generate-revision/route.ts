@@ -4,6 +4,8 @@ import { generateRevisionSchema, validateRequestBody } from "@/lib/validation/sc
 import { logAIUsage } from "@/lib/ai/tracker";
 import { callAI } from "@/lib/ai";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   // Apply rate limiting for AI-powered endpoint
   const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);

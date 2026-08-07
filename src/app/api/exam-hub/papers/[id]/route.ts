@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 const SIGNED_URL_TTL_SECONDS = 60 * 10; // 10 minutes — plenty for viewing, short enough to limit leaked-link risk
 
 export async function GET(

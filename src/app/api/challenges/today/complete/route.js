@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabaseClient";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req) {
   try {
     const supabase = createServerClient();

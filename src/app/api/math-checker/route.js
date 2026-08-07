@@ -3,6 +3,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
+export const dynamic = "force-dynamic";
+
 // Vision + reasoning calls on multi-step problems (calculus, matrices,
 // mechanics) routinely exceed the default 10s serverless timeout. Without
 // this the function is killed mid-call and the client sees a generic

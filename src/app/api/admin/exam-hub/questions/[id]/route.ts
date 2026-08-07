@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasUserRole } from "@/lib/auth/rbac";
 
+export const dynamic = "force-dynamic";
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }

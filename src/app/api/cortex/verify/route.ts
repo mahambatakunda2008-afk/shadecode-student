@@ -3,6 +3,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { applyRateLimit, aiEndpointLimiter } from '@/lib/rate-limit/limiter';
 
+export const dynamic = "force-dynamic";
+
 // Reuse many patterns from math-checker route: provider rotation, vision-first
 export const maxDuration = 60;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;

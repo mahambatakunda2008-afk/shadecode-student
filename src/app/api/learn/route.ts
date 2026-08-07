@@ -23,6 +23,8 @@ import {
 import { callAI } from "@/lib/ai";
 import { awardXPBySource } from "@/lib/xp/manager";
 
+export const dynamic = "force-dynamic";
+
 // This route's own callAI call requests 4000 tokens and can fall through
 // several provider retries -- confirmed in prod logs as one of the routes
 // hitting AbortError / "All providers exhausted" under the old flat 15s

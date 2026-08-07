@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAchievements, getUserAchievements, checkAndUnlockAchievements } from "@/lib/cortex/achievements";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = await createSupabaseServerClient();

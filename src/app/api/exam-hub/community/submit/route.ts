@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
 
+export const dynamic = "force-dynamic";
+
 const VALID_UPLOAD_TYPES = ["paper", "mark_scheme", "examiner_report", "variant"];
 const VALID_KINDS = ["qp", "ms", "in", "gt"];
 

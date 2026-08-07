@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabaseClient';
 import { recordCortexInsight } from '@/lib/cortex';
 
+export const dynamic = "force-dynamic";
+
 export async function PUT(request, { params }) {
   const { id } = params;
   const supabase = createServerClient();
