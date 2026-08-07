@@ -7,6 +7,7 @@ import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
+import { calculateExamScore } from "@/lib/exam/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -15,20 +16,6 @@ export const dynamic = "force-dynamic";
 // fallback chain before lib/ai.ts's own (now-scaled) timeouts even got a
 // chance to complete.
 export const maxDuration = 90;
-
-/* ─────────────────────────────────────────────
-   GRADE SYSTEM
-───────────────────────────────────────────── */
-
-function getGrade(p) {
-  if (p >= 90) return "A*";
-  if (p >= 80) return "A";
-  if (p >= 70) return "B";
-  if (p >= 60) return "C";
-  if (p >= 50) return "D";
-  if (p >= 40) return "E";
-  return "U";
-}
 
 /* ─────────────────────────────────────────────
    MAIN ROUTE
@@ -180,29 +167,10 @@ ${qaText}
        SCORE CALCULATION
     ───────────────────────────── */
 
-    const questionMarksById = new Map(questions.map((q) => [q.id, q.marks]));
-
-    const totalScore = markingData.results.reduce((sum, r) => {
-      const maxForQuestion = questionMarksById.get(r.questionId);
-      const rawScore = r.score || 0;
-      // Clamp against a hallucinating AI grader returning a score higher
-      // than the question's own max marks (or a negative value) -- without
-      // this, percentage could exceed 100%.
-      const clampedScore = maxForQuestion !== undefined
-        ? Math.max(0, Math.min(rawScore, maxForQuestion))
-        : Math.max(0, rawScore);
-      return sum + clampedScore;
-    }, 0);
-
-    const maxScore = questions.reduce(
-      (sum, q) => sum + q.marks,
-      0
+    const { totalScore, maxScore, percentage, grade } = calculateExamScore(
+      questions,
+      markingData.results
     );
-
-    const percentage =
-      maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-
-    const grade = getGrade(percentage);
 
     /* ─────────────────────────────
        CORTEX INTEGRATION (🔥 MAIN FIX)
