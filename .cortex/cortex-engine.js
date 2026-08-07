@@ -315,12 +315,43 @@ async function openPullRequest(decision) {
   return pr.html_url;
 }
 
+// ── Step 0: Check for unreviewed cortex-auto PRs ─────────────────────────────
+// Root cause of the Daily Challenge (PRs #77-80) and Achievements
+// (PRs #81-83) duplication bugs: readTaskRoadmap() re-reads tasks.md fresh
+// from `main` every cycle, and applyImprovements() never marks a task [x] --
+// it only opens a PR for human review. If that PR is still open when the
+// next scheduled cycle runs, tasks.md on `main` still shows the task
+// pending, so the engine independently rebuilds it again, with no idea a
+// PR already exists. Rather than trying to teach the AI to reconcile
+// competing in-flight implementations (expensive, error-prone, and it's
+// exactly what produced the conflicting route.ts/route.js pair last time),
+// simply don't start new work while prior cycles are awaiting review.
+async function checkForOpenCortexPRs() {
+  log("Checking for unreviewed Cortex PRs...");
+  const { data: prs } = await octokit.pulls.list({ owner: REPO_OWNER, repo: REPO_NAME, state: "open", per_page: 30 });
+  const cortexPRs = prs.filter(pr => pr.head.ref.startsWith("cortex-auto-"));
+  if (cortexPRs.length > 0) {
+    log(`  Found ${cortexPRs.length} open cortex-auto PR(s) awaiting review:`);
+    cortexPRs.forEach(pr => log(`    #${pr.number} ${pr.title} (${pr.head.ref})`));
+  }
+  return cortexPRs;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   log("═══════════════════════════════════════");
   log("CORTEX ENGINE — Autonomous Cycle Start");
   log("═══════════════════════════════════════");
   try {
+    const openCortexPRs = await checkForOpenCortexPRs();
+    if (openCortexPRs.length > 0) {
+      log(`Skipping this cycle -- ${openCortexPRs.length} prior cortex-auto PR(s) still need review/merge. Merge or close them so tasks.md reflects reality before the next cycle builds anything new.`);
+      log("═══════════════════════════════════════");
+      log("CORTEX ENGINE — Cycle Skipped (avoided duplicate work)");
+      log("═══════════════════════════════════════");
+      return;
+    }
+
     const schema = await discoverSchema();
     const signals = await gatherSignals(schema);
     const roadmap = await readTaskRoadmap();
