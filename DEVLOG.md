@@ -91,3 +91,25 @@ Checked `tasks.md` against the live repo (same bug class as the Daily Challenge 
 - [HIGH] Supabase security sweep: enabled RLS (previously fully disabled and publicly readable/writable) on `user_cortex`, `topic_mastery`, `learning_events`, `daily_focus`, `revisions`, `exam_logs`; fixed mutable `search_path` on 12 `SECURITY DEFINER` functions; added the missing `auth.uid() = user_id` ownership guard to `increment_xp`, which previously let any authenticated (or anon) caller set arbitrary XP/level on any user's account via direct RPC call -- a live leaderboard-manipulation vector.
 
 ---
+
+## 2026-08-07, later same day — Self-caught regression in the `increment_xp` fix above
+
+**This broke production XP awards for a window of this same session** -- flagging directly rather than burying it in a routine commit message.
+
+The `auth.uid() = user_id` guard added to `increment_xp` above was correct for closing the XP-spoofing exploit, but didn't account for `src/lib/xp/manager.ts`'s `awardXP()` -- the function behind virtually every server-side XP award (lesson completion, exam completion, task completion, streak milestones, achievement unlocks, perfect day bonus). `awardXP()` uses the **service-role** client, which has no end-user session, so `auth.uid()` resolves to `NULL` there by design, not by attack. The guard's `IF auth.uid() IS NULL THEN RAISE EXCEPTION` fired on every one of those calls. `awardXP()` already swallows RPC errors into `{success:false}` with no caller checking it (see that file's own top-of-file comment, written during an earlier session, describing the exact same failure mode from a different root cause) -- so this would have failed completely silently in production, no user-visible error, XP just quietly not incrementing.
+
+Caught by working through the actual callers of `increment_xp` while looking for something to write a route-level test around, not by any test or monitoring -- there is currently no alerting on `awardXP()`'s swallowed errors, which is a real gap.
+
+Because this DB function was fixed via a direct migration (not gated behind a Vercel deploy), the broken window was live in production, not caught in review -- from whenever the original guard was applied earlier this session until this fix. Given the volume of exam-sim/task/lesson completions a live app can generate in that window, some number of legitimate XP awards from that window are likely permanently lost (the awarding attempt failed and was never retried).
+
+**Fix:** the function now checks the caller's JWT role via `current_setting('request.jwt.claims', true)::jsonb->>'role'`. `service_role` calls skip the ownership check entirely (trusted implicitly -- only server code holding the secret service key can authenticate as it). `authenticated`/`anon` calls still require `auth.uid() = user_id`, preserving the original exploit fix.
+
+Verified all 4 cases directly against the live DB before considering this closed:
+1. `service_role`, any `user_id` -> succeeds (the regression, now fixed)
+2. `authenticated`, `user_id` matches `auth.uid()` -> succeeds
+3. `authenticated`, `user_id` does NOT match `auth.uid()` -> still fails (the original exploit, confirmed not re-broken)
+4. `anon`, no session -> still fails
+
+**Recommendation, not yet actioned:** `awardXP()` swallowing RPC errors silently is a real gap independent of this specific bug -- worth either surfacing failures (log aggregation alert on `[XP] increment_xp failed`) or having callers actually check `.success` and retry/report. Not fixed this session; flagging for prioritization.
+
+---
