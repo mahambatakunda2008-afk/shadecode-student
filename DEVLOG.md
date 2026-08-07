@@ -91,3 +91,13 @@ Checked `tasks.md` against the live repo (same bug class as the Daily Challenge 
 - [HIGH] Supabase security sweep: enabled RLS (previously fully disabled and publicly readable/writable) on `user_cortex`, `topic_mastery`, `learning_events`, `daily_focus`, `revisions`, `exam_logs`; fixed mutable `search_path` on 12 `SECURITY DEFINER` functions; added the missing `auth.uid() = user_id` ownership guard to `increment_xp`, which previously let any authenticated (or anon) caller set arbitrary XP/level on any user's account via direct RPC call -- a live leaderboard-manipulation vector.
 
 ---
+
+## 2026-08-07 — Cortex Auto-Cycle
+
+I have completed the first task on the roadmap: building the Cortex Insight History page. This involved creating `src/app/insights/history/page.jsx` to fetch user-specific insights from the `cortex_insights` table, and `src/components/InsightTimeline.jsx` to display them grouped by week. A summary of the most frequent insight patterns is also calculated and displayed at the top of the history page.
+
+**Improvements this cycle:**
+- [HIGH] Cortex Insight History Page: Create the main page component `src/app/insights/history/page.jsx`. This component will be a Server Component responsible for fetching all Cortex insights for the logged-in user from the `cortex_insights` table. It will use Supabase `auth-helpers-nextjs` to get the user session and secure the route. The fetched data will then be passed to a client-side `InsightTimeline` component for rendering.
+- [HIGH] Insight Timeline Component: Create a client-side React component `src/components/InsightTimeline.jsx` to render the fetched insights. This component will group insights by week, displaying a clear timeline of activity. It will also calculate and show a 'most frequent pattern' summary at the top by identifying the insight text (after canonicalization) that appears most often.
+
+---
