@@ -39,23 +39,18 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
   - Already implemented on main under a different name: `src/app/(app)/achievements/page.tsx`, `src/contexts/AchievementsContext.tsx`, `src/hooks/useAchievements.ts`, `src/app/api/achievements/route.ts` (17-achievement catalog, rarity tiers, XP rewards, `user_achievements` table), plus `AchievementToast.tsx` for unlock notifications. Wired into exam-sim, tasks, lessons, and the app layout.
   - Was still marked `[ ]` here, causing separate cycles to independently rebuild this as `BadgeDisplay.jsx` + a second, conflicting `route.js` in the same folder as the real `route.ts` (10-badge catalog reading straight from the older, orphaned `achievements` table, incompatible id/field shape with the real system). `route.js` was silently shadowed by `route.ts` at build time and never executed; `BadgeDisplay.jsx` was never imported anywhere. Both deleted as dead code (2026-08-07). Marking `[x]` here so future cycles don't repeat this -- same bug class as the Daily Challenge duplication above.
 
-- [ ] 🔴 **Cortex Insight History Page**
-  - Build `src/app/insights/history/page.jsx`
-  - Show all past Cortex insights for the logged-in user from `insights` table
-  - Group by week, show date and insight text
-  - Add a "most frequent pattern" summary at the top
-  - File targets: `src/app/insights/history/page.jsx`, `src/components/InsightTimeline.jsx`
+- [ ] 🟡 **Insight History — "most frequent pattern" summary**
+  - The page itself already exists and is fully built: `src/app/(app)/insights/history/page.tsx` (255 lines — loading/error/empty states, groups by week, formats dates, fetches from `/api/cortex/insight`). Was still marked `[ ]` here 🔴, which is what's already caused 3 separate duplication incidents this month (Daily Challenge, Achievements, and this would've been the 4th) — Cortex reads a pending task and has no way to know the file already exists.
+  - The one real gap, self-documented in DEVLOG.md's own entry for this page ("has a placeholder for the 'most frequent pattern' summary to be implemented later"): add a summary block at the top of the existing page surfacing the most common recurring pattern/theme across the user's insights.
+  - Do NOT rebuild the page. Add to it. Downgraded to 🟡 since the page is functional as-is; this is a polish item, not a blocker.
+  - File target: `src/app/(app)/insights/history/page.tsx` (edit, not create) — note the actual path uses the `(app)` route group and `.tsx`, not `.jsx` as originally scoped.
 
 ---
 
 ## 🟡 Phase 2 — Social & Competition
 
-- [ ] 🟡 **Leaderboard Page**
-  - Build `src/app/leaderboard/page.jsx`
-  - Show top students ranked by XP this week
-  - Display rank, username, XP, streak
-  - Highlight current user's position even if not in top 10
-  - File targets: `src/app/leaderboard/page.jsx`, `src/app/api/leaderboard/route.js`
+- [x] 🟡 **Leaderboard Page**
+  - Already built and wired: `src/app/(app)/leaderboard/page.tsx` (457 lines), registered in `src/lib/navigation.ts`'s NAV_ITEMS, both the Progress nav group and mobile nav. Ranks by XP/season_xp/level/streak/cortex_score. Was still `[ ]` here.
 
 - [ ] 🟡 **Goals System**
   - Let users set a weekly study goal
@@ -82,9 +77,9 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
   - Make it feel alive — recent activity feed, next challenge, badge progress
   - File targets: `src/app/dashboard/page.jsx`
 
-- [ ] 🟢 **Onboarding Flow**
-  - 3-step onboarding for first-time users: pick subjects, set a goal, meet Cortex
-  - File targets: `src/app/onboarding/page.jsx`
+- [x] 🟢 **Onboarding Flow**
+  - Already built and wired, well beyond the original 3-step spec: `src/app/onboarding/page.tsx` + `OnboardingFlow.tsx` orchestrating a 6-step flow (Welcome → Subjects → StepGoalSelection → Goals → Confirm → Finish), plus `/api/onboarding/complete` and `/api/onboarding/reset` routes, a recommendations engine, and a settings-page reset option. Was still `[ ]` here.
+  - Found alongside it: 6 fully-written, zero-import orphaned step components using an older `Step<Name>.tsx` naming convention (`StepWelcome`, `StepEducation`, `StepInterests`, `StepExplanation`, `StepFinish`, `StepGoal` — 843 lines total) — an entire earlier onboarding implementation abandoned when the current `OnboardingFlow.tsx` was built (using `WelcomeStep`, `SubjectStep`, `GoalsStep`, `StepGoalSelection`, `ConfirmStep` instead), never cleaned up. Removed 2026-08-07, verified via `tsc --noEmit` after removal (initially also flagged `StepActions.tsx` as unused by mistake -- it's the shared next/back button bar imported by every live step; restored and re-verified before shipping).
 
 - [ ] 🟢 **Cortex Prompt Quality Improvement**
   - Improve Gemini prompt for insight generation
