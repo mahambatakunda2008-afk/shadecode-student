@@ -61,6 +61,15 @@ export interface WeakAreaInput {
   lastAssessed: string;
   recommendedActions: string[];
   estimatedTimeToImprove: number;
+  /**
+   * 0-100, from src/lib/cortex/retentionRisk.ts. Optional and additive --
+   * existing callers that don't set it get identical behavior to before
+   * this field existed. Represents Priority Engine Factor 4 ("Retention
+   * Risk") from blueprints/MISSION CONTROL/Chapter 7.docx.
+   */
+  retentionRisk?: number;
+  /** Human-readable explanation paired with retentionRisk, e.g. "Not reviewed in 12 days". */
+  retentionReason?: string;
 }
 
 export interface ExamReadinessInput {

@@ -203,6 +203,15 @@ export class RecommendationEngine {
     // High exam frequency topics get priority
     // This would need topic data, for now we use severity
 
+    // Retention Risk (Priority Engine Factor 4): a topic can score fine
+    // on its last attempt and still be actively decaying if it hasn't
+    // been reviewed recently. Scaled to a max contribution of 30,
+    // comparable to score_gap's max of 30 -- a real, competing factor,
+    // not a dominant override.
+    if (weakArea.retentionRisk !== undefined) {
+      score += weakArea.retentionRisk * 0.3;
+    }
+
     return Math.min(100, score);
   }
 
@@ -271,6 +280,10 @@ export class RecommendationEngine {
       if (careerPriority > 0) {
         factors.push({ factor: "career_aligned", weight: careerPriority * 1.5, value: careerPriority / 10 });
       }
+    }
+
+    if (weakArea.retentionRisk !== undefined) {
+      factors.push({ factor: "retention_risk", weight: weakArea.retentionRisk * 0.3, value: weakArea.retentionRisk / 100 });
     }
 
     return factors;
@@ -602,6 +615,11 @@ export class RecommendationEngine {
 
     reasons.push(`Severity: ${weakArea.severity}`);
     reasons.push(`Score: ${weakArea.score}%`);
+
+    const retentionFactor = factors.find(f => f.factor === "retention_risk");
+    if (retentionFactor && weakArea.retentionReason) {
+      reasons.push(weakArea.retentionReason);
+    }
 
     const urgentFactor = factors.find(f => f.factor === "urgent_exam");
     if (urgentFactor) {

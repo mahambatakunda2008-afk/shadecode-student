@@ -7,7 +7,8 @@ import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
-import { calculateExamScore } from "@/lib/exam/scoring";
+import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
+import { blendMastery } from "@/lib/topicMastery/blend";
 
 export const dynamic = "force-dynamic";
 
@@ -255,6 +256,60 @@ ${qaText}
         if (memoryError) console.error("[exam/mark] Failed to persist exam_scores:", memoryError.message);
       } catch (memErr) {
         console.error("[exam/mark] cortex_memory update threw:", memErr);
+      }
+
+      // Persist per-topic mastery. topic_mastery has existed in the
+      // schema (with a real unique constraint on user_id+subject+topic)
+      // since before this fix, but had zero producers anywhere in the
+      // codebase -- every row this exam should have contributed to
+      // Retention Risk tracking was silently discarded once the overall
+      // percentage was calculated. See src/lib/topicMastery/blend.ts and
+      // src/lib/cortex/retentionRisk.ts for the read side this feeds.
+      try {
+        const svc2 = createSupabaseServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+
+        const topicScores = computeTopicScores(questions, markingData.results);
+
+        if (topicScores.length > 0) {
+          const { data: existingRows } = await svc2
+            .from("topic_mastery")
+            .select("topic, mastery_score, attempts")
+            .eq("user_id", userId)
+            .eq("subject", subject)
+            .in("topic", topicScores.map((t) => t.topic));
+
+          const existingByTopic = new Map((existingRows || []).map((r) => [r.topic, r]));
+          const now = new Date().toISOString();
+
+          const upsertRows = topicScores.map((t) => {
+            const existing = existingByTopic.get(t.topic);
+            const update = blendMastery(
+              existing ? { mastery_score: existing.mastery_score, attempts: existing.attempts } : null,
+              t.percentage
+            );
+            return {
+              user_id: userId,
+              subject,
+              topic: t.topic,
+              mastery_score: update.mastery_score,
+              last_score: update.last_score,
+              attempts: update.attempts,
+              trend: update.trend,
+              last_attempted: now,
+            };
+          });
+
+          const { error: masteryError } = await svc2
+            .from("topic_mastery")
+            .upsert(upsertRows, { onConflict: "user_id,subject,topic" });
+          if (masteryError) console.error("[exam/mark] Failed to persist topic_mastery:", masteryError.message);
+        }
+      } catch (masteryErr) {
+        console.error("[exam/mark] topic_mastery update threw:", masteryErr);
       }
     }
 

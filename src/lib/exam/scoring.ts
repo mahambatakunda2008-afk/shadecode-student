@@ -16,6 +16,7 @@
 export interface ExamQuestion {
   id: string | number;
   marks: number;
+  topic?: string;
   [key: string]: unknown;
 }
 
@@ -34,6 +35,18 @@ export interface ExamScoreSummary {
   maxScore: number;
   percentage: number;
   grade: string;
+}
+
+/**
+ * Clamps a single raw score into [0, max] (or just [0, ∞) if max is
+ * unknown). Shared by calculateExamScore and computeTopicScores so the
+ * hallucinating-grader defense lives in exactly one place.
+ */
+function clampScore(rawScore: number, maxForQuestion: number | undefined): number {
+  const safeRaw = rawScore || 0;
+  return maxForQuestion !== undefined
+    ? Math.max(0, Math.min(safeRaw, maxForQuestion))
+    : Math.max(0, safeRaw);
 }
 
 /**
@@ -69,13 +82,7 @@ export function calculateExamScore(
   const questionMarksById = new Map(questions.map((q) => [q.id, q.marks]));
 
   const totalScore = results.reduce((sum, r) => {
-    const maxForQuestion = questionMarksById.get(r.questionId);
-    const rawScore = r.score || 0;
-    const clampedScore =
-      maxForQuestion !== undefined
-        ? Math.max(0, Math.min(rawScore, maxForQuestion))
-        : Math.max(0, rawScore);
-    return sum + clampedScore;
+    return sum + clampScore(r.score, questionMarksById.get(r.questionId));
   }, 0);
 
   const maxScore = questions.reduce((sum, q) => sum + q.marks, 0);
@@ -83,4 +90,45 @@ export function calculateExamScore(
   const grade = getGrade(percentage);
 
   return { totalScore, maxScore, percentage, grade };
+}
+
+export interface TopicScoreBreakdown {
+  topic: string;
+  scoreEarned: number;
+  scoreMax: number;
+  percentage: number;
+}
+
+/**
+ * Groups an exam's clamped results by question.topic and sums per
+ * topic -- the input topic_mastery needs (see src/lib/topicMastery/),
+ * previously computed nowhere: exam marking discarded per-topic detail
+ * once the overall total was calculated. Questions with no topic set
+ * are grouped under "General" rather than silently dropped.
+ */
+export function computeTopicScores(
+  questions: ExamQuestion[],
+  results: ExamMarkResult[]
+): TopicScoreBreakdown[] {
+  const questionById = new Map(questions.map((q) => [q.id, q]));
+  const totals = new Map<string, { earned: number; max: number }>();
+
+  results.forEach((r) => {
+    const question = questionById.get(r.questionId);
+    const topic = question?.topic?.trim() || "General";
+    const max = question?.marks;
+    const earned = clampScore(r.score, max);
+
+    const existing = totals.get(topic) ?? { earned: 0, max: 0 };
+    existing.earned += earned;
+    existing.max += max ?? 0;
+    totals.set(topic, existing);
+  });
+
+  return Array.from(totals.entries()).map(([topic, { earned, max }]) => ({
+    topic,
+    scoreEarned: earned,
+    scoreMax: max,
+    percentage: max > 0 ? Math.round((earned / max) * 100) : 0,
+  }));
 }

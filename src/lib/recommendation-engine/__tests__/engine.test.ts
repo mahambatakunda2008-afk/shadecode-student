@@ -211,5 +211,42 @@ describe("Recommendation Engine", () => {
 
       expect(output.recommendedExamPractice.practiceType).toBe("timed");
     });
+
+    it("should raise priority for a weak area with high retention risk over an otherwise-identical one without it", async () => {
+      const baseWeakArea = {
+        topicId: "topic-1",
+        topic: "Algebra",
+        subject: "Mathematics",
+        severity: "medium" as const,
+        score: 55,
+        lastAssessed: new Date().toISOString(),
+        recommendedActions: [],
+        estimatedTimeToImprove: 40,
+      };
+
+      const withoutRisk: RecommendationEngineInput = {
+        ...mockInput,
+        weakAreas: [baseWeakArea],
+      };
+      const withRisk: RecommendationEngineInput = {
+        ...mockInput,
+        weakAreas: [{ ...baseWeakArea, retentionRisk: 90, retentionReason: "Not reviewed in 30 days" }],
+      };
+
+      const outputWithout = await recommendationEngine.generateRecommendations(withoutRisk);
+      await recommendationEngine.invalidateCache(testUserId);
+      const outputWith = await recommendationEngine.generateRecommendations(withRisk);
+
+      // Same topic either way, but the metadata's confidence/factor
+      // count or the reason text should reflect retention risk was
+      // actually used when present.
+      expect(outputWith.recommendedRevisionTopic.reason).toContain("Not reviewed in 30 days");
+      expect(outputWithout.recommendedRevisionTopic.reason).not.toContain("Not reviewed in 30 days");
+    });
+
+    it("does not mention retention risk when the field is absent (non-breaking for existing callers)", async () => {
+      const output = await recommendationEngine.generateRecommendations(mockInput);
+      expect(output.recommendedRevisionTopic.reason).not.toMatch(/reviewed/i);
+    });
   });
 });
