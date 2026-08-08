@@ -7,7 +7,12 @@
 
 ## Current Project State
 
-No implementation task is currently claimed by this handoff file. The repository contains the active product code, Cortex system, task roadmap, audits, architecture documentation, and the new multi-agent coordination protocol.
+Claude is mid-way through Blueprint Reconciliation (see `docs/BLUEPRINT_GAP_MATRIX.md`). Two gaps addressed so far:
+
+1. **Retention Risk** (Mission Control Ch.7, Priority Engine Factor 4) -- fully shipped. `topic_mastery` now has both a producer (`exam/mark/route.js`) and a consumer (`weakAreas.ts` → `recommendation-engine/engine.ts`'s new `retention_risk` factor).
+2. **Scheduling Engine** (Mission Control Ch.8) -- investigation done, fabrication issue fixed, full wiring deferred. `studyPlan/generator.ts` (450 lines) is real and now free of hardcoded fake topic content, but still has zero callers -- no goal-capture UI, no persistence table, no API route, no page. `cortex/generatePlan.ts` archived in place (duplicate, unused). Precise completion plan is in `docs/BLUEPRINT_GAP_MATRIX.md`'s "Second pass finding" section and `.cortex/tasks.md`.
+
+No task is currently claimed/in-progress -- both of the above are either shipped or cleanly paused with a documented next step, not mid-edit.
 
 ## Required Starting Point
 
