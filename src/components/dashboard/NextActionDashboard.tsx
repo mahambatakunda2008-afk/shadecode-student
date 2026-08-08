@@ -74,15 +74,20 @@ export default function NextActionDashboard() {
           return;
         }
 
-        const [intelligenceData, tasksData] = await Promise.all([
+        const [intelligenceData, examsData] = await Promise.all([
           getStudentIntelligence(user.id),
+          // Was querying tasks.due_date, which doesn't exist on the tasks
+          // table at all -- Supabase returned {data: null, error} for
+          // every call, silently, so "Upcoming assessments" always
+          // rendered its empty state regardless of what a student
+          // actually had coming up. exams.exam_date is the real,
+          // existing date field this section actually needs.
           supabase
-            .from("tasks")
-            .select("*")
+            .from("exams")
+            .select("id, subject, exam_date")
             .eq("user_id", user.id)
-            .not("due_date", "is", null)
-            .gte("due_date", new Date().toISOString().split("T")[0])
-            .order("due_date", { ascending: true })
+            .gte("exam_date", new Date().toISOString().split("T")[0])
+            .order("exam_date", { ascending: true })
             .limit(5),
         ]);
 
@@ -92,8 +97,15 @@ export default function NextActionDashboard() {
           setError("Failed to load intelligence data");
         }
 
-        if (tasksData?.data) {
-          setUpcomingAssessments(tasksData.data);
+        if (examsData?.data) {
+          setUpcomingAssessments(
+            examsData.data.map((exam) => ({
+              id: exam.id,
+              title: exam.subject,
+              due_date: exam.exam_date,
+              completed: false,
+            }))
+          );
         }
       } catch (err) {
         console.error("[NextActionDashboard] Error:", err);
