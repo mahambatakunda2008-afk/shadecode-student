@@ -23,10 +23,10 @@ This registry is the navigation and status index for the strategic blueprint sys
 
 ## Existing implementation knowledge
 
-- `docs/ARCHITECTURE.md` — verified current architecture. fileciteturn9file0L2-L6
+- `docs/ARCHITECTURE.md` — verified current architecture.
 - `docs/AUDIT_2026-08.md` — detailed audit record.
-- `docs/FINAL_AUDIT_REPORT_2026-08.md` — consolidated audit and release-readiness assessment. fileciteturn10file0L2-L6
-- `AGENTS.md` — repository agent rules and Cortex architecture orientation. fileciteturn8file0L2-L6
+- `docs/FINAL_AUDIT_REPORT_2026-08.md` — consolidated audit and release-readiness assessment.
+- `AGENTS.md` — repository agent rules and Cortex architecture orientation.
 - `prompts/` — reusable implementation and product prompts, including documentation and domain-specific prompts.
 - `.cortex/` — autonomous Cortex operational artifacts and live agent state.
 
