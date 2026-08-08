@@ -113,3 +113,25 @@ Verified all 4 cases directly against the live DB before considering this closed
 **Recommendation, not yet actioned:** `awardXP()` swallowing RPC errors silently is a real gap independent of this specific bug -- worth either surfacing failures (log aggregation alert on `[XP] increment_xp failed`) or having callers actually check `.success` and retry/report. Not fixed this session; flagging for prioritization.
 
 ---
+
+## 2026-08-07, later same day — Blueprint Reconciliation: Retention Risk
+
+Full Blueprint Gap Matrix produced (`docs/BLUEPRINT_GAP_MATRIX.md`) covering all 92 blueprint `.docx` files across 8 series. Headline finding: this is a 10-year, company-scale vision (hardware, global school network, career/marketplace, virtual labs) -- the live repo is correctly a single-developer MVP at Phase 0/early Phase 1, and most of the corpus is appropriately unimplemented future vision, not a missed checklist.
+
+Selected gap: **Retention Risk** (Priority Engine Factor 4, Mission Control Ch.7) -- the single item that was both concretely specified (not vision prose) and buildable now on existing data, not requiring new infrastructure.
+
+Before building anything: searched for existing implementations first, per the explicit "search before creating" methodology for this phase. Found `topic_mastery` already had a real schema and unique constraint (`user_id, subject, topic`) -- but grep across the entire `src` tree returned zero matches for the table name anywhere. Fully orphaned: a table someone correctly designed for exactly this purpose, never wired to any producer or consumer. Also found `src/lib/recommendation-engine/engine.ts` already implements a genuine weighted multi-factor priority system (exam urgency from real `exams.exam_date`, weak-area severity, career alignment, consistency/streak) -- building a parallel "Priority Engine" from scratch, as originally planned before checking, would have been the exact duplication mistake this session spent hours fixing in other people's work. Extended the existing engine instead.
+
+**Shipped:**
+- `src/lib/exam/scoring.ts`: added `computeTopicScores()`, per-topic breakdown from a marked exam (previously discarded once the overall total was calculated), reusing the existing clamp helper rather than a second copy.
+- `src/lib/topicMastery/blend.ts` (new): pure, tested EMA blend (70% history / 30% new attempt) for updating a topic's mastery_score from one more graded attempt.
+- `src/lib/cortex/retentionRisk.ts` (new): the actual Factor 4 implementation. Deliberately simple and honestly labeled as a heuristic, not a validated forgetting-curve model -- the blueprint's own illustrative example implies a precision ("74% -> 69% tomorrow") this repo has no data to back, and claiming it would repeat the exact fabricated-data mistake already caught once in this codebase (see `NextActionDashboard.tsx`'s own comment on the removed Exam Readiness card).
+- `src/app/api/exam/mark/route.js`: now writes `topic_mastery` after every marked exam -- the write side this table never had.
+- `src/lib/student-intelligence/services/weakAreas.ts`: now reads `topic_mastery` back, enriches existing weak areas with real retention data (fixing a hardcoded `lastAssessed: new Date()` that was wrong for every topic, every time), and surfaces topics quietly decaying that `cortexMemory.weakTopics` never flagged at all.
+- `src/lib/recommendation-engine/engine.ts` + `types.ts`: added `retention_risk` as a new named, explainable factor (optional field, fully additive -- all 10 original tests unchanged and passing, 2 new tests added covering the new factor and its absence being a no-op).
+
+**Also fixed along the way**, found while working the same code path: `NextActionDashboard.tsx`'s "Upcoming assessments" section was querying `tasks.due_date`, which has never existed on the `tasks` table -- silently failing every call (Supabase returns `{data:null,error}`, not a throw), so the section always rendered empty regardless of what a student actually had coming up. Fixed to query the real `exams` table instead. Caught my own leftover dangling reference to the old variable name before it shipped, via the same typecheck-before-push discipline used all session. Also removed `src/lib/cortex/teacher.ts.bak`, confirmed zero references, dead.
+
+**Verification:** `tsc --noEmit` clean, `node --check` on the modified `.js` route, full vitest suite (41 passed, 3 pre-existing todos unrelated to this work).
+
+---
