@@ -20,6 +20,17 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getStudentIntelligence } from "@/lib/student-intelligence";
+import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
+
+// getStudentIntelligence() fans out into 4 internal services (progress,
+// performance, activity, Cortex intelligence), any one of which could
+// stall with no upstream timeout of its own. Without a bound here, an
+// unresolved (not rejected) inner promise leaves `loading` true forever
+// -- the exact "tab hangs forever" failure mode
+// docs/AGENT_WORK_DIVISION.md calls out as production evidence, not a
+// cosmetic UX detail. 15s matches the order of magnitude already used
+// elsewhere in this codebase for bounded external calls (src/lib/ai.ts).
+const INTELLIGENCE_TIMEOUT_MS = 15000;
 
 interface StudentIntelligenceData {
   progress: {
@@ -56,14 +67,49 @@ export default function NextActionDashboard() {
   const [intelligence, setIntelligence] =
     useState<StudentIntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Reserved for genuinely unrecoverable failures (no authenticated
+  // user). A failed/timed-out intelligence fetch is NOT this -- it gets
+  // its own localized state below, so it doesn't blank sections that
+  // loaded fine (e.g. upcoming assessments).
   const [error, setError] = useState<string | null>(null);
+  const [intelligenceError, setIntelligenceError] = useState<string | null>(null);
+  const [intelligenceLoading, setIntelligenceLoading] = useState(true);
   const [upcomingAssessments, setUpcomingAssessments] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const router = useRouter();
   const supabase = createClient();
 
+  const loadIntelligence = async (userId: string) => {
+    setIntelligenceLoading(true);
+    setIntelligenceError(null);
+    try {
+      const data = await withTimeout(
+        getStudentIntelligence(userId),
+        INTELLIGENCE_TIMEOUT_MS,
+        "Loading your recommendations is taking longer than expected"
+      );
+      if (data) {
+        setIntelligence(data as any);
+      } else {
+        // getStudentIntelligence() already caught its own internal
+        // errors and returned null -- a real, resolved failure, not a
+        // hang. Still gets a retry path, just not a TimeoutError one.
+        setIntelligenceError("We couldn't load your personalized recommendations.");
+      }
+    } catch (err) {
+      setIntelligenceError(
+        err instanceof TimeoutError
+          ? "Loading your recommendations is taking longer than expected."
+          : "We couldn't load your personalized recommendations."
+      );
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const init = async () => {
       try {
         const {
           data: { user },
@@ -74,32 +120,26 @@ export default function NextActionDashboard() {
           return;
         }
 
-        const [intelligenceData, examsData] = await Promise.all([
-          getStudentIntelligence(user.id),
-          // Was querying tasks.due_date, which doesn't exist on the tasks
-          // table at all -- Supabase returned {data: null, error} for
-          // every call, silently, so "Upcoming assessments" always
-          // rendered its empty state regardless of what a student
-          // actually had coming up. exams.exam_date is the real,
-          // existing date field this section actually needs.
-          supabase
-            .from("exams")
-            .select("id, subject, exam_date")
-            .eq("user_id", user.id)
-            .gte("exam_date", new Date().toISOString().split("T")[0])
-            .order("exam_date", { ascending: true })
-            .limit(5),
-        ]);
+        setUserId(user.id);
 
-        if (intelligenceData) {
-          setIntelligence(intelligenceData as any);
-        } else {
-          setError("Failed to load intelligence data");
-        }
+        // Independent, not Promise.all: a slow/failed intelligence fetch
+        // must not prevent upcoming assessments (a fast, simple query)
+        // from rendering, and vice versa. Was previously combined so
+        // getStudentIntelligence() alone determined whether the entire
+        // page -- including already-fetched exam data -- was thrown away.
+        void loadIntelligence(user.id);
 
-        if (examsData?.data) {
+        const examsResult = await supabase
+          .from("exams")
+          .select("id, subject, exam_date")
+          .eq("user_id", user.id)
+          .gte("exam_date", new Date().toISOString().split("T")[0])
+          .order("exam_date", { ascending: true })
+          .limit(5);
+
+        if (examsResult?.data) {
           setUpcomingAssessments(
-            examsData.data.map((exam) => ({
+            examsResult.data.map((exam) => ({
               id: exam.id,
               title: exam.subject,
               due_date: exam.exam_date,
@@ -115,12 +155,13 @@ export default function NextActionDashboard() {
       }
     };
 
-    fetchData();
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, supabase]);
 
   if (loading) return <DashboardSkeleton />;
 
-  if (error || !intelligence) {
+  if (error) {
     return (
       <div className="ssc-page">
         <div className="ssc-card flex items-center gap-4 p-5">
@@ -130,7 +171,7 @@ export default function NextActionDashboard() {
           <div>
             <h1 className="text-2xl">Dashboard unavailable</h1>
             <p className="text-sm text-[var(--muted-foreground)]">
-              {error ?? "We could not load your learning intelligence."}
+              {error}
             </p>
           </div>
         </div>
@@ -138,10 +179,10 @@ export default function NextActionDashboard() {
     );
   }
 
-  const { progress, performance, activity, intelligence: intel } = intelligence;
-  const topRecommendation = intel.recommendations[0];
-  const topWeakArea = intel.weakAreas[0];
-  const topInsight = intel.insights[0];
+  const intel = intelligence?.intelligence;
+  const topRecommendation = intel?.recommendations[0];
+  const topWeakArea = intel?.weakAreas[0];
+  const topInsight = intel?.insights[0];
 
   return (
     <div className="ssc-page-full dashboard-main">
@@ -166,134 +207,152 @@ export default function NextActionDashboard() {
           </div>
         </section>
 
-        {topRecommendation ? (
-          <PrimaryActionCard
-            recommendation={topRecommendation}
-            onAction={() => router.push("/learn")}
-          />
+        {intelligence && intel ? (
+          <>
+            {topRecommendation ? (
+              <PrimaryActionCard
+                recommendation={topRecommendation}
+                onAction={() => router.push("/learn")}
+              />
+            ) : (
+              <EmptyState
+                icon={<Sparkles size={24} />}
+                title="You are caught up"
+                description="No urgent recommendations right now. Keep learning or review your progress."
+                actionLabel="Browse lessons"
+                onAction={() => router.push("/learn")}
+              />
+            )}
+
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                label="Study streak"
+                value={`${intelligence.activity.streak.currentStreak} days`}
+                icon={<Flame size={20} />}
+                tone="warning"
+              />
+              <StatCard
+                label="Overall progress"
+                value={`${intelligence.progress.overallCompletion}%`}
+                icon={<BarChart3 size={20} />}
+                tone="primary"
+              />
+              <StatCard
+                label="Average score"
+                value={`${Math.round(intelligence.performance.trends.averageScore)}%`}
+                icon={<LineChart size={20} />}
+                tone="accent"
+              />
+              <StatCard
+                label="Weak areas"
+                value={intel.weakAreas.length.toString()}
+                icon={<AlertTriangle size={20} />}
+                tone="danger"
+              />
+            </section>
+
+            {/* Exam Readiness card intentionally removed: every field it showed
+                was either hardcoded (readinessLevel always "Intermediate",
+                predictedGrade always "B", timeToExam always 30) or permanently
+                zero (overallScore -- its data source, getExamPerformance(), is
+                an unimplemented "exam results table" stub that always returns
+                an empty array). Showing fabricated data as a real, personalized
+                prediction is worse than showing nothing. Re-add once
+                student-intelligence/services/performance.ts actually reads
+                real exam data and a real grade-prediction calculation exists. */}
+
+            <section
+              className="grid gap-4"
+              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
+            >
+              {intelligence.progress.curriculum.recommendedNextLesson && (
+                <SectionCard
+                  title="Recommended lesson"
+                  icon={<BookOpenCheck size={18} />}
+                  content={
+                    <div>
+                      <h3>{intelligence.progress.curriculum.recommendedNextLesson.title}</h3>
+                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                        Continue with this lesson to make progress.
+                      </p>
+                    </div>
+                  }
+                  actionLabel="Start lesson"
+                  onAction={() =>
+                    router.push(
+                      `/learn/${intelligence.progress.curriculum.recommendedNextLesson?.id}`
+                    )
+                  }
+                />
+              )}
+
+              {topWeakArea && (
+                <SectionCard
+                  title="Weakest topic"
+                  icon={<Target size={18} />}
+                  content={
+                    <div>
+                      <h3>{topWeakArea.topic}</h3>
+                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                        Severity: {topWeakArea.severity} · Score:{" "}
+                        {topWeakArea.score}%
+                      </p>
+                    </div>
+                  }
+                  actionLabel="Start revision"
+                  onAction={() => router.push("/learn")}
+                />
+              )}
+
+              {topInsight && (
+                <SectionCard
+                  title="Cortex insight"
+                  icon={<BrainCircuit size={18} />}
+                  content={
+                    <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+                      {topInsight.content}
+                    </p>
+                  }
+                  actionLabel="View insights"
+                  onAction={() => router.push("/insights/history")}
+                />
+              )}
+            </section>
+
+            {intel.recommendations.length > 1 && (
+              <section
+                className="grid gap-4"
+                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}
+              >
+                <SectionCard
+                  title="Today's study plan"
+                  icon={<ClipboardList size={18} />}
+                  content={
+                    <div className="grid gap-2">
+                      {intel.recommendations.slice(1, 5).map((rec, index) => (
+                        <PlanRow key={rec.id || index} recommendation={rec} />
+                      ))}
+                    </div>
+                  }
+                />
+              </section>
+            )}
+          </>
         ) : (
-          <EmptyState
-            icon={<Sparkles size={24} />}
-            title="You are caught up"
-            description="No urgent recommendations right now. Keep learning or review your progress."
-            actionLabel="Browse lessons"
-            onAction={() => router.push("/learn")}
+          <IntelligenceUnavailable
+            loading={intelligenceLoading}
+            error={intelligenceError}
+            onRetry={() => userId && loadIntelligence(userId)}
           />
         )}
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Study streak"
-            value={`${activity.streak.currentStreak} days`}
-            icon={<Flame size={20} />}
-            tone="warning"
-          />
-          <StatCard
-            label="Overall progress"
-            value={`${progress.overallCompletion}%`}
-            icon={<BarChart3 size={20} />}
-            tone="primary"
-          />
-          <StatCard
-            label="Average score"
-            value={`${Math.round(performance.trends.averageScore)}%`}
-            icon={<LineChart size={20} />}
-            tone="accent"
-          />
-          <StatCard
-            label="Weak areas"
-            value={intel.weakAreas.length.toString()}
-            icon={<AlertTriangle size={20} />}
-            tone="danger"
-          />
-        </section>
-
-        {/* Exam Readiness card intentionally removed: every field it showed
-            was either hardcoded (readinessLevel always "Intermediate",
-            predictedGrade always "B", timeToExam always 30) or permanently
-            zero (overallScore -- its data source, getExamPerformance(), is
-            an unimplemented "exam results table" stub that always returns
-            an empty array). Showing fabricated data as a real, personalized
-            prediction is worse than showing nothing. Re-add once
-            student-intelligence/services/performance.ts actually reads
-            real exam data and a real grade-prediction calculation exists. */}
-
-        <section
-          className="grid gap-4"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
-        >
-          {progress.curriculum.recommendedNextLesson && (
-            <SectionCard
-              title="Recommended lesson"
-              icon={<BookOpenCheck size={18} />}
-              content={
-                <div>
-                  <h3>{progress.curriculum.recommendedNextLesson.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    Continue with this lesson to make progress.
-                  </p>
-                </div>
-              }
-              actionLabel="Start lesson"
-              onAction={() =>
-                router.push(
-                  `/learn/${progress.curriculum.recommendedNextLesson?.id}`
-                )
-              }
-            />
-          )}
-
-          {topWeakArea && (
-            <SectionCard
-              title="Weakest topic"
-              icon={<Target size={18} />}
-              content={
-                <div>
-                  <h3>{topWeakArea.topic}</h3>
-                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    Severity: {topWeakArea.severity} · Score:{" "}
-                    {topWeakArea.score}%
-                  </p>
-                </div>
-              }
-              actionLabel="Start revision"
-              onAction={() => router.push("/learn")}
-            />
-          )}
-
-          {topInsight && (
-            <SectionCard
-              title="Cortex insight"
-              icon={<BrainCircuit size={18} />}
-              content={
-                <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-                  {topInsight.content}
-                </p>
-              }
-              actionLabel="View insights"
-              onAction={() => router.push("/insights/history")}
-            />
-          )}
-        </section>
-
+        {/* Independent of intelligence status -- a slow/failed
+            recommendations fetch above must not prevent this section,
+            which has its own separately-fetched data, from rendering. */}
         <section
           className="grid gap-4"
           style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}
         >
-          {intel.recommendations.length > 1 && (
-            <SectionCard
-              title="Today's study plan"
-              icon={<ClipboardList size={18} />}
-              content={
-                <div className="grid gap-2">
-                  {intel.recommendations.slice(1, 5).map((rec, index) => (
-                    <PlanRow key={rec.id || index} recommendation={rec} />
-                  ))}
-                </div>
-              }
-            />
-          )}
-
           {upcomingAssessments.length > 0 ? (
             <SectionCard
               title="Upcoming assessments"
@@ -320,6 +379,50 @@ export default function NextActionDashboard() {
         </section>
       </div>
     </div>
+  );
+}
+
+function IntelligenceUnavailable({
+  loading,
+  error,
+  onRetry,
+}: {
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  if (loading) {
+    return (
+      <section className="ssc-card flex items-center gap-3 p-6">
+        <Loader2 size={20} className="animate-spin text-[var(--primary)]" />
+        <p className="text-sm text-[var(--muted-foreground)]">
+          Loading your recommendations...
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="ssc-card flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--danger-soft)] text-[var(--danger)]">
+          <AlertTriangle size={22} />
+        </div>
+        <div>
+          <p className="text-sm font-semibold">Recommendations unavailable</p>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {error ?? "We couldn't load your personalized recommendations."}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="ssc-button-secondary shrink-0"
+      >
+        Retry
+      </button>
+    </section>
   );
 }
 

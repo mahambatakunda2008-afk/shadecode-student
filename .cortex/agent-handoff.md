@@ -7,12 +7,13 @@
 
 ## Current Project State
 
-Claude is mid-way through Blueprint Reconciliation (see `docs/BLUEPRINT_GAP_MATRIX.md`). Two gaps addressed so far:
+Claude is mid-way through Blueprint Reconciliation (see `docs/BLUEPRINT_GAP_MATRIX.md`) and has started on the `DASHBOARD_REDESIGN_SPEC.md` implementation track (§15 handoff).
 
-1. **Retention Risk** (Mission Control Ch.7, Priority Engine Factor 4) -- fully shipped. `topic_mastery` now has both a producer (`exam/mark/route.js`) and a consumer (`weakAreas.ts` → `recommendation-engine/engine.ts`'s new `retention_risk` factor).
-2. **Scheduling Engine** (Mission Control Ch.8) -- investigation done, fabrication issue fixed, full wiring deferred. `studyPlan/generator.ts` (450 lines) is real and now free of hardcoded fake topic content, but still has zero callers -- no goal-capture UI, no persistence table, no API route, no page. `cortex/generatePlan.ts` archived in place (duplicate, unused). Precise completion plan is in `docs/BLUEPRINT_GAP_MATRIX.md`'s "Second pass finding" section and `.cortex/tasks.md`.
+1. **Retention Risk** (Mission Control Ch.7) -- fully shipped.
+2. **Scheduling Engine** (Mission Control Ch.8) -- fabrication issue fixed, full wiring (persistence, UI, API route) deferred with a documented plan.
+3. **Dashboard reliability** (`DASHBOARD_REDESIGN_SPEC.md` §7) -- shipped: bounded timeout on the intelligence fetch (`src/lib/async/withTimeout.ts`), independent section loading so a failed/slow intelligence fetch no longer blanks the whole dashboard, real per-section retry. The visual/information-architecture recomposition (welcome header, momentum strip, new IA) is NOT attempted -- that's the product/UX-led majority of the spec, left for coordination with ChatGPT's product direction rather than unilateral implementation.
 
-No task is currently claimed/in-progress -- both of the above are either shipped or cleanly paused with a documented next step, not mid-edit.
+No task is currently claimed/in-progress -- all of the above are either shipped or cleanly paused with a documented next step, not mid-edit.
 
 ## Required Starting Point
 

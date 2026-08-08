@@ -155,3 +155,22 @@ Full wiring (goal-capture UI, persistence table, API route, page) would be compa
 **Verification:** `tsc --noEmit` clean, full vitest suite (48 passed, up from 41).
 
 ---
+
+## 2026-08-08 — Dashboard reliability fix (DASHBOARD_REDESIGN_SPEC.md track)
+
+`docs/AGENT_WORK_DIVISION.md` landed on `main` mid-session, establishing ChatGPT as product/UX lead and Claude as deep-implementation lead, then `docs/DASHBOARD_REDESIGN_SPEC.md` landed as an explicit implementation handoff to Claude (§15). The full spec is a large product/visual recomposition -- most of it (welcome-header copy, momentum-strip layout, new information architecture) is ChatGPT's product-direction call, not something to unilaterally implement. Scoped this pass to what's objectively in Claude's lane per the work-division doc and independently verifiable: §7's reliability requirements.
+
+Found two real bugs in `NextActionDashboard.tsx`, both directly named in the spec's own acceptance criteria:
+
+1. **No bounded timeout.** `getStudentIntelligence()` fans out into 4 internal services (progress/performance/activity/Cortex intelligence) with no timeout anywhere in that chain. If any one stalls, the calling `Promise.all` never resolves, `loading` never becomes `false` -- a genuine permanent spinner, the exact "tab hangs forever" failure mode `AGENT_WORK_DIVISION.md`'s reliability rule explicitly says must be investigated as production evidence, not dismissed as cosmetic.
+2. **All-or-nothing rendering.** Even a *graceful* intelligence failure (the function already catches its own errors and returns `null`, no hang involved) blanked the entire dashboard via `if (error || !intelligence) return <fullPageError>` -- discarding the separately-fetched, already-successful exams/upcoming-assessments data in the same render.
+
+**Shipped:**
+- `src/lib/async/withTimeout.ts` (new): generic `Promise`-level timeout wrapper. `src/lib/ai.ts` already has a fetch-specific timeout pattern (`AbortController`), but that doesn't help a composed function like `getStudentIntelligence()` with no fetch/signal to hook into. 5 tests, including one that wraps a promise that genuinely never settles, to confirm the wrapper actually terminates that exact failure mode rather than just the happy path.
+- `NextActionDashboard.tsx`: intelligence and exams now load independently (was a single `Promise.all` where either failing discarded both); intelligence wrapped in `withTimeout` (15s, matching the order of magnitude already used in `ai.ts`); a real, working per-section retry (`IntelligenceUnavailable` component, calls `loadIntelligence(userId)` again) rather than a full-page reload; upcoming assessments now renders regardless of intelligence status.
+
+**Deliberately not attempted this pass:** the visual/information-architecture recomposition (welcome-back header, momentum strip, hero redesign, mobile IA) -- that's the product/UX-led majority of the spec, better done in coordination with ChatGPT's product direction than unilaterally by Claude. This pass is the reliability foundation the rest can build on, not the redesign itself.
+
+**Verification:** `tsc --noEmit` clean, full vitest suite (53 passed, up from 48). No component-test infrastructure exists in this codebase yet (all prior test files are pure-logic, no React Testing Library) -- consistent with that, tested the actual novel logic (`withTimeout`) thoroughly and relied on `tsc`'s JSX-aware typecheck for the component wiring itself, rather than standing up a new testing framework for one fix.
+
+---
