@@ -1,0 +1,1 @@
+Governance changes in this branch establish a durable layer around blueprints, architecture, audits, prompts, Labs, decisions, and agent handoffs.
