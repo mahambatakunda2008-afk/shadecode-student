@@ -33,6 +33,8 @@ Then inspect the actual code affected by the proposed task.
 - Use a dedicated branch and reviewable PR for implementation changes.
 - Update this file before handing work to another agent.
 
+**Exception:** Claude commits directly to `main` for its own work, per explicit owner decision -- see `docs/decisions/ADR-2026-08-08-001-claude-direct-to-main.md`. This does not apply to other agents unless the owner records the same exception for them.
+
 ## Current Ownership
 
 No task is claimed. The next agent must explicitly claim a task and populate the handoff before beginning substantial implementation work.
