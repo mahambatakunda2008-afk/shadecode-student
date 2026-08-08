@@ -1,0 +1,1 @@
+The strategic knowledge changes made in this branch are recorded in `docs/KNOWLEDGE_CHANGELOG.md` when that file exists on the branch.
