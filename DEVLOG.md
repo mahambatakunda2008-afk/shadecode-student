@@ -135,3 +135,23 @@ Before building anything: searched for existing implementations first, per the e
 **Verification:** `tsc --noEmit` clean, `node --check` on the modified `.js` route, full vitest suite (41 passed, 3 pre-existing todos unrelated to this work).
 
 ---
+
+## 2026-08-08 — Blueprint Reconciliation continued: Scheduling Engine investigation + governance protocol landed
+
+While reading Mission Control Ch.8 as the next candidate, searched for existing implementations first per the established "search before creating" methodology (already paid off twice this phase). Found substantial dormant infrastructure: `src/lib/studyPlan/generator.ts` (450 lines, real non-fabricated weighted scheduling algorithm) and `src/components/StudyPlanDisplay.tsx` (a complete display component) both fully built, zero callers anywhere. A second, differently-shaped `generateStudyPlan` also exists in `src/lib/cortex/generatePlan.ts` -- also zero callers, same function name, independently built.
+
+Also found a real quality issue: `generator.ts`'s `generateTopicPlaceholder()` returned a topic from a hardcoded fixed list per subject/session-type (e.g. every "learn" session for Math showed one of exactly 3 fixed topic names, regardless of the actual student) -- the same fabricated-content mistake already caught once in this codebase.
+
+Full wiring (goal-capture UI, persistence table, API route, page) would be comparable in scope to the entire Retention Risk slice from the previous entry -- deferred with a precise, documented completion plan in `docs/BLUEPRINT_GAP_MATRIX.md` rather than rushed. What *was* completed this pass: the fabrication fix itself, since it was well-bounded and high-confidence on its own.
+
+**Shipped:**
+- `src/lib/studyPlan/generator.ts`: `generateTopicPlaceholder()` replaced with `selectSessionTopic()`, exported and tested. Takes optional real `topicHints` (weak topics from `topic_mastery`, fresh/uncovered topics from curriculum coverage's `missingTopics`) threaded through from `StudyPlanInput` via both `generateWeeklySessions()` and `generateRevisionBlocks()`. When no real hints exist for a subject, falls back to an honestly generic label ("Mathematics — core review") rather than inventing a specific-sounding one.
+- `src/lib/studyPlan/__tests__/generator.test.ts` (new, 7 tests): confirms real hints are used when present, confirms the honest generic fallback when absent, confirms no cross-subject leakage.
+- `src/lib/cortex/generatePlan.ts` archived in place (not deleted) with a comment explaining the decision and pointing to the kept implementation -- preserves the recommendation-engine integration pattern as reference in case a future session wants a lighter-weight variant.
+- `.cortex/tasks.md`: added as a tracked, partially-complete item with the precise remaining scope.
+
+**Also this pass:** `AGENT_COORDINATION_PROTOCOL.md` and related multi-agent governance docs landed on `main` from the owner's account mid-session (commits `54af471`, `f4ffb2a`), establishing formal rules for Claude/ChatGPT/Copilot/Cortex working on this repo concurrently. Its §6 ("never push directly to `main`, use PRs") directly conflicted with the standing instruction Claude was already operating under. Rather than silently pick one, stopped and surfaced the conflict to the owner directly. Owner confirmed direct-to-main remains preferred for Claude specifically, to save tokens/turns. Recorded as `docs/decisions/ADR-2026-08-08-001-claude-direct-to-main.md` using the protocol's own decision-record mechanism, and noted as an explicit per-agent exception in `.cortex/agent-handoff.md` so it doesn't read as Claude unilaterally ignoring governance the owner just set up.
+
+**Verification:** `tsc --noEmit` clean, full vitest suite (48 passed, up from 41).
+
+---

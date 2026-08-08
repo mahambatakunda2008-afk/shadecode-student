@@ -12,13 +12,23 @@ import { getMemory } from "@/lib/cortex/memory";
 export interface StudyPlanInput extends StudyGoals {
   userId: string;
   startDate?: string;
+  /**
+   * Real per-subject topic data, computed by the caller (e.g. from
+   * topic_mastery for weak/at-risk topics, and curriculum coverage's
+   * missingTopics for genuinely new material) so this module never has
+   * to guess or fabricate a specific-sounding topic name. Optional --
+   * when a subject has no hints, session topics for that subject fall
+   * back to an honestly generic label rather than a made-up specific one.
+   * See selectSessionTopic() below.
+   */
+  topicHints?: Record<string, { weak: string[]; fresh: string[] }>;
 }
 
 /**
  * Generate a complete study plan based on goals and learning history
  */
 export async function generateStudyPlan(input: StudyPlanInput): Promise<StudyPlan> {
-  const { userId, targetGrade, examDate, availableHoursPerWeek, subjects, prioritySubjects, startDate } = input;
+  const { userId, targetGrade, examDate, availableHoursPerWeek, subjects, prioritySubjects, startDate, topicHints } = input;
 
   // Get user's learning memory for personalization
   const memory = await getMemory(userId);
@@ -50,6 +60,7 @@ export async function generateStudyPlan(input: StudyPlanInput): Promise<StudyPla
       currentWeek: week + 1,
       weakSubjects: memory.weakSubjects || [],
       strongSubjects: memory.strongSubjects || [],
+      topicHints,
     });
 
     weeklySchedules.push(weekSessions);
@@ -63,6 +74,7 @@ export async function generateStudyPlan(input: StudyPlanInput): Promise<StudyPla
     examDate,
     totalWeeks,
     availableHoursPerWeek,
+    topicHints,
   });
 
   // Generate catch-up recommendations (empty for new plan)
@@ -102,10 +114,11 @@ interface WeeklySessionsInput {
   currentWeek: number;
   weakSubjects?: string[];
   strongSubjects?: string[];
+  topicHints?: Record<string, { weak: string[]; fresh: string[] }>;
 }
 
 function generateWeeklySessions(input: WeeklySessionsInput): WeeklySchedule {
-  const { weekNumber, startDate, endDate, subjects, prioritySubjects, availableHoursPerWeek, totalWeeks, currentWeek, weakSubjects, strongSubjects } = input;
+  const { weekNumber, startDate, endDate, subjects, prioritySubjects, availableHoursPerWeek, totalWeeks, currentWeek, weakSubjects, strongSubjects, topicHints } = input;
 
   const sessions: StudySession[] = [];
   const totalMinutes = availableHoursPerWeek * 60;
@@ -155,7 +168,7 @@ function generateWeeklySessions(input: WeeklySessionsInput): WeeklySchedule {
           id: crypto.randomUUID(),
           date: currentDate.toISOString(),
           subject,
-          topic: generateTopicPlaceholder(subject, sessionType),
+          topic: selectSessionTopic(subject, sessionType, topicHints?.[subject]),
           durationMinutes: sessionMinutes,
           type: sessionType,
           completed: false,
@@ -263,31 +276,47 @@ function determineSessionType(input: SessionTypeInput): "learn" | "practice" | "
   return "exam";
 }
 
-function generateTopicPlaceholder(subject: string, sessionType: string): string {
-  const topics: Record<string, Record<string, string[]>> = {
-    math: {
-      learn: ["Algebra fundamentals", "Geometry basics", "Calculus introduction"],
-      practice: ["Problem solving", "Past paper questions", "Drill exercises"],
-      revision: ["Key formulas", "Common mistakes", "Exam techniques"],
-      exam: ["Full past paper", "Timed practice", "Mock exam"],
-    },
-    physics: {
-      learn: ["Mechanics", "Electricity", "Waves"],
-      practice: ["Calculations", "Diagrams", "Applications"],
-      revision: ["Key concepts", "Formula sheet", "Practical skills"],
-      exam: ["Full past paper", "Timed practice", "Mock exam"],
-    },
-    chemistry: {
-      learn: ["Atomic structure", "Bonding", "Reactions"],
-      practice: ["Equations", "Calculations", "Lab techniques"],
-      revision: ["Periodic table", "Key reactions", "Safety"],
-      exam: ["Full past paper", "Timed practice", "Mock exam"],
-    },
-  };
+/**
+ * Selects a session's topic. Was previously generateTopicPlaceholder():
+ * returned a name from a hardcoded fixed list per subject/session-type
+ * (e.g. "Algebra fundamentals" for every student, every time, regardless
+ * of what they'd actually studied) -- fabricated content with no
+ * relationship to the student it was shown to. Flagged during Blueprint
+ * Reconciliation (2026-08-08) as the same class of mistake already
+ * caught once in this codebase (NextActionDashboard's removed Exam
+ * Readiness card).
+ *
+ * `hints` are real, caller-supplied data (see StudyPlanInput.topicHints):
+ * `weak` from topic_mastery (low mastery / high retention risk),
+ * `fresh` from curriculum coverage's missingTopics (real syllabus
+ * content not yet attempted). When neither is available for a subject,
+ * falls back to an honestly generic label -- "Mathematics review" is a
+ * true statement; a specific invented topic name is not.
+ */
+export function selectSessionTopic(
+  subject: string,
+  sessionType: string,
+  hints?: { weak: string[]; fresh: string[] }
+): string {
+  if (sessionType === "exam") {
+    // Not topic-specific by nature -- these describe the activity, not
+    // a personalized subject-matter claim, so a fixed pool is honest.
+    const examActivities = ["Full past paper", "Timed practice", "Mock exam"];
+    return examActivities[Math.floor(Math.random() * examActivities.length)];
+  }
 
-  const subjectTopics = topics[subject.toLowerCase()] || topics.math;
-  const typeTopics = subjectTopics[sessionType] || subjectTopics.learn;
-  return typeTopics[Math.floor(Math.random() * typeTopics.length)];
+  if (sessionType === "learn") {
+    if (hints?.fresh && hints.fresh.length > 0) {
+      return hints.fresh[Math.floor(Math.random() * hints.fresh.length)];
+    }
+    return `${subject} — next topic`;
+  }
+
+  // practice / revision / catchup: prefer real weak/at-risk topics
+  if (hints?.weak && hints.weak.length > 0) {
+    return hints.weak[Math.floor(Math.random() * hints.weak.length)];
+  }
+  return `${subject} — core review`;
 }
 
 interface RevisionBlocksInput {
@@ -296,10 +325,11 @@ interface RevisionBlocksInput {
   examDate: string;
   totalWeeks: number;
   availableHoursPerWeek: number;
+  topicHints?: Record<string, { weak: string[]; fresh: string[] }>;
 }
 
 function generateRevisionBlocks(input: RevisionBlocksInput): RevisionBlock[] {
-  const { subjects, weakSubjects, examDate, totalWeeks, availableHoursPerWeek } = input;
+  const { subjects, weakSubjects, examDate, totalWeeks, availableHoursPerWeek, topicHints } = input;
 
   const blocks: RevisionBlock[] = [];
   const exam = new Date(examDate);
@@ -322,7 +352,7 @@ function generateRevisionBlocks(input: RevisionBlocksInput): RevisionBlock[] {
       blocks.push({
         id: crypto.randomUUID(),
         subject,
-        topics: [generateTopicPlaceholder(subject, "revision")],
+        topics: [selectSessionTopic(subject, "revision", topicHints?.[subject])],
         scheduledDate: weekDate.toISOString(),
         durationMinutes: duration,
         priority,

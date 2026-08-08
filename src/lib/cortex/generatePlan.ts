@@ -1,3 +1,24 @@
+/**
+ * ARCHIVED (2026-08-08) -- Blueprint Reconciliation, Mission Control Ch.8
+ * "Scheduling Engine" investigation.
+ *
+ * This module and src/lib/studyPlan/generator.ts both export a function
+ * named generateStudyPlan, built independently, with different
+ * signatures and different scope. Neither had any caller anywhere in
+ * the codebase. Decision: keep and complete studyPlan/generator.ts --
+ * it more closely matches Ch.8's actual vision (multi-week schedules,
+ * revision blocks, session typing) than this module's flatter
+ * "convert Priority Engine output into a task list" approach. See
+ * docs/BLUEPRINT_GAP_MATRIX.md's "Second pass finding" section for the
+ * full comparison and reasoning.
+ *
+ * Not deleted -- the recommendation-engine integration pattern here
+ * (snapshotToEngineInput) may still be useful reference if a future
+ * session wants a lighter-weight, no-persistence-needed plan variant.
+ * If nothing ends up needing that, this can be removed outright in a
+ * later pass with this comment as the justification trail.
+ */
+
 import type { CortexSnapshot } from "@/lib/types";
 import { recommendationEngine, RecommendationEngineInput, GoalInput, CareerInterestInput } from "@/lib/recommendation-engine";
 import { getCareerMapping, getCareerSubjects } from "@/lib/careers/mapping";
