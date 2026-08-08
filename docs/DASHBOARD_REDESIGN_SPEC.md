@@ -7,11 +7,11 @@
 
 ## 1. Source basis
 
-This specification is grounded in the current dashboard implementation and the existing platform audit. The current dashboard is composed of `NextActionDashboard` plus `CortexIntelligencePanel`, with data loaded client-side through Supabase authentication and `getStudentIntelligence()`. fileciteturn68file0
+This specification is grounded in the current dashboard implementation and the existing platform audit. The current dashboard is composed of `NextActionDashboard` plus `CortexIntelligencePanel`, with data loaded client-side through Supabase authentication and `getStudentIntelligence()`.
 
-The master platform audit identified dashboard-related issues including the absence of a personalized welcome-back experience, weak prominence/actionability for Cortex recommendations, inconsistent navigation, and broader design-system, loading-state, mobile, accessibility, and performance problems. fileciteturn71file0
+The master platform audit identified dashboard-related issues including the absence of a personalized welcome-back experience, weak prominence/actionability for Cortex recommendations, inconsistent navigation, and broader design-system, loading-state, mobile, accessibility, and performance problems.
 
-The current implementation already has useful ingredients: a primary next action, streak/progress/score/weak-area statistics, recommended lesson, weak topic, Cortex insight, study-plan recommendations, upcoming assessments, and a Cortex status panel. fileciteturn69file0
+The current implementation already has useful ingredients: a primary next action, streak/progress/score/weak-area statistics, recommended lesson, weak topic, Cortex insight, study-plan recommendations, upcoming assessments, and a Cortex status panel.
 
 This document therefore defines a **recomposition**, not a blind rewrite and not a generic AI-dashboard template.
 
@@ -104,7 +104,7 @@ CTA should lead directly to the relevant learning/revision experience when the r
 
 ### F. Upcoming assessments
 
-Show only meaningful upcoming exams/assessments. The current implementation correctly uses `exams.exam_date` rather than the nonexistent `tasks.due_date`; preserve that correction. fileciteturn69file0
+Show only meaningful upcoming exams/assessments. The current implementation correctly uses `exams.exam_date` rather than the nonexistent `tasks.due_date`; preserve that correction.
 
 Use relative urgency where safely derivable, but do not invent deadlines.
 
