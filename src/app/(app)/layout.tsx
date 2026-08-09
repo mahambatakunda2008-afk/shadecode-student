@@ -12,6 +12,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AdminBottomNav } from "@/components/layout/AdminBottomNav";
 import { AchievementToast } from "@/components/AchievementToast";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { getOnboardingStatus } from "@/lib/onboarding";
 import { useSession } from "@/hooks/useSession";
 
@@ -165,6 +166,13 @@ export default function AppLayout({
         {/* Achievement unlock notifications -- fixed-position, renders
             nothing until useAchievements' newUnlocked has an entry */}
         <AchievementToast />
+
+        {/* Floating, one-click feedback entry point -- was previously
+            only reachable via Settings, which the person who asked for
+            this said people weren't finding. Reuses the existing
+            /api/feedback + /api/feedback-email flow; that flow's own
+            full-page version (Settings -> Feedback) is left untouched. */}
+        <FeedbackWidget />
       </div>
       </AchievementsProvider>
     </UserProvider>

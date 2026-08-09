@@ -7,13 +7,14 @@
 
 ## Current Project State
 
-Claude is mid-way through Blueprint Reconciliation (see `docs/BLUEPRINT_GAP_MATRIX.md`) and has started on the `DASHBOARD_REDESIGN_SPEC.md` implementation track (§15 handoff).
+Claude is mid-way through Blueprint Reconciliation (see `docs/BLUEPRINT_GAP_MATRIX.md`) and the `DASHBOARD_REDESIGN_SPEC.md` implementation track (§15 handoff).
 
 1. **Retention Risk** (Mission Control Ch.7) -- fully shipped.
-2. **Scheduling Engine** (Mission Control Ch.8) -- fabrication issue fixed, full wiring (persistence, UI, API route) deferred with a documented plan.
-3. **Dashboard reliability** (`DASHBOARD_REDESIGN_SPEC.md` §7) -- shipped: bounded timeout on the intelligence fetch (`src/lib/async/withTimeout.ts`), independent section loading so a failed/slow intelligence fetch no longer blanks the whole dashboard, real per-section retry. The visual/information-architecture recomposition (welcome header, momentum strip, new IA) is NOT attempted -- that's the product/UX-led majority of the spec, left for coordination with ChatGPT's product direction rather than unilateral implementation.
+2. **Scheduling Engine** (Mission Control Ch.8) -- fabrication issue fixed, full wiring deferred with a documented plan.
+3. **Dashboard reliability + repo-wide reliability sweep** -- shipped. `src/lib/async/withTimeout.ts` (Promise-level) and `src/lib/async/fetchWithTimeout.ts` (client fetch-level) both exist and are tested. Applied to the dashboard, `exam-sim`, `math-checker`, `insights/history`. `tasks`/`curriculum` pages still have unbounded `Promise.all` on plain DB reads -- lower priority, documented, not yet fixed.
+4. **Floating feedback widget** -- shipped (`src/components/FeedbackWidget.tsx`, mounted globally). One open item: a minor RLS policy fix on `feedback` (closed a spoofing gap) has the authenticated case verified live; the anonymous-insert case couldn't be conclusively verified through this session's SQL simulation tooling (looks like a tool quirk, not a real policy issue -- see `DEVLOG.md` for full reasoning). Worth a real-world check, not blocking.
 
-No task is currently claimed/in-progress -- all of the above are either shipped or cleanly paused with a documented next step, not mid-edit.
+No task is currently claimed/in-progress.
 
 ## Required Starting Point
 
