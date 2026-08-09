@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { log } from "@/lib/observability";
+import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import ExamShareCard from "@/components/ExamShareCard";
 import {
@@ -270,7 +271,13 @@ export default function ExamSimulation() {
     let data: ExamResults;
     try {
       const { data: { session } } = await createClient().auth.getSession();
-      const res = await fetch("/api/exam/mark", {
+      // 100s: comfortably above this route's own maxDuration=90 server-side
+      // bound, so that limit is what normally triggers first -- this is a
+      // hard client-side backstop in case it somehow doesn't (proxy/edge
+      // issue), not the primary bound. Without any client-side timeout,
+      // a genuine network stall left this screen showing "marking" with
+      // no terminal state at all.
+      const res = await fetchWithTimeout("/api/exam/mark", {
         method:  "POST",
         headers: {
           "Content-Type": "application/json",
@@ -283,7 +290,7 @@ export default function ExamSimulation() {
           answers:    latestAnswers,
           timeTaken:  latestTotalTime - latestTimeLeft,
         }),
-      });
+      }, 100000);
 
       if (!res.ok) {
         const errorText = await res.text().catch(() => "(no body)");
@@ -294,7 +301,11 @@ export default function ExamSimulation() {
       data = await res.json();
     } catch (err) {
       log.examMarkingFailed({ userId: latestUserId, subject: latestSubject, error: String(err) });
-      alert("Failed to mark exam. Please try again.");
+      alert(
+        err instanceof FetchTimeoutError
+          ? "Marking is taking longer than expected. Please try submitting again."
+          : "Failed to mark exam. Please try again."
+      );
       isSubmittingRef.current = false;
       setStep("exam");
       setMarking(false);
@@ -416,7 +427,7 @@ export default function ExamSimulation() {
         ? `${topic.trim()} (${curriculumLevel})`
         : `${subject} (${curriculumLevel})`;
       const { data: { session } } = await createClient().auth.getSession();
-      const res = await fetch("/api/exam/generate", {
+      const res = await fetchWithTimeout("/api/exam/generate", {
         method:  "POST",
         headers: {
           "Content-Type": "application/json",
@@ -428,7 +439,7 @@ export default function ExamSimulation() {
           difficulty:   DIFFICULTY_API_VALUES[difficulty],
           questionCount,
         }),
-      });
+      }, 100000);
       const data = await res.json();
       if (!res.ok || !data.questions) throw new Error(data.error || "No questions were generated.");
       setGenError(null);
@@ -443,7 +454,11 @@ export default function ExamSimulation() {
       setStep("exam");
     } catch (err) {
       console.error("[exam-sim] generateExam failed:", err);
-      setGenError(err instanceof Error ? err.message : "Couldn't generate this exam. Please try again.");
+      setGenError(
+        err instanceof FetchTimeoutError
+          ? "Generating this exam is taking longer than expected. Please try again."
+          : err instanceof Error ? err.message : "Couldn't generate this exam. Please try again."
+      );
     } finally {
       setGenerating(false);
     }

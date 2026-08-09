@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrainCircuit, Clock, AlertCircle, RefreshCw, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,14 +146,22 @@ export default function InsightHistoryPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cortex/insight");
+      // Simple DB read (no AI generation on this route), so a shorter
+      // bound than the AI-heavy routes is appropriate -- surfaces a real
+      // problem faster instead of waiting nearly as long as a call that
+      // has genuine reason to be slow.
+      const res = await fetchWithTimeout("/api/cortex/insight", {}, 20000);
       if (!res.ok) {
         const body = await res.json();
         throw new Error(body.error ?? "Failed to fetch insights");
       }
       setInsights(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(
+        err instanceof FetchTimeoutError
+          ? "This is taking longer than expected. Please try again."
+          : err instanceof Error ? err.message : "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }

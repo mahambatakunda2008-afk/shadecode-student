@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
 
 interface MathResult {
   problem: string;
@@ -53,7 +54,8 @@ export default function MathCheckerPage() {
       formData.append("subject", subject);
       formData.append("topic", subject);
 
-      const res = await fetch("/api/math-checker", { method: "POST", body: formData });
+      // 70s: headroom above this route's own maxDuration=60 server-side bound.
+      const res = await fetchWithTimeout("/api/math-checker", { method: "POST", body: formData }, 70000);
       const data = await res.json();
 
       if (!res.ok || data.error) {
@@ -65,7 +67,11 @@ export default function MathCheckerPage() {
 
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not analyse the image. Please try again.");
+      setError(
+        err instanceof FetchTimeoutError
+          ? "This is taking longer than expected. Please try again."
+          : err instanceof Error ? err.message : "Could not analyse the image. Please try again."
+      );
     } finally {
       setLoading(false);
     }
