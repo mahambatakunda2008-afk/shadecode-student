@@ -1,0 +1,58 @@
+/* Dashboard Reimagined: composition-first styling. */
+.dashboard-command-center {
+  --dashboard-gap: clamp(1rem, 1.8vw, 1.5rem);
+  container-type: inline-size;
+}
+
+.dashboard-command-center .dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.11), hsl(var(--background)) 62%);
+}
+
+.dashboard-command-center .dashboard-hero::after {
+  content: "";
+  position: absolute;
+  width: 18rem;
+  height: 18rem;
+  right: -7rem;
+  top: -9rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.08);
+  pointer-events: none;
+}
+
+.dashboard-command-center .dashboard-eyebrow {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-command-center .dashboard-section-heading {
+  letter-spacing: -0.025em;
+}
+
+.dashboard-command-center .dashboard-action {
+  box-shadow: 0 10px 30px hsl(var(--primary) / 0.16);
+}
+
+.dashboard-command-center .dashboard-list-item {
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.dashboard-command-center .dashboard-list-item:hover {
+  transform: translateX(2px);
+}
+
+.dashboard-command-center .dashboard-cortex {
+  background: linear-gradient(145deg, hsl(var(--primary) / 0.06), hsl(var(--background)));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-command-center .dashboard-list-item { transition: none; }
+  .dashboard-command-center .dashboard-list-item:hover { transform: none; }
+}
+
+@container (max-width: 760px) {
+  .dashboard-command-center .dashboard-hero { border-radius: 1.15rem; }
+}
