@@ -1,17 +1,36 @@
 "use client";
 
 import "./DashboardReimagined.css";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, BrainCircuit, CalendarClock, CheckCircle2, Flame, Loader2, Target, Trophy } from "lucide-react";
+import {
+  ArrowRight, BrainCircuit, CalendarClock, CheckCircle2, Flame,
+  Loader2, Target, Trophy, BookOpen, Clock3, Sparkles,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getStudentIntelligence } from "@/lib/student-intelligence";
 import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-const TIMEOUT = 15000;
 type Intelligence = any;
+const TIMEOUT = 15000;
+
+const SUBJECT_ACCENTS: Record<string, string> = {
+  Mathematics: "#8b5cf6",
+  Physics: "#38bdf8",
+  Chemistry: "#22d3ee",
+  Biology: "#34d399",
+  History: "#f59e0b",
+  Geography: "#2dd4bf",
+  Economics: "#4ade80",
+  "Computer Science": "#818cf8",
+  default: "#a78bfa",
+};
+
+function accentFor(subject?: string) {
+  return SUBJECT_ACCENTS[subject || ""] || SUBJECT_ACCENTS.default;
+}
 
 export default function DashboardReimagined() {
   const router = useRouter();
@@ -47,7 +66,13 @@ export default function DashboardReimagined() {
       setUserId(auth.user.id);
       setUserName(auth.user.user_metadata?.full_name?.split(" ")[0] || auth.user.email?.split("@")[0] || "Student");
       void load(auth.user.id);
-      const { data: examData } = await supabase.from("exams").select("id, subject, exam_date").eq("user_id", auth.user.id).gte("exam_date", new Date().toISOString().split("T")[0]).order("exam_date", { ascending: true }).limit(5);
+      const { data: examData } = await supabase
+        .from("exams")
+        .select("id, subject, exam_date")
+        .eq("user_id", auth.user.id)
+        .gte("exam_date", new Date().toISOString().split("T")[0])
+        .order("exam_date", { ascending: true })
+        .limit(5);
       if (alive) setExams(examData || []);
       if (alive) setLoading(false);
     })();
@@ -64,44 +89,154 @@ export default function DashboardReimagined() {
   const progress = data?.progress?.overallCompletion;
   const score = data?.performance?.trends?.averageScore;
   const streak = data?.activity?.streak?.currentStreak;
+  const subjects = (data?.progress?.subjects || []).slice(0, 6);
+  const recentLessons = (data?.progress?.lessons || [])
+    .filter((lesson: any) => lesson.lastAttempted)
+    .sort((a: any, b: any) => new Date(b.lastAttempted).getTime() - new Date(a.lastAttempted).getTime())
+    .slice(0, 3);
+  const activeMinutes = data?.activity?.patterns?.averageDailyStudyTime;
+  const recommendationCount = intel?.recommendations?.length || 0;
+  const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening";
+  const nextAccent = accentFor(next?.subject || weak?.subject);
+
+  const openRecommendation = (item: any) => {
+    const params = new URLSearchParams();
+    if (item?.subject) params.set("subject", item.subject);
+    const topic = item?.topic || item?.title || "";
+    if (topic) params.set("topic", topic);
+    router.push(`/learn?${params.toString()}`);
+  };
 
   return (
-    <main className="dashboard-command-center min-h-full bg-background">
-      <div className="mx-auto w-full max-w-[1440px] px-4 pb-12 pt-6 sm:px-6 lg:px-8">
-        <header className="mb-7 flex flex-col gap-1 sm:mb-8">
-          <p className="dashboard-eyebrow text-xs font-semibold text-muted-foreground">Academic command center</p>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {userName}.</h1>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">Here’s what matters most for your learning right now.</p>
+    <main className="dashboard-command-center min-h-full">
+      <div className="dashboard-ambient dashboard-ambient-one" aria-hidden="true" />
+      <div className="dashboard-ambient dashboard-ambient-two" aria-hidden="true" />
+
+      <div className="dashboard-shell mx-auto w-full max-w-[1480px] px-4 pb-14 pt-5 sm:px-6 lg:px-8">
+        <header className="dashboard-header">
+          <div>
+            <p className="dashboard-kicker"><Sparkles className="h-3.5 w-3.5" /> Your learning cockpit</p>
+            <h1>{greeting}, {userName}.</h1>
+            <p>One place to see what needs your attention, what is improving, and what to do next.</p>
+          </div>
+          <div className="dashboard-header-stat">
+            <span>Study rhythm</span>
+            <strong>{activeMinutes == null ? "Building" : `${Math.round(activeMinutes)}m`}</strong>
+            <small>average daily</small>
+          </div>
         </header>
 
-        <section className="mb-7" aria-labelledby="next-heading">
-          <Card className="dashboard-hero">
-            <CardContent className="relative z-10 p-6 sm:p-8">
-              <div className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary"><Target className="h-4 w-4" aria-hidden="true" />Next move</div>
-              {intelLoading ? <div className="flex items-center gap-3 py-5 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Preparing your next recommendation…</div> : next ? <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-3xl"><h2 id="next-heading" className="text-2xl font-semibold tracking-tight sm:text-3xl">{next.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{next.description}</p></div><Button size="lg" className="dashboard-action shrink-0" onClick={() => router.push("/learn")}>Start <ArrowRight className="ml-2 h-4 w-4" /></Button></div> : <div><h2 id="next-heading" className="text-xl font-semibold">Nothing urgent right now.</h2><p className="mt-1 text-sm text-muted-foreground">Keep learning and Shadecode will use your new activity to shape what comes next.</p></div>}
-            </CardContent>
-          </Card>
+        <section className="dashboard-hero" style={{ ["--hero-accent" as string]: nextAccent }} aria-labelledby="next-heading">
+          <div className="dashboard-hero-orb" aria-hidden="true" />
+          <div className="dashboard-hero-content">
+            <div className="dashboard-hero-label"><span className="dashboard-live-dot" /> NEXT BEST MOVE</div>
+            {intelLoading ? (
+              <div className="dashboard-loading-line"><Loader2 className="h-4 w-4 animate-spin" /> Reading your learning signals…</div>
+            ) : next ? (
+              <>
+                <div className="dashboard-hero-copy">
+                  <div>
+                    <span className="dashboard-recommendation-type">{next.type || "practice"}{next.estimatedTime ? ` · ${next.estimatedTime} min` : ""}</span>
+                    <h2 id="next-heading">{next.title}</h2>
+                    <p>{next.description || next.reason}</p>
+                  </div>
+                  <button className="dashboard-primary-action" type="button" onClick={() => openRecommendation(next)}>
+                    Begin <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+                {next.reason && <div className="dashboard-hero-reason"><BrainCircuit className="h-4 w-4" /> {next.reason}</div>}
+              </>
+            ) : (
+              <div className="dashboard-hero-copy"><div><span className="dashboard-recommendation-type">YOU'RE CLEAR</span><h2 id="next-heading">No urgent task right now.</h2><p>Keep building evidence through learning and practice. Cortex will adjust your next move.</p></div><Button onClick={() => router.push("/learn")}>Explore Learn <ArrowRight className="ml-2 h-4 w-4" /></Button></div>
+            )}
+          </div>
         </section>
 
-        <section aria-label="Momentum" className="mb-8 grid gap-3 sm:grid-cols-3">
-          <Metric icon={<CheckCircle2 />} label="Progress" value={progress == null ? "—" : `${Math.round(progress)}%`} detail="Overall" />
-          <Metric icon={<Flame />} label="Streak" value={streak == null ? "—" : `${streak} days`} detail="Current" />
-          <Metric icon={<Trophy />} label="Average" value={score == null ? "—" : `${Math.round(score)}%`} detail="Recent work" />
+        <section className="dashboard-momentum" aria-label="Your momentum">
+          <Metric icon={<CheckCircle2 />} label="Progress" value={progress == null ? "—" : `${Math.round(progress)}%`} detail="overall completion" />
+          <Metric icon={<Flame />} label="Streak" value={streak == null ? "—" : `${streak} days`} detail="current run" />
+          <Metric icon={<Trophy />} label="Average" value={score == null ? "—" : `${Math.round(score)}%`} detail="recent performance" />
+          <Metric icon={<Target />} label="Cortex queue" value={recommendationCount ? `${recommendationCount}` : "—"} detail="recommendations ready" />
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
-          <div className="space-y-6">
-            <section aria-labelledby="today-heading"><SectionTitle kicker="Keep moving" title="Today’s plan" />
-              <Card><CardContent className="p-2 sm:p-3">{intel?.recommendations?.slice(0, 4).length ? intel.recommendations.slice(0, 4).map((item: any, i: number) => <button key={item.id || i} type="button" onClick={() => router.push("/learn")} className="dashboard-list-item flex w-full items-center gap-3 rounded-xl p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted"><Target className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{item.title}</span><span className="mt-0.5 block line-clamp-1 text-xs text-muted-foreground">{item.description}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></button>) : <p className="p-5 text-sm text-muted-foreground">Your plan will appear as Shadecode gathers more learning activity.</p>}</CardContent></Card>
+        <div className="dashboard-grid">
+          <div className="dashboard-main-column">
+            <section aria-labelledby="subjects-heading">
+              <SectionTitle kicker="Your map" title="Subjects in motion" />
+              {subjects.length ? (
+                <div className="dashboard-subject-grid">
+                  {subjects.map((subject: any) => <SubjectTile key={subject.subject} subject={subject} onClick={() => router.push(`/learn?subject=${encodeURIComponent(subject.subject)}`)} />)}
+                </div>
+              ) : (
+                <Card><CardContent className="p-6 text-sm text-muted-foreground">Your subject progress will appear here as you learn.</CardContent></Card>
+              )}
             </section>
 
-            <section aria-labelledby="upcoming-heading"><SectionTitle icon={<CalendarClock />} title="Next up" /><Card><CardContent className="divide-y p-0">{exams.length ? exams.map(exam => <button key={exam.id} type="button" onClick={() => router.push("/tasks")} className="dashboard-list-item flex w-full items-center justify-between gap-4 p-4 text-left"><span><span className="block text-sm font-medium">{exam.subject}</span><span className="text-xs text-muted-foreground">{new Date(exam.exam_date).toLocaleDateString()}</span></span><ArrowRight className="h-4 w-4 text-muted-foreground" /></button>) : <p className="p-5 text-sm text-muted-foreground">No upcoming assessments to show.</p>}</CardContent></Card></section>
+            <section aria-labelledby="today-heading">
+              <SectionTitle kicker="Keep moving" title="Today" />
+              <Card className="dashboard-panel">
+                <CardContent className="p-2 sm:p-3">
+                  {intel?.recommendations?.slice(0, 3).length ? intel.recommendations.slice(0, 3).map((item: any, i: number) => (
+                    <button key={item.id || i} type="button" onClick={() => openRecommendation(item)} className="dashboard-today-row">
+                      <span className="dashboard-row-icon" style={{ ["--row-accent" as string]: accentFor(item.subject) }}><Target className="h-4 w-4" /></span>
+                      <span className="min-w-0 flex-1"><strong>{item.title}</strong><small>{item.description}</small></span>
+                      <span className="dashboard-row-time">{item.estimatedTime ? `${item.estimatedTime}m` : "Start"}<ArrowRight className="h-4 w-4" /></span>
+                    </button>
+                  )) : <p className="p-5 text-sm text-muted-foreground">Shadecode will build your plan as it learns more about your work.</p>}
+                </CardContent>
+              </Card>
+            </section>
+
+            <section aria-labelledby="recent-heading">
+              <SectionTitle kicker="Your trail" title="Recently touched" />
+              <Card className="dashboard-panel">
+                <CardContent className="p-0">
+                  {recentLessons.length ? recentLessons.map((lesson: any) => (
+                    <button key={lesson.lessonId} type="button" className="dashboard-recent-row" onClick={() => router.push(`/learn?subject=${encodeURIComponent(lesson.subject)}&topic=${encodeURIComponent(lesson.lessonTitle)}`)}>
+                      <span className="dashboard-row-icon soft"><BookOpen className="h-4 w-4" /></span>
+                      <span className="min-w-0 flex-1"><strong>{lesson.lessonTitle}</strong><small>{lesson.subject} · {lesson.progress ?? 0}% complete</small></span>
+                      <span className="dashboard-row-meta"><Clock3 className="h-3.5 w-3.5" /> {timeAgo(lesson.lastAttempted)}</span>
+                    </button>
+                  )) : <p className="p-5 text-sm text-muted-foreground">Your recent lessons will show up here.</p>}
+                </CardContent>
+              </Card>
+            </section>
           </div>
 
-          <aside className="space-y-6">
-            <section aria-labelledby="focus-heading"><SectionTitle icon={<Target />} title="Focus area" /><Card><CardContent className="p-5">{weak ? <><h3 id="focus-heading" className="font-semibold">{weak.topic}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">This is currently one of the areas where focused practice can have the most impact.</p><Button variant="outline" className="mt-4" onClick={() => router.push("/learn")}>Practice <ArrowRight className="ml-2 h-4 w-4" /></Button></> : <p id="focus-heading" className="text-sm leading-6 text-muted-foreground">Complete more practice so Shadecode can identify your highest-impact focus area.</p>}</CardContent></Card></section>
+          <aside className="dashboard-side-column">
+            <section aria-labelledby="focus-heading">
+              <SectionTitle kicker="High impact" title="Focus area" />
+              <Card className="dashboard-focus" style={{ ["--focus-accent" as string]: accentFor(weak?.subject) }}>
+                <CardContent className="p-5">
+                  {weak ? <>
+                    <div className="dashboard-focus-top"><span className="dashboard-focus-chip">{weak.subject}</span><span className={`dashboard-severity severity-${weak.severity}`}>{weak.severity}</span></div>
+                    <h3 id="focus-heading">{weak.topic}</h3>
+                    <div className="dashboard-score-line"><span>Current signal</span><strong>{Math.round(weak.score)}%</strong></div>
+                    <div className="dashboard-score-track"><span style={{ width: `${Math.max(0, Math.min(100, weak.score))}%` }} /></div>
+                    <p>Focused practice here is likely to have the biggest near-term payoff.</p>
+                    <button type="button" className="dashboard-outline-action" onClick={() => router.push(`/learn?subject=${encodeURIComponent(weak.subject)}&topic=${encodeURIComponent(weak.topic)}`)}>Work on {weak.topic} <ArrowRight className="h-4 w-4" /></button>
+                  </> : <p id="focus-heading" className="text-sm leading-6 text-muted-foreground">Complete more practice and Cortex will surface the area where your effort can have the most impact.</p>}
+                </CardContent>
+              </Card>
+            </section>
 
-            <section aria-labelledby="cortex-heading"><SectionTitle icon={<BrainCircuit className="text-primary" />} title="Cortex" /><Card className="dashboard-cortex border-primary/15"><CardContent className="p-5">{intelError ? <><h3 id="cortex-heading" className="font-semibold">Cortex is temporarily unavailable</h3><p className="mt-2 text-sm text-muted-foreground">{intelError}</p><Button variant="outline" className="mt-4" disabled={!userId || intelLoading} onClick={() => userId && load(userId)}>Retry</Button></> : insight ? <><h3 id="cortex-heading" className="font-semibold">{insight.title || "A useful signal"}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{insight.content}</p></> : <><h3 id="cortex-heading" className="font-semibold">Cortex is learning</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Keep learning. As Shadecode gathers evidence from your work, this space will become more useful.</p></>}</CardContent></Card></section>
+            <section aria-labelledby="upcoming-heading">
+              <SectionTitle icon={<CalendarClock />} title="Next up" />
+              <Card className="dashboard-panel">
+                <CardContent className="p-0">
+                  {exams.length ? exams.slice(0, 4).map(exam => <button key={exam.id} type="button" onClick={() => router.push("/tasks")} className="dashboard-exam-row"><span><strong>{exam.subject}</strong><small>{formatDate(exam.exam_date)}</small></span><ArrowRight className="h-4 w-4" /></button>) : <p className="p-5 text-sm text-muted-foreground">No upcoming assessments.</p>}
+                </CardContent>
+              </Card>
+            </section>
+
+            <section aria-labelledby="cortex-heading">
+              <SectionTitle icon={<BrainCircuit className="text-primary" />} title="Cortex signal" />
+              <Card className="dashboard-cortex">
+                <CardContent className="p-5">
+                  {intelError ? <><h3 id="cortex-heading">Cortex needs a moment</h3><p>{intelError}</p><button type="button" className="dashboard-outline-action" disabled={!userId || intelLoading} onClick={() => userId && load(userId)}>Retry <RotateCcw className="h-4 w-4" /></button></> : insight ? <><span className="dashboard-signal-label">{insight.type}</span><h3 id="cortex-heading">{insight.title || "A useful signal"}</h3><p>{insight.content}</p></> : <><h3 id="cortex-heading">Still learning your pattern</h3><p>Keep learning. Cortex becomes more useful as your activity and performance history grow.</p></>}
+                </CardContent>
+              </Card>
+            </section>
           </aside>
         </div>
       </div>
@@ -109,6 +244,30 @@ export default function DashboardReimagined() {
   );
 }
 
-function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) { return <Card className="shadow-none"><CardContent className="flex items-center gap-4 p-4 sm:p-5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">{icon}</span><div><p className="text-xs font-medium text-muted-foreground">{label}</p><p className="text-xl font-semibold tracking-tight">{value}</p><p className="text-xs text-muted-foreground">{detail}</p></div></CardContent></Card>; }
-function SectionTitle({ kicker, title, icon }: { kicker?: string; title: string; icon?: React.ReactNode }) { return <div className="mb-3 flex items-end justify-between"><div>{kicker && <p className="dashboard-eyebrow mb-1 text-xs font-medium text-muted-foreground">{kicker}</p>}<h2 className="dashboard-section-heading flex items-center gap-2 text-xl font-semibold">{icon}{title}</h2></div></div>; }
-function DashboardLoading() { return <main className="dashboard-command-center mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8"><div className="animate-pulse space-y-5"><div className="h-10 w-72 rounded-lg bg-muted" /><div className="h-52 rounded-2xl bg-muted" /><div className="grid gap-3 sm:grid-cols-3"><div className="h-24 rounded-2xl bg-muted" /><div className="h-24 rounded-2xl bg-muted" /><div className="h-24 rounded-2xl bg-muted" /></div><div className="grid gap-6 lg:grid-cols-[1.45fr_.55fr]"><div className="h-72 rounded-2xl bg-muted" /><div className="h-72 rounded-2xl bg-muted" /></div></div></main>; }
+function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
+  return <div className="dashboard-metric"><span className="dashboard-metric-icon">{icon}</span><span><small>{label}</small><strong>{value}</strong><em>{detail}</em></span></div>;
+}
+
+function SubjectTile({ subject, onClick }: { subject: any; onClick: () => void }) {
+  const accent = accentFor(subject.subject);
+  const percent = Math.max(0, Math.min(100, Number(subject.completionPercentage) || 0));
+  return <button type="button" className="dashboard-subject-tile" onClick={onClick} style={{ ["--subject-accent" as string]: accent }}><span className="dashboard-subject-orb" /><span className="dashboard-subject-copy"><strong>{subject.subject}</strong><small>{subject.completedLessons || 0} of {subject.totalLessons || 0} lessons</small></span><span className="dashboard-progress-ring" style={{ ["--progress" as string]: `${percent * 3.6}deg` }}><b>{Math.round(percent)}%</b></span></button>;
+}
+
+function SectionTitle({ kicker, title, icon }: { kicker?: string; title: string; icon?: React.ReactNode }) {
+  return <div className="dashboard-section-title"><div>{kicker && <p>{kicker}</p>}<h2>{icon}{title}</h2></div></div>;
+}
+
+function timeAgo(iso: string) {
+  const hours = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "yesterday" : `${days}d ago`;
+}
+
+function formatDate(date: string) { return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+
+function DashboardLoading() {
+  return <main className="dashboard-command-center dashboard-loading-state"><div className="dashboard-shell mx-auto w-full max-w-[1480px] px-4 py-8 sm:px-6 lg:px-8"><div className="dashboard-skeleton dashboard-skeleton-header" /><div className="dashboard-skeleton dashboard-skeleton-hero" /><div className="dashboard-skeleton dashboard-skeleton-metrics" /><div className="dashboard-skeleton dashboard-skeleton-grid" /></div></main>;
+}
