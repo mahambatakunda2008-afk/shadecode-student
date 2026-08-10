@@ -12,9 +12,94 @@ export interface VerifyResult {
   correct?: boolean;
   cortexInsight?: string;
   steps?: { description: string; status: string; note?: string }[];
-  // additional fields for non-math subjects
   feedback?: string;
   marksBreakdown?: Array<{ criterion: string; marksLost: number; note?: string }>;
+}
+
+const REQUEST_TIMEOUT_MS = 30_000;
+const FILE_READ_TIMEOUT_MS = 15_000;
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    const timeout = window.setTimeout(() => {
+      reader.abort();
+      reject(new Error("Image processing took too long. Please try again."));
+    }, FILE_READ_TIMEOUT_MS);
+
+    reader.onload = () => {
+      window.clearTimeout(timeout);
+      resolve(String(reader.result));
+    };
+    reader.onerror = () => {
+      window.clearTimeout(timeout);
+      reject(new Error("Could not read the selected image."));
+    };
+    reader.onabort = () => {
+      window.clearTimeout(timeout);
+      reject(new Error("Image processing was cancelled."));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function sendAttemptNow(attempt: CortexAttempt) {
+  try {
+    const fd = new FormData();
+    if (attempt.imageDataUrl) {
+      const res = await fetchWithTimeout(attempt.imageDataUrl);
+      if (!res.ok) throw new Error("Could not prepare the selected image.");
+      const blob = await res.blob();
+      fd.append("image", blob, "upload.jpg");
+    }
+    fd.append("mode", attempt.mode);
+    if (attempt.subject) fd.append("subject", attempt.subject);
+    if (attempt.question) fd.append("question", attempt.question);
+    if (attempt.studentAnswer) fd.append("studentAnswer", attempt.studentAnswer);
+    if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
+
+    const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd });
+    let data: VerifyResult & { error?: string };
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("The verification service returned an invalid response.");
+    }
+    if (!response.ok) throw new Error(data.error || "Provider error");
+    if (!data || typeof data !== "object") throw new Error("Invalid provider response");
+
+    await remove(attempt.id);
+    return data as VerifyResult;
+  } catch (err) {
+    try {
+      const existing = await getAll();
+      const found = existing.find((x) => x.id === attempt.id);
+      if (found) {
+        found.attempts = (found.attempts || 0) + 1;
+        await enqueue(found);
+      }
+    } catch {
+      // Keep the original request failure as the useful signal.
+    }
+    throw err;
+  }
+}
+
+function errorMessage(err: unknown) {
+  if (err instanceof DOMException && err.name === "AbortError") {
+    return "The request took too long. It has been kept for retry. Please try again later.";
+  }
+  return err instanceof Error ? err.message : "The verification request failed.";
 }
 
 export function useCortexVerify() {
@@ -22,48 +107,8 @@ export function useCortexVerify() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function sendAttemptNow(attempt: CortexAttempt) {
-    // Build FormData and POST to API
-    try {
-      const fd = new FormData();
-      if (attempt.imageDataUrl) {
-        // convert dataURL to blob
-        const res = await fetch(attempt.imageDataUrl);
-        const blob = await res.blob();
-        fd.append('image', blob, 'upload.jpg');
-      }
-      fd.append('mode', attempt.mode);
-      if (attempt.subject) fd.append('subject', attempt.subject);
-      if (attempt.question) fd.append('question', attempt.question);
-      if (attempt.studentAnswer) fd.append('studentAnswer', attempt.studentAnswer);
-      if (attempt.mode === 'help' && attempt.level) fd.append('level', attempt.level);
-
-      const response = await fetch('/api/cortex/verify', { method: 'POST', body: fd });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Provider error');
-      // Basic validation of returned shape
-      if (!data || typeof data !== 'object') throw new Error('Invalid provider response');
-      // On success remove from queue
-      await remove(attempt.id);
-      return data as VerifyResult;
-    } catch (err) {
-      // increment attempts counter stored in queue
-      try {
-        const existing = await getAll();
-        const found = existing.find((x) => x.id === attempt.id);
-        if (found) {
-          found.attempts = (found.attempts || 0) + 1;
-          await enqueue(found);
-        }
-      } catch {
-        // ignore
-      }
-      throw err;
-    }
-  }
-
   const check = useCallback(async (options: {
-    mode: 'check';
+    mode: "check";
     subject?: string;
     question?: string;
     studentAnswer?: string;
@@ -73,19 +118,11 @@ export function useCortexVerify() {
     setError(null);
     setResult(null);
     try {
-      // Persist attempt locally first
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      let imageDataUrl: string | null = null;
-      if (options.image) {
-        imageDataUrl = await new Promise<string>((resolve) => {
-          const r = new FileReader();
-          r.onload = () => resolve(String(r.result));
-          r.readAsDataURL(options.image as File);
-        });
-      }
+      const imageDataUrl = options.image ? await fileToDataUrl(options.image) : null;
       const attempt: CortexAttempt = {
         id,
-        mode: 'check',
+        mode: "check",
         subject: options.subject,
         question: options.question,
         studentAnswer: options.studentAnswer,
@@ -95,20 +132,21 @@ export function useCortexVerify() {
       };
       await enqueue(attempt);
 
-      // Try send immediately if online
-      if (typeof navigator !== 'undefined' && navigator.onLine) {
+      if (typeof navigator !== "undefined" && navigator.onLine) {
         try {
           const res = await sendAttemptNow(attempt);
-          setResult(res as VerifyResult);
-          return res as VerifyResult;
+          setResult(res);
+          return res;
         } catch (err) {
-          // keep queued and inform user
-          setError('Request queued due to temporary error; it will retry automatically.');
+          setError(`Request queued: ${errorMessage(err)}`);
           return null;
         }
       }
 
-      setError('Offline — request queued and will be sent when online.');
+      setError("Offline — request queued and will be sent when online.");
+      return null;
+    } catch (err) {
+      setError(errorMessage(err));
       return null;
     } finally {
       setLoading(false);
@@ -116,7 +154,7 @@ export function useCortexVerify() {
   }, []);
 
   const help = useCallback(async (options: {
-    mode: 'help';
+    mode: "help";
     subject?: string;
     question?: string;
     level: HelpLevel;
@@ -127,17 +165,10 @@ export function useCortexVerify() {
     setResult(null);
     try {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      let imageDataUrl: string | null = null;
-      if (options.image) {
-        imageDataUrl = await new Promise<string>((resolve) => {
-          const r = new FileReader();
-          r.onload = () => resolve(String(r.result));
-          r.readAsDataURL(options.image as File);
-        });
-      }
+      const imageDataUrl = options.image ? await fileToDataUrl(options.image) : null;
       const attempt: CortexAttempt = {
         id,
-        mode: 'help',
+        mode: "help",
         subject: options.subject,
         question: options.question,
         level: options.level,
@@ -147,25 +178,27 @@ export function useCortexVerify() {
       };
       await enqueue(attempt);
 
-      if (typeof navigator !== 'undefined' && navigator.onLine) {
+      if (typeof navigator !== "undefined" && navigator.onLine) {
         try {
           const res = await sendAttemptNow(attempt);
-          setResult(res as VerifyResult);
-          return res as VerifyResult;
+          setResult(res);
+          return res;
         } catch (err) {
-          setError('Request queued due to temporary error; it will retry automatically.');
+          setError(`Request queued: ${errorMessage(err)}`);
           return null;
         }
       }
 
-      setError('Offline — request queued and will be sent when online.');
+      setError("Offline — request queued and will be sent when online.");
+      return null;
+    } catch (err) {
+      setError(errorMessage(err));
       return null;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Background sync: attempt queued items when online or every 30s
   useEffect(() => {
     let cancelled = false;
     let timer: number | undefined;
@@ -173,21 +206,18 @@ export function useCortexVerify() {
     async function processQueueOnce() {
       try {
         const items = await getAll();
-        // sort oldest first
         items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         for (const it of items) {
           if (cancelled) return;
-          // simple backoff: skip if attempts > 5
           if ((it.attempts || 0) >= 5) continue;
           try {
             await sendAttemptNow(it);
-          } catch (err) {
-            // if provider failure, leave in queue
+          } catch {
             continue;
           }
         }
-      } catch (e) {
-        // ignore local queue errors — will retry next tick
+      } catch {
+        // Retry on the next scheduled pass.
       }
     }
 
@@ -198,15 +228,14 @@ export function useCortexVerify() {
       }, 30000);
     }
 
-    window.addEventListener('online', processQueueOnce);
+    window.addEventListener("online", processQueueOnce);
     schedule();
-    // also run once at mount
-    if (navigator.onLine) processQueueOnce();
+    if (navigator.onLine) void processQueueOnce();
 
     return () => {
       cancelled = true;
-      window.removeEventListener('online', processQueueOnce);
-      if (timer) clearTimeout(timer);
+      window.removeEventListener("online", processQueueOnce);
+      if (timer) window.clearTimeout(timer);
     };
   }, []);
 
