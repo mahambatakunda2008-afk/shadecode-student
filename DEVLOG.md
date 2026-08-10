@@ -197,3 +197,30 @@ While wiring the widget's submission path, found the `feedback` table had two ov
 **Verification:** `tsc --noEmit` clean, full vitest suite (58 passed, up from 53).
 
 ---
+
+## 2026-08-08, later same day — Audio lessons: narration + hands-free voice commands
+
+Direct owner request ("some user requested audio lessons"), not from the blueprint corpus -- the one relevant reference (`SHADECODE PLATFORM BLUEPRINT/Volume II.docx` §14 "Voice") is a thin aspirational list about voice *input*, not narration. Full design reasoning in `docs/AUDIO_LESSONS_SPEC.md`; summarizing the key decisions here.
+
+Searched first, per this session's established methodology: zero existing audio/TTS/voice infrastructure anywhere in `src`. This is genuinely new ground. One valuable finding while searching: both Cloudflare Workers AI and OpenAI -- providers already integrated and billed in `src/lib/ai.ts` -- offer TTS models, meaning a future higher-quality tier wouldn't need a new vendor relationship.
+
+**Designed around who actually uses this product**, not a generic feature bolt-on: Shadecode Student's real users are mobile-first, Android-first, Zimbabwe-based students, for whom mobile data costs real money. The existing "Download lesson for offline access" button already shows this product takes that seriously. A two-tier design follows from that:
+- **Tier 1 (shipped)**: browser-native `speechSynthesis` narration. Zero data cost -- nothing downloaded, synthesized client-side from text already on the page. Zero server cost, zero new vendor, works today.
+- **Tier 2 (designed, deferred)**: cached cloud TTS via the already-integrated providers, downloaded explicitly, ideally Wi-Fi-gated like the existing download button. Deferred because it has a real, ongoing delivery-bandwidth cost to the student that Tier 1 doesn't -- not attempting this before validating real Tier 1 usage, same reasoning already applied to deferring the Scheduling Engine's full wiring earlier this session.
+
+**Follow-up request mid-build**: hands-free voice control, since a student might have the phone in a pocket or not want to keep tapping the screen. Visualized the real constraint before building anything further (see chat): mobile browsers suspend background tabs on screen lock, so true "phone in pocket, screen off" control is not achievable in a web app -- would need a native Android app with a foreground background service. Stated this plainly in the spec rather than shipping something that silently stops working the moment a student's screen locks.
+
+What *is* honestly achievable and was shipped: voice commands ("next", "repeat", "pause", "explain", "resume", "previous") while the tab is active and the screen is on -- genuinely serves "earbuds in, don't want to keep tapping." Solved a real technical trap along the way: if narration plays through a speaker (not headphones) while the mic is also listening, it would hear its own voice and misfire. Rather than patch around this, the design only listens for a command in the pause between narrated blocks, never while actively speaking -- sidesteps the feedback loop by construction.
+
+**Shipped:**
+- `src/lib/audio/narration.ts` (pure, tested): builds a spoken script from lesson blocks. Math-type blocks get an honest spoken substitute ("here's a formula, take a look at the screen") rather than reading raw notation aloud unintelligibly, or fabricating a plain-English restatement of content that can't be verified.
+- `src/lib/audio/voiceCommands.ts` (pure, tested): matches natural spoken phrasing ("can you say that again", "hold on a second") to a fixed command set, not just exact keywords.
+- `src/hooks/useLessonNarration.ts`: the SpeechSynthesis + SpeechRecognition browser-API orchestration around the tested logic above -- same "extract pure logic, test that, keep the API wiring thin" split as `src/lib/async/withTimeout.ts` + the dashboard component earlier this session.
+- A "Listen" button in the lesson page's existing action bar, matching the visual style of the existing four buttons exactly. Live status (idle / reading N of M / listening) and a discoverability hint once narration starts -- learned directly from this session's earlier finding that the feedback feature went unused because nobody knew where it was; a hidden voice-command feature would repeat that exact mistake.
+- Graceful degradation: no Listen button at all if `speechSynthesis` isn't supported (no dead button); if `SpeechRecognition` specifically isn't supported, playback still works, it just auto-advances on a timer instead of listening for commands.
+
+**Not built this pass, documented not hidden:** read-along word highlighting (cross-browser `onboundary` timing needs more testing than this session allows), Tier 2 cached cloud audio, and any wake-word/pocket-mode experience.
+
+**Verification:** `tsc --noEmit` clean, full vitest suite (71 passed, up from 58 -- 13 new tests across the two pure audio modules).
+
+---

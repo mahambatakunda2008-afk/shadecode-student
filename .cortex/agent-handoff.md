@@ -11,8 +11,9 @@ Claude is mid-way through Blueprint Reconciliation (see `docs/BLUEPRINT_GAP_MATR
 
 1. **Retention Risk** (Mission Control Ch.7) -- fully shipped.
 2. **Scheduling Engine** (Mission Control Ch.8) -- fabrication issue fixed, full wiring deferred with a documented plan.
-3. **Dashboard reliability + repo-wide reliability sweep** -- shipped. `src/lib/async/withTimeout.ts` (Promise-level) and `src/lib/async/fetchWithTimeout.ts` (client fetch-level) both exist and are tested. Applied to the dashboard, `exam-sim`, `math-checker`, `insights/history`. `tasks`/`curriculum` pages still have unbounded `Promise.all` on plain DB reads -- lower priority, documented, not yet fixed.
-4. **Floating feedback widget** -- shipped (`src/components/FeedbackWidget.tsx`, mounted globally). One open item: a minor RLS policy fix on `feedback` (closed a spoofing gap) has the authenticated case verified live; the anonymous-insert case couldn't be conclusively verified through this session's SQL simulation tooling (looks like a tool quirk, not a real policy issue -- see `DEVLOG.md` for full reasoning). Worth a real-world check, not blocking.
+3. **Dashboard reliability + repo-wide reliability sweep** -- shipped (dashboard, `exam-sim`, `math-checker`, `insights/history`). `tasks`/`curriculum` pages still have unbounded `Promise.all` on plain DB reads -- lower priority, documented, not yet fixed.
+4. **Floating feedback widget** -- shipped. One open item: an RLS policy fix's anonymous-insert case couldn't be conclusively verified through SQL simulation tooling (see `DEVLOG.md`) -- low real-world stakes, worth a live check.
+5. **Audio lessons Tier 1** -- shipped, direct owner request. Browser-native narration + hands-free voice commands on the lesson page. Full design record in `docs/AUDIO_LESSONS_SPEC.md`. Tier 2 (cloud TTS) deliberately deferred pending real usage of Tier 1.
 
 No task is currently claimed/in-progress.
 

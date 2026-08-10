@@ -9,10 +9,12 @@ import {
   FlaskConical, Calculator, Brain, Code2, TrendingUp,
   Languages, Music, Palette, CheckCircle2, Clock,
   HelpCircle, ArrowRight, MessageSquare, Download,
+  Headphones, Pause, Mic,
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
+import { useLessonNarration } from "@/hooks/useLessonNarration";
 
 type SubjectTheme = {
   hex: string; bg: string; border: string; text: string;
@@ -87,6 +89,12 @@ export default function LessonDetailPage() {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [autoSaving,   setAutoSaving]   = useState(false);
   const [lastSavedProgress, setLastSavedProgress] = useState<number>(0);
+
+  // Must be called unconditionally (before any early return below) per
+  // Rules of Hooks -- lesson is still null on first render, so pass a
+  // safe empty default; the hook's own internal effect rebuilds the
+  // narration script once real blocks arrive.
+  const narration = useLessonNarration(lesson?.blocks ?? []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -421,7 +429,31 @@ export default function LessonDetailPage() {
                   <><Download size={17} /> Download</>
                 )}
               </button>
+
+              {/* Listen -- narrates lesson blocks aloud; free, on-device,
+                  no data cost. See docs/AUDIO_LESSONS_SPEC.md */}
+              {narration.speechSupported && (
+                <button
+                  onClick={narration.status === "idle" ? narration.start : narration.stop}
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: narration.status !== "idle" ? "rgba(99,102,241,0.18)" : "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}
+                  aria-label={narration.status === "idle" ? "Listen to this lesson" : "Stop listening"}
+                >
+                  {narration.status === "listening" ? (
+                    <><Mic size={17} /> Listening&hellip;</>
+                  ) : narration.status === "speaking" ? (
+                    <><Pause size={17} /> Reading {narration.currentIndex + 1}/{narration.totalSegments}</>
+                  ) : (
+                    <><Headphones size={17} /> Listen</>
+                  )}
+                </button>
+              )}
             </div>
+
+            {narration.status !== "idle" && narration.voiceCommandsSupported && (
+              <p style={{ fontSize: 12, color: "var(--muted-foreground)", textAlign: "center", margin: "2px 0 0" }}>
+                Say &ldquo;next&rdquo;, &ldquo;repeat&rdquo;, or &ldquo;pause&rdquo; between sections &mdash; works best with the screen on and headphones in.
+              </p>
+            )}
           </div>
         ) : (
           <div style={{ textAlign: "center", padding: "52px 24px", background: "var(--surface-2)", border: "1px solid var(--card-border)", borderRadius: 20 }}>
