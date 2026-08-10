@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight, BrainCircuit, CalendarClock, CheckCircle2, Flame,
-  Loader2, Target, Trophy, BookOpen, Clock3, Sparkles,
+  Loader2, RotateCcw, Target, Trophy, BookOpen, Clock3, Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getStudentIntelligence } from "@/lib/student-intelligence";
