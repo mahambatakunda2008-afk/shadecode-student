@@ -26,6 +26,27 @@ export interface MathCheckResult {
   nextSteps: string[];
 }
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
+async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function readError(response: Response, fallback: string) {
+  try {
+    const data = await response.json();
+    return typeof data?.error === "string" ? data.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useMathChecker() {
   const [solution, setSolution] = useState<MathSolution | null>(null);
   const [checkResult, setCheckResult] = useState<MathCheckResult | null>(null);
@@ -38,22 +59,22 @@ export function useMathChecker() {
       setError(null);
       setCheckResult(null);
 
-      const res = await fetch("/api/cortex/math-check", {
+      const res = await fetchWithTimeout("/api/cortex/math-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "solve", problem, subject }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to solve problem");
-      }
+      if (!res.ok) throw new Error(await readError(res, "Failed to solve problem"));
 
       const data = await res.json();
       setSolution(data.solution);
       return data.solution;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      const message = err instanceof DOMException && err.name === "AbortError"
+        ? "The request took too long. Please try again."
+        : err instanceof Error ? err.message : "Unknown error";
+      setError(message);
       return null;
     } finally {
       setLoading(false);
@@ -69,23 +90,23 @@ export function useMathChecker() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("/api/cortex/math-check", {
+      const res = await fetchWithTimeout("/api/cortex/math-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "check", problem, subject, studentAnswer }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to check answer");
-      }
+      if (!res.ok) throw new Error(await readError(res, "Failed to check answer"));
 
       const data = await res.json();
       setCheckResult(data.result);
       setSolution(data.result.solution);
       return data.result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      const message = err instanceof DOMException && err.name === "AbortError"
+        ? "The request took too long. Please try again."
+        : err instanceof Error ? err.message : "Unknown error";
+      setError(message);
       return null;
     } finally {
       setLoading(false);
