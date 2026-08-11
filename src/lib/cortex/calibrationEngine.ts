@@ -1,17 +1,10 @@
-import type { LearningCandidate } from "@/lib/learning-engine/shadecodeLearningUtility";
-import { chooseNextLearningMove } from "@/lib/learning-engine/shadecodeLearningUtility";
+import {
+  chooseNextLearningMove,
+  type LearningCandidate,
+  type LearningUtilityWeights,
+} from "@/lib/learning-engine/shadecodeLearningUtility";
 
-export interface CalibrationWeights {
-  masteryGap: number;
-  retentionRisk: number;
-  examUrgency: number;
-  prerequisiteValue: number;
-  goalAlignment: number;
-  curriculumGap: number;
-  trendRisk: number;
-  uncertainty: number;
-  momentum: number;
-}
+export type CalibrationWeights = LearningUtilityWeights;
 
 export interface CalibrationExample {
   candidates: LearningCandidate[];
@@ -34,7 +27,6 @@ function clamp(value: number, min = 0, max = 2): number {
   return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 }
 
-/** Evaluate a weight set against reviewed examples. */
 export function evaluateWeights(
   weights: CalibrationWeights,
   examples: CalibrationExample[],
@@ -49,9 +41,9 @@ export function evaluateWeights(
 }
 
 /**
- * Small deterministic coordinate search. It explores only bounded perturbations
- * around the supplied weights and keeps a candidate only when it improves the
- * reviewed-example score. This is calibration, not autonomous truth discovery.
+ * Small deterministic coordinate search around a baseline multiplier set.
+ * Each multiplier is bounded so calibration cannot silently create runaway
+ * influence. A change is retained only when it improves reviewed-example score.
  */
 export function calibrateWeights(
   initial: CalibrationWeights,
@@ -63,7 +55,7 @@ export function calibrateWeights(
 
   for (const key of KEYS) {
     for (const direction of [1, -1]) {
-      const candidate = {
+      const candidate: CalibrationWeights = {
         ...best.weights,
         [key]: clamp(best.weights[key] + direction * delta),
       };
