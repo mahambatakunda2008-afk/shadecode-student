@@ -5,6 +5,7 @@ import {
   BookOpen,
   Brain,
   Calculator,
+  Sparkles,
   BarChart3,
   Trophy,
   BrainCircuit,
@@ -38,13 +39,14 @@ export interface NavGroup {
 export const NAV_ITEMS = {
   dashboard: { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   focus: { href: "/focus", label: "Focus", icon: Timer },
-  tasks: { href: "/tasks", label: "Tasks", icon: CheckSquare, badge: "3", urgent: false },
-  exams: { href: "/exams", label: "Exams", icon: BookOpen, badge: "2d", urgent: true },
+  tasks: { href: "/tasks", label: "Tasks", icon: CheckSquare },
+  exams: { href: "/exams", label: "Exams", icon: BookOpen },
   examHub: { href: "/exam-hub", label: "Exam Hub", icon: FileText },
   examSim: { href: "/exam-sim", label: "Exam Sim", icon: Gamepad2 },
   learn: { href: "/learn", label: "Learn", icon: Brain },
   curriculum: { href: "/curriculum", label: "Curriculum", icon: BookOpen },
   mathChecker: { href: "/math-checker", label: "Math", icon: Calculator },
+  cortexVerify: { href: "/cortex-verify", label: "Cortex Verify", icon: Sparkles, badge: "New" },
   timetable: { href: "/timetable", label: "Timetable", icon: Calendar },
   analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
   leaderboard: { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -82,7 +84,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   },
   {
     group: "Tools",
-    items: [NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.mathChecker],
+    items: [NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.mathChecker, NAV_ITEMS.cortexVerify],
   },
   {
     group: "Progress",

@@ -6,10 +6,20 @@ import { useState, useEffect } from "react";
 import { X, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BOTTOM_PRIMARY, BOTTOM_MORE, isRouteActive } from "@/lib/navigation";
+import { useNavBadges } from "@/hooks/useNavBadges";
 
 export function BottomNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { tasksBadge, tasksUrgent, examsBadge, examsUrgent } = useNavBadges();
+
+  // Only tasks/exams have live data to show; everything else keeps
+  // whatever (currently nothing) is on the static nav item.
+  const resolveBadge = (href: string, staticBadge?: string, staticUrgent?: boolean) => {
+    if (href === "/tasks") return { badge: tasksBadge, urgent: tasksUrgent };
+    if (href === "/exams") return { badge: examsBadge, urgent: examsUrgent };
+    return { badge: staticBadge, urgent: staticUrgent };
+  };
 
   // Close drawer on route change
   useEffect(() => {
@@ -35,7 +45,8 @@ export function BottomNav() {
         className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)]/95 shadow-[var(--shadow-lg)] backdrop-blur-2xl"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        {BOTTOM_PRIMARY.map(({ href, label, icon: Icon, badge, urgent }) => {
+        {BOTTOM_PRIMARY.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
+          const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
           const active = isRouteActive(pathname, href);
           return (
             <Link
@@ -152,7 +163,8 @@ export function BottomNav() {
 
           {/* 3-column grid */}
           <div className="grid grid-cols-3 gap-[10px] px-4 pb-2">
-            {BOTTOM_MORE.map(({ href, label, icon: Icon, badge, urgent }) => {
+            {BOTTOM_MORE.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
+              const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
               const active = isRouteActive(pathname, href);
               return (
                 <Link
