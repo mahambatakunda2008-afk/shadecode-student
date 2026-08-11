@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { calculateLearningUtility } from "@/lib/learning-engine/shadecodeLearningUtility";
 import { calibrateWeights, evaluateWeights, type CalibrationWeights } from "../calibrationEngine";
 
 const weights: CalibrationWeights = {
@@ -23,6 +24,13 @@ describe("Cortex calibration", () => {
     expect(result.total).toBe(1);
     expect(result.correct).toBe(1);
     expect(result.score).toBe(1);
+  });
+
+  it("passes custom multipliers into the utility function", () => {
+    const candidate = { ...weak, mastery: 70, retentionRisk: 20, examUrgency: 100 };
+    const baseline = calculateLearningUtility(candidate, weights);
+    const examHeavy = calculateLearningUtility(candidate, { ...weights, examUrgency: 2 });
+    expect(examHeavy.breakdown.need).toBeGreaterThan(baseline.breakdown.need);
   });
 
   it("keeps weights bounded and deterministic", () => {
