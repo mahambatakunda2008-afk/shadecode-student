@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { CompactLocalModel } from "../src/lib/cortex/compactLocalModel";
 import { LocalModel } from "../src/lib/cortex/localModel";
 import { CortexRouter } from "../src/lib/cortex/router";
 import type { CortexSnapshot } from "../src/lib/cortex/types";
@@ -53,6 +54,30 @@ async function benchmarkLocalModel(iterations = 100) {
   return rows;
 }
 
+function benchmarkCompactLocalModel(iterations = 100) {
+  const model = new CompactLocalModel();
+  const snapshot = createBenchmarkSnapshot();
+  const rows: Array<{ label: string; avgMs: number; p95Ms: number; intent: string }> = [];
+
+  for (const sample of samples) {
+    const times: number[] = [];
+    let intent = "generic";
+    for (let i = 0; i < iterations; i += 1) {
+      const start = performance.now();
+      const result = model.infer(sample.question, { history: [], snapshot });
+      intent = result.intent;
+      times.push(performance.now() - start);
+    }
+    rows.push({
+      label: sample.label,
+      avgMs: times.reduce((a, b) => a + b, 0) / times.length,
+      p95Ms: percentile(times, 0.95),
+      intent,
+    });
+  }
+  return rows;
+}
+
 async function benchmarkRouter(iterations = 100) {
   const router = new CortexRouter();
   const results: Array<{ label: string; avgMs: number; source: string }> = [];
@@ -84,8 +109,10 @@ async function main() {
   const iterations = Number(process.env.BENCH_ITERATIONS ?? 100);
   console.log(`Cortex edge benchmark | iterations=${iterations}`);
   console.log(`Node=${process.version} | arch=${process.arch} | platform=${process.platform}`);
-  console.log("\nLocalModel");
+  console.log("\nExisting LocalModel");
   console.table(await benchmarkLocalModel(iterations));
+  console.log("\nCompactLocalModel candidate");
+  console.table(benchmarkCompactLocalModel(iterations));
   console.log("\nCortexRouter");
   console.table(await benchmarkRouter(Math.min(iterations, 20)));
   console.log("\nRecord the same command on the target Arm device and compare median/p95 latency, throughput, RSS, and package/model size.");
