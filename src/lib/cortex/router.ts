@@ -86,7 +86,7 @@ export class CortexRouter {
       answer = await this.teacher.generateResponse(question, request.context);
     } else if (this.useCompactLocalModel) {
       provider = "local";
-      answer = this.compactLocalModel.infer(question, request.context as never).answer;
+      answer = this.compactLocalModel.infer(question).answer;
     } else {
       provider = "local";
       answer = await this.localModel.generateResponse(question, request.context);
