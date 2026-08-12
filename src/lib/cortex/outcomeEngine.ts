@@ -62,7 +62,7 @@ export function evaluateIntervention(record: InterventionRecord, baselineScore?:
   const efficiency = record.status === "completed" ? clamp(100 / Math.sqrt(minutes / 15)) : 0;
   const followUpImprovement = record.followUpScore == null || baselineScore == null
     ? 0
-    : clamp(record.followUpScore - baselineScore + 50);
+    : clamp(record.followUpScore - baselineScore, -100, 100);
   const outcomeScore = clamp(
     completion * 0.35 + efficiency * 0.2 + followUpImprovement * 0.45,
   );
