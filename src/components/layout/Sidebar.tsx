@@ -8,6 +8,7 @@ import { Flame, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { SIDEBAR_GROUPS, NAV_ITEMS, isRouteActive } from "@/lib/navigation";
+import { useNavBadges } from "@/hooks/useNavBadges";
 
 // ─── Design tokens (mirrored from globals.css for component use) ──────────────
 // Item height: 40px = py-[11px] top+bottom + 18px icon
@@ -20,6 +21,15 @@ export function Sidebar() {
   const pathname = usePathname();
   const router   = useRouter();
   const { profile } = useUser();
+  const { tasksBadge, tasksUrgent, examsBadge, examsUrgent } = useNavBadges();
+
+  // Only tasks/exams have live data; everything else keeps whatever
+  // (currently nothing) is on the static nav item.
+  const resolveBadge = (href: string, staticBadge?: string, staticUrgent?: boolean) => {
+    if (href === "/tasks") return { badge: tasksBadge, urgent: tasksUrgent };
+    if (href === "/exams") return { badge: examsBadge, urgent: examsUrgent };
+    return { badge: staticBadge, urgent: staticUrgent };
+  };
 
   const firstName =
     profile?.first_name ?? profile?.full_name?.split(" ")[0] ?? "Student";
@@ -165,7 +175,8 @@ export function Sidebar() {
 
             {/* Items: 2px gap within a group — tight, purposeful density */}
             <div className="flex flex-col gap-[2px]">
-              {section.items.map(({ href, label, icon: Icon, badge, urgent }) => {
+              {section.items.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
+                const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
                 const active = isRouteActive(pathname, href);
                 return (
                   <Link

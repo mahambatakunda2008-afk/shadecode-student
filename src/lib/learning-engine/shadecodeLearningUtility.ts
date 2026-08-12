@@ -15,6 +15,7 @@ export type LearningMoveType = "lesson" | "revision" | "exam" | "practice" | "re
 export interface LearningCandidate {
   id: string;
   type: LearningMoveType;
+ feat/shadow-cortex-next16
   mastery: number;
   retentionRisk: number;
   examUrgency: number;
@@ -24,6 +25,16 @@ export interface LearningCandidate {
   trendRisk: number;
   uncertainty: number;
   momentum: number;
+  mastery: number; // 0-100
+  retentionRisk: number; // 0-100
+  examUrgency: number; // 0-100
+  prerequisiteValue: number; // 0-100
+  goalAlignment: number; // 0-100
+  curriculumGap: number; // 0-100
+  trendRisk: number; // 0-100, higher = performance is becoming less stable
+  uncertainty: number; // 0-100, higher = less evidence about the student's state
+  momentum: number; // 0-100, recent engagement/progress signal
+main
   estimatedMinutes: number;
 }
 
@@ -38,11 +49,15 @@ export interface LearningUtilityBreakdown {
 
 export interface LearningDecision {
   candidate: LearningCandidate;
+ feat/shadow-cortex-next16
   score: number;
+  score: number; // 0-100
+main
   breakdown: LearningUtilityBreakdown;
   reason: string;
 }
 
+ feat/shadow-cortex-next16
 /** Multipliers around the v1 baseline. 1 = unchanged baseline influence. */
 export interface LearningUtilityWeights {
   masteryGap: number;
@@ -69,6 +84,9 @@ export const DEFAULT_LEARNING_UTILITY_WEIGHTS: LearningUtilityWeights = {
 };
 
 const BASE_NEED_WEIGHTS = {
+
+const WEIGHTS = {
+ main
   masteryGap: 0.30,
   retentionRisk: 0.25,
   examUrgency: 0.20,
@@ -76,7 +94,11 @@ const BASE_NEED_WEIGHTS = {
   prerequisiteValue: 0.10,
 } as const;
 
+ feat/shadow-cortex-next16
 const BASE_OPPORTUNITY_WEIGHTS = {
+
+const OPPORTUNITY_WEIGHTS = {
+ main
   goalAlignment: 0.45,
   curriculumGap: 0.25,
   uncertainty: 0.20,
@@ -87,6 +109,7 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 }
 
+ feat/shadow-cortex-next16
 function weighted(
   values: Record<string, number>,
   baseWeights: Record<string, number>,
@@ -131,6 +154,56 @@ export function calculateLearningUtility(
   const minutes = Math.max(5, Number.isFinite(candidate.estimatedMinutes) ? candidate.estimatedMinutes : 15);
   const costPenalty = 1 + Math.log2(minutes / 15 + 1) * 0.35;
   const explorationBonus = clamp(candidate.uncertainty) * 0.08 * effectiveWeights.uncertainty;
+
+function weighted(values: Record<string, number>, weights: Record<string, number>): number {
+  return Object.keys(weights).reduce((sum, key) => sum + clamp(values[key]) * weights[key], 0);
+}
+
+/**
+ * Calculates Shadecode's transparent learning-utility score.
+ *
+ * Design idea:
+ *   NEED × OPPORTUNITY ÷ COST
+ *
+ * Need asks "why does this student need this now?".
+ * Opportunity asks "how much useful learning signal is available here?".
+ * Cost prevents a 90-minute task from automatically beating a strong
+ * 15-minute intervention simply because its raw need is high.
+ */
+export function calculateLearningUtility(candidate: LearningCandidate): LearningDecision {
+  const masteryGap = 100 - clamp(candidate.mastery);
+
+  const need = weighted(
+    {
+      masteryGap,
+      retentionRisk: candidate.retentionRisk,
+      examUrgency: candidate.examUrgency,
+      trendRisk: candidate.trendRisk,
+      prerequisiteValue: candidate.prerequisiteValue,
+    },
+    WEIGHTS,
+  );
+
+  const opportunity = weighted(
+    {
+      goalAlignment: candidate.goalAlignment,
+      curriculumGap: candidate.curriculumGap,
+      uncertainty: candidate.uncertainty,
+      momentum: candidate.momentum,
+    },
+    OPPORTUNITY_WEIGHTS,
+  );
+
+  // Sub-linear cost curve: doubling study time should hurt, but not twice as much.
+  const minutes = Math.max(5, candidate.estimatedMinutes);
+  const costPenalty = 1 + Math.log2(minutes / 15 + 1) * 0.35;
+
+  // Exploration prevents the engine from repeatedly selecting only the topics
+  // it already understands well. It is deliberately bounded so uncertainty
+  // can never overwhelm a genuine urgent need.
+  const explorationBonus = clamp(candidate.uncertainty) * 0.08;
+
+ main
   const rawUtility = ((need * 0.65) + (opportunity * 0.35)) / costPenalty;
   const score = Math.round(clamp(rawUtility + explorationBonus));
 
@@ -149,6 +222,7 @@ export function calculateLearningUtility(
   };
 }
 
+ feat/shadow-cortex-next16
 export function chooseNextLearningMove(
   candidates: LearningCandidate[],
   weights?: Partial<LearningUtilityWeights>,
@@ -157,6 +231,17 @@ export function chooseNextLearningMove(
 
   return candidates
     .map((candidate) => calculateLearningUtility(candidate, weights))
+
+/**
+ * Picks the next-best learning move from a candidate set.
+ * Stable tie-breaking prefers shorter interventions, then higher need.
+ */
+export function chooseNextLearningMove(candidates: LearningCandidate[]): LearningDecision | null {
+  if (candidates.length === 0) return null;
+
+  return candidates
+    .map(calculateLearningUtility)
+ main
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (a.candidate.estimatedMinutes !== b.candidate.estimatedMinutes) {
