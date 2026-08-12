@@ -14,7 +14,7 @@ function splitExamples(examples: CalibrationExample[], holdoutFraction: number):
   }
 
   const fraction = Math.max(0.2, Math.min(0.5, holdoutFraction));
-  const holdoutCount = Math.max(1, Math.floor(examples.length * fraction));
+  const holdoutCount = Math.max(1, Math.round(examples.length * fraction));
   const train = examples.slice(0, examples.length - holdoutCount);
   const holdout = examples.slice(examples.length - holdoutCount);
   return [train, holdout];
