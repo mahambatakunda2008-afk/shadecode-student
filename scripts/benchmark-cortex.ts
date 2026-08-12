@@ -1,6 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { LocalModel } from "../src/lib/cortex/localModel";
 import { CortexRouter } from "../src/lib/cortex/router";
+import type { CortexSnapshot } from "../src/lib/cortex/types";
 
 type Sample = { label: string; question: string };
 
@@ -12,6 +13,19 @@ const samples: Sample[] = [
   { label: "analysis", question: "Analyze the relationship between force, mass and acceleration and explain the consequences of changing each variable." },
 ];
 
+function createBenchmarkSnapshot(): CortexSnapshot {
+  return {
+    streak: 0,
+    level: 1,
+    xp: 0,
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
+    subjects: [],
+    recentTaskTitles: [],
+  };
+}
+
 function percentile(values: number[], p: number): number {
   const sorted = [...values].sort((a, b) => a - b);
   const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1));
@@ -20,13 +34,14 @@ function percentile(values: number[], p: number): number {
 
 async function benchmarkLocalModel(iterations = 100) {
   const model = new LocalModel();
+  const snapshot = createBenchmarkSnapshot();
   const rows: Array<{ label: string; avgMs: number; p95Ms: number }> = [];
 
   for (const sample of samples) {
     const times: number[] = [];
     for (let i = 0; i < iterations; i += 1) {
       const start = performance.now();
-      await model.generate(sample.question, { history: [], snapshot: { level: 1 } });
+      await model.generate(sample.question, { history: [], snapshot });
       times.push(performance.now() - start);
     }
     rows.push({
