@@ -79,27 +79,42 @@ function benchmarkCompactLocalModel(iterations = 100) {
 }
 
 async function benchmarkRouter(iterations = 100) {
-  const router = new CortexRouter();
-  const results: Array<{ label: string; avgMs: number; source: string }> = [];
+  const existingRouter = new CortexRouter();
+  const compactRouter = new CortexRouter({ useCompactLocalModel: true });
+  const results: Array<{ label: string; existingAvgMs: number; compactAvgMs: number; existingSource: string; compactSource: string }> = [];
 
   for (const sample of samples) {
-    const times: number[] = [];
-    let source = "unknown";
-    for (let i = 0; i < iterations; i += 1) {
-      const start = performance.now();
+    const existingTimes: number[] = [];
+    const compactTimes: number[] = [];
+    let existingSource = "unknown";
+    let compactSource = "unknown";
+
+    for (let i = 0; i < Math.min(iterations, 20); i += 1) {
+      const existingStart = performance.now();
       try {
-        const response = await router.handle({ userId: `bench-${sample.label}`, question: sample.question });
-        source = response.source;
+        const response = await existingRouter.handle({ userId: `bench-existing-${sample.label}-${i}`, question: sample.question });
+        existingSource = response.source;
       } catch (error) {
-        // Network/provider configuration is deliberately not required for this harness.
-        source = `error:${error instanceof Error ? error.name : "unknown"}`;
+        existingSource = `error:${error instanceof Error ? error.name : "unknown"}`;
       }
-      times.push(performance.now() - start);
+      existingTimes.push(performance.now() - existingStart);
+
+      const compactStart = performance.now();
+      try {
+        const response = await compactRouter.handle({ userId: `bench-compact-${sample.label}-${i}`, question: sample.question });
+        compactSource = response.source;
+      } catch (error) {
+        compactSource = `error:${error instanceof Error ? error.name : "unknown"}`;
+      }
+      compactTimes.push(performance.now() - compactStart);
     }
+
     results.push({
       label: sample.label,
-      avgMs: times.reduce((a, b) => a + b, 0) / times.length,
-      source,
+      existingAvgMs: existingTimes.reduce((a, b) => a + b, 0) / existingTimes.length,
+      compactAvgMs: compactTimes.reduce((a, b) => a + b, 0) / compactTimes.length,
+      existingSource,
+      compactSource,
     });
   }
   return results;
@@ -113,9 +128,9 @@ async function main() {
   console.table(await benchmarkLocalModel(iterations));
   console.log("\nCompactLocalModel candidate");
   console.table(benchmarkCompactLocalModel(iterations));
-  console.log("\nCortexRouter");
-  console.table(await benchmarkRouter(Math.min(iterations, 20)));
-  console.log("\nRecord the same command on the target Arm device and compare median/p95 latency, throughput, RSS, and package/model size.");
+  console.log("\nRouter: production-default vs explicit compact experiment");
+  console.table(await benchmarkRouter(iterations));
+  console.log("\nRecord the same command on the target Arm device and compare latency, throughput, RSS, package/model size, correctness, and network avoidance.");
 }
 
 main().catch((error) => {
