@@ -88,6 +88,6 @@ export function updateLearningState(
     responseSpeed: Number(responseSpeed.toFixed(2)),
     recentImprovement: Number(recentImprovement.toFixed(2)),
     uncertainty: Number(uncertainty.toFixed(2)),
-    lastObservedAt: observation.observedAt ?? new Date().toISOString(),
+    lastObservedAt: observation.observedAt ?? previous.lastObservedAt,
   };
 }
