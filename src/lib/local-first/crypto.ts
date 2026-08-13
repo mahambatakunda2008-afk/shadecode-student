@@ -15,10 +15,21 @@ function base64ToBytes(value: string): Uint8Array {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+/**
+ * Normalize a typed-array view to a concrete ArrayBuffer for the Web Crypto
+ * DOM types. Newer TypeScript lib.dom definitions distinguish ArrayBuffer
+ * from ArrayBufferLike, while Uint8Array may be backed by either.
+ */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
 async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
   const material = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(passphrase),
+    toArrayBuffer(new TextEncoder().encode(passphrase)),
     "PBKDF2",
     false,
     ["deriveKey"],
@@ -27,7 +38,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: toArrayBuffer(salt),
       iterations: PBKDF2_ITERATIONS,
       hash: "SHA-256",
     },
@@ -48,7 +59,11 @@ export async function encryptBundle(bundle: SyncBundle, passphrase: string): Pro
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
   const key = await deriveKey(passphrase, salt);
   const plaintext = new TextEncoder().encode(JSON.stringify(bundle));
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },
+    key,
+    toArrayBuffer(plaintext),
+  );
 
   return {
     version: 1,
@@ -76,7 +91,11 @@ export async function decryptBundle(
   const key = await deriveKey(passphrase, salt);
 
   try {
-    const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: toArrayBuffer(iv) },
+      key,
+      toArrayBuffer(ciphertext),
+    );
     const bundle = JSON.parse(new TextDecoder().decode(plaintext)) as SyncBundle;
     if (bundle.version !== 1 || !bundle.userId || !Array.isArray(bundle.records)) {
       throw new Error("Invalid sync bundle");
