@@ -1,4 +1,4 @@
-import { chooseNextLearningMove, type LearningCandidate, type LearningDecision, type LearningUtilityWeights } from "@/lib/learning-engine/shadecodeLearningUtility";
+import { calculateLearningUtility, type LearningCandidate, type LearningDecision, type LearningUtilityWeights } from "@/lib/learning-engine/shadecodeLearningUtility";
 
 export interface CounterfactualAlternative {
   candidateId: string;
@@ -19,7 +19,7 @@ export function evaluateCounterfactuals(
   weights?: Partial<LearningUtilityWeights>,
 ): CounterfactualDecision {
   const decisions = candidates
-    .map((candidate) => calculate(candidate, weights))
+    .map((candidate) => calculateLearningUtility(candidate, weights))
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (a.candidate.estimatedMinutes !== b.candidate.estimatedMinutes) {
@@ -41,8 +41,4 @@ export function evaluateCounterfactuals(
     })),
     margin: chosen && second ? chosen.score - second.score : chosen ? chosen.score : 0,
   };
-}
-
-function calculate(candidate: LearningCandidate, weights?: Partial<LearningUtilityWeights>): LearningDecision {
-  return chooseNextLearningMove([candidate], weights)!;
 }
