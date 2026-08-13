@@ -2,6 +2,7 @@ import { offlineStorage, type OfflineTask } from "@/lib/offline/storage";
 
 export interface LocalTaskInput {
   id: string;
+  userId: string;
   subject_id: string;
   title: string;
   completed?: boolean;
@@ -14,17 +15,18 @@ export interface LocalTaskInput {
  * device first and let the existing sync layer handle cloud reconciliation.
  */
 export const localTasks = {
-  async list(): Promise<OfflineTask[]> {
-    return offlineStorage.getAllTasks();
+  async list(userId?: string): Promise<OfflineTask[]> {
+    return userId ? offlineStorage.getTasksForUser(userId) : offlineStorage.getAllTasks();
   },
 
-  async get(id: string): Promise<OfflineTask | null> {
-    return offlineStorage.getTask(id);
+  async get(id: string, userId?: string): Promise<OfflineTask | null> {
+    return userId ? offlineStorage.getTaskForUser(id, userId) : offlineStorage.getTask(id);
   },
 
   async create(input: LocalTaskInput): Promise<OfflineTask> {
     const task: OfflineTask = {
       id: input.id,
+      userId: input.userId,
       subject_id: input.subject_id,
       title: input.title.trim(),
       completed: input.completed ?? false,
@@ -36,8 +38,10 @@ export const localTasks = {
     return task;
   },
 
-  async complete(id: string): Promise<OfflineTask | null> {
-    const task = await offlineStorage.getTask(id);
+  async complete(id: string, userId?: string): Promise<OfflineTask | null> {
+    const task = userId
+      ? await offlineStorage.getTaskForUser(id, userId)
+      : await offlineStorage.getTask(id);
     if (!task) return null;
 
     const updated: OfflineTask = {
