@@ -5,18 +5,137 @@
 
 ---
 
-## How Cortex Uses This File
+## 🚀 Shadecode 2.0 Strategic Gap Roadmap
 
-- `[ ]` = pending — Cortex will pick this up
-- `[~]` = in progress — Cortex is working on it
-- `[x]` = done — merged into main
-- Priority: `🔴 high` `🟡 medium` `🟢 low`
+This section is the strategic layer above the feature backlog. It prevents Cortex from treating Shadecode as a collection of isolated UI features when the product is evolving toward a full academic intelligence platform.
 
-Cortex works top to bottom, high priority first. Max 1-2 tasks per cycle.
+### 🔴 Strategic priorities
+
+- [ ] 🔴 **Tertiary Education Support — Universities, Polytechnics & Colleges**
+  - Add an education-level model covering secondary, university, polytechnic, college and technical/vocational pathways.
+  - Support courses/modules, semesters, credits, assignments, coursework, labs, projects, research and GPA/grade tracking.
+  - Make curriculum, qualification and institution context first-class inputs to Cortex.
+  - Do not build institution-specific integrations until the generic academic model is defined.
+
+- [ ] 🔴 **Student Knowledge & Mastery Graph**
+  - Evolve from isolated activity records toward topic-level knowledge state.
+  - Track mastery, confidence, evidence, recency, misconceptions and decay.
+  - Connect subjects/courses → topics → questions → mistakes → lessons → assessments.
+  - Use existing `topic_mastery` as the seed rather than creating a second competing mastery system.
+
+- [ ] 🔴 **Assessment Intelligence & Past-Paper Intelligence**
+  - Make past papers, mark schemes, syllabuses and question metadata machine-readable.
+  - Map questions to curriculum topics and difficulty.
+  - Classify mistakes and identify likely mark-loss areas.
+  - Use assessment evidence to drive revision and recommendations rather than generic AI generation.
+
+- [ ] 🔴 **Offline-First Learning Architecture**
+  - Treat local storage/database, queued writes, synchronization and conflict handling as core architecture.
+  - Cache lessons, questions, progress and selected media for intermittent-connectivity use.
+  - Design the sync layer so future peer-to-peer educational exchange is possible without making P2P a current dependency.
+
+- [ ] 🔴 **Cortex 2.0 Architecture**
+  - Separate student-facing Cortex intelligence from Cortex Engineering's autonomous repository agent.
+  - Progress toward memory hierarchy, knowledge graph, planning, forecasting and specialized agents.
+  - Introduce model routing, semantic caching and local/cheap inference where appropriate to control AI cost.
+
+- [ ] 🔴 **Security, Privacy & Academic Integrity**
+  - Audit authentication, authorization/RLS, API boundaries, file uploads, secrets, rate limits and student-data isolation.
+  - Add explicit academic-integrity safeguards and graduated assistance for assignments/exams.
+  - Define privacy boundaries for student, parent, teacher and institution views.
+
+- [ ] 🔴 **Observability & Product Intelligence**
+  - Measure activation, retention, feature usage, AI failures, sync failures, latency and cost per active learner.
+  - Add error/event instrumentation before scaling traffic.
+  - Establish a small set of product health metrics that guide engineering priorities.
+
+### 🟡 Ecosystem priorities
+
+- [ ] 🟡 **Shadecode SCS ↔ Shadecode Student Integration**
+  - Connect school identity, classes, subjects, teachers, attendance/results and announcements to learning intelligence where permissions allow.
+  - Keep private student learning data separate from administrative views by default.
+
+- [ ] 🟡 **Teacher & Lecturer Platform**
+  - Let educators create/import assessments and learning material.
+  - Generate topic analytics and class-level weakness summaries.
+  - Build distribution loops between educator content and student learning.
+
+- [ ] 🟡 **Content & Knowledge Infrastructure**
+  - Establish ingestion, provenance, versioning, curriculum mapping, search and retrieval for legitimate educational content.
+  - Prioritize official syllabuses, past papers/mark schemes and high-value practice material.
+
+- [ ] 🟡 **Student Collaboration**
+  - Study rooms, shared notes, group challenges, peer explanations and institution/course communities.
+  - Design moderation and privacy before enabling open community features.
+
+- [ ] 🟡 **Unified Shadecode Identity**
+  - One identity/permission model spanning Student, SCS and future Shadecode products.
+  - Support student, teacher, parent, institution and developer roles without coupling their data unnecessarily.
+
+- [ ] 🟡 **Business & Distribution Model**
+  - Define what students, parents, schools, universities and institutions pay for.
+  - Test free/paid boundaries only after activation and retention data identify the strongest value loops.
+
+- [ ] 🟡 **Zimbabwe → Africa Readiness**
+  - Optimize for low data, intermittent connectivity, mobile-first access, low-end hardware and local curricula/qualifications.
+  - Treat Zimbabwe as an initial validation environment, not the permanent ceiling of the product.
+
+### 🟢 Long-horizon research
+
+- [ ] 🟢 **Education P2P Network**
+  - Research device-to-device exchange of lessons, questions, media and other permitted educational assets.
+  - Cloud remains coordination/storage where needed; P2P must be optional and privacy/security-preserving.
+  - Do not make P2P a prerequisite for the MVP.
+
+- [ ] 🟢 **Academic Digital Twin**
+  - Only after the knowledge graph and assessment evidence are mature.
+  - Model learning, workload, goals, performance and other academic dimensions incrementally.
+
+- [ ] 🟢 **Multi-Agent Cortex**
+  - Tutor, Planner, Coach, Analyst, Creator, Career and Community roles should emerge from validated use cases, not exist merely as separate AI prompts.
+
+- [ ] 🟢 **Marketplace / Creator Economy**
+  - Teacher/student-created lessons, question sets and revision resources with provenance, moderation and quality signals.
+
+- [ ] 🟢 **Science Platform / Hardware / Global Network**
+  - Virtual labs, simulation engine, Learning Box, global education network and other blueprint-scale initiatives remain future products, not current blockers.
+
+### 🚫 Anti-scope-creep rules
+
+- Do not build every blueprint idea simultaneously.
+- Do not create duplicate systems when a working implementation already exists.
+- Do not replace real curriculum/assessment evidence with fabricated AI content.
+- Do not build native apps before the web/offline architecture and product-market evidence justify them.
+- Do not make P2P, digital-twin or multi-agent architecture a prerequisite for current student value.
 
 ---
 
-## ✅ Phase 0 — Database Foundation (Complete)
+## 🔴 Immediate Execution Queue
+
+The strategic roadmap above does not replace the verified implementation backlog below. Near-term execution should prioritize completing dormant real infrastructure before inventing new parallel systems.
+
+- [ ] 🔴 **Tertiary Academic Model — discovery/specification first**
+  - Define the minimum generic model for institution → qualification/program → course/module → semester/term → assessment.
+  - Audit current `profiles`, `subjects`, `exams`, `study_topics` and onboarding data before adding anything.
+  - Deliver a written model and gap list before implementation.
+
+- [ ] 🔴 **Assessment Intelligence — curriculum/past-paper audit**
+  - Audit current Exam Hub ingestion, past-paper metadata and syllabus mappings.
+  - Define canonical question/topic/assessment entities before building prediction features.
+
+- [ ] 🔴 **Offline Sync Architecture Audit**
+  - Inventory current offline/PWA behavior, caching, persistence and mutation paths.
+  - Produce a sync contract before implementing P2P or deeper offline functionality.
+
+- [ ] 🔴 **Security Audit**
+  - Review auth, RLS, API routes, service-role usage, uploads, secrets and AI-provider boundaries.
+
+- [ ] 🔴 **Product Observability Audit**
+  - Identify missing activation, retention, error, latency and AI-cost events.
+
+---
+
+## Phase 0 — Database Foundation (Complete)
 
 These tables already exist in Supabase. Do NOT recreate them.
 Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`, `insights`, `profiles`, `study_topics`, `subjects`, `tasks`, `timetable`
@@ -25,109 +144,82 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 - [x] 🔴 Create `daily_challenges` Supabase table
 - [x] 🔴 Create `achievements` Supabase table
 - [x] 🔴 Create `cortex_insights` Supabase table
-- [x] 🔴 insights table is confirmed working (empty = no data yet, not broken)    
+- [x] 🔴 insights table is confirmed working (empty = no data yet, not broken)
 
 ---
 
-## 🔴 Phase 1 — Frontend Features (Do Now)
+## 🔴 Phase 1 — Frontend Features
 
 - [x] 🔴 **Daily Challenge Component**
-  - Already implemented on main: `src/components/DailyChallenge.jsx` (fetches `/api/challenges/today`), `src/app/api/challenges/today/route.js`, `src/app/api/challenges/today/complete/route.js`.
-  - Was still marked `[ ]` here, causing 4 separate autonomous cycles (2026-08-04/05) to independently regenerate this same feature, opening PRs #77, #78, #79, #80 -- all now redundant/superseded, closed manually. #80 additionally broke the production build (deprecated `createServerComponentClient` import from `@supabase/auth-helpers-nextjs`, and destructively rewrote the existing 167-line working `challenges/today/route.js` down to a broken 61-line version). Marking `[x]` here so future cycles don't repeat this.
+  - Already implemented on main: `src/components/DailyChallenge.jsx`, `src/app/api/challenges/today/route.js`, `src/app/api/challenges/today/complete/route.js`.
+  - Was still marked `[ ]`, causing repeated autonomous regeneration and redundant PRs. Marked complete to prevent duplication.
 
 - [x] 🔴 **Badges & Achievements Display**
-  - Already implemented on main under a different name: `src/app/(app)/achievements/page.tsx`, `src/contexts/AchievementsContext.tsx`, `src/hooks/useAchievements.ts`, `src/app/api/achievements/route.ts` (17-achievement catalog, rarity tiers, XP rewards, `user_achievements` table), plus `AchievementToast.tsx` for unlock notifications. Wired into exam-sim, tasks, lessons, and the app layout.
-  - Was still marked `[ ]` here, causing separate cycles to independently rebuild this as `BadgeDisplay.jsx` + a second, conflicting `route.js` in the same folder as the real `route.ts` (10-badge catalog reading straight from the older, orphaned `achievements` table, incompatible id/field shape with the real system). `route.js` was silently shadowed by `route.ts` at build time and never executed; `BadgeDisplay.jsx` was never imported anywhere. Both deleted as dead code (2026-08-07). Marking `[x]` here so future cycles don't repeat this -- same bug class as the Daily Challenge duplication above.
+  - Already implemented on main under `src/app/(app)/achievements/page.tsx`, `src/contexts/AchievementsContext.tsx`, `src/hooks/useAchievements.ts`, `src/app/api/achievements/route.ts` with the live achievement system and unlock notifications.
+  - Older duplicate `BadgeDisplay.jsx`/`route.js` implementation was removed as dead/conflicting code. Marked complete to prevent regeneration.
 
-- [x] 🔴 **Retention Risk (Priority Engine Factor 4, Mission Control Ch.7)**
-  - Blueprint Reconciliation (2026-08-07) found `topic_mastery` had a real schema and unique constraint (`user_id, subject, topic`) but zero producers and zero consumers anywhere in the codebase -- fully orphaned since before this session. Wired both sides: `src/app/api/exam/mark/route.js` now writes per-topic mastery after every marked exam (`src/lib/exam/scoring.ts`'s `computeTopicScores()` + `src/lib/topicMastery/blend.ts`'s EMA blend); `src/lib/student-intelligence/services/weakAreas.ts` now reads it back via `src/lib/cortex/retentionRisk.ts` and surfaces topics quietly decaying that Cortex's own `weakTopics` list never flagged.
-  - Added `retention_risk` as a new named, explainable factor in `src/lib/recommendation-engine/engine.ts` (additive -- all 10 original tests still pass, 2 new ones added).
-  - Full matrix and reasoning for why this was the selected gap: `docs/BLUEPRINT_GAP_MATRIX.md`.
+- [x] 🔴 **Retention Risk / Priority Engine Factor 4**
+  - `topic_mastery` is now written after marked exams and read by retention-risk analysis; `retention_risk` is an explainable recommendation factor. Full matrix: `docs/BLUEPRINT_GAP_MATRIX.md`.
 
 - [ ] 🟡 **Scheduling Engine (Mission Control Ch.8) — finish wiring dormant infrastructure**
-  - `src/lib/studyPlan/generator.ts` (450 lines, real weighted scheduling logic) exists and is now free of fabricated content (2026-08-08): `selectSessionTopic()` replaced the old hardcoded-list `generateTopicPlaceholder()`, using real caller-supplied `topicHints` (topic_mastery for weak topics, curriculum coverage's missingTopics for new ones) with an honestly generic fallback label when no real data exists for a subject, instead of ever inventing a specific-sounding one. 7 tests added.
-  - `src/lib/cortex/generatePlan.ts` archived (not deleted) -- a second, differently-shaped `generateStudyPlan` with zero callers; `studyPlan/generator.ts` kept as the one to complete.
-  - Still needed before this is user-facing: a goal-capture UI (exam date / target grade / hours-per-week / subjects aren't captured anywhere currently) or an auto-derivation path from real data (`exams.exam_date`, `profiles.daily_goal_minutes`, `profiles.subjects`); a `study_plans` persistence table (none exists); the actual `topicHints` computation wired from `topic_mastery` + curriculum coverage into a real caller; one API route + one page. See `docs/BLUEPRINT_GAP_MATRIX.md`'s "Second pass finding" for the full plan.
+  - `src/lib/studyPlan/generator.ts` contains real weighted scheduling logic and uses real topic hints.
+  - `src/components/StudyPlanDisplay.tsx` exists but the system has no real caller/API/page yet.
+  - Decide the canonical generator, audit onboarding/settings for goal data, add persistence only if required, then wire one API route + page and verify thoroughly.
 
-- [ ] 🟡 **Insight History — "most frequent pattern" summary**
-  - The page itself already exists and is fully built: `src/app/(app)/insights/history/page.tsx` (255 lines — loading/error/empty states, groups by week, formats dates, fetches from `/api/cortex/insight`). Was still marked `[ ]` here 🔴, which is what's already caused 3 separate duplication incidents this month (Daily Challenge, Achievements, and this would've been the 4th) — Cortex reads a pending task and has no way to know the file already exists.
-  - The one real gap, self-documented in DEVLOG.md's own entry for this page ("has a placeholder for the 'most frequent pattern' summary to be implemented later"): add a summary block at the top of the existing page surfacing the most common recurring pattern/theme across the user's insights.
-  - Do NOT rebuild the page. Add to it. Downgraded to 🟡 since the page is functional as-is; this is a polish item, not a blocker.
-  - File target: `src/app/(app)/insights/history/page.tsx` (edit, not create) — note the actual path uses the `(app)` route group and `.tsx`, not `.jsx` as originally scoped.
+- [ ] 🟡 **Insight History — most frequent pattern summary**
+  - Existing page: `src/app/(app)/insights/history/page.tsx`.
+  - Add only the missing summary block. Do not rebuild the page.
 
 ---
 
 ## 🟡 Phase 2 — Social & Competition
 
 - [x] 🟡 **Leaderboard Page**
-  - Already built and wired: `src/app/(app)/leaderboard/page.tsx` (457 lines), registered in `src/lib/navigation.ts`'s NAV_ITEMS, both the Progress nav group and mobile nav. Ranks by XP/season_xp/level/streak/cortex_score. Was still `[ ]` here.
+  - Already built and wired in `src/app/(app)/leaderboard/page.tsx` and navigation. Marked complete to prevent duplicate implementations.
 
 - [ ] 🟡 **Goals System**
-  - Let users set a weekly study goal
-  - Show goal progress bar on dashboard
-  - Cortex mentions goal progress in insights
-  - File targets: `src/components/GoalTracker.jsx`, `src/app/api/goals/route.js`
+  - Let users set a weekly study goal, show progress, and expose goal progress to Cortex.
 
 - [ ] 🟡 **Streak Display Improvements**
-  - Make streaks more visible on dashboard — flame icon, streak count
-  - Add streak freeze mechanic (one free miss per week)
-  - File targets: `src/components/StreakDisplay.jsx`, `src/lib/streaks.js`
+  - Improve visibility and evaluate a streak-freeze mechanic with clear abuse/edge-case rules.
 
 ---
 
 ## 🟢 Phase 3 — Polish & Experience
 
 - [ ] 🟢 **Subject Progress Visualization**
-  - Show per-subject progress bars or radar chart on dashboard
-  - Use `study_topics` and `subjects` tables
-  - File targets: `src/components/SubjectProgress.jsx`
+  - Show real per-subject progress using existing learning evidence.
 
 - [ ] 🟢 **Dashboard Redesign**
-  - Consolidate XP, streak, daily challenge, and latest Cortex insight
-  - Make it feel alive — recent activity feed, next challenge, badge progress
-  - File targets: `src/app/dashboard/page.jsx`
+  - Consolidate mission, progress, streak, challenge and Cortex signals only after the underlying data is reliable.
 
 - [x] 🟢 **Onboarding Flow**
-  - Already built and wired, well beyond the original 3-step spec: `src/app/onboarding/page.tsx` + `OnboardingFlow.tsx` orchestrating a 6-step flow (Welcome → Subjects → StepGoalSelection → Goals → Confirm → Finish), plus `/api/onboarding/complete` and `/api/onboarding/reset` routes, a recommendations engine, and a settings-page reset option. Was still `[ ]` here.
-  - Found alongside it: 6 fully-written, zero-import orphaned step components using an older `Step<Name>.tsx` naming convention (`StepWelcome`, `StepEducation`, `StepInterests`, `StepExplanation`, `StepFinish`, `StepGoal` — 843 lines total) — an entire earlier onboarding implementation abandoned when the current `OnboardingFlow.tsx` was built (using `WelcomeStep`, `SubjectStep`, `GoalsStep`, `StepGoalSelection`, `ConfirmStep` instead), never cleaned up. Removed 2026-08-07, verified via `tsc --noEmit` after removal (initially also flagged `StepActions.tsx` as unused by mistake -- it's the shared next/back button bar imported by every live step; restored and re-verified before shipping).
+  - Current onboarding is a live multi-step flow with API completion/reset and recommendations. Older orphaned step components were removed after verification.
 
-- [x] 🟢 **Audio Lessons — Tier 1 (browser narration + voice commands)**
-  - Direct owner request, not from a blueprint spec (the closest reference, `SHADECODE PLATFORM BLUEPRINT/Volume II.docx` §14 "Voice", is a thin aspirational list about voice input, not narration). Full design record in `docs/AUDIO_LESSONS_SPEC.md`.
-  - Shipped: `src/lib/audio/narration.ts` + `voiceCommands.ts` (pure, tested), `src/hooks/useLessonNarration.ts` (SpeechSynthesis + SpeechRecognition orchestration), a "Listen" button in the lesson page action bar matching the existing button style, hands-free voice commands ("next", "repeat", "pause", "explain") that only listen in the pause between narrated blocks -- avoids the mic picking up the app's own voice through a speaker.
-  - Deliberately scoped, documented honestly: Tier 2 (cached cloud TTS via Cloudflare/OpenAI, already-integrated providers) deferred pending real Tier 1 usage, same reasoning as the Scheduling Engine's deferred full wiring. True "phone in pocket, screen off" hands-free control is not achievable in a web app (mobile browsers suspend background tabs) -- would need a native app; stated plainly rather than shipping something that silently breaks on screen lock.
+- [x] 🟢 **Audio Lessons — Tier 1**
+  - Browser narration and voice commands shipped. Tier 2 cloud TTS/native background behavior remains deferred pending evidence of use.
 
 - [ ] 🟢 **Cortex Prompt Quality Improvement**
-  - Improve Gemini prompt for insight generation
-  - Insights should reference actual subject names and task counts
-  - File targets: `src/lib/cortex/prompts.js`
-
----
-
-## ✅ Completed
-
-- [x] Cortex Engine setup and GitHub Actions scheduler
-- [x] Supabase schema discovery
-- [x] Database foundation (all core tables exist)
-- [x] insights table created
-- [x] daily_challenges table created
-- [x] achievements table created
+  - Improve insight generation using actual subject names, tasks and evidence. Avoid generic/fabricated claims.
 
 ---
 
 ## 📋 Cortex Rules
 
-1. Always open a PR — never push directly to main
-2. One task at a time — finish before starting next
-3. Update this file each cycle — mark tasks `[~]` when starting, `[x]` when PR is merged
-4. Update DEVLOG.md every cycle
-5. If a task is too large, split it and do Part 1 first
-6. Prioritize retention over aesthetics
-7. Keep code consistent with existing Next.js + Supabase + Node stack
-8. NEVER create database tables that already exist — check the list above first
-9. All app code goes under src/ — never at root level
-10. Use ES module syntax (import/export) in all app files
-11. NEVER use @supabase/auth-helpers-nextjs — use @supabase/supabase-js directly
-12. Math Checker and Learn pages already exist — do not recreate them
-13. The `insights` table EXISTS and is working — it is empty because no insights have been generated yet, NOT because it is broken. Do NOT recreate it or try to fix its schema.
-14. Skip any task related to creating tables or fixing schemas — go directly to Phase 1 frontend tasks.
-
+1. Always open a PR — never push directly to main.
+2. One task at a time — finish before starting the next.
+3. Update this file each cycle — mark tasks `[~]` when starting and `[x]` when actually merged.
+4. Update `DEVLOG.md` every cycle.
+5. If a task is too large, split it and document the boundary.
+6. Prioritize retention and learning outcomes over aesthetics.
+7. Search the existing codebase before creating a new implementation.
+8. Do not create duplicate components, routes, engines or data models.
+9. Never create database tables that already exist; verify schema first.
+10. All app code goes under `src/`.
+11. Use the repository's existing TypeScript/JavaScript conventions; do not impose a second module/style system.
+12. Never use `@supabase/auth-helpers-nextjs`.
+13. Math Checker and Learn pages already exist; do not recreate them.
+14. The `insights` table exists and an empty table is not a schema failure.
+15. Never invent curriculum topics, exam readiness scores, mastery claims or academic content when real evidence is unavailable.
+16. Before building a feature, identify its source of truth and at least one producer/consumer path.
+17. Strategic roadmap items are not permission to start large future systems prematurely; execute the immediate queue and verified backlog first.
