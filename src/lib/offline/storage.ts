@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export interface OfflineLesson {
   id: string;
@@ -51,6 +51,7 @@ export interface OfflineProgress {
 
 export interface OfflineTask {
   id: string;
+  userId: string;
   subject_id: string;
   title: string;
   completed: boolean;
@@ -104,7 +105,26 @@ class OfflineStorage {
         // Tasks store
         if (!db.objectStoreNames.contains("tasks")) {
           const tasksStore = db.createObjectStore("tasks", { keyPath: "id" });
+          tasksStore.createIndex("userId", "userId", { unique: false });
           tasksStore.createIndex("synced", "synced", { unique: false });
+        } else if (request.transaction) {
+          const tasksStore = request.transaction.objectStore("tasks");
+
+          if (!tasksStore.indexNames.contains("userId")) {
+            tasksStore.createIndex("userId", "userId", { unique: false });
+          }
+
+          // Task records created by pre-user-scoped versions cannot safely be
+          // attributed to an account. Drop those legacy records so they cannot
+          // leak into a different signed-in user's local task list. The normal
+          // server fallback will repopulate them for the active account.
+          const cursorRequest = tasksStore.openCursor();
+          cursorRequest.onsuccess = () => {
+            const cursor = cursorRequest.result;
+            if (!cursor) return;
+            if (!cursor.value?.userId) cursor.delete();
+            cursor.continue();
+          };
         }
       };
     });
@@ -236,7 +256,7 @@ class OfflineStorage {
       const transaction = this.db!.transaction(["progress"], "readonly");
       const store = transaction.objectStore("progress");
       const index = store.index("synced");
-      const request = index.getAll("false");
+      const request = index.getAll(false);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result || []);
@@ -276,6 +296,11 @@ class OfflineStorage {
     });
   }
 
+  async getTaskForUser(id: string, userId: string): Promise<OfflineTask | null> {
+    const task = await this.getTask(id);
+    return task?.userId === userId ? task : null;
+  }
+
   async getAllTasks(): Promise<OfflineTask[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
@@ -288,21 +313,28 @@ class OfflineStorage {
     });
   }
 
-  async getUnsyncedTasks(): Promise<OfflineTask[]> {
+  async getTasksForUser(userId: string): Promise<OfflineTask[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(["tasks"], "readonly");
       const store = transaction.objectStore("tasks");
-      const index = store.index("synced");
-      const request = index.getAll("false");
+      const index = store.index("userId");
+      const request = index.getAll(userId);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result || []);
     });
   }
 
-  async markTaskSynced(taskId: string): Promise<void> {
-    const task = await this.getTask(taskId);
+  async getUnsyncedTasks(userId?: string): Promise<OfflineTask[]> {
+    const tasks = userId ? await this.getTasksForUser(userId) : await this.getAllTasks();
+    return tasks.filter((task) => !task.synced);
+  }
+
+  async markTaskSynced(taskId: string, userId?: string): Promise<void> {
+    const task = userId
+      ? await this.getTaskForUser(taskId, userId)
+      : await this.getTask(taskId);
     if (task) {
       task.synced = true;
       task.lastSyncedAt = new Date().toISOString();
