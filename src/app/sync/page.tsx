@@ -5,9 +5,9 @@ import { CloudDownload, CloudUpload, Download, RefreshCw, ShieldCheck, Smartphon
 import { createClient } from "@/lib/supabase/client";
 import {
   decryptBundle,
-  downloadEncryptedBackup,
+  downloadEncryptedBundle,
   encryptBundle,
-  downloadEncryptedBackup as fetchCloudBackup,
+  downloadEncryptedBackup,
   localFirstStore,
   uploadEncryptedBackup,
   type EncryptedSyncBundle,
@@ -50,7 +50,7 @@ export default function SyncPage() {
     setBusy(true);
     try {
       const encrypted = await createBackup();
-      downloadEncryptedBackup(encrypted);
+      downloadEncryptedBundle(encrypted);
       setStatus("Encrypted backup exported. Keep the passphrase safe: Shadecode cannot recover it.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Backup export failed");
@@ -98,7 +98,7 @@ export default function SyncPage() {
   async function handleCloudRestore() {
     setBusy(true);
     try {
-      const encrypted = await fetchCloudBackup(userId!);
+      const encrypted = await downloadEncryptedBackup(userId!);
       if (!encrypted) {
         setStatus("No cloud backup exists for this account yet.");
         return;
