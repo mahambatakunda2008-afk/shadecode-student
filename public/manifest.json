@@ -1,13 +1,17 @@
 {
   "name": "Shadecode Student",
   "short_name": "Shadecode",
-  "id": "shadecode-student",
+  "id": "/",
   "description": "Study smarter. Live sharper.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f0f24",
   "theme_color": "#6366f1",
-  "orientation": "portrait",
+  "orientation": "any",
+  "dir": "ltr",
+  "lang": "en",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",
@@ -38,39 +42,38 @@
       "sizes": "1080x1920",
       "type": "image/png"
     },
-     {
+    {
       "src": "/screenshots/topic.png",
       "sizes": "1080x1920",
       "type": "image/png"
     },
-     {
+    {
       "src": "/screenshots/questions.png",
       "sizes": "1080x1920",
       "type": "image/png"
     },
     {
-        "src": "/screenshots/mathdesktop.png",
-        "sizes": "1080x1920",
-        "type": "image/png"
-      },
-      {
-        "src": "/screenshots/math.png",
-        "sizes": "1080x1920",
-        "type": "image/png"
-      },
-       {
+      "src": "/screenshots/mathdesktop.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/math.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+    {
       "src": "/screenshots/timetable.png",
       "sizes": "1080x1920",
       "type": "image/png"
     },
-        {
-        "src": "/screenshots/settings.png",
-        "sizes": "1080x1920",
-        "type": "image/png"
-      }
+    {
+      "src": "/screenshots/settings.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    }
   ],
   "privacy_policy_url": "https://shadecodestudent.vercel.app/privacy.html",
   "categories": ["education", "productivity"],
-  "lang": "en",
   "offline_enabled": true
 }
