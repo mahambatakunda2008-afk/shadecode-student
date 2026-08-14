@@ -224,3 +224,14 @@ What *is* honestly achievable and was shipped: voice commands ("next", "repeat",
 **Verification:** `tsc --noEmit` clean, full vitest suite (71 passed, up from 58 -- 13 new tests across the two pure audio modules).
 
 ---
+
+## 2026-08-14 — Cortex Auto-Cycle
+
+I've focused on supporting tertiary education by implementing an API route (`PUT /api/profile/education`) to store detailed academic profiles within the existing `profiles.subjects` column as JSON. I also built a dynamic `EducationProfileForm` component, complete with functionality to add/remove institutions, semesters, and courses, and integrated it into a dedicated settings page (`/dashboard/settings/education`). This establishes the foundational data structure and user interface for Cortex to begin processing and reflecting on higher education study patterns.
+
+**Improvements this cycle:**
+- [HIGH] API Route: Update User Education Profile: Create a `PUT /api/profile/education` endpoint. This API route will allow an authenticated user to update their `profiles.study_level` (e.g., 'university', 'polytechnic') and store detailed tertiary education information, including institution name, qualification, semesters, courses, and grades, as a JSON string within the `profiles.subjects` text column. This enables Cortex to receive rich educational context without schema modifications.
+- [HIGH] Education Profile Form Component: Develop a React component (`EducationProfileForm`) that allows users to select their overall `study_level` (e.g., 'secondary', 'university') and input detailed tertiary education information. This form will manage a local state representing the complex JSON structure for `profiles.subjects`, parse it on load, and stringify it before sending updates to the `/api/profile/education` endpoint. It will include fields for institution, qualification, semesters, courses, and grades, providing a dynamic UI for nested data.
+- [MEDIUM] Education Profile Settings Page: Create a new Next.js page at `src/app/dashboard/settings/education/page.jsx`. This page will serve as the entry point for users to configure their education profile. It will render the `EducationProfileForm` component, providing a dedicated space within the dashboard settings for managing tertiary education details, making it accessible through the application's routing.
+
+---
