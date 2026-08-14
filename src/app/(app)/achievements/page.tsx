@@ -1,8 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
-import { Trophy, Lock, Sparkles, Star, Flame, Medal, Crown, Loader2 } from "lucide-react";
+import {
+  Trophy,
+  Lock,
+  Sparkles,
+  Star,
+  Flame,
+  Medal,
+  Crown,
+  Loader2,
+  Target,
+  ListChecks,
+  FileCheck2,
+  GraduationCap,
+  Search,
+  Languages,
+  BadgeCheck,
+  Timer,
+  BookOpen,
+  CalendarCheck,
+  type LucideIcon,
+} from "lucide-react";
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
   common: { bg: "bg-[var(--surface-2)]", border: "border-[var(--card-border)]", text: "text-[var(--muted-foreground)]", glow: "shadow-slate-500/20" },
@@ -18,8 +38,42 @@ const RARITY_ICONS: Record<string, React.ReactNode> = {
   legendary: <Crown className="w-4 h-4" />,
 };
 
+// Real vector icons only. Legacy emoji values are mapped too so previously
+// unlocked achievements are upgraded immediately without a database reset.
+const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = {
+  Target,
+  ListChecks,
+  Trophy,
+  FileCheck2,
+  GraduationCap,
+  Flame,
+  Sparkles,
+  Search,
+  Languages,
+  BadgeCheck,
+  Timer,
+  BookOpen,
+  Star,
+  CalendarCheck,
+  "🎯": Target,
+  "📋": ListChecks,
+  "🏆": Trophy,
+  "📝": FileCheck2,
+  "🎓": GraduationCap,
+  "🔥": Flame,
+  "💫": Sparkles,
+  "🔍": Search,
+  "🌐": Languages,
+  "💯": BadgeCheck,
+  "⏱️": Timer,
+  "📚": BookOpen,
+  "📖": BookOpen,
+  "⭐": Star,
+  "📅": CalendarCheck,
+};
+
 export default function AchievementsPage() {
-  const { achievements, totalUnlocked, totalAchievements, loading, refresh } = useAchievementsContext();
+  const { achievements, totalUnlocked, totalAchievements, loading } = useAchievementsContext();
   const [filter, setFilter] = useState<string>("all");
 
   const filtered = filter === "all"
@@ -40,7 +94,6 @@ export default function AchievementsPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--foreground)] flex items-center gap-2">
           <Trophy className="w-6 h-6 text-amber-400" />
@@ -51,7 +104,6 @@ export default function AchievementsPage() {
         </p>
       </div>
 
-      {/* Progress Bar */}
       <div className="bg-[var(--card)] rounded-xl p-4 border border-[var(--card-border)]">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm text-[var(--muted-foreground)]">Progress</span>
@@ -72,7 +124,10 @@ export default function AchievementsPage() {
             const c = RARITY_COLORS[rarity];
             return (
               <div key={rarity} className={`flex-1 ${c.bg} rounded-lg p-2 border ${c.border} text-center`}>
-                <div className={`text-xs capitalize ${c.text}`}>{rarity}</div>
+                <div className="flex items-center justify-center gap-1">
+                  <span className={c.text}>{RARITY_ICONS[rarity]}</span>
+                  <span className={`text-xs capitalize ${c.text}`}>{rarity}</span>
+                </div>
                 <div className={`text-sm font-bold ${c.text}`}>{count}/{total}</div>
               </div>
             );
@@ -80,7 +135,6 @@ export default function AchievementsPage() {
         </div>
       </div>
 
-      {/* Filter */}
       <div className="flex gap-2">
         {[
           { key: "all", label: "All" },
@@ -101,10 +155,10 @@ export default function AchievementsPage() {
         ))}
       </div>
 
-      {/* Achievement Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((achievement) => {
           const c = RARITY_COLORS[achievement.rarity];
+          const Icon = ACHIEVEMENT_ICONS[achievement.icon] ?? Trophy;
           return (
             <div
               key={achievement.id}
@@ -121,8 +175,8 @@ export default function AchievementsPage() {
               )}
 
               <div className="flex items-start gap-3">
-                <div className={`text-2xl ${achievement.unlocked ? "" : "grayscale"}`}>
-                  {achievement.icon}
+                <div className={`shrink-0 rounded-lg p-2 ${c.bg} ${c.text}`}>
+                  <Icon className={`w-6 h-6 ${achievement.unlocked ? "" : "grayscale"}`} strokeWidth={1.9} aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
