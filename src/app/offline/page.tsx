@@ -34,8 +34,10 @@ export default function OfflineHub() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      const id = data.user?.id ?? null;
+      // getSession reads the locally persisted auth session and does not require
+      // a network round-trip, which is important when this page is truly offline.
+      const { data } = await supabase.auth.getSession();
+      const id = data.session?.user.id ?? null;
       setUserId(id);
       if (id) setRecords(await localFirstStore.list(id));
     } finally {
@@ -61,6 +63,12 @@ export default function OfflineHub() {
   const achievements = snapshots.get("achievements")?.rows ?? [];
   const insights = [...(snapshots.get("insights")?.rows ?? []), ...(snapshots.get("cortex_insights")?.rows ?? [])];
   const lastSync = Math.max(0, ...Array.from(snapshots.values()).map((item) => item.fetchedAt));
+  const stats = [
+    { Icon: Target, label: "Tasks", value: tasks.length },
+    { Icon: CalendarClock, label: "Timetable", value: timetable.length },
+    { Icon: CheckCircle2, label: "Achievements", value: achievements.length },
+    { Icon: Sparkles, label: "Cortex insights", value: insights.length },
+  ];
 
   return (
     <main className="mx-auto min-h-screen max-w-5xl space-y-6 p-5 pb-12 sm:p-8">
@@ -85,16 +93,11 @@ export default function OfflineHub() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          [Target, "Tasks", tasks.length],
-          [CalendarClock, "Timetable", timetable.length],
-          [CheckCircle2, "Achievements", achievements.length],
-          [Sparkles, "Cortex insights", insights.length],
-        ].map(([Icon, label, value]) => (
-          <div key={String(label)} className="rounded-2xl border bg-card p-5">
+        {stats.map(({ Icon, label, value }) => (
+          <div key={label} className="rounded-2xl border bg-card p-5">
             <Icon className="mb-4 h-5 w-5" />
-            <div className="text-2xl font-black">{value as number}</div>
-            <div className="text-sm text-muted-foreground">{String(label)}</div>
+            <div className="text-2xl font-black">{value}</div>
+            <div className="text-sm text-muted-foreground">{label}</div>
           </div>
         ))}
       </section>
