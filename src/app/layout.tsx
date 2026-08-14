@@ -8,6 +8,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
+import OfflineDataBootstrap from "@/components/OfflineDataBootstrap";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
@@ -92,6 +93,7 @@ export default function RootLayout({
         <ThemeContextProvider>
           <MuiThemeProvider>
             <BandwidthProvider>
+              <OfflineDataBootstrap />
               {children}
               <OfflineShell />
               <PWAInstallPrompt />
@@ -104,4 +106,3 @@ export default function RootLayout({
     </html>
   );
 }
-
