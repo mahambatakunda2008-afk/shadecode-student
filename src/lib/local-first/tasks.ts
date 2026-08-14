@@ -11,19 +11,23 @@ export interface LocalTaskInput {
 /**
  * Device-first task repository.
  *
- * This module deliberately has no Supabase dependency. Callers write to the
- * device first and let the existing sync layer handle cloud reconciliation.
+ * User scope is mandatory on every read/update so one browser cannot expose
+ * another account's locally cached tasks. This module deliberately has no
+ * Supabase dependency. Callers write to the device first and let the existing
+ * sync layer handle cloud reconciliation.
  */
 export const localTasks = {
-  async list(userId?: string): Promise<OfflineTask[]> {
-    return userId ? offlineStorage.getTasksForUser(userId) : offlineStorage.getAllTasks();
+  async list(userId: string): Promise<OfflineTask[]> {
+    return offlineStorage.getTasksForUser(userId);
   },
 
-  async get(id: string, userId?: string): Promise<OfflineTask | null> {
-    return userId ? offlineStorage.getTaskForUser(id, userId) : offlineStorage.getTask(id);
+  async get(id: string, userId: string): Promise<OfflineTask | null> {
+    return offlineStorage.getTaskForUser(id, userId);
   },
 
   async create(input: LocalTaskInput): Promise<OfflineTask> {
+    if (!input.userId) throw new Error("Local task creation requires a userId");
+
     const task: OfflineTask = {
       id: input.id,
       userId: input.userId,
@@ -38,10 +42,8 @@ export const localTasks = {
     return task;
   },
 
-  async complete(id: string, userId?: string): Promise<OfflineTask | null> {
-    const task = userId
-      ? await offlineStorage.getTaskForUser(id, userId)
-      : await offlineStorage.getTask(id);
+  async complete(id: string, userId: string): Promise<OfflineTask | null> {
+    const task = await offlineStorage.getTaskForUser(id, userId);
     if (!task) return null;
 
     const updated: OfflineTask = {
@@ -55,12 +57,15 @@ export const localTasks = {
     return updated;
   },
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId: string): Promise<void> {
+    const task = await offlineStorage.getTaskForUser(id, userId);
+    if (!task) return;
+
     // Deletion is intentionally not exposed as a hard delete yet. The sync
     // protocol needs tombstones before deletes can safely replicate across
     // multiple devices and ShadeNet peers.
     throw new Error(
-      "Local task deletion requires a sync tombstone. Use the migration layer before enabling deletes."
+      "Local task deletion requires a sync tombstone. Use the migration layer before enabling deletes.",
     );
   },
 };
