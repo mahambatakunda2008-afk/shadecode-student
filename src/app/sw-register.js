@@ -5,11 +5,11 @@ export default function SWRegister() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/service-worker.js")
-        .then(() => console.log("Service Worker registered"))
-        .catch(err => console.error("Service Worker registration failed:", err));
+        .register("/sw.js")
+        .then(() => console.log("Shadecode service worker registered"))
+        .catch(err => console.error("Service worker registration failed:", err));
     }
   }, []);
 
-  return null; // nothing to render
+  return null;
 }
