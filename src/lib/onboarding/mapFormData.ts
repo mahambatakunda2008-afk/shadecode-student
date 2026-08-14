@@ -13,7 +13,10 @@ import type {
 
 const STUDY_LEVEL_TO_EDUCATION: Record<string, EducationLevel> = {
   "high-school": "secondary",
-  "a-level": "university",
+  // A-Level is pre-tertiary education. The canonical persisted enum currently
+  // has no dedicated A-Level value, so retain it under secondary while the
+  // normalized academic context preserves the more precise `a_level` pathway.
+  "a-level": "secondary",
   university: "university",
   professional: "tvet",
 };
