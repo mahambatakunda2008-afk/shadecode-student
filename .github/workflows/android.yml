@@ -34,14 +34,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Validate Gradle project
-        run: gradle --version
+      - name: Validate Android project
+        run: gradle projects --stacktrace --no-daemon
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace --no-daemon
+        run: gradle :app:assembleDebug --stacktrace --no-daemon
 
       - name: Build release bundle
-        run: gradle bundleRelease --stacktrace --no-daemon
+        run: gradle :app:bundleRelease --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
