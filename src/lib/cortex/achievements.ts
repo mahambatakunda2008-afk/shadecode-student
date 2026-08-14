@@ -12,13 +12,7 @@ import { awardXPBySource } from "@/lib/xp/manager";
 // (api/achievements, api/cortex/mark-exam) acting on an explicit userId --
 // never from a genuine browser session. The browser client
 // (@/lib/supabase/client) has no session/cookies in that context, so RLS
-// silently blocked every read and write here: checkAndUnlockAchievements'
-// insert would fail (error set, so `if (!error)` never pushed the
-// achievement into newlyUnlocked), and getUserAchievements would always
-// return an empty list -- explaining why achievements never appeared to
-// unlock even after the exam-scores persistence fix. Same bug class
-// already fixed twice this session (xp/manager.ts's awardXP,
-// exam/mark/route.js's cortex_memory write).
+// silently blocked every read and write here.
 function createClient() {
   return createSupabaseServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +27,7 @@ export interface Achievement {
   id: string;
   title: string;
   description: string;
+  /** Lucide icon name. Kept as a string so achievement data stays serializable. */
   icon: string;
   rarity: AchievementRarity;
   xpReward: number;
@@ -69,7 +64,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "first_task",
     title: "First Steps",
     description: "Complete your first task",
-    icon: "🎯",
+    icon: "Target",
     rarity: "common",
     xpReward: 25,
     condition: (s) => s.totalTasksCompleted >= 1,
@@ -78,7 +73,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "task_master_10",
     title: "Task Master",
     description: "Complete 10 tasks",
-    icon: "📋",
+    icon: "ListChecks",
     rarity: "common",
     xpReward: 50,
     condition: (s) => s.totalTasksCompleted >= 10,
@@ -87,7 +82,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "task_champion_50",
     title: "Task Champion",
     description: "Complete 50 tasks",
-    icon: "🏆",
+    icon: "Trophy",
     rarity: "rare",
     xpReward: 150,
     condition: (s) => s.totalTasksCompleted >= 50,
@@ -96,7 +91,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "first_exam",
     title: "Exam Warrior",
     description: "Complete your first exam",
-    icon: "📝",
+    icon: "FileCheck2",
     rarity: "common",
     xpReward: 50,
     condition: (s) => s.totalExamsCompleted >= 1,
@@ -105,7 +100,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "exam_pro_10",
     title: "Exam Pro",
     description: "Complete 10 exams",
-    icon: "🎓",
+    icon: "GraduationCap",
     rarity: "rare",
     xpReward: 200,
     condition: (s) => s.totalExamsCompleted >= 10,
@@ -114,7 +109,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "streak_3",
     title: "Getting Started",
     description: "Maintain a 3-day study streak",
-    icon: "🔥",
+    icon: "Flame",
     rarity: "common",
     xpReward: 75,
     condition: (s) => s.currentStreak >= 3,
@@ -123,7 +118,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "streak_7",
     title: "Week Warrior",
     description: "Maintain a 7-day study streak",
-    icon: "🔥",
+    icon: "Flame",
     rarity: "rare",
     xpReward: 150,
     condition: (s) => s.currentStreak >= 7,
@@ -132,7 +127,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "streak_30",
     title: "Monthly Legend",
     description: "Maintain a 30-day study streak",
-    icon: "💫",
+    icon: "Sparkles",
     rarity: "legendary",
     xpReward: 500,
     condition: (s) => s.currentStreak >= 30,
@@ -141,7 +136,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "subject_explorer",
     title: "Subject Explorer",
     description: "Study 3 or more subjects",
-    icon: "🔍",
+    icon: "Search",
     rarity: "common",
     xpReward: 50,
     condition: (s) => s.subjectsCount >= 3,
@@ -150,7 +145,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "subject_polyglot",
     title: "Subject Polyglot",
     description: "Study 5 or more subjects",
-    icon: "🌐",
+    icon: "Languages",
     rarity: "rare",
     xpReward: 150,
     condition: (s) => s.subjectsCount >= 5,
@@ -159,7 +154,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "perfect_score",
     title: "Perfect Score",
     description: "Score 100% on any exam",
-    icon: "💯",
+    icon: "BadgeCheck",
     rarity: "epic",
     xpReward: 250,
     condition: (s) => s.perfectExamCount >= 1,
@@ -168,7 +163,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "study_marathon_5h",
     title: "Study Marathon",
     description: "Study for 5 hours total",
-    icon: "⏱️",
+    icon: "Timer",
     rarity: "common",
     xpReward: 75,
     condition: (s) => s.totalStudyMinutes >= 300,
@@ -177,7 +172,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "study_marathon_20h",
     title: "Dedicated Scholar",
     description: "Study for 20 hours total",
-    icon: "📚",
+    icon: "BookOpen",
     rarity: "rare",
     xpReward: 300,
     condition: (s) => s.totalStudyMinutes >= 1200,
@@ -186,7 +181,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "lesson_learner_5",
     title: "Eager Learner",
     description: "Complete 5 lessons",
-    icon: "📖",
+    icon: "BookOpen",
     rarity: "common",
     xpReward: 50,
     condition: (s) => s.totalLessonsCompleted >= 5,
@@ -195,7 +190,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "lesson_learner_25",
     title: "Knowledge Seeker",
     description: "Complete 25 lessons",
-    icon: "📖",
+    icon: "BookOpen",
     rarity: "rare",
     xpReward: 200,
     condition: (s) => s.totalLessonsCompleted >= 25,
@@ -204,7 +199,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "top_performer",
     title: "Top Performer",
     description: "Achieve average exam score above 80%",
-    icon: "⭐",
+    icon: "Star",
     rarity: "epic",
     xpReward: 350,
     condition: (s) => s.averageExamScore >= 80 && s.totalExamsCompleted >= 3,
@@ -213,7 +208,7 @@ const ACHIEVEMENTS: Achievement[] = [
     id: "daily_dedication",
     title: "Daily Dedication",
     description: "Complete tasks 7 days in a row",
-    icon: "📅",
+    icon: "CalendarCheck",
     rarity: "epic",
     xpReward: 400,
     condition: (s) => s.longestStreak >= 7,
