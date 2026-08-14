@@ -22,7 +22,7 @@ export interface OfflineLesson {
 export interface OfflineNotes { lessonId: string; content: string; downloadedAt: string; lastSyncedAt?: string; }
 export interface OfflineQuiz { lessonId: string; questions: Array<{ id: string; question: string; options: string[]; correctAnswer: string }>; downloadedAt: string; lastSyncedAt?: string; }
 export interface OfflineProgress { lessonId: string; userId: string; completed: boolean; progress: number; quizScore?: number; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
-export interface OfflineTask { id: string; userId: string; subject_id: string; title: string; completed: boolean; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
+export interface OfflineTask { id: string; userId: string; subject_id: string; title: string; completed: boolean; lastUpdated: string; lastSyncedAt?: string; }
 
 class OfflineStorage {
   private db: IDBDatabase | null = null;
@@ -85,7 +85,7 @@ class OfflineStorage {
   async getUnsyncedProgress(): Promise<OfflineProgress[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
-      const request = this.db!.transaction(["progress"], "readonly").objectStore("progress").index("synced").getAll("false");
+      const request = this.db!.transaction(["progress"], "readonly").objectStore("progress").index("synced").getAll(false);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result || []);
     });
@@ -101,8 +101,15 @@ class OfflineStorage {
   async getTaskForUser(id: string, userId: string): Promise<OfflineTask | null> { const task = await this.getTask(id); return task?.userId === userId ? task : null; }
   async getAllTasks(): Promise<OfflineTask[]> { return this.getAll("tasks"); }
   async getTasksForUser(userId: string): Promise<OfflineTask[]> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { const request = this.db!.transaction(["tasks"], "readonly").objectStore("tasks").index("userId").getAll(userId); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result || []); }); }
-  async getUnsyncedTasks(userId?: string): Promise<OfflineTask[]> { const tasks = userId ? await this.getTasksForUser(userId) : await this.getAllTasks(); return tasks.filter((task) => !task.synced); }
-  async markTaskSynced(taskId: string, userId?: string): Promise<void> { const task = userId ? await this.getTaskForUser(taskId, userId) : await this.getTask(taskId); if (task) { task.synced = true; task.lastSyncedAt = new Date().toISOString(); await this.saveTask(task); } }
+  async getUnsyncedTasks(): Promise<OfflineTask[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const request = this.db!.transaction(["tasks"], "readonly").objectStore("tasks").index("synced").getAll(false);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || []);
+    });
+  }
+  async markTaskSynced(taskId: string, userId: string): Promise<void> { const task = await this.getTaskForUser(taskId, userId); if (task) { task.synced = true; task.lastSyncedAt = new Date().toISOString(); await this.saveTask(task); } }
   async getStorageSize(): Promise<number> { const lessons = await this.getAllLessons(); return lessons.reduce((sum, lesson) => sum + lesson.size, 0); }
 
   private async put(storeName: string, value: unknown): Promise<void> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readwrite").objectStore(storeName).put(value); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
