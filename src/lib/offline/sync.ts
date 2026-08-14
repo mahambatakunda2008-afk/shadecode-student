@@ -23,7 +23,7 @@ export class OfflineSync {
   async syncAll(): Promise<void> {
     if (this.syncInProgress || !navigator.onLine) return;
     this.syncInProgress = true;
-    try { await Promise.all([this.syncTasks(), this.syncProgress()]); }
+    try { await Promise.all([this.syncTasks(), this.syncSubjects(), this.syncProgress()]); }
     catch (error) { console.error("[OfflineSync] Sync failed:", error); }
     finally { this.syncInProgress = false; }
   }
@@ -44,6 +44,23 @@ export class OfflineSync {
         await offlineStorage.markTaskSynced(task.id, task.userId);
         console.log("[OfflineSync] Synced task:", task.id);
       } catch (error) { console.error("[OfflineSync] Failed to sync task:", task.id, error); }
+    }
+  }
+
+  private async syncSubjects(): Promise<void> {
+    const unsyncedSubjects = await offlineStorage.getUnsyncedSubjects();
+    const supabase = createClient();
+    for (const subject of unsyncedSubjects) {
+      try {
+        const { error } = await supabase.from("subjects").upsert({
+          id: subject.id,
+          user_id: subject.userId,
+          name: subject.name,
+        });
+        if (error) throw error;
+        await offlineStorage.markSubjectSynced(subject.id, subject.userId);
+        console.log("[OfflineSync] Synced subject:", subject.id);
+      } catch (error) { console.error("[OfflineSync] Failed to sync subject:", subject.id, error); }
     }
   }
 
@@ -95,6 +112,27 @@ export class OfflineSync {
       await offlineStorage.saveTask({ id: task.id, userId: task.user_id ?? userId, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true });
     }
     return tasks || [];
+  }
+
+  async getSubjects(userId: string): Promise<any[]> {
+    const localSubjects = await offlineStorage.getSubjectsForUser(userId);
+    if (localSubjects.length > 0) return localSubjects;
+
+    const supabase = createClient();
+    const { data: subjects, error } = await supabase.from("subjects").select("*").eq("user_id", userId);
+    if (error) { console.error("[OfflineSync] Failed to fetch subjects from server:", error); return []; }
+
+    for (const subject of subjects || []) {
+      await offlineStorage.saveSubject({
+        id: subject.id,
+        userId: subject.user_id ?? userId,
+        name: subject.name,
+        lastUpdated: new Date().toISOString(),
+        synced: true,
+      });
+    }
+
+    return subjects || [];
   }
 
   async getProgress(lessonId: string, userId: string): Promise<OfflineProgress | null> {
