@@ -41,6 +41,7 @@ jobs:
       - name: Validate Android project
         run: gradle projects --stacktrace --no-daemon
 
+      # Keep Java and Kotlin compilation targets aligned for Kotlin 2.x validation.
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
 
