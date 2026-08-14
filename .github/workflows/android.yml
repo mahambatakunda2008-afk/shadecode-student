@@ -61,3 +61,5 @@ jobs:
           name: shadecode-student-aab
           path: android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
+
+      # Release gate: this commit intentionally triggers a fresh APK/AAB build.
