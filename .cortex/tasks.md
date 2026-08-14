@@ -11,7 +11,7 @@ This section is the strategic layer above the feature backlog. It prevents Corte
 
 ### 🔴 Strategic priorities
 
-- [ ] 🔴 **Tertiary Education Support — Universities, Polytechnics & Colleges**
+- [~] 🔴 **Tertiary Education Support — Universities, Polytechnics & Colleges**
   - Add an education-level model covering secondary, university, polytechnic, college and technical/vocational pathways.
   - Support courses/modules, semesters, credits, assignments, coursework, labs, projects, research and GPA/grade tracking.
   - Make curriculum, qualification and institution context first-class inputs to Cortex.
@@ -114,10 +114,13 @@ This section is the strategic layer above the feature backlog. It prevents Corte
 
 The strategic roadmap above does not replace the verified implementation backlog below. Near-term execution should prioritize completing dormant real infrastructure before inventing new parallel systems.
 
-- [ ] 🔴 **Tertiary Academic Model — discovery/specification first**
+- [~] 🔴 **Tertiary Academic Model — discovery/specification first**
   - Define the minimum generic model for institution → qualification/program → course/module → semester/term → assessment.
   - Audit current `profiles`, `subjects`, `exams`, `study_topics` and onboarding data before adding anything.
   - Deliver a written model and gap list before implementation.
+  - Discovery output: `docs/TERTIARY_ACADEMIC_MODEL_SPEC.md`.
+  - Initial implementation: `src/lib/academic/context.ts` provides a non-persistent normalized academic context.
+  - Known defect corrected: A-Level is no longer persisted as `university`; it remains under the current `secondary` enum while the normalized context preserves `a_level`.
 
 - [ ] 🔴 **Assessment Intelligence — curriculum/past-paper audit**
   - Audit current Exam Hub ingestion, past-paper metadata and syllabus mappings.
