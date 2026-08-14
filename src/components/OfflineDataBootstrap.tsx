@@ -27,7 +27,9 @@ export default function OfflineDataBootstrap() {
 
       await Promise.all(
         SNAPSHOTS.map(async ([table, entity]) => {
-          const { data, error } = await supabase.from(table).select("*");
+          // Keep device snapshots bounded. The local-first layer is for the
+          // active study surface, not an unbounded database mirror.
+          const { data, error } = await supabase.from(table).select("*").limit(100);
           if (error || cancelled) return;
 
           await localFirstStore.upsert({
