@@ -85,9 +85,9 @@ class OfflineStorage {
   async getUnsyncedProgress(): Promise<OfflineProgress[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
-      const request = this.db!.transaction(["progress"], "readonly").objectStore("progress").index("synced").getAll(false);
+      const request = this.db!.transaction(["progress"], "readonly").objectStore("progress").getAll();
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => resolve((request.result || []).filter((progress: OfflineProgress) => progress.synced === false));
     });
   }
 
@@ -104,9 +104,9 @@ class OfflineStorage {
   async getUnsyncedTasks(): Promise<OfflineTask[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
-      const request = this.db!.transaction(["tasks"], "readonly").objectStore("tasks").index("synced").getAll(false);
+      const request = this.db!.transaction(["tasks"], "readonly").objectStore("tasks").getAll();
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => resolve((request.result || []).filter((task: OfflineTask) => task.synced === false));
     });
   }
   async markTaskSynced(taskId: string, userId: string): Promise<void> { const task = await this.getTaskForUser(taskId, userId); if (task) { task.synced = true; task.lastSyncedAt = new Date().toISOString(); await this.saveTask(task); } }
