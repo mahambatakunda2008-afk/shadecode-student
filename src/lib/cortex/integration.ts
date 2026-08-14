@@ -1,4 +1,4 @@
-import { calculateLearningUtility, type LearningCandidate, type LearningDecision, type LearningUtilityWeights } from "@/lib/learning-engine/shadecodeLearningUtility";
+import { type LearningCandidate, type LearningDecision, type LearningUtilityWeights } from "@/lib/learning-engine/shadecodeLearningUtility";
 import { applyLearningEvents, type LearningEvent } from "./learningEvents";
 import { createInitialLearningState, type TopicLearningState } from "./learningState";
 import { evaluateCounterfactuals, type CounterfactualDecision } from "./counterfactualEngine";
@@ -21,11 +21,10 @@ export function buildCortexTopicContext(
   return { state, decision: counterfactuals.chosen, counterfactuals };
 }
 
-/** Evaluate the selected candidate directly when a caller only needs the winner. */
+/** Return the winner from the same ranked surface used by the full Cortex context. */
 export function chooseCortexMove(
   candidates: LearningCandidate[],
   weights?: Partial<LearningUtilityWeights>,
 ): LearningDecision | null {
-  if (candidates.length === 0) return null;
-  return calculateLearningUtility(candidates[0], weights);
+  return evaluateCounterfactuals(candidates, weights).chosen;
 }
