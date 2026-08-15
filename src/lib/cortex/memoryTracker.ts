@@ -13,6 +13,7 @@
 
 import { getMemory, updateMemory } from "./memory";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
+import { computeStreakUpdate } from "@/lib/streaks";
 
 function getServiceClient() {
   return createSupabaseServiceClient(
@@ -132,36 +133,30 @@ export async function trackExamResult(result: ExamResult): Promise<void> {
 }
 
 /**
- * Update streak based on study activity
+ * Update streak based on study activity. Transition rules (same-day no-op,
+ * consecutive-day increment, gap reset, one-freeze-per-week forgiveness)
+ * live in the pure, tested `computeStreakUpdate()` in `src/lib/streaks.ts`
+ * -- this function is now just the side-effecting wrapper: read state,
+ * compute the transition, persist it to both `cortex_memory` (canonical)
+ * and `profiles.streak` (dashboard-read mirror, see comment below).
  */
 export async function updateStreak(userId: string, studiedToday: boolean): Promise<void> {
   const memory = await getMemory(userId);
-  
-  const today = new Date().toISOString().split('T')[0];
-  const lastStudyDate = memory.lastStudyDate?.split('T')[0];
-  
-  let currentStreak = memory.streak || 0;
-  let longestStreak = memory.longestStreak || 0;
-  
-  if (studiedToday) {
-    if (lastStudyDate === today) {
-      // Already studied today, no change
-    } else if (isYesterday(lastStudyDate)) {
-      // Studied yesterday, increment streak
-      currentStreak++;
-      if (currentStreak > longestStreak) longestStreak = currentStreak;
-    } else {
-      // Streak broken or first day
-      currentStreak = 1;
-    }
-  } else if (lastStudyDate && !isYesterday(lastStudyDate) && lastStudyDate !== today) {
-    // Didn't study today and missed yesterday, streak broken
-    currentStreak = 0;
-  }
-  
+
+  const result = computeStreakUpdate(
+    {
+      currentStreak: memory.streak || 0,
+      longestStreak: memory.longestStreak || 0,
+      lastStudyDate: memory.lastStudyDate,
+      freezeWeek: memory.streakFreezeWeek,
+    },
+    studiedToday
+  );
+
   await updateMemory(userId, {
-    streak: currentStreak,
-    longestStreak,
+    streak: result.streak,
+    longestStreak: result.longestStreak,
+    streakFreezeWeek: result.freezeWeek,
   });
 
   // Also update the canonical profiles.streak field -- see comment above
@@ -170,7 +165,7 @@ export async function updateStreak(userId: string, studiedToday: boolean): Promi
     const svc = getServiceClient();
     const { error } = await svc
       .from("profiles")
-      .update({ streak: currentStreak })
+      .update({ streak: result.streak })
       .eq("id", userId);
     if (error) console.error("[memoryTracker] Failed to sync profiles.streak:", error.message);
   } catch (err) {
@@ -258,13 +253,4 @@ export async function generateRecommendation(userId: string): Promise<string> {
   
   // Default recommendation
   return 'Start with a subject that interests you most.';
-}
-
-// Helper: Check if a date string is yesterday
-function isYesterday(dateStr?: string): boolean {
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return date.toDateString() === yesterday.toDateString();
 }

@@ -95,6 +95,26 @@ export default function FocusTimer() {
     setSessionsToday(newStats.sessions);
     setTotalFocusToday(newStats.minutes);
 
+    // Persist the session to focus_sessions -- this table already existed
+    // with full RLS but nothing in the codebase wrote to it (verified via
+    // repo-wide search 2026-08-13), so no per-session, timestamped study
+    // log existed anywhere. Wiring it here (not creating a parallel table)
+    // is what makes GoalTracker's weekly progress real instead of fabricated.
+    if (userId) {
+      try {
+        const xpEarned =
+          selectedPreset !== 1 && selectedPreset !== 2 ? Math.round(focusMinutes * 0.5) : 0;
+        await supabase.from("focus_sessions").insert({
+          user_id: userId,
+          duration_minutes: focusMinutes,
+          xp_earned: xpEarned,
+          mode: preset.label,
+        });
+      } catch (err) {
+        console.error("focus_sessions insert error:", err);
+      }
+    }
+
     // Award XP for focus sessions
     if (userId && selectedPreset !== 1 && selectedPreset !== 2) {
       try {

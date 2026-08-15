@@ -80,6 +80,14 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
                 context
             );
 
+            // Update streak BEFORE trackStudySession. trackStudySession
+            // writes lastStudyDate = now, so calling it first would make
+            // updateStreak's own lastStudyDate read always equal "today" --
+            // meaning it always took the "already studied today, no change"
+            // branch and the streak counter could never actually increment.
+            // Verified via direct read of both functions on 2026-08-13.
+            await updateStreak(input.userId, true);
+
             // Track study session for persistent memory
             if (input.payload.subjectId && input.payload.subjectName) {
                 await trackStudySession({
@@ -90,9 +98,6 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
                     completedAt: new Date().toISOString(),
                 });
             }
-
-            // Update streak
-            await updateStreak(input.userId, true);
 
             await updateMemory(input.userId, {
                 lastTopic: input.payload.topic,

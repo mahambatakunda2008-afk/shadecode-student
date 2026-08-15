@@ -444,6 +444,8 @@ export interface CortexUserMemory {
   lastStudyDate?: string;
   learningInsight?: string;
   recommendationInsight?: string;
+  /** ISO week key ("2026-W33") of the last streak-freeze use, if any. */
+  streakFreezeWeek?: string;
 }
 
 const DEFAULT_USER_MEMORY: CortexUserMemory = {
@@ -505,6 +507,7 @@ export async function getMemory(userId: string): Promise<CortexUserMemory> {
       lastStudyDate: (data as any).last_study_date ?? undefined,
       learningInsight: (data as any).learning_insight ?? undefined,
       recommendationInsight: (data as any).recommendation_insight ?? undefined,
+      streakFreezeWeek: (data as any).streak_freeze_week ?? undefined,
     };
   } catch (err) {
     console.error("[cortex memory] failed to get memory:", err);
@@ -539,6 +542,7 @@ export async function updateMemory(
     if (patch.lastStudyDate !== undefined) updateData.last_study_date = patch.lastStudyDate;
     if (patch.learningInsight !== undefined) updateData.learning_insight = patch.learningInsight;
     if (patch.recommendationInsight !== undefined) updateData.recommendation_insight = patch.recommendationInsight;
+    if (patch.streakFreezeWeek !== undefined) updateData.streak_freeze_week = patch.streakFreezeWeek;
 
     // Try upsert (update if exists, insert if not)
     const { data, error } = await supabase
