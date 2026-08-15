@@ -4,55 +4,60 @@
 
 Implemented in `shadecode-student` main on 15 August 2026.
 
-## Canonical assets
+## Canonical identity
 
-- `public/brand/shadecode-mark.svg` — master app symbol.
-- `public/brand/shadecode-student-logo.svg` — primary product wordmark.
+Shadecode Student uses the shared Shadecode brand mark: the blue gradient S-form with the central knowledge star. The product descriptor is `Student` and is never represented by a separate competing logo.
 
-The Student product inherits the Shadecode symbol rather than using a separate unrelated icon. This creates a visible family relationship between the studio and its learning product.
+## Design decisions
 
-## Symbol
+- One canonical mark across web, PWA metadata, navigation, landing page, and product UI.
+- Vector SVG is the source of truth for scalable use.
+- Real vector UI icons are used for feature and achievement iconography. Emoji are not used as brand or product icons.
+- Primary brand color family is blue, with the mark using a cyan-to-blue gradient.
+- The mark must remain recognizable at favicon, app-icon, navigation, and large hero sizes.
+- The landing page uses the same mark as the application shell, creating continuity from acquisition to product.
 
-The mark is a geometric `S` with a central four-point knowledge star. The `S` identifies Shadecode and the star represents knowledge, clarity and achievement.
+## Current assets
 
-The symbol is designed to remain recognizable without the word `Student`, which is important for mobile launchers, favicons, PWA install surfaces and compact navigation.
+- `public/brand/shadecode-mark.svg` - canonical mark.
+- PWA metadata references the canonical mark.
+- Landing page references the canonical mark directly.
+- Navigation/sidebar branding uses the canonical mark.
 
-## Product wordmark
+## Landing page optimization
 
-`SHADECODE` is the parent name. `STUDENT` is the product descriptor and uses the same blue family with increased tracking so it reads as a product line rather than a second company.
+The public landing page was updated to remove the old diamond/emoji visual language and use the canonical mark plus Lucide vector icons. The visual system now has a single brand language across:
 
-## Palette
+1. Navbar
+2. Hero
+3. Cortex panel
+4. Feature cards
+5. Research/future section
+6. Trust section
+7. Final CTA
+8. Footer
 
-- Bright blue: `#38BDF8`
-- Primary blue: `#2563EB`
-- Deep blue: `#1D4ED8`
-- App background: `#06111F`
-- Light text: `#F8FAFC`
+The landing page keeps the existing product positioning but improves brand recognition, hierarchy, consistency, and small-screen resilience.
 
-## Applied surfaces
+## App/store packaging
 
-The canonical mark is now wired into:
+SVG is the canonical master. Before final Microsoft Store / Android package submission, export the master into the required raster sizes and platform-specific formats. Do not redraw the icon separately for each platform.
 
-- Sidebar brand area
-- Next.js metadata/favicon surface
-- PWA manifest as the canonical SVG icon
-- App theme color
+Recommended export set:
 
-The existing PNG icon entries remain as fallback compatibility assets. They should be regenerated from the canonical SVG before store submission so Android, Microsoft Store and other raster-only surfaces use the new mark as well.
+- 16x16, 32x32, 48x48 favicon sizes
+- 180x180 Apple touch icon
+- 192x192 PWA icon
+- 512x512 PWA icon
+- 1024x1024 high-resolution master
+- Windows Store tile/icon sizes required by the current Partner Center package
 
-## Design principles
+## Do not regress
 
-1. One recognizable symbol across Shadecode products.
-2. Vector-first source of truth.
-3. Strong silhouette at small sizes.
-4. No emoji, generic `SC` badge or unrelated stock icon as a brand mark.
-5. Blue is the primary brand signal; do not introduce arbitrary per-product colors.
-6. Keep generous clear space around the symbol.
+Do not reintroduce:
 
-## Benchmarking rationale
-
-The identity was optimized against recognizable education products and modern technology brands. The goal is not to imitate them, but to satisfy the same practical requirements: distinct silhouette, instant recognition, strong small-size performance, restrained geometry and easy reproduction across web, mobile and stores.
-
-## Store-ready export rule
-
-Treat `public/brand/shadecode-mark.svg` as the master. Generate official PNG/ICO exports from it at 1024, 512, 192, 180 and 32px when preparing store packages. Do not manually redraw or modify the icon for individual platforms.
+- generic `SC` boxes
+- diamond glyphs as the logo
+- emoji as brand marks
+- unrelated icon families for primary product identity
+- different logos for Shadecode and Shadecode Student
