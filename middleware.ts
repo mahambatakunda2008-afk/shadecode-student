@@ -116,7 +116,9 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    // Match all except: api/auth callbacks, Next.js internals, static files
-    '/((?!api/auth|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
+    // Match all except: API/auth callbacks, Next.js internals, and static assets.
+    // manifest.json must be excluded so PWABuilder/browser installability checks
+    // can fetch the web manifest without being redirected through auth middleware.
+    '/((?!api/auth|_next/static|_next/image|favicon\\.ico|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 };
