@@ -7,12 +7,12 @@
 
 ## 🚀 Shadecode 2.0 Strategic Gap Roadmap
 
-This section is the strategic layer above the feature backlog. It prevents Cortex from treating Shadecode as a collection of isolated UI features when the product is evolving toward a full academic intelligence platform.
+This section is the strategic layer above the feature backlog when the product is evolving toward a full academic intelligence platform.
 
 ### 🔴 Strategic priorities
 
 - [x] 🔴 **Tertiary Education Support — Universities, Polytechnics & Colleges**
-  - Generic academic model and initial normalized context are now documented and tested.
+  - Generic academic model and initial normalized context are documented and tested.
   - Full persistence and institution integrations remain future implementation slices.
 
 - [ ] 🔴 **Student Knowledge & Mastery Graph**
@@ -28,63 +28,27 @@ This section is the strategic layer above the feature backlog. It prevents Corte
   - Use assessment evidence to drive revision and recommendations rather than generic AI generation.
 
 - [ ] 🔴 **Offline-First Learning Architecture**
-  - Treat local storage/database, queued writes, synchronization and conflict handling as core architecture.
-  - Cache lessons, questions, progress and selected media for intermittent-connectivity use.
-  - Design the sync layer so future peer-to-peer educational exchange is possible without making P2P a current dependency.
-
 - [ ] 🔴 **Cortex 2.0 Architecture**
-  - Separate student-facing Cortex intelligence from Cortex Engineering's autonomous repository agent.
-  - Progress toward memory hierarchy, knowledge graph, planning, forecasting and specialized agents.
-  - Introduce model routing, semantic caching and local/cheap inference where appropriate to control AI cost.
-
 - [ ] 🔴 **Security, Privacy & Academic Integrity**
-  - Audit authentication, authorization/RLS, API boundaries, file uploads, secrets, rate limits and student-data isolation.
-  - Add explicit academic-integrity safeguards and graduated assistance for assignments/exams.
-  - Define privacy boundaries for student, parent, teacher and institution views.
-
 - [ ] 🔴 **Observability & Product Intelligence**
-  - Measure activation, retention, feature usage, AI failures, sync failures, latency and cost per active learner.
-  - Add error/event instrumentation before scaling traffic.
-  - Establish a small set of product health metrics that guide engineering priorities.
 
 ### 🟡 Ecosystem priorities
 
 - [ ] 🟡 **Shadecode SCS ↔ Shadecode Student Integration**
-  - Connect school identity, classes, subjects, teachers, attendance/results and announcements to learning intelligence where permissions allow.
-  - Keep private student learning data separate from administrative views by default.
-
 - [ ] 🟡 **Teacher & Lecturer Platform**
-  - Let educators create/import assessments and learning material.
-  - Generate topic analytics and class-level weakness summaries.
-  - Build distribution loops between educator content and student learning.
-
 - [ ] 🟡 **Content & Knowledge Infrastructure**
-  - Establish ingestion, provenance, versioning, curriculum mapping, search and retrieval for legitimate educational content.
-  - Prioritize official syllabuses, past papers/mark schemes and high-value practice material.
-
 - [ ] 🟡 **Student Collaboration**
-  - Study rooms, shared notes, group challenges, peer explanations and institution/course communities.
-  - Design moderation and privacy before enabling open community features.
-
 - [ ] 🟡 **Unified Shadecode Identity**
-  - One identity/permission model spanning Student, SCS and future Shadecode products.
-  - Support student, teacher, parent, institution and developer roles without coupling their data unnecessarily.
-
 - [ ] 🟡 **Business & Distribution Model**
-  - Define what students, parents, schools, universities and institutions pay for.
-  - Test free/paid boundaries only after activation and retention data identify the strongest value loops.
-
 - [ ] 🟡 **Zimbabwe → Africa Readiness**
-  - Optimize for low data, intermittent connectivity, mobile-first access, low-end hardware and local curricula/qualifications.
-  - Treat Zimbabwe as an initial validation environment, not the permanent ceiling of the product.
 
 ### 🟢 Long-horizon research
 
-- [ ] 🟢 **Education P2P Network**
-- [ ] 🟢 **Academic Digital Twin**
-- [ ] 🟢 **Multi-Agent Cortex**
-- [ ] 🟢 **Marketplace / Creator Economy**
-- [ ] 🟢 **Science Platform / Hardware / Global Network**
+- [ ] 🟢 Education P2P Network
+- [ ] 🟢 Academic Digital Twin
+- [ ] 🟢 Multi-Agent Cortex
+- [ ] 🟢 Marketplace / Creator Economy
+- [ ] 🟢 Science Platform / Hardware / Global Network
 
 ### 🚫 Anti-scope-creep rules
 
@@ -106,25 +70,23 @@ This section is the strategic layer above the feature backlog. It prevents Corte
   - No new database tables or institution integrations were introduced.
 
 - [~] 🔴 **Assessment Intelligence — curriculum/past-paper audit**
-  - Baseline documented in `docs/ASSESSMENT_INTELLIGENCE_AUDIT.md`.
-  - Existing Exam Hub, qualification-mapping and exam-marking infrastructure identified.
-  - Next: inspect actual persisted paper/question/qualification fields and define the canonical evidence contract.
+  - Initial audit: `docs/ASSESSMENT_INTELLIGENCE_AUDIT.md`.
+  - Canonical domain contract: `docs/ASSESSMENT_EVIDENCE_CONTRACT.md`.
+  - Non-persistent evidence model: `src/lib/assessment/evidence.ts`.
+  - Unit coverage: `src/lib/assessment/__tests__/evidence.test.ts`.
+  - Existing exam scoring, Exam Hub ingestion and syllabus mapping remain the producers to be adapted.
+  - Next: build the adapter from current exam-marking results into `AssessmentEvidence`, preserving one stable assessment/attempt ID.
+  - Then audit actual persisted `past_papers` / `syllabus_papers` / question fields before proposing migrations.
 
 - [ ] 🔴 **Offline Sync Architecture Audit**
-  - Inventory current offline/PWA behavior, caching, persistence and mutation paths.
-  - Produce a sync contract before implementing P2P or deeper offline functionality.
-
 - [ ] 🔴 **Security Audit**
-  - Review auth, RLS, API routes, service-role usage, uploads, secrets and AI-provider boundaries.
-
 - [ ] 🔴 **Product Observability Audit**
-  - Identify missing activation, retention, error, latency and AI-cost events.
 
 ---
 
-## Phase 0 — Database Foundation (Complete)
+## Phase 0 — Existing Infrastructure
 
-Existing tables must be reused rather than recreated.
+Existing tables and mastery systems must be reused rather than recreated.
 
 - [x] insights
 - [x] daily_challenges
