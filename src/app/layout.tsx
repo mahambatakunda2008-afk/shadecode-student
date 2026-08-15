@@ -25,8 +25,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "Shadecode Student", description: "AI-powered learning platform for students.", images: ["/og-image.png"] },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
   icons: {
-    icon: [{ url: "/brand/shadecode-mark.svg", type: "image/svg+xml", sizes: "any" }, { url: "/favicon.ico", sizes: "any" }],
-    apple: [{ url: "/brand/shadecode-mark.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/brand/shadecode-mark.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "256x256" },
+    ],
+    apple: [{ url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "256x256" }],
   },
 };
 
