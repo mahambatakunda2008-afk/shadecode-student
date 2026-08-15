@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-  <title id="title">Shadecode Student mark</title>
-  <desc id="desc">Blue gradient Shadecode S mark with a central knowledge star.</desc>
-  <defs><linearGradient id="g" x1="42" y1="34" x2="214" y2="226" gradientUnits="userSpaceOnUse"><stop stop-color="#38BDF8"/><stop offset=".5" stop-color="#2563EB"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs>
-  <path fill="url(#g)" d="M73 34c14-10 31-10 45 0l67 48c13 9 20 23 20 38v20c0 20-10 38-27 49l-68 45c-14 9-31 9-45 0l-24-16 45-30 14 9 45-30c5-3 8-8 8-14v-14L75 97c-18-12-29-32-29-53 0-4 0-7 1-10l26 0zm110 188c-14 10-31 10-45 0L71 174c-13-9-20-23-20-38v-20c0-20 10-38 27-49l68-45c14-9 31-9 45 0l24 16-45 30-14-9-45 30c-5 3-8 8-8 14v14l78 52c18 12 29 32 29 53 0 4 0 7-1 10l-26 0z"/>
-  <path fill="#06111F" d="m128 82 6 17 17 6-17 6-6 17-6-17-17-6 17-6 6-17z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc"><title id="title">Shadecode Student mark</title><desc id="desc">A clean geometric Shadecode S mark.</desc><path d="M190 64H101c-29 0-45 14-45 36 0 20 15 31 43 37l58 12c29 6 43 19 43 41 0 26-21 42-55 42H66" fill="none" stroke="#2563EB" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/><path d="M190 64H101c-29 0-45 14-45 36 0 20 15 31 43 37l58 12c29 6 43 19 43 41 0 26-21 42-55 42H66" fill="none" stroke="#38BDF8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
