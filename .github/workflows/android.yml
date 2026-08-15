@@ -42,14 +42,14 @@ jobs:
       - name: Validate Android project
         run: gradle projects --stacktrace --no-daemon
 
-      - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace --no-daemon
+      - name: Build installable release APK
+        run: gradle :app:assembleReleaseApk --stacktrace --no-daemon
 
-      - name: Build release bundle
+      - name: Build release AAB
         run: gradle :app:bundleRelease --stacktrace --no-daemon
 
-      - name: Prepare installable APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ShadecodeStudent-Android-${{ github.run_number }}.apk
+      - name: Prepare APK
+        run: cp app/build/outputs/apk/releaseApk/app-releaseApk.apk ShadecodeStudent-Android-${{ github.run_number }}.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
