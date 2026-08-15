@@ -3,9 +3,11 @@
 
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ServiceWorkerRegistrar from "@/components/shared/ServiceWorkerRegistrar";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
 import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
@@ -45,6 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MuiThemeProvider>
             <BandwidthProvider>
               {children}
+              <Script id="pwa-service-worker-register" strategy="beforeInteractive">
+                {`if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js").catch(function () {}); }`}
+              </Script>
+              <ServiceWorkerRegistrar />
               <OfflineShell />
               <PWAInstallPrompt />
               <Analytics />
