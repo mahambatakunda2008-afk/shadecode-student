@@ -21,15 +21,17 @@ export const metadata: Metadata = {
   keywords: ["Shadecode Student", "AI learning platform", "Computer Science", "A Level", "AS Level", "Zimbabwe students", "education"],
   authors: [{ name: "Shadecode" }],
   creator: "Shadecode",
+  manifest: "/manifest.json",
   openGraph: { type: "website", locale: "en_US", url: "https://shadecodestudent.vercel.app", siteName: "Shadecode Student", title: "Shadecode Student", description: "AI-powered learning platform for students.", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Shadecode Student — AI-powered learning platform" }] },
   twitter: { card: "summary_large_image", title: "Shadecode Student", description: "AI-powered learning platform for students.", images: ["/og-image.png"] },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
   icons: {
     icon: [
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
       { url: "/brand/shadecode-mark.svg", type: "image/svg+xml", sizes: "any" },
-      { url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "256x256" },
     ],
-    apple: [{ url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "256x256" }],
+    apple: [{ url: "/icon-192.png", type: "image/png", sizes: "192x192" }],
   },
 };
 
