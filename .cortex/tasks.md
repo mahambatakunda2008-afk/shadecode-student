@@ -161,14 +161,17 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 - [x] 🔴 **Retention Risk / Priority Engine Factor 4**
   - `topic_mastery` is now written after marked exams and read by retention-risk analysis; `retention_risk` is an explainable recommendation factor. Full matrix: `docs/BLUEPRINT_GAP_MATRIX.md`.
 
-- [ ] 🟡 **Scheduling Engine (Mission Control Ch.8) — finish wiring dormant infrastructure**
-  - `src/lib/studyPlan/generator.ts` contains real weighted scheduling logic and uses real topic hints.
-  - `src/components/StudyPlanDisplay.tsx` exists but the system has no real caller/API/page yet.
-  - Decide the canonical generator, audit onboarding/settings for goal data, add persistence only if required, then wire one API route + page and verify thoroughly.
+- [x] 🟡 **Scheduling Engine (Mission Control Ch.8) — finish wiring dormant infrastructure**
+  - Shipped 2026-08-13 (Claude, in-chat session). `study_plans` table created directly on the live Supabase project (`zczdtffwzkctkxwmvalb`) -- RLS enabled, `auth.uid() = user_id` policy matching the `exams`/`cortex_insights` convention. One active plan per student.
+  - `src/app/api/study-plan/route.ts` (new): `GET` returns the active plan or null; `POST` validates goals, computes real `topicHints.weak` from `topic_mastery` (mastery_score < 60, scoped to submitted subjects), calls the existing `generateStudyPlan()`, deactivates any prior plan, persists the new one.
+  - `src/app/(app)/study-plan/page.tsx` (new): uses the already-built, previously zero-caller `StudyGoalInput.tsx` for goal capture (caught and fixed a self-duplication -- had briefly hand-rolled a second form before finding this one), hands off to the already-built `StudyPlanDisplay`.
+  - `src/lib/navigation.ts`: added `studyPlan` nav item next to Timetable.
+  - Deliberately not wired: `topicHints.fresh` (curriculum-coverage "new topic" hints) -- confirmed via direct schema query that no per-subject exam-board/level mapping exists (`profiles.study_level` is one value for the whole student, not per subject). `generateStudyPlan()`'s existing honest generic fallback covers this; revisit only if per-subject board selection is added to onboarding/settings.
+  - Verified: `tsc --noEmit` clean, full vitest suite green.
 
-- [ ] 🟡 **Insight History — most frequent pattern summary**
-  - Existing page: `src/app/(app)/insights/history/page.tsx`.
-  - Add only the missing summary block. Do not rebuild the page.
+- [x] 🟡 **Insight History — most frequent pattern summary**
+  - Shipped 2026-08-13. `src/lib/insights/patternSummary.ts` (new, pure, 6 tests): plain recurring-word count across a user's stored `cortex_insights` rows -- deliberately not an AI call or a claimed semantic pattern. Renders nothing unless there's real recurrence (3+ insights, a word in 2+ of them), rather than a misleading summary on thin data.
+  - Wired into the existing `src/app/(app)/insights/history/page.tsx` as a `PatternSummaryBanner`. Page itself untouched otherwise.
 
 ---
 
@@ -177,30 +180,43 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 - [x] 🟡 **Leaderboard Page**
   - Already built and wired in `src/app/(app)/leaderboard/page.tsx` and navigation. Marked complete to prevent duplicate implementations.
 
-- [ ] 🟡 **Goals System**
-  - Let users set a weekly study goal, show progress, and expose goal progress to Cortex.
+- [x] 🟡 **Goals System**
+  - Shipped 2026-08-13. `profiles.weekly_goal_minutes` added (live migration). Progress computed from `focus_sessions.duration_minutes` -- which required its own fix first, see Streak item below.
+  - `src/lib/goals.ts` (new, pure, 11 tests): Monday-start week boundary, `computeGoalProgress()`, input validation.
+  - `src/app/api/goals/route.ts` (new), `src/components/GoalTracker.tsx` (new), wired into `DashboardReimagined.tsx`.
+  - Cortex mention: added a rule to the existing `resolveDeterministicInsight()` engine (`runtime/templates.ts`) and a goal-progress line to `buildBehaviorSummary()` for the Gemini path -- rather than building a parallel insight generator. Labeled "focused study time" throughout, not "study time" in general, since it only measures what's actually logged.
 
-- [ ] 🟡 **Streak Display Improvements**
-  - Improve visibility and evaluate a streak-freeze mechanic with clear abuse/edge-case rules.
+- [x] 🟡 **Streak Display Improvements**
+  - Shipped 2026-08-13. `src/lib/streaks.ts` (new, pure, 14 tests): ISO week keys, a new one-freeze-per-week mechanic (abuse case handled: freeze only forgives a gap of exactly one missed day, only once per ISO week, never a larger gap). `cortex_memory.streak_freeze_week` added (live migration).
+  - **Found and fixed a real production bug**: `src/lib/cortex/core.ts` called `trackStudySession()` (writes `lastStudyDate = now`) *before* `updateStreak()`, so `updateStreak`'s own fresh read of `lastStudyDate` was always "today" -- meaning the streak counter could never actually increment through the live Cortex "learn" path. Reordered the two calls. Predates this session.
+  - `src/components/StreakDisplay.tsx` (new): flame icon, count, weekly freeze badge, replacing the old subtle `Metric` tile on the dashboard.
+  - **Also found and fixed**: `focus_sessions` table existed in the live DB with full RLS but had zero writers anywhere in the codebase -- the Focus timer computed session length in-memory and discarded it. Wired the missing insert in `src/app/(app)/focus/page.tsx`; this is also what makes Goals System's progress real instead of empty.
+  - **Unscoped fix found along the way**: `src/app/api/insights/generate/route.js` always inserted the identical hardcoded sentence regardless of any real data, and had zero callers anywhere in the app -- sitting unused next to the real `resolveDeterministicInsight()` engine. Converted to `route.ts`, rewired to build a real snapshot and call that engine instead.
+  - Verified: `tsc --noEmit` clean, full suite green (137 passed).
 
 ---
 
 ## 🟢 Phase 3 — Polish & Experience
 
-- [ ] 🟢 **Subject Progress Visualization**
-  - Show real per-subject progress using existing learning evidence.
+- [x] 🟢 **Subject Progress Visualization**
+  - Already built and live -- not a gap. `DashboardReimagined.tsx`'s "Subjects in motion" section renders `SubjectTile` components (circular progress ring, subject name, completed/total lessons, percentage) sourced from `data.progress.subjects`, i.e. `ProgressService.getSubjectProgress()` computing this from `study_topics`/`subjects`. Verified by reading the live component, not assumed.
 
-- [ ] 🟢 **Dashboard Redesign**
-  - Consolidate mission, progress, streak, challenge and Cortex signals only after the underlying data is reliable.
+- [~] 🟢 **Dashboard Redesign**
+  - Reliability track (loading/error/empty states, timeout handling) already shipped. Two additional passes done 2026-08-13 on direct owner request:
+    - Motion/micro-interaction pass: framer-motion entrance choreography, animated count-up numbers (`src/components/ui/CountUp.tsx`, new), subject progress rings sweeping in on mount, ambient hero animation -- all respecting `prefers-reduced-motion`.
+    - **Real bug fix, not a design opinion**: `DashboardReimagined.css` was the only file in the entire codebase using the `hsl(var(--token))` pattern, which requires tokens defined as bare HSL numbers -- but `globals.css` defines every token as hex/rgba, and `--border` isn't defined at all. `hsl(#7c8cff)` is invalid CSS and the browser silently drops it; this broke nearly every background/border/shadow declaration in the dashboard's own stylesheet, which is why it visually read as flat/monochrome despite a fully-designed accent system underneath. Converted every occurrence to `color-mix(in srgb, var(--X) N%, transparent)` or plain `var(--X)`, with `--border` mapped to the real `--card-border` token. No design values changed -- this restores color that was already coded but never rendering.
+  - Remaining scope (IA consolidation, activity feed, badge progress) is explicitly ChatGPT's lane per `docs/AGENT_WORK_DIVISION.md` ("dashboard redesign and information architecture") and its "Dashboard rule" requiring an approved product direction before restructuring -- not attempted here for that reason, even under the owner's "improve it" request, which was scoped to motion/visual-correctness rather than structure.
 
 - [x] 🟢 **Onboarding Flow**
-  - Current onboarding is a live multi-step flow with API completion/reset and recommendations. Older orphaned step components were removed after verification.
+  - Already built and wired, well beyond the original 3-step spec. Found and removed 6 fully-written, zero-import orphaned step components (older `Step<Name>.tsx` naming convention, 843 lines) left over from an earlier abandoned onboarding implementation. Removed 2026-08-07, verified via `tsc --noEmit`.
 
 - [x] 🟢 **Audio Lessons — Tier 1**
-  - Browser narration and voice commands shipped. Tier 2 cloud TTS/native background behavior remains deferred pending evidence of use.
+  - Shipped, direct owner request. Browser-native narration + hands-free voice commands. Tier 2 (cloud TTS) deliberately deferred pending real Tier 1 usage.
 
-- [ ] 🟢 **Cortex Prompt Quality Improvement**
-  - Improve insight generation using actual subject names, tasks and evidence. Avoid generic/fabricated claims.
+- [x] 🟢 **Cortex Prompt Quality Improvement**
+  - Shipped 2026-08-13. Real target found (`src/lib/cortex/prompts.js` doesn't exist -- the actual live Gemini insight prompt is `buildBehaviorPrompt()` in `src/lib/cortex/runtime/ai-gateway.ts`, confirmed wired via `Cortex.tsx` → `/api/cortex` `behavior.insight`).
+  - The data summary (`buildBehaviorSummary()`) already included real subject names and task counts -- the prompt just never instructed the model to use them. Added an explicit instruction to name an actual subject/task count and an explicit anti-fabrication rule ("never invent a subject, task, number, or streak value not present in the data"), without changing the strict `{"insight":"..."}` output contract `extractInsightFromJson()` depends on.
+  - Verified: `tsc --noEmit` clean, full suite green (137 passed).
 
 ---
 

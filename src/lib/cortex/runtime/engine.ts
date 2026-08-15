@@ -55,6 +55,11 @@ export function buildBehaviorSummary(snapshot: CortexSnapshot, events: CortexEve
       ? Math.round((snapshot.completedTasks / snapshot.totalTasks) * 100)
       : 0;
 
+  const goalLine =
+    snapshot.weeklyGoalMinutes !== undefined
+      ? `\n- Weekly study goal: ${snapshot.goalPercentComplete ?? 0}% complete (${snapshot.minutesThisWeek ?? 0} of ${snapshot.weeklyGoalMinutes} minutes)`
+      : "";
+
   return `
 Student behavioral data:
 - Streak: ${snapshot.streak} days
@@ -62,7 +67,7 @@ Student behavioral data:
 - Total tasks: ${snapshot.totalTasks}, Completed: ${snapshot.completedTasks}, Pending: ${snapshot.pendingTasks}
 - Subjects: ${snapshot.subjects.join(", ") || "none"}
 - Completion rate: ${completionRate}%
-- Recent task titles (last 5): ${snapshot.recentTaskTitles.join(", ") || "none"}
+- Recent task titles (last 5): ${snapshot.recentTaskTitles.join(", ") || "none"}${goalLine}
 - Recent Cortex events: ${formatEvents(events)}
   `.trim();
 }

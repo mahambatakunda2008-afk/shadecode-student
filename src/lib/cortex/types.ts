@@ -79,6 +79,11 @@ export interface CortexSnapshot {
 
   lastExamScore?: number;
   lastExamSubject?: string;
+
+  // Weekly study goal (optional, backwards compatible) -- see src/lib/goals.ts
+  weeklyGoalMinutes?: number;
+  minutesThisWeek?: number;
+  goalPercentComplete?: number;
 }
 
 /* ─────────────────────────────────────────────

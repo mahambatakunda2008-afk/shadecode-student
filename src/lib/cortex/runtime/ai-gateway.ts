@@ -98,6 +98,9 @@ Rules:
 - Never ask questions
 - Never give advice
 - Do not use conversational language
+- Ground the insight in the specific data below: name an actual subject from the "Subjects" list and/or cite a specific task count (total/completed/pending) rather than describing engagement in generic terms
+- Never invent a subject, task, number, or streak value that is not present in the data below
+- If the data is too sparse to say something specific (e.g. no subjects, zero tasks), state that plainly instead of writing a generic filler sentence
 - Keep the response reusable and specific to the provided data
 
 Student behavioral data:

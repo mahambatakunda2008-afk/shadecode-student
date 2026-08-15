@@ -86,6 +86,22 @@ export function resolveDeterministicInsight(context: CortexInsightContext) {
     return "Study activity is concentrated within a single subject.";
   }
 
+  // Weekly study goal progress (optional, backwards compatible -- only
+  // fires when the student has actually set a goal, see src/lib/goals.ts)
+  if (snapshot.weeklyGoalMinutes !== undefined && snapshot.goalPercentComplete !== undefined) {
+    const pct = snapshot.goalPercentComplete;
+    if (pct >= 100) {
+      return "This week's study goal has been reached — nice consistency.";
+    }
+    if (pct >= 50) {
+      return `${pct}% of this week's study goal is complete — on track to finish it.`;
+    }
+    if (pct > 0) {
+      return `${pct}% of this week's study goal is complete so far.`;
+    }
+    return "No focused study time logged toward this week's goal yet.";
+  }
+
   // Curriculum-aware deterministic insight (fallback)
   if ((snapshot as any).curriculumCompletionPercent !== undefined) {
     const pct = (snapshot as any).curriculumCompletionPercent;
