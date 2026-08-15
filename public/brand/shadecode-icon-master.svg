@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Shadecode Student app icon</title>
+  <desc id="desc">A bold geometric S mark in vivid cyan on a deep navy field.</desc>
+  <rect width="512" height="512" fill="#0B0D12"/>
+  <path d="M 327 168
+           C 327 137 293 120 256 120
+           C 208 120 174 144 174 185
+           C 174 222 205 239 256 253
+           C 307 266 338 283 338 321
+           C 338 361 304 385 256 385
+           C 215 385 181 368 181 338"
+        fill="none" stroke="#3FC8FF" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

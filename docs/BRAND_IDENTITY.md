@@ -35,9 +35,8 @@ The construction is deliberately simple enough to survive reduction to small siz
 
 ## Colour system
 
-- Deep Navy: `#06111F`
-- Primary Blue: `#2563EB`
-- Electric Cyan: `#38BDF8`
+- Deep Navy: `#0B0D12`
+- Electric Cyan: `#3FC8FF`
 - Light wordmark: `#F8FAFC`
 
 The app icon avoids gradients. This keeps the silhouette crisp and reduces visual clutter at small sizes.

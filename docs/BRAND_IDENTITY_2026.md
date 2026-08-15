@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented in `shadecode-student` main on 15 August 2026.
+Implemented in `shadecode-student` main on 15 August 2026. Mark geometry redrawn 15 August 2026 (Claude, direct owner request): the previous "ribbon S" (a flowing organic shape with a two-tone accent bar) is exactly the "twisted/ribbon-like S geometry" this doc's own "Do not regress" section already warned against -- it read as an unintentional artifact rather than a designed accent, especially at small size and at a distance. Replaced with a single-stroke, mathematically symmetric geometric S (one weight, one colour, round joins), verified against the W3C maskable-icon safe zone and at both 40px and 512px render sizes before shipping. No other change to the identity direction -- same S concept, same colour family, executed with tighter geometric discipline.
 
 ## Canonical identity
 
@@ -27,8 +27,9 @@ The goal is to make Shadecode recognizable before the user reads the name.
 ## Canonical assets
 
 - `public/brand/shadecode-mark.svg` - transparent master for navbar, favicon, footer, hero, and general brand use.
-- `public/brand/shadecode-app-icon.svg` - square master for PWA/app surfaces and maskable contexts.
-- `public/brand/shadecode-logo.svg` - full wordmark lockup.
+- `public/brand/shadecode-icon-master.svg` - full-bleed square master used to generate all PWA/platform/maskable icon raster exports.
+- `public/brand/shadecode-app-icon.svg` - rounded-tile square version of the same mark, for marketing/docs/store-listing contexts that want the icon already on its own tile.
+- `public/brand/shadecode-student-logo.svg` - full wordmark lockup.
 
 SVG is the source of truth. Raster exports must be generated from these masters rather than independently redrawn.
 
@@ -45,9 +46,8 @@ The app icon must:
 
 ## Brand colours
 
-- Deep navy: `#06111F`
-- Primary blue: `#2563EB`
-- Cyan accent: `#38BDF8`
+- Deep navy: `#0B0D12`
+- Cyan accent: `#3FC8FF`
 
 The colour treatment is secondary to the silhouette. The mark must remain strong without the gradient.
 
