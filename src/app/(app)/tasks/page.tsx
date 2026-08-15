@@ -7,6 +7,9 @@ import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { emitStudySessionStarted, emitStudySessionFinished } from "@/lib/events";
 import { awardXPClient } from "@/lib/xp/manager";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
+import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
+
+const FETCH_TIMEOUT_MS = 15000;
 
 interface Subject {
   id: string;
@@ -29,30 +32,48 @@ export default function Tasks() {
   const [xp, setXp] = useState(0);
   const [level, setLevel] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
 
-      const [{ data: subjectsData }, { data: tasksData }, { data: profileData }] = await Promise.all([
-        supabase.from("subjects").select("*").eq("user_id", user.id),
-        supabase.from("tasks").select("*").eq("user_id", user.id),
-        supabase.from("profiles").select("xp, level").eq("id", user.id).single(),
-      ]);
+      const [{ data: subjectsData }, { data: tasksData }, { data: profileData }] = await withTimeout(
+        Promise.all([
+          supabase.from("subjects").select("*").eq("user_id", user.id),
+          supabase.from("tasks").select("*").eq("user_id", user.id),
+          supabase.from("profiles").select("xp, level").eq("id", user.id).single(),
+        ]),
+        FETCH_TIMEOUT_MS,
+        "Loading your tasks timed out"
+      );
 
       setSubjects(subjectsData || []);
       setTasks(tasksData || []);
       setXp(profileData?.xp || 0);
       setLevel(profileData?.level || 1);
+    } catch (err) {
+      setLoadError(
+        err instanceof TimeoutError
+          ? "This is taking longer than expected. Please try again."
+          : "Could not load your tasks. Please try again."
+      );
+    } finally {
       setLoading(false);
-    };
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, supabase]);
 
   const showToast = (msg: string) => {
@@ -198,6 +219,26 @@ export default function Tasks() {
   if (loading) return (
     <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--muted-foreground)" }}>
       Loading...
+    </div>
+  );
+
+  if (loadError) return (
+    <div style={{ padding: "32px 24px", textAlign: "center" }}>
+      <p style={{ color: "#ef4444", fontSize: 14, marginBottom: 12 }}>{loadError}</p>
+      <button
+        onClick={fetchData}
+        style={{
+          padding: "8px 16px",
+          borderRadius: 10,
+          border: "1px solid var(--card-border)",
+          background: "var(--card)",
+          color: "inherit",
+          fontSize: 13,
+          cursor: "pointer",
+        }}
+      >
+        Retry
+      </button>
     </div>
   );
 

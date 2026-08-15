@@ -5,7 +5,10 @@ import Link from "next/link";
 import { BookOpen, ArrowRight, CheckCircle2, Lock, TrendingUp, Clock, Zap } from "lucide-react";
 import CurriculumProgressCard from "@/components/CurriculumProgressCard";
 import LearningJourney from "@/components/LearningJourney";
+import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
 import type { CurriculumState, LessonRow } from "@/lib/curriculum";
+
+const FETCH_TIMEOUT_MS = 15000;
 
 interface Subject { id: string; name: string; }
 
@@ -14,16 +17,22 @@ export default function CurriculumPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const retry = () => setReloadToken((n) => n + 1);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setError(null);
 
-    Promise.all([
-      fetch("/api/curriculum").then((res) => res.json()),
-      fetch("/api/learn").then((res) => res.json()),
-    ])
+    withTimeout(
+      Promise.all([
+        fetch("/api/curriculum").then((res) => res.json()),
+        fetch("/api/learn").then((res) => res.json()),
+      ]),
+      FETCH_TIMEOUT_MS,
+      "Loading your curriculum timed out"
+    )
       .then(([curriculumData, learnData]) => {
         if (mounted) {
           setState(curriculumData?.state ?? null);
@@ -31,7 +40,13 @@ export default function CurriculumPage() {
         }
       })
       .catch((err) => {
-        if (mounted) setError(err instanceof Error ? err.message : "Failed to load curriculum");
+        if (mounted) {
+          setError(
+            err instanceof TimeoutError
+              ? "This is taking longer than expected. Please try again."
+              : err instanceof Error ? err.message : "Failed to load curriculum"
+          );
+        }
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -40,7 +55,7 @@ export default function CurriculumPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [reloadToken]);
 
   /* ── Loading state ── */
   if (loading) {
@@ -64,7 +79,21 @@ export default function CurriculumPage() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)", marginBottom: 12 }}>Curriculum</h1>
           <div style={{ padding: 20, borderRadius: 18, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
-            <p style={{ color: "#fca5a5", margin: 0 }}>{error}</p>
+            <p style={{ color: "#fca5a5", margin: "0 0 12px" }}>{error}</p>
+            <button
+              onClick={retry}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 10,
+                border: "1px solid rgba(239,68,68,0.3)",
+                background: "transparent",
+                color: "#fca5a5",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
