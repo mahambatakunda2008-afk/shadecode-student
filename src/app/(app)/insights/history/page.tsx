@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, Clock, AlertCircle, RefreshCw, ArrowLeft } from "lucide-react";
+import { BrainCircuit, Clock, AlertCircle, RefreshCw, ArrowLeft, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/async/fetchWithTimeout";
+import { summarizeMostFrequentPattern } from "@/lib/insights/patternSummary";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,31 @@ function EmptyState() {
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Dashboard
       </Link>
+    </div>
+  );
+}
+
+// ─── Pattern summary ─────────────────────────────────────────────────────────
+// Deliberately a plain recurring-word count, not an AI claim -- see
+// src/lib/insights/patternSummary.ts for the reasoning. Renders nothing
+// when there isn't enough data to honestly call something a pattern.
+
+function PatternSummaryBanner({ insights }: { insights: Insight[] }) {
+  const pattern = summarizeMostFrequentPattern(insights);
+  if (!pattern) return null;
+
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-xl mb-6
+      bg-indigo-500/[0.06] border border-indigo-500/15">
+      <div className="w-8 h-8 rounded-lg bg-indigo-500/15
+        flex items-center justify-center flex-shrink-0">
+        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+      </div>
+      <p className="text-[12.5px] text-white/60 leading-relaxed">
+        <span className="text-white/85 font-semibold">"{pattern.theme}"</span>{" "}
+        is your most frequent theme lately — it came up in {pattern.count} of
+        your last {pattern.totalInsights} insights.
+      </p>
     </div>
   );
 }
@@ -231,6 +257,10 @@ export default function InsightHistoryPage() {
         )}
 
         {!loading && !error && insights.length === 0 && <EmptyState />}
+
+        {!loading && !error && insights.length > 0 && (
+          <PatternSummaryBanner insights={insights} />
+        )}
 
         {/* ── Insight groups ── */}
         {!loading && !error && weekKeys.length > 0 && (

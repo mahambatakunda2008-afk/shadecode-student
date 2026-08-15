@@ -14,6 +14,7 @@ import {
   Settings,
   Award,
   GraduationCap,
+  Route,
   FileText,
   UploadCloud,
   ClipboardCheck,
@@ -48,6 +49,7 @@ export const NAV_ITEMS = {
   mathChecker: { href: "/math-checker", label: "Math", icon: Calculator },
   cortexVerify: { href: "/cortex-verify", label: "Cortex Verify", icon: Sparkles, badge: "New" },
   timetable: { href: "/timetable", label: "Timetable", icon: Calendar },
+  studyPlan: { href: "/study-plan", label: "Study Plan", icon: Route },
   analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
   leaderboard: { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   cortex: { href: "/insights/history", label: "Cortex", icon: BrainCircuit },
@@ -76,7 +78,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
 export const SIDEBAR_GROUPS: NavGroup[] = [
   {
     group: "Core",
-    items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.study, NAV_ITEMS.timetable],
+    items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.study, NAV_ITEMS.timetable, NAV_ITEMS.studyPlan],
   },
   {
     group: "Practice",
@@ -103,6 +105,7 @@ export const BOTTOM_PRIMARY: NavItem[] = [
 
 export const BOTTOM_MORE: NavItem[] = [
   NAV_ITEMS.timetable,
+  NAV_ITEMS.studyPlan,
   NAV_ITEMS.study,
   NAV_ITEMS.exams,
   NAV_ITEMS.examSim,
