@@ -6,13 +6,19 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0f0f24",
-  "theme_color": "#6366f1",
+  "background_color": "#06111F",
+  "theme_color": "#2563EB",
   "orientation": "any",
   "dir": "ltr",
   "lang": "en",
   "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "/brand/shadecode-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -27,51 +33,15 @@
     }
   ],
   "screenshots": [
-    {
-      "src": "/screenshots/login.png",
-      "sizes": "800x1378",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/dashboard.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/learn.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/topic.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/questions.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/mathdesktop.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/math.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/timetable.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/settings.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    }
+    { "src": "/screenshots/login.png", "sizes": "800x1378", "type": "image/png" },
+    { "src": "/screenshots/dashboard.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/learn.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/topic.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/questions.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/mathdesktop.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/math.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/timetable.png", "sizes": "1080x1920", "type": "image/png" },
+    { "src": "/screenshots/settings.png", "sizes": "1080x1920", "type": "image/png" }
   ],
   "privacy_policy_url": "https://shadecodestudent.vercel.app/privacy.html",
   "categories": ["education", "productivity"],
