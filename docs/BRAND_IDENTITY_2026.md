@@ -19,8 +19,9 @@ Shadecode Student uses the shared Shadecode brand mark: the blue gradient S-form
 
 ## Current assets
 
-- `public/brand/shadecode-mark.svg` - canonical mark.
-- PWA metadata references the canonical mark.
+- `public/brand/shadecode-mark.svg` - canonical transparent mark for navigation, favicon, hero, and general brand use.
+- `public/brand/shadecode-app-icon.svg` - square dark-background app icon master for PWA/app surfaces and maskable use.
+- PWA metadata references the canonical app icon and mark.
 - Landing page references the canonical mark directly.
 - Navigation/sidebar branding uses the canonical mark.
 
@@ -41,7 +42,9 @@ The landing page keeps the existing product positioning but improves brand recog
 
 ## App/store packaging
 
-SVG is the canonical master. Before final Microsoft Store / Android package submission, export the master into the required raster sizes and platform-specific formats. Do not redraw the icon separately for each platform.
+The SVG masters are the source of truth. The square app-icon master has a dark background and generous safe area so the same mark remains legible on app surfaces and maskable PWA contexts.
+
+The repository now uses the SVG app icon directly for PWA metadata rather than relying on an older unrelated raster icon. Platform-specific raster exports should still be generated from this master before final Microsoft Store, Android, or Apple package submission.
 
 Recommended export set:
 
