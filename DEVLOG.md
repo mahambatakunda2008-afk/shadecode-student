@@ -224,3 +224,116 @@ What *is* honestly achievable and was shipped: voice commands ("next", "repeat",
 **Verification:** `tsc --noEmit` clean, full vitest suite (71 passed, up from 58 -- 13 new tests across the two pure audio modules).
 
 ---
+
+## 2026-08-13 — Insight History pattern summary (Phase 1 close-out)
+
+Picked up from `.cortex/tasks.md` as the smallest remaining Phase 1 gap. The page (`src/app/(app)/insights/history/page.tsx`) was already fully built; the one documented placeholder was the "most frequent pattern" summary block.
+
+Built as a pure, tested function rather than an AI call — `summarizeMostFrequentPattern()` counts meaningful words recurring across a user's stored `cortex_insights` rows (at most once per insight, stopword-filtered), and returns `null` when there isn't enough data to honestly call something a pattern (fewer than 3 insights, or nothing recurring in 2+ of them). Matches this codebase's established stance against overclaimed precision (same reasoning as `retentionRisk.ts`).
+
+**Shipped:**
+- `src/lib/insights/patternSummary.ts` (new)
+- `src/lib/insights/__tests__/patternSummary.test.ts` (new, 6 tests)
+- `src/app/(app)/insights/history/page.tsx`: added `PatternSummaryBanner`, rendered above the weekly groups when a pattern exists.
+
+**Verification:** `tsc --noEmit` clean, full vitest suite (112 passed).
+
+Phase 1 is now fully closed except the Scheduling Engine's full user-facing wiring (goal-capture UI, `study_plans` persistence table, API route, page) — up next.
+
+## 2026-08-13, continued — Scheduling Engine wiring (Phase 1 fully closed)
+
+Picked up the last item from `docs/BLUEPRINT_GAP_MATRIX.md`'s Scheduling Engine completion plan: the dormant `src/lib/studyPlan/generator.ts` (real weighted algorithm, fabrication already fixed 2026-08-08) had no persistence, no API route, and no page.
+
+**Schema decision made against the live DB, not assumed:** queried `profiles`, `exams`, and `topic_mastery` columns directly before designing `study_plans` — confirmed `profiles.subjects` and `profiles.daily_goal_minutes` exist and are usable for form prefill, and confirmed no per-subject exam-board/level mapping exists anywhere (`profiles.study_level` is one value for the whole student, not per subject). That ruled out wiring curriculum-coverage-based "fresh topic" hints this pass — doing so would mean guessing a board per subject rather than using real data, the same fabrication mistake this codebase has already been burned by twice. Left it to `generateStudyPlan()`'s existing honest generic fallback instead.
+
+**Shipped:**
+- `study_plans` table, applied directly to the live Supabase project via the Supabase MCP connector (`apply_migration`, confirmed created via follow-up `information_schema` query): `user_id`, goal columns, `plan jsonb`, `is_active`. RLS: single `auth.uid() = user_id` policy, same shape as `exams`/`cortex_insights`.
+- `src/app/api/study-plan/route.ts` (new): `GET` (active plan or null), `POST` (validates goals server-side, computes real `topicHints.weak` from `topic_mastery` scoped to the submitted subjects and a `mastery_score < 60` cutoff, calls `generateStudyPlan()`, deactivates the prior plan, persists the new one).
+- `src/app/(app)/study-plan/page.tsx` (new): goal-capture form prefilled from the student's own profile data, handing off to the already-built `StudyPlanDisplay` component once a plan exists. Regenerate option to replace an active plan.
+- `src/lib/navigation.ts`: `studyPlan` nav item added to the `Core` sidebar group and `BOTTOM_MORE`.
+
+**Verification:** `tsc --noEmit` clean, full vitest suite (112 passed, no regressions — no new tests needed here since the tested logic, `generateStudyPlan`/`selectSessionTopic`, was already covered on 2026-08-08; this pass is wiring, not new algorithmic logic).
+
+Phase 1 (`.cortex/tasks.md`) is now fully closed. Next up: Phase 2 — Goals System, Streak Display Improvements.
+
+## 2026-08-13, continued — self-audit caught duplication in the Study Plan page
+
+Re-ran the "search before creating" check against my own prior turn's work (per the standing instruction to treat this as a mandatory step, not a one-time audit). Found `src/components/StudyGoalInput.tsx` — a pre-built, fully-styled goal-capture form (target grade, exam date, hours/week, free-text subject add/remove, priority toggling) with zero callers anywhere in the repo. `src/app/(app)/study-plan/page.tsx` had hand-rolled an inline form doing the same job.
+
+Rewrote the page to import and use `StudyGoalInput` instead, dropped the duplicate inline form and its ~10 pieces of local state. Subject prefill from `profiles.subjects` now flows in via `initialGoals`. Behavior for the student is unchanged; the duplication is gone.
+
+**Verified:** `tsc --noEmit` clean.
+
+No new duplication found elsewhere in the current Phase 2 scope (`StreakDisplay`, `GoalTracker`, `SubjectProgress` all confirmed absent from the repo before starting).
+
+## 2026-08-13, continued — Phase 2 (Goals System + Streak Display), plus two real bugs found along the way
+
+Picked up both remaining Phase 2 items together since they turned out to share a dependency: Goals System's weekly progress needed *some* real per-session, timestamped study-duration log to compute against, and none existed anywhere in the codebase.
+
+**Bug #1 -- streak counter could never increment.** While refactoring `updateStreak()` onto the new pure `src/lib/streaks.ts` module, traced the exact call order in `src/lib/cortex/core.ts`: `trackStudySession()` (writes `lastStudyDate = now`) ran *before* `updateStreak()`. Since `updateStreak` re-fetches memory fresh, its own `lastStudyDate` read was therefore always "today," so it always took the "already studied today, no change" branch. The streak counter has likely never actually incremented through the live Cortex "learn" path. Fixed by reordering the two calls. Verified by direct code inspection, not assumed; predates this session.
+
+**Bug #2 -- `focus_sessions` had full RLS and zero writers.** Repo-wide search confirmed nothing read or wrote this table anywhere; the Focus timer computed session length in-memory, awarded XP inline on `profiles`, and discarded the duration. This is exactly the "complete it instead of duplicating it" case -- wired the missing insert (`src/app/(app)/focus/page.tsx`) rather than building a new table, which is what made Goals System's weekly progress a real number instead of a fabricated one.
+
+**Bug #3 -- `/api/insights/generate` was fabricated and dead.** While wiring "Cortex mentions goal progress" into an insight, found this route: `.js` (not `.ts`, silently shadowing the TS convention this codebase has been burned by before), always inserted the identical hardcoded sentence regardless of any real data, and had zero callers anywhere in the app. Sitting right next to it, unused: `resolveDeterministicInsight()` in `runtime/templates.ts`, a fully-built rule engine designed for exactly this. Rewrote the route (as `.ts`) to build a real snapshot and call the existing engine instead of inventing a fourth parallel one. Added a new goal-progress rule to that engine as part of the same change, so it serves the Goals System requirement too.
+
+**Shipped:**
+- `src/lib/streaks.ts` + 14 tests (freeze mechanic, ISO week keys, gap/increment rules)
+- `src/lib/goals.ts` + 11 tests (week boundary, progress calc, validation)
+- `src/app/api/goals/route.ts`, `src/components/GoalTracker.tsx`
+- `src/components/StreakDisplay.tsx`, wired into `DashboardReimagined.tsx` in place of the old subtle streak `Metric` tile
+- `cortex_memory.streak_freeze_week`, `profiles.weekly_goal_minutes` -- both live migrations, applied directly to the production Supabase project
+- `src/app/api/insights/generate/route.ts` (replacing the fabricated `.js` version)
+- `src/lib/cortex/types.ts`: `CortexSnapshot` extended with optional `weeklyGoalMinutes`/`minutesThisWeek`/`goalPercentComplete`
+
+**Also corrected from the previous session:** `src/app/(app)/study-plan/page.tsx` had a hand-rolled goal-capture form duplicating the already-built, zero-caller `StudyGoalInput.tsx`. Rewired to use the real component instead.
+
+**Verification:** `tsc --noEmit` clean. Full vitest suite: 137 passed (up from 112 -- 25 new tests across `streaks.ts` and `goals.ts`), no regressions.
+
+**Known architecture smell, not fixed, documented instead:** there are now three separate "snapshot/context" abstractions in the Cortex subsystem (`CortexSnapshot`/`runtime/templates.ts`, `IntelligenceContext`/`intelligence.ts`, and an inline shape in `generatePlan.ts`/`cortex.ts`). Consolidating them is a real future task but too large and too risky to attempt as a side effect of Phase 2 -- flagging it here rather than silently leaving it undocumented.
+
+Phase 2 (`.cortex/tasks.md`) is now fully closed. Next up: Phase 3 -- Subject Progress Visualization, Dashboard Redesign (visual pass), Cortex Prompt Quality.
+
+## 2026-08-13, continued — Phase 3 (Subject Progress + Cortex Prompt Quality; Dashboard Redesign deferred to ChatGPT)
+
+Checked all three remaining `[ ]` Phase 3 items before writing anything.
+
+**Subject Progress Visualization -- already fully built, not a gap.** `DashboardReimagined.tsx`'s "Subjects in motion" section already renders `SubjectTile` components (circular progress ring, subject name, completed/total lessons, percent) sourced from `data.progress.subjects` -- which is `ProgressService.getSubjectProgress()` in `src/lib/student-intelligence/services/progress.ts`, already computing exactly this from `study_topics`/`subjects` via the curriculum module. Building `SubjectProgress.jsx` as the task's file target suggested would have been this codebase's 4th documented duplication incident. Marked `[x]` instead.
+
+**Dashboard Redesign -- deliberately not touched.** `docs/AGENT_WORK_DIVISION.md` explicitly assigns "dashboard redesign and information architecture" to ChatGPT, with a "Dashboard rule" requiring an approved product direction before restructuring. The reliability half of this task was already shipped in an earlier session; the remaining IA/consolidation scope is out of Claude's lane per the standing coordination contract, not a technical gap. Marked `[~]` (partial/deferred, not `[x]`) rather than silently skipping it.
+
+**Cortex Prompt Quality Improvement -- shipped.** The task's listed file (`src/lib/cortex/prompts.js`) doesn't exist; the real, live Gemini insight prompt is `buildBehaviorPrompt()` in `src/lib/cortex/runtime/ai-gateway.ts`, confirmed wired end-to-end (`Cortex.tsx` → `/api/cortex` `behavior.insight` → this function). The underlying data summary (`buildBehaviorSummary()`) already included real subject names and task counts -- the actual gap was that the prompt never told the model to use them, so output could stay generic despite having specific data on hand.
+
+Added to the prompt: explicit instruction to name an actual subject and/or task count, and an explicit anti-fabrication rule ("never invent a subject, task, number, or streak value not present in the data") -- consistent with this codebase's standing no-fabrication principle, now extended into prompt engineering itself. Left the strict `{"insight":"..."}` JSON output contract untouched since `extractInsightFromJson()` depends on it exactly. Also added an optional weekly-goal-progress line to `buildBehaviorSummary()` for parity with the deterministic engine's goal-progress rule from the earlier Phase 2 work.
+
+**Verification:** `tsc --noEmit` clean, full suite green (137 passed, no regressions).
+
+All Claude-scoped Phase 1-3 tasks in `.cortex/tasks.md` are now closed. Remaining open items across all phases: `tasks`/`curriculum` pages' unbounded `Promise.all` (documented, lower priority), the RLS anonymous-insert verification gap (documented, low stakes), Scheduling Engine's `topicHints.fresh` (documented, needs a schema decision), Audio Lessons Tier 2 (deliberately deferred), and Dashboard Redesign's IA scope (ChatGPT's lane). No fabricated or dead-code items known to remain after this session's three bug/fabrication fixes (streak increment, focus_sessions writer, insights/generate route).
+
+## 2026-08-13, continued — Dashboard motion/polish pass (direct owner request)
+
+Owner explicitly asked for the dashboard to be more impressive. This satisfies `docs/AGENT_WORK_DIVISION.md`'s "Dashboard rule" ("needs an approved product direction before restructuring") -- but scoped this as a motion/micro-interaction pass, not an information-architecture change, since IA/redesign remains ChatGPT's documented lane. No sections were added, removed, or reordered; no data model or copy changed.
+
+**What changed, and why each one:**
+- Framer-motion entrance choreography (`framer-motion` was already a listed dependency with zero prior usage anywhere in the repo -- confirmed via search): header, hero, streak/goal row, momentum strip, subject grid, and each main-column section stagger in with a fade + slight rise on mount, instead of appearing instantly. Respects `prefers-reduced-motion` via a `useReducedMotionSafe()` hook that falls back to static variants.
+- `src/components/ui/CountUp.tsx` (new): reusable count-up hook. Momentum metric values (Progress %, Average %, Cortex queue count) and the header's "Study rhythm" minutes now animate from their previous value to the new one instead of snapping -- also respects reduced motion.
+- Subject progress rings (`SubjectTile`) now sweep from 0 to their real percentage on mount via a `requestAnimationFrame`-triggered second render plus a CSS `@property --progress` transition, rather than appearing already-filled. Genuinely animates on future data changes too, not just mount.
+- Hero orb gets a slow ambient breathing animation (7s, subtle scale+drift) instead of sitting static; the "live" status dot gets a soft expanding ping ring, both suppressed under reduced motion.
+- Momentum metric tiles get a hover lift + border glow, matching the existing subject-tile/row hover language instead of being the one static element on the page.
+
+**Deliberately not done:** any change to layout, section order, copy, or data shown -- that's the IA line this session stayed on the technical side of. Also did not touch color tokens or typography scale, which were already well-considered (accent-driven glass cards, conic-gradient rings, ambient gradients) -- the gap was motion and liveliness, not the underlying token system.
+
+**Verified:** `tsc --noEmit` clean, full suite green (137 passed, unchanged from before this pass -- no test coverage for animation timing itself, which is expected/appropriate).
+
+## 2026-08-13, continued — the real reason the dashboard looked black and white
+
+Owner's feedback after the motion pass: "it was just black and white." That's not a subjective design complaint -- it's the exact, precise symptom of a real CSS bug, found and fixed.
+
+**Root cause:** `DashboardReimagined.css` used the `hsl(var(--token))` pattern throughout (e.g. `hsl(var(--card)/.66)`, `hsl(var(--primary)/.09)`, `hsl(var(--border))`) -- the standard shadcn/ui convention, which requires design tokens to be defined as bare HSL number triplets (e.g. `--primary: 221 83% 53%`). But `src/app/globals.css` defines every token as a hex or rgba string instead (`--primary: #7c8cff`, `--card: rgba(18, 22, 31, 0.82)`), and never defines `--border` at all (only `--card-border`). `hsl(#7c8cff)` and `hsl(undefined)` are both invalid CSS -- the browser silently drops the whole declaration. Verified via a repo-wide search that this pattern (`hsl(var(--`) appears in exactly one file in the entire codebase -- this one. Every other component already correctly uses `var(--token)` directly, matching the real hex/rgba convention.
+
+Practical effect: nearly every background, border, and shadow color declaration in the dashboard's own stylesheet was invalid and never applied -- leaving default/inherited black-on-white (or white-on-black) rendering for most of the page, while only the inline accent-driven pieces (subject colors, hero accent) partially survived because they're fed through `color-mix()` with a real hex custom property set directly via React `style`.
+
+**Fix:** systematic conversion of every `hsl(var(--X) / N)` to `color-mix(in srgb, var(--X) N%, transparent)` (matching the technique already used correctly elsewhere in the same file for accent variables), and every plain `hsl(var(--X))` to `var(--X)`. `--border` specifically mapped to the real, already-used `--card-border` token. Zero changes to the color values themselves or the design -- this restores the colors and depth that were already designed and coded, just never actually rendering.
+
+**Verified:** `tsc --noEmit` clean, full suite green (137 passed, unaffected -- this was a pure CSS fix). Paren/brace balance checked programmatically before shipping given the scale of the regex-based edit (30+ occurrences across one file).
+
+This also means the earlier "not impressive" feedback and this session's whole motion pass were both operating on top of a dashboard that was silently rendering with most of its color system broken -- the motion/liveliness additions were real and correct, but this fix is what actually restores the visual richness (ambient gradients, glass cards, accent-tinted borders and shadows) the CSS was already designed to produce.
