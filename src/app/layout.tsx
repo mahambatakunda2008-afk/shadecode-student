@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ServiceWorkerRegistrar from "@/components/shared/ServiceWorkerRegistrar";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
 import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MuiThemeProvider>
             <BandwidthProvider>
               {children}
+              <ServiceWorkerRegistrar />
               <OfflineShell />
               <PWAInstallPrompt />
               <Analytics />
