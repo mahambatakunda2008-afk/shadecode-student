@@ -13,9 +13,13 @@ import {
   Target,
   WifiOff,
   Zap,
+  type LucideIcon,
 } from "lucide-react";
 
 const BRAND = "/brand/shadecode-mark.svg";
+
+type Feature = [LucideIcon, string, string, string];
+type TrustItem = [LucideIcon, string, string];
 
 function GlobalStyles() {
   return (
@@ -61,15 +65,13 @@ function Badge({ children }: { children: React.ReactNode }) {
 function Nav() {
   return <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:20, height:68, padding:"0 24px", display:"flex", alignItems:"center", justifyContent:"space-between", background:"rgba(7,7,13,.84)", backdropFilter:"blur(18px)", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
     <Link href="/" style={{ textDecoration:"none" }}><Brand compact /></Link>
-    <div className="nav-links" style={{ display:"flex", gap:28 }}>
-      <a className="nav-link" href="#intelligence">Intelligence</a><a className="nav-link" href="#features">Features</a><a className="nav-link" href="#future">The future</a><a className="nav-link" href="#faq">FAQ</a>
-    </div>
+    <div className="nav-links" style={{ display:"flex", gap:28 }}><a className="nav-link" href="#intelligence">Intelligence</a><a className="nav-link" href="#features">Features</a><a className="nav-link" href="#future">The future</a><a className="nav-link" href="#faq">FAQ</a></div>
     <div style={{ display:"flex", gap:8 }}><Link href="/auth/login" className="secondary" style={{ padding:"9px 15px", fontSize:13 }}>Sign in</Link><Link href="/auth/signup" className="primary" style={{ padding:"9px 15px", fontSize:13 }}>Get started</Link></div>
   </nav>;
 }
 
 function IntelligencePanel() {
-  const stats = [["Maths","72%"],["Physics","51%"],["Trigonometry","38%"]];
+  const stats: Array<[string, string]> = [["Maths","72%"],["Physics","51%"],["Trigonometry","38%"]];
   return <div className="float card" style={{ padding:20, maxWidth:500, width:"100%", background:"rgba(10,10,20,.9)", boxShadow:"0 30px 90px rgba(0,0,0,.55),0 0 70px rgba(37,99,235,.12)" }}>
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}><div style={{ display:"flex", alignItems:"center", gap:9 }}><BrainCircuit size={20} color="#60a5fa"/><strong style={{ color:"#bfdbfe" }}>Cortex Learning State</strong></div><span style={{ width:9,height:9,borderRadius:"50%",background:"#22c55e",animation:"pulse 2s infinite" }}/></div>
     <div className="stats" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:12 }}>{stats.map(([name,value])=><div key={name} style={{ padding:12,borderRadius:12,background:"rgba(255,255,255,.035)",border:"1px solid rgba(255,255,255,.06)" }}><small style={{ color:"#64748b" }}>{name}</small><div style={{ color:"#60a5fa",fontWeight:900,fontSize:20,marginTop:3 }}>{value}</div><div style={{ height:4,background:"rgba(255,255,255,.06)",borderRadius:99,marginTop:7 }}><div style={{ width:value,height:"100%",background:"#2563eb",borderRadius:99 }}/></div></div>)}</div>
@@ -79,21 +81,7 @@ function IntelligencePanel() {
 }
 
 function Hero() {
-  return <section className="grid" style={{ minHeight:"100vh",padding:"135px 24px 85px",position:"relative",overflow:"hidden" }}>
-    <div style={{ position:"absolute",width:500,height:500,borderRadius:"50%",left:"4%",top:"15%",background:"radial-gradient(circle,rgba(37,99,235,.18),transparent 68%)",filter:"blur(30px)",pointerEvents:"none" }}/>
-    <div style={{ position:"absolute",width:550,height:550,borderRadius:"50%",right:0,bottom:0,background:"radial-gradient(circle,rgba(96,165,250,.12),transparent 68%)",filter:"blur(35px)",pointerEvents:"none" }}/>
-    <div className="hero rise" style={{ maxWidth:1180,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:70,alignItems:"center",position:"relative" }}>
-      <div className="hero-copy" style={{ display:"flex",flexDirection:"column",alignItems:"flex-start",gap:22 }}>
-        <Brand />
-        <Badge><BrainCircuit size={14}/> Learning intelligence, not just AI chat</Badge>
-        <h1 style={{ fontSize:"clamp(2.8rem,6vw,5rem)",lineHeight:1.02,letterSpacing:"-.045em",fontWeight:950,color:"#f8fafc" }}>A learning system that <span className="gradient">learns how you learn.</span></h1>
-        <p style={{ color:"#94a3b8",fontSize:"clamp(1rem,1.7vw,1.2rem)",lineHeight:1.75,maxWidth:560 }}>Lessons, questions, mistakes, exams, revision and study behaviour become one evolving learning experience, built with Cambridge and ZIMSEC learners in mind.</p>
-        <div className="cta" style={{ display:"flex",gap:10,flexWrap:"wrap" }}><Link href="/auth/signup" className="primary">Start studying free <ArrowRight size={17}/></Link><Link href="#intelligence" className="secondary">See how it works</Link></div>
-        <p style={{ color:"#475569",fontSize:12 }}>Free to start · PWA · Designed for imperfect connectivity</p>
-      </div>
-      <div style={{ display:"flex",justifyContent:"center" }}><IntelligencePanel/></div>
-    </div>
-  </section>;
+  return <section className="grid" style={{ minHeight:"100vh",padding:"135px 24px 85px",position:"relative",overflow:"hidden" }}><div style={{ position:"absolute",width:500,height:500,borderRadius:"50%",left:"4%",top:"15%",background:"radial-gradient(circle,rgba(37,99,235,.18),transparent 68%)",filter:"blur(30px)",pointerEvents:"none" }}/><div style={{ position:"absolute",width:550,height:550,borderRadius:"50%",right:0,bottom:0,background:"radial-gradient(circle,rgba(96,165,250,.12),transparent 68%)",filter:"blur(35px)",pointerEvents:"none" }}/><div className="hero rise" style={{ maxWidth:1180,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:70,alignItems:"center",position:"relative" }}><div className="hero-copy" style={{ display:"flex",flexDirection:"column",alignItems:"flex-start",gap:22 }}><Brand/><Badge><BrainCircuit size={14}/> Learning intelligence, not just AI chat</Badge><h1 style={{ fontSize:"clamp(2.8rem,6vw,5rem)",lineHeight:1.02,letterSpacing:"-.045em",fontWeight:950,color:"#f8fafc" }}>A learning system that <span className="gradient">learns how you learn.</span></h1><p style={{ color:"#94a3b8",fontSize:"clamp(1rem,1.7vw,1.2rem)",lineHeight:1.75,maxWidth:560 }}>Lessons, questions, mistakes, exams, revision and study behaviour become one evolving learning experience, built with Cambridge and ZIMSEC learners in mind.</p><div className="cta" style={{ display:"flex",gap:10,flexWrap:"wrap" }}><Link href="/auth/signup" className="primary">Start studying free <ArrowRight size={17}/></Link><Link href="#intelligence" className="secondary">See how it works</Link></div><p style={{ color:"#475569",fontSize:12 }}>Free to start · PWA · Designed for imperfect connectivity</p></div><div style={{ display:"flex",justifyContent:"center" }}><IntelligencePanel/></div></div></section>;
 }
 
 function IntelligenceSection() {
@@ -102,8 +90,8 @@ function IntelligenceSection() {
 }
 
 function Features() {
-  const features = [[BrainCircuit,"Cortex","Learning intelligence","Weak-area signals, insights and recommendations become part of a persistent learning state."],[Calculator,"Math Checker","Learn from your mistakes","Upload handwritten work and get step-level feedback that explains where the reasoning went wrong."],[Target,"Exam Simulation","Practice under pressure","Timed practice helps you rehearse real exam conditions and turn results into revision signals."],[BookOpen,"Exam Hub","Turn past papers into practice","Searchable past-paper workflows bring exam material into a more usable study loop."],[Zap,"Study tools","Make consistency easier","Tasks, timetables, focus sessions, XP, achievements, streaks and analytics keep the routine moving."],[WifiOff,"Offline foundations","Built for real connectivity","A PWA direction helps Shadecode work in environments where reliable internet cannot be assumed."]];
-  return <section id="features" style={{ padding:"110px 24px",background:"rgba(255,255,255,.015)",borderTop:"1px solid rgba(255,255,255,.05)",borderBottom:"1px solid rgba(255,255,255,.05)" }}><div style={{ maxWidth:1050,margin:"0 auto" }}><div style={{ textAlign:"center",marginBottom:55 }}><Badge><Zap size={14}/> The toolkit</Badge><h2 style={{ color:"#f8fafc",fontSize:"clamp(2rem,4vw,3rem)",marginTop:18,fontWeight:900 }}>Many tools. One learning system.</h2></div><div className="two" style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12 }}>{features.map(([Icon,name,title,desc])=><div key={name as string} className="card" style={{ padding:26,display:"flex",gap:18 }}><div style={{ width:48,height:48,flexShrink:0,borderRadius:14,display:"grid",placeItems:"center",background:"rgba(37,99,235,.09)",color:"#60a5fa" }}><Icon size={22}/></div><div><div style={{ color:"#60a5fa",fontSize:11,fontWeight:900,textTransform:"uppercase",letterSpacing:".06em" }}>{name}</div><h3 style={{ color:"#f8fafc",margin:"7px 0",fontSize:18 }}>{title}</h3><p style={{ color:"#64748b",fontSize:13,lineHeight:1.7 }}>{desc}</p></div></div>)}</div></div></section>;
+  const features: Feature[] = [[BrainCircuit,"Cortex","Learning intelligence","Weak-area signals, insights and recommendations become part of a persistent learning state."],[Calculator,"Math Checker","Learn from your mistakes","Upload handwritten work and get step-level feedback that explains where the reasoning went wrong."],[Target,"Exam Simulation","Practice under pressure","Timed practice helps you rehearse real exam conditions and turn results into revision signals."],[BookOpen,"Exam Hub","Turn past papers into practice","Searchable past-paper workflows bring exam material into a more usable study loop."],[Zap,"Study tools","Make consistency easier","Tasks, timetables, focus sessions, XP, achievements, streaks and analytics keep the routine moving."],[WifiOff,"Offline foundations","Built for real connectivity","A PWA direction helps Shadecode work in environments where reliable internet cannot be assumed."]];
+  return <section id="features" style={{ padding:"110px 24px",background:"rgba(255,255,255,.015)",borderTop:"1px solid rgba(255,255,255,.05)",borderBottom:"1px solid rgba(255,255,255,.05)" }}><div style={{ maxWidth:1050,margin:"0 auto" }}><div style={{ textAlign:"center",marginBottom:55 }}><Badge><Zap size={14}/> The toolkit</Badge><h2 style={{ color:"#f8fafc",fontSize:"clamp(2rem,4vw,3rem)",marginTop:18,fontWeight:900 }}>Many tools. One learning system.</h2></div><div className="two" style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12 }}>{features.map(([Icon,name,title,desc])=><div key={name} className="card" style={{ padding:26,display:"flex",gap:18 }}><div style={{ width:48,height:48,flexShrink:0,borderRadius:14,display:"grid",placeItems:"center",background:"rgba(37,99,235,.09)",color:"#60a5fa" }}><Icon size={22}/></div><div><div style={{ color:"#60a5fa",fontSize:11,fontWeight:900,textTransform:"uppercase",letterSpacing:".06em" }}>{name}</div><h3 style={{ color:"#f8fafc",margin:"7px 0",fontSize:18 }}>{title}</h3><p style={{ color:"#64748b",fontSize:13,lineHeight:1.7 }}>{desc}</p></div></div>)}</div></div></section>;
 }
 
 function FutureSection() {
@@ -112,8 +100,8 @@ function FutureSection() {
 }
 
 function Trust() {
-  const items=[[GraduationCap,"Curriculum-aware","Designed around real student work, with Cambridge and ZIMSEC as important starting points."],[WifiOff,"Connectivity-aware","A PWA and offline-first direction matters when reliable internet cannot be taken for granted."],[BadgeCheck,"Evidence-driven","Learning interventions should be measured, not merely advertised as intelligent."]];
-  return <section style={{ padding:"75px 24px",background:"rgba(255,255,255,.018)",borderTop:"1px solid rgba(255,255,255,.05)",borderBottom:"1px solid rgba(255,255,255,.05)" }}><div style={{ maxWidth:1000,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:30 }} className="three">{items.map(([Icon,title,desc])=><div key={title as string}><Icon size={24} color="#60a5fa" style={{ marginBottom:10 }}/><h3 style={{ color:"#f8fafc",fontSize:15,marginBottom:6 }}>{title}</h3><p style={{ color:"#64748b",fontSize:13,lineHeight:1.65 }}>{desc}</p></div>)}</div></section>;
+  const items: TrustItem[]=[[GraduationCap,"Curriculum-aware","Designed around real student work, with Cambridge and ZIMSEC as important starting points."],[WifiOff,"Connectivity-aware","A PWA and offline-first direction matters when reliable internet cannot be taken for granted."],[BadgeCheck,"Evidence-driven","Learning interventions should be measured, not merely advertised as intelligent."]];
+  return <section style={{ padding:"75px 24px",background:"rgba(255,255,255,.018)",borderTop:"1px solid rgba(255,255,255,.05)",borderBottom:"1px solid rgba(255,255,255,.05)" }}><div style={{ maxWidth:1000,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:30 }} className="three">{items.map(([Icon,title,desc])=><div key={title}><Icon size={24} color="#60a5fa" style={{ marginBottom:10 }}/><h3 style={{ color:"#f8fafc",fontSize:15,marginBottom:6 }}>{title}</h3><p style={{ color:"#64748b",fontSize:13,lineHeight:1.65 }}>{desc}</p></div>)}</div></section>;
 }
 
 function FAQ() {
