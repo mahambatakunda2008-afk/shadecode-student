@@ -2,10 +2,11 @@
   "name": "Shadecode Student",
   "short_name": "Shadecode",
   "id": "/",
-  "description": "Study smarter. Live sharper.",
+  "description": "Study smarter. Live sharper. An AI-powered learning platform for students.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#06111F",
   "theme_color": "#2563EB",
   "orientation": "any",
@@ -14,16 +15,28 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/brand/shadecode-app-icon.svg",
-      "sizes": "256x256",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/brand/shadecode-mark.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
@@ -36,6 +49,26 @@
     { "src": "/screenshots/math.png", "sizes": "1080x1920", "type": "image/png" },
     { "src": "/screenshots/timetable.png", "sizes": "1080x1920", "type": "image/png" },
     { "src": "/screenshots/settings.png", "sizes": "1080x1920", "type": "image/png" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Learn",
+      "short_name": "Learn",
+      "url": "/learn",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Exam Hub",
+      "short_name": "Exam Hub",
+      "url": "/exam-hub",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Math Checker",
+      "short_name": "Math Checker",
+      "url": "/math-checker",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ],
   "privacy_policy_url": "https://shadecodestudent.vercel.app/privacy.html",
   "categories": ["education", "productivity"],
