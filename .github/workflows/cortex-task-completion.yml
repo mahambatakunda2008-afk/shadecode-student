@@ -24,6 +24,7 @@ jobs:
       - name: Mark the merged Cortex task as complete
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           python - <<'PY'
           import os
@@ -31,12 +32,24 @@ jobs:
           from pathlib import Path
 
           body = os.environ.get("PR_BODY", "")
-          match = re.search(r"<!--\s*cortex-task:\s*(.*?)\s*-->", body, re.IGNORECASE)
-          if not match:
-              print("No Cortex task marker found; nothing to update.")
+          title = os.environ.get("PR_TITLE", "")
+
+          # Newer Cortex PRs may carry an explicit marker. Older/current engine
+          # versions identify the task in the PR title, so keep both formats.
+          marker = re.search(r"<!--\s*cortex-task:\s*(.*?)\s*-->", body, re.IGNORECASE)
+          if marker:
+              task = marker.group(1).strip()
+          else:
+              prefix = "🧠 Cortex: "
+              if not title.startswith(prefix):
+                  print("No Cortex task marker or recognized Cortex title; nothing to update.")
+                  raise SystemExit(0)
+              task = title[len(prefix):].strip()
+
+          if not task:
+              print("Empty Cortex task; nothing to update.")
               raise SystemExit(0)
 
-          task = match.group(1).strip()
           path = Path(".cortex/tasks.md")
           content = path.read_text(encoding="utf-8")
 
