@@ -1,12 +1,66 @@
 /**
- * /lib/curriculum/types.ts
+ * Curriculum and academic-context intelligence types.
  *
- * Curriculum intelligence types
+ * Exam-board curricula remain supported for secondary learners. University
+ * and polytechnic/TVET learners use the more flexible academic-context model.
  */
 
 export type CurriculumBoard = "ZIMSEC" | "Cambridge" | "IB" | "Edexcel";
 export type CurriculumLevel = "O-Level" | "A-Level" | "IGCSE" | "AS-Level" | "Form 1-2" | "Form 3-4";
 export type Subject = "Mathematics" | "English" | "Science" | "Physics" | "Chemistry" | "Biology" | "Shona" | "Ndebele" | "History" | "Geography" | "Commerce" | "Economics";
+
+export type AcademicPathway = "secondary" | "university" | "tvet";
+export type AssessmentType =
+  | "assignment"
+  | "project"
+  | "quiz"
+  | "test"
+  | "midterm"
+  | "exam"
+  | "practical"
+  | "lab"
+  | "workshop"
+  | "presentation"
+  | "report";
+
+/** Flexible academic identity for post-secondary learners. */
+export interface AcademicContext {
+  pathway: AcademicPathway;
+  institution?: string;
+  programme?: string;
+  yearLevel?: string;
+  semester?: string;
+  term?: string;
+  courses: AcademicCourse[];
+}
+
+export interface AcademicCourse {
+  id: string;
+  code?: string;
+  name: string;
+  description?: string;
+  credits?: number;
+  topics: string[];
+  assessmentTypes: AssessmentType[];
+}
+
+export interface AcademicAssessment {
+  id: string;
+  courseId: string;
+  title: string;
+  type: AssessmentType;
+  dueAt?: string;
+  weight?: number;
+  completed: boolean;
+}
+
+export interface CourseMaterial {
+  id: string;
+  courseId: string;
+  title: string;
+  kind: "notes" | "slides" | "pdf" | "assignment" | "past_paper" | "reading" | "other";
+  sourceUrl?: string;
+}
 
 export interface CurriculumTopic {
   id: string;
@@ -15,12 +69,12 @@ export interface CurriculumTopic {
   level: CurriculumLevel;
   topic: string;
   subtopics: string[];
-  weight: number; // Importance weight (1-10)
-  examFrequency: number; // How often it appears in exams (1-10)
-  difficulty: number; // Difficulty level (1-10)
-  prerequisites: string[]; // Topic IDs that must be learned first
+  weight: number;
+  examFrequency: number;
+  difficulty: number;
+  prerequisites: string[];
   learningObjectives: string[];
-  examWeight: number; // Percentage of exam marks
+  examWeight: number;
 }
 
 export interface CurriculumStandard {
@@ -39,7 +93,7 @@ export interface ExamStructure {
 }
 
 export interface PaperStructure {
-  duration: number; // in minutes
+  duration: number;
   totalMarks: number;
   sections: ExamSection[];
 }
@@ -56,16 +110,16 @@ export interface StudentProgress {
   subject: Subject;
   board: CurriculumBoard;
   level: CurriculumLevel;
-  completedTopics: string[]; // Topic IDs
-  topicProgress: Record<string, TopicProgress>; // Topic ID -> progress
+  completedTopics: string[];
+  topicProgress: Record<string, TopicProgress>;
   lastUpdated: string;
 }
 
 export interface TopicProgress {
   topicId: string;
   completed: boolean;
-  score: number; // 0-100
-  timeSpent: number; // in minutes
+  score: number;
+  timeSpent: number;
   lastAttempted: string;
   attempts: number;
 }
@@ -77,7 +131,7 @@ export interface CurriculumCoverage {
   totalTopics: number;
   completedTopics: number;
   coveragePercentage: number;
-  weightedCoverage: number; // Weighted by topic importance
+  weightedCoverage: number;
   missingTopics: string[];
   weakTopics: string[];
   strongTopics: string[];
@@ -87,20 +141,20 @@ export interface ExamReadiness {
   subject: Subject;
   board: CurriculumBoard;
   level: CurriculumLevel;
-  overallScore: number; // 0-100
+  overallScore: number;
   readinessLevel: "Not Ready" | "Basic" | "Intermediate" | "Advanced" | "Exam Ready";
   topicReadiness: Record<string, TopicReadiness>;
   predictedGrade: string;
-  confidence: number; // 0-100
+  confidence: number;
   recommendations: string[];
-  timeToExam: number; // in days
+  timeToExam: number;
 }
 
 export interface TopicReadiness {
   topicId: string;
-  score: number; // 0-100
+  score: number;
   readiness: "Not Ready" | "Basic" | "Intermediate" | "Advanced" | "Ready";
-  confidence: number; // 0-100
+  confidence: number;
   recommendedActions: string[];
 }
 
@@ -109,7 +163,7 @@ export interface CurriculumGap {
   topic: string;
   gapType: "missing" | "weak" | "outdated";
   severity: "low" | "medium" | "high" | "critical";
-  impact: number; // Impact on exam performance (1-10)
+  impact: number;
   recommendedActions: string[];
-  estimatedTimeToComplete: number; // in hours
+  estimatedTimeToComplete: number;
 }
