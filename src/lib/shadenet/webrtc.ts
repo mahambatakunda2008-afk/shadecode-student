@@ -49,9 +49,9 @@ export class ShadeNetWebRtcPeer {
     if (!this.channel) throw new Error("ShadeNet data channel is not available yet");
     const listener = (event: MessageEvent<string | ArrayBuffer>) => {
       const bytes = typeof event.data === "string" ? new TextEncoder().encode(event.data) : new Uint8Array(event.data);
-      const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>;
-      if (Array.isArray(parsed.data)) parsed.data = new Uint8Array(parsed.data).buffer;
-      handler(parsed as ResourceRequest | ResourceChunk);
+      const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+      if (!isShadeNetMessage(parsed)) return;
+      handler(parsed);
     };
     this.channel.addEventListener("message", listener);
     return () => this.channel?.removeEventListener("message", listener);
@@ -61,4 +61,10 @@ export class ShadeNetWebRtcPeer {
     this.channel?.close();
     this.connection.close();
   }
+}
+
+function isShadeNetMessage(value: unknown): value is ResourceRequest | ResourceChunk {
+  if (!value || typeof value !== "object") return false;
+  const message = value as Record<string, unknown>;
+  return message.protocol === 1 && typeof message.requestId === "string" && typeof message.resourceId === "string";
 }
