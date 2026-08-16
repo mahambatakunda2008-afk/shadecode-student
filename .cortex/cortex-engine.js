@@ -1,391 +1,216 @@
-/**
- * CORTEX ENGINE
- * Autonomous self-improvement agent for Shadecode Student
- * Powered by Gemini 2.5 | Runs on GitHub Actions
- * Repo: mahambatakunda2008-afk/shadecode-student
- */
-
 const { createClient } = require("@supabase/supabase-js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { Octokit } = require("@octokit/rest");
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const REPO_OWNER = "mahambatakunda2008-afk";
 const REPO_NAME = "shadecode-student";
 const BASE_BRANCH = "main";
 const ENGINE_BRANCH = `cortex-auto-${Date.now()}`;
+const TASK_FILE = ".cortex/tasks.md";
+const MAX_IMPROVEMENTS = 1;
+const MAX_CODE_BYTES = 200_000;
+const ALLOWED_PREFIXES = ["src/"];
+const FORBIDDEN_PATHS = new Set(["package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", ".env", ".env.local", ".github/workflows/", ".cortex/"]);
 
-// ── Clients ───────────────────────────────────────────────────────────────────
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
+for (const key of ["GITHUB_TOKEN", "GEMINI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]) {
+  if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
+}
 
-// ── Logging ───────────────────────────────────────────────────────────────────
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 const logs = [];
-function log(msg) {
-  const line = `[${new Date().toISOString()}] ${msg}`;
+
+function log(message) {
+  const line = `[${new Date().toISOString()}] ${message}`;
   console.log(line);
   logs.push(line);
 }
 
-// ── Step 1: Discover Supabase schema ─────────────────────────────────────────
-async function discoverSchema() {
-  log("Discovering Supabase schema...");
-  const tables = {};
-  const candidates = [
-    "users", "insights", "tasks", "xp", "streaks",
-    "subjects", "sessions", "activity", "notifications", "badges",
-    "achievements", "cortex_insights", "daily_challenges", "exams",
-    "profiles", "study_topics", "timetable"
-  ];
-  for (const table of candidates) {
-    try {
-      const { data, error } = await supabase.from(table).select("*").limit(3);
-      if (!error && data !== null) {
-        tables[table] = {
-          exists: true,
-          sampleCount: data.length,
-          // If table is empty, mark it as existing but empty — NOT broken
-          columns: data.length > 0 ? Object.keys(data[0]) : ["TABLE_EXISTS_BUT_EMPTY"],
-          sample: data.slice(0, 2),
-        };
-        log(`  ✓ Found table: ${table} (${data.length} sample rows)`);
-      }
-    } catch { }
-  }
-  log(`Schema discovery complete. Found: ${Object.keys(tables).join(", ")}`);
-  return tables;
+function isAllowedPath(filePath) {
+  if (typeof filePath !== "string" || filePath.length === 0 || filePath.length > 240) return false;
+  if (filePath.includes("..") || filePath.startsWith("/") || filePath.includes("\\")) return false;
+  if (FORBIDDEN_PATHS.has(filePath) || [...FORBIDDEN_PATHS].some((p) => filePath.startsWith(p))) return false;
+  return ALLOWED_PREFIXES.some((prefix) => filePath.startsWith(prefix));
 }
 
-// ── Step 2: Gather behavioral signals ────────────────────────────────────────
-async function gatherSignals(schema) {
-  log("Gathering behavioral signals from Supabase...");
-  const signals = {};
-  if (schema.insights) {
-    const { data } = await supabase.from("insights").select("*").order("created_at", { ascending: false }).limit(50);
-    signals.recentInsights = data || [];
-    log(`  Insights loaded: ${signals.recentInsights.length}`);
+function validateDecision(decision) {
+  if (!decision || typeof decision !== "object") throw new Error("AI decision is not an object");
+  if (typeof decision.analysis !== "string" || decision.analysis.length < 10) throw new Error("AI decision has invalid analysis");
+  if (!Array.isArray(decision.improvements) || decision.improvements.length !== MAX_IMPROVEMENTS) {
+    throw new Error(`Cortex must produce exactly ${MAX_IMPROVEMENTS} improvement per cycle`);
   }
-  if (schema.profiles) {
-    const { data } = await supabase.from("profiles").select("*").limit(20);
-    signals.userStats = data || [];
-    log(`  Profiles loaded: ${signals.userStats.length}`);
-  }
-  for (const [table, meta] of Object.entries(schema)) {
-    if (!["insights", "profiles"].includes(table) && meta.exists) {
-      const { data } = await supabase.from(table).select("*").limit(20);
-      signals[table] = data || [];
-      log(`  ${table} loaded: ${signals[table].length} rows`);
+  const item = decision.improvements[0];
+  if (!item || typeof item !== "object") throw new Error("Invalid improvement object");
+  if (!["new_feature", "new_component", "bug_fix", "refactor"].includes(item.type)) throw new Error("Invalid improvement type");
+  if (!item.title || !item.description || !item.file_path || typeof item.code !== "string") throw new Error("Incomplete improvement");
+  if (!isAllowedPath(item.file_path)) throw new Error(`Unsafe file path: ${item.file_path}`);
+  if (Buffer.byteLength(item.code, "utf8") > MAX_CODE_BYTES) throw new Error("Generated file exceeds safety size limit");
+  return decision;
+}
+
+async function checkForOpenCortexPRs() {
+  const { data: prs } = await octokit.pulls.list({ owner: REPO_OWNER, repo: REPO_NAME, state: "open", per_page: 50 });
+  const open = prs.filter((pr) => pr.head.ref.startsWith("cortex-auto-"));
+  if (open.length) open.forEach((pr) => log(`Open Cortex PR blocks new work: #${pr.number} ${pr.title}`));
+  return open;
+}
+
+async function readTaskRoadmap() {
+  const { data } = await octokit.repos.getContent({ owner: REPO_OWNER, repo: REPO_NAME, path: TASK_FILE, ref: BASE_BRANCH });
+  const content = Buffer.from(data.content, "base64").toString("utf8");
+  const sectionMatch = content.match(/^## Immediate Execution Queue[\s\S]*?(?=^## |$)/m);
+  const queue = sectionMatch ? sectionMatch[0] : "";
+  const pendingTasks = [];
+  const lines = queue.split("\n");
+  let current = null;
+
+  for (const line of lines) {
+    const match = line.match(/^- \[ \] (🔴|🟡|🟢) \*\*(.+?)\*\*/);
+    if (match) {
+      if (current) pendingTasks.push(current);
+      current = { priority: match[1], title: match[2].trim(), details: [] };
+    } else if (current && /^\s{2,}- /.test(line)) {
+      current.details.push(line.trim());
     }
+  }
+  if (current) pendingTasks.push(current);
+  log(`Immediate queue: ${pendingTasks.length} executable pending task(s)`);
+  return { raw: content, pendingTasks };
+}
+
+async function discoverSchema() {
+  const candidates = ["profiles", "subjects", "study_topics", "tasks", "exams", "cortex_insights", "daily_challenges", "achievements", "timetable"];
+  const schema = {};
+  for (const table of candidates) {
+    try {
+      const { data, error } = await supabase.from(table).select("*").limit(0);
+      if (!error && data !== null) schema[table] = { exists: true };
+    } catch {}
+  }
+  log(`Schema check: ${Object.keys(schema).join(", ")}`);
+  return schema;
+}
+
+async function gatherSignals(schema) {
+  const signals = { counts: {}, insightCount: 0 };
+  for (const table of ["profiles", "tasks", "study_topics", "exams", "cortex_insights"]) {
+    if (!schema[table]) continue;
+    const { count } = await supabase.from(table).select("id", { count: "exact", head: true });
+    if (table === "cortex_insights") signals.insightCount = count ?? 0;
+    else signals.counts[table] = count ?? 0;
   }
   return signals;
 }
 
-// ── Step 2.5: Read tasks.md from repo ────────────────────────────────────────
-async function readTaskRoadmap() {
-  log("Reading tasks.md from repo...");
-  try {
-    const { data } = await octokit.repos.getContent({ owner: REPO_OWNER, repo: REPO_NAME, path: ".cortex/tasks.md", ref: BASE_BRANCH });
-    const content = Buffer.from(data.content, "base64").toString("utf8");
-    const pendingTasks = [];
-    const lines = content.split("\n");
-    let currentTask = null;
-    for (const line of lines) {
-      if (line.match(/- \[ \] (🔴|🟡|🟢)/)) {
-        if (currentTask) pendingTasks.push(currentTask);
-        currentTask = { title: line.replace(/- \[ \] (🔴|🟡|🟢) /, "").trim(), details: [] };
-      } else if (currentTask && line.trim().startsWith("-")) {
-        currentTask.details.push(line.trim());
-      } else if (currentTask && line.trim() === "") {
-        pendingTasks.push(currentTask);
-        currentTask = null;
-      }
-    }
-    log(`  Pending tasks found: ${pendingTasks.length}`);
-    return { raw: content, pendingTasks };
-  } catch {
-    log("  tasks.md not found — Cortex will decide freely");
-    return { raw: "", pendingTasks: [] };
-  }
+function extractJson(text) {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const candidate = fenced ? fenced[1] : text.trim();
+  try { return JSON.parse(candidate); } catch {}
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("AI did not return JSON");
+  return JSON.parse(candidate.slice(start, end + 1));
 }
 
-// ── Step 3: Ask AI what to improve ───────────────────────────────────────────
-async function analyzeAndDecide(schema, signals, roadmap) {
-  log("Consulting AI for improvement decisions...");
+async function askAI(roadmap, schema, signals) {
+  const task = roadmap.pendingTasks[0];
+  const prompt = `You are Cortex Engineering for Shadecode Student. Execute exactly ONE task from the Immediate Execution Queue.\n\nTASK:\nPriority: ${task.priority}\nTitle: ${task.title}\nDetails:\n${task.details.join("\n") || "(none)"}\n\nVERIFIED TABLES:\n${Object.keys(schema).join(", ")}\n\nNON-SENSITIVE PRODUCT COUNTS:\n${JSON.stringify(signals)}\n\nRULES:\n- Work only on this task. Do not choose another task.\n- Produce exactly ONE improvement.\n- App code must be under src/.\n- Never create migrations or SQL.\n- Never create or modify package/config/CI files.\n- Never invent database tables.\n- Reuse existing systems when possible.\n- Return only JSON.\n- Code must be complete file content.\n\nJSON schema:\n{\n  "analysis": "short explanation",\n  "improvements": [{\n    "type": "new_feature | new_component | bug_fix | refactor",\n    "title": "short title",\n    "description": "what changes and why",\n    "priority": "high | medium | low",\n    "file_path": "src/...",\n    "code": "complete file content"\n  }],\n  "devlog_entry": "first-person short entry"\n}`;
 
-  const schemaDesc = Object.entries(schema).map(([t, m]) => {
-    const colDesc = m.columns.includes("TABLE_EXISTS_BUT_EMPTY")
-      ? "EXISTS (empty — no rows yet, schema is fine)"
-      : `columns=[${m.columns.join(", ")}]`;
-    return `${t}: ${colDesc}`;
-  }).join("\n");
-
-  const insightSample = signals.recentInsights?.slice(0, 5) || [];
-  const nextTasks = roadmap.pendingTasks.slice(0, 3).map((t, i) => `${i + 1}. ${t.title}\n${t.details.join("\n")}`).join("\n\n");
-
-  const prompt = `
-You are Cortex Engine, the autonomous self-improvement agent for Shadecode Student.
-Shadecode Student is a Next.js + Supabase learning platform where Cortex (powered by Gemini)
-observes student study behavior and reflects patterns back to them as neutral insights.
-
-CURRENT DATABASE SCHEMA:
-${schemaDesc}
-
-IMPORTANT SCHEMA NOTES:
-- Tables marked "EXISTS (empty)" are working correctly — they just have no data yet. Do NOT recreate them.
-- All core tables already exist: achievements, cortex_insights, daily_challenges, exams, insights, profiles, study_topics, subjects, tasks, timetable
-- NEVER create SQL migrations or try to fix table schemas — the database is correctly set up.
-- Focus ONLY on building frontend React/Next.js components and API routes.
-
-RECENT INSIGHTS SAMPLE:
-${JSON.stringify(insightSample, null, 2)}
-
-CURRENT TASK ROADMAP (work on these in order):
-${nextTasks || "No tasks defined — use your judgment"}
-
-BEHAVIORAL SIGNALS SUMMARY:
-- Total users: ${signals.userStats?.length || "unknown"}
-- Recent insights generated: ${signals.recentInsights?.length || 0}
-- Other active tables: ${Object.keys(signals).filter(k => !["recentInsights", "userStats"].includes(k)).join(", ")}
-
-YOUR TASK:
-Pick the FIRST pending task from the roadmap and build it. Do not work on database schema.
-Produce a JSON response with this exact structure:
-
-{
-  "analysis": "2-3 sentence neutral analysis of what needs to be built next",
-  "improvements": [
-    {
-      "type": "new_feature | new_component | bug_fix | refactor",
-      "title": "Short title",
-      "description": "What to build and why",
-      "priority": "high | medium | low",
-      "file_path": "relative path in repo e.g. src/components/DailyChallenge.jsx",
-      "code": "complete file content to write"
-    }
-  ],
-  "devlog_entry": "A short developer log entry describing what Cortex did this cycle"
-}
-
-Rules:
-- Max 3 improvements per cycle
-- NEVER create SQL files, migrations, or database schema — only React/Next.js code
-- NEVER recreate tables that already exist
-- Code must use ES modules (import/export syntax)
-- All app code goes under src/ — never at root level
-- Never import @google/generative-ai, @octokit/rest, fs, or path in app code
-- Use @supabase/supabase-js directly in API routes
-- All exports must be named exports
-- devlog_entry written in first person as Cortex
-`;
-
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   let rawText = null;
-
-  // Try Gemini models. gemini-2.0-flash and gemini-2.0-flash-lite are
-  // confirmed permanently zero-quota on this account (see src/lib/ai.ts
-  // and docs/AUDIT_2026-08.md) -- trying them wastes time before reaching
-  // OpenRouter, they are not a real fallback. 2.5-flash only, but with a
-  // short retry: "503 Service Unavailable / high demand" is a transient
-  // Google-side condition, not a real failure, and gives up too easily
-  // on the first attempt otherwise.
-  const geminiModels = ["gemini-2.5-flash"];
-  const GEMINI_RETRY_ATTEMPTS = 2;
-  const GEMINI_RETRY_DELAY_MS = 5000;
-  for (const modelName of geminiModels) {
-    for (let attempt = 1; attempt <= GEMINI_RETRY_ATTEMPTS; attempt++) {
-      try {
-        log(`Trying model: ${modelName} (attempt ${attempt}/${GEMINI_RETRY_ATTEMPTS})...`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        rawText = result.response.text();
-        log(`Success with model: ${modelName}`);
-        break;
-      } catch (err) {
-        const isTransient = /503|overloaded|high demand|unavailable/i.test(err.message);
-        log(`Model ${modelName} failed (attempt ${attempt}): ${err.message}`);
-        if (isTransient && attempt < GEMINI_RETRY_ATTEMPTS) {
-          log(`Transient error, retrying in ${GEMINI_RETRY_DELAY_MS / 1000}s...`);
-          await new Promise((resolve) => setTimeout(resolve, GEMINI_RETRY_DELAY_MS));
-        }
-      }
-    }
-    if (rawText) break;
-  }
-
-  // Fallback to OpenRouter
-  if (!rawText && OPENROUTER_API_KEY) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      log("Trying OpenRouter fallback...");
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://shadecodestudent.vercel.app",
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-3.3-70b-instruct:free",
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      const data = await response.json();
-      rawText = data.choices?.[0]?.message?.content;
-      if (rawText) {
-        log("Success with OpenRouter");
-      } else {
-        // fetch() succeeded but the response didn't have the expected
-        // shape -- previously this silently fell through to "All AI
-        // models failed" with zero indication why. Log the actual
-        // response so a failure here is diagnosable without needing
-        // another log round-trip.
-        log(`OpenRouter returned no usable content. HTTP ${response.status}. Response: ${JSON.stringify(data).slice(0, 500)}`);
-      }
-    } catch (err) {
-      log(`OpenRouter failed: ${err.message}`);
+      rawText = (await model.generateContent(prompt)).response.text();
+      break;
+    } catch (error) {
+      log(`Gemini attempt ${attempt} failed: ${error.message}`);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 5000));
     }
   }
 
-  if (!rawText) throw new Error("All AI models failed.");
+  if (!rawText && process.env.OPENROUTER_API_KEY) {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app" },
+      body: JSON.stringify({ model: "meta-llama/llama-3.3-70b-instruct:free", messages: [{ role: "user", content: prompt }] }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(`OpenRouter HTTP ${response.status}`);
+    rawText = data.choices?.[0]?.message?.content ?? null;
+  }
 
-  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("AI did not return valid JSON");
-
-  const decision = JSON.parse(jsonMatch[0]);
-  log(`Analysis: ${decision.analysis}`);
-  log(`Improvements planned: ${decision.improvements.length}`);
-  decision.improvements.forEach(i => log(`  → [${i.priority}] ${i.title}`));
-
+  if (!rawText) throw new Error("No AI provider returned a decision");
+  const decision = validateDecision(extractJson(rawText));
+  log(`Decision: ${decision.improvements[0].title} -> ${decision.improvements[0].file_path}`);
   return decision;
 }
 
-// ── Step 4: Apply improvements to GitHub ─────────────────────────────────────
-async function applyImprovements(decision) {
-  log("Applying improvements to GitHub...");
+async function createBranch() {
   const { data: ref } = await octokit.git.getRef({ owner: REPO_OWNER, repo: REPO_NAME, ref: `heads/${BASE_BRANCH}` });
-  const baseSha = ref.object.sha;
-  await octokit.git.createRef({ owner: REPO_OWNER, repo: REPO_NAME, ref: `refs/heads/${ENGINE_BRANCH}`, sha: baseSha });
-  log(`Created branch: ${ENGINE_BRANCH}`);
-
-  for (const improvement of decision.improvements) {
-    if (!improvement.code || !improvement.file_path) continue;
-    // Skip any SQL files
-    if (improvement.file_path.endsWith(".sql")) {
-      log(`  Skipping SQL file: ${improvement.file_path}`);
-      continue;
-    }
-    const content = Buffer.from(improvement.code).toString("base64");
-    let fileSha;
-    try {
-      const { data: existing } = await octokit.repos.getContent({ owner: REPO_OWNER, repo: REPO_NAME, path: improvement.file_path, ref: ENGINE_BRANCH });
-      fileSha = existing.sha;
-    } catch { fileSha = undefined; }
-    await octokit.repos.createOrUpdateFileContents({ owner: REPO_OWNER, repo: REPO_NAME, path: improvement.file_path, message: `cortex: ${improvement.title}`, content, sha: fileSha, branch: ENGINE_BRANCH });
-    log(`  Committed: ${improvement.file_path}`);
-  }
-  return baseSha;
+  await octokit.git.createRef({ owner: REPO_OWNER, repo: REPO_NAME, ref: `refs/heads/${ENGINE_BRANCH}`, sha: ref.object.sha });
 }
 
-// ── Step 5: Update DEVLOG.md ──────────────────────────────────────────────────
+async function applyImprovement(improvement) {
+  let existingSha;
+  let existingContent = null;
+  try {
+    const { data } = await octokit.repos.getContent({ owner: REPO_OWNER, repo: REPO_NAME, path: improvement.file_path, ref: ENGINE_BRANCH });
+    existingSha = data.sha;
+    existingContent = Buffer.from(data.content, "base64").toString("utf8");
+  } catch {}
+  if (existingContent === improvement.code) throw new Error(`Generated change is identical to ${improvement.file_path}`);
+  await octokit.repos.createOrUpdateFileContents({ owner: REPO_OWNER, repo: REPO_NAME, path: improvement.file_path, message: `cortex: ${improvement.title}`, content: Buffer.from(improvement.code).toString("base64"), sha: existingSha, branch: ENGINE_BRANCH });
+}
+
 async function updateDevlog(decision) {
-  log("Updating DEVLOG.md...");
-  const date = new Date().toISOString().split("T")[0];
-  const entry = `\n## ${date} — Cortex Auto-Cycle\n\n${decision.devlog_entry}\n\n**Improvements this cycle:**\n${decision.improvements.map(i => `- [${i.priority.toUpperCase()}] ${i.title}: ${i.description}`).join("\n")}\n\n---\n`;
-  let existingContent = `# Shadecode Student — Cortex Devlog\n\nAutonomous improvement log maintained by Cortex Engine.\n\n---\n`;
-  let fileSha;
+  let content = "# Shadecode Student — Cortex Devlog\n\n";
+  let sha;
   try {
     const { data } = await octokit.repos.getContent({ owner: REPO_OWNER, repo: REPO_NAME, path: "DEVLOG.md", ref: ENGINE_BRANCH });
-    existingContent = Buffer.from(data.content, "base64").toString("utf8");
-    fileSha = data.sha;
-  } catch { fileSha = undefined; }
-  await octokit.repos.createOrUpdateFileContents({ owner: REPO_OWNER, repo: REPO_NAME, path: "DEVLOG.md", message: "cortex: update devlog", content: Buffer.from(existingContent + entry).toString("base64"), sha: fileSha, branch: ENGINE_BRANCH });
-  log("DEVLOG.md updated.");
+    content = Buffer.from(data.content, "base64").toString("utf8");
+    sha = data.sha;
+  } catch {}
+  const date = new Date().toISOString().slice(0, 10);
+  const item = decision.improvements[0];
+  const entry = `\n## ${date} — Cortex Auto-Cycle\n\n${decision.devlog_entry}\n\n**Task:** ${item.title}\n\n**Change:** ${item.description}\n\n---\n`;
+  await octokit.repos.createOrUpdateFileContents({ owner: REPO_OWNER, repo: REPO_NAME, path: "DEVLOG.md", message: "cortex: update devlog", content: Buffer.from(content + entry).toString("base64"), sha, branch: ENGINE_BRANCH });
 }
 
-// ── Step 6: Open Pull Request ─────────────────────────────────────────────────
 async function openPullRequest(decision) {
-  log("Opening Pull Request...");
-  const body = `## 🧠 Cortex Auto-Improvement\n\n**Analysis:**\n${decision.analysis}\n\n**Changes in this PR:**\n${decision.improvements.map(i => `- **[${i.priority.toUpperCase()}]** \`${i.file_path}\` — ${i.title}: ${i.description}`).join("\n")}\n\n**Devlog:**\n${decision.devlog_entry}\n\n---\n*This PR was generated autonomously by Cortex Engine. Review before merging.*`;
-  const { data: pr } = await octokit.pulls.create({ owner: REPO_OWNER, repo: REPO_NAME, title: `🧠 Cortex: ${decision.improvements[0]?.title || "Auto-improvements"}`, head: ENGINE_BRANCH, base: BASE_BRANCH, body });
-  log(`PR opened: ${pr.html_url}`);
+  const item = decision.improvements[0];
+  const body = `## 🧠 Cortex Auto-Improvement\n\n**Task:** ${item.title}\n\n**Analysis:** ${decision.analysis}\n\n**Change:** \`${item.file_path}\`\n\n${item.description}\n\n### Safety\n- One improvement only\n- App path allowlist enforced\n- No schema/migration/config changes\n- Human review required before merge\n\n*Generated by Cortex Engineering.*`;
+  const { data: pr } = await octokit.pulls.create({ owner: REPO_OWNER, repo: REPO_NAME, title: `🧠 Cortex: ${item.title}`, head: ENGINE_BRANCH, base: BASE_BRANCH, body });
   return pr.html_url;
 }
 
-// ── Step 0: Check for unreviewed cortex-auto PRs ─────────────────────────────
-// Root cause of the Daily Challenge (PRs #77-80) and Achievements
-// (PRs #81-83) duplication bugs: readTaskRoadmap() re-reads tasks.md fresh
-// from `main` every cycle, and applyImprovements() never marks a task [x] --
-// it only opens a PR for human review. If that PR is still open when the
-// next scheduled cycle runs, tasks.md on `main` still shows the task
-// pending, so the engine independently rebuilds it again, with no idea a
-// PR already exists. Rather than trying to teach the AI to reconcile
-// competing in-flight implementations (expensive, error-prone, and it's
-// exactly what produced the conflicting route.ts/route.js pair last time),
-// simply don't start new work while prior cycles are awaiting review.
-async function checkForOpenCortexPRs() {
-  log("Checking for unreviewed Cortex PRs...");
-  const { data: prs } = await octokit.pulls.list({ owner: REPO_OWNER, repo: REPO_NAME, state: "open", per_page: 30 });
-  const cortexPRs = prs.filter(pr => pr.head.ref.startsWith("cortex-auto-"));
-  if (cortexPRs.length > 0) {
-    log(`  Found ${cortexPRs.length} open cortex-auto PR(s) awaiting review:`);
-    cortexPRs.forEach(pr => log(`    #${pr.number} ${pr.title} (${pr.head.ref})`));
-  }
-  return cortexPRs;
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  log("═══════════════════════════════════════");
-  log("CORTEX ENGINE — Autonomous Cycle Start");
-  log("═══════════════════════════════════════");
-  try {
-    const openCortexPRs = await checkForOpenCortexPRs();
-    if (openCortexPRs.length > 0) {
-      log(`Skipping this cycle -- ${openCortexPRs.length} prior cortex-auto PR(s) still need review/merge. Merge or close them so tasks.md reflects reality before the next cycle builds anything new.`);
-      log("═══════════════════════════════════════");
-      log("CORTEX ENGINE — Cycle Skipped (avoided duplicate work)");
-      log("═══════════════════════════════════════");
-      return;
-    }
-
-    const schema = await discoverSchema();
-    const signals = await gatherSignals(schema);
-    const roadmap = await readTaskRoadmap();
-    const decision = await analyzeAndDecide(schema, signals, roadmap);
-    await applyImprovements(decision);
-    await updateDevlog(decision);
-    const prUrl = await openPullRequest(decision);
-    log("═══════════════════════════════════════");
-    log("CORTEX ENGINE — Cycle Complete ✓");
-    log(`PR: ${prUrl}`);
-    log("═══════════════════════════════════════");
-  } catch (err) {
-    log(`ERROR: ${err.message}`);
-    console.error(err);
-
-    // Persist the failure where a human can actually see it -- GitHub's
-    // Actions log storage isn't reliably fetchable via API/tooling, but
-    // the step summary renders directly in the Actions UI and survives
-    // independently of log retention.
-    try {
-      const fs = require("fs");
-      if (process.env.GITHUB_STEP_SUMMARY) {
-        const recentLogs = logs.slice(-15).join("\n");
-        fs.appendFileSync(
-          process.env.GITHUB_STEP_SUMMARY,
-          `## ❌ Cortex Engine cycle failed\n\n**Error:** ${err.message}\n\n**Stack:**\n\`\`\`\n${err.stack || "(no stack)"}\n\`\`\`\n\n**Last log lines:**\n\`\`\`\n${recentLogs}\n\`\`\`\n`
-        );
-      }
-    } catch (summaryErr) {
-      console.error("Failed to write step summary:", summaryErr.message);
-    }
-
-    process.exit(1);
+  log("CORTEX ENGINE — cycle start");
+  const open = await checkForOpenCortexPRs();
+  if (open.length) {
+    log("Cycle skipped: an earlier Cortex PR is still awaiting review.");
+    return;
   }
+  const roadmap = await readTaskRoadmap();
+  if (!roadmap.pendingTasks.length) {
+    log("No executable task in Immediate Execution Queue. No autonomous change made.");
+    return;
+  }
+  const schema = await discoverSchema();
+  const signals = await gatherSignals(schema);
+  const decision = await askAI(roadmap, schema, signals);
+  await createBranch();
+  await applyImprovement(decision.improvements[0]);
+  await updateDevlog(decision);
+  const prUrl = await openPullRequest(decision);
+  log(`Cortex PR opened: ${prUrl}`);
 }
 
-main();
+main().catch((error) => {
+  log(`ERROR: ${error.message}`);
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const summary = `## ❌ Cortex Engine failed\n\n**Error:** ${error.message}\n\n\`\`\`\n${error.stack || ""}\n\`\`\``;
+    require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+  }
+  process.exit(1);
+});
