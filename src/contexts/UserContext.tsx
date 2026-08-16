@@ -10,8 +10,7 @@ import {
 } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { offlineSync } from "@/lib/offline/sync";
 
 export interface UserProfile {
   id: string;
@@ -38,17 +37,12 @@ export interface UserContextValue {
   refreshProfile: () => Promise<void>;
 }
 
-// ─── Context ──────────────────────────────────────────────────────────────────
-
-// Default is intentionally null/false — never hardcode user data here.
 const UserContext = createContext<UserContextValue>({
   user: null,
   profile: null,
   loading: true,
   refreshProfile: async () => {},
 });
-
-// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const supabase = createBrowserClient(
@@ -64,25 +58,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     async (userId: string) => {
       const { data, error } = await supabase
         .from("profiles")
-        .select(
-          `
-          id,
-          full_name,
-          first_name,
-          email,
-          avatar_url,
-          level,
-          xp,
-          xp_to_next_level,
-          streak,
-          weekly_xp,
-          focus_minutes_today,
-          avg_score,
-          streak_message,
-          created_at,
-          updated_at
-        `
-        )
+        .select(`
+          id, full_name, first_name, email, avatar_url,
+          level, xp, xp_to_next_level, streak, weekly_xp,
+          focus_minutes_today, avg_score, streak_message,
+          created_at, updated_at
+        `)
         .eq("id", userId)
         .single();
 
@@ -106,7 +87,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
-      // getUser() validates the token server-side — safer than getSession()
       const {
         data: { user: currentUser },
         error,
@@ -115,7 +95,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       if (error || !currentUser) {
-        // Unauthenticated — clear everything, never show fallback data
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -127,15 +106,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (mounted) setLoading(false);
     };
 
-    initAuth();
+    void initAuth();
 
-    // Subscribe to auth state changes (login / logout / token refresh)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
       if (event === "SIGNED_OUT" || !session) {
+        offlineSync.stopAutoSync();
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -151,9 +130,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      offlineSync.stopAutoSync();
       subscription.unsubscribe();
     };
   }, [supabase, fetchProfile]);
+
+  // Offline sync is deliberately tied to an authenticated student session.
+  // The engine uses the current Supabase identity when flushing queued data.
+  useEffect(() => {
+    if (!user) return;
+    offlineSync.startAutoSync();
+    void offlineSync.syncAll();
+    return () => offlineSync.stopAutoSync();
+  }, [user]);
 
   return (
     <UserContext.Provider value={{ user, profile, loading, refreshProfile }}>
@@ -162,12 +151,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
 export function useUser(): UserContextValue {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
+  if (!context) throw new Error("useUser must be used within a UserProvider");
   return context;
 }
