@@ -1,25 +1,49 @@
 # Tertiary Academic Model
 
-Status: discovery/specification complete
+Status: discovery/specification corrected after live-code/database audit
 Date: 2026-08-16
 
-## Purpose
+## Important correction
 
-Shadecode Student must support secondary learners and post-secondary learners without creating a second product or forcing university/polytechnic data into school-specific fields.
+The first version of this document incorrectly stated that there was no persisted academic-context source of truth. A live Supabase audit found that `public.academic_contexts` already exists, is currently empty, has `user_id` as its primary key, and has RLS policies restricting reads/writes to the authenticated owner.
 
-The existing code already contains a partial post-secondary type layer in `src/lib/curriculum/types.ts` and helper logic in `src/lib/academic/postSecondary.ts`. The missing piece is a persisted, user-facing source of truth and a clear boundary between curriculum-board data and institution/course data.
+The repository also already contains `src/app/api/academic-context/route.ts`, which authenticates with the Supabase server client and reads/upserts that table, plus `src/lib/curriculum/types.ts` and `src/lib/academic/postSecondary.ts` for the TypeScript vocabulary and helper logic.
 
-## Canonical academic hierarchy
+Therefore the tertiary gap is **integration and model depth**, not creation of a second academic-context table.
+
+## Existing source of truth
+
+`academic_contexts` currently contains:
+
+- `user_id`
+- `pathway`
+- `institution`
+- `programme`
+- `year_level`
+- `semester`
+- `courses text[]`
+- `created_at`
+- `updated_at`
+
+The primary key is `user_id`, so the current design intentionally supports one active context per learner.
+
+Current RLS policies are owner-scoped for SELECT, INSERT, UPDATE and DELETE.
+
+Current API behavior:
+
+- `GET /api/academic-context` returns the authenticated user's context.
+- `PATCH /api/academic-context` upserts the authenticated user's context.
+- Current API pathways are `university` and `tvet`.
+- Courses are currently stored as a string array, not normalized course entities.
+
+## Canonical hierarchy
 
 ```text
-Education Pathway
-  ├── secondary
-  │    └── curriculum board → qualification/level → subject → topic
-  │
+Pathway
+  ├── secondary → board → qualification/level → subject → topic
   └── post-secondary
        ├── university
-       ├── polytechnic / TVET
-       └── college
+       └── TVET / polytechnic
             └── institution
                  └── programme / qualification
                       └── academic period
@@ -29,223 +53,133 @@ Education Pathway
                                 └── assessments
 ```
 
-The application should use `pathway` as the first discriminator. Post-secondary learners must not be forced to select a `CurriculumBoard` or school `Subject` merely to use the core study features.
+The existing `AcademicContext` / `AcademicCourse` / `AcademicAssessment` / `CourseMaterial` types are the correct vocabulary to extend rather than inventing parallel concepts.
 
-## Canonical entities
+## Remaining tertiary gaps
 
-### 1. Institution
+### P0: product integration
 
-Represents the organization delivering the programme.
+- Tertiary learners are not yet routed through a dedicated onboarding branch.
+- The existing academic-context API is not enough by itself to make university/polytechnic learning a first-class user experience.
+- `courses text[]` cannot represent course codes, credits, topics, materials or assessment structure.
 
-Required concepts:
-- id
-- name
-- type: university | polytechnic | college | other
-- country
-- optional campus
+### P1: normalized academic entities
 
-Institution-specific integrations are out of scope for the first implementation.
+Only after confirming the current consumers of `academic_contexts`, introduce normalized child entities where needed:
 
-### 2. Programme / qualification
+- academic periods
+- courses/modules
+- course topics
+- assessments/coursework
+- course materials
+- optional results/credits
 
-Represents the learner's degree, diploma, certificate, apprenticeship or other formal pathway.
+Do not create a replacement `academic_contexts` table.
 
-Required concepts:
-- id
-- institution_id
-- name
-- qualification_type
-- duration or expected completion period
+### P1: Cortex integration
 
-### 3. Academic period
-
-Represents semester, term, trimester or equivalent.
-
-Required concepts:
-- id
-- programme_id
-- label
-- start_date
-- end_date
-- status
-
-The model must not assume every institution uses semesters.
-
-### 4. Course / module
-
-This is the primary learning unit for post-secondary students.
-
-Required concepts:
-- id
-- academic_period_id
-- code
-- name
-- description
-- credits, nullable
-- topic list
-- assessment types
-
-This maps directly to the existing `AcademicCourse` type where possible.
-
-### 5. Assessment
-
-Required concepts:
-- id
-- course_id
-- title
-- type
-- due_at, nullable
-- weight, nullable
-- completed
-- score/result, nullable
-
-Supported types already include assignment, project, quiz, test, midterm, exam, practical, lab, workshop, presentation and report.
-
-### 6. Course material
-
-Required concepts:
-- id
-- course_id
-- title
-- kind
-- source/provenance
-- optional source URL or storage reference
-
-Existing `CourseMaterial` should be reused rather than creating another material abstraction.
-
-## Student academic identity
-
-The existing `profiles` table currently has generic fields such as `study_level` and a `subjects` array. It does not provide a normalized institution/programme/course hierarchy.
-
-Do not immediately add many nullable columns to `profiles`.
-
-Preferred direction:
-- keep `profiles` for identity and lightweight preferences;
-- introduce a separate academic-context relation for the learner;
-- allow one active academic context at a time while retaining historical contexts later;
-- keep the existing secondary curriculum flow intact.
-
-## Compatibility with existing systems
-
-Existing systems that should remain sources of truth:
-
-- `profiles`: identity, preferences and lightweight learner state
-- `subjects`: current secondary-style subject records
-- `study_topics`: current topic activity records
-- `exams`: existing exam records
-- `topic_mastery`: existing mastery evidence
-- curriculum modules under `src/lib/curriculum/`: board-based secondary curriculum
-- `AcademicContext`, `AcademicCourse`, `AcademicAssessment`, `CourseMaterial`: existing type vocabulary
-- `src/lib/academic/postSecondary.ts`: existing post-secondary helper vocabulary
-
-Do not create a second mastery graph. The future tertiary model should feed the same mastery and Cortex systems through course/module/topic identifiers.
-
-## Onboarding changes required later
-
-Current onboarding collects subjects/goals/daily study preferences. It does not establish a persisted tertiary academic identity.
-
-For post-secondary learners, onboarding should branch after pathway selection:
-
-1. Choose pathway: Secondary / University / Polytechnic / College/TVET.
-2. If secondary: existing board + level + subjects flow.
-3. If post-secondary: institution + programme + year/level + academic period.
-4. Add courses/modules.
-5. Add optional assessment deadlines.
-6. Confirm study goals.
-
-Institution and programme fields should be free-form initially. A curated institution catalogue can be added later after real usage establishes which institutions matter.
-
-## Current gap audit
-
-| Area | Current state | Gap |
-|---|---|---|
-| Academic types | Partial | Types exist but are not a persisted source of truth |
-| Post-secondary helpers | Partial | Utility functions exist but have no end-to-end product path |
-| Profile | Secondary-oriented | No normalized tertiary identity |
-| Courses/modules | Type only | No durable learner course records |
-| Academic periods | Type concepts only | No persisted semester/term context |
-| Assessments | Type only | Existing `exams` is too narrow for coursework/assignments |
-| Course materials | Type only | No post-secondary material workflow |
-| Onboarding | Existing | No tertiary branch |
-| Cortex context | Partial | Course/programme/institution context is not consistently available |
-| Mastery | Existing | Must be connected to course/module/topic hierarchy without duplication |
-| Past papers | Existing Exam Hub | Needs tertiary metadata and provenance model |
-| GPA/credits | Missing | Requires assessment + credit-aware academic result model |
-| Institution integrations | Missing | Correctly deferred until generic model is stable |
-
-## Implementation boundary
-
-### Phase T1: model and storage
-
-- Add normalized academic-context entities after schema review.
-- Add RLS from day one.
-- Keep user ownership explicit.
-- Add indexes for user, active context, programme, period and course.
-- Add migration tests.
-
-### Phase T2: onboarding
-
-- Add pathway selection.
-- Route tertiary learners through the new academic context flow.
-- Preserve existing secondary onboarding behavior.
-
-### Phase T3: student experience
-
-- Show current programme and academic period.
-- Show course/module workload.
-- Add assignment/coursework tracking.
-- Integrate deadlines into Mission Control and study planning.
-
-### Phase T4: Cortex
-
-Cortex should receive structured academic context such as:
+Cortex should consume verified context including:
 
 - pathway
 - institution
 - programme
-- year/level
-- current academic period
+- year level
+- academic period
 - active courses
-- credits
 - upcoming assessments
-- mastery/weakness evidence
+- mastery evidence
 
-It must never invent institution, course, credit or assessment facts.
+Cortex must not invent any of these values.
 
-### Phase T5: results intelligence
+### P1: Mission Control integration
 
-Only after real assessment data exists:
+Coursework and assessment deadlines should become scheduling inputs alongside existing tasks and exams.
+
+### P2: academic results
+
+After assessment data exists:
 
 - weighted course results
-- GPA/average calculations
-- credit progression
+- credit-aware progress
+- GPA/average calculations where the institution's grading scheme is known
 - academic-risk signals
-- revision recommendations
+
+Never assume a universal GPA scale.
+
+## Compatibility rules
+
+Keep existing secondary systems intact:
+
+- `profiles`
+- `subjects`
+- `study_topics`
+- `exams`
+- `topic_mastery`
+- `src/lib/curriculum/*`
+
+Post-secondary records should feed the existing learning/mast​​ery/Cortex infrastructure instead of creating a second learning intelligence stack.
+
+## Onboarding target
+
+1. Choose pathway.
+2. Secondary learners continue through the existing board/level/subject flow.
+3. University/TVET learners provide institution, programme, year/level and academic period.
+4. Add courses/modules.
+5. Optionally add assessments/deadlines.
+6. Confirm study goals.
+
+Institution and programme should remain free-form initially. A curated institution catalogue can follow real usage.
+
+## Implementation boundary
+
+### T1: integrate existing context
+
+- Audit all current reads/writes of `academic_contexts`.
+- Add onboarding pathway selection.
+- Connect existing context API to the student experience.
+- Preserve secondary onboarding.
+
+### T2: normalize courses
+
+- Replace the course string array only after consumers are mapped.
+- Preserve backwards compatibility during migration.
+- Add RLS and ownership to every child entity.
+
+### T3: assessments and workload
+
+- Add assignment/coursework/practical/lab/project tracking.
+- Feed due dates into Mission Control.
+
+### T4: Cortex
+
+- Include academic context in behavior summaries and planning.
+- Use only stored/evidenced academic facts.
+
+### T5: results
+
+- Add institution-aware grading models before GPA calculations.
 
 ## Non-goals
 
-Do not yet build:
+Do not make these prerequisites:
 
-- institution-specific APIs
 - university LMS integrations
-- automatic scraping of university portals
-- a marketplace
-- peer-to-peer academic exchange
-- a full digital twin
-- institution-wide administration
-
-Those can sit on top of this generic model later.
+- institution-specific APIs
+- portal scraping
+- marketplace/community systems
+- P2P exchange
+- digital twin
+- multi-agent architecture
 
 ## Acceptance criteria
 
-The model is ready for implementation when:
+Tertiary support is considered product-ready when:
 
-- a secondary student can continue using the existing curriculum path unchanged;
-- a university student can be represented without selecting a school exam board;
-- a polytechnic/TVET student can be represented without pretending every course is a school subject;
-- one learner can have an active programme and academic period;
-- courses/modules can own topics, materials and assessments;
-- assessment deadlines can feed Mission Control;
-- mastery can attach to course topics without creating a duplicate mastery system;
-- Cortex can consume the context without fabricated academic metadata;
-- RLS can isolate one learner's academic records from another learner.
+- a university student can onboard without selecting a school exam board;
+- a polytechnic/TVET student can onboard without pretending every course is a school subject;
+- their existing `academic_contexts` record becomes the root of their tertiary academic state;
+- courses/modules support real academic workload rather than only names;
+- assessments can be tracked and scheduled;
+- Cortex can use academic context without fabrication;
+- mastery remains a single shared intelligence system;
+- RLS keeps academic data isolated per learner.
