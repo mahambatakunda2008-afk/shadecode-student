@@ -20,12 +20,17 @@ This registry is the navigation and status index for the strategic blueprint sys
 | Labs blueprint | Gap / to locate | TBD | Experimental governance should connect to the knowledge-governance rules. |
 | Shadecode Student blueprint | Gap / to locate | TBD | Product-specific strategy should be distinguished from current architecture. |
 | Shadecode ecosystem blueprint | Gap / to locate | TBD | Covers Student, SCS, Idea Vault and future products where applicable. |
+| Distributed Intelligence Architecture | Superseded strategic proposal | `docs/SHADECODE_DISTRIBUTED_INTELLIGENCE_ARCHITECTURE.md` | Earlier proposal focused primarily on distributed intelligence. Retained as historical context. |
+| Distributed Infrastructure Architecture | Located / current strategic proposal | `docs/SHADECODE_DISTRIBUTED_INFRASTRUCTURE_ARCHITECTURE.md` | Current direction expands decentralization beyond AI to compute, storage, knowledge, synchronization, content delivery, and selected services. User devices are first-class infrastructure nodes; cloud is optional infrastructure. |
 
 ## Existing implementation knowledge
 
-- `docs/ARCHITECTURE.md` — verified current architecture.
+- `docs/ARCHITECTURE.md` — verified current implementation architecture and strategic direction.
 - `docs/AUDIT_2026-08.md` — detailed audit record.
 - `docs/FINAL_AUDIT_REPORT_2026-08.md` — consolidated audit and release-readiness assessment.
+- `docs/SHADENET_DECENTRALIZED_EDUCATION_NETWORK.md` — decentralized educational content/network architecture.
+- `docs/SHADECODE_DISTRIBUTED_INTELLIGENCE_ARCHITECTURE.md` — superseded strategic proposal focused on distributed intelligence.
+- `docs/SHADECODE_DISTRIBUTED_INFRASTRUCTURE_ARCHITECTURE.md` — current strategic proposal for device-native distributed infrastructure.
 - `AGENTS.md` — repository agent rules and Cortex architecture orientation.
 - `prompts/` — reusable implementation and product prompts, including documentation and domain-specific prompts.
 - `.cortex/` — autonomous Cortex operational artifacts and live agent state.
