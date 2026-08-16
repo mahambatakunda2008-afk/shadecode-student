@@ -3,37 +3,18 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 /**
- * Middleware — edge-runtime route guard
- * ──────────────────────────────────────
- * State machine:
+ * Edge route guard.
  *
- *   Unauthenticated              → /login
- *   Authenticated, not onboarded → /onboarding   (unless already there)
- *   Authenticated, onboarded     → /dashboard    (if they hit /onboarding again)
- *   Everything else              → pass through
- *
- * Session validation & refresh
- * ─────────────────────────────
- * Previously this only checked whether an sb-*-auth-token COOKIE was
- * PRESENT, never whether the session it represents was actually still
- * valid. Supabase access tokens expire (1 hour by default); without
- * calling supabase.auth.getUser() here -- which is what actually
- * triggers @supabase/ssr's automatic refresh-token exchange and writes
- * the new tokens back onto the response cookies -- an expired access
- * token cookie just sits there unrefreshed until something finally
- * tries to use it and gets rejected, at which point the user is bounced
- * to login with no warning. This was the root cause of logged-in users
- * being asked to log in again periodically. Calling getUser() here on
- * every request keeps the session alive for as long as the refresh
- * token remains valid, matching Supabase's documented Next.js
- * middleware pattern.
+ * Authentication is validated by Supabase on every protected request.
+ * Onboarding is validated from the authoritative user_profiles row, not a
+ * client-writable cookie. The cookie is retained only as a compatibility
+ * hint for older clients; it is never trusted for access control.
  */
 
-// ── Routes that bypass all checks ────────────────────────────────────────────
 const PUBLIC_PREFIXES = [
-  '/',              // Landing page
-  '/auth',          // Auth pages (login, signup, etc.)
-  '/api',           // Route handlers authenticate themselves and return JSON
+  '/',
+  '/auth',
+  '/api',
   '/_next',
   '/favicon',
   '/images',
@@ -44,18 +25,10 @@ function isPublic(path: string): boolean {
   return PUBLIC_PREFIXES.some(p => p === '/' ? path === '/' : path.startsWith(p));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
-
-  // Public routes never need a Supabase round-trip.
   if (isPublic(pathname)) return NextResponse.next();
 
-  // Response object that Supabase's cookie adapter can write refreshed
-  // tokens onto. Must be created before the Supabase client and returned
-  // (or have its cookies copied onto whatever response IS returned) so a
-  // refreshed session is actually persisted to the browser.
   let response = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
@@ -77,13 +50,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
   );
 
-  // This call is what actually refreshes an expiring session -- not just
-  // a cookie-presence check.
   const { data: { user } } = await supabase.auth.getUser();
-  const authed = !!user;
-
-  const onboardingComplete = req.cookies.get('onboarding_complete')?.value === '1';
-  const onOnboarding       = pathname.startsWith('/onboarding');
 
   function redirectPreservingSession(destination: string, extraParams?: Record<string, string>) {
     const url = req.nextUrl.clone();
@@ -96,17 +63,44 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return redirectResponse;
   }
 
-  // Not authenticated → login
-  if (!authed) {
+  if (!user) {
     return redirectPreservingSession('/auth/login', { redirect: pathname });
   }
 
-  // Authenticated but onboarding pending → force into /onboarding
+  // Admins are platform operators, not student accounts. They must not be
+  // blocked by the student onboarding gate.
+  const { data: adminCheck, error: adminError } = await supabase.rpc('has_role', {
+    user_id: user.id,
+    role_name: 'admin',
+  });
+
+  if (!adminError && Boolean(adminCheck)) {
+    return response;
+  }
+
+  // Authoritative onboarding state. A forged localStorage value or a
+  // client-written onboarding_complete cookie cannot bypass this check.
+  const { data: profile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('onboarding_completed')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  // Fail closed for protected application routes when the account state
+  // cannot be established. This prevents an RLS/database failure from
+  // accidentally becoming an onboarding bypass.
+  if (profileError) {
+    console.error('[middleware] onboarding profile check failed:', profileError.message);
+    return redirectPreservingSession('/auth/login', { error: 'profile_check' });
+  }
+
+  const onboardingComplete = profile?.onboarding_completed === true;
+  const onOnboarding = pathname.startsWith('/onboarding');
+
   if (!onboardingComplete && !onOnboarding) {
     return redirectPreservingSession('/onboarding');
   }
 
-  // Already onboarded but somehow hitting /onboarding again → dashboard
   if (onboardingComplete && onOnboarding) {
     return redirectPreservingSession('/dashboard');
   }
@@ -116,9 +110,6 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    // Match all except: API/auth callbacks, Next.js internals, and static assets.
-    // manifest.json must be excluded so PWABuilder/browser installability checks
-    // can fetch the web manifest without being redirected through auth middleware.
     '/((?!api/auth|_next/static|_next/image|favicon\\.ico|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 };
