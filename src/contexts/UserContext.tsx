@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import { createBrowserClient } from "@supabase/ssr";
@@ -45,9 +46,13 @@ const UserContext = createContext<UserContextValue>({
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
   const [user, setUser] = useState<User | null>(null);
@@ -135,8 +140,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase, fetchProfile]);
 
-  // Offline sync is deliberately tied to an authenticated student session.
-  // The engine uses the current Supabase identity when flushing queued data.
   useEffect(() => {
     if (!user) return;
     offlineSync.startAutoSync();
