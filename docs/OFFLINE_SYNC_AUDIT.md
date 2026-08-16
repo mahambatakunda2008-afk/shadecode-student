@@ -132,3 +132,7 @@ Offline-first is considered implemented only when a learner can:
 ## Conclusion
 
 The project already has useful local-first primitives. The actual gap is integration, durable mutation synchronization and entity-specific reconciliation. Building peer-to-peer networking now would be premature.
+
+## Roadmap status
+
+The offline sync discovery/audit task is complete. The next engineering work is application integration and a durable mutation queue, not peer-to-peer networking.
