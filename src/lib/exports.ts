@@ -9,6 +9,7 @@ export function downloadExport(
   filename: string,
   data: unknown,
   format: ExportFormat,
+  tracking?: { exportType?: string; sourceType?: string; sourceId?: string },
 ) {
   if (typeof window === "undefined") return;
 
@@ -37,4 +38,17 @@ export function downloadExport(
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+
+  void fetch("/api/exports/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify({
+      format,
+      exportType: tracking?.exportType ?? "generic",
+      sourceType: tracking?.sourceType ?? null,
+      sourceId: tracking?.sourceId ?? null,
+      metadata: { filename },
+    }),
+  }).catch(() => undefined);
 }
