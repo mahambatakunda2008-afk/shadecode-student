@@ -1,31 +1,84 @@
 /**
- * /lib/offline/sync.ts
+ * Offline data synchronization logic.
  *
- * Offline data synchronization logic
+ * Cached records remain available for reads, while writes can be queued as
+ * durable mutations and retried without losing the user's intent.
  */
 
-import { offlineStorage, type OfflineProgress } from "./storage";
+import { offlineStorage, type OfflineProgress, type OfflineTask, type OfflineSubject } from "./storage";
+import { mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
 
 export class OfflineSync {
   private syncInProgress = false;
-  private syncInterval: NodeJS.Timeout | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
 
   startAutoSync(): void {
     if (this.syncInterval) return;
-    this.syncInterval = setInterval(() => { if (navigator.onLine) this.syncAll(); }, 30000);
+    this.syncInterval = setInterval(() => {
+      if (typeof navigator !== "undefined" && navigator.onLine) void this.syncAll();
+    }, 30000);
   }
 
   stopAutoSync(): void {
-    if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
   }
 
   async syncAll(): Promise<void> {
-    if (this.syncInProgress || !navigator.onLine) return;
+    if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return;
     this.syncInProgress = true;
-    try { await Promise.all([this.syncTasks(), this.syncSubjects(), this.syncProgress()]); }
-    catch (error) { console.error("[OfflineSync] Sync failed:", error); }
-    finally { this.syncInProgress = false; }
+    try {
+      await this.syncMutations();
+      await Promise.all([this.syncTasks(), this.syncSubjects(), this.syncProgress()]);
+    } catch (error) {
+      console.error("[OfflineSync] Sync failed:", error);
+    } finally {
+      this.syncInProgress = false;
+    }
+  }
+
+  /** Queue a write when offline. Callers can safely retry the same intent. */
+  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts">): Promise<OfflineMutation<T>> {
+    return mutationQueue.enqueue(input);
+  }
+
+  private async syncMutations(): Promise<void> {
+    const mutations = await mutationQueue.list();
+    const supabase = createClient();
+
+    for (const mutation of mutations) {
+      try {
+        const table = mutation.store;
+        const payload = mutation.payload as Record<string, unknown>;
+        if (!table || table.includes(".") || table.includes("/") || !/^[a-zA-Z0-9_]+$/.test(table)) {
+          throw new Error(`Invalid offline mutation store: ${table}`);
+        }
+
+        if (mutation.operation === "delete") {
+          const id = payload.id;
+          if (typeof id !== "string") throw new Error("Delete mutation requires a string id");
+          const { error } = await supabase.from(table).delete().eq("id", id);
+          if (error) throw error;
+        } else if (mutation.operation === "update") {
+          const id = payload.id;
+          if (typeof id !== "string") throw new Error("Update mutation requires a string id");
+          const { id: _id, ...changes } = payload;
+          const { error } = await supabase.from(table).update(changes).eq("id", id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from(table).upsert(payload);
+          if (error) throw error;
+        }
+
+        await mutationQueue.remove(mutation.id);
+      } catch (error) {
+        await mutationQueue.recordFailure(mutation.id, error);
+        console.error("[OfflineSync] Failed queued mutation:", mutation.id, error);
+      }
+    }
   }
 
   private async syncTasks(): Promise<void> {
@@ -33,16 +86,9 @@ export class OfflineSync {
     const supabase = createClient();
     for (const task of unsyncedTasks) {
       try {
-        const { error } = await supabase.from("tasks").upsert({
-          id: task.id,
-          user_id: task.userId,
-          subject_id: task.subject_id,
-          title: task.title,
-          completed: task.completed,
-        });
+        const { error } = await supabase.from("tasks").upsert({ id: task.id, user_id: task.userId, subject_id: task.subject_id, title: task.title, completed: task.completed });
         if (error) throw error;
         await offlineStorage.markTaskSynced(task.id, task.userId);
-        console.log("[OfflineSync] Synced task:", task.id);
       } catch (error) { console.error("[OfflineSync] Failed to sync task:", task.id, error); }
     }
   }
@@ -52,14 +98,9 @@ export class OfflineSync {
     const supabase = createClient();
     for (const subject of unsyncedSubjects) {
       try {
-        const { error } = await supabase.from("subjects").upsert({
-          id: subject.id,
-          user_id: subject.userId,
-          name: subject.name,
-        });
+        const { error } = await supabase.from("subjects").upsert({ id: subject.id, user_id: subject.userId, name: subject.name });
         if (error) throw error;
         await offlineStorage.markSubjectSynced(subject.id, subject.userId);
-        console.log("[OfflineSync] Synced subject:", subject.id);
       } catch (error) { console.error("[OfflineSync] Failed to sync subject:", subject.id, error); }
     }
   }
@@ -69,13 +110,9 @@ export class OfflineSync {
     const supabase = createClient();
     for (const progress of unsyncedProgress) {
       try {
-        const { error } = await supabase.from("learn_lessons").update({
-          progress: progress.progress,
-          updated_at: new Date().toISOString(),
-        }).eq("id", progress.lessonId).eq("user_id", progress.userId);
+        const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", progress.userId);
         if (error) throw error;
         await offlineStorage.markProgressSynced(progress.lessonId);
-        console.log("[OfflineSync] Synced progress:", progress.lessonId);
       } catch (error) { console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error); }
     }
   }
@@ -83,55 +120,34 @@ export class OfflineSync {
   async saveTaskLocally(taskId: string): Promise<void> {
     const supabase = createClient();
     const { data: task, error } = await supabase.from("tasks").select("*").eq("id", taskId).single();
-    if (error || !task) { console.error("[OfflineSync] Failed to fetch task for offline storage:", error); return; }
-    await offlineStorage.saveTask({
-      id: task.id,
-      userId: task.user_id,
-      subject_id: task.subject_id,
-      title: task.title,
-      completed: task.completed,
-      lastUpdated: new Date().toISOString(),
-      synced: true,
-    });
+    if (error || !task) return;
+    await offlineStorage.saveTask({ id: task.id, userId: task.user_id, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true });
   }
 
   async saveProgressLocally(lessonId: string, userId: string): Promise<void> {
     const supabase = createClient();
     const { data: lesson, error } = await supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", userId).single();
-    if (error || !lesson) { console.error("[OfflineSync] Failed to fetch progress for offline storage:", error); return; }
+    if (error || !lesson) return;
     await offlineStorage.saveProgress({ lessonId: lesson.id, userId, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true });
   }
 
-  async getTasks(userId: string): Promise<any[]> {
+  async getTasks(userId: string): Promise<OfflineTask[]> {
     const localTasks = await offlineStorage.getTasksForUser(userId);
     if (localTasks.length > 0) return localTasks;
     const supabase = createClient();
     const { data: tasks, error } = await supabase.from("tasks").select("*").eq("user_id", userId);
-    if (error) { console.error("[OfflineSync] Failed to fetch tasks from server:", error); return []; }
-    for (const task of tasks || []) {
-      await offlineStorage.saveTask({ id: task.id, userId: task.user_id ?? userId, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true });
-    }
+    if (error) return [];
+    for (const task of tasks || []) await offlineStorage.saveTask({ id: task.id, userId: task.user_id ?? userId, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true });
     return tasks || [];
   }
 
-  async getSubjects(userId: string): Promise<any[]> {
+  async getSubjects(userId: string): Promise<OfflineSubject[]> {
     const localSubjects = await offlineStorage.getSubjectsForUser(userId);
     if (localSubjects.length > 0) return localSubjects;
-
     const supabase = createClient();
     const { data: subjects, error } = await supabase.from("subjects").select("*").eq("user_id", userId);
-    if (error) { console.error("[OfflineSync] Failed to fetch subjects from server:", error); return []; }
-
-    for (const subject of subjects || []) {
-      await offlineStorage.saveSubject({
-        id: subject.id,
-        userId: subject.user_id ?? userId,
-        name: subject.name,
-        lastUpdated: new Date().toISOString(),
-        synced: true,
-      });
-    }
-
+    if (error) return [];
+    for (const subject of subjects || []) await offlineStorage.saveSubject({ id: subject.id, userId: subject.user_id ?? userId, name: subject.name, lastUpdated: new Date().toISOString(), synced: true });
     return subjects || [];
   }
 
@@ -140,7 +156,7 @@ export class OfflineSync {
     if (localProgress?.userId === userId) return localProgress;
     const supabase = createClient();
     const { data: lesson, error } = await supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", userId).single();
-    if (error || !lesson) { console.error("[OfflineSync] Failed to fetch progress from server:", error); return null; }
+    if (error || !lesson) return null;
     const progress: OfflineProgress = { lessonId: lesson.id, userId, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true };
     await offlineStorage.saveProgress(progress);
     return progress;
