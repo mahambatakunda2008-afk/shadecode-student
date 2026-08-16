@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { trackEvent } from "@/lib/traction/client";
 
 type Question = {
   id: string;
@@ -43,7 +42,6 @@ export default function InAppSurvey() {
         body: JSON.stringify({ surveyId: survey.id, answers }),
       });
       if (!response.ok) throw new Error("submit failed");
-      await trackEvent("survey_completed", { surveyId: survey.id });
       setClosed(true);
     } catch {
       setBusy(false);
@@ -68,9 +66,7 @@ export default function InAppSurvey() {
             {q.type === "single" && (
               <div className="grid gap-2">
                 {(q.options ?? []).map((option) => (
-                  <button key={option} onClick={() => setAnswers((a) => ({ ...a, [q.id]: option }))} className={`rounded-xl border px-3 py-2 text-left text-sm ${answers[q.id] === option ? "border-cyan-400 bg-cyan-400/10" : "border-white/10 bg-white/5"}`}>
-                    {option}
-                  </button>
+                  <button key={option} onClick={() => setAnswers((a) => ({ ...a, [q.id]: option }))} className={`rounded-xl border px-3 py-2 text-left text-sm ${answers[q.id] === option ? "border-cyan-400 bg-cyan-400/10" : "border-white/10 bg-white/5"}`}>{option}</button>
                 ))}
               </div>
             )}
@@ -81,16 +77,12 @@ export default function InAppSurvey() {
                 ))}
               </div>
             )}
-            {q.type === "text" && (
-              <textarea value={String(answers[q.id] ?? "")} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} rows={3} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm outline-none focus:border-cyan-400" />
-            )}
+            {q.type === "text" && <textarea value={String(answers[q.id] ?? "")} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} rows={3} className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm outline-none focus:border-cyan-400" />}
           </div>
         ))}
       </div>
 
-      <button disabled={busy || Object.keys(answers).length === 0} onClick={submit} className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40">
-        {busy ? "Saving…" : "Send feedback"}
-      </button>
+      <button disabled={busy || Object.keys(answers).length === 0} onClick={submit} className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40">{busy ? "Saving…" : "Send feedback"}</button>
     </div>
   );
 }
