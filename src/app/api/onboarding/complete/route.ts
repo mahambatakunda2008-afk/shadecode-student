@@ -21,56 +21,38 @@ export async function POST(request: NextRequest) {
     let subjectInterests = (body.subject_interests ?? []) as SubjectInterest[];
     const goals = (body.goals ?? []) as string[] | undefined;
 
-    if (!educationLevel || !learningGoal) {
-      return NextResponse.json({ error: "education_level and learning_goal are required" }, { status: 400 });
-    }
+    if (!educationLevel || !learningGoal) return NextResponse.json({ error: "education_level and learning_goal are required" }, { status: 400 });
 
     const detectedCountry = (body.country as string) ?? request.headers.get("x-vercel-ip-country") ?? request.headers.get("cf-ipcountry") ?? request.headers.get("x-country") ?? null;
-
     try {
       const { lookupLocalization } = await import("@/lib/localization/curriculumMap");
       const loc = lookupLocalization(detectedCountry ?? undefined);
-      if (loc?.recommendedBoosts?.length) {
-        subjectInterests = Array.from(new Set([...loc.recommendedBoosts, ...subjectInterests])).slice(0, 6) as SubjectInterest[];
-      }
-    } catch (e) {
-      console.warn("[onboarding] localization unavailable:", e);
-    }
+      if (loc?.recommendedBoosts?.length) subjectInterests = Array.from(new Set([...loc.recommendedBoosts, ...subjectInterests])).slice(0, 6) as SubjectInterest[];
+    } catch (e) { console.warn("[onboarding] localization unavailable:", e); }
 
-    // Post-secondary metadata is optional and deliberately user-owned. It does not
-    // require a global university curriculum database.
-    const academicMetadata = {
-      institution: typeof body.institution === "string" ? body.institution.trim() : undefined,
-      programme: typeof body.programme === "string" ? body.programme.trim() : undefined,
-      year_level: typeof body.year_level === "string" ? body.year_level.trim() : undefined,
-      semester: typeof body.semester === "string" ? body.semester.trim() : undefined,
-      courses: Array.isArray(body.courses) ? body.courses.filter((v: unknown): v is string => typeof v === "string").map((v: string) => v.trim()).filter(Boolean) : undefined,
-    };
-
-    const profilePayload: Record<string, unknown> = {
+    const academicContext = {
       user_id: user.id,
-      education_level: educationLevel,
-      learning_goal: learningGoal,
-      subject_interests: subjectInterests,
-      onboarding_completed: true,
+      pathway: educationLevel === "tvet" ? "tvet" : "university",
+      institution: typeof body.institution === "string" ? body.institution.trim() || null : null,
+      programme: typeof body.programme === "string" ? body.programme.trim() : "",
+      year_level: typeof body.year_level === "string" ? body.year_level.trim() || null : null,
+      semester: typeof body.semester === "string" ? body.semester.trim() || null : null,
+      courses: Array.isArray(body.courses) ? body.courses.filter((v: unknown): v is string => typeof v === "string").map((v: string) => v.trim()).filter(Boolean) : [],
     };
 
-    // Only write fields that already exist in the profile schema. If the optional
-    // post-secondary columns have not been migrated yet, onboarding remains safe.
-    if (educationLevel === "university" || educationLevel === "tvet") {
-      Object.assign(profilePayload, academicMetadata);
-    }
+    if ((educationLevel === "university" || educationLevel === "tvet") && !academicContext.programme) return NextResponse.json({ error: "programme is required for university and TVET learners" }, { status: 400 });
 
-    const { error: profileError } = await supabase.from("user_profiles").upsert(profilePayload, { onConflict: "user_id" });
-    if (profileError) {
-      // Keep the existing onboarding path compatible with deployments that have not
-      // applied the optional post-secondary columns yet.
-      if (educationLevel === "university" || educationLevel === "tvet") {
-        const { institution: _i, programme: _p, year_level: _y, semester: _s, courses: _c, ...legacyPayload } = profilePayload;
-        const { error: fallbackError } = await supabase.from("user_profiles").upsert(legacyPayload, { onConflict: "user_id" });
-        if (fallbackError) return NextResponse.json({ error: "Failed to save profile" }, { status: 500 });
-      } else {
-        return NextResponse.json({ error: "Failed to save profile" }, { status: 500 });
+    const { error: profileError } = await supabase.from("user_profiles").upsert({
+      user_id: user.id, education_level: educationLevel, learning_goal: learningGoal,
+      subject_interests: subjectInterests, onboarding_completed: true,
+    }, { onConflict: "user_id" });
+    if (profileError) return NextResponse.json({ error: "Failed to save profile" }, { status: 500 });
+
+    if (educationLevel === "university" || educationLevel === "tvet") {
+      const { error: contextError } = await supabase.from("academic_contexts").upsert(academicContext, { onConflict: "user_id" });
+      if (contextError) {
+        console.error("[onboarding] academic context error:", contextError);
+        return NextResponse.json({ error: "Failed to save academic context" }, { status: 500 });
       }
     }
 
