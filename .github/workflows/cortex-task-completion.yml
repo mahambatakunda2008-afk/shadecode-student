@@ -1,0 +1,67 @@
+name: Mark Cortex task complete
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  mark-complete:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'cortex-auto-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Mark the merged Cortex task as complete
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          body = os.environ.get("PR_BODY", "")
+          match = re.search(r"<!--\s*cortex-task:\s*(.*?)\s*-->", body, re.IGNORECASE)
+          if not match:
+              print("No Cortex task marker found; nothing to update.")
+              raise SystemExit(0)
+
+          task = match.group(1).strip()
+          path = Path(".cortex/tasks.md")
+          content = path.read_text(encoding="utf-8")
+
+          pattern = re.compile(
+              r"^- \[ \] (🔴|🟡|🟢) \*\*" + re.escape(task) + r"\*\*",
+              re.MULTILINE,
+          )
+          updated, count = pattern.subn(r"- [x] \1 **" + task + "**", content, count=1)
+
+          if count == 0:
+              print(f"Task is already complete or was not found: {task}")
+              raise SystemExit(0)
+
+          path.write_text(updated, encoding="utf-8")
+          print(f"Marked Cortex task complete: {task}")
+          PY
+
+      - name: Commit roadmap update
+        run: |
+          if git diff --quiet -- .cortex/tasks.md; then
+            echo "No roadmap change to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .cortex/tasks.md
+          git commit -m "chore(cortex): mark merged task complete"
+          git push origin HEAD:main
