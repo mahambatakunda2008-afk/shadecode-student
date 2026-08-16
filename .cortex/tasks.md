@@ -114,7 +114,7 @@ This section is the strategic layer above the feature backlog. It prevents Corte
 
 The strategic roadmap above does not replace the verified implementation backlog below. Near-term execution should prioritize completing dormant real infrastructure before inventing new parallel systems.
 
-- [ ] 🔴 **Tertiary Academic Model — discovery/specification first**
+- [x] 🔴 **Tertiary Academic Model — discovery/specification first**
   - Define the minimum generic model for institution → qualification/program → course/module → semester/term → assessment.
   - Audit current `profiles`, `subjects`, `exams`, `study_topics` and onboarding data before adding anything.
   - Deliver a written model and gap list before implementation.
