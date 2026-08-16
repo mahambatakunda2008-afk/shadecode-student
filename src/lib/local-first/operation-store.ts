@@ -1,12 +1,7 @@
-import {
-  type LocalOperation,
-  type Tombstone,
-  compareOperations,
-  createTombstone,
-} from "./operations";
+import { type LocalOperation, type Tombstone, compareOperations, createTombstone } from "./operations";
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const OPERATIONS = "operations";
 const TOMBSTONES = "tombstones";
 
@@ -18,84 +13,37 @@ export class LocalOperationStore {
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(OPERATIONS)) {
-          const store = db.createObjectStore(OPERATIONS, { keyPath: "id" });
-          store.createIndex("userId", "userId", { unique: false });
-          store.createIndex("entity", "entity", { unique: false });
-          store.createIndex("entityId", "entityId", { unique: false });
-          store.createIndex("timestamp", "timestamp", { unique: false });
-        }
-        if (!db.objectStoreNames.contains(TOMBSTONES)) {
-          const store = db.createObjectStore(TOMBSTONES, { keyPath: "operationId" });
-          store.createIndex("userId", "userId", { unique: false });
-          store.createIndex("entity", "entity", { unique: false });
-          store.createIndex("entityId", "entityId", { unique: false });
-        }
-      };
+      request.onsuccess = () => { this.db = request.result; resolve(); };
+      request.onupgradeneeded = () => reject(new Error("Operation store schema must be created by offline storage migration"));
     });
   }
 
   async append(operation: LocalOperation): Promise<boolean> {
     await this.init();
-    const existing = await this.get(operation.id);
-    if (existing) return false;
-    await this.put(OPERATIONS, operation);
-    if (operation.kind === "delete") {
-      await this.put(TOMBSTONES, createTombstone(operation));
-    }
-    return true;
-  }
-
-  async get(id: string): Promise<LocalOperation | null> {
-    await this.init();
-    return this.read<LocalOperation>(OPERATIONS, id);
-  }
-
-  async list(userId: string): Promise<LocalOperation[]> {
-    await this.init();
-    const operations = await this.readAll<LocalOperation>(OPERATIONS);
-    return operations.filter((operation) => operation.userId === userId).sort(compareOperations);
-  }
-
-  async listTombstones(userId: string): Promise<Tombstone[]> {
-    await this.init();
-    const tombstones = await this.readAll<Tombstone>(TOMBSTONES);
-    return tombstones.filter((tombstone) => tombstone.userId === userId);
-  }
-
-  async hasOperation(id: string): Promise<boolean> {
-    return (await this.get(id)) !== null;
-  }
-
-  private async put(storeName: string, value: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = this.db!.transaction([storeName], "readwrite").objectStore(storeName).put(value);
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      const stores = operation.kind === "delete" ? [OPERATIONS, TOMBSTONES] : [OPERATIONS];
+      const tx = this.db!.transaction(stores, "readwrite");
+      const operations = tx.objectStore(OPERATIONS);
+      const existing = operations.get(operation.id);
+      existing.onerror = () => reject(existing.error);
+      existing.onsuccess = () => {
+        if (existing.result) { tx.abort(); resolve(false); return; }
+        operations.put(operation);
+        if (operation.kind === "delete") tx.objectStore(TOMBSTONES).put(createTombstone(operation));
+      };
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => { if (tx.error) reject(tx.error); };
     });
   }
 
-  private async read<T>(storeName: string, key: IDBValidKey): Promise<T | null> {
-    return new Promise((resolve, reject) => {
-      const request = this.db!.transaction([storeName], "readonly").objectStore(storeName).get(key);
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result ?? null);
-    });
-  }
+  async get(id: string): Promise<LocalOperation | null> { await this.init(); return this.read<LocalOperation>(OPERATIONS, id); }
+  async list(userId: string): Promise<LocalOperation[]> { await this.init(); return (await this.readAll<LocalOperation>(OPERATIONS)).filter(v => v.userId === userId).sort(compareOperations); }
+  async listTombstones(userId: string): Promise<Tombstone[]> { await this.init(); return (await this.readAll<Tombstone>(TOMBSTONES)).filter(v => v.userId === userId); }
+  async hasOperation(id: string): Promise<boolean> { return (await this.get(id)) !== null; }
 
-  private async readAll<T>(storeName: string): Promise<T[]> {
-    return new Promise((resolve, reject) => {
-      const request = this.db!.transaction([storeName], "readonly").objectStore(storeName).getAll();
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result ?? []);
-    });
-  }
+  private async read<T>(store: string, key: IDBValidKey): Promise<T | null> { return new Promise((resolve, reject) => { const r = this.db!.transaction([store], "readonly").objectStore(store).get(key); r.onerror = () => reject(r.error); r.onsuccess = () => resolve(r.result ?? null); }); }
+  private async readAll<T>(store: string): Promise<T[]> { return new Promise((resolve, reject) => { const r = this.db!.transaction([store], "readonly").objectStore(store).getAll(); r.onerror = () => reject(r.error); r.onsuccess = () => resolve(r.result || []); }); }
 }
 
 export const localOperationStore = new LocalOperationStore();
