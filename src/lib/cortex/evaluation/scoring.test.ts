@@ -60,7 +60,24 @@ describe("evaluateExperiment", () => {
     );
 
     expect(result.decision).toBe("reject");
-    expect(result.failedGates).toContain("learningOutcome");
+    expect(result.failedGates).toContain("metric:learningOutcome");
+  });
+
+  it("rejects invalid thresholds instead of silently normalizing them", () => {
+    const result = evaluateExperiment(
+      {
+        learningOutcome: 0.99,
+        correctness: 0.99,
+        retention: 0.99,
+        accessibility: 0.99,
+        costEfficiency: 0.99,
+        engagement: 0.99,
+      },
+      { ...thresholds, correctness: Number.POSITIVE_INFINITY },
+    );
+
+    expect(result.decision).toBe("reject");
+    expect(result.failedGates).toContain("threshold:correctness");
   });
 
   it("iterates when hard gates pass but supporting evidence is incomplete", () => {
