@@ -25,15 +25,14 @@ export class SupabaseSignalingTransport implements SignalingTransport {
       });
     });
     return () => {
-      this.channel.unsubscribe();
+      void this.channel.unsubscribe();
       this.subscribed = false;
     };
   }
 
   private async ensureSubscribed(): Promise<void> {
     if (this.subscribed) return;
-    const status = await this.channel.subscribe();
-    if (status !== "SUBSCRIBED") throw new Error(`ShadeNet signaling unavailable: ${status}`);
+    await this.channel.subscribe();
     this.subscribed = true;
   }
 }
