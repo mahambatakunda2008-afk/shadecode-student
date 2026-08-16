@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/traction/client";
 
+const ACTIVATED_KEY = "shadecode_activation_recorded";
+
 export default function TractionBootstrap() {
   const pathname = usePathname();
 
@@ -16,7 +18,9 @@ export default function TractionBootstrap() {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname === "/dashboard") void trackEvent("activation_completed", { path: pathname });
+    if (pathname !== "/dashboard" || window.localStorage.getItem(ACTIVATED_KEY)) return;
+    window.localStorage.setItem(ACTIVATED_KEY, "1");
+    void trackEvent("activation_completed", { path: pathname });
   }, [pathname]);
 
   return null;
