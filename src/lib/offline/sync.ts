@@ -2,7 +2,7 @@
  * Offline data synchronization logic.
  *
  * Cached records remain available for reads, while writes can be queued as
- * durable mutations and retried without losing the user's intent.
+ * durable, operation-scoped mutations and retried without losing intent.
  */
 
 import { offlineStorage, type OfflineProgress, type OfflineTask, type OfflineSubject } from "./storage";
@@ -50,26 +50,63 @@ export class OfflineSync {
 
     for (const mutation of mutations) {
       try {
-        const table = mutation.store;
         const payload = mutation.payload as Record<string, unknown>;
-        if (!table || !/^[a-zA-Z0-9_]+$/.test(table)) {
-          throw new Error(`Invalid offline mutation store: ${table}`);
-        }
-
-        if (mutation.operation === "delete") {
-          const id = payload.id;
-          if (typeof id !== "string") throw new Error("Delete mutation requires a string id");
-          const { error } = await supabase.from(table).delete().eq("id", id);
-          if (error) throw error;
-        } else if (mutation.operation === "update") {
-          const id = payload.id;
-          if (typeof id !== "string") throw new Error("Update mutation requires a string id");
-          const { id: _id, ...changes } = payload;
-          const { error } = await supabase.from(table).update(changes).eq("id", id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from(table).upsert(payload);
-          if (error) throw error;
+        switch (mutation.operation) {
+          case "task.upsert": {
+            const { error } = await supabase.from("tasks").upsert(payload);
+            if (error) throw error;
+            break;
+          }
+          case "task.update": {
+            const id = payload.id;
+            if (typeof id !== "string") throw new Error("task.update requires a string id");
+            const { id: _id, ...changes } = payload;
+            const { error } = await supabase.from("tasks").update(changes).eq("id", id);
+            if (error) throw error;
+            break;
+          }
+          case "task.delete": {
+            const id = payload.id;
+            if (typeof id !== "string") throw new Error("task.delete requires a string id");
+            const { error } = await supabase.from("tasks").delete().eq("id", id);
+            if (error) throw error;
+            break;
+          }
+          case "subject.upsert": {
+            const { error } = await supabase.from("subjects").upsert(payload);
+            if (error) throw error;
+            break;
+          }
+          case "subject.update": {
+            const id = payload.id;
+            if (typeof id !== "string") throw new Error("subject.update requires a string id");
+            const { id: _id, ...changes } = payload;
+            const { error } = await supabase.from("subjects").update(changes).eq("id", id);
+            if (error) throw error;
+            break;
+          }
+          case "subject.delete": {
+            const id = payload.id;
+            if (typeof id !== "string") throw new Error("subject.delete requires a string id");
+            const { error } = await supabase.from("subjects").delete().eq("id", id);
+            if (error) throw error;
+            break;
+          }
+          case "lesson_progress.update": {
+            const lessonId = payload.lessonId;
+            const userId = payload.userId;
+            if (typeof lessonId !== "string" || typeof userId !== "string") {
+              throw new Error("lesson_progress.update requires lessonId and userId");
+            }
+            const { progress, updated_at } = payload;
+            const { error } = await supabase.from("learn_lessons").update({ progress, updated_at }).eq("id", lessonId).eq("user_id", userId);
+            if (error) throw error;
+            break;
+          }
+          default: {
+            const unreachable: never = mutation.operation;
+            throw new Error(`Unsupported offline mutation: ${unreachable}`);
+          }
         }
 
         await mutationQueue.remove(mutation.id);
