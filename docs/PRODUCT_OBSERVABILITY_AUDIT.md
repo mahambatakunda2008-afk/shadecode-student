@@ -106,3 +106,7 @@ Observability is considered production-ready when:
 ## Conclusion
 
 Shadecode already has the database foundations for product intelligence. The next work is to connect the right producers, validate event quality and generate aggregates before building an elaborate analytics dashboard.
+
+## Roadmap status
+
+The product observability discovery/audit task is complete. The next work is instrumentation coverage and aggregate generation, not another analytics schema.
