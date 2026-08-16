@@ -2,7 +2,7 @@
  * Offline data synchronization logic.
  *
  * Cached records remain available for reads, while writes can be queued as
- * durable, operation-scoped mutations and retried without losing intent.
+ * durable, account-scoped, operation-specific mutations and retried safely.
  */
 
 import { offlineStorage, type OfflineProgress, type OfflineTask, type OfflineSubject } from "./storage";
@@ -40,66 +40,74 @@ export class OfflineSync {
     }
   }
 
-  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts">): Promise<OfflineMutation<T>> {
-    return mutationQueue.enqueue(input);
+  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> {
+    const supabase = createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) throw new Error("Cannot queue offline mutation without an authenticated user");
+    return mutationQueue.enqueue({ ...input, ownerId: user.id });
   }
 
   private async syncMutations(): Promise<void> {
-    const mutations = await mutationQueue.list();
     const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return;
+
+    const mutations = await mutationQueue.list(user.id);
 
     for (const mutation of mutations) {
       try {
         const payload = mutation.payload as Record<string, unknown>;
+        const payloadUserId = payload.user_id;
+        if (payloadUserId !== undefined && payloadUserId !== user.id) {
+          throw new Error("Queued mutation user_id does not match the authenticated user");
+        }
+
         switch (mutation.operation) {
           case "task.upsert": {
-            const { error } = await supabase.from("tasks").upsert(payload);
+            const { error } = await supabase.from("tasks").upsert({ ...payload, user_id: user.id });
             if (error) throw error;
             break;
           }
           case "task.update": {
             const id = payload.id;
             if (typeof id !== "string") throw new Error("task.update requires a string id");
-            const { id: _id, ...changes } = payload;
-            const { error } = await supabase.from("tasks").update(changes).eq("id", id);
+            const { id: _id, user_id: _userId, ...changes } = payload;
+            const { error } = await supabase.from("tasks").update(changes).eq("id", id).eq("user_id", user.id);
             if (error) throw error;
             break;
           }
           case "task.delete": {
             const id = payload.id;
             if (typeof id !== "string") throw new Error("task.delete requires a string id");
-            const { error } = await supabase.from("tasks").delete().eq("id", id);
+            const { error } = await supabase.from("tasks").delete().eq("id", id).eq("user_id", user.id);
             if (error) throw error;
             break;
           }
           case "subject.upsert": {
-            const { error } = await supabase.from("subjects").upsert(payload);
+            const { error } = await supabase.from("subjects").upsert({ ...payload, user_id: user.id });
             if (error) throw error;
             break;
           }
           case "subject.update": {
             const id = payload.id;
             if (typeof id !== "string") throw new Error("subject.update requires a string id");
-            const { id: _id, ...changes } = payload;
-            const { error } = await supabase.from("subjects").update(changes).eq("id", id);
+            const { id: _id, user_id: _userId, ...changes } = payload;
+            const { error } = await supabase.from("subjects").update(changes).eq("id", id).eq("user_id", user.id);
             if (error) throw error;
             break;
           }
           case "subject.delete": {
             const id = payload.id;
             if (typeof id !== "string") throw new Error("subject.delete requires a string id");
-            const { error } = await supabase.from("subjects").delete().eq("id", id);
+            const { error } = await supabase.from("subjects").delete().eq("id", id).eq("user_id", user.id);
             if (error) throw error;
             break;
           }
           case "lesson_progress.update": {
             const lessonId = payload.lessonId;
-            const userId = payload.userId;
-            if (typeof lessonId !== "string" || typeof userId !== "string") {
-              throw new Error("lesson_progress.update requires lessonId and userId");
-            }
+            if (typeof lessonId !== "string") throw new Error("lesson_progress.update requires lessonId");
             const { progress, updated_at } = payload;
-            const { error } = await supabase.from("learn_lessons").update({ progress, updated_at }).eq("id", lessonId).eq("user_id", userId);
+            const { error } = await supabase.from("learn_lessons").update({ progress, updated_at }).eq("id", lessonId).eq("user_id", user.id);
             if (error) throw error;
             break;
           }
