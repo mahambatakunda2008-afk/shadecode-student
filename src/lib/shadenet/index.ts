@@ -5,4 +5,6 @@ export * from "./discovery";
 export * from "./peer-registry";
 export * from "./signaling";
 export * from "./client";
+export * from "./webrtc";
 export { ShadeNetResourceCache, shadeNetCache } from "./cache";
+export { SupabaseSignalingTransport } from "./supabase-signaling";
