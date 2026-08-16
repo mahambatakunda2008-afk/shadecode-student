@@ -42,7 +42,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <script src="/register-sw.js" />
+        {/* Service worker registration: next-pwa (see next.config.ts)
+            auto-registers the real, build-generated service worker when
+            register:true is set -- a manual script tag registering
+            /register-sw.js here would register a second time against
+            the same file, and was part of the source of the
+            registration confusion this session traced back to
+            next.config.ts overwriting public/sw.js on every build.
+            Removed 2026-08-15. */}
       </head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeContextProvider>

@@ -5,6 +5,63 @@ const nextConfig = withPWA({
   dest: "public",
   register: true,
   disable: process.env.NODE_ENV === "development",
+  // Real fallback offline shell for uncached navigations, and the
+  // page-shell/API/static-asset caching strategy actually shipped in
+  // production. Replaces a hand-written public/sw.js that next-pwa's
+  // build step was silently overwriting every build -- that file was
+  // committed to git looking like real source, but next-pwa's default
+  // Workbox generation always wins at build time, so none of its
+  // custom low-bandwidth/network-first logic was ever actually
+  // reaching a deployed user. Found 2026-08-15 while investigating a
+  // low-end-device performance report; explains the recent run of
+  // "fix(pwa): register service worker..." commits, which were
+  // fighting the symptom (registration confusion) rather than this
+  // root cause (two systems writing to the same public/sw.js).
+  fallbacks: {
+    document: "/offline",
+  },
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        // App page navigations: try the network first (fresh content),
+        // fall back to whatever was last cached when offline or slow,
+        // and to the /offline shell above when there's no cache either.
+        urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "shadecode-pages",
+          networkTimeoutSeconds: 6,
+          expiration: { maxEntries: 48, maxAgeSeconds: 24 * 60 * 60 },
+        },
+      },
+      {
+        // API GET routes: serve the last-known response instantly while
+        // revalidating in the background -- keeps dashboard/tasks/etc.
+        // usable and snappy on slow connections instead of blocking on
+        // a round trip every time.
+        urlPattern: /^\/api\/.*/i,
+        method: "GET",
+        handler: "StaleWhileRevalidate",
+        options: {
+          cacheName: "shadecode-api",
+          expiration: { maxEntries: 96, maxAgeSeconds: 24 * 60 * 60 },
+        },
+      },
+      {
+        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "shadecode-images",
+          expiration: { maxEntries: 96, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        },
+      },
+      {
+        urlPattern: /\.(?:js|css)$/i,
+        handler: "StaleWhileRevalidate",
+        options: { cacheName: "shadecode-static" },
+      },
+    ],
+  },
 })({
   turbopack: {
     root: process.cwd(),

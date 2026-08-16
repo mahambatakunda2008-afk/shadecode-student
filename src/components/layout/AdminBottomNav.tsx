@@ -11,7 +11,7 @@ export function AdminBottomNav() {
 
   return (
     <nav
-      className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)]/95 shadow-[var(--shadow-lg)] backdrop-blur-2xl"
+      className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       {items.map(({ href, label, icon: Icon }) => {

@@ -56,7 +56,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]/90 backdrop-blur-2xl">
+    <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]">
       <div className="flex items-center gap-3 px-4 pt-4 pb-4 flex-shrink-0">
         <Link href="/" aria-label="Shadecode Student home" className="flex items-center gap-3 min-w-0">
           <span className="w-8 h-8 rounded-[9px] overflow-hidden flex items-center justify-center flex-shrink-0 bg-[#0B0D12] shadow-[0_0_18px_rgba(63,200,255,0.28)]">

@@ -27,7 +27,7 @@ export default function SubjectTabs({
       aria-label="Subjects"
       className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"
     >
-      <div className="flex min-w-max gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--card)] p-2 shadow-sm shadow-sky-100/60 backdrop-blur">
+      <div className="flex min-w-max gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--card)] p-2 shadow-sm shadow-sky-100/60">
         {tabs.map((subject) => {
           const selected = selectedSubjectId === subject.id;
 

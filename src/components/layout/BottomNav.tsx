@@ -42,7 +42,7 @@ export function BottomNav() {
     <>
       {/* ── Bottom tab bar ──────────────────────────────────────────── */}
       <nav
-        className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)]/95 shadow-[var(--shadow-lg)] backdrop-blur-2xl"
+        className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {BOTTOM_PRIMARY.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
@@ -129,7 +129,7 @@ export function BottomNav() {
       {/* ── Backdrop ────────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed inset-0 z-[9998] bg-black/45 backdrop-blur-sm"
+          className="fixed inset-0 z-[9998] bg-black/60"
           style={{ animation: "ssc-fadeIn 0.15s ease forwards" }}
           onClick={() => setOpen(false)}
         />
@@ -138,7 +138,7 @@ export function BottomNav() {
       {/* ── More drawer ─────────────────────────────────────────────── */}
       {open && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[22px] border-t border-[var(--card-border)] bg-[var(--surface)]/98 shadow-[var(--shadow-lg)] backdrop-blur-2xl"
+          className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[22px] border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
           style={{
             animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
             paddingBottom:

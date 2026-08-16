@@ -41,3 +41,16 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 schema-snapshot.json
+
+# next-pwa build output -- generated fresh by every `next build` (see
+# next.config.ts's workboxOptions). Committing these would either be
+# instantly stale or, worse, look like real hand-written source that a
+# future engineer or agent edits directly -- exactly the confusion this
+# session traced a real bug back to. Source of truth is next.config.ts
+# and worker/index.js, not these generated files.
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/worker-*.js
+public/worker-*.js.map

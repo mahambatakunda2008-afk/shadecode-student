@@ -46,7 +46,7 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]/90 backdrop-blur-2xl">
+    <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]">
       <div className="flex items-center gap-3 px-4 pt-4 pb-4 flex-shrink-0">
         <div
           className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0"

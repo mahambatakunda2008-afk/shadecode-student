@@ -28,7 +28,7 @@ export default function GlobalErrorBoundary({
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl p-8 text-center">
+        <div className="relative z-10 w-full max-w-md bg-white/10 border border-white/10 shadow-2xl rounded-2xl p-8 text-center">
           {/* Animated Icon */}
           <div className="inline-flex items-center justify-center p-4 bg-rose-500/10 rounded-full text-rose-400 mb-6 ring-8 ring-rose-500/5 animate-pulse">
             <ShieldAlert className="w-10 h-10" />

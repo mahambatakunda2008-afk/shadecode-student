@@ -26,7 +26,7 @@ export default function ErrorBoundary({
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl p-8 text-center transition-all duration-300 hover:border-white/15">
+      <div className="relative z-10 w-full max-w-md bg-white/10 border border-white/10 shadow-2xl rounded-2xl p-8 text-center transition-all duration-300 hover:border-white/15">
         {/* Animated Icon */}
         <div className="inline-flex items-center justify-center p-4 bg-indigo-500/10 rounded-full text-indigo-400 mb-6 ring-8 ring-indigo-500/5 animate-pulse">
           <AlertCircle className="w-10 h-10" />
