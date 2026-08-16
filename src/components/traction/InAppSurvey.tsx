@@ -32,6 +32,7 @@ export default function InAppSurvey() {
   }, []);
 
   if (!survey || closed) return null;
+  const currentSurvey = survey;
 
   async function submit() {
     setBusy(true);
@@ -39,7 +40,7 @@ export default function InAppSurvey() {
       const response = await fetch("/api/surveys/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surveyId: survey.id, answers }),
+        body: JSON.stringify({ surveyId: currentSurvey.id, answers }),
       });
       if (!response.ok) throw new Error("submit failed");
       setClosed(true);
@@ -53,14 +54,14 @@ export default function InAppSurvey() {
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Quick check-in</p>
-          <h2 className="mt-1 text-lg font-bold">{survey.title}</h2>
-          <p className="mt-1 text-sm text-zinc-300">{survey.prompt}</p>
+          <h2 className="mt-1 text-lg font-bold">{currentSurvey.title}</h2>
+          <p className="mt-1 text-sm text-zinc-300">{currentSurvey.prompt}</p>
         </div>
         <button aria-label="Close survey" onClick={() => setClosed(true)} className="text-zinc-400 hover:text-white">×</button>
       </div>
 
       <div className="space-y-4">
-        {survey.questions.map((q) => (
+        {currentSurvey.questions.map((q) => (
           <div key={q.id}>
             <label className="mb-2 block text-sm font-medium">{q.label}</label>
             {q.type === "single" && (
