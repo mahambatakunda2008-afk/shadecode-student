@@ -130,7 +130,7 @@ The strategic roadmap above does not replace the verified implementation backlog
 - [ ] 🔴 **Security Audit**
   - Review auth, RLS, API routes, service-role usage, uploads, secrets and AI-provider boundaries.
 
-- [ ] 🔴 **Product Observability Audit**
+- [x] 🔴 **Product Observability Audit**
   - Identify missing activation, retention, error, latency and AI-cost events.
 
 ---
