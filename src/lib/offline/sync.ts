@@ -12,9 +12,16 @@ import { createClient } from "@/lib/supabase/client";
 export class OfflineSync {
   private syncInProgress = false;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private onlineHandler: (() => void) | null = null;
 
   startAutoSync(): void {
     if (this.syncInterval) return;
+
+    if (typeof window !== "undefined") {
+      this.onlineHandler = () => void this.syncAll();
+      window.addEventListener("online", this.onlineHandler);
+    }
+
     this.syncInterval = setInterval(() => {
       if (typeof navigator !== "undefined" && navigator.onLine) void this.syncAll();
     }, 30000);
@@ -25,6 +32,10 @@ export class OfflineSync {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
     }
+    if (typeof window !== "undefined" && this.onlineHandler) {
+      window.removeEventListener("online", this.onlineHandler);
+    }
+    this.onlineHandler = null;
   }
 
   async syncAll(): Promise<void> {
