@@ -9,6 +9,11 @@ This map tells agents where project truth is recorded. It is intentionally a map
 | Product vision | Blueprint volumes / approved project documents | Long-range direction |
 | Architecture | `docs/ARCHITECTURE.md` + approved blueprints | System structure and boundaries |
 | Blueprint gaps | `docs/BLUEPRINT_GAP_MATRIX.md` | Missing, incomplete, or unresolved blueprint material |
+| Breakthroughs & pivots | `docs/SHADECODE_BREAKTHROUGHS_AND_PIVOTS.md` | Strategic breakthroughs, research directions and fallback product paths |
+| Learning intelligence | `docs/LEARNING_INTELLIGENCE_ARCHITECTURE.md` | Personal learning model, knowledge graph, assessment intelligence and personalization |
+| Cortex evaluation | `docs/CORTEX_EVALUATION_ARCHITECTURE.md` | Evidence-driven autonomous improvement and promotion gates |
+| Research Lab | `docs/CORTEX_RESEARCH_LAB.md` | Experimental AI/edge/agent research protocol |
+| Pivot decisions | `docs/PIVOT_DECISION_FRAMEWORK.md` | Evidence-based continue/focus/pivot criteria |
 | Audits | `docs/*AUDIT*.md`, latest dated audit | Evidence about the current system |
 | Product decisions | Repository decision records / issues / approved PRs | Explicit decisions that override assumptions |
 
@@ -48,15 +53,19 @@ README → relevant blueprint → blueprint gap material → architecture → ro
 
 ### For architecture work
 
-Blueprints → audits → architecture → current implementation → dependencies → decision record.
+Breakthrough/learning-intelligence documents → blueprints → audits → architecture → current implementation → dependencies → decision record.
 
 ### For prompt/agent work
 
-Coordination protocol → relevant blueprint/docs → current Cortex/agent implementation → prompt registry → handoff state.
+Coordination protocol → Cortex evaluation architecture → relevant blueprint/docs → current Cortex/agent implementation → prompt registry → handoff state.
 
 ### For Lab/research work
 
-Research brief → applicable blueprint → current implementation constraints → experiment → recorded findings → explicit promotion decision.
+Research question → `docs/CORTEX_RESEARCH_LAB.md` → applicable blueprint → current implementation constraints → experiment → recorded findings → explicit promotion decision.
+
+### For pivot decisions
+
+`docs/PIVOT_DECISION_FRAMEWORK.md` → product metrics → learning outcomes → customer evidence → technical evidence → decision record.
 
 ## Source Freshness
 
