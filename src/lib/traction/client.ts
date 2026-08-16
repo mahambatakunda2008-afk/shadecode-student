@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/client";
-
 const SESSION_KEY = "shadecode_session_id";
 const ANON_KEY = "shadecode_anonymous_id";
 
@@ -18,9 +16,6 @@ export async function trackEvent(
 ) {
   if (typeof window === "undefined") return;
 
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
   try {
     await fetch("/api/traction/event", {
       method: "POST",
@@ -31,7 +26,6 @@ export async function trackEvent(
         path: window.location.pathname,
         sessionId: stableId(SESSION_KEY),
         anonymousId: stableId(ANON_KEY),
-        userId: user?.id ?? null,
         properties,
       }),
     });
