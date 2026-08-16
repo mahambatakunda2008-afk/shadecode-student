@@ -22,11 +22,8 @@ export interface Tombstone {
   sequence: number;
 }
 
-/**
- * Stable, dependency-free operation identity. UUIDs are intentionally avoided
- * here because deterministic tests and replay need a predictable representation.
- */
 export function createOperationId(deviceId: string, sequence: number): string {
+  if (!deviceId || !Number.isSafeInteger(sequence) || sequence < 0) throw new Error("Invalid operation identity");
   return `${deviceId}:${sequence}`;
 }
 
@@ -37,42 +34,13 @@ export function compareOperations(a: LocalOperation, b: LocalOperation): number 
 }
 
 export function createTombstone(operation: LocalOperation): Tombstone {
-  if (operation.kind !== "delete") {
-    throw new Error("Tombstones can only be created from delete operations");
-  }
-
-  return {
-    entity: operation.entity,
-    entityId: operation.entityId,
-    userId: operation.userId,
-    operationId: operation.id,
-    deviceId: operation.deviceId,
-    timestamp: operation.timestamp,
-    sequence: operation.sequence,
-  };
+  if (operation.kind !== "delete") throw new Error("Tombstones require delete operations");
+  return { entity: operation.entity, entityId: operation.entityId, userId: operation.userId, operationId: operation.id, deviceId: operation.deviceId, timestamp: operation.timestamp, sequence: operation.sequence };
 }
 
-export function isOperationSuppressed(
-  operation: LocalOperation,
-  tombstones: Tombstone[],
-): boolean {
-  return tombstones.some(
-    (tombstone) =>
-      tombstone.userId === operation.userId &&
-      tombstone.entity === operation.entity &&
-      tombstone.entityId === operation.entityId &&
-      compareOperations(
-        operation,
-        {
-          id: tombstone.operationId,
-          deviceId: tombstone.deviceId,
-          userId: tombstone.userId,
-          entity: tombstone.entity,
-          entityId: tombstone.entityId,
-          kind: "delete",
-          timestamp: tombstone.timestamp,
-          sequence: tombstone.sequence,
-        },
-      ) <= 0,
-  );
+export function isOperationSuppressed(operation: LocalOperation, tombstones: Tombstone[]): boolean {
+  return tombstones.some((tombstone) => {
+    if (tombstone.userId !== operation.userId || tombstone.entity !== operation.entity || tombstone.entityId !== operation.entityId) return false;
+    return compareOperations(operation, { id: tombstone.operationId, deviceId: tombstone.deviceId, userId: tombstone.userId, entity: tombstone.entity, entityId: tombstone.entityId, kind: "delete", timestamp: tombstone.timestamp, sequence: tombstone.sequence }) <= 0;
+  });
 }
