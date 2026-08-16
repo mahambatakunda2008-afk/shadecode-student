@@ -51,32 +51,40 @@ export function evaluateExperiment(
   metrics: EvaluationMetrics,
   thresholds: EvaluationThresholds,
 ): EvaluationResult {
-  const invalid = METRIC_KEYS.filter((key) => !isFiniteMetric(metrics[key]));
-  if (invalid.length > 0) {
+  const invalidMetrics = METRIC_KEYS.filter((key) => !isFiniteMetric(metrics[key]));
+  const invalidThresholds = METRIC_KEYS.filter(
+    (key) => !isFiniteMetric(thresholds[key]),
+  );
+
+  if (invalidMetrics.length > 0 || invalidThresholds.length > 0) {
+    const invalid = [
+      ...invalidMetrics.map((key) => `metric:${key}`),
+      ...invalidThresholds.map((key) => `threshold:${key}`),
+    ];
     return {
       decision: "reject",
       score: 0,
       failedGates: invalid,
-      reasons: [`Invalid metric values: ${invalid.join(", ")}`],
+      reasons: [`Invalid evaluation values: ${invalid.join(", ")}`],
     };
   }
 
   const failedGates = METRIC_KEYS.filter(
-    (key) => metrics[key] < clamp(thresholds[key]),
+    (key) => metrics[key] < thresholds[key],
   );
 
   const weightedScore =
-    metrics.learningOutcome * 0.30 +
+    metrics.learningOutcome * 0.3 +
     metrics.correctness * 0.25 +
     metrics.retention * 0.15 +
-    metrics.accessibility * 0.10 +
-    metrics.costEfficiency * 0.10 +
-    metrics.engagement * 0.10;
+    metrics.accessibility * 0.1 +
+    metrics.costEfficiency * 0.1 +
+    metrics.engagement * 0.1;
 
   const score = Number(weightedScore.toFixed(4));
   const hardGateFailure =
-    metrics.learningOutcome < clamp(thresholds.learningOutcome) ||
-    metrics.correctness < clamp(thresholds.correctness);
+    metrics.learningOutcome < thresholds.learningOutcome ||
+    metrics.correctness < thresholds.correctness;
 
   if (hardGateFailure) {
     return {
