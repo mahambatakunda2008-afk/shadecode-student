@@ -7,6 +7,7 @@ import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import InAppSurvey from "@/components/traction/InAppSurvey";
+import TractionBootstrap from "@/components/traction/TractionBootstrap";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
 import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
@@ -41,9 +42,7 @@ export const viewport: Viewport = { themeColor: "#3FC8FF", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-      </head>
+      <head><link rel="manifest" href="/manifest.json" /></head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeContextProvider>
           <MuiThemeProvider>
@@ -52,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <OfflineShell />
               <PWAInstallPrompt />
               <InAppSurvey />
+              <TractionBootstrap />
               <Analytics />
               <SpeedInsights />
             </BandwidthProvider>
