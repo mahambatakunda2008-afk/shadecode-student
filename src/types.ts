@@ -28,7 +28,6 @@ export interface CortexSnapshot {
     courses?: string[];
   };
 }
-
 export interface CortexInsightContext { events: CortexEvent[]; snapshot: CortexSnapshot; }
 export type CortexStructuredValue = null | boolean | number | string | CortexStructuredValue[] | { [key: string]: CortexStructuredValue };
 export type CortexAIRequestType = "behavior.insight" | "behavior.summary" | "learning.focus" | "learning.recommendation";
@@ -42,7 +41,7 @@ export type CortexAIProvider = "local" | "gemini";
 export interface CortexAIResponse<T extends CortexAIRequestType = CortexAIRequestType> { requestType: T; provider: CortexAIProvider; cached: boolean; fingerprint: string; cacheKey: string; data: CortexAIResponseDataMap[T]; }
 export interface CortexCacheEntry<T = unknown> { createdAt: string; value: T; }
 
-export type StudyLevel = 'high-school' | 'a-level' | 'university' | 'professional';
+export type StudyLevel = 'high-school' | 'a-level' | 'university' | 'tvet' | 'professional';
 export type StudyStyle = 'structured' | 'flexible';
 export interface OnboardingFormData {
   displayName: string;
