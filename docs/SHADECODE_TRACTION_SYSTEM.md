@@ -4,34 +4,21 @@ Date: 2026-08-16
 
 ## Purpose
 
-Shadecode Student is now treated as a product that must prove demand, not only a codebase that can ship features. This system connects the student experience, feedback collection, experimentation, analytics, exports, and operator decisions.
+Shadecode Student is treated as a product that must prove demand, not only a codebase that can ship features. The system connects the student experience, feedback collection, experimentation, analytics, exports, retention measurement, and operator decisions.
 
-## Product loop
+## Student-facing loop
 
-Problem -> activation -> useful learning action -> repeat use -> measurable learning progress -> retention -> referral -> revenue.
+Problem -> activation -> useful learning action -> repeat use -> measurable progress -> retention -> referral -> revenue.
 
-The core product promise remains student-first: **What should I do right now? Do it. See what I am weak at. Get the next useful action.**
-
-## Student-facing surface
-
-- Mission Control / today's next action
-- Cortex AI and learning assistance
-- Exam Simulation
-- Past Papers
-- Math Checker
-- Tasks and timetable
-- Progress, mastery and streaks
-- Export/share outputs
-- In-app feedback and surveys
-- Clear account/settings controls
+The product promise is: **What should I do right now? Do it. See what I am weak at. Get the next useful action.**
 
 ## Onboarding
 
-The onboarding flow stays short and progressively disclosed. It collects only information needed to personalize the first session, while supporting secondary, university, TVET/polytechnic and professional learners.
+Onboarding remains short and progressively disclosed. It collects only information needed to personalize the first session and supports secondary, university, polytechnic/TVET and professional learners.
 
-The first screen now contains an optional instant-value demo. The demo is deliberately deterministic and fast: the student can solve one small math problem before completing setup. The goal is to demonstrate the product loop rather than explain a feature list.
+The first screen includes an optional instant-value demo: one deterministic math problem before setup is complete. This demonstrates value instead of presenting a feature tour.
 
-Instrumentation:
+Instrumented events:
 
 - `onboarding_demo_opened`
 - `onboarding_demo_answered`
@@ -41,27 +28,19 @@ Instrumentation:
 
 ## In-app research
 
-The product can deliver lightweight surveys without sending students to an external form. The first seeded survey asks:
+Students can receive lightweight surveys inside Shadecode. Surveys are dismissible and never block studying. Responses are stored separately for product research and admin review.
+
+The initial survey covers:
 
 1. Biggest current study problem
-2. Perceived usefulness (1-5)
+2. Perceived usefulness on a 1-5 scale
 3. What should improve first
 
-Survey responses are stored separately from general feedback so qualitative research can be segmented and exported. Surveys must remain dismissible and must never block studying.
+Authenticated survey responses are unique per survey/user, preventing accidental duplicate submissions.
 
-## Product analytics
+## First-party analytics
 
-A first-party `traction_events` stream records product events with:
-
-- authenticated user ID when available
-- anonymous device identifier
-- session identifier
-- route
-- event name
-- small JSON properties object
-- timestamp
-
-Analytics failures are intentionally non-blocking. User-supplied identity from the browser is never trusted by the ingestion endpoint; the server derives the authenticated user from the Supabase session.
+The `traction_events` stream records authenticated user ID when available, anonymous ID, session ID, route, event name, small properties, and timestamp. Analytics failures never block learning.
 
 Initial events include:
 
@@ -73,46 +52,19 @@ Initial events include:
 - `onboarding_step_completed`
 - `survey_completed`
 - `output_exported`
+- `result_shared`
+- `challenge_created`
+- `challenge_shared`
 
-## Operator interface
+Browser-supplied identity is not trusted for authenticated events. The event endpoint derives the authenticated user from the Supabase session.
 
-`/admin/traction` is the first dedicated traction command center. It is protected by the existing database role system and is intended for product operation, not student use.
+## Export system
 
-It surfaces:
+Students can take useful work out of Shadecode. The reusable export layer supports JSON, CSV, TXT and browser Print/PDF.
 
-- total student count
-- event volume
-- survey response volume
-- activation signal
-- event distribution
-- latest feedback
-- experiment inventory
-- exportable event/feedback data
+The exam result surface now has a direct export action. The generic export menu can be reused by lessons, plans, saved questions, analytics and admin tools.
 
-This should grow into the broader Shadecode operator console covering users, content, AI health/cost, support, growth, experiments, revenue, security and system health.
-
-## Experiments
-
-The database now supports named experiments with:
-
-- stable key
-- hypothesis
-- variants
-- active/draft state
-- user/device assignment
-
-The first seeded experiment is `activation-first-session`. It is intentionally inactive until the instrumentation baseline is understood.
-
-Do not activate experiments merely because they sound plausible. State the hypothesis, define the primary metric, define the guardrails, run the test, then decide.
-
-## Exportable outputs
-
-Students should be able to take useful work out of Shadecode instead of trapping it inside the app. The reusable export layer supports:
-
-- JSON for structured reuse
-- CSV for tabular study data
-- TXT for portable notes
-- Print/PDF through the browser print flow
+Authenticated exports are persisted in `export_logs`, while the lightweight event stream records the product action.
 
 Priority export targets:
 
@@ -123,54 +75,64 @@ Priority export targets:
 5. Progress summaries
 6. Past-paper study records
 
-Every export emits `output_exported` for product measurement.
-
 ## Retention measurement
 
-The next analytics iteration must add cohort calculations rather than relying on vanity counts:
+The database now exposes an admin-only `get_traction_metrics()` function for D1, D7 and D30 retention, WAU, MAU, active learners over 7 days, export volume, survey volume and growth/share events.
 
+Retention cohorts are based on a user's first `activation_completed` event and subsequent `session_started` events in the relevant day window.
+
+The key metric is not registration count. It is repeated use of the core learning loop.
+
+## Experiments
+
+Experiments contain a stable key, hypothesis, variants, active state and timestamps. The assignment endpoint provides deterministic, sticky assignment for authenticated users using a SHA-256 bucket, so the same user receives the same variant for an experiment.
+
+Admins can activate or pause experiments from the Traction Command Center. The initial `activation-first-session` experiment remains inactive until baseline data is understood.
+
+Do not activate experiments merely because they sound plausible. Define the hypothesis, primary metric, guardrails, test window and decision rule first.
+
+## Operator interface
+
+`/admin/traction` is the first dedicated traction command center. It is protected by the existing admin role system.
+
+It surfaces:
+
+- total students
+- WAU / MAU
 - activation rate
-- Day-1 retention
-- Day-7 retention
-- Day-30 retention
-- weekly active users
-- repeat learning sessions
-- exam attempts per active learner
-- past-paper usage
-- export/share rate
-- referral rate
-- free-to-paid conversion
-- churn
+- D1 / D7 / D30 retention
+- 7-day event signals
+- export volume
+- experiment inventory and controls
+- recent student feedback
+- exportable event and feedback data
 
-The key question is not "How many registered?" but "How many students repeatedly return for the core learning loop?"
+This is the foundation for the larger Shadecode operator console covering users, cohorts, content, AI health/cost, support, revenue, security and system health.
 
-## Research priorities
+## Research rules
 
-Validate separately with:
+Validate separately with Cambridge/ZIMSEC secondary students, university students, and university/polytechnic/TVET learners.
 
-- Cambridge/ZIMSEC secondary students
-- university students
-- university/polytechnic/TVET learners
-
-Ask about real behaviour: what they studied, what they used, what failed, what they paid for, and what they would replace. Avoid asking students to design the product for us.
+Ask about observed behaviour, not hypothetical feature wishes: what they studied, what they used, what failed, what they paid for, and what they replaced.
 
 ## Guardrails
 
-- No feature is considered successful because it was shipped.
-- No growth claim is accepted without a measurable event or cohort definition.
+- Shipping a feature does not count as success.
+- Growth claims require measurable events and cohort definitions.
 - Surveys remain optional and lightweight.
-- Analytics must not block learning or create unnecessary personal-data collection.
-- Admin surfaces must use server-side role checks and RLS.
-- Export functions must never expose another student's private data.
-- Existing low-end-device and offline-first constraints remain product requirements.
+- Analytics never blocks the learning experience.
+- Admin surfaces use server-side role checks and RLS.
+- Export endpoints never accept another student's identity from the browser.
+- Existing low-end-device and offline-first requirements remain product requirements.
+- Experiments stay inactive until their measurement baseline exists.
 
-## Next build sequence
+## Next product-validation phase
 
-1. Instrument the highest-value learning actions beyond the initial global signals.
-2. Wire `ExportMenu` into exam results, lessons, plans and saved questions.
-3. Expand `/admin/traction` into users, cohorts, feedback, experiments and AI/system health.
-4. Add cohort retention queries and trend cards.
-5. Add experiment assignment and result calculation UI.
-6. Run a real student cohort and use the evidence to choose what to build next.
+1. Instrument the highest-value learning actions across Learn, Exam Sim, Past Papers, Tasks and Cortex.
+2. Wire exports into generated lessons, study plans and saved questions.
+3. Add cohort/segment filters to the admin console.
+4. Add survey creation/editing and audience targeting to the admin console.
+5. Add experiment result dashboards and guardrail alerts.
+6. Run a real student cohort and use the evidence to choose the next build.
 
-The rule for the next phase is simple: **build what the evidence demands.**
+The operating rule is: **build what the evidence demands.**
