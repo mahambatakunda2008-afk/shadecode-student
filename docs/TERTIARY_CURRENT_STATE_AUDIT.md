@@ -47,6 +47,10 @@ The audited `academic_contexts` table has owner-scoped SELECT/INSERT/UPDATE/DELE
 
 No duplicate tertiary context table should be introduced.
 
+## Roadmap status
+
+The tertiary discovery/specification task is complete. The next actionable item is assessment intelligence/past-paper auditing, followed by the offline sync audit and the deeper tertiary course/module work described above.
+
 ## Next implementation target
 
 The next engineering step is **course/module normalization**, but only after auditing every current consumer of `academic_contexts.courses`. The migration must preserve existing string-array data and avoid breaking current onboarding users.
