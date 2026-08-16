@@ -6,6 +6,7 @@ const STUDY_LEVEL_TO_EDUCATION: Record<string, EducationLevel> = {
   "high-school": "secondary",
   "a-level": "secondary",
   university: "university",
+  tvet: "tvet",
   professional: "tvet",
 };
 
