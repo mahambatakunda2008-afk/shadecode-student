@@ -166,3 +166,7 @@ Assessment intelligence is ready to move beyond audit when:
 ## Conclusion
 
 The past-paper system is **not missing from scratch**. The real bottleneck is that the existing paper-level corpus has not yet been converted into a populated, trustworthy question-level corpus. That is the next assessment-engineering target.
+
+## Roadmap status
+
+The assessment intelligence discovery/audit task is complete. Implementation should now focus on populating `exam_questions` from legitimate source papers with provenance and confidence preserved.
