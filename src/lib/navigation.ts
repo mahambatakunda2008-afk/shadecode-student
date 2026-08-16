@@ -56,6 +56,7 @@ export const NAV_ITEMS = {
   study: { href: "/study", label: "Study Session", icon: GraduationCap },
   achievements: { href: "/achievements", label: "Achievements", icon: Award },
   settings: { href: "/settings", label: "Settings", icon: Settings },
+  adminDashboard: { href: "/admin", label: "Overview", icon: LayoutDashboard },
   adminUpload: { href: "/admin/exam-hub/upload", label: "Upload Papers", icon: UploadCloud },
   adminModeration: { href: "/admin/exam-hub/moderation", label: "Moderation", icon: ClipboardCheck },
   adminQuestions: { href: "/admin/exam-hub/questions", label: "Tag Questions", icon: Tags },
@@ -64,17 +65,13 @@ export const NAV_ITEMS = {
   adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
-// Nav shown to admin accounts instead of the full student nav — per product
-// decision, admins get an admin-only shell, not the student app with an
-// extra card bolted on.
 export const ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     group: "Admin",
-    items: [NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminManage, NAV_ITEMS.adminModeration, NAV_ITEMS.adminQuestions, NAV_ITEMS.adminBoards, NAV_ITEMS.adminFeedback, NAV_ITEMS.settings],
+    items: [NAV_ITEMS.adminDashboard, NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminManage, NAV_ITEMS.adminModeration, NAV_ITEMS.adminQuestions, NAV_ITEMS.adminBoards, NAV_ITEMS.adminFeedback, NAV_ITEMS.settings],
   },
 ];
 
-// Sidebar groups (all items accessible on desktop)
 export const SIDEBAR_GROUPS: NavGroup[] = [
   {
     group: "Core",
@@ -94,7 +91,6 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   },
 ];
 
-// BottomNav items for mobile layout
 export const BOTTOM_PRIMARY: NavItem[] = [
   NAV_ITEMS.dashboard,
   NAV_ITEMS.learn,
@@ -122,4 +118,3 @@ export function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
-
