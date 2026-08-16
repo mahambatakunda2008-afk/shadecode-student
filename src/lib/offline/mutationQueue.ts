@@ -1,15 +1,21 @@
 /**
  * Durable offline mutation queue.
  *
- * Keeps local mutations separate from cached records so sync can retry
- * safely and eventually support conflict resolution without losing intent.
+ * Mutations use a closed set of logical operations. The sync layer must never
+ * accept an arbitrary Supabase table name from client-controlled queue data.
  */
 
-export type MutationOperation = "upsert" | "update" | "delete";
+export type MutationOperation =
+  | "task.upsert"
+  | "task.update"
+  | "task.delete"
+  | "subject.upsert"
+  | "subject.update"
+  | "subject.delete"
+  | "lesson_progress.update";
 
 export interface OfflineMutation<T = Record<string, unknown>> {
   id: string;
-  store: string;
   operation: MutationOperation;
   payload: T;
   createdAt: string;
@@ -19,7 +25,7 @@ export interface OfflineMutation<T = Record<string, unknown>> {
 }
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORE = "mutations";
 
 function uuid(): string {
@@ -31,6 +37,7 @@ class MutationQueue {
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
+    if (typeof indexedDB === "undefined") throw new Error("Offline mutation queue requires IndexedDB");
     if (this.db) return;
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
