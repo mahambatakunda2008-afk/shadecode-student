@@ -119,7 +119,7 @@ The strategic roadmap above does not replace the verified implementation backlog
   - Audit current `profiles`, `subjects`, `exams`, `study_topics` and onboarding data before adding anything.
   - Deliver a written model and gap list before implementation.
 
-- [ ] 🔴 **Assessment Intelligence — curriculum/past-paper audit**
+- [x] 🔴 **Assessment Intelligence — curriculum/past-paper audit**
   - Audit current Exam Hub ingestion, past-paper metadata and syllabus mappings.
   - Define canonical question/topic/assessment entities before building prediction features.
 
