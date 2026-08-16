@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import InAppSurvey from "@/components/traction/InAppSurvey";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
 import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
@@ -42,14 +43,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        {/* Service worker registration: next-pwa (see next.config.ts)
-            auto-registers the real, build-generated service worker when
-            register:true is set -- a manual script tag registering
-            /register-sw.js here would register a second time against
-            the same file, and was part of the source of the
-            registration confusion this session traced back to
-            next.config.ts overwriting public/sw.js on every build.
-            Removed 2026-08-15. */}
       </head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeContextProvider>
@@ -58,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
               <OfflineShell />
               <PWAInstallPrompt />
+              <InAppSurvey />
               <Analytics />
               <SpeedInsights />
             </BandwidthProvider>
