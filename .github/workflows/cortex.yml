@@ -2,10 +2,8 @@ name: 🧠 Cortex Engine — Auto Improve
 
 on:
   schedule:
-    # Runs every 6 hours
     - cron: "0 */6 * * *"
   workflow_dispatch:
-    # Also allows manual trigger from GitHub Actions tab
 
 jobs:
   cortex-cycle:
@@ -23,19 +21,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Node 20 lacks native WebSocket support, and
-          # @supabase/supabase-js unconditionally initializes a Realtime
-          # client on createClient() even though this script never uses
-          # realtime features (no .channel()/.subscribe() anywhere) --
-          # that crashed every run with "Node.js 20 detected without
-          # native WebSocket support" before ever reaching real work.
-          # Node 22 has native WebSocket support, avoiding this entirely.
           node-version: "22"
 
       - name: Install Cortex Engine dependencies
         run: |
           cd .cortex
           npm install
+
+      - name: Validate Cortex Engine syntax
+        run: node --check .cortex/cortex-engine.js
 
       - name: Run Cortex Engine
         env:
@@ -44,6 +38,4 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          cd .cortex
-          node cortex-engine.js
+        run: node .cortex/cortex-engine.js
