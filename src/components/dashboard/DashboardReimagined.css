@@ -97,6 +97,12 @@
 .dashboard-signal-label { color:var(--primary); font-size:.62rem; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
 .dashboard-cortex { border-color:color-mix(in srgb, var(--primary) 18%, transparent); background:linear-gradient(145deg,color-mix(in srgb, var(--primary) 8%, transparent),color-mix(in srgb, var(--card) 72%, transparent)); }
 
+/* Shown when core dashboard data (progress/performance/activity) fails --
+   independent of and visually distinct from the Cortex-specific error
+   states elsewhere, per the two-boundary fetch split. */
+.dashboard-core-error { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; margin-bottom:16px; border-radius:16px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); }
+.dashboard-core-error p { margin:0; font-size:.8rem; color:#ef4444; }
+
 .dashboard-loading-state { min-height:100%; }
 .dashboard-skeleton { position:relative; overflow:hidden; border-radius:22px; background:var(--muted); }
 .dashboard-skeleton::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--background) 55%, transparent),transparent); animation:dashboard-shimmer 1.4s infinite; }
