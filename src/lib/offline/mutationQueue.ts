@@ -1,8 +1,8 @@
 /**
  * Durable offline mutation queue.
  *
- * Mutations use a closed set of logical operations. The sync layer must never
- * accept an arbitrary Supabase table name from client-controlled queue data.
+ * Mutations are scoped to the authenticated account that created them. The
+ * sync layer must never accept an arbitrary Supabase table name from queue data.
  */
 
 export type MutationOperation =
@@ -16,6 +16,7 @@ export type MutationOperation =
 
 export interface OfflineMutation<T = Record<string, unknown>> {
   id: string;
+  ownerId: string;
   operation: MutationOperation;
   payload: T;
   createdAt: string;
@@ -25,7 +26,7 @@ export interface OfflineMutation<T = Record<string, unknown>> {
 }
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE = "mutations";
 
 function uuid(): string {
@@ -51,12 +52,19 @@ class MutationQueue {
         if (!db.objectStoreNames.contains(STORE)) {
           const store = db.createObjectStore(STORE, { keyPath: "id" });
           store.createIndex("createdAt", "createdAt", { unique: false });
+          store.createIndex("ownerId", "ownerId", { unique: false });
+        } else {
+          const store = (event.target as IDBOpenDBRequest).transaction?.objectStore(STORE);
+          if (store && !store.indexNames.contains("ownerId")) {
+            store.createIndex("ownerId", "ownerId", { unique: false });
+          }
         }
       };
     });
   }
 
   async enqueue<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts">): Promise<OfflineMutation<T>> {
+    if (!input.ownerId) throw new Error("Offline mutation requires an ownerId");
     await this.init();
     const mutation: OfflineMutation<T> = {
       ...input,
@@ -68,10 +76,11 @@ class MutationQueue {
     return mutation;
   }
 
-  async list<T = Record<string, unknown>>(): Promise<OfflineMutation<T>[]> {
+  async list<T = Record<string, unknown>>(ownerId: string): Promise<OfflineMutation<T>[]> {
+    if (!ownerId) return [];
     await this.init();
     return new Promise((resolve, reject) => {
-      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("createdAt").getAll();
+      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("ownerId").getAll(ownerId);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result || []);
     });
