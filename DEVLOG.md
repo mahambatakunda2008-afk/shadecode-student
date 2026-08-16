@@ -395,3 +395,17 @@ No change to visual design, section order, spacing, or tokens -- this was a fetc
 **Verification, given the explicit "make sure nothing breaks" stakes**: `tsc --noEmit` clean, full vitest suite passing (169 tests, no regressions), and — beyond the usual — a complete `next build` run end to end (temporary `next/font/google` swap for this sandbox's network restriction, reverted and re-diffed against the real file afterward, same technique as the earlier PWA verification) confirming every route compiles, including `/dashboard` itself.
 
 Rebased twice onto concurrent work during this session (a new "ShadeNet" P2P layer, then a university/TVET learner-support feature) -- zero file overlap both times, confirmed via `git diff --name-only` before proceeding each time.
+
+## 2026-08-15, continued — icon redesign v2, working from owner's reference image
+
+Owner supplied a reference image directly (a hexagonal, faceted "S" in a cyan-to-violet gradient with 3D chrome bevel and baked-in "SHADECODE STUDENT" text) and asked to optimize it -- competitive against other companies, works at building-signage scale and on clothing, text removed.
+
+Kept the parts of the reference that were genuinely good: the faceted hexagonal geometry (much more distinctive than the single-stroke S shipped a few hours earlier) and the cyan-to-violet gradient. Dropped the parts that were the same mistake as the very first icon this project ever had (found in git history earlier the same day): fake 3D bevel/chrome highlights and baked-in text -- neither survives at small size or at distance, and baked-in text is a platform icon guideline violation regardless.
+
+Built and compared 2 real candidates (faceted-polygon vs. a gradient-stroke version of the earlier single-color S) before choosing. The faceted version won clearly -- more distinctive, still reads instantly as "S" at both 512px and actual 40px render size. Ran the brand doc's own stated robustness test (`docs/BRAND_IDENTITY_2026.md`: "must remain strong without the gradient") by rendering it as a single flat colour with no gradient at all -- passed cleanly, confirming the shape itself carries the identity, not just the colour treatment. Re-verified against the W3C maskable-icon safe zone.
+
+This supersedes the single-stroke S shipped earlier today, not a reversion to the original "twisted" mistake -- documented the distinction explicitly in `docs/BRAND_IDENTITY_2026.md` so a future reader doesn't confuse "gradient + facets" with "bevel + glow + baked-in text."
+
+Propagated to every real touchpoint again: `shadecode-mark.svg` (live nav/landing/favicon-metadata asset), `shadecode-icon-master.svg` (full-bleed square, regenerated all PWA/maskable/Apple PNG icons and a multi-resolution favicon.ico from it), `shadecode-app-icon.svg` (rounded tile), `shadecode-student-logo.svg` (wordmark), `og-image.png` (rebuilt again), `manifest.json` theme_color, `layout.tsx` viewport.themeColor, the sidebar icon-tile glow color, and both `docs/BRAND_IDENTITY*.md` files -- found via a repo-wide search for the previous flat-cyan hex value, not assumed complete.
+
+**Verified:** `tsc --noEmit` clean, full vitest suite passing (171 tests, unaffected -- pure asset/branding change).

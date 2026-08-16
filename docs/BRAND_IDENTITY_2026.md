@@ -4,6 +4,8 @@
 
 Implemented in `shadecode-student` main on 15 August 2026. Mark geometry redrawn 15 August 2026 (Claude, direct owner request): the previous "ribbon S" (a flowing organic shape with a two-tone accent bar) is exactly the "twisted/ribbon-like S geometry" this doc's own "Do not regress" section already warned against -- it read as an unintentional artifact rather than a designed accent, especially at small size and at a distance. Replaced with a single-stroke, mathematically symmetric geometric S (one weight, one colour, round joins), verified against the W3C maskable-icon safe zone and at both 40px and 512px render sizes before shipping. No other change to the identity direction -- same S concept, same colour family, executed with tighter geometric discipline.
 
+Redrawn again 15 August 2026, same day (Claude, direct owner request, working from a reference image the owner supplied): faceted hexagonal S, cyan-to-violet gradient, no baked-in text, no bevel/glow/chrome effects (those were tested and rejected -- see "Do not regress" below, they don't survive at building-signage distance or small icon size). Verified the shape holds up as a single flat colour with no gradient at all (the mark carries the identity, not the colour treatment) and re-checked against the maskable safe zone. This supersedes the single-stroke version two paragraphs up -- the gradient identity was a deliberate, informed choice from a direct reference, not a reversion to the earlier "twisted" mistake, which specifically involved fake 3D bevels and baked-in text, neither of which this version has.
+
 ## Canonical identity
 
 Shadecode Student uses a simple geometric Shadecode S mark. The mark is the identity. It does not depend on a graduation cap, book, brain, lightbulb, star, ribbon, or other education cliché.
@@ -47,7 +49,8 @@ The app icon must:
 ## Brand colours
 
 - Deep navy: `#0B0D12`
-- Cyan accent: `#3FC8FF`
+- Mark gradient: `#22D3EE` (cyan) -> `#6366F1` (indigo) -> `#A855F7` (violet), diagonal
+- Single-colour fallback / UI accent: `#6366F1`
 
 The colour treatment is secondary to the silhouette. The mark must remain strong without the gradient.
 
