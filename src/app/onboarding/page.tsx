@@ -6,8 +6,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * /onboarding
  *
  * Server-renders the guard check before any client JS loads.
- * Completion is read from the authenticated profile, not a client-controlled
- * cookie, so a user cannot forge the onboarding state by editing browser data.
+ * Completion is read from the authenticated `user_profiles` record, not a
+ * client-controlled cookie, so browser state cannot bypass the server guard.
  */
 export default async function OnboardingPage() {
   const supabase = await createSupabaseServerClient();
@@ -15,9 +15,9 @@ export default async function OnboardingPage() {
 
   if (user) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('onboarding_completed')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (profile?.onboarding_completed === true) {
