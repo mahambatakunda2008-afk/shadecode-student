@@ -51,7 +51,11 @@ export class ShadeNetWebRtcPeer {
       const bytes = typeof event.data === "string" ? new TextEncoder().encode(event.data) : new Uint8Array(event.data);
       const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>;
       if (Array.isArray(parsed.data)) parsed.data = new Uint8Array(parsed.data).buffer;
-      handler(parsed as ResourceRequest | ResourceChunk);
+      // Double-cast through unknown: this is a wire-format parse where the
+      // runtime shape is trusted post-deserialization, not something TS can
+      // structurally verify from Record<string, unknown> -- same pattern
+      // the compiler itself suggests for this exact case.
+      handler(parsed as unknown as ResourceRequest | ResourceChunk);
     };
     this.channel.addEventListener("message", listener);
     return () => this.channel?.removeEventListener("message", listener);

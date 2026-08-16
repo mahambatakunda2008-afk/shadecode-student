@@ -32,7 +32,12 @@ export class SupabaseSignalingTransport implements SignalingTransport {
 
   private async ensureSubscribed(): Promise<void> {
     if (this.subscribed) return;
-    const status = await this.channel.subscribe();
+    // RealtimeChannel.subscribe() is callback-based (returns the channel
+    // itself for chaining, not a Promise) -- wrap it rather than await
+    // the return value directly, which type-checked incorrectly.
+    const status = await new Promise<string>((resolve) => {
+      this.channel.subscribe((status) => resolve(status));
+    });
     if (status !== "SUBSCRIBED") throw new Error(`ShadeNet signaling unavailable: ${status}`);
     this.subscribed = true;
   }
