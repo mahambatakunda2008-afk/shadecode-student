@@ -16,6 +16,9 @@ const DB_NAME = "shadecode-offline-mutations";
 const DB_VERSION = 2;
 const STORE = "mutations";
 
+/** Only stores whose rows are explicitly scoped by user_id may use the generic queue. */
+export const USER_SCOPED_MUTATION_STORES = new Set(["tasks", "subjects", "learn_lessons"]);
+
 function createMutationId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -28,9 +31,7 @@ class MutationQueue {
 
   private async init(): Promise<void> {
     if (this.db) return;
-    if (typeof indexedDB === "undefined") {
-      throw new Error("Offline mutation queue requires IndexedDB");
-    }
+    if (typeof indexedDB === "undefined") throw new Error("Offline mutation queue requires IndexedDB");
 
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -46,19 +47,17 @@ class MutationQueue {
         const store = db.objectStoreNames.contains(STORE)
           ? transaction?.objectStore(STORE)
           : db.createObjectStore(STORE, { keyPath: "id" });
-
-        if (store && !store.indexNames.contains("ownerId")) {
-          store.createIndex("ownerId", "ownerId", { unique: false });
-        }
-        if (store && !store.indexNames.contains("createdAt")) {
-          store.createIndex("createdAt", "createdAt", { unique: false });
-        }
+        if (store && !store.indexNames.contains("ownerId")) store.createIndex("ownerId", "ownerId", { unique: false });
+        if (store && !store.indexNames.contains("createdAt")) store.createIndex("createdAt", "createdAt", { unique: false });
       };
     });
   }
 
   async enqueue<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts">): Promise<OfflineMutation<T>> {
     if (!input.ownerId) throw new Error("Offline mutation requires an authenticated owner");
+    if (!USER_SCOPED_MUTATION_STORES.has(input.store)) {
+      throw new Error(`Offline mutation store is not approved: ${input.store}`);
+    }
     await this.init();
 
     const mutation: OfflineMutation<T> = {
@@ -67,7 +66,6 @@ class MutationQueue {
       createdAt: new Date().toISOString(),
       attempts: 0,
     };
-
     await this.put(mutation);
     return mutation;
   }
@@ -75,13 +73,8 @@ class MutationQueue {
   async list(ownerId: string): Promise<OfflineMutation[]> {
     if (!ownerId) return [];
     await this.init();
-
     return new Promise((resolve, reject) => {
-      const request = this.db!
-        .transaction(STORE, "readonly")
-        .objectStore(STORE)
-        .index("ownerId")
-        .getAll(ownerId);
+      const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).index("ownerId").getAll(ownerId);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const rows = (request.result ?? []) as OfflineMutation[];
@@ -95,7 +88,6 @@ class MutationQueue {
     await this.init();
     const current = await this.get(id);
     if (!current || current.ownerId !== ownerId) return;
-
     await new Promise<void>((resolve, reject) => {
       const request = this.db!.transaction(STORE, "readwrite").objectStore(STORE).delete(id);
       request.onerror = () => reject(request.error);
@@ -108,7 +100,6 @@ class MutationQueue {
     await this.init();
     const current = await this.get(id);
     if (!current || current.ownerId !== ownerId) return;
-
     await this.put({
       ...current,
       attempts: current.attempts + 1,
