@@ -6,7 +6,7 @@ const REPO_OWNER = "mahambatakunda2008-afk";
 const REPO_NAME = "shadecode-student";
 const BASE_BRANCH = "main";
 const ENGINE_BRANCH = `cortex-auto-${Date.now()}`;
-const TASK_FILE = ".cortex/tasks.md";
+const TASK_FILE = ".cortex/active-queue.md";
 const MAX_IMPROVEMENTS = 1;
 const MAX_CODE_BYTES = 200_000;
 const ALLOWED_PREFIXES = ["src/"];
@@ -57,22 +57,18 @@ async function checkForOpenCortexPRs() {
 async function readTaskRoadmap() {
   const { data } = await octokit.repos.getContent({ owner: REPO_OWNER, repo: REPO_NAME, path: TASK_FILE, ref: BASE_BRANCH });
   const content = Buffer.from(data.content, "base64").toString("utf8");
-  const sectionMatch = content.match(/^## Immediate Execution Queue[\s\S]*?(?=^## |$)/m);
-  const queue = sectionMatch ? sectionMatch[0] : "";
   const pendingTasks = [];
-  const lines = queue.split("\n");
-  let current = null;
-  for (const line of lines) {
-    const match = line.match(/^- \[ \] (🔴|🟡|🟢) \*\*(.+?)\*\*/);
-    if (match) {
-      if (current) pendingTasks.push(current);
-      current = { priority: match[1], title: match[2].trim(), details: [] };
-    } else if (current && /^\s{2,}- /.test(line)) {
-      current.details.push(line.trim());
-    }
+  const headings = [...content.matchAll(/^## (🔴|🟡|🟢) (.+)$/gm)];
+
+  for (let i = 0; i < headings.length; i++) {
+    const match = headings[i];
+    const start = match.index + match[0].length;
+    const end = i + 1 < headings.length ? headings[i + 1].index : content.length;
+    const details = content.slice(start, end).split("\n").map((line) => line.trim()).filter(Boolean);
+    pendingTasks.push({ priority: match[1], title: match[2].trim(), details });
   }
-  if (current) pendingTasks.push(current);
-  log(`Immediate queue: ${pendingTasks.length} executable pending task(s)`);
+
+  log(`Active queue: ${pendingTasks.length} executable task(s)`);
   return { raw: content, pendingTasks };
 }
 
@@ -112,7 +108,7 @@ function extractJson(text) {
 
 async function askAI(roadmap, schema, signals) {
   const task = roadmap.pendingTasks[0];
-  const prompt = `You are Cortex Engineering for Shadecode Student. Execute exactly ONE task from the Immediate Execution Queue.\n\nTASK:\nPriority: ${task.priority}\nTitle: ${task.title}\nDetails:\n${task.details.join("\n") || "(none)"}\n\nVERIFIED TABLES:\n${Object.keys(schema).join(", ")}\n\nNON-SENSITIVE PRODUCT COUNTS:\n${JSON.stringify(signals)}\n\nRULES:\n- Work only on this task. Do not choose another task.\n- Produce exactly ONE improvement.\n- App code must be under src/.\n- Never create migrations or SQL.\n- Never create or modify package/config/CI files.\n- Never invent database tables.\n- Reuse existing systems when possible.\n- Return only JSON.\n- Code must be complete file content.\n\nJSON schema:\n{\n  "analysis": "short explanation",\n  "improvements": [{\n    "type": "new_feature | new_component | bug_fix | refactor",\n    "title": "short title",\n    "description": "what changes and why",\n    "priority": "high | medium | low",\n    "file_path": "src/...",\n    "code": "complete file content"\n  }],\n  "devlog_entry": "first-person short entry"\n}`;
+  const prompt = `You are Cortex Engineering for Shadecode Student. Execute exactly ONE task from the Active Execution Queue.\n\nTASK:\nPriority: ${task.priority}\nTitle: ${task.title}\nDetails:\n${task.details.join("\n") || "(none)"}\n\nVERIFIED TABLES:\n${Object.keys(schema).join(", ")}\n\nNON-SENSITIVE PRODUCT COUNTS:\n${JSON.stringify(signals)}\n\nRULES:\n- Work only on this task. Do not choose another task.\n- Produce exactly ONE improvement.\n- App code must be under src/.\n- Never create migrations or SQL.\n- Never create or modify package/config/CI files.\n- Never invent database tables.\n- Reuse existing systems when possible.\n- Return only JSON.\n- Code must be complete file content.\n\nJSON schema:\n{\n  "analysis": "short explanation",\n  "improvements": [{\n    "type": "new_feature | new_component | bug_fix | refactor",\n    "title": "short title",\n    "description": "what changes and why",\n    "priority": "high | medium | low",\n    "file_path": "src/...",\n    "code": "complete file content"\n  }],\n  "devlog_entry": "first-person short entry"\n}`;
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   let rawText = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -187,7 +183,7 @@ async function main() {
   }
   const roadmap = await readTaskRoadmap();
   if (!roadmap.pendingTasks.length) {
-    log("No executable task in Immediate Execution Queue. No autonomous change made.");
+    log("Active queue is empty. No autonomous change made.");
     return;
   }
   const schema = await discoverSchema();
