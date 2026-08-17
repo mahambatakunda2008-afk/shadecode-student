@@ -1,163 +1,210 @@
 import { getMemory, updateMemory } from "./memory";
-import { scoreAnswer } from "./tools/scoring";
+import { scoreAnswer, type ScoreAnswerInput } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
-import { trackStudySession, trackExamResult, updateStreak, generateLearningInsight, generateRecommendation } from "./memoryTracker";
+import {
+  trackStudySession,
+  trackExamResult,
+  updateStreak,
+  generateRecommendation,
+} from "./memoryTracker";
 
 export type CortexInput = {
-    userId: string;
-    type: "learn" | "practice" | "exam" | "feedback";
-    payload: any;
+  userId: string;
+  type: "learn" | "practice" | "exam" | "feedback";
+  payload: unknown;
 };
 
 export type CortexOutput = {
-    response: string;
-    nextAction?: string;
-    updatedState?: any;
+  response: string;
+  nextAction?: string;
+  recommendation?: string;
+  updatedState?: {
+    snapshot: CortexSnapshot;
+  };
 };
 
+type CortexSnapshot = {
+  streak: number;
+  level: number;
+  xp: number;
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  subjects: string[];
+  frequentlyStudiedSubjects: string[];
+  strongSubjects: string[];
+  weakSubjects: string[];
+  averageSessionDuration: number;
+  totalStudySessions: number;
+  averageExamScore: number;
+  longestStreak: number;
+  totalLessonsCompleted: number;
+  totalStudyTimeMinutes: number;
+  curriculumCompletionPercent?: number;
+  currentLesson?: { id: string; title: string } | null;
+  recommendedNextLesson?: { id: string; title: string } | null;
+  completedLessonCount?: number;
+  lockedLessonCount?: number;
+};
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? value as Record<string, unknown> : {};
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function asPositiveNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+async function buildSnapshot(userId: string, memory?: Awaited<ReturnType<typeof getMemory>>): Promise<CortexSnapshot> {
+  const resolvedMemory = memory ?? await getMemory(userId);
+  let curriculumState = null;
+  try {
+    curriculumState = await getCurriculumState(userId);
+  } catch (error) {
+    console.error("[cortex] failed to fetch curriculum state:", error);
+  }
+
+  const totalTasks = Math.max(0, resolvedMemory.totalTasks ?? 0);
+  const completedTasks = Math.min(totalTasks, Math.max(0, resolvedMemory.completedTasks ?? 0));
+
+  const snapshot: CortexSnapshot = {
+    streak: Math.max(0, resolvedMemory.streak ?? 0),
+    level: Math.max(1, resolvedMemory.level ?? 1),
+    xp: Math.max(0, resolvedMemory.xp ?? 0),
+    totalTasks,
+    completedTasks,
+    pendingTasks: Math.max(0, totalTasks - completedTasks),
+    subjects: resolvedMemory.subjects ?? [],
+    frequentlyStudiedSubjects: resolvedMemory.frequentlyStudiedSubjects ?? [],
+    strongSubjects: resolvedMemory.strongSubjects ?? [],
+    weakSubjects: resolvedMemory.weakSubjects ?? [],
+    averageSessionDuration: Math.max(0, resolvedMemory.averageSessionDuration ?? 0),
+    totalStudySessions: Math.max(0, resolvedMemory.totalStudySessions ?? 0),
+    averageExamScore: Math.max(0, resolvedMemory.averageExamScore ?? 0),
+    longestStreak: Math.max(0, resolvedMemory.longestStreak ?? 0),
+    totalLessonsCompleted: Math.max(0, resolvedMemory.totalLessonsCompleted ?? 0),
+    totalStudyTimeMinutes: Math.max(0, resolvedMemory.totalStudyTimeMinutes ?? 0),
+  };
+
+  if (curriculumState) {
+    snapshot.curriculumCompletionPercent = curriculumState.completionPercent;
+    snapshot.currentLesson = curriculumState.currentLesson
+      ? { id: curriculumState.currentLesson.id, title: curriculumState.currentLesson.title }
+      : null;
+    snapshot.recommendedNextLesson = curriculumState.recommendedNextLesson
+      ? { id: curriculumState.recommendedNextLesson.id, title: curriculumState.recommendedNextLesson.title }
+      : null;
+    snapshot.completedLessonCount = curriculumState.completedLessons.length;
+    snapshot.lockedLessonCount = curriculumState.lockedLessons.length;
+  }
+
+  return snapshot;
+}
+
+async function outputState(userId: string) {
+  return { snapshot: await buildSnapshot(userId) };
+}
+
 export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
-    const memory = await getMemory(input.userId);
+  if (!input.userId?.trim()) {
+    throw new Error("Cortex requires an authenticated user id");
+  }
 
-    // 1. Understand context
-    // Fetch curriculum state once per Cortex request and adapt it into a lightweight summary.
-    let curriculumState = null;
-    try {
-      curriculumState = await getCurriculumState(input.userId);
-    } catch (e) {
-      // Keep behavior safe if curriculum fetch fails
-      console.error("[cortex] failed to fetch curriculum state:", e);
-      curriculumState = null;
+  const memory = await getMemory(input.userId);
+  const snapshot = await buildSnapshot(input.userId, memory);
+  const context = {
+    level: memory.level,
+    streak: memory.streak,
+    weakTopics: memory.weakTopics,
+    weakSubjects: memory.weakSubjects,
+    strongSubjects: memory.strongSubjects,
+    snapshot,
+  };
+
+  switch (input.type) {
+    case "learn": {
+      const payload = asRecord(input.payload);
+      const topic = asString(payload.topic) ?? "your current topic";
+      const response = await generateTutoringResponse(topic, context);
+
+      await updateStreak(input.userId, true);
+
+      const subjectId = asString(payload.subjectId);
+      const subjectName = asString(payload.subjectName);
+      if (subjectId && subjectName) {
+        await trackStudySession({
+          userId: input.userId,
+          subjectId,
+          subjectName,
+          durationMinutes: asPositiveNumber(payload.durationMinutes, 15),
+          completedAt: new Date().toISOString(),
+        });
+      }
+
+      await updateMemory(input.userId, { lastTopic: topic });
+      const recommendation = await generateRecommendation(input.userId);
+
+      return {
+        response,
+        nextAction: "continue_learning",
+        recommendation,
+        updatedState: await outputState(input.userId),
+      };
     }
 
-    // Build a minimal snapshot that merges memory-derived fields and optional curriculum fields
-    const snapshot: any = {
-      streak: memory.streak,
-      level: memory.level,
-      xp: (memory as any).xp ?? 0,
-      totalTasks: (memory as any).totalTasks ?? 0,
-      completedTasks: (memory as any).completedTasks ?? 0,
-      pendingTasks: ((memory as any).totalTasks ?? 0) - ((memory as any).completedTasks ?? 0),
-      subjects: (memory as any).subjects ?? [],
-      // Add persistent memory insights
-      frequentlyStudiedSubjects: memory.frequentlyStudiedSubjects,
-      strongSubjects: memory.strongSubjects,
-      weakSubjects: memory.weakSubjects,
-      averageSessionDuration: memory.averageSessionDuration,
-      totalStudySessions: memory.totalStudySessions,
-      averageExamScore: memory.averageExamScore,
-      longestStreak: memory.longestStreak,
-      totalLessonsCompleted: memory.totalLessonsCompleted,
-      totalStudyTimeMinutes: memory.totalStudyTimeMinutes,
-    };
+    case "practice": {
+      const result = await scoreAnswer(asRecord(input.payload) as ScoreAnswerInput);
+      await updateMemory(input.userId, {
+        lastScore: result.score,
+        weakTopics: result.weakTopics,
+      });
 
-    if (curriculumState) {
-      snapshot.curriculumCompletionPercent = curriculumState.completionPercent;
-      snapshot.currentLesson = curriculumState.currentLesson
-        ? { id: curriculumState.currentLesson.id, title: curriculumState.currentLesson.title }
-        : null;
-      snapshot.recommendedNextLesson = curriculumState.recommendedNextLesson
-        ? { id: curriculumState.recommendedNextLesson.id, title: curriculumState.recommendedNextLesson.title }
-        : null;
-      snapshot.completedLessonCount = curriculumState.completedLessons.length;
-      snapshot.lockedLessonCount = curriculumState.lockedLessons.length;
+      const recommendation = await generateRecommendation(input.userId);
+      return {
+        response: result.feedback,
+        nextAction: result.score >= 80 ? "advance_or_recall" : "review_and_retry",
+        recommendation,
+        updatedState: await outputState(input.userId),
+      };
     }
 
-    const context = {
-        level: memory.level,
-        streak: memory.streak,
-        weakTopics: memory.weakTopics,
-        weakSubjects: memory.weakSubjects,
-        strongSubjects: memory.strongSubjects,
-        snapshot,
-    };
+    case "exam": {
+      const payload = asRecord(input.payload);
+      const subject = asString(payload.subject);
+      const score = payload.score;
+      if (subject && typeof score === "number" && Number.isFinite(score)) {
+        await trackExamResult({
+          userId: input.userId,
+          subject,
+          score: Math.max(0, Math.min(100, score)),
+          completedAt: new Date().toISOString(),
+        });
+      }
 
-    // 2. Route intent (SINGLE DECISION POINT)
-    switch (input.type) {
-        case "learn": {
-            const response = await generateTutoringResponse(
-                input.payload.topic,
-                context
-            );
-
-            // Update streak BEFORE trackStudySession. trackStudySession
-            // writes lastStudyDate = now, so calling it first would make
-            // updateStreak's own lastStudyDate read always equal "today" --
-            // meaning it always took the "already studied today, no change"
-            // branch and the streak counter could never actually increment.
-            // Verified via direct read of both functions on 2026-08-13.
-            await updateStreak(input.userId, true);
-
-            // Track study session for persistent memory
-            if (input.payload.subjectId && input.payload.subjectName) {
-                await trackStudySession({
-                    userId: input.userId,
-                    subjectId: input.payload.subjectId,
-                    subjectName: input.payload.subjectName,
-                    durationMinutes: input.payload.durationMinutes || 15,
-                    completedAt: new Date().toISOString(),
-                });
-            }
-
-            await updateMemory(input.userId, {
-                lastTopic: input.payload.topic,
-            });
-
-            return {
-                response,
-                nextAction: "continue_learning",
-                updatedState: { snapshot },
-            };
-        }
-
-        case "practice": {
-            const result = await scoreAnswer(input.payload);
-
-            await updateMemory(input.userId, {
-                lastScore: result.score,
-                weakTopics: result.weakTopics,
-            });
-
-            return {
-                response: result.feedback,
-                nextAction: "adjust_difficulty",
-                updatedState: { snapshot },
-            };
-        }
-
-        case "exam": {
-            // Track exam result for persistent memory
-            if (input.payload.subject && input.payload.score !== undefined) {
-                await trackExamResult({
-                    userId: input.userId,
-                    subject: input.payload.subject,
-                    score: input.payload.score,
-                    completedAt: new Date().toISOString(),
-                });
-            }
-
-            return {
-                response: "Exam mode activated. Good luck.",
-                nextAction: "lock_learning_mode",
-                updatedState: { snapshot },
-            };
-        }
-
-        case "feedback": {
-            await updateMemory(input.userId, {
-                feedback: input.payload,
-            });
-
-            return {
-                response: "Got it. I'm adjusting your learning path.",
-                updatedState: { snapshot },
-            };
-        }
-
-        default:
-            return {
-                response: "Unknown cortex action.",
-                updatedState: { snapshot },
-            };
+      const recommendation = await generateRecommendation(input.userId);
+      return {
+        response: "Exam mode activated. Good luck.",
+        nextAction: "lock_learning_mode",
+        recommendation,
+        updatedState: await outputState(input.userId),
+      };
     }
+
+    case "feedback": {
+      await updateMemory(input.userId, { feedback: input.payload });
+      return {
+        response: "Got it. I'm adjusting your learning path.",
+        nextAction: "continue_learning",
+        updatedState: await outputState(input.userId),
+      };
+    }
+
+    default:
+      throw new Error(`Unsupported Cortex action: ${String(input.type)}`);
+  }
 }
