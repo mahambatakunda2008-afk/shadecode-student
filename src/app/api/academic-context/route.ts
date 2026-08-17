@@ -11,6 +11,13 @@ async function getUser() {
   return { supabase, user };
 }
 
+function toAcademicContextInput(value: unknown): AcademicContextInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Request body must be an object");
+  }
+  return value as AcademicContextInput;
+}
+
 export async function GET() {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -37,10 +44,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const context = normalizeAcademicContext(
-      body && typeof body === "object" ? body as AcademicContextInput : { pathway: undefined },
-    );
-
+    const context = normalizeAcademicContext(toAcademicContextInput(body));
     const { data, error } = await supabase.from("academic_contexts").upsert({
       user_id: user.id,
       ...context,
