@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     other: [
       { rel: "mask-icon", url: "/brand/shadecode-app-icon.svg", color: "#22D3EE" },
     ],
-    apple: [{ url: "/brand/shadecode-app-icon-maskable.svg", type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "any" }],
   },
 };
 
