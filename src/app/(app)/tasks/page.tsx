@@ -9,6 +9,7 @@ import { emitStudySessionFinished } from "@/lib/events";
 import { awardXPClient } from "@/lib/xp/manager";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
+import { offlineSync } from "@/lib/offline/sync";
 
 const FETCH_TIMEOUT_MS = 15000;
 interface Subject { id: string; name: string; }
@@ -30,21 +31,55 @@ export default function Tasks() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
       setUserId(user.id);
+
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        const [localSubjects, localTasks] = await Promise.all([
+          offlineSync.getSubjects(user.id),
+          offlineSync.getTasks(user.id),
+        ]);
+        setSubjects(localSubjects.map(({ id, name }) => ({ id, name })));
+        setTasks(localTasks.map(({ id, subject_id, title, completed }) => ({ id, subject_id, title, completed })));
+        const { data: profile } = await supabase.from("profiles").select("xp,level").eq("id", user.id).single();
+        setXp(profile?.xp || 0); setLevel(profile?.level || 1);
+        return;
+      }
+
       const [{ data: subjectsData }, { data: tasksData }, { data: profileData }] = await withTimeout(Promise.all([
         supabase.from("subjects").select("id,name").eq("user_id", user.id),
         supabase.from("tasks").select("id,subject_id,title,completed").eq("user_id", user.id),
         supabase.from("profiles").select("xp,level").eq("id", user.id).single(),
       ]), FETCH_TIMEOUT_MS, "Loading your tasks timed out");
       setSubjects(subjectsData || []); setTasks(tasksData || []); setXp(profileData?.xp || 0); setLevel(profileData?.level || 1);
-    } catch (err) { setLoadError(err instanceof TimeoutError ? "This is taking longer than expected. Please try again." : "Could not load your tasks. Please try again."); }
-    finally { setLoading(false); }
+    } catch (err) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const [localSubjects, localTasks] = await Promise.all([offlineSync.getSubjects(user.id), offlineSync.getTasks(user.id)]);
+          if (localSubjects.length || localTasks.length) {
+            setSubjects(localSubjects.map(({ id, name }) => ({ id, name })));
+            setTasks(localTasks.map(({ id, subject_id, title, completed }) => ({ id, subject_id, title, completed })));
+            showToast("Showing your saved offline tasks.");
+            return;
+          }
+        }
+      } catch (offlineError) {
+        console.error("[Tasks] Offline fallback failed:", offlineError);
+      }
+      setLoadError(err instanceof TimeoutError ? "This is taking longer than expected. Please try again." : "Could not load your tasks. Please try again.");
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { void fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [router, supabase]);
   const showToast = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(""), 2500); };
+  const isOffline = () => typeof navigator !== "undefined" && !navigator.onLine;
 
   const addSubject = async () => {
     const name = newSubject.trim(); if (!name || !userId) return;
+    if (isOffline()) {
+      const id = crypto.randomUUID();
+      await offlineSync.queueMutation({ operation: "create", store: "subjects", payload: { id, user_id: userId, name } });
+      setSubjects(prev => [...prev, { id, name }]); setNewSubject(""); showToast("Subject saved offline. It will sync when you're online."); return;
+    }
     const { data, error } = await supabase.from("subjects").insert({ user_id: userId, name }).select("id,name").single();
     if (error) { showToast("Couldn't add that subject."); return; }
     if (data) { setSubjects(prev => [...prev, data]); setNewSubject(""); emitCortexEvent({ userId, type: "subject.created", source: "tasks", data: { subjectName: data.name } }); }
@@ -52,6 +87,11 @@ export default function Tasks() {
 
   const addTask = async (subjectId: string) => {
     const title = newTasks[subjectId]?.trim(); if (!title || !userId) return;
+    if (isOffline()) {
+      const id = crypto.randomUUID();
+      await offlineSync.queueMutation({ operation: "create", store: "tasks", payload: { id, user_id: userId, subject_id: subjectId, title, completed: false } });
+      setTasks(prev => [...prev, { id, subject_id: subjectId, title, completed: false }]); setNewTasks(prev => ({ ...prev, [subjectId]: "" })); showToast("Task saved offline. It will sync when you're online."); return;
+    }
     const { data, error } = await supabase.from("tasks").insert({ user_id: userId, subject_id: subjectId, title, completed: false }).select("id,subject_id,title,completed").single();
     if (error) { showToast("Couldn't add that task."); return; }
     if (data) { setTasks(prev => [...prev, data]); setNewTasks(prev => ({ ...prev, [subjectId]: "" })); emitCortexEvent({ userId, type: "task.created", source: "tasks", data: { subjectId, title: data.title } }); }
@@ -59,6 +99,12 @@ export default function Tasks() {
 
   const completeTask = async (task: Task) => {
     if (task.completed || !userId) return;
+    if (isOffline()) {
+      await offlineSync.queueMutation({ operation: "update", store: "tasks", payload: { id: task.id, user_id: userId, completed: true } });
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true } : t));
+      showToast("Completed offline. XP will sync when you're online.");
+      return;
+    }
     const { error } = await supabase.from("tasks").update({ completed: true }).eq("id", task.id).eq("user_id", userId);
     if (error) { console.error("[Tasks] complete failed:", error.message); showToast("Couldn't mark that task complete. Please try again."); return; }
     const result = await awardXPClient(userId, { amount: 10 });
@@ -72,6 +118,10 @@ export default function Tasks() {
 
   const deleteTask = async (taskId: string) => {
     const deletedTask = tasks.find(task => task.id === taskId); if (!userId) return;
+    if (isOffline()) {
+      await offlineSync.queueMutation({ operation: "delete", store: "tasks", payload: { id: taskId, user_id: userId } });
+      setTasks(prev => prev.filter(t => t.id !== taskId)); showToast("Task deleted offline. It will sync when you're online."); return;
+    }
     const { error } = await supabase.from("tasks").delete().eq("id", taskId).eq("user_id", userId);
     if (error) { console.error("[Tasks] delete failed:", error.message); showToast("Couldn't delete that task. Please try again."); return; }
     setTasks(prev => prev.filter(t => t.id !== taskId));
@@ -81,6 +131,12 @@ export default function Tasks() {
   const deleteSubject = async (subjectId: string) => {
     if (!userId) return;
     const deletedSubject = subjects.find(subject => subject.id === subjectId);
+    if (isOffline()) {
+      const subjectTaskIds = tasks.filter(task => task.subject_id === subjectId).map(task => task.id);
+      for (const taskId of subjectTaskIds) await offlineSync.queueMutation({ operation: "delete", store: "tasks", payload: { id: taskId, user_id: userId } });
+      await offlineSync.queueMutation({ operation: "delete", store: "subjects", payload: { id: subjectId, user_id: userId } });
+      setSubjects(prev => prev.filter(s => s.id !== subjectId)); setTasks(prev => prev.filter(t => t.subject_id !== subjectId)); showToast("Subject deleted offline. It will sync when you're online."); return;
+    }
     const { error } = await supabase.from("subjects").delete().eq("id", subjectId).eq("user_id", userId);
     if (error) { console.error("[Tasks] delete subject failed:", error.message); showToast("Couldn't delete that subject. Please try again."); return; }
     setSubjects(prev => prev.filter(s => s.id !== subjectId)); setTasks(prev => prev.filter(t => t.subject_id !== subjectId));
