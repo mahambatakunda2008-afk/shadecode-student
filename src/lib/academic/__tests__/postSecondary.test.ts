@@ -20,9 +20,9 @@ describe("post-secondary academic helpers", () => {
 
   it("orders open assessments by due date", () => {
     const assessments: AcademicAssessment[] = [
-      { id: "late", title: "Exam", type: "exam", dueAt: "2026-09-10T00:00:00.000Z", completed: false },
-      { id: "soon", title: "Assignment", type: "assignment", dueAt: "2026-08-20T00:00:00.000Z", completed: false },
-      { id: "done", title: "Done", type: "test", dueAt: "2026-08-18T00:00:00.000Z", completed: true },
+      { id: "late", courseId: "CS201", title: "Exam", type: "exam", dueAt: "2026-09-10T00:00:00.000Z", completed: false },
+      { id: "soon", courseId: "CS201", title: "Assignment", type: "assignment", dueAt: "2026-08-20T00:00:00.000Z", completed: false },
+      { id: "done", courseId: "CS201", title: "Done", type: "test", dueAt: "2026-08-18T00:00:00.000Z", completed: true },
     ];
 
     const open = getOpenAssessments(assessments, new Date("2026-08-17T00:00:00.000Z"));
@@ -32,6 +32,7 @@ describe("post-secondary academic helpers", () => {
   it("weights nearer assessments more heavily", () => {
     const base: AcademicAssessment = {
       id: "a",
+      courseId: "CS201",
       title: "Assignment",
       type: "assignment",
       completed: false,
