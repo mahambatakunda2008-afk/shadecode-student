@@ -7,6 +7,7 @@ import { saveWorkObject } from "@/lib/studyspace/store";
 
 const modes: { id: StudySpaceMode; label: string; description: string }[] = [
   { id: "workmate", label: "Workmate", description: "Bring questions, answers, working or images." },
+  { id: "lesson", label: "Lesson", description: "Learn, revise and practise from a generated or curriculum lesson." },
   { id: "practice", label: "Practice", description: "Work through focused questions." },
   { id: "assessment", label: "Assessment", description: "Complete graded assessment work." },
   { id: "exam", label: "Exam", description: "Use a focused timed exam surface." },
@@ -17,6 +18,7 @@ export default function StudySpacePage() {
   const router = useRouter();
   const params = useSearchParams();
   const initialMode = params.get("mode") as StudySpaceMode | null;
+  const lessonId = params.get("lessonId") || undefined;
   const [mode, setMode] = useState<StudySpaceMode>(initialMode && modes.some((item) => item.id === initialMode) ? initialMode : "workmate");
   const [subject, setSubject] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -34,6 +36,7 @@ export default function StudySpacePage() {
     const work: WorkObject = {
       id: crypto.randomUUID(),
       mode,
+      lessonId: mode === "lesson" ? lessonId : undefined,
       subject: subject.trim() || undefined,
       prompt: prompt.trim() || undefined,
       response: response.trim() || undefined,
@@ -51,7 +54,7 @@ export default function StudySpacePage() {
         <div>
           <p style={{ margin: 0, fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--primary)" }}>SHADECODE</p>
           <h1 style={{ margin: "4px 0", fontSize: 32, fontWeight: 850 }}>StudySpace</h1>
-          <p style={{ margin: 0, color: "var(--muted-foreground)" }}>One workspace for learning, working, practicing, assessment and exams.</p>
+          <p style={{ margin: 0, color: "var(--muted-foreground)" }}>One workspace for lessons, learning, working, practice, assessment and exams.</p>
         </div>
         <button onClick={() => router.back()} style={{ border: "1px solid var(--card-border)", background: "var(--muted)", borderRadius: 8, padding: "9px 12px", cursor: "pointer" }}>Back</button>
       </header>
@@ -75,6 +78,8 @@ export default function StudySpacePage() {
             <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Saved locally</span>
           </div>
 
+          {mode === "lesson" && lessonId && <p style={{ marginTop: 0, fontSize: 13, color: "var(--muted-foreground)" }}>Linked lesson: {lessonId}</p>}
+
           <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Subject <span style={{ fontWeight: 400, color: "var(--muted-foreground)" }}>(optional)</span></label>
           <input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Any subject, or leave blank" style={{ width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
 
@@ -84,7 +89,7 @@ export default function StudySpacePage() {
           <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Your work / answer</label>
           <textarea value={response} onChange={(event) => setResponse(event.target.value)} placeholder="Write your answer, reasoning, working or notes here..." rows={8} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <button onClick={save} style={{ border: 0, borderRadius: 8, padding: "11px 16px", background: "var(--primary)", color: "white", fontWeight: 750, cursor: "pointer" }}>Save work</button>
             <button onClick={() => router.push(`/workmate?mode=${mode}`)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>Open Workmate</button>
             {saved && <span role="status" style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Saved offline ✓</span>}
