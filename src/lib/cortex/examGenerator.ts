@@ -8,6 +8,21 @@ export interface ExamQuestion { id: string; type: QuestionType; question: string
 export interface GeneratedExam { subject: string; title: string; questions: ExamQuestion[]; totalMarks: number; durationMinutes: number; difficulty: string; topics: string[]; }
 
 const EXAM_SYSTEM_PROMPT = `You are an experienced exam setter for Shadecode Student. Generate a realistic exam paper and return ONLY valid JSON. MCQs must have exactly four options. Include model answers and marking criteria.`;
+const MEMORY_BUDGET_MS = 2000;
+const AI_BUDGET_MS = 18000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(fallback), timeoutMs);
+    promise.then(value => {
+      clearTimeout(timer);
+      resolve(value);
+    }).catch(() => {
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
 
 function isQuestion(value: unknown): value is Partial<ExamQuestion> { if (!value || typeof value !== "object") return false; const q = value as Partial<ExamQuestion>; return typeof q.question === "string" && q.question.trim().length > 3 && typeof q.topic === "string" && q.topic.trim().length > 0; }
 function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: string): ExamQuestion {
@@ -23,9 +38,19 @@ function isExamPayload(value: unknown): value is { title?: unknown; questions: u
 export async function generateExam(subject: string, topics: string[], difficulty: string, questionCount: number, userId: string): Promise<GeneratedExam | null> {
   const safeCount = Math.max(1, Math.min(20, Math.round(questionCount)));
   try {
-    const memory = await getMemory(userId);
+    const memory = await withTimeout(getMemory(userId), MEMORY_BUDGET_MS, {
+      level: 1, streak: 0, xp: 0, totalTasks: 0, completedTasks: 0,
+      subjects: [], weakTopics: [], frequentlyStudiedSubjects: [], strongSubjects: [],
+      preferredStudyHours: [], averageSessionDuration: 0, totalStudySessions: 0,
+      examScores: [], averageExamScore: 0, longestStreak: 0, totalLessonsCompleted: 0,
+      totalStudyTimeMinutes: 0,
+    });
     const prompt = `${EXAM_SYSTEM_PROMPT}\n\nSubject: ${subject}\nTopics: ${topics.join(", ")}\nDifficulty: ${difficulty}\nNumber of questions: ${safeCount}\nStudent level: ${memory.level}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${(memory.weakSubjects ?? []).join(", ") || "none"}\n\nGenerate the exam.`;
-    const response = await callAI(prompt, 5000, { userId, feature: "exam_sim", subfeature: "generate_exam", maxChainMs: 45000, perProviderMaxMs: 10000 });
+    const response = await withTimeout(
+      callAI(prompt, 5000, { userId, feature: "exam_sim", subfeature: "generate_exam", maxChainMs: 16000, perProviderMaxMs: 3500 }),
+      AI_BUDGET_MS,
+      null
+    );
     if (response) {
       const parsed = repairAndParseJSON(response, isExamPayload);
       const rawQuestions = parsed?.questions.filter(isQuestion) ?? [];
@@ -37,4 +62,4 @@ export async function generateExam(subject: string, topics: string[], difficulty
   } catch (error) { console.error("[ExamGenerator] Failed:", error); }
   return fallbackExam(subject, difficulty, safeCount, topics);
 }
-function fallbackExam(subject: string, difficulty: string, count: number, requestedTopics: string[] = []): GeneratedExam { const topic = requestedTopics.find(Boolean) || `General ${subject}`; const questions: ExamQuestion[] = []; for (let i = 0; i < count; i++) { const type: QuestionType = i % 3 === 0 ? "multiple_choice" : i % 3 === 1 ? "short_answer" : "structured"; questions.push({ id: `q_${i + 1}_${Date.now()}`, type, question: type === "multiple_choice" ? `Which statement best describes a key principle of ${topic}?` : `Explain a key principle of ${topic}, giving a relevant example where appropriate.`, options: type === "multiple_choice" ? ["It is always constant.", "It depends on the stated conditions.", "It has no measurable effect.", "It is unrelated to the topic."] : undefined, marks: i < 3 ? 1 : i < 6 ? 2 : 3, topic, difficulty: i < 3 ? "easy" : i < 6 ? "medium" : "hard", modelAnswer: type === "multiple_choice" ? "It depends on the stated conditions." : `A correct explanation should identify the key principle of ${topic} and apply it accurately.`, markingCriteria: "Award marks for accurate explanation, relevant application, and correct terminology." }); } return { subject, title: `${subject} Practice Exam`, questions, totalMarks: questions.reduce((s, q) => s + q.marks, 0), durationMinutes: Math.max(5, count * 3), difficulty, topics: [topic] }; }
+function fallbackExam(subject: string, difficulty: string, count: number, requestedTopics: string[] = []): GeneratedExam { const topic = requestedTopics.find(Boolean) || `General ${subject}`; const questions: ExamQuestion[] = []; for (let i = 0; i < count; i++) { const type: QuestionType = i % 3 === 0 ? "multiple_choice" : i % 3 === 1 ? "short_answer" : "structured"; questions.push({ id: `q_${i + 1}_${Date.now()}`, type, question: type === "multiple_choice" ? `Which statement best describes a key principle of ${topic}?` : `Explain a key principle of ${topic}, giving a relevant example where appropriate.`, options: type === "multiple_choice" ? ["It is always constant.", "It depends on the stated conditions.", "It has no measurable effect.", "It is unrelated to the topic." ] : undefined, marks: i < 3 ? 1 : i < 6 ? 2 : 3, topic, difficulty: i < 3 ? "easy" : i < 6 ? "medium" : "hard", modelAnswer: type === "multiple_choice" ? "It depends on the stated conditions." : `A correct explanation should identify the key principle of ${topic} and apply it accurately.`, markingCriteria: "Award marks for accurate explanation, relevant application, and correct terminology." }); } return { subject, title: `${subject} Practice Exam`, questions, totalMarks: questions.reduce((s, q) => s + q.marks, 0), durationMinutes: Math.max(5, count * 3), difficulty, topics: [topic] }; }
