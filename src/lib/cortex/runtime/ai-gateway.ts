@@ -5,80 +5,17 @@ import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 
 const inflightRequests = new Map<string, Promise<CortexAIResponse>>();
-
-function isStructuredValue(value: unknown): value is CortexStructuredValue {
-  if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") return true;
-  if (Array.isArray(value)) return value.every(isStructuredValue);
-  if (!value || typeof value !== "object") return false;
-  return Object.values(value).every(isStructuredValue);
-}
-function assertStructuredPayload(payload: unknown): asserts payload is CortexStructuredValue {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload) || !isStructuredValue(payload)) throw new Error("Cortex AI payload must be a structured JSON object.");
-}
+function isStructuredValue(value: unknown): value is CortexStructuredValue { if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") return true; if (Array.isArray(value)) return value.every(isStructuredValue); if (!value || typeof value !== "object") return false; return Object.values(value).every(isStructuredValue); }
+function assertStructuredPayload(payload: unknown): asserts payload is CortexStructuredValue { if (!payload || typeof payload !== "object" || Array.isArray(payload) || !isStructuredValue(payload)) throw new Error("Cortex AI payload must be a structured JSON object."); }
 function hashText(input: string) { let hash = 0; for (let i = 0; i < input.length; i++) { hash = (hash << 5) - hash + input.charCodeAt(i); hash |= 0; } return Math.abs(hash).toString(36); }
 function normalizeUserId(userId: string) { return userId.trim() || "anonymous"; }
 function getInsightFingerprint(payload: CortexBehaviorInsightPayload) { return payload.fingerprint?.trim() || buildCortexFingerprint(payload.snapshot, payload.events ?? []); }
 function getSummaryFingerprint(payload: CortexBehaviorSummaryPayload) { return payload.fingerprint?.trim() || hashText(payload.behaviorSummary.trim()); }
 function buildCacheKey<T extends CortexAIRequestType>(requestType: T, payload: CortexAIRequestPayloadMap[T], fingerprint: string) { return createCortexCacheKey(`${requestType}:${normalizeUserId(payload.userId)}`, fingerprint); }
-
-function isInsightResponse(value: unknown): value is { insight: string } {
-  return !!value && typeof value === "object" && typeof (value as { insight?: unknown }).insight === "string" && Boolean((value as { insight: string }).insight.trim());
-}
-
-function buildBehaviorPrompt(summary: string) {
-  return `You are Cortex, a behavioral interpretation layer inside Shadecode Student.
-Return ONLY valid JSON with exactly this shape: {"insight":"..."}.
-The insight must be one complete sentence, 8-20 words, neutral and analytical.
-Rules: no markdown, no advice, no questions, no invented subjects/numbers/streaks; ground the sentence in the provided data and name an actual subject or specific task count when available. If data is sparse, say so plainly.
-Student behavioral data:\n${summary}`;
-}
-
-async function requestBehaviorInsight(summary: string, userId?: string): Promise<string> {
-  const prompt = buildBehaviorPrompt(summary);
-  const text = await callAI(prompt, 180, { userId, feature: "cortex", subfeature: "behavior_insight" });
-  if (text) {
-    const parsed = repairAndParseJSON(text, isInsightResponse);
-    if (parsed?.insight) return parsed.insight.trim();
-    const plain = text.replace(/```(?:json)?/gi, "").trim();
-    if (plain.length >= 20 && plain.length <= 240 && !plain.includes("{")) return plain.replace(/\s+/g, " ");
-  }
-  return "Cortex could not generate a fresh behavioral insight from the available data.";
-}
-
-async function executeBehaviorInsight(payload: CortexBehaviorInsightPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.insight">> {
-  const localInsight = resolveCortexExtension({ events: payload.events ?? [], snapshot: payload.snapshot });
-  const insight = localInsight || await requestBehaviorInsight(buildBehaviorSummary(payload.snapshot, payload.events ?? []), payload.userId);
-  const result: CortexAIResponse<"behavior.insight"> = { requestType: "behavior.insight", provider: localInsight ? "local" : "ai", cached: false, fingerprint, cacheKey, data: { insight } };
-  setCachedCortexValue(cacheKey, result);
-  return result;
-}
-
-async function executeBehaviorSummary(payload: CortexBehaviorSummaryPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.summary">> {
-  const insight = await requestBehaviorInsight(payload.behaviorSummary.trim(), payload.userId);
-  const result: CortexAIResponse<"behavior.summary"> = { requestType: "behavior.summary", provider: "ai", cached: false, fingerprint, cacheKey, data: { insight } };
-  setCachedCortexValue(cacheKey, result);
-  return result;
-}
-
-async function executeRequest<T extends CortexAIRequestType>(requestType: T, payload: CortexAIRequestPayloadMap[T], fingerprint: string, cacheKey: string): Promise<CortexAIResponse<T>> {
-  switch (requestType) {
-    case "behavior.insight": return await executeBehaviorInsight(payload as CortexBehaviorInsightPayload, fingerprint, cacheKey) as CortexAIResponse<T>;
-    case "behavior.summary": return await executeBehaviorSummary(payload as CortexBehaviorSummaryPayload, fingerprint, cacheKey) as CortexAIResponse<T>;
-    default: throw new Error(`Unsupported Cortex AI request type: ${String(requestType)}`);
-  }
-}
-
-export async function cortexAI<T extends CortexAIRequestType>(requestType: T, payload: CortexAIRequestPayloadMap[T]): Promise<CortexAIResponse<T>> {
-  assertStructuredPayload(payload);
-  const normalizedPayload = Object.assign({}, payload, { userId: normalizeUserId(payload.userId) }) as CortexAIRequestPayloadMap[T];
-  const fingerprint = requestType === "behavior.insight" ? getInsightFingerprint(normalizedPayload as CortexBehaviorInsightPayload) : getSummaryFingerprint(normalizedPayload as CortexBehaviorSummaryPayload);
-  const cacheKey = buildCacheKey(requestType, normalizedPayload, fingerprint);
-  const cached = getCachedCortexValue<CortexAIResponse<T>>(cacheKey);
-  if (cached) return { ...cached, cached: true, cacheKey, fingerprint };
-  const inflightKey = `${requestType}:${cacheKey}`;
-  const existingRequest = inflightRequests.get(inflightKey);
-  if (existingRequest) return await existingRequest as CortexAIResponse<T>;
-  const requestPromise = executeRequest(requestType, normalizedPayload, fingerprint, cacheKey) as Promise<CortexAIResponse>;
-  inflightRequests.set(inflightKey, requestPromise);
-  try { return await requestPromise as CortexAIResponse<T>; } finally { inflightRequests.delete(inflightKey); }
-}
+function isInsightResponse(value: unknown): value is { insight: string } { return !!value && typeof value === "object" && typeof (value as { insight?: unknown }).insight === "string" && Boolean((value as { insight: string }).insight.trim()); }
+function buildBehaviorPrompt(summary: string) { return `You are Cortex, a behavioral interpretation layer inside Shadecode Student.\nReturn ONLY valid JSON with exactly this shape: {"insight":"..."}.\nThe insight must be one complete sentence, 8-20 words, neutral and analytical.\nRules: no markdown, no advice, no questions, no invented subjects/numbers/streaks; ground the sentence in the provided data and name an actual subject or specific task count when available. If data is sparse, say so plainly.\nStudent behavioral data:\n${summary}`; }
+async function requestBehaviorInsight(summary: string, userId?: string): Promise<string> { const text = await callAI(buildBehaviorPrompt(summary), 180, { userId, feature: "cortex", subfeature: "behavior_insight" }); if (text) { const parsed = repairAndParseJSON(text, isInsightResponse); if (parsed?.insight) return parsed.insight.trim(); const plain = text.replace(/```(?:json)?/gi, "").trim(); if (plain.length >= 20 && plain.length <= 240 && !plain.includes("{")) return plain.replace(/\s+/g, " "); } return "Cortex could not generate a fresh behavioral insight from the available data."; }
+async function executeBehaviorInsight(payload: CortexBehaviorInsightPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.insight">> { const localInsight = resolveCortexExtension({ events: payload.events ?? [], snapshot: payload.snapshot }); const insight = localInsight || await requestBehaviorInsight(buildBehaviorSummary(payload.snapshot, payload.events ?? []), payload.userId); const result: CortexAIResponse<"behavior.insight"> = { requestType: "behavior.insight", provider: localInsight ? "local" : "gemini", cached: false, fingerprint, cacheKey, data: { insight } }; setCachedCortexValue(cacheKey, result); return result; }
+async function executeBehaviorSummary(payload: CortexBehaviorSummaryPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.summary">> { const insight = await requestBehaviorInsight(payload.behaviorSummary.trim(), payload.userId); const result: CortexAIResponse<"behavior.summary"> = { requestType: "behavior.summary", provider: "gemini", cached: false, fingerprint, cacheKey, data: { insight } }; setCachedCortexValue(cacheKey, result); return result; }
+async function executeRequest<T extends CortexAIRequestType>(requestType: T, payload: CortexAIRequestPayloadMap[T], fingerprint: string, cacheKey: string): Promise<CortexAIResponse<T>> { switch (requestType) { case "behavior.insight": return await executeBehaviorInsight(payload as CortexBehaviorInsightPayload, fingerprint, cacheKey) as CortexAIResponse<T>; case "behavior.summary": return await executeBehaviorSummary(payload as CortexBehaviorSummaryPayload, fingerprint, cacheKey) as CortexAIResponse<T>; default: throw new Error(`Unsupported Cortex AI request type: ${String(requestType)}`); } }
+export async function cortexAI<T extends CortexAIRequestType>(requestType: T, payload: CortexAIRequestPayloadMap[T]): Promise<CortexAIResponse<T>> { assertStructuredPayload(payload); const normalizedPayload = Object.assign({}, payload, { userId: normalizeUserId(payload.userId) }) as CortexAIRequestPayloadMap[T]; const fingerprint = requestType === "behavior.insight" ? getInsightFingerprint(normalizedPayload as CortexBehaviorInsightPayload) : getSummaryFingerprint(normalizedPayload as CortexBehaviorSummaryPayload); const cacheKey = buildCacheKey(requestType, normalizedPayload, fingerprint); const cached = getCachedCortexValue<CortexAIResponse<T>>(cacheKey); if (cached) return { ...cached, cached: true, cacheKey, fingerprint }; const inflightKey = `${requestType}:${cacheKey}`; const existingRequest = inflightRequests.get(inflightKey); if (existingRequest) return await existingRequest as CortexAIResponse<T>; const requestPromise = executeRequest(requestType, normalizedPayload, fingerprint, cacheKey) as Promise<CortexAIResponse>; inflightRequests.set(inflightKey, requestPromise); try { return await requestPromise as CortexAIResponse<T>; } finally { inflightRequests.delete(inflightKey); } }
