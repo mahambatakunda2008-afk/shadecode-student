@@ -14,8 +14,28 @@ Status: **P0 controls reviewed; continuous audit remains required**
 - Admin access is checked through the application role system.
 - Cortex draft approval requires the authenticated draft-approval permission.
 - Cortex student intelligence requests are bound to the authenticated user.
-- The traction metrics RPC no longer permits anonymous execution.
+- The traction metrics RPC rejects non-admin callers and has no anonymous EXECUTE grant.
+- `set_academic_contexts_updated_at()` now uses `SET search_path = public` and is not executable by `PUBLIC`.
 - Cortex Engineering has source-path restrictions, protected-path restrictions, bounded generated changes, and a human review gate.
+
+## Current Supabase advisor findings
+
+### Informational
+
+- `exam_logs` has RLS enabled without policies.
+- `insights_archive` has RLS enabled without policies.
+
+These tables are not being treated as student-readable by default. Policies should be added only after their intended owner/admin semantics are defined, rather than creating permissive policies just to silence the advisor.
+
+### Warnings requiring deliberate review
+
+- `get_traction_metrics()` is `SECURITY DEFINER` and executable by `authenticated`. It contains an admin-role guard. Its privilege should remain until the admin dashboard is migrated to a safer equivalent invocation path.
+- `get_user_permissions()` is `SECURITY DEFINER` and executable by `authenticated`. It rejects unauthenticated and cross-user calls.
+- `has_permission()` is `SECURITY DEFINER` and executable by `authenticated`. It rejects unauthenticated and cross-user calls.
+- `has_role()` is `SECURITY DEFINER` and executable by `authenticated`. It rejects unauthenticated and cross-user calls.
+- `increment_xp()` is `SECURITY DEFINER` and executable by `authenticated`. It rejects unauthenticated and cross-user end-user calls while retaining the trusted service-role path.
+- `upsert_revision_item()` is `SECURITY DEFINER` and executable by `authenticated`. It rejects unauthenticated and cross-user calls.
+- Supabase Auth leaked-password protection is disabled. This should be enabled in Auth security settings.
 
 ## CI verification
 
@@ -26,7 +46,7 @@ The repository CI performs:
 3. Vitest
 4. Production build
 
-The CI runtime is Node 24 because the current `pdfjs-dist` dependency requires Node >=22.13.
+The CI runtime is Node 24 because the current `pdfjs-dist` dependency requires Node >=22.13. GitHub Actions is now configured to use the Node-24-native `actions/checkout@v5` and `actions/setup-node@v5` releases.
 
 ## Remaining continuous checks
 
