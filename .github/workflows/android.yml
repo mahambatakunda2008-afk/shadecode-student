@@ -97,8 +97,15 @@ jobs:
           path: dist/android/ShadecodeStudent-Android.aab
           if-no-files-found: error
 
+      - name: Refuse unsigned production release
+        if: startsWith(github.ref, 'refs/tags/android-v') && env.HAS_ANDROID_SIGNING != 'true'
+        run: |
+          echo "Production Android releases require signing secrets." >&2
+          echo "Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD before pushing an android-v* tag." >&2
+          exit 1
+
       - name: Publish tagged Android release
-        if: startsWith(github.ref, 'refs/tags/android-v')
+        if: startsWith(github.ref, 'refs/tags/android-v') && env.HAS_ANDROID_SIGNING == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
