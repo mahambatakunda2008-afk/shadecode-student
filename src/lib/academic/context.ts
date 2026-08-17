@@ -30,7 +30,7 @@ export function normalizeAcademicContext(input: AcademicContextInput): Normalize
     throw new Error("pathway must be university or tvet");
   }
 
-  const pathway = input.pathway as AcademicPathway;
+  const pathway: AcademicPathway = input.pathway === "university" ? "university" : "tvet";
   const programme = boundedString(input.programme, 200);
   if (!programme) throw new Error("programme is required");
 
