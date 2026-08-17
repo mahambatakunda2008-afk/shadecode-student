@@ -56,11 +56,12 @@ function base64ToBytes(value: string): ArrayBuffer {
   for (let index = 0; index < binary.length; index += 1) {
     bytes[index] = binary.charCodeAt(index);
   }
-  return bytes.buffer;
+  return bytes.buffer as ArrayBuffer;
 }
 
 function advertisementPayload(advertisement: Omit<NodeAdvertisement, 'signature'>): ArrayBuffer {
-  return encoder.encode(canonicalize(advertisement)).buffer;
+  const encoded = encoder.encode(canonicalize(advertisement));
+  return encoded.buffer as ArrayBuffer;
 }
 
 export async function createNodeIdentity(): Promise<CryptoKeyPair> {
