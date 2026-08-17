@@ -26,6 +26,15 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 }
 
+function safeObservationNumber(value: number | undefined, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function safeObservationTime(value?: string): string | undefined {
+  if (!value) return undefined;
+  return Number.isNaN(Date.parse(value)) ? undefined : value;
+}
+
 /**
  * Creates a deliberately conservative initial state. This is a state estimate,
  * not a claim that the student's true cognitive state equals these numbers.
@@ -61,18 +70,21 @@ export function updateLearningState(
     throw new Error("Learning observation topic does not match state topic");
   }
 
-  const difficulty = clamp(observation.difficulty ?? 50);
+  const difficulty = clamp(safeObservationNumber(observation.difficulty, 50));
   const responseQuality = observation.correct ? 1 : 0;
   const priorMastery = previous.mastery;
   const learningSignal = (responseQuality * 100 - 50) * (0.5 + difficulty / 200);
   const mastery = clamp(priorMastery + learningSignal * 0.12);
   const errorRate = clamp(previous.errorRate * 0.85 + (observation.correct ? 0 : 100) * 0.15);
   const confidence = clamp(
-    previous.confidence * 0.8 + clamp(observation.confidence ?? previous.confidence) * 0.2,
+    previous.confidence * 0.8 + clamp(safeObservationNumber(observation.confidence, previous.confidence)) * 0.2,
   );
-  const responseSpeed = observation.responseSeconds == null
+  const responseSeconds = observation.responseSeconds == null
+    ? undefined
+    : Math.max(0, safeObservationNumber(observation.responseSeconds, 0));
+  const responseSpeed = responseSeconds == null
     ? previous.responseSpeed
-    : clamp(100 - observation.responseSeconds / 3);
+    : clamp(100 - responseSeconds / 3);
   const exposure = clamp(previous.exposure + 1);
   const recentImprovement = clamp(mastery - priorMastery, -100, 100);
   const uncertainty = clamp(previous.uncertainty * 0.92);
@@ -88,6 +100,6 @@ export function updateLearningState(
     responseSpeed: Number(responseSpeed.toFixed(2)),
     recentImprovement: Number(recentImprovement.toFixed(2)),
     uncertainty: Number(uncertainty.toFixed(2)),
-    lastObservedAt: observation.observedAt ?? previous.lastObservedAt,
+    lastObservedAt: safeObservationTime(observation.observedAt) ?? previous.lastObservedAt,
   };
 }
