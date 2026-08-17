@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="shadecode_background">#0F0F24</color>
+    <color name="shadecode_background">#06111C</color>
+    <color name="shadecode_cyan">#22D3EE</color>
+    <color name="shadecode_cyan_strong">#0891B2</color>
 </resources>
