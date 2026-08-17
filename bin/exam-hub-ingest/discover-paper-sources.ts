@@ -7,29 +7,15 @@ import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const SOURCES = [
-  {
-    board: 'CAIE',
-    syllabusId: '9709',
-    url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/past-papers/',
-  },
-  {
-    board: 'CAIE',
-    syllabusId: '9702',
-    url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/',
-  },
-  {
-    board: 'CAIE',
-    syllabusId: '9618',
-    url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/past-papers/',
-  },
-  {
-    board: 'ZIMSEC',
-    syllabusId: null,
-    url: 'https://website.zimsec.co.zw/documents/',
-  },
+  { board: 'CAIE', syllabusId: '9709', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/past-papers/' },
+  { board: 'CAIE', syllabusId: '9702', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/' },
+  { board: 'CAIE', syllabusId: '9618', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/past-papers/' },
+  { board: 'ZIMSEC', syllabusId: null, url: 'https://website.zimsec.co.zw/documents/' },
 ] as const;
 
 const ALLOWED_HOSTS = new Set(['www.cambridgeinternational.org', 'cambridgeinternational.org', 'website.zimsec.co.zw', 'www5.zimsec.co.zw']);
+
+type ResourceKind = 'past_paper' | 'specimen' | 'syllabus' | 'examiner_report';
 
 function absoluteUrl(href: string, base: string): string | null {
   try {
@@ -43,7 +29,22 @@ function absoluteUrl(href: string, base: string): string | null {
 }
 
 function text(value: string): string {
-  return value.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function classify(label: string, url: string): ResourceKind | null {
+  const value = `${label} ${url}`.toLowerCase();
+  if (/mark\s*scheme|examiner\s*report/.test(value)) return 'examiner_report';
+  if (/syllabus/.test(value)) return 'syllabus';
+  if (/specimen/.test(value)) return 'specimen';
+  if (/question\s*paper|question-paper|past\s*paper|(^|[/_-])qp([._/-]|$)/.test(value)) return 'past_paper';
+  return null;
 }
 
 async function main() {
@@ -52,7 +53,7 @@ async function main() {
   if (!supabaseUrl || !serviceKey) throw new Error('Missing Supabase service credentials');
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-  const discovered: Array<{ board: string; syllabusId: string | null; title: string; url: string }> = [];
+  const discovered: Array<{ board: string; syllabusId: string | null; title: string; url: string; kind: ResourceKind }> = [];
   for (const source of SOURCES) {
     const response = await fetch(source.url, { headers: { 'user-agent': 'ShadecodeStudent-PaperSourceBot/1.0' } });
     if (!response.ok) {
@@ -63,16 +64,11 @@ async function main() {
     const links = [...html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
     for (const match of links) {
       const url = absoluteUrl(match[1], source.url);
-      if (!url) continue;
+      if (!url || !/\.pdf(?:$|\?)/i.test(url)) continue;
       const label = text(match[2]);
-      const isPaper = /\.pdf(?:$|\?)/i.test(url) && /(question|paper|specimen|exam|mark|report)/i.test(`${label} ${url}`);
-      if (!isPaper) continue;
-      discovered.push({
-        board: source.board,
-        syllabusId: source.syllabusId,
-        title: label || url.split('/').pop() || 'Exam resource',
-        url,
-      });
+      const kind = classify(label, url);
+      if (!kind) continue;
+      discovered.push({ board: source.board, syllabusId: source.syllabusId, title: label || url.split('/').pop() || 'Exam resource', url, kind });
     }
   }
 
@@ -84,7 +80,7 @@ async function main() {
       syllabus_id: item.syllabusId,
       title: item.title.slice(0, 300),
       source_url: item.url,
-      source_kind: 'past_paper',
+      source_kind: item.kind,
       access_mode: 'external_link',
       rights_note: 'External link only. Shadecode does not copy or republish copyrighted exam content without permission.',
       active: true,
