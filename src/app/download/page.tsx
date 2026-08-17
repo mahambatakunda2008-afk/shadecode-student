@@ -18,8 +18,6 @@ export const metadata: Metadata = {
 const WEB_URL = "https://shadecodestudent.vercel.app/";
 const ANDROID_RELEASES_URL =
   "https://github.com/mahambatakunda2008-afk/shadecode-student/releases/latest";
-const ANDROID_APK_URL =
-  "https://github.com/mahambatakunda2008-afk/shadecode-student/releases/latest/download/ShadecodeStudent-Android.apk";
 const WINDOWS_STORE_URL =
   "https://apps.microsoft.com/search?query=Shadecode%20Student";
 
@@ -89,7 +87,7 @@ export default function DownloadPage() {
 
         <section className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Download options">
           <PlatformCard icon="🌐" title="Web" description="Works immediately in Chrome, Edge, Safari, Firefox, and other modern browsers. Nothing to install." action="Open Shadecode Student" href={WEB_URL} external />
-          <PlatformCard icon="📱" title="Android APK" description="Install directly when you need a simple distribution path outside Google Play. Only use the official Shadecode release." action="Download Android APK" href={ANDROID_APK_URL} external secondary="If the latest release has no APK yet, use the release page below." />
+          <PlatformCard icon="📱" title="Android APK" description="Use the official Shadecode Android release page for direct APK downloads. The stable download will appear there when the first production release is published." action="Open Android releases" href={ANDROID_RELEASES_URL} external secondary="Only install APKs published by Shadecode." />
           <PlatformCard icon="▶️" title="Google Play" description="The Play Store build is generated from the Android project. Store publication requires the signed production bundle and publisher account." action="View Android releases" href={ANDROID_RELEASES_URL} external secondary="The store listing will replace this release link once published." />
           <PlatformCard icon="🪟" title="Windows" description="Install as a desktop app through the PWA experience today, with Microsoft Store distribution as the next store channel." action="Find on Microsoft Store" href={WINDOWS_STORE_URL} external secondary="If the listing is not live yet, install the PWA from Edge or Chrome instead." />
           <PlatformCard icon="🍎" title="iPhone & iPad" description="Open Shadecode Student in Safari, use Share, then Add to Home Screen. This gives you an app-like installed experience without waiting for App Store publication." action="Open on iPhone / iPad" href={WEB_URL} external secondary="Safari → Share → Add to Home Screen" />
