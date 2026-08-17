@@ -61,9 +61,17 @@ This document separates **landed engineering** from the long-term distributed-in
 - overlap rejection;
 - final content-integrity verification.
 
+### Peer transport abstraction
+
+- provider/transport interfaces;
+- deterministic in-memory peer transport;
+- chunked resource exchange loop;
+- no-progress protection;
+- end-to-end content integrity verification.
+
 ## Important limitation
 
-These foundations do **not** mean ShadeNet is already a production P2P network. There is currently no claim here that browsers can discover arbitrary peers, exchange resources directly, execute peer workloads, or perform distributed inference in production.
+These foundations do **not** mean ShadeNet is already a production P2P network. There is currently no claim here that browsers can discover arbitrary peers, exchange resources directly over the Internet, execute peer workloads, or perform distributed inference in production. The current transport simulator deliberately runs in-process.
 
 ## Next engineering slice
 
@@ -72,10 +80,10 @@ Tracked by GitHub issue #172:
 1. authenticated pairing and trust establishment;
 2. peer-discovery abstraction;
 3. replay-safe request handling;
-4. browser capability detection;
-5. two-node simulator;
+4. browser capability detection integration;
+5. two-node browser/native simulator;
 6. feature flag and kill switch;
-7. actual transport integration for chunked/resumable resource exchange;
+7. real WebRTC/native transport integration;
 8. latency/bandwidth/failure measurements.
 
 ## Safety gates
@@ -105,6 +113,8 @@ Current Student
       +-- signed protocol foundation          [LANDED]
       |
       +-- resumable transfer primitives       [LANDED]
+      |
+      +-- peer transport abstraction           [LANDED]
       |
       +-- authenticated pairing               [NEXT]
       |
