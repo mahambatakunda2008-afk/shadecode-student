@@ -38,8 +38,6 @@ export function getDeviceId(): string {
     window.localStorage.setItem(DEVICE_ID_KEY, id);
     return id;
   } catch {
-    // If browser storage is blocked, keep one process-local identity instead of
-    // silently creating a different device ID on every operation.
     volatileDeviceId ??= uuid();
     return volatileDeviceId;
   }
@@ -58,10 +56,9 @@ function compareOperations(a: SyncOperation, b: SyncOperation): number {
 }
 
 export function nextClock(current: SyncClock | undefined): SyncClock {
-  const timestamp = Date.now();
   return {
     lamport: (current?.lamport ?? 0) + 1,
-    timestamp,
+    timestamp: Date.now(),
   };
 }
 
@@ -183,7 +180,9 @@ class IndexedDbSyncStore implements SyncStore {
       for (const id of operationIds) {
         const request = store.get(id);
         request.onsuccess = () => {
-          if (request.result) store.put({ ...request.result, acknowledged: true });
+          if (request.result) {
+            store.put({ ...request.result, acknowledged: true });
+          }
         };
       }
       tx.oncomplete = () => resolve();
