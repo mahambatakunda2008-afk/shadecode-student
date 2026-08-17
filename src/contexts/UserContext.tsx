@@ -38,12 +38,48 @@ export interface UserContextValue {
   refreshProfile: () => Promise<void>;
 }
 
+const PROFILE_CACHE_PREFIX = "shadecode:profile:";
+const PROFILE_FETCH_TIMEOUT_MS = 4_000;
+
 const UserContext = createContext<UserContextValue>({
   user: null,
   profile: null,
   loading: true,
   refreshProfile: async () => {},
 });
+
+function readCachedProfile(userId: string): UserProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(`${PROFILE_CACHE_PREFIX}${userId}`);
+    return raw ? JSON.parse(raw) as UserProfile : null;
+  } catch {
+    return null;
+  }
+}
+
+function cacheProfile(profile: UserProfile): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${PROFILE_CACHE_PREFIX}${profile.id}`, JSON.stringify(profile));
+  } catch {
+    // Local storage can be unavailable or full. The network remains authoritative.
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Profile request timed out")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const supabase = useMemo(
@@ -61,24 +97,37 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(
     async (userId: string) => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(`
-          id, full_name, first_name, email, avatar_url,
-          level, xp, xp_to_next_level, streak, weekly_xp,
-          focus_minutes_today, avg_score, streak_message,
-          created_at, updated_at
-        `)
-        .eq("id", userId)
-        .single();
+      const cached = readCachedProfile(userId);
+      if (cached) setProfile(cached);
 
-      if (error) {
-        console.error("[UserContext] Failed to fetch profile:", error.message);
-        setProfile(null);
-        return;
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+
+      try {
+        const result = await withTimeout(
+          supabase
+            .from("profiles")
+            .select(`
+              id, full_name, first_name, email, avatar_url,
+              level, xp, xp_to_next_level, streak, weekly_xp,
+              focus_minutes_today, avg_score, streak_message,
+              created_at, updated_at
+            `)
+            .eq("id", userId)
+            .single(),
+          PROFILE_FETCH_TIMEOUT_MS
+        );
+
+        if (result.error || !result.data) {
+          console.error("[UserContext] Failed to fetch profile:", result.error?.message);
+          return;
+        }
+
+        const nextProfile = result.data as UserProfile;
+        cacheProfile(nextProfile);
+        setProfile(nextProfile);
+      } catch (error) {
+        console.warn("[UserContext] Using cached profile:", error);
       }
-
-      setProfile(data as UserProfile);
     },
     [supabase]
   );
@@ -92,30 +141,33 @@ export function UserProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
+      // getSession reads the Supabase session from local storage and does not
+      // require a network round trip just to decide whether the app can render.
       const {
-        data: { user: currentUser },
-        error,
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!mounted) return;
 
-      if (error || !currentUser) {
-        setUser(null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const cached = readCachedProfile(currentUser.id);
+        if (cached) setProfile(cached);
+        // Do not make navigation wait for profile hydration.
+        setLoading(false);
+        void fetchProfile(currentUser.id);
+      } else {
         setProfile(null);
         setLoading(false);
-        return;
       }
-
-      setUser(currentUser);
-      await fetchProfile(currentUser.id);
-      if (mounted) setLoading(false);
     };
 
     void initAuth();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
       if (event === "SIGNED_OUT" || !session) {
@@ -128,8 +180,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         setUser(session.user);
-        await fetchProfile(session.user.id);
-        if (mounted) setLoading(false);
+        setLoading(false);
+        void fetchProfile(session.user.id);
       }
     });
 
@@ -146,6 +198,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     void offlineSync.syncAll();
     return () => offlineSync.stopAutoSync();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || typeof window === "undefined") return;
+    const handleOnline = () => void fetchProfile(user.id);
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [user, fetchProfile]);
 
   return (
     <UserContext.Provider value={{ user, profile, loading, refreshProfile }}>
