@@ -29,24 +29,11 @@ export function normalizeAcademicContext(input: AcademicContextInput): Normalize
   if (typeof input.pathway !== "string" || !ACADEMIC_PATHWAYS.includes(input.pathway as AcademicPathway)) {
     throw new Error("pathway must be university or tvet");
   }
-
+  const pathway = input.pathway as AcademicPathway;
   const programme = boundedString(input.programme, 200);
   if (!programme) throw new Error("programme is required");
-
   const courses = Array.isArray(input.courses)
-    ? input.courses
-        .filter((value): value is string => typeof value === "string")
-        .map((value) => value.trim().slice(0, 160))
-        .filter(Boolean)
-        .slice(0, 30)
+    ? input.courses.filter((value): value is string => typeof value === "string").map((value) => value.trim().slice(0, 160)).filter(Boolean).slice(0, 30)
     : [];
-
-  return {
-    pathway: input.pathway,
-    institution: boundedString(input.institution, 200),
-    programme,
-    year_level: boundedString(input.year_level, 80),
-    semester: boundedString(input.semester, 80),
-    courses,
-  };
+  return { pathway, institution: boundedString(input.institution, 200), programme, year_level: boundedString(input.year_level, 80), semester: boundedString(input.semester, 80), courses };
 }
