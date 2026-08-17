@@ -6,6 +6,7 @@ import { Inter, Michroma } from "next/font/google";
 import "./globals.css";
 import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import InAppSurvey from "@/components/traction/InAppSurvey";
 import TractionBootstrap from "@/components/traction/TractionBootstrap";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <BandwidthProvider>
               {children}
               <OfflineShell />
+              <ServiceWorkerRegistration />
               <PWAInstallPrompt />
               <InAppSurvey />
               <TractionBootstrap />
