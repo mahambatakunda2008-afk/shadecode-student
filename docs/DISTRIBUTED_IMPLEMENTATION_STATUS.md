@@ -52,6 +52,15 @@ This document separates **landed engineering** from the long-term distributed-in
 - request nonce requirements;
 - versioned peer protocol envelopes.
 
+### Resumable transfer primitives
+
+- bounded chunk request planning;
+- arbitrary-order chunk assembly;
+- missing-range detection;
+- duplicate chunk idempotency;
+- overlap rejection;
+- final content-integrity verification.
+
 ## Important limitation
 
 These foundations do **not** mean ShadeNet is already a production P2P network. There is currently no claim here that browsers can discover arbitrary peers, exchange resources directly, execute peer workloads, or perform distributed inference in production.
@@ -63,12 +72,11 @@ Tracked by GitHub issue #172:
 1. authenticated pairing and trust establishment;
 2. peer-discovery abstraction;
 3. replay-safe request handling;
-4. chunked/resumable resource transfer;
-5. integrity verification at the receiving node;
-6. browser capability detection;
-7. two-node simulator;
-8. feature flag and kill switch;
-9. latency/bandwidth/failure measurements.
+4. browser capability detection;
+5. two-node simulator;
+6. feature flag and kill switch;
+7. actual transport integration for chunked/resumable resource exchange;
+8. latency/bandwidth/failure measurements.
 
 ## Safety gates
 
@@ -96,9 +104,11 @@ Current Student
       |
       +-- signed protocol foundation          [LANDED]
       |
+      +-- resumable transfer primitives       [LANDED]
+      |
       +-- authenticated pairing               [NEXT]
       |
-      +-- peer resource exchange              [NEXT]
+      +-- actual P2P transport                [NEXT]
       |
       +-- bounded peer services               [LATER]
       |
