@@ -60,7 +60,8 @@ function asPositiveNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-async function buildSnapshot(userId: string, memory = await getMemory(userId)): Promise<CortexSnapshot> {
+async function buildSnapshot(userId: string, memory?: Awaited<ReturnType<typeof getMemory>>): Promise<CortexSnapshot> {
+  const resolvedMemory = memory ?? await getMemory(userId);
   let curriculumState = null;
   try {
     curriculumState = await getCurriculumState(userId);
@@ -68,26 +69,26 @@ async function buildSnapshot(userId: string, memory = await getMemory(userId)): 
     console.error("[cortex] failed to fetch curriculum state:", error);
   }
 
-  const totalTasks = Math.max(0, memory.totalTasks ?? 0);
-  const completedTasks = Math.min(totalTasks, Math.max(0, memory.completedTasks ?? 0));
+  const totalTasks = Math.max(0, resolvedMemory.totalTasks ?? 0);
+  const completedTasks = Math.min(totalTasks, Math.max(0, resolvedMemory.completedTasks ?? 0));
 
   const snapshot: CortexSnapshot = {
-    streak: Math.max(0, memory.streak ?? 0),
-    level: Math.max(1, memory.level ?? 1),
-    xp: Math.max(0, memory.xp ?? 0),
+    streak: Math.max(0, resolvedMemory.streak ?? 0),
+    level: Math.max(1, resolvedMemory.level ?? 1),
+    xp: Math.max(0, resolvedMemory.xp ?? 0),
     totalTasks,
     completedTasks,
     pendingTasks: Math.max(0, totalTasks - completedTasks),
-    subjects: memory.subjects ?? [],
-    frequentlyStudiedSubjects: memory.frequentlyStudiedSubjects ?? [],
-    strongSubjects: memory.strongSubjects ?? [],
-    weakSubjects: memory.weakSubjects ?? [],
-    averageSessionDuration: Math.max(0, memory.averageSessionDuration ?? 0),
-    totalStudySessions: Math.max(0, memory.totalStudySessions ?? 0),
-    averageExamScore: Math.max(0, memory.averageExamScore ?? 0),
-    longestStreak: Math.max(0, memory.longestStreak ?? 0),
-    totalLessonsCompleted: Math.max(0, memory.totalLessonsCompleted ?? 0),
-    totalStudyTimeMinutes: Math.max(0, memory.totalStudyTimeMinutes ?? 0),
+    subjects: resolvedMemory.subjects ?? [],
+    frequentlyStudiedSubjects: resolvedMemory.frequentlyStudiedSubjects ?? [],
+    strongSubjects: resolvedMemory.strongSubjects ?? [],
+    weakSubjects: resolvedMemory.weakSubjects ?? [],
+    averageSessionDuration: Math.max(0, resolvedMemory.averageSessionDuration ?? 0),
+    totalStudySessions: Math.max(0, resolvedMemory.totalStudySessions ?? 0),
+    averageExamScore: Math.max(0, resolvedMemory.averageExamScore ?? 0),
+    longestStreak: Math.max(0, resolvedMemory.longestStreak ?? 0),
+    totalLessonsCompleted: Math.max(0, resolvedMemory.totalLessonsCompleted ?? 0),
+    totalStudyTimeMinutes: Math.max(0, resolvedMemory.totalStudyTimeMinutes ?? 0),
   };
 
   if (curriculumState) {
@@ -106,8 +107,7 @@ async function buildSnapshot(userId: string, memory = await getMemory(userId)): 
 }
 
 async function outputState(userId: string) {
-  const memory = await getMemory(userId);
-  return { snapshot: await buildSnapshot(userId, memory) };
+  return { snapshot: await buildSnapshot(userId) };
 }
 
 export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
@@ -132,8 +132,6 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
       const topic = asString(payload.topic) ?? "your current topic";
       const response = await generateTutoringResponse(topic, context);
 
-      // Update the streak before trackStudySession, because that tracker writes
-      // lastStudyDate. Reversing the order would make every session look same-day.
       await updateStreak(input.userId, true);
 
       const subjectId = asString(payload.subjectId);
