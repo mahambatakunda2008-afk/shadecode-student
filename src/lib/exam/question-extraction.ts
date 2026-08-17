@@ -4,10 +4,8 @@ export interface ExtractedQuestion {
   marks: number | null;
 }
 
-// Require either explicit punctuation after the question number or a plain
-// number followed by ordinary question text. Subparts such as "2 (a)" and
-// "3 (b)" are deliberately rejected because they belong to their parent.
-const TOP_LEVEL_QUESTION = /^\s*(\d{1,2})(?:[.)]\s+|\s+(?!\([a-z]\)|[a-z]\))[A-Za-z])/;
+const EXPLICIT_TOP_LEVEL = /^\s*(\d{1,2})[.)]\s+(.+)$/;
+const PLAIN_TOP_LEVEL = /^\s*(\d{1,2})\s+((?!\([a-z]\)|[a-z]\))\S.*)$/i;
 const MARKS_AT_END = /\[\s*(\d{1,3})\s*\]\s*$/;
 
 function normalizeLine(line: string): string {
@@ -24,8 +22,9 @@ function cleanBlock(lines: string[]): string {
 }
 
 /**
- * Conservative parser for question-paper text. It only recognizes numbered
- * top-level questions and never invents topic, difficulty, or marks metadata.
+ * Conservative parser for question-paper text. It recognizes explicit
+ * numbered top-level questions and plain numbered questions while rejecting
+ * common subparts such as "2 (a)" and "3 b)".
  */
 export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
   const normalized = text.replace(/\r\n?/g, '\n').replace(/\f/g, '\n');
@@ -46,11 +45,11 @@ export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
   };
 
   for (const line of lines) {
-    const match = TOP_LEVEL_QUESTION.exec(line);
+    const match = EXPLICIT_TOP_LEVEL.exec(line) ?? PLAIN_TOP_LEVEL.exec(line);
     if (match) {
       flush();
       currentNumber = match[1];
-      currentLines = [line.slice(match[0].length).trim()];
+      currentLines = [match[2]];
     } else if (currentNumber) {
       currentLines.push(line);
     }
