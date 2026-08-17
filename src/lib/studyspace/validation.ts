@@ -1,6 +1,6 @@
 import type { WorkObject } from "./types";
 
-const MODES = new Set(["workmate", "practice", "assessment", "exam", "canvas"]);
+const MODES = new Set(["workmate", "practice", "assessment", "exam", "lesson", "canvas"]);
 const STATUSES = new Set(["draft", "submitted", "marked", "synced"]);
 
 export function isWorkObject(value: unknown): value is WorkObject {
@@ -10,5 +10,6 @@ export function isWorkObject(value: unknown): value is WorkObject {
     MODES.has(String(item.mode)) &&
     (!item.status || STATUSES.has(String(item.status))) &&
     typeof item.createdAt === "string" &&
-    typeof item.updatedAt === "string";
+    typeof item.updatedAt === "string" &&
+    (!item.lessonId || typeof item.lessonId === "string");
 }
