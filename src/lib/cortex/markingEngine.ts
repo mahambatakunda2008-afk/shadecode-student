@@ -16,6 +16,7 @@ export interface MarkingResult {
   strengths: string[];
   improvements: string[];
   confidence: number;
+  provisional?: boolean;
 }
 
 export interface ExamMarkingReport {
@@ -27,6 +28,7 @@ export interface ExamMarkingReport {
   weakTopics: string[];
   strongTopics: string[];
   recommendedActions: string[];
+  provisional: boolean;
 }
 
 const MARKING_SYSTEM_PROMPT = `You are an experienced examiner for Shadecode Student.
@@ -83,14 +85,15 @@ function fallbackMark(questionId: string, maxMarks: number, answer: string): Mar
   const hasContent = answer.trim().length > 10;
   return {
     questionId,
-    score: hasContent ? Math.ceil(safeMax * 0.7) : 0,
+    score: 0,
     maxMarks: safeMax,
     feedback: hasContent
-      ? "The AI marker was unavailable, so this answer was recorded as provisionally evaluated. Review it manually before relying on the mark."
+      ? "AI marking is temporarily unavailable. No mark was invented for this answer. Retry marking when the service is available or review this answer manually."
       : "No substantial answer provided.",
     strengths: hasContent ? ["Answer provided"] : [],
-    improvements: hasContent ? ["Review the answer against the marking criteria"] : ["Provide a complete answer"],
-    confidence: 0.2,
+    improvements: hasContent ? ["Retry AI marking or review the answer manually"] : ["Provide a complete answer"],
+    confidence: 0,
+    provisional: true,
   };
 }
 
@@ -113,8 +116,6 @@ ${studentAnswer}
 
 Mark this answer:`;
 
-    // Marking has a deliberately tight budget. A long provider chain per
-    // question used to make a multi-question exam appear to hang forever.
     const response = await callAI(prompt, 1000, {
       feature: "exam_sim",
       subfeature: "mark_answer",
@@ -127,7 +128,13 @@ Mark this answer:`;
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackMark(question.id, question.marks, studentAnswer);
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      return fallbackMark(question.id, question.marks, studentAnswer);
+    }
+
     return normalizeResult(question, parsed) ?? fallbackMark(question.id, question.marks, studentAnswer);
   } catch (error) {
     console.error("[MarkingEngine] Failed:", error);
@@ -135,11 +142,7 @@ Mark this answer:`;
   }
 }
 
-/**
- * Mark a complete exam with bounded concurrency. We avoid sequential AI
- * calls because ten questions each waiting on a provider fallback can turn
- * one submission into several minutes of apparent inactivity.
- */
+/** Mark a complete exam with bounded concurrency. */
 export async function generateExamFeedback(
   subject: string,
   questions: ExamQuestion[],
@@ -150,32 +153,28 @@ export async function generateExamFeedback(
 
   for (let i = 0; i < questions.length; i += concurrency) {
     const batch = questions.slice(i, i + concurrency);
-    const batchResults = await Promise.all(
-      batch.map((q) => markAnswer(q, answers[q.id] || ""))
-    );
+    const batchResults = await Promise.all(batch.map((q) => markAnswer(q, answers[q.id] || "")));
     results.push(...batchResults.filter((r): r is MarkingResult => Boolean(r)));
   }
 
+  const provisional = results.some((r) => r.provisional);
   const totalScore = results.reduce((s, r) => s + clampNumber(r.score, 0, r.maxMarks, 0), 0);
   const totalMaxMarks = results.reduce((s, r) => s + Math.max(0, r.maxMarks), 0);
   const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
 
-  const weakTopics = results
-    .filter(r => r.score < r.maxMarks * 0.5)
-    .flatMap(r => r.improvements);
-
-  const strongTopics = results
-    .filter(r => r.score >= r.maxMarks * 0.8)
-    .flatMap(r => r.strengths);
+  const weakTopics = results.filter(r => !r.provisional && r.score < r.maxMarks * 0.5).flatMap(r => r.improvements);
+  const strongTopics = results.filter(r => !r.provisional && r.score >= r.maxMarks * 0.8).flatMap(r => r.strengths);
 
   const recommendedActions: string[] = [];
+  if (provisional) recommendedActions.push("Some answers could not be AI-marked. Retry marking before relying on the score.");
   if (percentage < 50) recommendedActions.push(`Review the fundamentals of ${subject}`);
-  if (percentage >= 50 && percentage < 75) recommendedActions.push(`Practice more ${subject} problems`);
-  if (percentage >= 75) recommendedActions.push(`Challenge yourself with advanced ${subject} topics`);
+  else if (percentage < 75) recommendedActions.push(`Practice more ${subject} problems`);
+  else recommendedActions.push(`Challenge yourself with advanced ${subject} topics`);
   if (weakTopics.length > 0) recommendedActions.push(`Focus on: ${[...new Set(weakTopics)].slice(0, 3).join(", ")}`);
 
   let overallFeedback: string;
-  if (percentage >= 80) overallFeedback = "Excellent performance! You have a strong grasp of the material.";
+  if (provisional) overallFeedback = "Marking completed with some answers requiring review because the AI marker was unavailable.";
+  else if (percentage >= 80) overallFeedback = "Excellent performance! You have a strong grasp of the material.";
   else if (percentage >= 60) overallFeedback = "Good effort! There are some areas to review.";
   else if (percentage >= 40) overallFeedback = "You're making progress. Focus on the fundamentals.";
   else overallFeedback = "Keep practicing. Review the core concepts and try again.";
@@ -189,5 +188,6 @@ export async function generateExamFeedback(
     weakTopics: [...new Set(weakTopics)],
     strongTopics: [...new Set(strongTopics)],
     recommendedActions,
+    provisional,
   };
 }
