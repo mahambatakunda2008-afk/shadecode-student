@@ -1,14 +1,7 @@
 /**
  * /lib/cortex/memoryTracker.ts
  *
- * Cortex Memory Tracker: Updates persistent memory based on learning events
- *
- * Responsibility:
- * - Track subject mastery patterns
- * - Track study time patterns
- * - Track exam performance trends
- * - Update streak patterns
- * - Generate memory summaries
+ * Cortex Memory Tracker: Updates persistent memory based on learning events.
  */
 
 import { getMemory, updateMemory } from "./memory";
@@ -16,11 +9,16 @@ import { createClient as createSupabaseServiceClient } from "@supabase/supabase-
 import { computeStreakUpdate } from "@/lib/streaks";
 
 function getServiceClient() {
-  return createSupabaseServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    throw new Error("Supabase service-role configuration is missing");
+  }
+
+  return createSupabaseServiceClient(url, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
 interface StudySession {
@@ -38,107 +36,108 @@ interface ExamResult {
   completedAt: string;
 }
 
-/**
- * Track a study session (lesson completion, practice session, etc.)
- */
+function clampScore(score: number): number {
+  return Math.max(0, Math.min(100, score));
+}
+
+function normalizeDuration(durationMinutes: number): number {
+  return Number.isFinite(durationMinutes) && durationMinutes > 0
+    ? Math.min(durationMinutes, 24 * 60)
+    : 0;
+}
+
+/** Track a study session (lesson completion, practice session, etc.). */
 export async function trackStudySession(session: StudySession): Promise<void> {
   const memory = await getMemory(session.userId);
-  
-  // Update study time metrics
-  const totalStudyTime = (memory.totalStudyTimeMinutes || 0) + session.durationMinutes;
-  const totalSessions = (memory.totalStudySessions || 0) + 1;
-  const avgDuration = totalSessions > 0 ? Math.round(totalStudyTime / totalSessions) : 0;
-  
-  // Track study hour (0-23)
-  const hour = new Date(session.completedAt).getHours();
+  const durationMinutes = normalizeDuration(session.durationMinutes);
+
+  if (durationMinutes <= 0) return;
+
+  const totalStudyTime = Math.max(0, memory.totalStudyTimeMinutes || 0) + durationMinutes;
+  const totalSessions = Math.max(0, memory.totalStudySessions || 0) + 1;
+  const avgDuration = Math.round(totalStudyTime / totalSessions);
+
+  const completedAt = new Date(session.completedAt);
+  if (Number.isNaN(completedAt.getTime())) return;
+
+  // preferredStudyHours is stored as [hour, frequency, hour, frequency, ...].
+  // Iterate by pairs so a frequency value can never be mistaken for an hour.
+  const hour = completedAt.getHours();
   const preferredHours = [...(memory.preferredStudyHours || [])];
-  const hourIndex = preferredHours.findIndex(h => h === hour);
+  let hourIndex = -1;
+  for (let i = 0; i < preferredHours.length; i += 2) {
+    if (preferredHours[i] === hour) {
+      hourIndex = i;
+      break;
+    }
+  }
+
   if (hourIndex >= 0) {
-    // Increment frequency (stored as [hour, frequency] pairs)
-    preferredHours[hourIndex + 1] = (preferredHours[hourIndex + 1] as number) + 1;
+    preferredHours[hourIndex + 1] = Math.max(0, preferredHours[hourIndex + 1] || 0) + 1;
   } else {
     preferredHours.push(hour, 1);
   }
-  
-  // Track subject frequency
+
   const subjects = [...(memory.frequentlyStudiedSubjects || [])];
-  const subjectIndex = subjects.findIndex(s => s === session.subjectName);
+  const subjectIndex = subjects.findIndex((s) => s === session.subjectName);
   if (subjectIndex >= 0) {
-    // Move to front (most recent)
     subjects.splice(subjectIndex, 1);
     subjects.unshift(session.subjectName);
   } else {
     subjects.unshift(session.subjectName);
-    // Keep only top 10
     if (subjects.length > 10) subjects.pop();
   }
-  
-  // Update last study date
-  const lastStudyDate = session.completedAt;
-  
+
   await updateMemory(session.userId, {
     totalStudyTimeMinutes: totalStudyTime,
     totalStudySessions: totalSessions,
     averageSessionDuration: avgDuration,
     preferredStudyHours: preferredHours,
     frequentlyStudiedSubjects: subjects,
-    lastStudyDate,
+    lastStudyDate: completedAt.toISOString(),
   });
 }
 
-/**
- * Track an exam result
- */
+/** Track an exam result. */
 export async function trackExamResult(result: ExamResult): Promise<void> {
   const memory = await getMemory(result.userId);
-  
-  // Update exam scores
+  const score = clampScore(result.score);
+  if (!Number.isFinite(score)) return;
+
   const examScores = [...(memory.examScores || [])];
-  examScores.push({
-    score: result.score,
-    subject: result.subject,
-    date: result.completedAt,
-  });
-  
-  // Keep only last 50 exam scores
-  if (examScores.length > 50) examScores.shift();
-  
-  // Calculate average
+  examScores.push({ score, subject: result.subject, date: result.completedAt });
+  if (examScores.length > 50) examScores.splice(0, examScores.length - 50);
+
   const avgScore = examScores.length > 0
-    ? Math.round(examScores.reduce((sum, e) => sum + e.score, 0) / examScores.length)
+    ? Math.round(examScores.reduce((sum, exam) => sum + clampScore(exam.score), 0) / examScores.length)
     : 0;
-  
-  // Update weak/strong subjects based on scores
-  const subjectScores = examScores.reduce((acc, e) => {
-    if (!acc[e.subject]) acc[e.subject] = [];
-    acc[e.subject].push(e.score);
+
+  const subjectScores = examScores.reduce<Record<string, number[]>>((acc, exam) => {
+    if (!acc[exam.subject]) acc[exam.subject] = [];
+    acc[exam.subject].push(clampScore(exam.score));
     return acc;
-  }, {} as Record<string, number[]>);
-  
+  }, {});
+
   const weakSubjects: string[] = [];
   const strongSubjects: string[] = [];
-  
-  Object.entries(subjectScores).forEach(([subject, scores]) => {
-    const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
-    if (avg < 60) weakSubjects.push(subject);
-    if (avg >= 80) strongSubjects.push(subject);
-  });
-  
+
+  for (const [subject, scores] of Object.entries(subjectScores)) {
+    const average = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    if (average < 60) weakSubjects.push(subject);
+    if (average >= 80) strongSubjects.push(subject);
+  }
+
   await updateMemory(result.userId, {
     examScores,
     averageExamScore: avgScore,
     weakSubjects,
     strongSubjects,
-  } as any);
+  });
 }
 
 /**
- * Update streak based on study activity. Transition rules (same-day no-op,
- * consecutive-day increment, gap reset, one-freeze-per-week forgiveness)
- * live in the pure, tested `computeStreakUpdate()` in `src/lib/streaks.ts`
- * -- this function is now just the side-effecting wrapper: read state,
- * compute the transition, persist it to both `cortex_memory` (canonical)
- * and `profiles.streak` (dashboard-read mirror, see comment below).
+ * Update streak based on study activity. Transition rules live in the pure,
+ * tested computeStreakUpdate() helper.
  */
 export async function updateStreak(userId: string, studiedToday: boolean): Promise<void> {
   const memory = await getMemory(userId);
@@ -159,8 +158,7 @@ export async function updateStreak(userId: string, studiedToday: boolean): Promi
     streakFreezeWeek: result.freezeWeek,
   });
 
-  // Also update the canonical profiles.streak field -- see comment above
-  // updateStreak's signature for why this matters.
+  // Keep the dashboard's profiles.streak mirror synchronized with Cortex.
   try {
     const svc = getServiceClient();
     const { error } = await svc
@@ -168,14 +166,12 @@ export async function updateStreak(userId: string, studiedToday: boolean): Promi
       .update({ streak: result.streak })
       .eq("id", userId);
     if (error) console.error("[memoryTracker] Failed to sync profiles.streak:", error.message);
-  } catch (err) {
-    console.error("[memoryTracker] profiles.streak sync threw:", err);
+  } catch (error) {
+    console.error("[memoryTracker] profiles.streak sync failed:", error);
   }
 }
 
-/**
- * Track lesson completion
- */
+/** Track lesson completion. */
 export async function trackLessonCompletion(
   userId: string,
   subjectId: string,
@@ -183,9 +179,8 @@ export async function trackLessonCompletion(
   durationMinutes: number
 ): Promise<void> {
   const memory = await getMemory(userId);
-  
-  const totalLessons = (memory.totalLessonsCompleted || 0) + 1;
-  
+  const totalLessons = Math.max(0, memory.totalLessonsCompleted || 0) + 1;
+
   await trackStudySession({
     userId,
     subjectId,
@@ -193,64 +188,43 @@ export async function trackLessonCompletion(
     durationMinutes,
     completedAt: new Date().toISOString(),
   });
-  
-  await updateMemory(userId, {
-    totalLessonsCompleted: totalLessons,
-  });
+
+  await updateMemory(userId, { totalLessonsCompleted: totalLessons });
 }
 
-/**
- * Generate learning insight summary
- */
+/** Generate a concise learning insight summary. */
 export async function generateLearningInsight(userId: string): Promise<string> {
   const memory = await getMemory(userId);
-  
   const insights: string[] = [];
-  
-  // Study frequency
+
   if (memory.totalStudySessions && memory.totalStudySessions > 5) {
     insights.push(`You've completed ${memory.totalStudySessions} study sessions.`);
   }
-  
-  // Subject mastery
-  if (memory.strongSubjects && memory.strongSubjects.length > 0) {
-    insights.push(`Strong in: ${memory.strongSubjects.join(', ')}.`);
+  if (memory.strongSubjects?.length) {
+    insights.push(`Strong in: ${memory.strongSubjects.join(", ")}.`);
   }
-  
-  if (memory.weakSubjects && memory.weakSubjects.length > 0) {
-    insights.push(`Areas for improvement: ${memory.weakSubjects.join(', ')}.`);
+  if (memory.weakSubjects?.length) {
+    insights.push(`Areas for improvement: ${memory.weakSubjects.join(", ")}.`);
   }
-  
-  // Streak
   if (memory.streak && memory.streak > 3) {
     insights.push(`On a ${memory.streak}-day learning streak!`);
   }
-  
-  // Study time
   if (memory.totalStudyTimeMinutes && memory.totalStudyTimeMinutes > 60) {
-    const hours = Math.round(memory.totalStudyTimeMinutes / 60);
-    insights.push(`Total study time: ${hours} hours.`);
+    insights.push(`Total study time: ${Math.round(memory.totalStudyTimeMinutes / 60)} hours.`);
   }
-  
-  return insights.length > 0 ? insights.join(' ') : 'Keep learning to build your learning profile!';
+
+  return insights.length > 0 ? insights.join(" ") : "Keep learning to build your learning profile!";
 }
 
-/**
- * Generate recommendation based on memory
- */
+/** Generate a recommendation from persistent learning state. */
 export async function generateRecommendation(userId: string): Promise<string> {
   const memory = await getMemory(userId);
-  
-  // Prioritize weak subjects
-  if (memory.weakSubjects && memory.weakSubjects.length > 0) {
+
+  if (memory.weakSubjects?.length) {
     return `Focus on ${memory.weakSubjects[0]} to strengthen your understanding.`;
   }
-  
-  // Suggest continuing with frequently studied subjects
-  if (memory.frequentlyStudiedSubjects && memory.frequentlyStudiedSubjects.length > 0) {
+  if (memory.frequentlyStudiedSubjects?.length) {
     return `Continue with ${memory.frequentlyStudiedSubjects[0]} to build momentum.`;
   }
-  
-  // Default recommendation
-  return 'Start with a subject that interests you most.';
+  return "Start with a subject that interests you most.";
 }
