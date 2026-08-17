@@ -20,6 +20,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_ANDROID_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     defaults:
       run:
         working-directory: android
@@ -46,7 +48,7 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Prepare production signing key
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_ANDROID_SIGNING == 'true'
         working-directory: .
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -79,11 +81,7 @@ jobs:
           mkdir -p dist/android
           cp android/app/build/outputs/apk/releaseApk/app-releaseApk.apk dist/android/ShadecodeStudent-Android.apk
           cp android/app/build/outputs/bundle/release/*.aab dist/android/ShadecodeStudent-Android.aab
-          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "SIGNED_BUILD=true" >> "$GITHUB_ENV"
-          else
-            echo "SIGNED_BUILD=false" >> "$GITHUB_ENV"
-          fi
+          echo "SIGNED_BUILD=$HAS_ANDROID_SIGNING" >> "$GITHUB_ENV"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -120,6 +118,6 @@ jobs:
             - AAB: Google Play publishing bundle
             - Package: `com.shadecode.student`
 
-            **Signing:** `${{ env.SIGNED_BUILD }}`
+            **Signing:** `${{ env.HAS_ANDROID_SIGNING }}`
 
             Do not install Android packages from unofficial mirrors.
