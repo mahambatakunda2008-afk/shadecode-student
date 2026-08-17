@@ -3,11 +3,9 @@
  *
  * Default mode is dry-run and prints a JSON report. Nothing is written to
  * Supabase unless --apply is supplied. Topic, difficulty, and page metadata
- * are deliberately left null because the extractor must not guess.
- *
- * Usage:
- *   npx tsx bin/exam-hub-ingest/extract-questions.ts ./past-papers
- *   npx tsx bin/exam-hub-ingest/extract-questions.ts ./past-papers --apply
+ * are deliberately left unset because the extractor must not guess.
+ * Existing question rows are never overwritten, protecting human-reviewed
+ * mappings and corrections from a later ingestion run.
  */
 import 'dotenv/config';
 import fs from 'fs';
@@ -116,7 +114,11 @@ async function main() {
   const folder = args.find((arg) => !arg.startsWith('--'));
   if (!folder) throw new Error('Usage: npx tsx bin/exam-hub-ingest/extract-questions.ts <folder> [--apply]');
   const apply = args.includes('--apply');
-  const maxQuestions = Number(args[args.indexOf('--max-questions') + 1]) || 100;
+  const maxQuestionsArg = args.indexOf('--max-questions');
+  const maxQuestions = maxQuestionsArg >= 0 ? Number(args[maxQuestionsArg + 1]) : 100;
+  if (!Number.isInteger(maxQuestions) || maxQuestions < 1 || maxQuestions > 500) {
+    throw new Error('--max-questions must be an integer from 1 to 500');
+  }
 
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -164,18 +166,14 @@ async function main() {
       const rows = questions.map((question) => ({
         paper_id: papers[0].id,
         question_number: question.questionNumber,
-        page_number: null,
-        topic_id: null,
-        subtopic: null,
-        difficulty: null,
         marks: question.marks,
         question_text: question.questionText,
       }));
-      const { error: upsertError } = await supabase
+      const { error: insertError } = await supabase
         .from('exam_questions')
-        .upsert(rows, { onConflict: 'paper_id,question_number' });
-      if (upsertError) {
-        reports.push({ file, status: 'error', paperId: papers[0].id, reason: upsertError.message });
+        .insert(rows, { onConflict: 'paper_id,question_number', ignoreDuplicates: true });
+      if (insertError) {
+        reports.push({ file, status: 'error', paperId: papers[0].id, reason: insertError.message });
         continue;
       }
     }
