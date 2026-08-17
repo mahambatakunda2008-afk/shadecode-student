@@ -52,6 +52,10 @@ Rules:
 - Identify specific strengths and improvements
 - Confidence 0-1 based on how clear the answer is`;
 
+const EXAM_MARKING_BUDGET_MS = 30_000;
+const ANSWER_MARKING_BUDGET_MS = 7_000;
+const CONCURRENCY = 4;
+
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
@@ -97,6 +101,19 @@ function fallbackMark(questionId: string, maxMarks: number, answer: string): Mar
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(fallback), timeoutMs);
+    promise.then(value => {
+      clearTimeout(timer);
+      resolve(value);
+    }).catch(() => {
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
+
 export async function markAnswer(
   question: ExamQuestion,
   studentAnswer: string
@@ -116,12 +133,16 @@ ${studentAnswer}
 
 Mark this answer:`;
 
-    const response = await callAI(prompt, 1000, {
-      feature: "exam_sim",
-      subfeature: "mark_answer",
-      maxChainMs: 12000,
-      perProviderMaxMs: 5000,
-    });
+    const response = await withTimeout(
+      callAI(prompt, 1000, {
+        feature: "exam_sim",
+        subfeature: "mark_answer",
+        maxChainMs: 6000,
+        perProviderMaxMs: 2500,
+      }),
+      ANSWER_MARKING_BUDGET_MS,
+      null
+    );
 
     if (!response) return fallbackMark(question.id, question.marks, studentAnswer);
 
@@ -142,22 +163,8 @@ Mark this answer:`;
   }
 }
 
-/** Mark a complete exam with bounded concurrency. */
-export async function generateExamFeedback(
-  subject: string,
-  questions: ExamQuestion[],
-  answers: Record<string, string>
-): Promise<ExamMarkingReport | null> {
-  const results: MarkingResult[] = [];
-  const concurrency = 3;
-
-  for (let i = 0; i < questions.length; i += concurrency) {
-    const batch = questions.slice(i, i + concurrency);
-    const batchResults = await Promise.all(batch.map((q) => markAnswer(q, answers[q.id] || "")));
-    results.push(...batchResults.filter((r): r is MarkingResult => Boolean(r)));
-  }
-
-  const provisional = results.some((r) => r.provisional);
+function buildReport(subject: string, results: MarkingResult[]): ExamMarkingReport {
+  const provisional = results.some(r => r.provisional);
   const totalScore = results.reduce((s, r) => s + clampNumber(r.score, 0, r.maxMarks, 0), 0);
   const totalMaxMarks = results.reduce((s, r) => s + Math.max(0, r.maxMarks), 0);
   const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
@@ -190,4 +197,36 @@ export async function generateExamFeedback(
     recommendedActions,
     provisional,
   };
+}
+
+/** Mark a complete exam with bounded concurrency and a hard overall deadline. */
+export async function generateExamFeedback(
+  subject: string,
+  questions: ExamQuestion[],
+  answers: Record<string, string>
+): Promise<ExamMarkingReport | null> {
+  const results: MarkingResult[] = [];
+  const startedAt = Date.now();
+
+  for (let i = 0; i < questions.length; i += CONCURRENCY) {
+    if (Date.now() - startedAt >= EXAM_MARKING_BUDGET_MS) break;
+
+    const batch = questions.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(q => markAnswer(q, answers[q.id] || ""))
+    );
+    results.push(...batchResults.filter((r): r is MarkingResult => Boolean(r)));
+  }
+
+  if (results.length === 0 && questions.length > 0) {
+    return buildReport(subject, questions.map(q => fallbackMark(q.id, q.marks, answers[q.id] || "")));
+  }
+
+  const report = buildReport(subject, results);
+  if (results.length < questions.length) {
+    report.provisional = true;
+    report.overallFeedback = "Marking stopped safely at the time limit. Unmarked answers require retry or manual review.";
+    report.recommendedActions.unshift("Retry marking to evaluate the remaining answers.");
+  }
+  return report;
 }
