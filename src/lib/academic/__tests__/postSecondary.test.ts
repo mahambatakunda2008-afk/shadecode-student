@@ -24,22 +24,21 @@ describe("post-secondary academic helpers", () => {
       { id: "soon", courseId: "CS201", title: "Assignment", type: "assignment", dueAt: "2026-08-20T00:00:00.000Z", completed: false },
       { id: "done", courseId: "CS201", title: "Done", type: "test", dueAt: "2026-08-18T00:00:00.000Z", completed: true },
     ];
-
     const open = getOpenAssessments(assessments, new Date("2026-08-17T00:00:00.000Z"));
     expect(open.map((item) => item.id)).toEqual(["soon", "late"]);
   });
 
   it("weights nearer assessments more heavily", () => {
-    const base: AcademicAssessment = {
-      id: "a",
-      courseId: "CS201",
-      title: "Assignment",
-      type: "assignment",
-      completed: false,
-      weight: 20,
+    const soon: AcademicAssessment = {
+      id: "soon", courseId: "CS201", title: "Assignment", type: "assignment",
+      dueAt: "2026-08-18T00:00:00.000Z", completed: false, weight: 20,
     };
-    const soon = assessmentPressure({ ...base, dueAt: "2026-08-18T00:00:00.000Z" }, new Date("2026-08-17T00:00:00.000Z"));
-    const distant = assessmentPressure({ ...base, dueAt: "2026-09-17T00:00:00.000Z" }, new Date("2026-08-17T00:00:00.000Z"));
-    expect(soon).toBeGreaterThan(distant);
+    const distant: AcademicAssessment = {
+      id: "distant", courseId: "CS201", title: "Assignment", type: "assignment",
+      dueAt: "2026-09-17T00:00:00.000Z", completed: false, weight: 20,
+    };
+    expect(assessmentPressure(soon, new Date("2026-08-17T00:00:00.000Z"))).toBeGreaterThan(
+      assessmentPressure(distant, new Date("2026-08-17T00:00:00.000Z")),
+    );
   });
 });
