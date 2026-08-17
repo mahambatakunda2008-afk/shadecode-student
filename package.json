@@ -16,8 +16,8 @@
   "dependencies": {
     "@base-ui/react": "^1.4.0",
     "@ducanh2912/next-pwa": "^10.2.9",
-    "@emotion/react": "^11.14.1",
-    "@emotion/styled": "^11.14.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@google/generative-ai": "^0.24.1",
     "@mui/material": "^9.1.1",
     "@octokit/rest": "^22.0.1",
