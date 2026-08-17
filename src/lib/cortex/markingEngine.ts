@@ -1,15 +1,11 @@
 /**
  * Cortex Marking Engine
  *
- * AI-powered exam marking with:
- * - Partial credit assessment
- * - Step-by-step evaluation
- * - Feedback generation
- * - Weak area identification
+ * AI-powered exam marking with bounded execution, partial credit,
+ * step-by-step evaluation, feedback, and weak-area identification.
  */
 
 import { callAI } from "@/lib/ai";
-import { getMemory } from "./memory";
 import type { ExamQuestion } from "./examGenerator";
 
 export interface MarkingResult {
@@ -54,6 +50,50 @@ Rules:
 - Identify specific strengths and improvements
 - Confidence 0-1 based on how clear the answer is`;
 
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(max, Math.max(min, numeric));
+}
+
+function normalizeResult(question: ExamQuestion, value: unknown): MarkingResult | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const maxMarks = Math.max(0, Number(question.marks) || 0);
+
+  return {
+    questionId: question.id,
+    score: clampNumber(raw.score, 0, maxMarks, 0),
+    maxMarks,
+    feedback: typeof raw.feedback === "string" && raw.feedback.trim()
+      ? raw.feedback.trim().slice(0, 1500)
+      : "Answer evaluated against the available marking criteria.",
+    strengths: Array.isArray(raw.strengths)
+      ? raw.strengths.filter((x): x is string => typeof x === "string").slice(0, 8)
+      : [],
+    improvements: Array.isArray(raw.improvements)
+      ? raw.improvements.filter((x): x is string => typeof x === "string").slice(0, 8)
+      : [],
+    confidence: clampNumber(raw.confidence, 0, 1, 0.5),
+  };
+}
+
+function fallbackMark(questionId: string, maxMarks: number, answer: string): MarkingResult {
+  const safeMax = Math.max(0, Number(maxMarks) || 0);
+  const hasContent = answer.trim().length > 10;
+  return {
+    questionId,
+    score: hasContent ? Math.ceil(safeMax * 0.7) : 0,
+    maxMarks: safeMax,
+    feedback: hasContent
+      ? "The AI marker was unavailable, so this answer was recorded as provisionally evaluated. Review it manually before relying on the mark."
+      : "No substantial answer provided.",
+    strengths: hasContent ? ["Answer provided"] : [],
+    improvements: hasContent ? ["Review the answer against the marking criteria"] : ["Provide a complete answer"],
+    confidence: 0.2,
+  };
+}
+
 export async function markAnswer(
   question: ExamQuestion,
   studentAnswer: string
@@ -73,52 +113,51 @@ ${studentAnswer}
 
 Mark this answer:`;
 
-    const response = await callAI(prompt, 1000, { feature: "exam_sim", subfeature: "mark_answer" });
+    // Marking has a deliberately tight budget. A long provider chain per
+    // question used to make a multi-question exam appear to hang forever.
+    const response = await callAI(prompt, 1000, {
+      feature: "exam_sim",
+      subfeature: "mark_answer",
+      maxChainMs: 12000,
+      perProviderMaxMs: 5000,
+    });
+
     if (!response) return fallbackMark(question.id, question.marks, studentAnswer);
 
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackMark(question.id, question.marks, studentAnswer);
 
-    const result = JSON.parse(jsonMatch[0]) as MarkingResult;
-    return {
-      ...result,
-      questionId: question.id,
-      maxMarks: question.marks,
-    };
+    const parsed = JSON.parse(jsonMatch[0]);
+    return normalizeResult(question, parsed) ?? fallbackMark(question.id, question.marks, studentAnswer);
   } catch (error) {
     console.error("[MarkingEngine] Failed:", error);
     return fallbackMark(question.id, question.marks, studentAnswer);
   }
 }
 
-function fallbackMark(questionId: string, maxMarks: number, answer: string): MarkingResult {
-  const hasContent = answer.trim().length > 10;
-  return {
-    questionId,
-    score: hasContent ? Math.ceil(maxMarks * 0.7) : 0,
-    maxMarks,
-    feedback: hasContent ? "Answer received and partially evaluated." : "No substantial answer provided.",
-    strengths: hasContent ? ["Answer provided"] : [],
-    improvements: hasContent ? ["Could be more detailed"] : ["Provide a complete answer"],
-    confidence: 0.5,
-  };
-}
-
+/**
+ * Mark a complete exam with bounded concurrency. We avoid sequential AI
+ * calls because ten questions each waiting on a provider fallback can turn
+ * one submission into several minutes of apparent inactivity.
+ */
 export async function generateExamFeedback(
   subject: string,
   questions: ExamQuestion[],
   answers: Record<string, string>
 ): Promise<ExamMarkingReport | null> {
   const results: MarkingResult[] = [];
+  const concurrency = 3;
 
-  for (const q of questions) {
-    const studentAnswer = answers[q.id] || "";
-    const result = await markAnswer(q, studentAnswer);
-    if (result) results.push(result);
+  for (let i = 0; i < questions.length; i += concurrency) {
+    const batch = questions.slice(i, i + concurrency);
+    const batchResults = await Promise.all(
+      batch.map((q) => markAnswer(q, answers[q.id] || ""))
+    );
+    results.push(...batchResults.filter((r): r is MarkingResult => Boolean(r)));
   }
 
-  const totalScore = results.reduce((s, r) => s + r.score, 0);
-  const totalMaxMarks = results.reduce((s, r) => s + r.maxMarks, 0);
+  const totalScore = results.reduce((s, r) => s + clampNumber(r.score, 0, r.maxMarks, 0), 0);
+  const totalMaxMarks = results.reduce((s, r) => s + Math.max(0, r.maxMarks), 0);
   const percentage = totalMaxMarks > 0 ? Math.round((totalScore / totalMaxMarks) * 100) : 0;
 
   const weakTopics = results
@@ -128,12 +167,6 @@ export async function generateExamFeedback(
   const strongTopics = results
     .filter(r => r.score >= r.maxMarks * 0.8)
     .flatMap(r => r.strengths);
-
-  const memory = {
-    subject,
-    score: percentage,
-    completedAt: new Date().toISOString(),
-  };
 
   const recommendedActions: string[] = [];
   if (percentage < 50) recommendedActions.push(`Review the fundamentals of ${subject}`);
