@@ -50,7 +50,7 @@ export interface RoutingContext {
   urgency: 'low' | 'normal' | 'high';
 }
 
-export type ExecutionTarget = 'local' | 'personal-peer' | 'shade-net' | 'edge' | 'cloud';
+export type ExecutionTarget = 'local' | 'personal-peer' | 'shade-net' | 'edge' | 'cloud' | 'unavailable';
 
 const networkPenalty: Record<NetworkClass, number> = {
   offline: 100,
@@ -59,10 +59,7 @@ const networkPenalty: Record<NetworkClass, number> = {
   ethernet: 0,
 };
 
-/**
- * Conservative admission control. This is intentionally deterministic so it
- * can be tested and later reused by a distributed router.
- */
+/** Conservative admission control for a node that may execute peer work. */
 export function canAcceptWorkload(
   node: NodeCapabilities,
   workload: DistributedWorkload,
@@ -77,6 +74,8 @@ export function canAcceptWorkload(
   if (node.storageQuotaMb < 0 || policy.maxStorageMb < 0) return false;
   if (policy.maxCpuPercent < 0 || policy.maxCpuPercent > 100) return false;
   if (policy.maxBandwidthMb < 0) return false;
+  if (node.network === 'metered' && !policy.allowCellular) return false;
+  if (policy.chargingOnly && node.batteryPolicy !== 'charging-only') return false;
   return true;
 }
 
@@ -92,8 +91,9 @@ export function chooseExecutionTarget(
     }
   }
 
+  // Private data must never silently fall back to an untrusted peer or cloud.
   if (workload.privacy === 'private') {
-    return context.localModelAvailable ? 'local' : 'cloud';
+    return 'unavailable';
   }
 
   const viable = candidates.filter((node) => canAcceptWorkload(node, workload, policy));
@@ -101,15 +101,17 @@ export function chooseExecutionTarget(
     const trustedPersonal = viable.find((node) => node.trust === 'trusted');
     if (trustedPersonal) return 'personal-peer';
     const paired = viable.find((node) => node.trust === 'paired');
+    if (paired && workload.privacy !== 'shareable') return 'personal-peer';
     if (paired) return 'shade-net';
     return 'edge';
   }
 
   if (context.localNetwork === 'offline') {
-    return context.localModelAvailable ? 'local' : 'cloud';
+    return context.localModelAvailable ? 'local' : 'unavailable';
   }
 
-  return context.externalCost > 0 ? 'cloud' : 'cloud';
+  // Cloud is permitted only for workloads explicitly marked shareable.
+  return workload.privacy === 'shareable' ? 'cloud' : 'unavailable';
 }
 
 export function scoreNode(node: NodeCapabilities, workload: DistributedWorkload): number {
