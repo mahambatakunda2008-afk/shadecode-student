@@ -1,4 +1,4 @@
-export type StudySpaceMode = "workmate" | "practice" | "assessment" | "exam" | "canvas";
+export type StudySpaceMode = "workmate" | "practice" | "assessment" | "exam" | "lesson" | "canvas";
 
 export type WorkStatus = "draft" | "submitted" | "marked" | "synced";
 
@@ -18,6 +18,7 @@ export type WorkObject = {
   status?: WorkStatus;
   subject?: string;
   topic?: string;
+  lessonId?: string;
   prompt?: string;
   response?: string;
   working?: string;
