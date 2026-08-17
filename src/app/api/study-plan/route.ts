@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildKnowledgeGraph, rankNextTopics } from "@/lib/mastery/graph";
 import { generateStudyPlan, type StudyPlanInput } from "@/lib/studyPlan/generator";
 import type { StudyGoals } from "@/lib/studyPlan/types";
 
@@ -7,22 +8,11 @@ export const dynamic = "force-dynamic";
 
 const VALID_GRADES = ["A*", "A", "B", "C", "D", "E", "U"];
 
-/**
- * GET /api/study-plan
- * Returns the authenticated user's current active study plan, or null if
- * they haven't generated one yet. Consumed by the /study-plan page.
- */
 export async function GET() {
   try {
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { data, error } = await supabase
       .from("study_plans")
@@ -33,52 +23,29 @@ export async function GET() {
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ plan: data?.plan ?? null, meta: data ?? null });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load study plan" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-/**
- * POST /api/study-plan
- * Generates a new study plan from the submitted goals and persists it,
- * deactivating any previously active plan. Body: StudyGoals.
- *
- * Real topicHints (from topic_mastery -- weak topics only, see route
- * comment below) are threaded through so generateStudyPlan() never has
- * to fabricate a specific-sounding topic name. Curriculum-coverage-based
- * "fresh topic" hints are deliberately not wired here yet -- doing that
- * correctly needs a per-subject exam board/level mapping that doesn't
- * exist in the schema (profiles.study_level is a single value, not
- * per-subject); generateStudyPlan()'s existing honest generic fallback
- * covers this gap without inventing anything. See docs/BLUEPRINT_GAP_MATRIX.md.
- */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json().catch(() => ({}));
     const targetGrade = body.targetGrade as StudyGoals["targetGrade"];
     const examDate = body.examDate as string;
     const availableHoursPerWeek = Number(body.availableHoursPerWeek);
-    const subjects = Array.isArray(body.subjects) ? (body.subjects as string[]) : [];
+    const subjects = Array.isArray(body.subjects) ? body.subjects.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0) : [];
     const prioritySubjects = Array.isArray(body.prioritySubjects)
-      ? (body.prioritySubjects as string[])
+      ? body.prioritySubjects.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
       : undefined;
 
     if (!targetGrade || !VALID_GRADES.includes(targetGrade)) {
@@ -90,30 +57,44 @@ export async function POST(request: NextRequest) {
     if (new Date(examDate).getTime() <= Date.now()) {
       return NextResponse.json({ error: "examDate must be in the future" }, { status: 400 });
     }
-    if (!Number.isFinite(availableHoursPerWeek) || availableHoursPerWeek <= 0) {
-      return NextResponse.json({ error: "availableHoursPerWeek must be a positive number" }, { status: 400 });
+    if (!Number.isFinite(availableHoursPerWeek) || availableHoursPerWeek <= 0 || availableHoursPerWeek > 168) {
+      return NextResponse.json({ error: "availableHoursPerWeek must be between 0 and 168" }, { status: 400 });
     }
-    if (subjects.length === 0) {
-      return NextResponse.json({ error: "At least one subject is required" }, { status: 400 });
+    if (subjects.length === 0 || subjects.length > 30) {
+      return NextResponse.json({ error: "Choose between 1 and 30 subjects" }, { status: 400 });
     }
 
-    // Real weak-topic hints from topic_mastery, grouped by subject. Only
-    // the "weak" half is populated here -- see the route-level comment
-    // above for why "fresh" is deliberately left for generateStudyPlan()'s
-    // existing honest fallback rather than wired to fabricated data.
-    const { data: masteryRows } = await supabase
+    const { data: masteryRows, error: masteryError } = await supabase
       .from("topic_mastery")
       .select("subject, topic, mastery_score")
       .eq("user_id", user.id)
       .in("subject", subjects)
       .lt("mastery_score", 60);
 
+    if (masteryError) {
+      return NextResponse.json({ error: masteryError.message }, { status: 500 });
+    }
+
     const topicHints: StudyPlanInput["topicHints"] = {};
+    const bySubject = new Map<string, typeof masteryRows>();
     for (const row of masteryRows ?? []) {
-      if (!topicHints[row.subject]) {
-        topicHints[row.subject] = { weak: [], fresh: [] };
-      }
-      topicHints[row.subject].weak.push(row.topic);
+      if (!row.subject || !row.topic) continue;
+      const rows = bySubject.get(row.subject) ?? [];
+      rows.push(row);
+      bySubject.set(row.subject, rows);
+    }
+
+    for (const subject of subjects) {
+      const rows = bySubject.get(subject) ?? [];
+      const graph = buildKnowledgeGraph(
+        rows.map((row) => ({
+          topicId: `${subject}:${row.topic}`,
+          masteryScore: Number(row.mastery_score ?? 0),
+          evidenceCount: 1,
+        })),
+      );
+      const ranked = rankNextTopics(graph).map((node) => node.topicId.slice(`${subject}:`.length));
+      topicHints[subject] = { weak: ranked, fresh: [] };
     }
 
     const plan = await generateStudyPlan({
@@ -126,17 +107,13 @@ export async function POST(request: NextRequest) {
       topicHints,
     });
 
-    // Deactivate any existing active plan(s) before inserting the new one
-    // -- one active plan per student, matching how the page reads it back.
     const { error: deactivateError } = await supabase
       .from("study_plans")
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq("user_id", user.id)
       .eq("is_active", true);
 
-    if (deactivateError) {
-      return NextResponse.json({ error: deactivateError.message }, { status: 500 });
-    }
+    if (deactivateError) return NextResponse.json({ error: deactivateError.message }, { status: 500 });
 
     const { data: inserted, error: insertError } = await supabase
       .from("study_plans")
@@ -153,15 +130,12 @@ export async function POST(request: NextRequest) {
       .select("id, plan, created_at")
       .single();
 
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
-    }
-
+    if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
     return NextResponse.json({ plan: inserted.plan }, { status: 201 });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to generate study plan" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
