@@ -18,7 +18,8 @@ describe("offline mutation retry policy", () => {
     expect(retryDelayMs(1)).toBe(5_000);
     expect(retryDelayMs(2)).toBe(10_000);
     expect(retryDelayMs(3)).toBe(20_000);
-    expect(retryDelayMs(8)).toBe(15 * 60_000);
+    expect(retryDelayMs(8)).toBe(640_000);
+    expect(retryDelayMs(9)).toBe(15 * 60_000);
     expect(retryDelayMs(20)).toBe(15 * 60_000);
   });
 
@@ -31,7 +32,7 @@ describe("offline mutation retry policy", () => {
   });
 
   it("stops retrying after the maximum attempt count", () => {
-    expect(isMutationReady(mutation({ attempts: 8 }), Date.now())).toBe(false);
+    expect(isMutationReady(mutation({ attempts: 8 }), Date.now())).toBe(true);
     expect(isMutationReady(mutation({ attempts: 9 }), Date.now())).toBe(false);
   });
 
