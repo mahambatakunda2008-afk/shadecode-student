@@ -9,12 +9,13 @@
     "test": "vitest run",
     "lint": "eslint",
     "postbuild": "next-sitemap",
-    "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts"
+    "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts",
+    "extract:questions": "tsx bin/exam-hub-ingest/extract-questions.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
     "@ducanh2912/next-pwa": "^10.2.9",
-    "@emotion/react": "^11.14.0",
+    "@emotion/react": "^11.14.2",
     "@emotion/styled": "^11.14.1",
     "@google/generative-ai": "^0.24.1",
     "@mui/material": "^9.1.1",
@@ -38,6 +39,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "resend": "^6.12.4",
+    "shadcn": "^4.3.0",
     "shadcn": "^4.3.0",
     "tailwind-merge": "^3.5.0"
   },
