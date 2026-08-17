@@ -30,8 +30,7 @@ class MainActivity : Activity() {
 
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                    val scheme = request.url.scheme?.lowercase()
-                    return scheme != "https" && scheme != "http"
+                    return false
                 }
             }
 
