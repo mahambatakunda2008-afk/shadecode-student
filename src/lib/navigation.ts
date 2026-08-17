@@ -22,20 +22,11 @@ import {
   Globe,
   MessageSquare,
   Settings2,
+  Share2,
 } from "lucide-react";
 
-export interface NavItem {
-  href: string;
-  label: string;
-  icon: any;
-  badge?: string;
-  urgent?: boolean;
-}
-
-export interface NavGroup {
-  group: string;
-  items: NavItem[];
-}
+export interface NavItem { href: string; label: string; icon: any; badge?: string; urgent?: boolean; }
+export interface NavGroup { group: string; items: NavItem[]; }
 
 export const NAV_ITEMS = {
   dashboard: { href: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -55,6 +46,7 @@ export const NAV_ITEMS = {
   cortex: { href: "/insights/history", label: "Cortex", icon: BrainCircuit },
   study: { href: "/study", label: "Study Session", icon: GraduationCap },
   achievements: { href: "/achievements", label: "Achievements", icon: Award },
+  share: { href: "/share", label: "Share", icon: Share2 },
   settings: { href: "/settings", label: "Settings", icon: Settings },
   adminDashboard: { href: "/admin", label: "Overview", icon: LayoutDashboard },
   adminUpload: { href: "/admin/exam-hub/upload", label: "Upload Papers", icon: UploadCloud },
@@ -65,54 +57,20 @@ export const NAV_ITEMS = {
   adminFeedback: { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 };
 
-export const ADMIN_NAV_GROUPS: NavGroup[] = [
-  {
-    group: "Admin",
-    items: [NAV_ITEMS.adminDashboard, NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminManage, NAV_ITEMS.adminModeration, NAV_ITEMS.adminQuestions, NAV_ITEMS.adminBoards, NAV_ITEMS.adminFeedback, NAV_ITEMS.settings],
-  },
-];
+export const ADMIN_NAV_GROUPS: NavGroup[] = [{
+  group: "Admin",
+  items: [NAV_ITEMS.adminDashboard, NAV_ITEMS.examHub, NAV_ITEMS.adminUpload, NAV_ITEMS.adminManage, NAV_ITEMS.adminModeration, NAV_ITEMS.adminQuestions, NAV_ITEMS.adminBoards, NAV_ITEMS.adminFeedback, NAV_ITEMS.settings],
+}];
 
 export const SIDEBAR_GROUPS: NavGroup[] = [
-  {
-    group: "Core",
-    items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.study, NAV_ITEMS.timetable, NAV_ITEMS.studyPlan],
-  },
-  {
-    group: "Practice",
-    items: [NAV_ITEMS.examHub, NAV_ITEMS.tasks, NAV_ITEMS.exams, NAV_ITEMS.examSim],
-  },
-  {
-    group: "Tools",
-    items: [NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.mathChecker, NAV_ITEMS.cortexVerify],
-  },
-  {
-    group: "Progress",
-    items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.achievements, NAV_ITEMS.cortex],
-  },
+  { group: "Core", items: [NAV_ITEMS.dashboard, NAV_ITEMS.focus, NAV_ITEMS.study, NAV_ITEMS.timetable, NAV_ITEMS.studyPlan] },
+  { group: "Practice", items: [NAV_ITEMS.examHub, NAV_ITEMS.tasks, NAV_ITEMS.exams, NAV_ITEMS.examSim] },
+  { group: "Tools", items: [NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.mathChecker, NAV_ITEMS.cortexVerify] },
+  { group: "Progress", items: [NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.achievements, NAV_ITEMS.cortex, NAV_ITEMS.share] },
 ];
 
-export const BOTTOM_PRIMARY: NavItem[] = [
-  NAV_ITEMS.dashboard,
-  NAV_ITEMS.learn,
-  NAV_ITEMS.tasks,
-  NAV_ITEMS.focus,
-  NAV_ITEMS.examHub,
-];
-
-export const BOTTOM_MORE: NavItem[] = [
-  NAV_ITEMS.timetable,
-  NAV_ITEMS.studyPlan,
-  NAV_ITEMS.study,
-  NAV_ITEMS.exams,
-  NAV_ITEMS.examSim,
-  NAV_ITEMS.curriculum,
-  NAV_ITEMS.mathChecker,
-  NAV_ITEMS.analytics,
-  NAV_ITEMS.leaderboard,
-  NAV_ITEMS.achievements,
-  NAV_ITEMS.cortex,
-  NAV_ITEMS.settings,
-];
+export const BOTTOM_PRIMARY: NavItem[] = [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.examHub];
+export const BOTTOM_MORE: NavItem[] = [NAV_ITEMS.timetable, NAV_ITEMS.studyPlan, NAV_ITEMS.study, NAV_ITEMS.exams, NAV_ITEMS.examSim, NAV_ITEMS.curriculum, NAV_ITEMS.mathChecker, NAV_ITEMS.analytics, NAV_ITEMS.leaderboard, NAV_ITEMS.achievements, NAV_ITEMS.cortex, NAV_ITEMS.share, NAV_ITEMS.settings];
 
 export function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
