@@ -2,10 +2,18 @@
 import { logAIUsage } from "@/lib/ai/tracker";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
-const MAX_CHAIN_MS = 55000;
-const PER_PROVIDER_MAX_MS = 14000;
+const DEFAULT_MAX_CHAIN_MS = 55000;
+const DEFAULT_PER_PROVIDER_MAX_MS = 14000;
 
-export interface CallAIOptions { userId?: string; feature?: string; subfeature?: string; }
+export interface CallAIOptions {
+  userId?: string;
+  feature?: string;
+  subfeature?: string;
+  /** Total wall-clock budget for the entire provider fallback chain. */
+  maxChainMs?: number;
+  /** Maximum time allowed for one provider attempt. */
+  perProviderMaxMs?: number;
+}
 
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
   const controller = new AbortController();
@@ -14,18 +22,24 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
 }
 
 export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOptions = {}): Promise<string | null> {
-  const { userId, feature = "ai_assistant", subfeature = "generate" } = options;
+  const {
+    userId,
+    feature = "ai_assistant",
+    subfeature = "generate",
+  } = options;
+  const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, DEFAULT_MAX_CHAIN_MS));
+  const perProviderMaxMs = Math.max(1000, Math.min(options.perProviderMaxMs ?? DEFAULT_PER_PROVIDER_MAX_MS, maxChainMs));
   const promptTokens = Math.ceil(prompt.length / 4);
   const startedAt = Date.now();
 
   async function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) {
     try {
-      await logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: prompt.length, maxTokens } });
+      await logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: prompt.length, maxTokens, maxChainMs, perProviderMaxMs } });
     } catch {}
   }
 
-  const remaining = () => Math.max(0, MAX_CHAIN_MS - (Date.now() - startedAt));
-  const providerTimeout = () => Math.min(PER_PROVIDER_MAX_MS, remaining());
+  const remaining = () => Math.max(0, maxChainMs - (Date.now() - startedAt));
+  const providerTimeout = () => Math.min(perProviderMaxMs, remaining());
   const canTry = () => remaining() >= 1000;
 
   async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
@@ -33,7 +47,10 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     const startTime = Date.now();
     try {
       const text = await request(providerTimeout());
-      if (text && text.trim().length > 20) { await logResult({ provider, model, startTime, success: true, text }); return text; }
+      if (text && text.trim().length > 20) {
+        await logResult({ provider, model, startTime, success: true, text });
+        return text;
+      }
       await logResult({ provider, model, startTime, success: false, err: "Empty or unusable AI response" });
     } catch (err) {
       await logResult({ provider, model, startTime, success: false, err });
@@ -84,6 +101,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  console.error("[AI] Provider chain exhausted within bounded time.");
+  console.error(`[AI] Provider chain exhausted within ${maxChainMs}ms.`);
   return null;
 }
