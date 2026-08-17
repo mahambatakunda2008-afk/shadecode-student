@@ -4,7 +4,10 @@ export interface ExtractedQuestion {
   marks: number | null;
 }
 
-const TOP_LEVEL_QUESTION = /^\s*(\d{1,3})[.)]?\s+(\S.*)$/;
+// Require either explicit punctuation after the question number or a plain
+// number followed by ordinary question text. Subparts such as "2 (a)" and
+// "3 (b)" are deliberately rejected because they belong to their parent.
+const TOP_LEVEL_QUESTION = /^\s*(\d{1,2})(?:[.)]\s+|\s+(?!\([a-z]\)|[a-z]\))[A-Za-z])/;
 const MARKS_AT_END = /\[\s*(\d{1,3})\s*\]\s*$/;
 
 function normalizeLine(line: string): string {
@@ -47,7 +50,7 @@ export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
     if (match) {
       flush();
       currentNumber = match[1];
-      currentLines = [match[2]];
+      currentLines = [line.slice(match[0].length).trim()];
     } else if (currentNumber) {
       currentLines.push(line);
     }
