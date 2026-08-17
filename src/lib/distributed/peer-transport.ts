@@ -15,11 +15,7 @@ export interface PeerTransport {
   requestResource(request: ResourceRequest): Promise<ResourceResponse>;
 }
 
-/**
- * In-memory transport used for deterministic tests and local development.
- * Production transports can implement the same contract over WebRTC, native
- * sockets, or another authenticated channel without changing the assembler.
- */
+/** In-memory transport for deterministic tests and local development. */
 export class InMemoryPeerTransport implements PeerTransport {
   constructor(
     private readonly provider: PeerResourceProvider,
@@ -63,11 +59,16 @@ export async function exchangeResource(
   createRequest: (offset: number, length: number) => ResourceRequest,
   chunkSize = 64 * 1024,
 ): Promise<ArrayBuffer> {
+  if (!Number.isInteger(chunkSize) || chunkSize <= 0 || chunkSize > 4 * 1024 * 1024) {
+    throw new Error('Invalid transfer chunk size');
+  }
+
   const assembler = new ResourceAssembler(manifest);
 
   while (!assembler.isComplete()) {
     const missing = assembler.getMissingRanges()[0];
     if (!missing) break;
+    const before = assembler.getReceivedBytes();
     const length = Math.min(chunkSize, missing.length);
     const response = await transport.requestResource(createRequest(missing.offset, length));
 
@@ -79,6 +80,9 @@ export async function exchangeResource(
       finalChunk: response.finalChunk,
     };
     assembler.addChunk(chunk);
+    if (assembler.getReceivedBytes() === before) {
+      throw new Error('Peer transfer made no progress');
+    }
   }
 
   const result = await assembler.finalize();
