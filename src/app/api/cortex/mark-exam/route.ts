@@ -10,16 +10,17 @@ export const dynamic = "force-dynamic";
 
 const SIDE_EFFECT_BUDGET_MS = 2500;
 
-async function bounded<T>(operation: Promise<T>, fallback: T): Promise<T> {
+async function bounded<T>(operation: Promise<T> | T, fallback: T): Promise<T> {
   return new Promise(resolve => {
-    const timer = setTimeout(() => resolve(fallback), SIDE_EFFECT_BUDGET_MS);
-    operation.then(value => {
+    let settled = false;
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       resolve(value);
-    }).catch(() => {
-      clearTimeout(timer);
-      resolve(fallback);
-    });
+    };
+    const timer = setTimeout(() => finish(fallback), SIDE_EFFECT_BUDGET_MS);
+    Promise.resolve(operation).then(finish).catch(() => finish(fallback));
   });
 }
 
