@@ -244,7 +244,7 @@ export async function generateRecommendation(userId: string): Promise<string> {
     return `Continue with ${memory.frequentlyStudiedSubjects[0]} to build momentum.`;
   }
 
-  if (memory.totalStudySessions > 0) {
+  if ((memory.totalStudySessions || 0) > 0) {
     return "Choose one recent study area and complete a short practice session next.";
   }
 
