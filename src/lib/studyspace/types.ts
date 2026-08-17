@@ -9,6 +9,7 @@ export type WorkObject = {
   response?: string;
   working?: string;
   attachments?: string[];
+  canvasData?: string;
   marks?: { earned?: number; available?: number };
   timeSpentMs?: number;
   createdAt: string;
