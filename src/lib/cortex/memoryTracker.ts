@@ -37,7 +37,7 @@ interface ExamResult {
 }
 
 function clampScore(score: number): number {
-  return Math.max(0, Math.min(100, score));
+  return Math.max(0, Math.min(100, Number.isFinite(score) ? score : 0));
 }
 
 function normalizeDuration(durationMinutes: number): number {
@@ -53,12 +53,12 @@ export async function trackStudySession(session: StudySession): Promise<void> {
 
   if (durationMinutes <= 0) return;
 
+  const completedAt = new Date(session.completedAt);
+  if (Number.isNaN(completedAt.getTime())) return;
+
   const totalStudyTime = Math.max(0, memory.totalStudyTimeMinutes || 0) + durationMinutes;
   const totalSessions = Math.max(0, memory.totalStudySessions || 0) + 1;
   const avgDuration = Math.round(totalStudyTime / totalSessions);
-
-  const completedAt = new Date(session.completedAt);
-  if (Number.isNaN(completedAt.getTime())) return;
 
   // preferredStudyHours is stored as [hour, frequency, hour, frequency, ...].
   // Iterate by pairs so a frequency value can never be mistaken for an hour.
@@ -79,12 +79,13 @@ export async function trackStudySession(session: StudySession): Promise<void> {
   }
 
   const subjects = [...(memory.frequentlyStudiedSubjects || [])];
-  const subjectIndex = subjects.findIndex((s) => s === session.subjectName);
-  if (subjectIndex >= 0) {
-    subjects.splice(subjectIndex, 1);
-    subjects.unshift(session.subjectName);
-  } else {
-    subjects.unshift(session.subjectName);
+  const subjectName = session.subjectName.trim();
+  if (subjectName) {
+    const subjectIndex = subjects.findIndex((s) => s === subjectName);
+    if (subjectIndex >= 0) {
+      subjects.splice(subjectIndex, 1);
+    }
+    subjects.unshift(subjectName);
     if (subjects.length > 10) subjects.pop();
   }
 
@@ -102,10 +103,13 @@ export async function trackStudySession(session: StudySession): Promise<void> {
 export async function trackExamResult(result: ExamResult): Promise<void> {
   const memory = await getMemory(result.userId);
   const score = clampScore(result.score);
-  if (!Number.isFinite(score)) return;
+  const subject = result.subject.trim();
+  const completedAt = new Date(result.completedAt);
+
+  if (!subject || Number.isNaN(completedAt.getTime())) return;
 
   const examScores = [...(memory.examScores || [])];
-  examScores.push({ score, subject: result.subject, date: result.completedAt });
+  examScores.push({ score, subject, date: completedAt.toISOString() });
   if (examScores.length > 50) examScores.splice(0, examScores.length - 50);
 
   const avgScore = examScores.length > 0
@@ -121,10 +125,10 @@ export async function trackExamResult(result: ExamResult): Promise<void> {
   const weakSubjects: string[] = [];
   const strongSubjects: string[] = [];
 
-  for (const [subject, scores] of Object.entries(subjectScores)) {
+  for (const [subjectName, scores] of Object.entries(subjectScores)) {
     const average = scores.reduce((sum, value) => sum + value, 0) / scores.length;
-    if (average < 60) weakSubjects.push(subject);
-    if (average >= 80) strongSubjects.push(subject);
+    if (average < 60) weakSubjects.push(subjectName);
+    if (average >= 80) strongSubjects.push(subjectName);
   }
 
   await updateMemory(result.userId, {
@@ -216,15 +220,33 @@ export async function generateLearningInsight(userId: string): Promise<string> {
   return insights.length > 0 ? insights.join(" ") : "Keep learning to build your learning profile!";
 }
 
-/** Generate a recommendation from persistent learning state. */
+/**
+ * Generate a conservative next-step recommendation from persistent learning
+ * signals. This remains deterministic and explainable; model-generated advice
+ * can be layered on top later without changing the source of truth.
+ */
 export async function generateRecommendation(userId: string): Promise<string> {
   const memory = await getMemory(userId);
 
   if (memory.weakSubjects?.length) {
-    return `Focus on ${memory.weakSubjects[0]} to strengthen your understanding.`;
+    const subject = memory.weakSubjects[0];
+    if ((memory.averageExamScore || 0) < 60) {
+      return `Prioritize ${subject}: your recent exam performance suggests it needs focused review.`;
+    }
+    return `Focus on ${subject} next to strengthen your understanding.`;
   }
+
+  if ((memory.averageExamScore || 0) >= 80 && memory.frequentlyStudiedSubjects?.length) {
+    return `You're performing strongly. Practice ${memory.frequentlyStudiedSubjects[0]} with a harder problem or past-paper question.`;
+  }
+
   if (memory.frequentlyStudiedSubjects?.length) {
     return `Continue with ${memory.frequentlyStudiedSubjects[0]} to build momentum.`;
   }
-  return "Start with a subject that interests you most.";
+
+  if (memory.totalStudySessions > 0) {
+    return "Choose one recent study area and complete a short practice session next.";
+  }
+
+  return "Start with a subject that interests you most, then complete one short practice session.";
 }
