@@ -4,7 +4,9 @@
 
     <application
         android:allowBackup="false"
+        android:icon="@drawable/ic_launcher_foreground"
         android:label="Shadecode Student"
+        android:roundIcon="@drawable/ic_launcher_foreground"
         android:supportsRtl="true"
         android:theme="@style/Theme.ShadecodeStudent">
         <activity

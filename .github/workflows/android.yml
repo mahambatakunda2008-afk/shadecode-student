@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    tags:
+      - "android-v*"
     paths:
       - "android/**"
       - ".github/workflows/android.yml"
@@ -11,9 +13,15 @@ on:
 permissions:
   contents: write
 
+env:
+  ANDROID_VERSION_CODE: ${{ github.run_number }}
+  ANDROID_VERSION_NAME: "0.2.0"
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_ANDROID_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     defaults:
       run:
         working-directory: android
@@ -39,44 +47,77 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
+      - name: Prepare production signing key
+        if: env.HAS_ANDROID_SIGNING == 'true'
+        working-directory: .
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shadecode-release.jks"
+          test -s "$RUNNER_TEMP/shadecode-release.jks"
+
       - name: Validate Android project
         run: gradle projects --stacktrace --no-daemon
 
-      - name: Build installable release APK
+      - name: Build installable APK
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/shadecode-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle :app:assembleReleaseApk --stacktrace --no-daemon
 
-      - name: Build release AAB
+      - name: Build Play Store AAB
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/shadecode-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle :app:bundleRelease --stacktrace --no-daemon
 
-      - name: Prepare APK
-        run: cp app/build/outputs/apk/releaseApk/app-releaseApk.apk app/ShadecodeStudent-Android-${{ github.run_number }}.apk
+      - name: Prepare distribution files
+        working-directory: .
+        run: |
+          mkdir -p dist/android
+          cp android/app/build/outputs/apk/releaseApk/app-releaseApk.apk dist/android/ShadecodeStudent-Android.apk
+          cp android/app/build/outputs/bundle/release/*.aab dist/android/ShadecodeStudent-Android.aab
+          echo "SIGNED_BUILD=$HAS_ANDROID_SIGNING" >> "$GITHUB_ENV"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shadecode-student-apk
-          path: android/app/ShadecodeStudent-Android-${{ github.run_number }}.apk
+          name: shadecode-student-apk-${{ github.run_number }}
+          path: dist/android/ShadecodeStudent-Android.apk
           if-no-files-found: error
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shadecode-student-aab
-          path: android/app/build/outputs/bundle/release/*.aab
+          name: shadecode-student-aab-${{ github.run_number }}
+          path: dist/android/ShadecodeStudent-Android.aab
           if-no-files-found: error
 
-      - name: Create draft GitHub Release with APK
+      - name: Publish tagged Android release
+        if: startsWith(github.ref, 'refs/tags/android-v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-preview-${{ github.run_number }}
-          name: Shadecode Student Android Preview ${{ github.run_number }}
-          draft: true
-          prerelease: true
+          tag_name: ${{ github.ref_name }}
+          name: Shadecode Student ${{ github.ref_name }}
+          draft: false
+          prerelease: false
           generate_release_notes: true
-          files: android/app/ShadecodeStudent-Android-${{ github.run_number }}.apk
+          files: |
+            dist/android/ShadecodeStudent-Android.apk
+            dist/android/ShadecodeStudent-Android.aab
+          body: |
+            ## Shadecode Student Android
 
-      - name: Publish GitHub Release
-        working-directory: .
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release edit android-preview-${{ github.run_number }} --draft=false --prerelease=true
+            Official Android distribution for Shadecode Student.
+
+            - APK: direct installation
+            - AAB: Google Play publishing bundle
+            - Package: `com.shadecode.student`
+
+            **Signing:** `${{ env.HAS_ANDROID_SIGNING }}`
+
+            Do not install Android packages from unofficial mirrors.
