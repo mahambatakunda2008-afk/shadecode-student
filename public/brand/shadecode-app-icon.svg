@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc"><title id="title">Shadecode app icon</title><desc id="desc">A faceted hexagonal S mark in a cyan-to-blue gradient on a deep navy field, for use anywhere the icon needs its own rounded tile (marketing, docs, store listings).</desc><rect width="256" height="256" rx="56" fill="#0B0D12"/><defs><linearGradient id="shadecodeAppIconGradient" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient></defs><path fill="url(#shadecodeAppIconGradient)" d="M170 66L128 44L86 66V96L128 118L170 140V170L128 192L86 170V200L128 222L170 200V170L128 148L86 126V96L128 74L170 96Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Shadecode Student app icon</title>
+  <desc id="desc">The monochrome Shadecode Student S mark on a deep navy field.</desc>
+  <rect width="256" height="256" rx="56" fill="#06111C"/>
+  <path fill="#22D3EE" d="M128 14 207 57v43l-79-43-39 21 118 64v43l-79 43-79-43v-43l79 43 39-21-118-64V57l79 43 39-21-39-21-39 21-40-22z"/>
+</svg>

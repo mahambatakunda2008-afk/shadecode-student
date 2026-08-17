@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { SIDEBAR_GROUPS, NAV_ITEMS, isRouteActive } from "@/lib/navigation";
 import { useNavBadges } from "@/hooks/useNavBadges";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -57,15 +58,9 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-4 flex-shrink-0">
-        <Link href="/" aria-label="Shadecode Student home" className="flex items-center gap-3 min-w-0">
-          <span className="w-8 h-8 rounded-[9px] overflow-hidden flex items-center justify-center flex-shrink-0 bg-[#0B0D12] shadow-[0_0_18px_rgba(34,211,238,0.32)]">
-            <img src="/brand/shadecode-mark.svg" alt="" className="w-[25px] h-[25px]" aria-hidden="true" />
-          </span>
-          <span className="flex flex-col gap-[3px] min-w-0">
-            <span className="text-[13px] font-semibold text-[var(--foreground)] leading-none">Shadecode</span>
-            <span className="text-[11px] text-[var(--muted-foreground)] leading-none">Student</span>
-          </span>
+      <div className="flex items-center px-4 pt-4 pb-4 flex-shrink-0">
+        <Link href="/" aria-label="Shadecode Student home" className="min-w-0">
+          <BrandLockup compact />
         </Link>
       </div>
 
@@ -90,7 +85,7 @@ export function Sidebar() {
           </div>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-[3px] rounded-full bg-[var(--surface-3)] overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${xpPercent}%`, background: "linear-gradient(90deg, var(--primary), var(--accent))" }} />
+              <div className="h-full rounded-full transition-all duration-700 bg-[var(--primary)]" style={{ width: `${xpPercent}%` }} />
             </div>
             <span className="text-[10px] text-[var(--muted-foreground)] leading-none tabular-nums flex-shrink-0">
               {profile.xp}<span className="opacity-50">/{profile.xp_to_next_level}</span>
@@ -102,7 +97,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 flex flex-col gap-5 py-2 min-h-0">
         {SIDEBAR_GROUPS.map((section) => (
           <div key={section.group}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--muted-foreground)] px-3 mb-2 select-none">{section.group}</p>
+            <p className="ssc-nav-label text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--muted-foreground)] px-3 mb-2 select-none">{section.group}</p>
             <div className="flex flex-col gap-[2px]">
               {section.items.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
                 const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
@@ -115,7 +110,9 @@ export function Sidebar() {
                       <span>{label}</span>
                     </div>
                     {badge && (
-                      <span className={cn("px-[6px] py-[3px] rounded-md text-[10px] font-bold leading-none tabular-nums", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]" : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]")}>{badge}</span>
+                      <span className={cn("px-[6px] py-[3px] rounded-md text-[10px] font-bold leading-none tabular-nums", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]" : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]")}>
+                        {badge}
+                      </span>
                     )}
                   </Link>
                 );
