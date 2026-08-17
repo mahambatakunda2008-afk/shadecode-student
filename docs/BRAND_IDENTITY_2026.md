@@ -6,6 +6,8 @@ Implemented in `shadecode-student` main on 15 August 2026. Mark geometry redrawn
 
 Redrawn again 15 August 2026, same day (Claude, direct owner request, working from a reference image the owner supplied): faceted hexagonal S, cyan-to-violet gradient, no baked-in text, no bevel/glow/chrome effects (those were tested and rejected -- see "Do not regress" below, they don't survive at building-signage distance or small icon size). Verified the shape holds up as a single flat colour with no gradient at all (the mark carries the identity, not the colour treatment) and re-checked against the maskable safe zone. This supersedes the single-stroke version two paragraphs up -- the gradient identity was a deliberate, informed choice from a direct reference, not a reversion to the earlier "twisted" mistake, which specifically involved fake 3D bevels and baked-in text, neither of which this version has.
 
+Colour treatment revised same day, immediately after: the cyan-to-violet gradient was replaced with cyan-to-blue after direct owner feedback that the violet portion "does not seem to be good." Rendered and compared 3 variants side by side (flat cyan, cyan-to-blue, cyan-to-violet) before deciding -- the violet portion measurably loses contrast against the near-black background, the same finding from the earlier single-stroke redesign's cyan-vs-violet comparison. Cyan-to-blue keeps the gradient's visual depth while staying in the higher-contrast cyan family throughout. System-wide single-accent usages (manifest theme_color, viewport meta, sidebar icon-tile glow) were also reverted from indigo back to cyan at the same time -- those three spots were introduced earlier the same day specifically to match the (now-superseded) violet-leaning icon, not a considered change to the app's separate, much longer-established indigo/violet UI theme (MuiThemeProvider, ProgressBar, and dozens of other components), which was correctly left untouched.
+
 ## Canonical identity
 
 Shadecode Student uses a simple geometric Shadecode S mark. The mark is the identity. It does not depend on a graduation cap, book, brain, lightbulb, star, ribbon, or other education cliché.
@@ -49,8 +51,8 @@ The app icon must:
 ## Brand colours
 
 - Deep navy: `#0B0D12`
-- Mark gradient: `#22D3EE` (cyan) -> `#6366F1` (indigo) -> `#A855F7` (violet), diagonal
-- Single-colour fallback / UI accent: `#6366F1`
+- Mark gradient: `#22D3EE` (cyan) -> `#3B82F6` (blue), diagonal
+- Single-colour fallback / UI accent: `#22D3EE`
 
 The colour treatment is secondary to the silhouette. The mark must remain strong without the gradient.
 

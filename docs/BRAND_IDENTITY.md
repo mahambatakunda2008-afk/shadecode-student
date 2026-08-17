@@ -36,7 +36,7 @@ The construction is deliberately simple enough to survive reduction to small siz
 ## Colour system
 
 - Deep Navy: `#0B0D12`
-- Mark gradient: Electric Cyan `#22D3EE` -> Indigo `#6366F1` -> Violet `#A855F7`
+- Mark gradient: Electric Cyan `#22D3EE` -> Blue `#3B82F6`
 - Light wordmark: `#F8FAFC`
 
 The app icon avoids gradients. This keeps the silhouette crisp and reduces visual clutter at small sizes.
