@@ -69,6 +69,14 @@ This document separates **landed engineering** from the long-term distributed-in
 - no-progress protection;
 - end-to-end content integrity verification.
 
+### Safety controls
+
+- master distributed feature gate;
+- child capability gates for discovery/resources/services/compute;
+- distributed features disabled by default;
+- peer compute disabled by default;
+- staged enablement contract tested independently.
+
 ## Important limitation
 
 These foundations do **not** mean ShadeNet is already a production P2P network. There is currently no claim here that browsers can discover arbitrary peers, exchange resources directly over the Internet, execute peer workloads, or perform distributed inference in production. The current transport simulator deliberately runs in-process.
@@ -82,9 +90,8 @@ Tracked by GitHub issue #172:
 3. replay-safe request handling;
 4. browser capability detection integration;
 5. two-node browser/native simulator;
-6. feature flag and kill switch;
-7. real WebRTC/native transport integration;
-8. latency/bandwidth/failure measurements.
+6. real WebRTC/native transport integration;
+7. latency/bandwidth/failure measurements.
 
 ## Safety gates
 
@@ -115,6 +122,8 @@ Current Student
       +-- resumable transfer primitives       [LANDED]
       |
       +-- peer transport abstraction           [LANDED]
+      |
+      +-- safety feature gates                [LANDED]
       |
       +-- authenticated pairing               [NEXT]
       |
