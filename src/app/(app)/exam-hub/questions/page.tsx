@@ -28,14 +28,13 @@ export default function QuestionBankPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (event?: FormEvent) => {
-    event?.preventDefault();
+  const fetchQuestions = useCallback(async (searchText: string, selectedDifficulty: string) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ limit: "50" });
-      if (query.trim()) params.set("q", query.trim());
-      if (difficulty) params.set("difficulty", difficulty);
+      if (searchText.trim()) params.set("q", searchText.trim());
+      if (selectedDifficulty) params.set("difficulty", selectedDifficulty);
       const response = await fetch(`/api/exam-hub/questions?${params.toString()}`, {
         credentials: "include",
         cache: "no-store",
@@ -49,11 +48,16 @@ export default function QuestionBankPage() {
     } finally {
       setLoading(false);
     }
-  }, [difficulty, query]);
+  }, []);
+
+  const load = (event?: FormEvent) => {
+    event?.preventDefault();
+    void fetchQuestions(query, difficulty);
+  };
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void fetchQuestions("", "");
+  }, [fetchQuestions]);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
