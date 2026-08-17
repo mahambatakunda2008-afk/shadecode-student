@@ -89,7 +89,7 @@ async function extractPdfText(filePath: string): Promise<string> {
     const page = await pdf.getPage(pageNumber);
     // eslint-disable-next-line no-await-in-loop
     const content = await page.getTextContent();
-    pages.push(content.items.map((item: { str?: string }) => item.str ?? '').join(' '));
+    pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
   }
   return pages.join('\n');
 }
@@ -171,7 +171,7 @@ async function main() {
       }));
       const { error: insertError } = await supabase
         .from('exam_questions')
-        .insert(rows, { onConflict: 'paper_id,question_number', ignoreDuplicates: true });
+        .upsert(rows, { onConflict: 'paper_id,question_number', ignoreDuplicates: true });
       if (insertError) {
         reports.push({ file, status: 'error', paperId: papers[0].id, reason: insertError.message });
         continue;
