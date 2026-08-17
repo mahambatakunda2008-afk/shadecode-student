@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<any[]>([]);
@@ -86,20 +86,13 @@ export default function AdminPage() {
   return (
     <div style={{ padding: 24 }}>
       <h1 style={{ fontSize: 26, fontWeight: 800 }}>Admin Dashboard 📊</h1>
-
       <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
         <Stat label="Total" value={data.length} />
         <Stat label="Bugs" value={grouped.bug.length} />
         <Stat label="Features" value={grouped.feature.length} />
         <Stat label="General" value={grouped.general.length} />
       </div>
-
-      {actionError && (
-        <div role="alert" style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#fff1f2', color: '#9f1239' }}>
-          {actionError}
-        </div>
-      )}
-
+      {actionError && <div role="alert" style={{ marginTop: 16, padding: 12, borderRadius: 8, background: '#fff1f2', color: '#9f1239' }}>{actionError}</div>}
       <div style={{ marginTop: 24 }}>
         {loading ? <p>Loading feedback...</p> : data.length === 0 ? <p>No feedback yet.</p> : data.map((item) => (
           <div key={item.id} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, marginBottom: 10, background: "white" }}>
@@ -109,7 +102,6 @@ export default function AdminPage() {
           </div>
         ))}
       </div>
-
       <section style={{ marginTop: 40 }}>
         <h2>Generated Course Drafts</h2>
         {draftsLoading ? <p>Loading drafts...</p> : drafts.length === 0 ? <p>No drafts found.</p> : drafts.map((d) => (
@@ -117,15 +109,8 @@ export default function AdminPage() {
             <div style={{ fontWeight: 700 }}>{d.draft?.title ?? 'Untitled'}</div>
             <div style={{ color: 'gray', fontSize: 12 }}>{d.created_at} — user: {d.user_id ?? d.userId ?? 'unknown'}</div>
             <p>{d.draft?.description}</p>
-            <button onClick={() => void approve(d.id)} disabled={busyId === d.id}>
-              {busyId === d.id ? 'Approving…' : 'Approve'}
-            </button>
-            {d.moderationIssues?.length > 0 && (
-              <div style={{ marginTop: 8, color: 'orange' }}>
-                <strong>Moderation issues:</strong>
-                <ul>{d.moderationIssues.map((m: any, i: number) => <li key={i}>{m}</li>)}</ul>
-              </div>
-            )}
+            <button onClick={() => void approve(d.id)} disabled={busyId === d.id}>{busyId === d.id ? 'Approving…' : 'Approve'}</button>
+            {d.moderationIssues?.length > 0 && <div style={{ marginTop: 8, color: 'orange' }}><strong>Moderation issues:</strong><ul>{d.moderationIssues.map((m: any, i: number) => <li key={i}>{m}</li>)}</ul></div>}
           </div>
         ))}
       </section>
@@ -134,10 +119,5 @@ export default function AdminPage() {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, minWidth: 100, textAlign: "center" }}>
-      <div style={{ fontSize: 12, color: "gray" }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 800 }}>{value}</div>
-    </div>
-  );
+  return <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, minWidth: 100, textAlign: "center" }}><div style={{ fontSize: 12, color: "gray" }}>{label}</div><div style={{ fontSize: 20, fontWeight: 800 }}>{value}</div></div>;
 }
