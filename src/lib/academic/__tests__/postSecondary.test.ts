@@ -1,0 +1,37 @@
+import { describe, expect, it } from "vitest";
+import { assessmentPressure, getOpenAssessments, isPostSecondary, normalizeCourse } from "../postSecondary";
+
+describe("post-secondary academic helpers", () => {
+  it("recognizes university and TVET pathways", () => {
+    expect(isPostSecondary("university")).toBe(true);
+    expect(isPostSecondary("tvet")).toBe(true);
+    expect(isPostSecondary("secondary")).toBe(false);
+  });
+
+  it("normalizes course identity and defaults", () => {
+    const course = normalizeCourse({ name: "  Data Structures  ", code: " CS201 " });
+    expect(course.name).toBe("Data Structures");
+    expect(course.code).toBe("CS201");
+    expect(course.assessmentTypes).toEqual(["assignment", "test", "exam"]);
+    expect(course.topics).toEqual([]);
+    expect(course.id).toMatch(/^[0-9a-f-]{36}$/i);
+  });
+
+  it("orders open assessments by due date", () => {
+    const assessments = [
+      { id: "late", title: "Exam", type: "exam", dueAt: "2026-09-10T00:00:00.000Z", completed: false },
+      { id: "soon", title: "Assignment", type: "assignment", dueAt: "2026-08-20T00:00:00.000Z", completed: false },
+      { id: "done", title: "Done", type: "test", dueAt: "2026-08-18T00:00:00.000Z", completed: true },
+    ] as never;
+
+    const open = getOpenAssessments(assessments, new Date("2026-08-17T00:00:00.000Z"));
+    expect(open.map((item) => item.id)).toEqual(["soon", "late"]);
+  });
+
+  it("weights nearer assessments more heavily", () => {
+    const base = { id: "a", title: "Assignment", type: "assignment", completed: false, weight: 20 } as never;
+    const soon = assessmentPressure({ ...base, dueAt: "2026-08-18T00:00:00.000Z" }, new Date("2026-08-17T00:00:00.000Z"));
+    const distant = assessmentPressure({ ...base, dueAt: "2026-09-17T00:00:00.000Z" }, new Date("2026-08-17T00:00:00.000Z"));
+    expect(soon).toBeGreaterThan(distant);
+  });
+});
