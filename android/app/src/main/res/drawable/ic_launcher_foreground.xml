@@ -6,8 +6,11 @@
     android:viewportHeight="108">
     <path
         android:fillColor="#22D3EE"
-        android:pathData="M54,12A42,42 0,1 0,54 96A42,42 0,1 0,54 12" />
+        android:pathData="M29.64,36.84 L54,22.2 L78,36 L77.88,46.2 L43.8,38.76 L29.64,42.48 Z" />
     <path
-        android:fillColor="#0B0D12"
-        android:pathData="M34,30L34,78L44,78L44,61L54,61L64,78L76,78L63,57C70,54 74,49 74,42C74,34 67,30 57,30ZM44,39L56,39C61,39 64,41 64,45C64,49 61,52 56,52L44,52Z" />
+        android:fillColor="#22D3EE"
+        android:pathData="M29.64,42.48 L78.24,58.44 L78.24,66 L29.64,51.24 Z" />
+    <path
+        android:fillColor="#22D3EE"
+        android:pathData="M29.64,60.12 L36.84,63.96 L36.84,66.84 L53.64,76.92 L78.24,66 L78.24,71.52 L54.36,85.92 L29.64,71.64 Z" />
 </vector>
