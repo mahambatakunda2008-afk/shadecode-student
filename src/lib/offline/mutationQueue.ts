@@ -15,6 +15,9 @@ export interface OfflineMutation<T = unknown> {
 const DB_NAME = "shadecode-offline-mutations";
 const DB_VERSION = 2;
 const STORE = "mutations";
+const MAX_ATTEMPTS = 8;
+const BASE_RETRY_MS = 5_000;
+const MAX_RETRY_MS = 15 * 60_000;
 
 /** Only stores whose rows are explicitly scoped by user_id may use the generic queue. */
 export const USER_SCOPED_MUTATION_STORES = new Set(["tasks", "subjects", "learn_lessons"]);
@@ -24,6 +27,19 @@ function createMutationId(): string {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function retryDelayMs(attempts: number): number {
+  if (attempts <= 0) return 0;
+  return Math.min(BASE_RETRY_MS * 2 ** (attempts - 1), MAX_RETRY_MS);
+}
+
+export function isMutationReady(mutation: OfflineMutation, now = Date.now()): boolean {
+  if (mutation.attempts >= MAX_ATTEMPTS) return false;
+  if (!mutation.lastAttemptAt) return true;
+  const lastAttempt = Date.parse(mutation.lastAttemptAt);
+  if (!Number.isFinite(lastAttempt)) return true;
+  return now - lastAttempt >= retryDelayMs(mutation.attempts);
 }
 
 class MutationQueue {
@@ -83,6 +99,11 @@ class MutationQueue {
     });
   }
 
+  async listReady(ownerId: string, now = Date.now()): Promise<OfflineMutation[]> {
+    const rows = await this.list(ownerId);
+    return rows.filter((mutation) => isMutationReady(mutation, now));
+  }
+
   async remove(id: string, ownerId: string): Promise<void> {
     if (!ownerId) return;
     await this.init();
@@ -102,7 +123,7 @@ class MutationQueue {
     if (!current || current.ownerId !== ownerId) return;
     await this.put({
       ...current,
-      attempts: current.attempts + 1,
+      attempts: Math.min(current.attempts + 1, MAX_ATTEMPTS),
       lastAttemptAt: new Date().toISOString(),
       lastError: error instanceof Error ? error.message : String(error),
     });
