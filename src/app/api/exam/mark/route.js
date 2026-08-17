@@ -11,20 +11,48 @@ import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
 import { blendMastery } from "@/lib/topicMastery/blend";
 
 export const dynamic = "force-dynamic";
-
-// AI marking can call multiple provider fallbacks sequentially at up to
-// 3000 tokens each; the default serverless timeout was killing this mid
-// fallback chain before lib/ai.ts's own (now-scaled) timeouts even got a
-// chance to complete.
 export const maxDuration = 90;
 
-/* ─────────────────────────────────────────────
-   MAIN ROUTE
-───────────────────────────────────────────── */
+function isMarkingShape(value) {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    Array.isArray(value.results)
+  );
+}
+
+function normalizeMarkingData(value, questions) {
+  if (!isMarkingShape(value)) return null;
+
+  const byId = new Map(questions.map((q) => [String(q.id), q]));
+  const results = value.results
+    .map((r) => {
+      const question = byId.get(String(r?.questionId));
+      if (!question) return null;
+      const maxScore = Math.max(0, Number(question.marks) || 0);
+      const rawScore = Number(r?.score);
+      const score = Number.isFinite(rawScore) ? Math.min(maxScore, Math.max(0, rawScore)) : 0;
+      return {
+        questionId: question.id,
+        score,
+        maxScore,
+        correct: Boolean(r?.correct) && score >= maxScore,
+        feedback: typeof r?.feedback === "string" ? r.feedback.slice(0, 1000) : "No feedback provided.",
+        modelAnswer: typeof r?.modelAnswer === "string" ? r.modelAnswer.slice(0, 2000) : "",
+        topic: typeof r?.topic === "string" && r.topic.trim() ? r.topic.trim() : question.topic,
+      };
+    })
+    .filter(Boolean);
+
+  const weakAreas = Array.isArray(value.weakAreas) ? value.weakAreas.filter((x) => typeof x === "string").slice(0, 20) : [];
+  const strongAreas = Array.isArray(value.strongAreas) ? value.strongAreas.filter((x) => typeof x === "string").slice(0, 20) : [];
+  const cortexInsight = typeof value.cortexInsight === "string" ? value.cortexInsight.slice(0, 2000) : "";
+
+  return { results, weakAreas, strongAreas, cortexInsight };
+}
 
 export async function POST(req) {
   try {
-    // Apply rate limiting for AI-powered endpoint
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
     if (rateLimitCheck) return rateLimitCheck;
 
@@ -34,54 +62,31 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    
-    // Validate request body
     const validation = validateRequestBody(body, examMarkSchema);
     if (!validation.success) {
-      return new Response(JSON.stringify({ 
-        error: 'Validation failed', 
-        details: validation.details?.issues.map(e => ({ field: e.path.join('.'), message: e.message }))
-      }), { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
-      });
+      return new Response(JSON.stringify({
+        error: "Validation failed",
+        details: validation.details?.issues.map((e) => ({ field: e.path.join("."), message: e.message })),
+      }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
-    const {
-      subject,
-      difficulty,
-      questions,
-      answers,
-      timeTaken,
-    } = validation.data;
-    // userId comes from the verified session, never the request body --
-    // see exam/generate/route.js for the same fix and full rationale.
+    const { subject, difficulty, questions, answers, timeTaken } = validation.data;
     const userId = user.id;
 
     if (!subject || !questions || !answers) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    /* ─────────────────────────────
-       BUILD MARKING INPUT
-    ───────────────────────────── */
-
-    const qaText = questions
-      .map((q, i) => {
-        const answer = answers.find((a) => a.questionId === q.id);
-
-        return `
+    const qaText = questions.map((q, i) => {
+      const answer = answers.find((a) => a.questionId === q.id);
+      return `
 Q${i + 1} [${q.type}, ${q.marks} marks, topic: ${q.topic}]
 Question: ${q.question}
 Options: ${q.options ? q.options.join(", ") : "N/A"}
 Student answer: ${answer?.answer || "(no answer)"}
 Time spent: ${answer?.timeSpent || 0}s
-        `;
-      })
-      .join("\n");
+`;
+    }).join("\n");
 
     const prompt = `
 You are an expert ${subject} examiner.
@@ -89,19 +94,16 @@ You are an expert ${subject} examiner.
 Mark this exam carefully.
 
 Return ONLY valid JSON:
-
 {
-  "results": [
-    {
-      "questionId": 1,
-      "score": 0,
-      "maxScore": 1,
-      "correct": false,
-      "feedback": "short explanation",
-      "modelAnswer": "correct answer",
-      "topic": "topic"
-    }
-  ],
+  "results": [{
+    "questionId": 1,
+    "score": 0,
+    "maxScore": 1,
+    "correct": false,
+    "feedback": "short explanation",
+    "modelAnswer": "correct answer",
+    "topic": "topic"
+  }],
   "weakAreas": [],
   "strongAreas": [],
   "cortexInsight": "neutral analytical summary of performance"
@@ -116,88 +118,53 @@ Rules:
 
 EXAM DATA:
 ${qaText}
-    `;
-
-    /* ─────────────────────────────
-       CALL AI (with one retry if the response comes back malformed —
-       losing a student's completed exam attempt to a single bad JSON
-       token from the model is worse than one extra AI call)
-    ───────────────────────────── */
-
-    function isMarkingShape(value) {
-      return (
-        value &&
-        typeof value === "object" &&
-        Array.isArray(value.results)
-      );
-    }
+`;
 
     let markingData = null;
 
+    // Marking gets a deliberately shorter AI budget than general tutoring.
+    // This guarantees that an unavailable provider cannot hold the exam UI
+    // hostage for the full generic AI fallback window.
     for (let attempt = 1; attempt <= 2 && !markingData; attempt++) {
-      const text = await callAI(prompt, 3000, { userId, feature: "exam_sim", subfeature: "mark_exam" });
+      const text = await callAI(prompt, 3000, {
+        userId,
+        feature: "exam_sim",
+        subfeature: "mark_exam",
+        maxChainMs: 20000,
+        perProviderMaxMs: 7000,
+      });
 
       if (!text) {
         if (attempt === 2) {
-          return NextResponse.json(
-            { error: "All AI models unavailable" },
-            { status: 503 }
-          );
+          return NextResponse.json({ error: "AI marking is temporarily unavailable. Your answers were not lost. Please retry." }, { status: 503 });
         }
         continue;
       }
 
-      markingData = repairAndParseJSON(text, isMarkingShape);
+      const parsed = repairAndParseJSON(text, isMarkingShape);
+      markingData = normalizeMarkingData(parsed, questions);
 
       if (!markingData) {
-        console.error(
-          `[exam/mark] JSON parse/repair failed on attempt ${attempt}. Raw excerpt:`,
-          text.slice(0, 300)
-        );
+        console.error(`[exam/mark] Invalid marking response on attempt ${attempt}. Raw excerpt:`, text.slice(0, 300));
       }
     }
 
     if (!markingData) {
-      return NextResponse.json(
-        { error: "Marking failed after retry — please try submitting again." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Marking could not be completed safely. Please try again." }, { status: 502 });
     }
 
-    /* ─────────────────────────────
-       SCORE CALCULATION
-    ───────────────────────────── */
-
-    const { totalScore, maxScore, percentage, grade } = calculateExamScore(
-      questions,
-      markingData.results
-    );
-
-    /* ─────────────────────────────
-       CORTEX INTEGRATION (🔥 MAIN FIX)
-    ───────────────────────────── */
+    const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
 
     if (userId) {
-      await updateCortexFromExam({
-        userId,
-        subject,
-        percentage,
-        weakAreas: markingData.weakAreas || [],
-        strongAreas: markingData.strongAreas || [],
-      });
+      await updateCortexFromExam({ userId, subject, percentage, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas });
 
       await emitCortexEvent({
         userId,
         type: "exam.marking.completed",
         source: "exam",
-        data: {
-          subject,
-          percentage,
-          grade,
-        },
+        data: { subject, percentage, grade },
       });
 
-      // Emit unified event
       await emitExamCompleted(userId, {
         examId: crypto.randomUUID(),
         subject,
@@ -205,107 +172,51 @@ ${qaText}
         score: percentage,
         totalMarks: maxScore,
         grade,
-        weakAreas: markingData.weakAreas || [],
-        strongAreas: markingData.strongAreas || [],
+        weakAreas: markingData.weakAreas,
+        strongAreas: markingData.strongAreas,
         timeSpent: timeTaken,
       }, "exam");
 
-      // Actually persist this exam's score into cortex_memory.exam_scores.
-      // updateCortexFromExam() above does NOT do this -- it only emits to
-      // an in-memory (non-persistent across serverless invocations) event
-      // store and generates an AI insight string. Without this write,
-      // totalExamsCompleted (read from exam_scores.length in
-      // lib/cortex/achievements.ts) is permanently 0 for every user,
-      // which silently blocks the first_exam / exam_pro_10 / exam_master
-      // achievements from ever unlocking.
       try {
         const svc = createSupabaseServiceClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           process.env.SUPABASE_SERVICE_ROLE_KEY,
           { auth: { autoRefreshToken: false, persistSession: false } }
         );
-        const { data: existingMemory } = await svc
-          .from("cortex_memory")
-          .select("exam_scores")
-          .eq("user_id", userId)
-          .maybeSingle();
-
+        const { data: existingMemory } = await svc.from("cortex_memory").select("exam_scores").eq("user_id", userId).maybeSingle();
         const priorScores = Array.isArray(existingMemory?.exam_scores) ? existingMemory.exam_scores : [];
-        const newScores = [
-          ...priorScores,
-          {
-            examId: crypto.randomUUID(),
-            subject,
-            score: totalScore,
-            totalMarks: maxScore,
-            percentage,
-            grade,
-            weakAreas: markingData.weakAreas || [],
-            strongAreas: markingData.strongAreas || [],
-            date: new Date().toISOString(),
-          },
-        ];
+        const newScores = [...priorScores, {
+          examId: crypto.randomUUID(), subject, score: totalScore, totalMarks: maxScore,
+          percentage, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas,
+          date: new Date().toISOString(),
+        }];
         const avgScore = Math.round(newScores.reduce((sum, s) => sum + (s.percentage ?? s.score ?? 0), 0) / newScores.length);
-
-        const { error: memoryError } = await svc
-          .from("cortex_memory")
-          .upsert(
-            { user_id: userId, exam_scores: newScores, average_exam_score: avgScore },
-            { onConflict: "user_id" }
-          );
+        const { error: memoryError } = await svc.from("cortex_memory").upsert(
+          { user_id: userId, exam_scores: newScores, average_exam_score: avgScore },
+          { onConflict: "user_id" }
+        );
         if (memoryError) console.error("[exam/mark] Failed to persist exam_scores:", memoryError.message);
       } catch (memErr) {
         console.error("[exam/mark] cortex_memory update threw:", memErr);
       }
 
-      // Persist per-topic mastery. topic_mastery has existed in the
-      // schema (with a real unique constraint on user_id+subject+topic)
-      // since before this fix, but had zero producers anywhere in the
-      // codebase -- every row this exam should have contributed to
-      // Retention Risk tracking was silently discarded once the overall
-      // percentage was calculated. See src/lib/topicMastery/blend.ts and
-      // src/lib/cortex/retentionRisk.ts for the read side this feeds.
       try {
         const svc2 = createSupabaseServiceClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           process.env.SUPABASE_SERVICE_ROLE_KEY,
           { auth: { autoRefreshToken: false, persistSession: false } }
         );
-
         const topicScores = computeTopicScores(questions, markingData.results);
-
         if (topicScores.length > 0) {
-          const { data: existingRows } = await svc2
-            .from("topic_mastery")
-            .select("topic, mastery_score, attempts")
-            .eq("user_id", userId)
-            .eq("subject", subject)
-            .in("topic", topicScores.map((t) => t.topic));
-
+          const { data: existingRows } = await svc2.from("topic_mastery").select("topic, mastery_score, attempts").eq("user_id", userId).eq("subject", subject).in("topic", topicScores.map((t) => t.topic));
           const existingByTopic = new Map((existingRows || []).map((r) => [r.topic, r]));
           const now = new Date().toISOString();
-
           const upsertRows = topicScores.map((t) => {
             const existing = existingByTopic.get(t.topic);
-            const update = blendMastery(
-              existing ? { mastery_score: existing.mastery_score, attempts: existing.attempts } : null,
-              t.percentage
-            );
-            return {
-              user_id: userId,
-              subject,
-              topic: t.topic,
-              mastery_score: update.mastery_score,
-              last_score: update.last_score,
-              attempts: update.attempts,
-              trend: update.trend,
-              last_attempted: now,
-            };
+            const update = blendMastery(existing ? { mastery_score: existing.mastery_score, attempts: existing.attempts } : null, t.percentage);
+            return { user_id: userId, subject, topic: t.topic, mastery_score: update.mastery_score, last_score: update.last_score, attempts: update.attempts, trend: update.trend, last_attempted: now };
           });
-
-          const { error: masteryError } = await svc2
-            .from("topic_mastery")
-            .upsert(upsertRows, { onConflict: "user_id,subject,topic" });
+          const { error: masteryError } = await svc2.from("topic_mastery").upsert(upsertRows, { onConflict: "user_id,subject,topic" });
           if (masteryError) console.error("[exam/mark] Failed to persist topic_mastery:", masteryError.message);
         }
       } catch (masteryErr) {
@@ -313,24 +224,9 @@ ${qaText}
       }
     }
 
-    /* ─────────────────────────────
-       RESPONSE
-    ───────────────────────────── */
-
-    return NextResponse.json({
-      ...markingData,
-      totalScore,
-      maxScore,
-      percentage,
-      grade,
-      timeTaken,
-    });
+    return NextResponse.json({ ...markingData, totalScore, maxScore, percentage, grade, timeTaken });
   } catch (err) {
     console.error("Marking error:", err);
-
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Server error" }, { status: 500 });
   }
 }
