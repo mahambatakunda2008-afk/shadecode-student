@@ -20,10 +20,13 @@ const HEX = /^[0-9a-f]+$/i;
 
 /** SHA-256 content identifier. The digest is the identity, not a mutable URL. */
 export async function contentId(data: ArrayBuffer | Uint8Array): Promise<string> {
-  const bytes = data instanceof Uint8Array
-    ? data
-    : new Uint8Array(data);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const source = data instanceof Uint8Array ? data : new Uint8Array(data);
+  // Copy into a fresh ArrayBuffer. This keeps the Web Crypto call compatible with
+  // Node 24's stricter BufferSource typings when the input is backed by a
+  // SharedArrayBuffer-compatible Uint8Array.
+  const bytes = new Uint8Array(source.byteLength);
+  bytes.set(source);
+  const digest = await crypto.subtle.digest('SHA-256', bytes.buffer);
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
 }
 
