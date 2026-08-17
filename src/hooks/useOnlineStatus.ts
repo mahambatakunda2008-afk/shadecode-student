@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 
+/**
+ * Real network status, not naive navigator.onLine. Verifies "back online"
+ * with an actual ping (existing behavior), and now also debounces "went
+ * offline" by 1.5s -- a flaky low-end/weak-signal connection (the exact
+ * Itel-A56-class scenario this was built to handle) can fire the browser's
+ * `offline` event for a brief blip that recovers on its own; treating that
+ * as a real offline transition caused visible flicker/disruption for no
+ * reason. A genuine, sustained offline period is unaffected by a 1.5s delay.
+ */
 export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     let verificationTimeout: NodeJS.Timeout;
+    let offlineDebounceTimeout: NodeJS.Timeout;
 
     const verifyNetwork = async () => {
       if (typeof navigator === "undefined" || !navigator.onLine) {
@@ -48,14 +58,19 @@ export function useOnlineStatus() {
     const updateStatus = () => {
       // When browser reports online, verify with actual network ping
       if (navigator.onLine) {
+        // A recovery cancels any pending "went offline" debounce.
+        clearTimeout(offlineDebounceTimeout);
         // Set to true immediately during verification to prevent banner flash
         setIsOnline(true);
         // Debounce verification to avoid rapid pings
         clearTimeout(verificationTimeout);
         verificationTimeout = setTimeout(verifyNetwork, 500);
       } else {
-        // Browser reports offline - trust it immediately
-        setIsOnline(false);
+        // Browser reports offline -- debounce briefly rather than trusting
+        // it instantly, so a momentary blip on a flaky connection doesn't
+        // flip the whole app into offline mode and back within a second.
+        clearTimeout(offlineDebounceTimeout);
+        offlineDebounceTimeout = setTimeout(() => setIsOnline(false), 1500);
       }
     };
 
@@ -67,6 +82,7 @@ export function useOnlineStatus() {
 
     return () => {
       clearTimeout(verificationTimeout);
+      clearTimeout(offlineDebounceTimeout);
       window.removeEventListener("online", updateStatus);
       window.removeEventListener("offline", updateStatus);
     };
