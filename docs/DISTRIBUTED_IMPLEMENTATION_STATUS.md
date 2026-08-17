@@ -42,6 +42,16 @@ This document separates **landed engineering** from the long-term distributed-in
 - shareability validation;
 - integrity verification.
 
+### Signed protocol foundation
+
+- ECDSA P-256 node identities;
+- canonicalized signed node advertisements;
+- advertisement expiry checks;
+- future-clock rejection window;
+- resource request freshness checks;
+- request nonce requirements;
+- versioned peer protocol envelopes.
+
 ## Important limitation
 
 These foundations do **not** mean ShadeNet is already a production P2P network. There is currently no claim here that browsers can discover arbitrary peers, exchange resources directly, execute peer workloads, or perform distributed inference in production.
@@ -50,16 +60,15 @@ These foundations do **not** mean ShadeNet is already a production P2P network. 
 
 Tracked by GitHub issue #172:
 
-1. signed node advertisements;
-2. authenticated pairing;
-3. peer-discovery abstraction;
-4. request/response protocol;
-5. chunked/resumable resource transfer;
-6. integrity verification at the receiving node;
-7. browser capability detection;
-8. two-node simulator;
-9. feature flag and kill switch;
-10. latency/bandwidth/failure measurements.
+1. authenticated pairing and trust establishment;
+2. peer-discovery abstraction;
+3. replay-safe request handling;
+4. chunked/resumable resource transfer;
+5. integrity verification at the receiving node;
+6. browser capability detection;
+7. two-node simulator;
+8. feature flag and kill switch;
+9. latency/bandwidth/failure measurements.
 
 ## Safety gates
 
@@ -85,7 +94,9 @@ Current Student
       |
       +-- content-addressed resources         [LANDED]
       |
-      +-- authenticated peer discovery        [NEXT]
+      +-- signed protocol foundation          [LANDED]
+      |
+      +-- authenticated pairing               [NEXT]
       |
       +-- peer resource exchange              [NEXT]
       |
