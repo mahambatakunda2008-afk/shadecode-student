@@ -3,17 +3,20 @@ import { contentId } from '../distributed/resource';
 import { InMemoryPeerTransport, exchangeResource, type PeerResourceProvider } from '../distributed/peer-transport';
 
 function requestFactory(contentIdValue: string) {
-  return (offset: number, length: number) => ({
-    protocolVersion: 1 as const,
-    requestId: `request-${offset}`,
-    senderNodeId: 'student-node',
-    contentId: contentIdValue,
-    offset,
-    length,
-    issuedAt: Date.now(),
-    expiresAt: Date.now() + 10_000,
-    nonce: `nonce-${offset}-123456`,
-  });
+  return (offset: number, length: number) => {
+    const issuedAt = Date.now();
+    return {
+      protocolVersion: 1 as const,
+      requestId: `request-${offset}`,
+      senderNodeId: 'student-node',
+      contentId: contentIdValue,
+      offset,
+      length,
+      issuedAt,
+      expiresAt: issuedAt + 10_000,
+      nonce: `nonce-${offset}-1234567890`,
+    };
+  };
 }
 
 describe('peer resource exchange', () => {
