@@ -14,17 +14,15 @@ const AI_BUDGET_MS = 18000;
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
   return new Promise(resolve => {
     const timer = setTimeout(() => resolve(fallback), timeoutMs);
-    promise.then(value => {
-      clearTimeout(timer);
-      resolve(value);
-    }).catch(() => {
-      clearTimeout(timer);
-      resolve(fallback);
-    });
+    promise.then(value => { clearTimeout(timer); resolve(value); }).catch(() => { clearTimeout(timer); resolve(fallback); });
   });
 }
 
-function isQuestion(value: unknown): value is Partial<ExamQuestion> { if (!value || typeof value !== "object") return false; const q = value as Partial<ExamQuestion>; return typeof q.question === "string" && q.question.trim().length > 3 && typeof q.topic === "string" && q.topic.trim().length > 0; }
+function isQuestion(value: unknown): value is Partial<ExamQuestion> {
+  if (!value || typeof value !== "object") return false;
+  const q = value as Partial<ExamQuestion>;
+  return typeof q.question === "string" && q.question.trim().length > 3 && typeof q.topic === "string" && q.topic.trim().length > 0;
+}
 function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: string): ExamQuestion {
   const rawType = q.type as string;
   const requestedType: QuestionType = ["multiple_choice", "short_answer", "structured", "essay"].includes(rawType) ? rawType as QuestionType : "short_answer";
@@ -45,12 +43,9 @@ export async function generateExam(subject: string, topics: string[], difficulty
       examScores: [], averageExamScore: 0, longestStreak: 0, totalLessonsCompleted: 0,
       totalStudyTimeMinutes: 0,
     });
-    const prompt = `${EXAM_SYSTEM_PROMPT}\n\nSubject: ${subject}\nTopics: ${topics.join(", ")}\nDifficulty: ${difficulty}\nNumber of questions: ${safeCount}\nStudent level: ${memory.level}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${(memory.weakSubjects ?? []).join(", ") || "none"}\n\nGenerate the exam.`;
-    const response = await withTimeout(
-      callAI(prompt, 5000, { userId, feature: "exam_sim", subfeature: "generate_exam", maxChainMs: 16000, perProviderMaxMs: 3500 }),
-      AI_BUDGET_MS,
-      null
-    );
+    const weakAreas = Array.isArray(memory.weakTopics) ? memory.weakTopics : [];
+    const prompt = `${EXAM_SYSTEM_PROMPT}\n\nSubject: ${subject}\nTopics: ${topics.join(", ")}\nDifficulty: ${difficulty}\nNumber of questions: ${safeCount}\nStudent level: ${memory.level}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${weakAreas.join(", ") || "none"}\n\nGenerate the exam.`;
+    const response = await withTimeout(callAI(prompt, 5000, { userId, feature: "exam_sim", subfeature: "generate_exam", maxChainMs: 16000, perProviderMaxMs: 3500 }), AI_BUDGET_MS, null);
     if (response) {
       const parsed = repairAndParseJSON(response, isExamPayload);
       const rawQuestions = parsed?.questions.filter(isQuestion) ?? [];
