@@ -1,4 +1,4 @@
-import type { BatteryPolicy, NetworkClass, NodeCapabilities } from './node';
+import type { NetworkClass, NodeCapabilities } from './node';
 
 interface NavigatorWithHints extends Navigator {
   deviceMemory?: number;
@@ -34,9 +34,9 @@ export function detectBrowserCapabilities(nodeId: string): NodeCapabilities {
   const cpuThreads = Math.max(0, nav.hardwareConcurrency || 0);
   const memoryGb = Math.max(0, nav.deviceMemory || 0);
   const network = networkClass(nav);
-  const batteryPolicy: BatteryPolicy = network === 'offline' ? 'charging-only' : 'never';
 
-  // These are deliberately coarse capability classes, not hardware fingerprints.
+  // Capability detection never grants permission to contribute compute.
+  // Contribution policy is a separate explicit user decision.
   return {
     nodeId,
     kind: 'browser',
@@ -46,7 +46,7 @@ export function detectBrowserCapabilities(nodeId: string): NodeCapabilities {
     memoryClassMb: memoryGb > 0 ? Math.round(memoryGb * 1024) : 512,
     storageQuotaMb: 256,
     network,
-    batteryPolicy,
+    batteryPolicy: 'never',
     modelIds: [],
     trust: 'unknown',
     lastSeenAt: Date.now(),
