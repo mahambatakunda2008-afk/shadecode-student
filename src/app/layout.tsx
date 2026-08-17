@@ -42,12 +42,11 @@ export const metadata: Metadata = {
   },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
   icons: {
-    icon: [
-      { url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "any" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    icon: [{ url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "any" }],
+    other: [
+      { rel: "mask-icon", url: "/brand/shadecode-app-icon.svg", color: "#22D3EE" },
     ],
-    apple: [{ url: "/icon-192.png", type: "image/png", sizes: "192x192" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "any" }],
   },
 };
 
