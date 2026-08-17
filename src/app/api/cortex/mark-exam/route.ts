@@ -1,79 +1,55 @@
-import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { generateExamFeedback } from "@/lib/cortex/markingEngine";
-import { trackExamResult } from "@/lib/cortex/memoryTracker";
-import { awardXPBySource } from "@/lib/xp/manager";
-import { emitCortexEvent } from "@/lib/cortex/events/emit";
-import { checkAndUnlockAchievements } from "@/lib/cortex/achievements";
+import { NextRequest, NextResponse } from 'next/server';
+import { markExamWithCortex } from '@/lib/cortex/marking';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-const SIDE_EFFECT_BUDGET_MS = 2500;
+const REQUEST_TIMEOUT_MS = 35_000;
 
-async function bounded<T>(operation: Promise<T> | T, fallback: T): Promise<T> {
-  return new Promise(resolve => {
-    let settled = false;
-    const finish = (value: T) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(value);
-    };
-    const timer = setTimeout(() => finish(fallback), SIDE_EFFECT_BUDGET_MS);
-    Promise.resolve(operation).then(finish).catch(() => finish(fallback));
-  });
+type MarkExamPayload = Parameters<typeof markExamWithCortex>[0];
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      const timer = setTimeout(() => reject(new Error('MARKING_TIMEOUT')), ms);
+      timer.unref?.();
+    }),
+  ]);
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const body = (await request.json()) as MarkExamPayload;
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid marking request.' }, { status: 400 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const { subject, questions, answers } = body;
+    const result = await withTimeout(markExamWithCortex(body), REQUEST_TIMEOUT_MS);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown marking error';
 
-    if (!subject || !Array.isArray(questions) || !answers || typeof answers !== "object") {
-      return NextResponse.json({ error: "subject, questions, and answers are required" }, { status: 400 });
+    if (message === 'MARKING_TIMEOUT') {
+      return NextResponse.json(
+        {
+          error: 'Marking took too long to complete.',
+          code: 'MARKING_TIMEOUT',
+          retryable: true,
+        },
+        { status: 504 },
+      );
     }
 
-    const report = await generateExamFeedback(subject, questions, answers);
-
-    if (!report) {
-      return NextResponse.json({ error: "Failed to mark exam" }, { status: 500 });
-    }
-
-    // Marking is the critical response. Analytics, XP, and achievements must
-    // never keep the student waiting after a valid report exists.
-    await bounded(trackExamResult({
-      userId: user.id,
-      subject,
-      score: report.percentage,
-      completedAt: new Date().toISOString(),
-    }), undefined);
-
-    await bounded(emitCortexEvent({
-      userId: user.id,
-      type: "exam.completed",
-      source: "exam",
-      data: { subject, score: report.percentage, maxScore: 100 },
-    }), undefined);
-
-    if (report.percentage >= 50) {
-      await bounded(awardXPBySource(user.id, "exam_completion"), undefined);
-    }
-
-    const achievements = await bounded(checkAndUnlockAchievements(user.id), []);
-
-    return NextResponse.json({ report, newAchievements: achievements });
-  } catch (err) {
-    console.error("[Cortex Mark Exam] Failed:", err);
+    console.error('[cortex/mark-exam]', error);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to mark exam" },
-      { status: 500 }
+      {
+        error: 'Unable to complete marking right now.',
+        code: 'MARKING_FAILED',
+        retryable: true,
+      },
+      { status: 502 },
     );
   }
 }
