@@ -28,7 +28,7 @@ function isQuestion(value: unknown): value is Partial<ExamQuestion> {
 function normalizeQuestion(q: Partial<ExamQuestion>, index: number, subject: string, difficulty: string): ExamQuestion {
   const type: QuestionType = ["multiple_choice", "short_answer", "structured", "essay"].includes(q.type as string) ? q.type as QuestionType : "short_answer";
   const normalizedDifficulty: "easy" | "medium" | "hard" = q.difficulty === "hard" || q.difficulty === "medium" ? q.difficulty : difficulty === "hard" ? "hard" : difficulty === "easy" ? "easy" : "medium";
-  const options = type === "multiple_choice" ? (Array.isArray(q.options) ? q.options.filter((o): o is string => typeof o === "string" && o.trim()).slice(0, 4) : []) : undefined;
+  const options = type === "multiple_choice" ? (Array.isArray(q.options) ? q.options.filter((o): o is string => typeof o === "string" && o.trim().length > 0).slice(0, 4) : []) : undefined;
   return {
     id: `q_${index + 1}_${Date.now()}`,
     type: options && options.length === 4 ? type : type === "multiple_choice" ? "short_answer" : type,
@@ -74,7 +74,7 @@ function fallbackExam(subject: string, difficulty: string, count: number, reques
   const questions: ExamQuestion[] = [];
   for (let i = 0; i < count; i++) {
     const type: QuestionType = i % 3 === 0 ? "multiple_choice" : i % 3 === 1 ? "short_answer" : "structured";
-    questions.push({ id: `q_${i + 1}_${Date.now()}`, type, question: type === "multiple_choice" ? `Which statement best describes a key principle of ${topic}?` : `Explain a key principle of ${topic}, giving a relevant example where appropriate.`, options: type === "multiple_choice" ? ["It is always constant.", "It depends on the stated conditions.", "It has no measurable effect.", "It is unrelated to the topic."] : undefined, marks: i < 3 ? 1 : i < 6 ? 2 : 3, topic, difficulty: i < 3 ? "easy" : i < 6 ? "medium" : "hard", modelAnswer: type === "multiple_choice" ? "It depends on the stated conditions." : `A correct explanation should identify the key principle of ${topic} and apply it accurately.` });
+    questions.push({ id: `q_${i + 1}_${Date.now()}`, type, question: type === "multiple_choice" ? `Which statement best describes a key principle of ${topic}?` : `Explain a key principle of ${topic}, giving a relevant example where appropriate.`, options: type === "multiple_choice" ? ["It is always constant.", "It depends on the stated conditions.", "It has no measurable effect.", "It is unrelated to the topic." ] : undefined, marks: i < 3 ? 1 : i < 6 ? 2 : 3, topic, difficulty: i < 3 ? "easy" : i < 6 ? "medium" : "hard", modelAnswer: type === "multiple_choice" ? "It depends on the stated conditions." : `A correct explanation should identify the key principle of ${topic} and apply it accurately.` });
   }
   return { subject, title: `${subject} Practice Exam`, questions, totalMarks: questions.reduce((s, q) => s + q.marks, 0), durationMinutes: Math.max(5, count * 3), difficulty, topics: [topic] };
 }

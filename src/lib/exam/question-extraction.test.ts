@@ -11,7 +11,7 @@ describe('extractTopLevelQuestions', () => {
 `);
 
     expect(result).toEqual([
-      { questionNumber: '1', questionText: 'Explain the principle.', marks: 3 },
+      { questionNumber: '1', questionText: 'Explain the principle. (a) This is a subpart.', marks: 3 },
       { questionNumber: '2', questionText: 'Explain the second principle.', marks: 5 },
       { questionNumber: '3', questionText: 'Calculate the value.', marks: null },
     ]);

@@ -173,7 +173,8 @@ export interface CortexAIResponseDataMap {
    RESPONSE WRAPPER
 ───────────────────────────────────────────── */
 
-export type CortexAIProvider = "local" | "gemini";
+/** `ai` represents the unified provider chain; `local` is deterministic Cortex logic. */
+export type CortexAIProvider = "local" | "gemini" | "ai";
 
 export interface CortexAIResponse<
   T extends CortexAIRequestType = CortexAIRequestType

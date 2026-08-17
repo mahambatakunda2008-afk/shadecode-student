@@ -30,6 +30,7 @@ export function normalizeAcademicContext(input: AcademicContextInput): Normalize
     throw new Error("pathway must be university or tvet");
   }
 
+  const pathway = input.pathway as AcademicPathway;
   const programme = boundedString(input.programme, 200);
   if (!programme) throw new Error("programme is required");
 
@@ -42,7 +43,7 @@ export function normalizeAcademicContext(input: AcademicContextInput): Normalize
     : [];
 
   return {
-    pathway: input.pathway,
+    pathway,
     institution: boundedString(input.institution, 200),
     programme,
     year_level: boundedString(input.year_level, 80),

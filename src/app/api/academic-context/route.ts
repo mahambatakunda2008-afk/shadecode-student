@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeAcademicContext } from "@/lib/academic/context";
+import { normalizeAcademicContext, type AcademicContextInput } from "@/lib/academic/context";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const context = normalizeAcademicContext(
-      body && typeof body === "object" ? body as Record<string, unknown> : {},
+      body && typeof body === "object" ? body as AcademicContextInput : { pathway: undefined },
     );
 
     const { data, error } = await supabase.from("academic_contexts").upsert({
