@@ -25,10 +25,15 @@ function uuid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** Returns a stable installation identifier. It is not an account identifier. */
+/**
+ * Returns a stable installation identifier in a browser.
+ * Non-browser runtimes use a process-local identifier so pure operation-log
+ * logic remains testable without pretending a server has a persistent device.
+ */
 export function getDeviceId(): string {
   if (typeof window === 'undefined') {
-    throw new Error('A device identity can only be created in a browser context');
+    volatileDeviceId ??= uuid();
+    return volatileDeviceId;
   }
 
   try {
@@ -117,16 +122,12 @@ class IndexedDbSyncStore implements SyncStore {
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(OPERATIONS_STORE)) {
-          const operations = db.createObjectStore(OPERATIONS_STORE, {
-            keyPath: 'operationId',
-          });
+          const operations = db.createObjectStore(OPERATIONS_STORE, { keyPath: 'operationId' });
           operations.createIndex('scopeId', 'scopeId', { unique: false });
           operations.createIndex('acknowledged', 'acknowledged', { unique: false });
         }
         if (!db.objectStoreNames.contains(TOMBSTONES_STORE)) {
-          const tombstones = db.createObjectStore(TOMBSTONES_STORE, {
-            keyPath: 'operationId',
-          });
+          const tombstones = db.createObjectStore(TOMBSTONES_STORE, { keyPath: 'operationId' });
           tombstones.createIndex('scopeId', 'scopeId', { unique: false });
         }
         if (!db.objectStoreNames.contains(CURSORS_STORE)) {
@@ -142,14 +143,10 @@ class IndexedDbSyncStore implements SyncStore {
   async append<T>(operation: SyncOperation<T>): Promise<void> {
     const db = await this.open();
     await new Promise<void>((resolve, reject) => {
-      const stores = operation.kind === 'delete'
-        ? [OPERATIONS_STORE, TOMBSTONES_STORE]
-        : [OPERATIONS_STORE];
+      const stores = operation.kind === 'delete' ? [OPERATIONS_STORE, TOMBSTONES_STORE] : [OPERATIONS_STORE];
       const tx = db.transaction(stores, 'readwrite');
       tx.objectStore(OPERATIONS_STORE).put({ ...operation, acknowledged: false });
-      if (operation.kind === 'delete') {
-        tx.objectStore(TOMBSTONES_STORE).put(makeTombstone(operation));
-      }
+      if (operation.kind === 'delete') tx.objectStore(TOMBSTONES_STORE).put(makeTombstone(operation));
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error('Unable to append sync operation'));
       tx.onabort = () => reject(tx.error ?? new Error('Sync operation transaction aborted'));
@@ -180,9 +177,7 @@ class IndexedDbSyncStore implements SyncStore {
       for (const id of operationIds) {
         const request = store.get(id);
         request.onsuccess = () => {
-          if (request.result) {
-            store.put({ ...request.result, acknowledged: true });
-          }
+          if (request.result) store.put({ ...request.result, acknowledged: true });
         };
       }
       tx.oncomplete = () => resolve();
@@ -205,11 +200,7 @@ class IndexedDbSyncStore implements SyncStore {
   async getTombstones(scopeId: string): Promise<SyncTombstone[]> {
     const db = await this.open();
     return new Promise((resolve, reject) => {
-      const request = db
-        .transaction(TOMBSTONES_STORE, 'readonly')
-        .objectStore(TOMBSTONES_STORE)
-        .index('scopeId')
-        .getAll(scopeId);
+      const request = db.transaction(TOMBSTONES_STORE, 'readonly').objectStore(TOMBSTONES_STORE).index('scopeId').getAll(scopeId);
       request.onsuccess = () => resolve(request.result as SyncTombstone[]);
       request.onerror = () => reject(request.error ?? new Error('Unable to read tombstones'));
     });
@@ -236,10 +227,7 @@ class IndexedDbSyncStore implements SyncStore {
   }
 }
 
-/** The runtime store is intentionally browser-only. */
 export function createSyncStore(): SyncStore {
-  if (!hasIndexedDB()) {
-    throw new Error('Local-first sync storage is only available in a browser context');
-  }
+  if (!hasIndexedDB()) throw new Error('Local-first sync storage is only available in a browser context');
   return new IndexedDbSyncStore();
 }
