@@ -80,7 +80,6 @@ export async function PATCH(request: Request) {
   const { error } = await supabase.rpc("review_exam_question_topic_proposal", {
     p_proposal_id: body.id,
     p_status: body.status,
-    p_reviewer_id: user.id,
   });
 
   if (error) {
