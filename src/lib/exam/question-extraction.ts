@@ -6,7 +6,6 @@ export interface ExtractedQuestion {
 
 const EXPLICIT_TOP_LEVEL = /^\s*(\d{1,2})[.)]\s+(.+)$/;
 const PLAIN_TOP_LEVEL = /^\s*(\d{1,2})\s+((?!\([a-z]\)|[a-z]\))\S.*)$/i;
-const SUBPART_START = /^\s*\([a-z]\)[.)]?\s+/i;
 const MARKS_TOKEN = /\[\s*(\d{1,3})\s*\]/;
 
 function normalizeLine(line: string): string {
@@ -25,7 +24,8 @@ function cleanBlock(lines: string[]): string {
 /**
  * Conservative parser for question-paper text. It recognizes explicit
  * numbered top-level questions and plain numbered questions while rejecting
- * common subparts such as "2 (a)" and "3 b)".
+ * common subparts such as "2 (a)" and "3 b)" as new top-level questions.
+ * Subparts that belong to a question remain part of that question's text.
  */
 export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
   const normalized = text.replace(/\r\n?/g, '\n').replace(/\f/g, '\n');
@@ -56,13 +56,6 @@ export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
       currentNumber = match[1];
       currentLines = [match[2]];
     } else if (currentNumber) {
-      const normalizedLine = normalizeLine(line);
-      if (SUBPART_START.test(normalizedLine) && MARKS_TOKEN.test(cleanBlock(currentLines))) {
-        flush();
-        currentNumber = null;
-        currentLines = [];
-        continue;
-      }
       currentLines.push(line);
     }
   }
