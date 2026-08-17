@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { StudySpaceMode, WorkObject } from "@/lib/studyspace/types";
 import { saveWorkObject } from "@/lib/studyspace/store";
@@ -13,7 +13,7 @@ const modes: { id: StudySpaceMode; label: string; description: string }[] = [
   { id: "canvas", label: "Canvas", description: "Write, sketch and reason freely." },
 ];
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 8,
   border: "1px solid var(--card-border)", background: "var(--muted)",
   color: "var(--foreground)", marginBottom: 14,
@@ -29,7 +29,7 @@ export default function StudySpacePage() {
   const [response, setResponse] = useState("");
   const [canvasData, setCanvasData] = useState("");
   const [saved, setSaved] = useState(false);
-  const [workId, setWorkId] = useState(() => crypto.randomUUID());
+  const [workId] = useState(() => crypto.randomUUID());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const dirtyRef = useRef(false);
@@ -76,10 +76,8 @@ export default function StudySpacePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const ratio = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
+    canvas.width = canvas.clientWidth * ratio;
+    canvas.height = canvas.clientHeight * ratio;
     ctx.scale(ratio, ratio);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -87,34 +85,37 @@ export default function StudySpacePage() {
     ctx.strokeStyle = "currentColor";
   }, []);
 
-  const point = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const point = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
 
-  const beginDraw = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const beginDraw = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const canvas = event.currentTarget;
     canvas.setPointerCapture(event.pointerId);
     const p = point(event);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     drawingRef.current = true;
+    dirtyRef.current = true;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
   };
 
-  const draw = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const draw = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!drawingRef.current) return;
     const p = point(event);
     const ctx = event.currentTarget.getContext("2d");
     if (!ctx) return;
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
-    dirtyRef.current = true;
-    setCanvasData(event.currentTarget.toDataURL("image/webp", 0.75));
   };
 
-  const endDraw = () => { drawingRef.current = false; };
+  const endDraw = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
+    setCanvasData(event.currentTarget.toDataURL("image/webp", 0.75));
+  };
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
