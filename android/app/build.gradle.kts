@@ -13,6 +13,8 @@ val hasReleaseSigning = listOf(
     releaseKeyAlias,
     releaseKeyPassword,
 ).all { !it.isNullOrBlank() }
+val ciVersionCode = System.getenv("ANDROID_VERSION_CODE")?.toIntOrNull() ?: 1
+val ciVersionName = System.getenv("ANDROID_VERSION_NAME")?.takeIf { it.isNotBlank() } ?: "0.2.0"
 
 android {
     namespace = "com.shadecode.student"
@@ -22,8 +24,8 @@ android {
         applicationId = "com.shadecode.student"
         minSdk = 23
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.2.0"
+        versionCode = ciVersionCode
+        versionName = ciVersionName
     }
 
     compileOptions {
