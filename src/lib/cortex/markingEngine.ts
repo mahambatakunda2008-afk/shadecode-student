@@ -6,10 +6,13 @@
  * - Step-by-step evaluation
  * - Feedback generation
  * - Weak area identification
+ *
+ * Reliability contract: one slow AI answer must never hold an entire exam
+ * hostage. Each answer has a bounded AI attempt and the exam marks answers
+ * concurrently in small batches.
  */
 
 import { callAI } from "@/lib/ai";
-import { getMemory } from "./memory";
 import type { ExamQuestion } from "./examGenerator";
 
 export interface MarkingResult {
@@ -54,6 +57,38 @@ Rules:
 - Identify specific strengths and improvements
 - Confidence 0-1 based on how clear the answer is`;
 
+const ANSWER_TIMEOUT_MS = 8_000;
+const MARKING_CONCURRENCY = 4;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      const timer = setTimeout(() => reject(new Error("ANSWER_MARKING_TIMEOUT")), ms);
+      timer.unref?.();
+    }),
+  ]);
+}
+
+function normalizeResult(result: MarkingResult, question: ExamQuestion): MarkingResult {
+  const score = Number.isFinite(result.score)
+    ? Math.min(Math.max(result.score, 0), question.marks)
+    : 0;
+  const confidence = Number.isFinite(result.confidence)
+    ? Math.min(Math.max(result.confidence, 0), 1)
+    : 0.5;
+
+  return {
+    questionId: question.id,
+    score,
+    maxMarks: question.marks,
+    feedback: typeof result.feedback === "string" ? result.feedback : "Answer evaluated.",
+    strengths: Array.isArray(result.strengths) ? result.strengths.filter((v): v is string => typeof v === "string") : [],
+    improvements: Array.isArray(result.improvements) ? result.improvements.filter((v): v is string => typeof v === "string") : [],
+    confidence,
+  };
+}
+
 export async function markAnswer(
   question: ExamQuestion,
   studentAnswer: string
@@ -73,20 +108,22 @@ ${studentAnswer}
 
 Mark this answer:`;
 
-    const response = await callAI(prompt, 1000, { feature: "exam_sim", subfeature: "mark_answer" });
+    const response = await withTimeout(
+      callAI(prompt, 1000, { feature: "exam_sim", subfeature: "mark_answer" }),
+      ANSWER_TIMEOUT_MS,
+    );
+
     if (!response) return fallbackMark(question.id, question.marks, studentAnswer);
 
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackMark(question.id, question.marks, studentAnswer);
 
-    const result = JSON.parse(jsonMatch[0]) as MarkingResult;
-    return {
-      ...result,
-      questionId: question.id,
-      maxMarks: question.marks,
-    };
+    const parsed = JSON.parse(jsonMatch[0]) as MarkingResult;
+    return normalizeResult(parsed, question);
   } catch (error) {
-    console.error("[MarkingEngine] Failed:", error);
+    if (!(error instanceof Error && error.message === "ANSWER_MARKING_TIMEOUT")) {
+      console.error("[MarkingEngine] Failed:", error);
+    }
     return fallbackMark(question.id, question.marks, studentAnswer);
   }
 }
@@ -104,18 +141,29 @@ function fallbackMark(questionId: string, maxMarks: number, answer: string): Mar
   };
 }
 
+async function markInBatches(
+  questions: ExamQuestion[],
+  answers: Record<string, string>,
+): Promise<MarkingResult[]> {
+  const results: MarkingResult[] = [];
+
+  for (let index = 0; index < questions.length; index += MARKING_CONCURRENCY) {
+    const batch = questions.slice(index, index + MARKING_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map((question) => markAnswer(question, answers[question.id] || "")),
+    );
+    results.push(...batchResults.filter((result): result is MarkingResult => result !== null));
+  }
+
+  return results;
+}
+
 export async function generateExamFeedback(
   subject: string,
   questions: ExamQuestion[],
   answers: Record<string, string>
 ): Promise<ExamMarkingReport | null> {
-  const results: MarkingResult[] = [];
-
-  for (const q of questions) {
-    const studentAnswer = answers[q.id] || "";
-    const result = await markAnswer(q, studentAnswer);
-    if (result) results.push(result);
-  }
+  const results = await markInBatches(questions, answers);
 
   const totalScore = results.reduce((s, r) => s + r.score, 0);
   const totalMaxMarks = results.reduce((s, r) => s + r.maxMarks, 0);
@@ -128,12 +176,6 @@ export async function generateExamFeedback(
   const strongTopics = results
     .filter(r => r.score >= r.maxMarks * 0.8)
     .flatMap(r => r.strengths);
-
-  const memory = {
-    subject,
-    score: percentage,
-    completedAt: new Date().toISOString(),
-  };
 
   const recommendedActions: string[] = [];
   if (percentage < 50) recommendedActions.push(`Review the fundamentals of ${subject}`);
