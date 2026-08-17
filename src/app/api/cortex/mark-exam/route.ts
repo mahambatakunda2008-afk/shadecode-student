@@ -12,16 +12,23 @@ export const runtime = "nodejs";
 const MARKING_REQUEST_BUDGET_MS = 34_000;
 const SIDE_EFFECT_BUDGET_MS = 2_500;
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+type MaybePromise<T> = T | Promise<T>;
+
+function withTimeout<T>(promise: MaybePromise<T>, timeoutMs: number, fallback: T): Promise<T> {
   return new Promise(resolve => {
-    const timer = setTimeout(() => resolve(fallback), timeoutMs);
-    promise.then(value => {
+    let settled = false;
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       resolve(value);
-    }).catch(() => {
-      clearTimeout(timer);
-      resolve(fallback);
-    });
+    };
+
+    const timer = setTimeout(() => finish(fallback), timeoutMs);
+
+    Promise.resolve(promise)
+      .then(finish)
+      .catch(() => finish(fallback));
   });
 }
 
@@ -39,7 +46,14 @@ export async function POST(request: Request) {
     const questions = body?.questions;
     const answers = body?.answers;
 
-    if (typeof subject !== "string" || !subject.trim() || !Array.isArray(questions) || !answers || typeof answers !== "object") {
+    if (
+      typeof subject !== "string" ||
+      !subject.trim() ||
+      !Array.isArray(questions) ||
+      !answers ||
+      typeof answers !== "object" ||
+      Array.isArray(answers)
+    ) {
       return NextResponse.json(
         { error: "subject, questions, and answers are required" },
         { status: 400 },
@@ -65,7 +79,7 @@ export async function POST(request: Request) {
 
     // Marking is the critical response. Analytics, XP and achievements are bounded
     // side effects and must never keep the student waiting after a valid report exists.
-    const sideEffects = [
+    const sideEffects: MaybePromise<unknown>[] = [
       trackExamResult({
         userId: user.id,
         subject: subject.trim(),
@@ -80,7 +94,7 @@ export async function POST(request: Request) {
       }),
       report.percentage >= 50
         ? awardXPBySource(user.id, "exam_completion")
-        : Promise.resolve(),
+        : undefined,
       checkAndUnlockAchievements(user.id),
     ];
 
