@@ -162,7 +162,7 @@ export default function DownloadPage() {
         </section>
 
         <footer className="mt-10 text-center text-xs text-white/35">
-          Shadecode Student · <Link href="/privacy" className="hover:text-white/60">Privacy</Link>
+          Shadecode Student · <a href="/privacy.html" className="hover:text-white/60">Privacy</a>
         </footer>
       </div>
     </main>
