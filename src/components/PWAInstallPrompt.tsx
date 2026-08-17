@@ -73,6 +73,7 @@ export default function PWAInstallPrompt() {
         <div><h3 style={{ fontSize: 16, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>Install Shadecode Student</h3><p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>Get a dedicated app window and faster repeat access.</p></div>
       </div>
       <button onClick={handleInstall} style={{ width: "100%", padding: "12px", borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Install App</button>
+      <a href="/download" style={{ display: "block", marginTop: 10, textAlign: "center", color: "#a5b4fc", fontSize: 12, textDecoration: "none" }}>See every install option →</a>
       <style jsx>{`@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
     </div>
   );
