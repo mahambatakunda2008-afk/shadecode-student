@@ -83,12 +83,7 @@ export async function PATCH(request: Request) {
     .eq("id", body.id)
     .single();
   if (proposalError || !proposal) return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
-
-  const { error: updateError } = await supabase
-    .from("exam_question_topic_proposals")
-    .update({ status: body.status, reviewer_id: user.id, reviewed_at: new Date().toISOString() })
-    .eq("id", body.id);
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (proposal.status !== "pending") return NextResponse.json({ error: "Proposal has already been reviewed" }, { status: 409 });
 
   if (body.status === "approved") {
     const { error: questionError } = await supabase
@@ -97,6 +92,13 @@ export async function PATCH(request: Request) {
       .eq("id", proposal.question_id);
     if (questionError) return NextResponse.json({ error: questionError.message }, { status: 500 });
   }
+
+  const { error: updateError } = await supabase
+    .from("exam_question_topic_proposals")
+    .update({ status: body.status, reviewer_id: user.id, reviewed_at: new Date().toISOString() })
+    .eq("id", body.id)
+    .eq("status", "pending");
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
