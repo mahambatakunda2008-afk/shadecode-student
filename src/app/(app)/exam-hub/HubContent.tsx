@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users } from "lucide-react";
+import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users, ListChecks } from "lucide-react";
 
 interface HubCard {
   href: string;
@@ -18,6 +18,13 @@ const CARDS: HubCard[] = [
     icon: FileText,
     title: "Past Papers",
     description: "Browse real past papers by board, subject, session, and year.",
+    accent: "var(--primary)",
+  },
+  {
+    href: "/exam-hub/questions",
+    icon: ListChecks,
+    title: "Question Bank",
+    description: "Search extracted questions and practice from the paper library.",
     accent: "var(--primary)",
   },
   {
