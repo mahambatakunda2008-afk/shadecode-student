@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { AcademicAssessment } from "@/lib/curriculum/types";
 import { assessmentPressure, getOpenAssessments, isPostSecondary, normalizeCourse } from "../postSecondary";
 
 describe("post-secondary academic helpers", () => {
@@ -18,18 +19,24 @@ describe("post-secondary academic helpers", () => {
   });
 
   it("orders open assessments by due date", () => {
-    const assessments = [
+    const assessments: AcademicAssessment[] = [
       { id: "late", title: "Exam", type: "exam", dueAt: "2026-09-10T00:00:00.000Z", completed: false },
       { id: "soon", title: "Assignment", type: "assignment", dueAt: "2026-08-20T00:00:00.000Z", completed: false },
       { id: "done", title: "Done", type: "test", dueAt: "2026-08-18T00:00:00.000Z", completed: true },
-    ] as never;
+    ];
 
     const open = getOpenAssessments(assessments, new Date("2026-08-17T00:00:00.000Z"));
     expect(open.map((item) => item.id)).toEqual(["soon", "late"]);
   });
 
   it("weights nearer assessments more heavily", () => {
-    const base = { id: "a", title: "Assignment", type: "assignment", completed: false, weight: 20 } as never;
+    const base: AcademicAssessment = {
+      id: "a",
+      title: "Assignment",
+      type: "assignment",
+      completed: false,
+      weight: 20,
+    };
     const soon = assessmentPressure({ ...base, dueAt: "2026-08-18T00:00:00.000Z" }, new Date("2026-08-17T00:00:00.000Z"));
     const distant = assessmentPressure({ ...base, dueAt: "2026-09-17T00:00:00.000Z" }, new Date("2026-08-17T00:00:00.000Z"));
     expect(soon).toBeGreaterThan(distant);
