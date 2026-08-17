@@ -14,6 +14,18 @@ describe("knowledge graph", () => {
     expect(graph.edges).toHaveLength(0);
   });
 
+  it("deduplicates topics and handles malformed recency safely", () => {
+    const graph = buildKnowledgeGraph([
+      { topicId: "a", masteryScore: 20, evidenceCount: 1 },
+      { topicId: "a", masteryScore: 70, evidenceCount: 3 },
+      { topicId: "b", masteryScore: Number.NaN, lastSeenAt: "not-a-date" },
+    ]);
+    expect(graph.nodes).toHaveLength(2);
+    expect(graph.nodes.find((node) => node.topicId === "a")?.mastery).toBe(0.7);
+    expect(graph.nodes.find((node) => node.topicId === "b")?.recency).toBe(0);
+    expect(graph.nodes.find((node) => node.topicId === "b")?.mastery).toBe(0);
+  });
+
   it("prioritizes weak, uncertain and stale topics", () => {
     const graph = buildKnowledgeGraph([
       { topicId: "strong", masteryScore: 90, confidence: 0.9, lastSeenAt: new Date().toISOString() },
