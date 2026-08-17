@@ -66,7 +66,7 @@ export class OfflineSync {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return;
 
-    const mutations = await mutationQueue.list(user.id);
+    const mutations = await mutationQueue.listReady(user.id);
 
     for (const mutation of mutations) {
       try {
