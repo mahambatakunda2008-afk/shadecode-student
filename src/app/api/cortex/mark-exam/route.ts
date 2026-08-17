@@ -8,6 +8,21 @@ import { checkAndUnlockAchievements } from "@/lib/cortex/achievements";
 
 export const dynamic = "force-dynamic";
 
+const SIDE_EFFECT_BUDGET_MS = 2500;
+
+async function bounded<T>(operation: Promise<T>, fallback: T): Promise<T> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(fallback), SIDE_EFFECT_BUDGET_MS);
+    operation.then(value => {
+      clearTimeout(timer);
+      resolve(value);
+    }).catch(() => {
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -20,7 +35,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { subject, questions, answers } = body;
 
-    if (!subject || !questions || !answers) {
+    if (!subject || !Array.isArray(questions) || !answers || typeof answers !== "object") {
       return NextResponse.json({ error: "subject, questions, and answers are required" }, { status: 400 });
     }
 
@@ -30,28 +45,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to mark exam" }, { status: 500 });
     }
 
-    await trackExamResult({
+    // Marking is the critical response. Analytics, XP, and achievements must
+    // never keep the student waiting after a valid report exists.
+    await bounded(trackExamResult({
       userId: user.id,
       subject,
       score: report.percentage,
       completedAt: new Date().toISOString(),
-    });
+    }), undefined);
 
-    await emitCortexEvent({
+    await bounded(emitCortexEvent({
       userId: user.id,
       type: "exam.completed",
       source: "exam",
       data: { subject, score: report.percentage, maxScore: 100 },
-    });
+    }), undefined);
 
     if (report.percentage >= 50) {
-      await awardXPBySource(user.id, "exam_completion");
+      await bounded(awardXPBySource(user.id, "exam_completion"), undefined);
     }
 
-    const achievements = await checkAndUnlockAchievements(user.id);
+    const achievements = await bounded(checkAndUnlockAchievements(user.id), []);
 
     return NextResponse.json({ report, newAchievements: achievements });
   } catch (err) {
+    console.error("[Cortex Mark Exam] Failed:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to mark exam" },
       { status: 500 }
