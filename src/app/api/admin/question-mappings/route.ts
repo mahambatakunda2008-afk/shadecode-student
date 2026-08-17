@@ -77,28 +77,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "id and approved/rejected status are required" }, { status: 400 });
   }
 
-  const { data: proposal, error: proposalError } = await supabase
-    .from("exam_question_topic_proposals")
-    .select("id,question_id,proposed_topic_id,status")
-    .eq("id", body.id)
-    .single();
-  if (proposalError || !proposal) return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
-  if (proposal.status !== "pending") return NextResponse.json({ error: "Proposal has already been reviewed" }, { status: 409 });
+  const { error } = await supabase.rpc("review_exam_question_topic_proposal", {
+    p_proposal_id: body.id,
+    p_status: body.status,
+    p_reviewer_id: user.id,
+  });
 
-  if (body.status === "approved") {
-    const { error: questionError } = await supabase
-      .from("exam_questions")
-      .update({ topic_id: proposal.proposed_topic_id })
-      .eq("id", proposal.question_id);
-    if (questionError) return NextResponse.json({ error: questionError.message }, { status: 500 });
+  if (error) {
+    const status = /not found/i.test(error.message) ? 404 : /already reviewed/i.test(error.message) ? 409 : /forbidden/i.test(error.message) ? 403 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
-
-  const { error: updateError } = await supabase
-    .from("exam_question_topic_proposals")
-    .update({ status: body.status, reviewer_id: user.id, reviewed_at: new Date().toISOString() })
-    .eq("id", body.id)
-    .eq("status", "pending");
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
