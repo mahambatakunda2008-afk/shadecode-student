@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { log } from "@/lib/observability";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { requirePermission } from '@/lib/auth/rbac';
+import { getUserIdFromRequest, requirePermission } from '@/lib/auth/rbac';
 import { cortexApproveDraftSchema, cortexRequestSchema, validateRequestBody } from '@/lib/validation/schemas';
 
 export const dynamic = "force-dynamic";
@@ -56,7 +56,6 @@ export async function POST(req: Request) {
       body = await req.json().catch(() => ({}));
       const validation = validateRequestBody(body, cortexApproveDraftSchema);
       if (!validation.success) return Response.json({ error: 'Validation failed', details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
-
       const id = validation.data?.id;
       let userId: string | undefined;
       try {
@@ -72,7 +71,6 @@ export async function POST(req: Request) {
         if (!entry?.draft) return Response.json({ error: 'invalid_entry' }, { status: 400 });
         userId = entry.user_id || entry.userId;
         if (!userId) throw new Error('Missing user id on draft');
-
         const subjName = (entry.draft.title && entry.draft.title.length <= 60) ? entry.draft.title : 'Generated Course';
         const { data: existing } = await supabase.from('subjects').select('id').eq('user_id', userId).eq('name', subjName).maybeSingle();
         let subjectId = existing?.id ?? null;
@@ -82,13 +80,11 @@ export async function POST(req: Request) {
           subjectId = insertedSub?.id ?? null;
         }
         if (!subjectId) throw new Error('Failed to resolve subject');
-
         const lessons = Array.isArray(entry.draft.lessons) ? entry.draft.lessons : [];
         const lessonsToInsert = lessons.map((l: any) => ({ user_id: userId, subject_id: subjectId, title: (l.title ?? l.summary ?? 'Untitled').toString().slice(0,255), description: (l.summary ?? '').toString().slice(0,1000), difficulty: l.difficulty === 'hard' ? 'hard' : l.difficulty === 'medium' ? 'medium' : 'easy', blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: 'text', content: l.summary ?? '' }], progress: 0 }));
         const { data: insertedLessons, error: lessonsInsertError } = await supabase.from('learn_lessons').insert(lessonsToInsert).select('id, title');
         if (lessonsInsertError) throw new Error(`Failed to insert lessons: ${lessonsInsertError.message}`);
         if (lessonsToInsert.length > 0 && (insertedLessons ?? []).length === 0) throw new Error('Lesson insert returned no rows despite lessons being submitted');
-
         const titleToId = new Map<string, string>();
         (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id));
         const prereqInserts: any[] = [];
@@ -106,13 +102,11 @@ export async function POST(req: Request) {
           const { error } = await supabase.from('lesson_prerequisites').insert(deduped);
           if (error) throw new Error(`Failed to insert prerequisites: ${error.message}`);
         }
-
         const result = { lessonsInserted: (insertedLessons ?? []).length };
         const { error: approvalError } = await supabase.from('generated_course_approvals').insert({ draft_id: id, notes: { source: 'admin_api' } });
         if (approvalError) throw new Error(`Failed to write approval audit: ${approvalError.message}`);
         const { error: updateError } = await supabase.from('generated_course_drafts').update({ status: 'approved', approved_at: new Date().toISOString(), result }).eq('id', id);
         if (updateError) throw new Error(`Failed to update draft status: ${updateError.message}`);
-
         try {
           const drafts = readDrafts();
           const idx = drafts.findIndex((d: any) => d.id === id);
@@ -126,23 +120,28 @@ export async function POST(req: Request) {
     }
 
     body = await req.json().catch(() => ({}));
+    const authenticatedUserId = await getUserIdFromRequest(req);
+    if (!authenticatedUserId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     if (body?.requestType) {
+      const requestedUserId = body?.payload?.userId;
+      if (requestedUserId && requestedUserId !== authenticatedUserId) return Response.json({ error: 'Forbidden' }, { status: 403 });
       try {
         const { cortexAI } = await import("@/lib/cortex/runtime/ai-gateway");
-        const result = await cortexAI(body.requestType, body.payload);
+        const result = await cortexAI(body.requestType, { ...body.payload, userId: authenticatedUserId });
         return Response.json({ insight: result.data?.insight ?? null, provider: result.provider, cached: result.cached });
       } catch (e) {
-        log.cortexFailure({ stage: "behavior.insight", error: e instanceof Error ? e.message : "cortex_ai_failed", userId: body?.payload?.userId });
+        log.cortexFailure({ stage: "behavior.insight", error: e instanceof Error ? e.message : "cortex_ai_failed", userId: authenticatedUserId });
         return Response.json({ insight: null, error: e instanceof Error ? e.message : "cortex_ai_failed" });
       }
     }
 
     const { userId, type, payload } = body;
+    if (userId !== authenticatedUserId) return Response.json({ error: 'Forbidden' }, { status: 403 });
     const validation = validateRequestBody({ userId, type, payload }, cortexRequestSchema);
     if (!validation.success || !validation.data) return Response.json({ error: 'Validation failed', details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
     const { userId: validatedUserId, type: validatedType, payload: validatedPayload } = validation.data;
     if (!validatedUserId || !validatedType) return Response.json({ error: "Missing userId or type" }, { status: 400 });
-
     if (validatedType === 'careers.list') {
       try { const { listCareers } = await import('@/lib/careers'); return Response.json({ success: true, careers: await listCareers() }); }
       catch (e: any) { return Response.json({ error: e.message || 'failed' }, { status: 500 }); }
