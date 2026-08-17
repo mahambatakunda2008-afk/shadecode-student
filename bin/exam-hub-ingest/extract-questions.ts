@@ -69,6 +69,7 @@ function parseMetadata(filePath: string): Metadata | null {
 async function extractPdfText(filePath: string): Promise<string> {
   const data = fs.readFileSync(filePath);
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pdfParseModule = require('pdf-parse');
     const parser = pdfParseModule?.default ?? pdfParseModule;
     if (typeof parser === 'function') {
@@ -86,7 +87,7 @@ async function extractPdfText(filePath: string): Promise<string> {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
+    pages.push(content.items.map((item) => ('str' in item ? item.str ?? '' : '')).join(' '));
   }
   return pages.join('\n');
 }

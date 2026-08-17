@@ -6,7 +6,7 @@ export interface ExtractedQuestion {
 
 const EXPLICIT_TOP_LEVEL = /^\s*(\d{1,2})[.)]\s+(.+)$/;
 const PLAIN_TOP_LEVEL = /^\s*(\d{1,2})\s+((?!\([a-z]\)|[a-z]\))\S.*)$/i;
-const MARKS_TOKEN = /\[\s*(\d{1,3})\s*\]/;
+const MARKS_PATTERN = /\[\s*(\d{1,3})\s*\]/;
 
 function normalizeLine(line: string): string {
   return line.replace(/[ \t]+/g, ' ').trim();
@@ -38,11 +38,17 @@ export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
     if (!currentNumber) return;
     const raw = cleanBlock(currentLines);
     if (!raw) return;
-
-    const markMatch = MARKS_TOKEN.exec(raw);
+    // MARKS_PATTERN isn't end-anchored: when a "[N]" mark annotation ends
+    // the first line of a multi-line question stem, later subpart lines
+    // (e.g. "(a) ...") get joined after it, burying it mid-block rather
+    // than at the block's true end. Search anywhere in the joined text
+    // and cleanly excise just that bracketed token, wherever it landed.
+    const markMatch = MARKS_PATTERN.exec(raw);
     const marks = markMatch ? Number(markMatch[1]) : null;
     const questionText = markMatch
-      ? `${raw.slice(0, markMatch.index)}${raw.slice(markMatch.index + markMatch[0].length)}`.replace(/\s{2,}/g, ' ').trim()
+      ? (raw.slice(0, markMatch.index) + raw.slice(markMatch.index + markMatch[0].length))
+          .replace(/\s+/g, ' ')
+          .trim()
       : raw;
 
     if (questionText.length < 3) return;
