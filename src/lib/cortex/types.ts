@@ -15,9 +15,6 @@ export type CortexEventType =
   | "exam.completed"
   | "exam.question.answered"
   | "exam.marking.completed";
-/* ─────────────────────────────────────────────
-   CONTEXT FOR AI INSIGHTS (ENGINE USE)
-───────────────────────────────────────────── */
 
 export interface CortexInsightContext {
   events: CortexEvent[];
@@ -50,61 +47,36 @@ export interface CortexEventInput {
   data?: CortexEventData;
 }
 
-/* ─────────────────────────────────────────────
-   SNAPSHOT (REAL-TIME USER STATE)
-───────────────────────────────────────────── */
-
 export interface CortexSnapshot {
   streak: number;
   level: number;
   xp: number;
-
   totalTasks: number;
   completedTasks: number;
   pendingTasks: number;
-
   subjects: string[];
-
   recentTaskTitles: string[];
-
   weakestSubjects?: string[];
   strongestSubjects?: string[];
-
-  // Curriculum integration (optional, backwards compatible)
   curriculumCompletionPercent?: number;
   currentLesson?: { id: string; title: string } | null;
   recommendedNextLesson?: { id: string; title: string } | null;
   completedLessonCount?: number;
   lockedLessonCount?: number;
-
   lastExamScore?: number;
   lastExamSubject?: string;
-
-  // Weekly study goal (optional, backwards compatible) -- see src/lib/goals.ts
   weeklyGoalMinutes?: number;
   minutesThisWeek?: number;
   goalPercentComplete?: number;
 }
 
-/* ─────────────────────────────────────────────
-   AI RUNTIME CONTEXT (NEW FIX)
-   ← this replaces broken router imports
-───────────────────────────────────────────── */
-
 export interface CortexContext {
   userId?: string;
-
   history?: unknown[];
   snapshot?: CortexSnapshot;
   events?: CortexEvent[];
-
-  // flexible extension point (future-proofing)
   [key: string]: unknown;
 }
-
-/* ─────────────────────────────────────────────
-   GENERIC STRUCTURE SUPPORT (AI SAFE)
-───────────────────────────────────────────── */
 
 export type CortexStructuredValue =
   | null
@@ -113,10 +85,6 @@ export type CortexStructuredValue =
   | string
   | CortexStructuredValue[]
   | { [key: string]: CortexStructuredValue };
-
-/* ─────────────────────────────────────────────
-   AI REQUEST SYSTEM
-───────────────────────────────────────────── */
 
 export type CortexAIRequestType =
   | "behavior.insight"
@@ -151,10 +119,6 @@ export interface CortexLearningRecommendationPayload {
   subject: string;
 }
 
-/* ─────────────────────────────────────────────
-   REQUEST MAPS
-───────────────────────────────────────────── */
-
 export interface CortexAIRequestPayloadMap {
   "behavior.insight": CortexBehaviorInsightPayload;
   "behavior.summary": CortexBehaviorSummaryPayload;
@@ -169,15 +133,10 @@ export interface CortexAIResponseDataMap {
   "learning.recommendation": { insight: string };
 }
 
-/* ─────────────────────────────────────────────
-   RESPONSE WRAPPER
-───────────────────────────────────────────── */
+/** `ai` means the unified provider chain; `local` means deterministic/local Cortex logic. */
+export type CortexAIProvider = "local" | "ai" | "gemini";
 
-export type CortexAIProvider = "local" | "gemini";
-
-export interface CortexAIResponse<
-  T extends CortexAIRequestType = CortexAIRequestType
-> {
+export interface CortexAIResponse<T extends CortexAIRequestType = CortexAIRequestType> {
   requestType: T;
   provider: CortexAIProvider;
   cached: boolean;
@@ -185,10 +144,6 @@ export interface CortexAIResponse<
   cacheKey: string;
   data: CortexAIResponseDataMap[T];
 }
-
-/* ─────────────────────────────────────────────
-   CACHE LAYER
-───────────────────────────────────────────── */
 
 export interface CortexCacheEntry<T = unknown> {
   createdAt: string;
