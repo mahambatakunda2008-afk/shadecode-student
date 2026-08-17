@@ -32,8 +32,6 @@ export function normalizeAcademicContext(input: AcademicContextInput): Normalize
   // The check above validates membership but doesn't narrow input.pathway
   // itself for later use -- capture it in a properly-typed local instead.
   const pathway = input.pathway as AcademicPathway;
-
-  const pathway: AcademicPathway = input.pathway === "university" ? "university" : "tvet";
   const programme = boundedString(input.programme, 200);
   if (!programme) throw new Error("programme is required");
 
