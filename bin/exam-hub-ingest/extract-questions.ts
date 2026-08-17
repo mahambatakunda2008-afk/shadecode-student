@@ -31,8 +31,8 @@ type Report = {
   reason?: string;
 };
 
-const VERBOSE = /^([\w-]+)_(AS|A)_(FebMarch|MayJune|OctNov)_(\d{4})_p(\d+)_v(\d+)_(qp|ms|in|gt)\.pdf$/i;
-const SHORT = /^([\w-]+)_([wsm])(\d{2})_([a-z]{2,3})(?:_(\d{2}))?\.pdf$/i;
+const VERBOSE = /^(\w[\w-]*)_(AS|A)_(FebMarch|MayJune|OctNov)_(\d{4})_p(\d+)_v(\d+)_(qp|ms|in|gt)\.pdf$/i;
+const SHORT = /^(\w[\w-]*)_([wsm])(\d{2})_([a-z]{2,3})(?:_(\d{2}))?\.pdf$/i;
 const SESSIONS: Record<string, string> = { w: 'Oct/Nov', s: 'May/June', m: 'Feb/March', febmarch: 'Feb/March', mayjune: 'May/June', octnov: 'Oct/Nov' };
 const LEVELS: Record<string, string> = { as: 'AS Level', a: 'A Level' };
 
@@ -160,18 +160,32 @@ async function main() {
     }
 
     if (apply) {
-      const rows = questions.map((question) => ({
-        paper_id: papers[0].id,
-        question_number: question.questionNumber,
-        marks: question.marks,
-        question_text: question.questionText,
-      }));
-      const { error: insertError } = await supabase
+      const paperId = papers[0].id;
+      const questionNumbers = questions.map((question) => question.questionNumber);
+      const { data: existing, error: existingError } = await supabase
         .from('exam_questions')
-        .upsert(rows, { onConflict: 'paper_id,question_number', ignoreDuplicates: true });
-      if (insertError) {
-        reports.push({ file, status: 'error', paperId: papers[0].id, reason: insertError.message });
+        .select('question_number')
+        .eq('paper_id', paperId)
+        .in('question_number', questionNumbers);
+      if (existingError) {
+        reports.push({ file, status: 'error', paperId, reason: existingError.message });
         continue;
+      }
+      const existingNumbers = new Set((existing ?? []).map((row) => row.question_number));
+      const rows = questions
+        .filter((question) => !existingNumbers.has(question.questionNumber))
+        .map((question) => ({
+          paper_id: paperId,
+          question_number: question.questionNumber,
+          marks: question.marks,
+          question_text: question.questionText,
+        }));
+      if (rows.length > 0) {
+        const { error: insertError } = await supabase.from('exam_questions').insert(rows);
+        if (insertError) {
+          reports.push({ file, status: 'error', paperId, reason: insertError.message });
+          continue;
+        }
       }
     }
 
