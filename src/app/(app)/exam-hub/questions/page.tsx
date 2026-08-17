@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Question {
@@ -28,7 +28,7 @@ export default function QuestionBankPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async (event?: FormEvent) => {
+  const load = useCallback(async (event?: FormEvent) => {
     event?.preventDefault();
     setLoading(true);
     setError(null);
@@ -49,11 +49,11 @@ export default function QuestionBankPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [difficulty, query]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
