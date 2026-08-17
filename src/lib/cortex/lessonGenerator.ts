@@ -8,6 +8,22 @@ export interface LessonSection { heading: string; content: string; type: "explan
 export interface PracticeQuestion { question: string; options?: string[]; correctAnswer: string; explanation: string; difficulty: "easy" | "medium" | "hard"; }
 
 const LESSON_SYSTEM_PROMPT = `You are an expert curriculum designer for Shadecode Student. Generate a structured lesson and return ONLY valid JSON. Include 3-5 sections and 2-5 practice questions. Use age-appropriate language and real-world examples.`;
+const MEMORY_BUDGET_MS = 2000;
+const AI_BUDGET_MS = 16000;
+const XP_BUDGET_MS = 1500;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(fallback), timeoutMs);
+    promise.then(value => {
+      clearTimeout(timer);
+      resolve(value);
+    }).catch(() => {
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
 
 function normalizeLesson(subject: string, raw: unknown): GeneratedLesson | null {
   if (!raw || typeof raw !== "object") return null;
@@ -32,17 +48,27 @@ function normalizeLesson(subject: string, raw: unknown): GeneratedLesson | null 
 
 export async function generateLesson(subject: string, topic: string, userId: string): Promise<GeneratedLesson | null> {
   try {
-    const memory = await getMemory(userId);
+    const memory = await withTimeout(getMemory(userId), MEMORY_BUDGET_MS, {
+      level: 1, streak: 0, xp: 0, totalTasks: 0, completedTasks: 0,
+      subjects: [], weakTopics: [], frequentlyStudiedSubjects: [], strongSubjects: [],
+      preferredStudyHours: [], averageSessionDuration: 0, totalStudySessions: 0,
+      examScores: [], averageExamScore: 0, longestStreak: 0, totalLessonsCompleted: 0,
+      totalStudyTimeMinutes: 0,
+    });
     const difficulty = memory.level <= 3 ? "easy" : memory.level <= 6 ? "medium" : "hard";
     const prompt = `${LESSON_SYSTEM_PROMPT}\n\nSubject: ${subject}\nTopic: ${topic}\nTarget difficulty: ${difficulty}\nStudent level: ${memory.level}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${(memory.weakSubjects ?? []).join(", ") || "none"}\n\nGenerate the lesson:`;
-    const response = await callAI(prompt, 4000, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 35000, perProviderMaxMs: 9000 });
+    const response = await withTimeout(
+      callAI(prompt, 4000, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 14000, perProviderMaxMs: 3000 }),
+      AI_BUDGET_MS,
+      null
+    );
     if (!response) return fallbackLesson(subject, topic, difficulty);
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackLesson(subject, topic, difficulty);
     const parsed = JSON.parse(jsonMatch[0]);
     const lesson = normalizeLesson(subject, parsed);
     if (!lesson) return fallbackLesson(subject, topic, difficulty);
-    await awardXPBySource(userId, "lesson_generation", { difficulty });
+    void withTimeout(awardXPBySource(userId, "lesson_generation", { difficulty }), XP_BUDGET_MS, undefined);
     return lesson;
   } catch (error) {
     console.error("[LessonGenerator] Failed:", error);
