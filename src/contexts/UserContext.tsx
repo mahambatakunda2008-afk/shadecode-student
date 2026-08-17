@@ -67,7 +67,7 @@ function cacheProfile(profile: UserProfile): void {
   }
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+async function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
@@ -141,8 +141,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
-      // getSession reads the Supabase session from local storage and does not
-      // require a network round trip just to decide whether the app can render.
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -154,7 +152,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (currentUser) {
         const cached = readCachedProfile(currentUser.id);
         if (cached) setProfile(cached);
-        // Do not make navigation wait for profile hydration.
         setLoading(false);
         void fetchProfile(currentUser.id);
       } else {
@@ -215,6 +212,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
 export function useUser(): UserContextValue {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser must be used within a UserProvider");
+  if (!context) throw new Error("useUser must be used within UserProvider");
   return context;
 }
