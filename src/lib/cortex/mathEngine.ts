@@ -13,12 +13,35 @@ export interface MathCheckResult { correct: boolean; score: number; feedback: st
 
 const MATH_SYSTEM_PROMPT = `You are an expert mathematics tutor for Shadecode Student.\nSolve the given math problem step by step. Return ONLY valid JSON.\n\nOutput format:\n{\n  "steps": [{"description":"Step description","expression":"Mathematical expression","explanation":"Why this step works","correct":true}],\n  "finalAnswer":"The final answer","conceptsUsed":["concept1"],"difficulty":"easy|medium|hard","estimatedAccuracy":0.95\n}\n\nRules:\n- Show all working steps\n- Explain the reasoning\n- Identify mathematical concepts\n- Output valid JSON only`;
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(fallback), timeoutMs);
+    promise.then(value => {
+      clearTimeout(timer);
+      resolve(value);
+    }).catch(() => {
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
+
 export async function solveMathProblem(problem: string, subject: string, userId: string): Promise<MathSolution | null> {
   try {
-    const memory = await getMemory(userId);
+    const memory = await withTimeout(getMemory(userId), 2000, {
+      level: 1, streak: 0, xp: 0, totalTasks: 0, completedTasks: 0,
+      subjects: [], weakTopics: [], frequentlyStudiedSubjects: [], strongSubjects: [],
+      preferredStudyHours: [], averageSessionDuration: 0, totalStudySessions: 0,
+      examScores: [], averageExamScore: 0, longestStreak: 0, totalLessonsCompleted: 0,
+      totalStudyTimeMinutes: 0,
+    });
     const levelContext = `Student math level: ${memory.level}\nPrior math subjects: ${(memory.subjects ?? []).join(", ")}\n${memory.averageExamScore ? `Average score: ${memory.averageExamScore}%` : ""}`;
     const prompt = `${MATH_SYSTEM_PROMPT}\n\nSubject: ${subject}\nProblem: ${problem}\n\nStudent context:\n${levelContext}\n\nSolve this problem:`;
-    const response = await callAI(prompt, 3000, { userId, feature: "math_engine", subfeature: "solve_problem", maxChainMs: 30000, perProviderMaxMs: 8000 });
+    const response = await withTimeout(
+      callAI(prompt, 3000, { userId, feature: "math_engine", subfeature: "solve_problem", maxChainMs: 12000, perProviderMaxMs: 3000 }),
+      13000,
+      null
+    );
     if (!response) return fallbackSolution(problem, subject);
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return fallbackSolution(problem, subject);
@@ -34,7 +57,7 @@ export async function solveMathProblem(problem: string, subject: string, userId:
 
 export async function checkStudentAnswer(problem: string, subject: string, studentAnswer: string, userId: string): Promise<MathCheckResult | null> {
   try {
-    const solution = await solveMathProblem(problem, subject, userId);
+    const solution = await withTimeout(solveMathProblem(problem, subject, userId), 14000, null);
     if (!solution) return null;
     const solutionAnswer = solution.finalAnswer.trim().toLowerCase();
     const studentTrimmed = studentAnswer.trim().toLowerCase();
