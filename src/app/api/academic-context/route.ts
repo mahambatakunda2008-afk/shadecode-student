@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeAcademicContext } from "@/lib/academic/context";
 
 export const dynamic = "force-dynamic";
-
-const PATHWAYS = new Set(["university", "tvet"]);
 
 async function getUser() {
   const supabase = await createSupabaseServerClient();
@@ -16,7 +15,12 @@ export async function GET() {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data, error } = await supabase.from("academic_contexts").select("*").eq("user_id", user.id).maybeSingle();
+  const { data, error } = await supabase
+    .from("academic_contexts")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   if (error) return NextResponse.json({ error: "Failed to load academic context" }, { status: 500 });
   return NextResponse.json({ context: data });
 }
@@ -25,27 +29,28 @@ export async function PATCH(request: NextRequest) {
   const { supabase, user } = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const pathway = body.pathway as string;
-  const programme = typeof body.programme === "string" ? body.programme.trim() : "";
-  if (!PATHWAYS.has(pathway) || !programme) {
-    return NextResponse.json({ error: "pathway and programme are required" }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const courses = Array.isArray(body.courses)
-    ? body.courses.filter((value: unknown): value is string => typeof value === "string").map((value: string) => value.trim()).filter(Boolean)
-    : [];
+  try {
+    const context = normalizeAcademicContext(
+      body && typeof body === "object" ? body as Record<string, unknown> : {},
+    );
 
-  const { data, error } = await supabase.from("academic_contexts").upsert({
-    user_id: user.id,
-    pathway,
-    institution: typeof body.institution === "string" ? body.institution.trim() || null : null,
-    programme,
-    year_level: typeof body.year_level === "string" ? body.year_level.trim() || null : null,
-    semester: typeof body.semester === "string" ? body.semester.trim() || null : null,
-    courses,
-  }, { onConflict: "user_id" }).select("*").single();
+    const { data, error } = await supabase.from("academic_contexts").upsert({
+      user_id: user.id,
+      ...context,
+    }, { onConflict: "user_id" }).select("*").single();
 
-  if (error) return NextResponse.json({ error: "Failed to save academic context" }, { status: 500 });
-  return NextResponse.json({ context: data });
+    if (error) return NextResponse.json({ error: "Failed to save academic context" }, { status: 500 });
+    return NextResponse.json({ context: data });
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : "Invalid academic context",
+    }, { status: 400 });
+  }
 }
