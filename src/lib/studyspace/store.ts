@@ -38,3 +38,25 @@ export async function getWorkObject(id: string): Promise<WorkObject | undefined>
   db.close();
   return value;
 }
+
+export async function listWorkObjects(): Promise<WorkObject[]> {
+  const db = await openDb();
+  const values = await new Promise<WorkObject[]>((resolve, reject) => {
+    const request = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
+    request.onsuccess = () => resolve((request.result as WorkObject[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    request.onerror = () => reject(request.error ?? new Error("Could not list work"));
+  });
+  db.close();
+  return values;
+}
+
+export async function deleteWorkObject(id: string): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Could not delete work"));
+  });
+  db.close();
+}
