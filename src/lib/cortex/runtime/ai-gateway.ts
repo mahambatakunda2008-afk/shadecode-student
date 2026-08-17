@@ -1,6 +1,6 @@
 import { buildBehaviorSummary, buildCortexFingerprint, resolveCortexExtension } from "@/lib/cortex/runtime/engine";
 import { createCortexCacheKey, getCachedCortexValue, setCachedCortexValue } from "@/lib/cortex/runtime/cache";
-import { CortexAIRequestPayloadMap, CortexAIRequestType, CortexAIResponse, CortexBehaviorInsightPayload, CortexBehaviorSummaryPayload, CortexStructuredValue } from "@/lib/cortex/types";
+import { CortexAIRequestPayloadMap, CortexAIRequestType, CortexAIResponse, CortexAIResponseDataMap, CortexAIProvider, CortexBehaviorInsightPayload, CortexBehaviorSummaryPayload, CortexStructuredValue } from "@/lib/cortex/types";
 import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 
@@ -26,11 +26,7 @@ function isInsightResponse(value: unknown): value is { insight: string } {
 }
 
 function buildBehaviorPrompt(summary: string) {
-  return `You are Cortex, a behavioral interpretation layer inside Shadecode Student.
-Return ONLY valid JSON with exactly this shape: {"insight":"..."}.
-The insight must be one complete sentence, 8-20 words, neutral and analytical.
-Rules: no markdown, no advice, no questions, no invented subjects/numbers/streaks; ground the sentence in the provided data and name an actual subject or specific task count when available. If data is sparse, say so plainly.
-Student behavioral data:\n${summary}`;
+  return `You are Cortex, a behavioral interpretation layer inside Shadecode Student.\nReturn ONLY valid JSON with exactly this shape: {"insight":"..."}.\nThe insight must be one complete sentence, 8-20 words, neutral and analytical.\nRules: no markdown, no advice, no questions, no invented subjects/numbers/streaks; ground the sentence in the provided data and name an actual subject or specific task count when available. If data is sparse, say so plainly.\nStudent behavioral data:\n${summary}`;
 }
 
 async function requestBehaviorInsight(summary: string, userId?: string): Promise<string> {
@@ -48,7 +44,8 @@ async function requestBehaviorInsight(summary: string, userId?: string): Promise
 async function executeBehaviorInsight(payload: CortexBehaviorInsightPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.insight">> {
   const localInsight = resolveCortexExtension({ events: payload.events ?? [], snapshot: payload.snapshot });
   const insight = localInsight || await requestBehaviorInsight(buildBehaviorSummary(payload.snapshot, payload.events ?? []), payload.userId);
-  const result: CortexAIResponse<"behavior.insight"> = { requestType: "behavior.insight", provider: localInsight ? "local" : "ai", cached: false, fingerprint, cacheKey, data: { insight } };
+  const provider: CortexAIProvider = localInsight ? "local" : "ai";
+  const result: CortexAIResponse<"behavior.insight"> = { requestType: "behavior.insight", provider, cached: false, fingerprint, cacheKey, data: { insight } };
   setCachedCortexValue(cacheKey, result);
   return result;
 }
