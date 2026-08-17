@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, Bug, Lightbulb, MessageCircle } from "lucide-react";
 import ExportMenu from "@/components/exports/ExportMenu";
-import { trackEvent } from "@/lib/traction/client";
 
 interface FeedbackItem { id: string; user_id: string | null; type: string; message: string; created_at: string; }
 const TYPE_CONFIG: Record<string, { icon: typeof Bug; color: string; label: string }> = { bug: { icon: Bug, color: "var(--danger)", label: "Bug" }, feature: { icon: Lightbulb, color: "var(--warning)", label: "Feature" }, general: { icon: MessageCircle, color: "var(--primary)", label: "General" } };
