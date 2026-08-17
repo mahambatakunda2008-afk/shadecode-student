@@ -6,7 +6,7 @@ export interface ExtractedQuestion {
 
 const EXPLICIT_TOP_LEVEL = /^\s*(\d{1,2})[.)]\s+(.+)$/;
 const PLAIN_TOP_LEVEL = /^\s*(\d{1,2})\s+((?!\([a-z]\)|[a-z]\))\S.*)$/i;
-const MARKS_AT_END = /\[\s*(\d{1,3})\s*\]\s*$/;
+const MARKS_TOKEN = /\[\s*(\d{1,3})\s*\]/;
 
 function normalizeLine(line: string): string {
   return line.replace(/[ \t]+/g, ' ').trim();
@@ -37,9 +37,13 @@ export function extractTopLevelQuestions(text: string): ExtractedQuestion[] {
     if (!currentNumber) return;
     const raw = cleanBlock(currentLines);
     if (!raw) return;
-    const markMatch = MARKS_AT_END.exec(raw);
+
+    const markMatch = MARKS_TOKEN.exec(raw);
     const marks = markMatch ? Number(markMatch[1]) : null;
-    const questionText = markMatch ? raw.slice(0, markMatch.index).trim() : raw;
+    const questionText = markMatch
+      ? `${raw.slice(0, markMatch.index)}${raw.slice(markMatch.index + markMatch[0].length)}`.replace(/\s{2,}/g, ' ').trim()
+      : raw;
+
     if (questionText.length < 3) return;
     questions.push({ questionNumber: currentNumber, questionText, marks });
   };
