@@ -23,7 +23,7 @@ function cleanAreas(areas: unknown): string[] {
   return areas.filter((area): area is string => typeof area === "string" && area.trim().length > 0).map((area) => area.trim()).slice(0, 20);
 }
 
-export function evidenceFromWork(work: WorkObject, id = crypto.randomUUID()): LearningEvidence {
+export function evidenceFromWork(work: WorkObject, id = `${work.id}:${work.updatedAt}`): LearningEvidence {
   const percentage = work.marks?.available && typeof work.marks.earned === "number"
     ? Math.max(0, Math.min(100, (work.marks.earned / work.marks.available) * 100))
     : undefined;
