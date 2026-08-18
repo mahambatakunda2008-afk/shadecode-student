@@ -18,8 +18,6 @@ export default function OfflineShell() {
 
   useEffect(() => {
     let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | undefined;
-
     const refresh = async () => {
       try {
         const supabase = createClient();
@@ -33,11 +31,10 @@ export default function OfflineShell() {
     };
 
     void refresh();
-    timer = setInterval(() => void refresh(), 5000);
-
+    const timer = setInterval(() => void refresh(), 5000);
     return () => {
       cancelled = true;
-      if (timer) clearInterval(timer);
+      clearInterval(timer);
     };
   }, [isOnline]);
 
@@ -45,10 +42,12 @@ export default function OfflineShell() {
     if (!isOnline || syncing) return;
     setSyncing(true);
     try {
-      await offlineSync.syncAll();
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setStatus(await mutationQueue.getStatus(user.id));
+      if (!user) return;
+      if (status.failed > 0) await mutationQueue.resetFailed(user.id);
+      await offlineSync.syncAll();
+      setStatus(await mutationQueue.getStatus(user.id));
     } finally {
       setSyncing(false);
     }
@@ -91,7 +90,7 @@ export default function OfflineShell() {
       <BrandMark width={15} height={15} style={{ color: "#22D3EE", flexShrink: 0 }} aria-hidden="true" />
       {!isOnline ? <WifiOff size={13} color="#9fb2bc" style={{ flexShrink: 0 }} /> : null}
       <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{message}</span>
-      {isOnline && status.pending > 0 && (
+      {isOnline && (status.pending > 0 || status.failed > 0) && (
         <button
           type="button"
           onClick={() => void handleSync()}
@@ -111,7 +110,7 @@ export default function OfflineShell() {
             cursor: syncing ? "wait" : "pointer",
           }}
         >
-          <RefreshCw size={13} style={{ animation: syncing ? "spin 1s linear infinite" : undefined }} aria-hidden="true" />
+          <RefreshCw size={13} className={syncing ? "animate-spin" : undefined} aria-hidden="true" />
         </button>
       )}
     </div>
