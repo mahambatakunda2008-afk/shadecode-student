@@ -3,3 +3,4 @@ export * from "./store";
 export * from "./adapters";
 export * from "./validation";
 export * from "./evidence";
+export * from "./profile";
