@@ -118,6 +118,19 @@ class MutationQueue {
     };
   }
 
+  /** Re-opens exhausted mutations for an explicit user-triggered retry. */
+  async resetFailed(ownerId: string): Promise<void> {
+    const failed = await this.listFailed(ownerId);
+    for (const mutation of failed) {
+      await this.put({
+        ...mutation,
+        attempts: 0,
+        lastAttemptAt: undefined,
+        lastError: undefined,
+      });
+    }
+  }
+
   async remove(id: string, ownerId: string): Promise<void> {
     if (!ownerId) return;
     await this.init();
