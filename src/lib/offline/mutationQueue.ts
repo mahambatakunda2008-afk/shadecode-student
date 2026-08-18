@@ -104,6 +104,20 @@ class MutationQueue {
     return rows.filter((mutation) => isMutationReady(mutation, now));
   }
 
+  /** Returns mutations that have exhausted automatic retries and need user attention. */
+  async listFailed(ownerId: string): Promise<OfflineMutation[]> {
+    const rows = await this.list(ownerId);
+    return rows.filter((mutation) => mutation.attempts >= MAX_ATTEMPTS);
+  }
+
+  async getStatus(ownerId: string): Promise<{ pending: number; failed: number }> {
+    const rows = await this.list(ownerId);
+    return {
+      pending: rows.filter((mutation) => mutation.attempts < MAX_ATTEMPTS).length,
+      failed: rows.filter((mutation) => mutation.attempts >= MAX_ATTEMPTS).length,
+    };
+  }
+
   async remove(id: string, ownerId: string): Promise<void> {
     if (!ownerId) return;
     await this.init();
