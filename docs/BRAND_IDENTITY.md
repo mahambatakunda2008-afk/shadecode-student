@@ -6,74 +6,68 @@ Canonical identity updated August 2026.
 
 ## Direction
 
-Shadecode Student should look like a serious technology product that happens to be built for education, not a generic school application.
+Shadecode Student should feel like a serious technology product that happens to be built for education, not a generic school application.
 
-The identity therefore uses a simple geometric **S** as the primary brand mark. The mark is intentionally recognizable without relying on a graduation cap, book, brain, lightbulb, robot, or decorative education symbol.
+The identity therefore uses a simple geometric **S** as the primary mark. The symbol is recognizable without relying on graduation caps, books, brains, robots, stars, or other education clichés.
 
 ## Design principles
 
 1. **Recognition first** — the silhouette must remain identifiable at favicon and app-icon sizes.
-2. **One mark, many surfaces** — the same S geometry is used for the app icon, standalone mark, and wordmark.
-3. **No visual noise** — no twisted ribbons, unnecessary internal symbols, or ornamental stars.
-4. **Vector-native** — the canonical source is SVG so it scales cleanly across web, PWA, desktop, and future native packaging.
-5. **Strong contrast** — the app icon uses deep navy with a blue/cyan S; the standalone mark uses blue with a restrained cyan highlight.
-6. **Technology-led** — geometry and typography should feel closer to a modern software company than a traditional school brand.
+2. **One mark, many surfaces** — the same S geometry is used across web, PWA, desktop and future native packaging.
+3. **One-color first** — the transparent cyan mark is the master; effects and gradients are optional atmosphere only.
+4. **Vector-native** — SVG is the source of truth.
+5. **Strong contrast** — Deep Ink and Shadecode Cyan form the core product pairing.
+6. **Technology-led** — geometry, spacing and typography should feel like modern software rather than school stationery.
 
 ## Canonical assets
 
-- `public/brand/shadecode-app-icon.svg` — primary app/PWA icon.
-- `public/brand/shadecode-mark.svg` — standalone brand mark.
-- `public/brand/shadecode-student-logo.svg` — full Shadecode Student wordmark.
-
-The application metadata and PWA manifest reference these canonical SVG assets.
-
-## Mark construction
-
-The mark is a single rounded S-shaped path with consistent visual weight. The app icon uses a bold blue stroke with a narrower cyan highlight. The standalone mark uses the same geometry without a surrounding container.
-
-The construction is deliberately simple enough to survive reduction to small sizes. At 16–32 px, the S should read as one solid symbol rather than a collection of details.
+- `public/brand/shadecode-app-icon.svg` — transparent cyan master.
+- `public/brand/shadecode-mark-white.svg` — reversed one-color master.
+- `public/brand/shadecode-app-icon-dark.svg` — dark platform tile.
+- `public/brand/shadecode-app-icon-light.svg` — light platform tile.
+- `public/brand/shadecode-app-icon-maskable.svg` — adaptive/maskable tile.
+- `public/brand/shadecode-student-logo.svg` — full product lockup.
+- `src/components/brand/BrandMark.tsx` — inline UI mark.
+- `src/components/brand/BrandLockup.tsx` — reusable product lockup.
 
 ## Colour system
 
-- Deep Navy: `#0B0D12`
-- Mark gradient: Electric Cyan `#22D3EE` -> Blue `#3B82F6`
-- Light wordmark: `#F8FAFC`
+- Shadecode Cyan: `#22D3EE`
+- Shadecode Cyan Strong: `#0891B2`
+- Shadecode Ink: `#06111C`
+- Shadecode Surface: `#0B1724`
 
-The app icon avoids gradients. This keeps the silhouette crisp and reduces visual clutter at small sizes.
+A cyan-blue-violet gradient may be used in campaign artwork or atmospheric surfaces. The master mark itself remains flat cyan.
+
+## Typography
+
+- **Michroma** for the wordmark and selected brand labels.
+- **Space Grotesk** for headings, navigation, controls and display UI.
+- **Inter** for reading, forms, tables and dense study content.
 
 ## Usage rules
 
 ### Do
 
-- Preserve the proportions of the canonical S.
-- Keep adequate clear space around the mark.
-- Use the app icon as the compact identity for installed apps and PWA surfaces.
-- Use the full wordmark where the product name needs to be explicit.
-- Prefer the SVG source assets for new interfaces and packaging.
+- Preserve the proportions and negative space of the canonical S.
+- Keep clear space around the mark.
+- Use the transparent cyan master when the surrounding surface already provides a background.
+- Use the dark/maskable tile when a platform expects a complete icon container.
+- Use the full wordmark when the product name needs to be explicit.
+- Prefer SVG source assets for new interfaces and packaging.
 
 ### Do not
 
-- Reintroduce the previous twisted/ribbon construction.
-- Add a knowledge star or other decorative symbol inside the S.
-- Stretch, rotate, skew, or independently reshape the mark.
-- Mix unrelated icon styles into the primary brand identity.
-- Treat emoji or generic education clip-art as brand assets.
+- Put text inside the standalone icon.
+- Add gradients, bevels, chrome, shadows or 3D effects to the master mark.
+- Stretch, rotate, skew or independently reshape the symbol.
+- Mix unrelated icon families into the primary identity.
+- Use semantic colors as replacements for brand cyan.
 
 ## Small-size acceptance test
 
-Before approving a future revision, inspect the mark at approximately:
-
-- 16 px — favicon/browser tab
-- 32 px — compact navigation
-- 48 px — mobile shortcut
-- 96 px — launcher preview
-- 192 px — PWA icon
-- 512 px — high-resolution app icon
-
-A revision fails if the S loses its identity, develops awkward tangencies, becomes visually tangled, or needs the wordmark to be recognizable.
+Inspect new exports at 16px, 32px, 48px, 96px, 180px, 192px, 512px and 1024px. Reject a revision if the S becomes tangled, thin, noisy, or dependent on the wordmark.
 
 ## Rationale
 
-The previous identity attempted to combine an S/ribbon structure with a knowledge star. At small sizes that created a visually tangled silhouette and made the mark feel more like decorative education artwork than a technology brand.
-
-The new system removes those competing signals and makes the **S itself the brand**. This gives Shadecode a stronger foundation for Student, SCS, Idea Vault, future university products, and the wider Shadecode ecosystem.
+The S is deliberately doing less so it can mean more. A single memorable silhouette gives Shadecode Student a durable identity across software, education environments and physical products. Cyan supplies recognition, typography supplies personality, and supporting effects supply atmosphere without becoming the logo.

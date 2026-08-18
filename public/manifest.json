@@ -15,16 +15,22 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/brand/shadecode-app-icon.svg",
-      "sizes": "any",
+      "src": "/brand/shadecode-app-icon-dark.svg",
+      "sizes": "600x600",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
       "src": "/brand/shadecode-app-icon-maskable.svg",
-      "sizes": "any",
+      "sizes": "600x600",
       "type": "image/svg+xml",
       "purpose": "maskable"
+    },
+    {
+      "src": "/brand/shadecode-app-icon.svg",
+      "sizes": "600x600",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "screenshots": [
@@ -43,19 +49,19 @@
       "name": "Learn",
       "short_name": "Learn",
       "url": "/learn",
-      "icons": [{ "src": "/brand/shadecode-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/brand/shadecode-app-icon-dark.svg", "sizes": "600x600", "type": "image/svg+xml" }]
     },
     {
       "name": "Exam Hub",
       "short_name": "Exam Hub",
       "url": "/exam-hub",
-      "icons": [{ "src": "/brand/shadecode-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/brand/shadecode-app-icon-dark.svg", "sizes": "600x600", "type": "image/svg+xml" }]
     },
     {
       "name": "Math Checker",
       "short_name": "Math Checker",
       "url": "/math-checker",
-      "icons": [{ "src": "/brand/shadecode-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/brand/shadecode-app-icon-dark.svg", "sizes": "600x600", "type": "image/svg+xml" }]
     }
   ],
   "privacy_policy_url": "https://shadecodestudent.vercel.app/privacy.html",

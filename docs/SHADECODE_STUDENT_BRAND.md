@@ -1,73 +1,105 @@
-# Shadecode Student Brand System
+# Shadecode Student Brand System v2
 
-## Decision
+## Core decision
 
-The **Shadecode Student symbol is now a monochrome mark**. The master brand color is cyan, with a deep navy field used for dark surfaces and app-icon containers.
+The **Shadecode Student S mark is the master identity**.
 
-This is deliberate: a single-color mark survives far more real-world uses than a gradient. It can be printed, embroidered, laser-engraved, embossed, painted on a building, etched onto a device, rendered at favicon size, or reproduced in black and white without losing its identity.
+The production master is a **single-color cyan mark on transparent background**. A deep-ink tile is a platform container, not part of the logo itself.
+
+This gives one symbol a much longer life: it works in a browser tab, on a phone, on a laptop lid, on clothing, in embroidery, in vinyl signage, in print, in engraving, and in one-color production without depending on effects.
 
 ## Master assets
 
-- `public/brand/shadecode-mark.svg` — transparent primary mark; use `currentColor` so it can inherit the correct brand color.
-- `public/brand/shadecode-mark-reversed.svg` — white mark for dark/photographic surfaces.
-- `public/brand/shadecode-app-icon.svg` — cyan mark on the deep-navy rounded tile used for app/product surfaces.
-- `src/components/brand/BrandMark.tsx` — reusable React mark for navigation, cards, results, loading states, achievements, and other UI surfaces.
-- `src/components/brand/BrandLockup.tsx` — mark + Shadecode Student wordmark lockup.
-- `src/app/icon.svg` — Next.js automatic application/browser icon.
+- `public/brand/shadecode-app-icon.svg` — transparent cyan master mark.
+- `public/brand/shadecode-mark-white.svg` — transparent reversed white mark.
+- `public/brand/shadecode-app-icon-dark.svg` — cyan mark on deep-ink product tile.
+- `public/brand/shadecode-app-icon-light.svg` — dark-cyan mark on light product tile.
+- `public/brand/shadecode-app-icon-maskable.svg` — safe-area PWA/adaptive icon with a deep-ink background.
+- `src/components/brand/BrandMark.tsx` — reusable inline mark for the product UI.
+- `src/components/brand/BrandLockup.tsx` — mark + wordmark lockup.
+- `src/app/icon.svg` — framework-managed browser/app icon.
+- `src/app/apple-icon.svg` — framework-managed Apple icon.
 
-## Color
+## Color architecture
 
-### Primary brand
+### Core identity
 
-- Brand Cyan: `#22D3EE`
-- Deep Navy: `#06111C`
+- **Shadecode Cyan:** `#22D3EE`
+- **Shadecode Cyan Strong:** `#0891B2`
+- **Shadecode Ink:** `#06111C`
 
-### Accessible UI mapping
+The icon itself stays monochrome. Cyan is the recognition color.
 
-On light backgrounds, interactive controls use a darker cyan family value (`#0891B2`) so text and controls remain readable. On dark backgrounds, the brand cyan (`#22D3EE`) is used directly.
+A restrained cyan-blue-violet gradient exists only as an **atmospheric campaign treatment**. It must never be required to recognize the mark.
 
-The product does **not** depend on purple or a cyan-purple gradient for recognition. Gradients may appear in external campaign artwork only when they do not replace the master mark.
+### UI semantics
+
+- Cyan = primary action, focus, active state, brand recognition.
+- Green = success/progress completion.
+- Amber = warning/attention.
+- Red = destructive/error.
+- Blue = informational state.
+
+Semantic colors never replace the master brand color in the logo.
 
 ## Typography
 
-The geometric display character from the logo is carried into the interface through **Michroma** for headings, labels, navigation labels, buttons, and brand elements. Inter remains the body/UI reading font where long-form readability matters.
+The system now uses two complementary typefaces:
 
-This creates a simple hierarchy:
+- **Michroma** = brand voice only: wordmark, compact brand labels, selected launch/marketing moments.
+- **Space Grotesk** = product display/UI: page titles, headings, navigation, controls, data-heavy interface labels.
+- **Inter** = long-form reading and dense utility text.
 
-- Brand/UI display: Michroma
-- Body and dense information: Inter
+This is intentionally different from making every heading Michroma. Michroma carries the futuristic identity, while Space Grotesk keeps the product fast to scan and comfortable to use for hours of studying.
 
-## Usage rules
+## Visual language
 
-1. Never place `SHADECODE STUDENT` text inside the standalone icon.
-2. Use the mark alone where the surrounding context already identifies the product.
-3. Use the lockup for marketing, onboarding, splash screens, official documents, and presentations.
-4. Keep clear space around the mark at least equal to the visual height of its smallest internal band.
-5. Do not stretch, skew, rotate, outline, bevel, or add a drop shadow to the master mark.
-6. Do not recolor the mark with arbitrary colors.
-7. For one-color physical production, use Brand Cyan, black, or white according to the surface and production method.
-8. For tiny UI sizes, prefer the simple mark without the wordmark.
-9. For dark surfaces, the cyan mark on Deep Navy is the preferred app/product treatment.
-10. The icon must remain recognizable at 16px and below, so unnecessary detail must never be added to the core mark.
+Shadecode Student should feel:
+
+- precise, not decorative
+- futuristic, not sci-fi cosplay
+- energetic, not noisy
+- premium, not glossy
+- intelligent, not corporate
+- youthful, not childish
+
+Use deep surfaces, thin borders, restrained cyan illumination, generous spacing, and strong typographic hierarchy. Glass effects and glow belong to supporting surfaces, never the master mark.
+
+## Icon rules
+
+1. The standalone icon contains **no text**.
+2. The transparent cyan mark is the preferred master asset.
+3. Use the dark tile where a platform requires a complete icon container.
+4. Use the maskable variant for Android/PWA adaptive surfaces.
+5. Use the white mark for one-color dark production.
+6. Never stretch, skew, rotate, bevel, outline, or add a shadow to the master mark.
+7. Never attach a gradient directly to the master mark.
+8. Preserve generous clear space around the mark.
+9. At tiny sizes, use the mark alone and avoid wordmarks.
+10. For physical production, use cyan, black, or white depending on the material and contrast requirements.
 
 ## Product-wide placement
 
-The mark is intended to appear consistently in:
+The mark and visual language should be consistent across:
 
-- browser/app icons
-- PWA install surfaces
+- browser tabs and favicons
+- PWA and install surfaces
+- desktop/mobile app shells
 - navigation and headers
-- loading states
-- empty states
+- loading and empty states
 - result and score pages
-- achievement/badge surfaces
+- exam/assessment surfaces
+- achievement and reward surfaces
 - notifications and completion states
 - onboarding
-- social/profile surfaces
-- documentation
-- presentations
-- clothing
-- signage and buildings
-- computers, phones, tablets, and accessories
+- social/share cards
+- documentation and presentations
+- clothing and merchandise
+- school/university/polytechnic signage
+- laptops, phones, tablets, backpacks and accessories
 
-The symbol is the identity. The wordmark is supporting typography.
+## The rule that keeps the system coherent
+
+**The S is the identity. Cyan is the recognition color. Typography carries the personality. Effects create atmosphere.**
+
+Never reverse those priorities.

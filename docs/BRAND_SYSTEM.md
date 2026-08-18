@@ -1,97 +1,60 @@
-# Shadecode Student Brand System
+# Shadecode Student Brand System v2
 
-## Master decision
+`docs/SHADECODE_STUDENT_BRAND.md` is the detailed source of truth. This file is the concise engineering reference.
 
-The Shadecode Student symbol is a **single-color, transparent-background mark**. The primary brand color is Shadecode Cyan `#22D3EE`.
+## Core identity
 
-The previous cyan-to-purple/blue gradient is not part of the core identity. It may be used only as optional campaign artwork when a richer visual treatment is useful. It must never replace the master mark.
+The Shadecode Student symbol is a **single-color transparent mark**. The master recognition color is Shadecode Cyan `#22D3EE`.
 
-## Core assets
+The cyan-blue-violet gradient from the visual references is an optional campaign/atmosphere treatment only. It is never required for recognition and is never applied to the master icon.
 
-- `public/brand/shadecode-mark.svg` — transparent master mark.
-- `public/brand/shadecode-app-icon.svg` — transparent cyan app mark.
-- `public/brand/shadecode-app-icon-maskable.svg` — deep-navy platform tile for maskable contexts.
-- `public/brand/shadecode-mark-reversed.svg` — white mark for dark/physical applications.
-- `public/brand/shadecode-student-logo.svg` — mark + wordmark lockup.
-- `src/components/brand/BrandMark.tsx` — canonical React mark component.
+## Assets
+
+- `public/brand/shadecode-app-icon.svg` — transparent cyan master mark.
+- `public/brand/shadecode-mark-white.svg` — transparent white/reversed mark.
+- `public/brand/shadecode-app-icon-dark.svg` — cyan mark on deep-ink tile.
+- `public/brand/shadecode-app-icon-light.svg` — dark-cyan mark on white tile.
+- `public/brand/shadecode-app-icon-maskable.svg` — maskable safe-area icon.
+- `public/brand/shadecode-student-logo.svg` — product lockup.
+- `src/components/brand/BrandMark.tsx` — canonical inline mark.
 - `src/components/brand/BrandLockup.tsx` — canonical product lockup.
+- `src/app/icon.svg` — framework favicon/application icon.
+- `src/app/apple-icon.svg` — framework Apple icon.
 
-## Color
+## Color tokens
 
-### Brand
-
-| Token | Value | Use |
+| Token | Value | Role |
 | --- | --- | --- |
-| Shadecode Cyan | `#22D3EE` | Master mark, primary brand accent, interactive emphasis |
-| Shadecode Cyan Strong | `#0891B2` | Light-theme buttons and text where contrast is required |
-| Shadecode Ink | `#06111C` | Dark surfaces, platform icon background |
-| Shadecode Surface | `#0B1724` | Dark cards and navigation surfaces |
+| Shadecode Cyan | `#22D3EE` | master identity and dark-theme primary |
+| Shadecode Cyan Strong | `#0891B2` | light-theme primary where contrast requires it |
+| Shadecode Ink | `#06111C` | dark background and platform tile |
+| Shadecode Surface | `#0B1724` | dark cards/navigation |
 
-Semantic colors such as warning and error remain separate. Brand cyan is not used to communicate semantic danger or success.
+Semantic colors stay separate from brand recognition.
 
 ## Typography
 
-- **Michroma** is the display/brand typeface. Use it for headings, navigation labels, product labels, major numbers, and brand-adjacent UI.
-- **Inter** remains the body/UI reading typeface for paragraphs, forms, tables, dense data, and long content.
-- Do not use the old heavy Arial/Helvetica logo treatment as the system wordmark.
+- **Michroma**: brand wordmark and selected brand labels only.
+- **Space Grotesk**: headings, navigation, controls, data/UI display.
+- **Inter**: body copy, forms, tables, long-form reading.
 
-## Mark rules
+This hierarchy keeps the futuristic character without forcing a display font onto dense study content.
 
-1. The icon is the symbol alone. Never put `SHADECODE` or `STUDENT` inside the icon.
-2. Keep the master mark transparent whenever the surface provides its own background.
-3. Use the maskable dark-background asset where a platform expects a complete square icon.
-4. Use the reversed white mark on dark physical or monochrome surfaces.
-5. Do not recolor the master mark with arbitrary gradients.
-6. Do not add shadows, glows, bevels, outlines, perspective, or 3D effects to the master asset.
-7. Maintain clear space around the symbol. At minimum, preserve the visual height of one outer ribbon as the breathing room on all sides.
-8. Never stretch the mark non-proportionally.
-9. At tiny sizes, prefer the flat cyan mark over detailed effects.
+## Engineering rules
 
-## Where the mark belongs
+1. The standalone icon contains no text.
+2. Transparent cyan is the master asset.
+3. Use the dark tile when a platform requires a complete icon container.
+4. Use the maskable asset for adaptive PWA/Android contexts.
+5. Use the white mark for dark one-color physical production.
+6. Never stretch, skew, bevel, outline, shadow, or perspective-transform the master mark.
+7. Do not apply gradients directly to the master mark.
+8. Preserve clear space around the symbol.
+9. At tiny sizes, use the symbol alone.
+10. Never use cyan as the only indicator of success, warning, error, or other semantic state.
 
-The canonical mark should be used consistently in:
+## Placement
 
-- browser favicon and tab identity
-- PWA manifest icons
-- install prompts
-- Android adaptive launcher icons
-- older Android launcher fallback
-- navigation/sidebar branding
-- loading and offline surfaces
-- empty states when the product identity is useful
-- result/exam sharing cards
-- notifications and install surfaces
-- documentation and product screenshots
-- social/profile avatars
-- merchandise, embroidery, signage, and device branding
+Use the canonical identity consistently across favicon, PWA/install surfaces, navigation, loading/offline states, empty states, results, exam sharing, notifications, onboarding, social cards, documentation, merchandise, signage, and device branding.
 
-## Platform strategy
-
-### Web / PWA
-
-Use `shadecode-app-icon.svg` for transparent icon contexts and `shadecode-app-icon-maskable.svg` for maskable contexts. The manifest deliberately avoids stale legacy PNG icon references.
-
-### Android
-
-Android 8+ uses the adaptive icon resources. Older Android versions use the vector fallback in `mipmap-anydpi`, so the launcher does not depend on obsolete raster artwork.
-
-### Physical applications
-
-Use the flat cyan mark on light surfaces, white on dark surfaces, or a single-color production ink. For embroidery, engraving, screen printing, and laser cutting, the mark must remain a single solid shape with no gradient.
-
-## Brand lockup
-
-The preferred product lockup is:
-
-**SHADECODE**
-
-**STUDENT**
-
-The symbol may sit to the left or above the wordmark. The symbol remains independent and must also work without the wordmark.
-
-## Accessibility
-
-- Do not rely on cyan alone to communicate a state.
-- Use text, icons, borders, or shape changes for status information.
-- Use `#0891B2` or darker for cyan text on light backgrounds when needed for readable contrast.
-- The symbol should have meaningful accessible text when it conveys identity and `aria-hidden="true"` when it is decorative beside an already-labelled brand lockup.
+**The S is the identity. Cyan is the recognition color. Typography carries the personality. Effects create atmosphere.**
