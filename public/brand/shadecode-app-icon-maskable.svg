@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-labelledby="title desc">
+  <title id="title">Shadecode Student maskable app icon</title>
+  <desc id="desc">A dark platform tile containing the centered Shadecode Student mark with safe-area padding.</desc>
+  <rect width="600" height="600" rx="132" fill="#06111C"/>
+  <g fill="#22D3EE" transform="translate(78 72) scale(.72)">
+    <path d="M72.5 146.5 275.5 24.5 475.5 139.5 474.5 224.5 190.5 162.5 72.5 193.5Z"/>
+    <path d="M72.5 193.5 477.5 326.5 477.5 389.5 72.5 266.5Z"/>
+    <path d="M72.5 340.5 132.5 372.5 132.5 396.5 272.5 480.5 477.5 389.5 477.5 435.5 278.5 555.5 72.5 436.5Z"/>
+  </g>
+</svg>
