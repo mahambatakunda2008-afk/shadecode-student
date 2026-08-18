@@ -1,6 +1,5 @@
 "use client";
 
-// src/theme/MuiThemeProvider.tsx
 import React, { ReactNode, useContext } from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -26,9 +25,10 @@ export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
     },
     typography: {
       fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
-      h1: { fontFamily: "var(--font-brand), Michroma, sans-serif" },
-      h2: { fontFamily: "var(--font-brand), Michroma, sans-serif" },
-      h3: { fontFamily: "var(--font-brand), Michroma, sans-serif" },
+      h1: { fontFamily: "var(--font-display), Space Grotesk, sans-serif", fontWeight: 600, letterSpacing: "-0.035em" },
+      h2: { fontFamily: "var(--font-display), Space Grotesk, sans-serif", fontWeight: 600, letterSpacing: "-0.025em" },
+      h3: { fontFamily: "var(--font-display), Space Grotesk, sans-serif", fontWeight: 600, letterSpacing: "-0.012em" },
+      button: { fontFamily: "var(--font-display), Space Grotesk, sans-serif", fontWeight: 600, textTransform: "none" },
     },
     shape: {
       borderRadius: 12,
