@@ -16,6 +16,7 @@ export function createWorkObject(input: Partial<WorkObject> & { mode: StudySpace
     status: input.status ?? "draft",
     subject: input.subject?.trim() || undefined,
     topic: input.topic?.trim() || undefined,
+    lessonId: input.lessonId,
     prompt: input.prompt,
     response: input.response,
     working: input.working,
@@ -61,4 +62,15 @@ export function createWorkmateWork(input: {
   attachments?: string[];
 }): WorkObject {
   return createWorkObject({ ...input, mode: "workmate" });
+}
+
+export function createLessonWork(input: {
+  lessonId: string;
+  subject?: string;
+  topic?: string;
+  prompt?: string;
+  response?: string;
+  working?: string;
+}): WorkObject {
+  return createWorkObject({ ...input, mode: "lesson" });
 }
