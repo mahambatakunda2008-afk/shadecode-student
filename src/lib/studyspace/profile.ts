@@ -39,7 +39,7 @@ export function buildLearnerProfile(evidence: LearningEvidence[], now = new Date
     groups.set(key, [...(groups.get(key) ?? []), item]);
   }
 
-  const topicMastery: TopicMastery[] = [...groups.entries()].map(([key, items]) => {
+  const topicMastery: TopicMastery[] = [...groups.entries()].map(([key, items]): TopicMastery => {
     const percentages = items.map((item) => item.percentage).filter((value): value is number => typeof value === "number");
     const recent = percentages.slice(-3);
     const older = percentages.slice(0, -3);
@@ -50,14 +50,18 @@ export function buildLearnerProfile(evidence: LearningEvidence[], now = new Date
     const weak = last !== undefined ? last < 50 : items.some((item) => item.outcome === "struggled");
     const strong = last !== undefined ? last >= 85 : items.some((item) => item.outcome === "mastered");
     const topic = items.at(-1)?.topic?.trim() ?? "";
+    const averagePercentage = average(percentages);
+    const mastery: TopicMastery["mastery"] = strong ? "secure" : weak ? "developing" : averagePercentage === undefined ? "unknown" : "developing";
+    const trend: TopicMastery["trend"] = delta === undefined ? "unknown" : delta >= 5 ? "improving" : delta <= -5 ? "declining" : "stable";
+
     return {
       key,
       subject: items.at(-1)?.subject?.trim() || undefined,
       topic,
       attempts: items.length,
-      averagePercentage: average(percentages),
-      trend: delta === undefined ? "unknown" : delta >= 5 ? "improving" : delta <= -5 ? "declining" : "stable",
-      mastery: strong ? "secure" : weak ? "developing" : "developing",
+      averagePercentage,
+      trend,
+      mastery,
       weak,
       strong,
     };
