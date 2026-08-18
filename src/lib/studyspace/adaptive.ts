@@ -12,7 +12,10 @@ export type LearningAction = {
 };
 
 function topicsFrom(work: WorkObject): string[] {
-  const values = [work.topic, ...(work.assessment?.weakAreas ?? [])].filter(Boolean) as string[];
+  const values = [
+    ...(work.assessment?.weakAreas ?? []),
+    work.topic,
+  ].filter(Boolean) as string[];
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
@@ -63,9 +66,6 @@ function actionFor(work: WorkObject, topic: string, index: number): LearningActi
 export function recommendNextActions(work: WorkObject, assessment?: WorkAssessment): LearningAction[] {
   const evidence = assessment ?? work.assessment;
   const enriched = evidence && evidence !== work.assessment ? { ...work, assessment: evidence } : work;
-  const topics = topicsFrom(enriched);
-
-  if (topics.length > 0) return topics.slice(0, 3).map((topic, index) => actionFor(enriched, topic, index));
 
   if (evidence?.percentage !== undefined && evidence.percentage >= 80) {
     return [{
@@ -77,6 +77,9 @@ export function recommendNextActions(work: WorkObject, assessment?: WorkAssessme
       priority: "medium",
     }];
   }
+
+  const topics = topicsFrom(enriched);
+  if (topics.length > 0) return topics.slice(0, 3).map((topic, index) => actionFor(enriched, topic, index));
 
   return [{
     type: "workmate",
