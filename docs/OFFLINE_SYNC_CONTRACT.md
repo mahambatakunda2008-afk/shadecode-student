@@ -31,6 +31,7 @@ The generic mutation queue is intentionally allowlisted. It must not become a ge
 - Concurrent sync runs are coalesced by an in-progress guard.
 - Signing out stops automatic sync.
 - Failed mutations remain queued and record an attempt/error rather than being silently discarded.
+- Mutations that exhaust automatic retries are visible in the learner UI and can be explicitly re-opened for another authenticated sync attempt.
 
 ## Conflict policy
 
