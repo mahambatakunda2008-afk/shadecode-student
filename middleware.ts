@@ -1,4 +1,17 @@
 import { NextResponse } from 'next/server';
+  "Content-Security-Policy": "default-src 'self'; script-src 'self';",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "no-referrer",
+  "X-Content-Type-Options": "nosniff",
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+};
+
+function applySecurityHeaders(res: NextResponse) {
+  for (const [key, value] of Object.entries(securityHeaders)) {
+    res.headers.set(key, value);
+  }
+  return res;
+}
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
@@ -53,15 +66,17 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser();
 
   function redirectPreservingSession(destination: string, extraParams?: Record<string, string>) {
-    const url = req.nextUrl.clone();
-    url.pathname = destination;
-    if (extraParams) {
-      Object.entries(extraParams).forEach(([k, v]) => url.searchParams.set(k, v));
-    }
-    const redirectResponse = NextResponse.redirect(url);
-    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
-    return redirectResponse;
+  const url = req.nextUrl.clone();
+  url.pathname = destination;
+  if (extraParams) {
+    Object.entries(extraParams).forEach(([k, v]) => url.searchParams.set(k, v));
   }
+  const redirectResponse = NextResponse.redirect(url);
+  response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+  // Apply security headers to redirect response
+  applySecurityHeaders(redirectResponse);
+  return redirectResponse;
+}
 
   if (!user) {
     return redirectPreservingSession('/auth/login', { redirect: pathname });
@@ -105,6 +120,8 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return redirectPreservingSession('/dashboard');
   }
 
+  // Apply security headers before returning response
+  applySecurityHeaders(response);
   return response;
 }
 

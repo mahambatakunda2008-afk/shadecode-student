@@ -61,6 +61,7 @@ export interface LessonProgress {
   lastAttempted: string;
   timeSpent: number;
   attempts: number;
+  score?: number;
 }
 
 export interface SubjectProgress {

@@ -1,15 +1,11 @@
 import { existsSync, mkdirSync, rmSync, renameSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path"; import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const brandDir = join(root, "public", "brand");
 const outputDir = join(root, "public", "icons");
 const tempDir = join(outputDir, ".generated");
-
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-const sharpCli = "sharp-cli@5.2.0";
 
 const sources = {
   master: "shadecode-app-icon.svg",
@@ -26,50 +22,45 @@ function ensureDirs() {
   mkdirSync(tempDir, { recursive: true });
 }
 
-function render(sourcePath, size) {
-  execFileSync(
-    npx,
-    ["--yes", sharpCli, "-i", sourcePath, "-o", tempDir, "-f", "png", "resize", String(size), String(size)],
-    { cwd: root, stdio: "inherit" },
-  );
-
-  const expected = join(tempDir, sourcePath.split(/[\\/]/).pop().replace(/\.svg$/i, ".png"));
-  if (!existsSync(expected)) {
-    throw new Error(`sharp-cli did not produce ${expected}`);
-  }
-  return expected;
+async function render(sourcePath, size) {
+  const outputFileName = sourcePath.split(/[\\/]/).pop().replace(/\.svg$/i, `-${size}.png`);
+  const destination = join(tempDir, outputFileName);
+  await sharp(sourcePath).resize(size, size).png().toFile(destination);
+  return destination;
 }
 
-function writeAsset(sourceName, size, outputName) {
+async function writeAsset(sourceName, size, outputName) {
   const sourcePath = join(brandDir, sourceName);
   if (!existsSync(sourcePath)) throw new Error(`Missing brand source: ${sourcePath}`);
-  const rendered = render(sourcePath, size);
+  const rendered = await render(sourcePath, size);
   const destination = join(outputDir, outputName);
   mkdirSync(dirname(destination), { recursive: true });
   rmSync(destination, { force: true });
   renameSync(rendered, destination);
 }
 
-ensureDirs();
+(async () => {
+  ensureDirs();
 
-for (const size of sizes) {
-  writeAsset(sources.master, size, `shadecode-student-${size}.png`);
-}
+  for (const size of sizes) {
+    await writeAsset(sources.master, size, `shadecode-student-${size}.png`);
+  }
 
-for (const size of [192, 512]) {
-  writeAsset(sources.dark, size, `shadecode-student-dark-${size}.png`);
-}
+  for (const size of [192, 512]) {
+    await writeAsset(sources.dark, size, `shadecode-student-dark-${size}.png`);
+  }
 
-for (const size of [180, 512]) {
-  writeAsset(sources.light, size, `shadecode-student-light-${size}.png`);
-}
+  for (const size of [180, 512]) {
+    await writeAsset(sources.light, size, `shadecode-student-light-${size}.png`);
+  }
 
-for (const size of [192, 512, 1024]) {
-  writeAsset(sources.maskable, size, `shadecode-student-maskable-${size}.png`);
-}
+  for (const size of [192, 512, 1024]) {
+    await writeAsset(sources.maskable, size, `shadecode-student-maskable-${size}.png`);
+  }
 
-writeAsset(sources.dark, 32, "favicon.png");
-writeAsset(sources.light, 180, "apple-touch-icon.png");
+  await writeAsset(sources.dark, 32, "favicon.png");
+  await writeAsset(sources.light, 180, "apple-touch-icon.png");
 
-rmSync(tempDir, { recursive: true, force: true });
-console.log(`Generated Shadecode Student raster brand assets in ${outputDir}`);
+  rmSync(tempDir, { recursive: true, force: true });
+  console.log(`Generated Shadecode Student raster brand assets in ${outputDir}`);
+})();

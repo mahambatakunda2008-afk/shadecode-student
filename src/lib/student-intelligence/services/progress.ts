@@ -82,6 +82,7 @@ export class ProgressService {
         return this.getEmptyCurriculumProgress();
       }
 
+      const lessonProgress = await this.getLessonProgress(userId);
       return {
         totalLessons: curriculumState.allLessons.length,
         completedLessons: curriculumState.completedLessons.length,
@@ -90,7 +91,7 @@ export class ProgressService {
         ).length,
         lockedLessons: curriculumState.lockedLessons.length,
         completionPercentage: curriculumState.completionPercent,
-        weightedCompletion: curriculumState.completionPercent, // TODO: Implement weighted calculation
+        weightedCompletion: this.calculateWeightedCompletion(lessonProgress),
         currentLesson: curriculumState.currentLesson?.id || null,
         recommendedNextLesson: curriculumState.recommendedNextLesson?.id || null,
       };
@@ -109,7 +110,7 @@ export class ProgressService {
 
       let query = supabase
         .from("learn_lessons")
-        .select("id, title, subject_id, progress, updated_at")
+        .select("id, title, subject_id, progress, updated_at, time_spent, attempts")
         .eq("user_id", userId);
 
       if (lessonId) {
@@ -130,8 +131,8 @@ export class ProgressService {
         progress: lesson.progress || 0,
         completed: (lesson.progress || 0) >= 100,
         lastAttempted: lesson.updated_at || new Date().toISOString(),
-        timeSpent: 0, // TODO: Track time spent
-        attempts: 1, // TODO: Track attempts
+        timeSpent: lesson.time_spent || 0,
+        attempts: lesson.attempts || 1,
       }));
     } catch (error) {
       console.error("[ProgressService] Error getting lesson progress:", error);
@@ -194,7 +195,12 @@ export class ProgressService {
       if (progress.lessonId && progress.progress !== undefined) {
         const { error } = await supabase
           .from("learn_lessons")
-          .update({ progress: progress.progress, updated_at: new Date().toISOString() })
+          .update({
+            progress: progress.progress,
+            updated_at: new Date().toISOString(),
+            ...(progress.timeSpent !== undefined && { time_spent: progress.timeSpent }),
+            ...(progress.attempts !== undefined && { attempts: progress.attempts }),
+          })
           .eq("user_id", userId)
           .eq("id", progress.lessonId);
 
@@ -224,9 +230,19 @@ export class ProgressService {
    */
   private calculateOverallCompletion(lessonProgress: LessonProgress[]): number {
     if (lessonProgress.length === 0) return 0;
-
     const totalProgress = lessonProgress.reduce((sum, lesson) => sum + lesson.progress, 0);
     return Math.round(totalProgress / lessonProgress.length);
+  }
+
+  /**
+   * Calculate weighted completion percentage
+   */
+  private calculateWeightedCompletion(lessonProgress: LessonProgress[]): number {
+    if (lessonProgress.length === 0) return 0;
+    // Example weighting: give higher weight to lessons with higher progress
+    const totalWeight = lessonProgress.reduce((sum, l) => sum + (l.progress / 100), 0);
+    const weightedSum = lessonProgress.reduce((sum, l) => sum + l.progress * (l.progress / 100), 0);
+    return Math.round(weightedSum / totalWeight);
   }
 
   /**
