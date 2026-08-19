@@ -8,6 +8,8 @@ on:
       - "android-v*"
     paths:
       - "android/**"
+      - "public/brand/**"
+      - "scripts/generate-brand-assets.mjs"
       - ".github/workflows/android.yml"
 
 permissions:
