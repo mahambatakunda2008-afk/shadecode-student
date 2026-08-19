@@ -2,13 +2,16 @@
  * /lib/events/EventPipeline.ts
  *
  * Unified Event Pipeline - Single Event Service
+ *
+ * The pipeline is intentionally idempotent by canonical event id. A replayed
+ * event must not execute Cortex/recommendation/analytics handlers twice in the
+ * same runtime. Durable cross-device idempotency remains a server concern.
  */
 
 import {
   UnifiedEvent,
   EventType,
   EventHandler,
-  EventSubscription,
   EventPipelineConfig,
 } from "./types";
 
@@ -18,6 +21,8 @@ export class EventPipeline {
   private config: EventPipelineConfig;
   private eventHistory: UnifiedEvent[] = [];
   private maxHistorySize = 1000;
+  private processedEventIds = new Set<string>();
+  private maxProcessedIds = 5000;
 
   private constructor(config: Partial<EventPipelineConfig> = {}) {
     this.config = {
@@ -31,9 +36,6 @@ export class EventPipeline {
     };
   }
 
-  /**
-   * Get singleton instance
-   */
   static getInstance(config?: Partial<EventPipelineConfig>): EventPipeline {
     if (!EventPipeline.instance) {
       EventPipeline.instance = new EventPipeline(config);
@@ -42,19 +44,28 @@ export class EventPipeline {
   }
 
   /**
-   * Emit an event to the pipeline
+   * Emit an event exactly once per event id for this runtime.
+   * Returns false when the event was already processed.
    */
-  async emit(event: UnifiedEvent): Promise<void> {
+  async emit(event: UnifiedEvent): Promise<boolean> {
+    if (!event.id || !event.userId) {
+      throw new Error("Unified event requires both id and userId");
+    }
+
+    if (this.processedEventIds.has(event.id)) {
+      return false;
+    }
+
+    // Mark before dispatch so a re-entrant replay cannot execute handlers twice.
+    this.processedEventIds.add(event.id);
+    this.trimProcessedIds();
+
     try {
-      // Add to history
       this.addToHistory(event);
 
-      // Route to subscribers
       const handlers = this.subscriptions.get(event.type) || [];
-      
-      // Execute handlers in priority order
-      const sortedHandlers = handlers.sort((a, b) => a.priority - b.priority);
-      
+      const sortedHandlers = [...handlers].sort((a, b) => a.priority - b.priority);
+
       for (const handler of sortedHandlers) {
         try {
           await handler.handle(event);
@@ -63,29 +74,29 @@ export class EventPipeline {
         }
       }
 
-      // Persist event if enabled
       if (this.config.enablePersistence) {
         await this.persistEvent(event);
       }
 
-      // Send to Cortex if enabled
       if (this.config.enableCortex) {
         await this.sendToCortex(event);
       }
 
-      // Send to analytics if enabled
       if (this.config.enableAnalytics) {
         await this.sendToAnalytics(event);
       }
+
+      return true;
     } catch (error) {
+      // A failed event is removed from the in-memory idempotency set so an
+      // explicit retry can execute. Durable downstream idempotency is still
+      // required for persisted/replayed events across processes.
+      this.processedEventIds.delete(event.id);
       console.error("[EventPipeline] Error emitting event:", error);
       throw error;
     }
   }
 
-  /**
-   * Subscribe to an event type
-   */
   subscribe(eventType: EventType, handler: EventHandler): void {
     if (!this.subscriptions.has(eventType)) {
       this.subscriptions.set(eventType, []);
@@ -93,22 +104,14 @@ export class EventPipeline {
     this.subscriptions.get(eventType)!.push(handler);
   }
 
-  /**
-   * Unsubscribe from an event type
-   */
   unsubscribe(eventType: EventType, handler: EventHandler): void {
     const handlers = this.subscriptions.get(eventType);
     if (handlers) {
       const index = handlers.indexOf(handler);
-      if (index > -1) {
-        handlers.splice(index, 1);
-      }
+      if (index > -1) handlers.splice(index, 1);
     }
   }
 
-  /**
-   * Add event to history
-   */
   private addToHistory(event: UnifiedEvent): void {
     this.eventHistory.push(event);
     if (this.eventHistory.length > this.maxHistorySize) {
@@ -116,61 +119,49 @@ export class EventPipeline {
     }
   }
 
-  /**
-   * Get event history
-   */
+  private trimProcessedIds(): void {
+    if (this.processedEventIds.size <= this.maxProcessedIds) return;
+    const keep = Array.from(this.processedEventIds).slice(-Math.floor(this.maxProcessedIds * 0.8));
+    this.processedEventIds = new Set(keep);
+  }
+
   getHistory(limit?: number): UnifiedEvent[] {
-    if (limit) {
-      return this.eventHistory.slice(-limit);
-    }
+    if (limit) return this.eventHistory.slice(-limit);
     return [...this.eventHistory];
   }
 
-  /**
-   * Persist event to database
-   */
-  private async persistEvent(event: UnifiedEvent): Promise<void> {
-    // TODO: Implement persistence to events table
-    // This would store events in the database for analytics and replay
+  /** Persistence remains a deliberate extension point until the canonical event table contract is migrated. */
+  private async persistEvent(_event: UnifiedEvent): Promise<void> {
+    // TODO: wire to the canonical learning-events table with a UNIQUE(event_id)
+    // constraint before claiming cross-process idempotency.
   }
 
-  /**
-   * Send event to Cortex
-   */
-  private async sendToCortex(event: UnifiedEvent): Promise<void> {
-    // TODO: Integrate with Cortex event system
-    // This would send the event to Cortex for intelligence processing
+  private async sendToCortex(_event: UnifiedEvent): Promise<void> {
+    // CortexEventHandler is the canonical Cortex adapter. Keeping this hook
+    // empty avoids dispatching the same event twice.
   }
 
-  /**
-   * Send event to analytics
-   */
-  private async sendToAnalytics(event: UnifiedEvent): Promise<void> {
-    // TODO: Integrate with analytics system
-    // This would send the event to analytics for tracking
+  private async sendToAnalytics(_event: UnifiedEvent): Promise<void> {
+    // AnalyticsEventHandler is the canonical analytics adapter. Keeping this
+    // hook empty avoids duplicate analytics writes.
   }
 
-  /**
-   * Clear event history
-   */
   clearHistory(): void {
     this.eventHistory = [];
   }
 
-  /**
-   * Update configuration
-   */
+  /** Test/support hook for resetting runtime idempotency state. */
+  clearProcessedEventIds(): void {
+    this.processedEventIds.clear();
+  }
+
   updateConfig(config: Partial<EventPipelineConfig>): void {
     this.config = { ...this.config, ...config };
   }
 
-  /**
-   * Get current configuration
-   */
   getConfig(): EventPipelineConfig {
     return { ...this.config };
   }
 }
 
-// Export singleton instance
 export const eventPipeline = EventPipeline.getInstance();
