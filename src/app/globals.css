@@ -6,7 +6,7 @@
   --brand-cyan-soft: #67E8F9;
   --brand-ink: #06111C;
   --brand-surface: #0B1724;
-  --brand-gradient: linear-gradient(115deg, #22D3EE 0%, #0EA5E9 48%, #7C3AED 100%);
+  --brand-gradient: linear-gradient(115deg, #00E5FF 0%, #00A8FF 28%, #245BFF 58%, #7A3CFF 82%, #C135FF 100%);
 
   --background: #F7FAFC;
   --foreground: #0B1724;
@@ -133,7 +133,15 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.28; letter-spac
 .shadecode-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--foreground); }
 .shadecode-brand__mark { width: 36px; height: 36px; flex: 0 0 auto; color: var(--brand-cyan); }
 .shadecode-brand__words { display: inline-flex; flex-direction: column; line-height: 1; }
-.shadecode-brand__name { font-family: var(--font-brand), sans-serif; font-size: 14px; letter-spacing: 0.035em; white-space: nowrap; }
+.shadecode-brand__name { display: inline-flex; align-items: baseline; font-family: var(--font-brand), sans-serif; font-size: 14px; font-weight: 400; letter-spacing: 0.035em; white-space: nowrap; }
+.shadecode-brand__shade { color: var(--foreground); }
+.shadecode-brand__code {
+  color: #245BFF;
+  background: var(--brand-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 .shadecode-brand__product { margin-top: 5px; font-family: var(--font-brand), sans-serif; font-size: 7px; letter-spacing: 0.42em; padding-left: 0.42em; color: var(--muted-foreground); white-space: nowrap; }
 .shadecode-brand--compact .shadecode-brand__mark { width: 30px; height: 30px; }
 .shadecode-brand--compact .shadecode-brand__name { font-size: 12px; }
