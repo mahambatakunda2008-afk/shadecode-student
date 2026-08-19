@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "predev": "npm run generate:brand",
     "build": "next build",
+    "prebuild": "npm run generate:brand",
     "start": "next start",
     "test": "vitest run",
     "lint": "eslint",
     "postbuild": "next-sitemap",
+    "generate:brand": "node scripts/generate-brand-assets.mjs",
     "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts",
     "extract:questions": "tsx bin/exam-hub-ingest/extract-questions.ts",
     "discover:paper-sources": "tsx bin/exam-hub-ingest/discover-paper-sources.ts"
