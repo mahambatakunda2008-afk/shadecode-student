@@ -108,6 +108,13 @@
 .dashboard-core-error { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; margin-bottom:16px; border-radius:16px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); }
 .dashboard-core-error p { margin:0; font-size:.8rem; color:#ef4444; }
 
+/* Informational, not an error -- shown when the dashboard is serving the
+   last successfully cached read instead of a live one (offline, timeout,
+   or a flaky connection). Amber rather than red: nothing is broken, the
+   data is just not guaranteed fresh. */
+.dashboard-stale-banner { display:flex; align-items:center; gap:8px; padding:10px 16px; margin-bottom:16px; border-radius:12px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.22); color:#f59e0b; font-size:.74rem; font-weight:600; }
+.dashboard-stale-banner svg { flex-shrink:0; }
+
 .dashboard-loading-state { min-height:100%; }
 .dashboard-skeleton { position:relative; overflow:hidden; border-radius:22px; background:var(--muted); }
 .dashboard-skeleton::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--background) 55%, transparent),transparent); animation:dashboard-shimmer 1.4s infinite; }
