@@ -43,10 +43,14 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Shadecode Student" },
   icons: {
     icon: [
+      { url: "/icons/favicon.png", type: "image/png", sizes: "32x32" },
       { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
       { url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "any" },
     ],
-    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "any" }],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" },
+      { url: "/apple-icon.svg", type: "image/svg+xml", sizes: "any" },
+    ],
     other: [{ rel: "mask-icon", url: "/brand/shadecode-mark-white.svg", color: "#22D3EE" }],
   },
 };
@@ -63,6 +67,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icons/favicon.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
         <meta name="theme-color" content="#06111C" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
