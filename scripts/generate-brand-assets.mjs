@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, rmSync, renameSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, renameSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
