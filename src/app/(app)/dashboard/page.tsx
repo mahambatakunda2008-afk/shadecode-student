@@ -1,7 +1,7 @@
 "use client";
 
-import DashboardReimagined from "@/components/dashboard/DashboardReimagined";
+import DashboardWatchdog from "@/components/dashboard/DashboardWatchdog";
 
 export default function Dashboard() {
-  return <DashboardReimagined />;
+  return <DashboardWatchdog />;
 }
