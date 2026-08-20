@@ -6,17 +6,21 @@ import { BookOpen, ArrowRight, CheckCircle2, Lock, TrendingUp, Clock, Zap } from
 import CurriculumProgressCard from "@/components/CurriculumProgressCard";
 import LearningJourney from "@/components/LearningJourney";
 import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
+import { saveDashboardCache, loadDashboardCache } from "@/lib/offline/dashboardCache";
+import { createClient } from "@/lib/supabase/client";
 import type { CurriculumState, LessonRow } from "@/lib/curriculum";
 
 const FETCH_TIMEOUT_MS = 15000;
 
 interface Subject { id: string; name: string; }
+interface CurriculumPayload { state: CurriculumState | null; subjects: Subject[]; }
 
 export default function CurriculumPage() {
   const [state, setState] = useState<CurriculumState | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCached, setIsCached] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const retry = () => setReloadToken((n) => n + 1);
 
@@ -25,32 +29,53 @@ export default function CurriculumPage() {
     setLoading(true);
     setError(null);
 
-    withTimeout(
-      Promise.all([
-        fetch("/api/curriculum").then((res) => res.json()),
-        fetch("/api/learn").then((res) => res.json()),
-      ]),
-      FETCH_TIMEOUT_MS,
-      "Loading your curriculum timed out"
-    )
-      .then(([curriculumData, learnData]) => {
+    (async () => {
+      // Curriculum state is scoped per user for the offline cache below --
+      // this is a read-only client-side lookup just to key that cache
+      // correctly (e.g. shared/family devices), not an auth gate. The
+      // actual protected data comes from /api/curriculum and /api/learn,
+      // which already authenticate server-side via cookies.
+      const { data: auth } = await createClient().auth.getUser();
+      const userId = auth.user?.id;
+
+      try {
+        const [curriculumData, learnData] = await withTimeout(
+          Promise.all([
+            fetch("/api/curriculum").then((res) => res.json()),
+            fetch("/api/learn").then((res) => res.json()),
+          ]),
+          FETCH_TIMEOUT_MS,
+          "Loading your curriculum timed out"
+        );
         if (mounted) {
-          setState(curriculumData?.state ?? null);
-          setSubjects(learnData?.subjects ?? []);
+          const nextState = curriculumData?.state ?? null;
+          const nextSubjects = learnData?.subjects ?? [];
+          setState(nextState);
+          setSubjects(nextSubjects);
+          setIsCached(false);
+          if (userId) saveDashboardCache<CurriculumPayload>(userId, "curriculum", { state: nextState, subjects: nextSubjects });
         }
-      })
-      .catch((err) => {
-        if (mounted) {
+      } catch (err) {
+        // Real fetch failed -- fall back to the last successful load rather
+        // than a hard error, same reasoning as the dashboard: a student
+        // looking at "what should I study next" is exactly the moment
+        // offline shouldn't mean "nothing." See src/lib/offline/dashboardCache.ts.
+        const cached = userId ? loadDashboardCache<CurriculumPayload>(userId, "curriculum") : null;
+        if (mounted && cached) {
+          setState(cached.data.state);
+          setSubjects(cached.data.subjects);
+          setIsCached(true);
+        } else if (mounted) {
           setError(
             err instanceof TimeoutError
               ? "This is taking longer than expected. Please try again."
               : err instanceof Error ? err.message : "Failed to load curriculum"
           );
         }
-      })
-      .finally(() => {
+      } finally {
         if (mounted) setLoading(false);
-      });
+      }
+    })();
 
     return () => {
       mounted = false;
@@ -150,6 +175,11 @@ export default function CurriculumPage() {
           <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0 }}>
             Track your learning progress and see your recommended path
           </p>
+          {isCached && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 14px", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)", width: "fit-content" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#f59e0b" }}>Showing your saved data -- reconnect to refresh</span>
+            </div>
+          )}
         </div>
 
         {/* Overview Stats */}
