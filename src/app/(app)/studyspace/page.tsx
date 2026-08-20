@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { StudySpaceMode, WorkObject } from "@/lib/studyspace/types";
 import { saveWorkObject } from "@/lib/studyspace/store";
+import AdaptiveNextMove from "@/components/studyspace/AdaptiveNextMove";
 
 const modes: { id: StudySpaceMode; label: string; description: string }[] = [
   { id: "workmate", label: "Workmate", description: "Bring questions, answers, working or images." },
@@ -19,8 +20,9 @@ export default function StudySpacePage() {
   const params = useSearchParams();
   const initialMode = params.get("mode") as StudySpaceMode | null;
   const lessonId = params.get("lessonId") || undefined;
+  const initialSubject = params.get("subject") || "";
   const [mode, setMode] = useState<StudySpaceMode>(initialMode && modes.some((item) => item.id === initialMode) ? initialMode : "workmate");
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(initialSubject);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [saved, setSaved] = useState(false);
@@ -28,6 +30,8 @@ export default function StudySpacePage() {
   useEffect(() => {
     if (initialMode && modes.some((item) => item.id === initialMode)) setMode(initialMode);
   }, [initialMode]);
+
+  useEffect(() => setSubject(initialSubject), [initialSubject]);
 
   const current = useMemo(() => modes.find((item) => item.id === mode)!, [mode]);
 
@@ -58,6 +62,8 @@ export default function StudySpacePage() {
         </div>
         <button onClick={() => router.back()} style={{ border: "1px solid var(--card-border)", background: "var(--muted)", borderRadius: 8, padding: "9px 12px", cursor: "pointer" }}>Back</button>
       </header>
+
+      <AdaptiveNextMove subject={subject.trim() || undefined} />
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 18 }}>
         <nav aria-label="StudySpace modes" style={{ display: "grid", gap: 8, alignContent: "start" }}>
