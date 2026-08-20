@@ -9,16 +9,20 @@ const WATCHDOG_TIMEOUT = 20_000;
 /**
  * Dashboard-level safety net.
  *
- * DashboardReimagined has bounded core/Cortex requests, but the initial
- * dashboard gate also waits on auth and the upcoming-exams query. A browser
- * request that never settles can therefore leave the outer skeleton mounted
- * forever. This watchdog guarantees that the user gets an actionable state.
+ * The dashboard has several independent remote reads. If one browser request
+ * never settles, its initial skeleton can otherwise remain mounted forever.
+ * The watchdog only trips while the actual dashboard skeleton is still in the
+ * DOM, so it never replaces a dashboard that has already loaded.
  */
 export default function DashboardWatchdog() {
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setTimedOut(true), WATCHDOG_TIMEOUT);
+    const timer = window.setTimeout(() => {
+      const stillLoading = Boolean(document.querySelector(".dashboard-loading-state"));
+      if (stillLoading) setTimedOut(true);
+    }, WATCHDOG_TIMEOUT);
+
     return () => window.clearTimeout(timer);
   }, []);
 
