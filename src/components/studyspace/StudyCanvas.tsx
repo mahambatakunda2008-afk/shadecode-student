@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 type Point = { x: number; y: number };
 
@@ -17,6 +17,14 @@ export default function StudyCanvas({ storageKey = "shadecode-study-canvas", hei
   const drawingRef = useRef(false);
   const lastPointRef = useRef<Point | null>(null);
   const [hasInk, setHasInk] = useState(false);
+
+  const configure = (context: CanvasRenderingContext2D, dpr: number) => {
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.lineWidth = 2.2;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#111827";
+  };
 
   const paint = (context: CanvasRenderingContext2D, from: Point, to: Point) => {
     context.beginPath();
@@ -43,16 +51,10 @@ export default function StudyCanvas({ storageKey = "shadecode-study-canvas", hei
     canvas.height = Math.max(1, Math.round(height * dpr));
     const context = canvas.getContext("2d");
     if (!context) return;
-    context.scale(dpr, dpr);
-    context.lineWidth = 2.2;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    context.strokeStyle = "#111827";
-    if (previous !== "data:image/png;base64,iVBORw0KGgo=") {
-      const image = new Image();
-      image.onload = () => context.drawImage(image, 0, 0, rect.width, height);
-      image.src = previous;
-    }
+    configure(context, dpr);
+    const image = new Image();
+    image.onload = () => context.drawImage(image, 0, 0, rect.width, height);
+    image.src = previous;
   };
 
   useEffect(() => {
@@ -64,11 +66,7 @@ export default function StudyCanvas({ storageKey = "shadecode-study-canvas", hei
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.round(rect.width * dpr));
     canvas.height = Math.max(1, Math.round(height * dpr));
-    context.scale(dpr, dpr);
-    context.lineWidth = 2.2;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    context.strokeStyle = "#111827";
+    configure(context, dpr);
 
     const saved = (() => { try { return localStorage.getItem(storageKey); } catch { return null; } })();
     if (saved) {
@@ -83,21 +81,20 @@ export default function StudyCanvas({ storageKey = "shadecode-study-canvas", hei
     return () => observer.disconnect();
   }, [height, storageKey]);
 
-  const point = (event: React.PointerEvent<HTMLCanvasElement>): Point => {
+  const point = (event: PointerEvent<HTMLCanvasElement>): Point => {
     const rect = event.currentTarget.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
 
-  const start = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const start = (event: PointerEvent<HTMLCanvasElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true;
     lastPointRef.current = point(event);
   };
 
-  const move = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const move = (event: PointerEvent<HTMLCanvasElement>) => {
     if (!drawingRef.current || !lastPointRef.current) return;
-    const canvas = event.currentTarget;
-    const context = canvas.getContext("2d");
+    const context = event.currentTarget.getContext("2d");
     if (!context) return;
     const next = point(event);
     paint(context, lastPointRef.current, next);
@@ -117,8 +114,9 @@ export default function StudyCanvas({ storageKey = "shadecode-study-canvas", hei
     if (!canvas) return;
     const context = canvas.getContext("2d");
     if (!context) return;
-    const rect = canvas.getBoundingClientRect();
-    context.clearRect(0, 0, rect.width, height);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    configure(context, dpr);
+    context.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
     try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
     setHasInk(false);
     onChange?.("");
