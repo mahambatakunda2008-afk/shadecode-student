@@ -68,8 +68,14 @@ export function buildLearnerProfile(evidence: LearningEvidence[], now = new Date
   }).sort((a, b) => (a.averagePercentage ?? 101) - (b.averagePercentage ?? 101));
 
   const percentages = ordered.map((item) => item.percentage).filter((value): value is number => typeof value === "number");
-  const weakAreas = [...new Set(topicMastery.filter((item) => item.weak).map((item) => item.topic))].slice(0, 20);
-  const strongAreas = [...new Set(topicMastery.filter((item) => item.strong).map((item) => item.topic))].slice(0, 20);
+  const weakAreas = [...new Set([
+    ...topicMastery.filter((item) => item.weak).map((item) => item.topic),
+    ...ordered.flatMap((item) => item.weakAreas),
+  ])].slice(0, 20);
+  const strongAreas = [...new Set([
+    ...topicMastery.filter((item) => item.strong).map((item) => item.topic),
+    ...ordered.flatMap((item) => item.strongAreas),
+  ])].slice(0, 20);
 
   return {
     evidenceCount: ordered.length,
