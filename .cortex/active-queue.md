@@ -13,6 +13,7 @@ This is the executable queue for Cortex Engineering. `.cortex/tasks.md` remains 
 - Preserve stable assessment/attempt identifiers.
 
 ## 🔴 Offline sync completion
+- [~] Offline navigation integration: service-worker RSC caching, network-only public landing page, authenticated `/` → `/dashboard`, and offline-safe `(app)` auth gate are now shipped.
 - Add server-side idempotency handling for queued mutations.
 - Define operation-specific conflict policies.
 - Add retry/backoff and permanent-failure visibility.
