@@ -1,5 +1,9 @@
 // Account-scoped IndexedDB queue for Cortex Verify attempts.
 // Never expose another signed-in user's offline work on a shared device.
+//
+// DB v2 intentionally keeps the legacy v1 store untouched. Older attempts did
+// not contain a userId, so assigning them to the current account would be
+// unsafe. They are therefore quarantined and are not returned by this queue.
 
 export type CortexAttempt = {
   id: string;
@@ -15,7 +19,8 @@ export type CortexAttempt = {
 };
 
 const DB_NAME = 'cortex_verify_db';
-const STORE_NAME = 'attempts';
+const STORE_NAME = 'attempts_v2';
+const LEGACY_STORE_NAME = 'attempts';
 const DB_VERSION = 2;
 
 function openDb(): Promise<IDBDatabase> {
@@ -28,11 +33,14 @@ function openDb(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
-      const oldStore = req.transaction?.objectStore(STORE_NAME);
-      if (db.objectStoreNames.contains(STORE_NAME)) db.deleteObjectStore(STORE_NAME);
-      const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      store.createIndex('userId', 'userId', { unique: false });
-      void oldStore;
+      // Preserve v1 records rather than deleting them or guessing their owner.
+      // The new queue uses a separate store and never reads the legacy store.
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+      // LEGACY_STORE_NAME is intentionally left untouched when it exists.
+      void LEGACY_STORE_NAME;
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -52,6 +60,7 @@ export async function enqueue(attempt: CortexAttempt): Promise<void> {
     tx.objectStore(STORE_NAME).put(attempt);
     tx.oncomplete = () => { db.close(); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Offline queue transaction aborted.')); };
   });
 }
 
@@ -64,6 +73,7 @@ export async function getAll(userId: string): Promise<CortexAttempt[]> {
     const req = index.getAll(owner);
     req.onsuccess = () => { db.close(); resolve(req.result as CortexAttempt[]); };
     req.onerror = () => { db.close(); reject(req.error); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
 
@@ -80,6 +90,7 @@ export async function remove(userId: string, id: string): Promise<void> {
     };
     tx.oncomplete = () => { db.close(); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Offline queue transaction aborted.')); };
   });
 }
 
@@ -97,5 +108,6 @@ export async function clearAll(userId: string): Promise<void> {
     };
     tx.oncomplete = () => { db.close(); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Offline queue transaction aborted.')); };
   });
 }
