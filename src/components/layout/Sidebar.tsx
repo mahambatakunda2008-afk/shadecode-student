@@ -36,6 +36,16 @@ export function Sidebar() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    // Authenticated RSC/page caches are local to this browser. Clear them on
+    // logout so a subsequent account cannot see the previous account's
+    // cached authenticated UI. Keep static assets and the public landing page.
+    if (typeof window !== "undefined" && "caches" in window) {
+      await Promise.allSettled([
+        caches.delete("shadecode-pages"),
+        caches.delete("shadecode-rsc"),
+        caches.delete("shadecode-api"),
+      ]);
+    }
     router.replace("/auth/login");
   };
 
@@ -59,7 +69,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]">
       <div className="flex items-center px-4 pt-4 pb-4 flex-shrink-0">
-        <Link href="/" aria-label="Shadecode Student home" className="min-w-0">
+        <Link href="/dashboard" aria-label="Shadecode Student dashboard" className="min-w-0">
           <BrandLockup compact />
         </Link>
       </div>

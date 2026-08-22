@@ -12,6 +12,14 @@ export function registerServiceWorker() {
       });
       console.log("[SW] Registered:", registration.scope);
 
+      // The previous PWA configuration used the same runtime cache for the
+      // landing page and authenticated pages. Retire that cache client-side
+      // once the current SW is ready so an old cached `/` cannot survive the
+      // rollout and unexpectedly appear after authentication.
+      if ("caches" in window) {
+        await caches.delete("shadecode-pages");
+      }
+
       registration.addEventListener("updatefound", () => {
         console.log("[SW] Update found");
       });
@@ -60,7 +68,6 @@ export function generateOfflineInsight(snapshot: OfflineSnapshot): string {
     ? Math.round((completedTasks / totalTasks) * 100)
     : 0;
 
-  // Intelligence-driven rules
   if (weakSubjects && weakSubjects.length > 0) {
     const weakAreas = weakSubjects.slice(0, 2).join(" and ");
     return `Focus on strengthening ${weakAreas} — identified as priority improvement areas.`;
