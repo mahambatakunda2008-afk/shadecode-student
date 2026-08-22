@@ -42,8 +42,19 @@ export class OfflineSync {
     if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return;
     this.syncInProgress = true;
     try {
-      await this.syncMutations();
-      await Promise.all([this.syncTasks(), this.syncSubjects(), this.syncProgress()]);
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) return;
+
+      // Resolve identity once per sync cycle. Repeated auth.getUser() calls for
+      // every queued row caused unnecessary latency and made flaky connectivity
+      // look like a stalled sync.
+      await this.syncMutations(supabase, user.id);
+      await Promise.all([
+        this.syncTasks(supabase, user.id),
+        this.syncSubjects(supabase, user.id),
+        this.syncProgress(supabase, user.id),
+      ]);
     } catch (error) {
       console.error("[OfflineSync] Sync failed:", error);
     } finally {
@@ -61,18 +72,14 @@ export class OfflineSync {
     return mutationQueue.enqueue({ ...input, ownerId: user.id });
   }
 
-  private async syncMutations(): Promise<void> {
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return;
-
-    const mutations = await mutationQueue.listReady(user.id);
+  private async syncMutations(supabase: ReturnType<typeof createClient>, userId: string): Promise<void> {
+    const mutations = await mutationQueue.listReady(userId);
 
     for (const mutation of mutations) {
       try {
         const payload = mutation.payload as Record<string, unknown>;
         const payloadUserId = payload.user_id;
-        if (payloadUserId !== undefined && payloadUserId !== user.id) {
+        if (payloadUserId !== undefined && payloadUserId !== userId) {
           throw new Error("Queued mutation user_id does not match the authenticated user");
         }
 
@@ -84,66 +91,66 @@ export class OfflineSync {
         if (mutation.operation === "delete") {
           const id = payload.id;
           if (typeof id !== "string") throw new Error("Delete mutation requires a string id");
-          const { error } = await supabase.from(table).delete().eq("id", id).eq("user_id", user.id);
+          const { error } = await supabase.from(table).delete().eq("id", id).eq("user_id", userId);
           if (error) throw error;
         } else if (mutation.operation === "update") {
           const id = payload.id;
           if (typeof id !== "string") throw new Error("Update mutation requires a string id");
           const { id: _id, user_id: _userId, ...changes } = payload;
-          const { error } = await supabase.from(table).update(changes).eq("id", id).eq("user_id", user.id);
+          const { error } = await supabase.from(table).update(changes).eq("id", id).eq("user_id", userId);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from(table).upsert({ ...payload, user_id: user.id });
+          const { error } = await supabase.from(table).upsert({ ...payload, user_id: userId });
           if (error) throw error;
         }
 
-        await mutationQueue.remove(mutation.id, user.id);
+        await mutationQueue.remove(mutation.id, userId);
       } catch (error) {
-        await mutationQueue.recordFailure(mutation.id, user.id, error);
+        await mutationQueue.recordFailure(mutation.id, userId, error);
         console.error("[OfflineSync] Failed queued mutation:", mutation.id, error);
       }
     }
   }
 
-  private async syncTasks(): Promise<void> {
+  private async syncTasks(supabase: ReturnType<typeof createClient>, userId: string): Promise<void> {
     const unsyncedTasks = await offlineStorage.getUnsyncedTasks();
-    const supabase = createClient();
     for (const task of unsyncedTasks) {
+      if (task.userId !== userId) continue;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || user.id !== task.userId) continue;
-        const { error } = await supabase.from("tasks").upsert({ id: task.id, user_id: user.id, subject_id: task.subject_id, title: task.title, completed: task.completed });
+        const { error } = await supabase.from("tasks").upsert({ id: task.id, user_id: userId, subject_id: task.subject_id, title: task.title, completed: task.completed });
         if (error) throw error;
         await offlineStorage.markTaskSynced(task.id, task.userId);
-      } catch (error) { console.error("[OfflineSync] Failed to sync task:", task.id, error); }
+      } catch (error) {
+        console.error("[OfflineSync] Failed to sync task:", task.id, error);
+      }
     }
   }
 
-  private async syncSubjects(): Promise<void> {
+  private async syncSubjects(supabase: ReturnType<typeof createClient>, userId: string): Promise<void> {
     const unsyncedSubjects = await offlineStorage.getUnsyncedSubjects();
-    const supabase = createClient();
     for (const subject of unsyncedSubjects) {
+      if (subject.userId !== userId) continue;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || user.id !== subject.userId) continue;
-        const { error } = await supabase.from("subjects").upsert({ id: subject.id, user_id: user.id, name: subject.name });
+        const { error } = await supabase.from("subjects").upsert({ id: subject.id, user_id: userId, name: subject.name });
         if (error) throw error;
         await offlineStorage.markSubjectSynced(subject.id, subject.userId);
-      } catch (error) { console.error("[OfflineSync] Failed to sync subject:", subject.id, error); }
+      } catch (error) {
+        console.error("[OfflineSync] Failed to sync subject:", subject.id, error);
+      }
     }
   }
 
-  private async syncProgress(): Promise<void> {
+  private async syncProgress(supabase: ReturnType<typeof createClient>, userId: string): Promise<void> {
     const unsyncedProgress = await offlineStorage.getUnsyncedProgress();
-    const supabase = createClient();
     for (const progress of unsyncedProgress) {
+      if (progress.userId !== userId) continue;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || user.id !== progress.userId) continue;
-        const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", user.id);
+        const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", userId);
         if (error) throw error;
         await offlineStorage.markProgressSynced(progress.lessonId);
-      } catch (error) { console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error); }
+      } catch (error) {
+        console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error);
+      }
     }
   }
 
