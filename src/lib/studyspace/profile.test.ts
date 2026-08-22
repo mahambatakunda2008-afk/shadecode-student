@@ -47,4 +47,13 @@ describe("learner profile", () => {
     expect(profile.weakAreas).toEqual(["Mechanics"]);
     expect(profile.strongAreas).toEqual(["Mechanics"]);
   });
+
+  it("propagates granular assessment areas", () => {
+    const item = evidence("4", 84, "2026-08-13T08:00:00Z");
+    item.weakAreas = ["Application of formulas"];
+    item.strongAreas = ["Definitions"];
+    const profile = buildLearnerProfile([item]);
+    expect(profile.weakAreas).toContain("Application of formulas");
+    expect(profile.strongAreas).toContain("Definitions");
+  });
 });

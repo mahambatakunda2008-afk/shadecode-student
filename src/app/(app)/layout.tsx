@@ -13,6 +13,7 @@ import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AdminBottomNav } from "@/components/layout/AdminBottomNav";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
+import LessonEvidenceRecorder from "@/components/studyspace/LessonEvidenceRecorder";
 import { useSession } from "@/hooks/useSession";
 
 const AUTH_GATE_TIMEOUT_MS = 4_000;
@@ -52,16 +53,6 @@ function writeBooleanCache(prefix: string, userId: string, value: boolean): void
   }
 }
 
-function clearUserGateCache(userId?: string): void {
-  if (!userId || typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(`${ADMIN_CACHE_PREFIX}${userId}`);
-    window.localStorage.removeItem(`${ONBOARDING_CACHE_PREFIX}${userId}`);
-  } catch {
-    // Best-effort cleanup only.
-  }
-}
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
@@ -82,8 +73,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
 
       try {
-        // getSession() reads the browser session without forcing a network
-        // round-trip. This is essential for offline app navigation.
         const { data: { session } } = await withTimeout(supabase.auth.getSession(), AUTH_GATE_TIMEOUT_MS);
         const user = session?.user ?? null;
 
@@ -102,9 +91,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const cachedAdmin = readBooleanCache(ADMIN_CACHE_PREFIX, user.id);
         const cachedOnboarding = readBooleanCache(ONBOARDING_CACHE_PREFIX, user.id);
 
-        // Offline mode must not block the entire application behind Supabase.
-        // The server middleware remains the security authority; these values
-        // only choose which local shell to render while disconnected.
         if (typeof navigator !== "undefined" && !navigator.onLine) {
           setIsAdmin(cachedAdmin === true);
           setReady(true);
@@ -112,9 +98,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
 
         try {
-          // These checks are independent once the authenticated user exists.
-          // Run them together and bound the whole operation so a slow Supabase
-          // connection cannot recreate the historical infinite spinner.
           const [adminResult, profileResult] = await withTimeout(
             Promise.all([
               supabase.rpc("has_role", { user_id: user.id, role_name: "admin" }),
@@ -152,9 +135,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           setReady(true);
         } catch (checkError) {
-          // A verified browser session is enough to keep the app usable when
-          // the secondary role/profile checks are temporarily unavailable.
-          // Middleware performs the authoritative server-side access control.
           console.warn("[AppLayout] Secondary auth checks unavailable; using cached shell:", checkError);
           setIsAdmin(cachedAdmin === true);
 
@@ -217,7 +197,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
         <aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><AdminSidebar /></aside>
-        <main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0">{children}</main>
+        <main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main>
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><AdminBottomNav /></div>
       </div>
     );
@@ -228,7 +208,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AchievementsProvider>
         <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
           <aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside>
-          <main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0">{children}</main>
+          <main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main>
           <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div>
           <AchievementToast />
           <FeedbackWidget />

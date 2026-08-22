@@ -20,16 +20,24 @@ export type LearningEvidence = {
 
 function cleanAreas(areas: unknown): string[] {
   if (!Array.isArray(areas)) return [];
-  return areas.filter((area): area is string => typeof area === "string" && area.trim().length > 0).map((area) => area.trim()).slice(0, 20);
+  return areas
+    .filter((area): area is string => typeof area === "string" && area.trim().length > 0)
+    .map((area) => area.trim())
+    .slice(0, 20);
 }
 
 export function evidenceFromWork(work: WorkObject, id = `${work.id}:${work.updatedAt}`): LearningEvidence {
-  const percentage = work.marks?.available && typeof work.marks.earned === "number"
-    ? Math.max(0, Math.min(100, (work.marks.earned / work.marks.available) * 100))
+  const assessmentPercentage = typeof work.assessment?.percentage === "number" ? work.assessment.percentage : undefined;
+  const markedPercentage = work.marks?.available && typeof work.marks.earned === "number"
+    ? (work.marks.earned / work.marks.available) * 100
     : undefined;
+  const percentage = assessmentPercentage ?? (markedPercentage === undefined ? undefined : Math.max(0, Math.min(100, markedPercentage)));
+  const score = typeof work.assessment?.score === "number" ? work.assessment.score : work.marks?.earned;
+  const weakAreas = cleanAreas(work.assessment?.weakAreas);
+  const strongAreas = cleanAreas(work.assessment?.strongAreas);
 
   const outcome: EvidenceOutcome = percentage === undefined
-    ? (work.response || work.working ? "submitted" : "completed")
+    ? (work.status === "draft" ? "submitted" : work.response || work.working ? "submitted" : "completed")
     : percentage >= 85 ? "mastered" : percentage < 50 ? "struggled" : "marked";
 
   return {
@@ -39,12 +47,12 @@ export function evidenceFromWork(work: WorkObject, id = `${work.id}:${work.updat
     subject: work.subject?.trim() || undefined,
     topic: work.topic?.trim() || undefined,
     outcome,
-    score: work.marks?.earned,
+    score,
     percentage,
     timeSpentMs: work.timeSpentMs,
     hintsUsed: 0,
-    weakAreas: cleanAreas([]),
-    strongAreas: cleanAreas([]),
+    weakAreas,
+    strongAreas,
     createdAt: work.updatedAt,
   };
 }

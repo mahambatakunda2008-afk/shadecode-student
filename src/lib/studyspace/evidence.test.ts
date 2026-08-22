@@ -27,9 +27,26 @@ describe("StudySpace evidence", () => {
     expect(evidence.outcome).toBe("struggled");
   });
 
+  it("uses Workmate assessment results and weak/strong areas", () => {
+    const evidence = evidenceFromWork(work({
+      mode: "workmate",
+      assessment: { score: 42, maxScore: 50, percentage: 84, weakAreas: ["Application"], strongAreas: ["Definitions"] },
+    }));
+    expect(evidence.percentage).toBe(84);
+    expect(evidence.score).toBe(42);
+    expect(evidence.outcome).toBe("marked");
+    expect(evidence.weakAreas).toEqual(["Application"]);
+    expect(evidence.strongAreas).toEqual(["Definitions"]);
+  });
+
   it("handles work without marks", () => {
     const evidence = evidenceFromWork(work({ mode: "workmate", response: "My answer" }));
     expect(evidence.percentage).toBeUndefined();
+    expect(evidence.outcome).toBe("submitted");
+  });
+
+  it("does not treat drafts as completed evidence", () => {
+    const evidence = evidenceFromWork(work({ status: "draft" }));
     expect(evidence.outcome).toBe("submitted");
   });
 
