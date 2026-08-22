@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 import { UserProvider } from "@/contexts/UserContext";
@@ -64,7 +64,6 @@ function clearUserGateCache(userId?: string): void {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
   const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -80,6 +79,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     const checkAuthAndOnboarding = async () => {
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
+
       try {
         // getSession() reads the browser session without forcing a network
         // round-trip. This is essential for offline app navigation.
@@ -136,7 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           writeBooleanCache(ONBOARDING_CACHE_PREFIX, user.id, onboardingComplete);
 
           if (userIsAdmin) {
-            if (pathname === "/dashboard" || pathname === "/onboarding") {
+            if (currentPath === "/dashboard" || currentPath === "/onboarding") {
               router.replace("/admin");
               return;
             }
@@ -157,12 +158,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           console.warn("[AppLayout] Secondary auth checks unavailable; using cached shell:", checkError);
           setIsAdmin(cachedAdmin === true);
 
-          if (cachedAdmin === true && (pathname === "/dashboard" || pathname === "/onboarding")) {
+          if (cachedAdmin === true && (currentPath === "/dashboard" || currentPath === "/onboarding")) {
             router.replace("/admin");
             return;
           }
 
-          if (cachedAdmin !== true && cachedOnboarding === false && pathname !== "/onboarding") {
+          if (cachedAdmin !== true && cachedOnboarding === false && currentPath !== "/onboarding") {
             router.replace("/onboarding");
             return;
           }
@@ -172,9 +173,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error("[AppLayout] Session check failed:", err);
         if (!cancelled) {
-          // Do not turn a transient network failure into a permanent logout
-          // screen. If a session cannot be read, Supabase auth is the source of
-          // truth and the next successful refresh will restore the app.
           setStatus("unauthenticated");
           setReady(false);
           router.replace("/auth/login?error=session_check");
@@ -188,7 +186,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
-        clearUserGateCache(session?.user?.id);
         setStatus("unauthenticated");
         setReady(false);
         setIsAdmin(false);
@@ -206,7 +203,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [router, supabase, pathname]);
+  }, [router, supabase]);
 
   if (!ready) {
     return (
