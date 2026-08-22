@@ -1,6 +1,7 @@
 export type StudySpaceMode = "workmate" | "practice" | "assessment" | "exam" | "lesson" | "canvas";
 
 export type WorkStatus = "draft" | "submitted" | "marked" | "synced";
+export type WorkSyncState = "local" | "pending" | "synced" | "conflict";
 
 export type WorkAssessment = {
   score?: number;
@@ -14,8 +15,10 @@ export type WorkAssessment = {
 
 export type WorkObject = {
   id: string;
+  userId: string;
   mode: StudySpaceMode;
   status?: WorkStatus;
+  syncState?: WorkSyncState;
   subject?: string;
   topic?: string;
   lessonId?: string;
@@ -28,4 +31,5 @@ export type WorkObject = {
   timeSpentMs?: number;
   createdAt: string;
   updatedAt: string;
+  lastSyncedAt?: string;
 };
