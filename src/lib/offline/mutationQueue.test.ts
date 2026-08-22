@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
+import { isMutationDeadLetter, isMutationReady, retryDelayMs, type OfflineMutation } from "./mutationQueue";
 
 const mutation = (overrides: Partial<OfflineMutation> = {}): OfflineMutation => ({
   id: "m1",
@@ -35,6 +35,11 @@ describe("offline mutation retry policy", () => {
     expect(isMutationReady(mutation({ attempts: 7 }), Date.now())).toBe(true);
     expect(isMutationReady(mutation({ attempts: 8 }), Date.now())).toBe(false);
     expect(isMutationReady(mutation({ attempts: 9 }), Date.now())).toBe(false);
+  });
+
+  it("identifies dead-letter mutations explicitly", () => {
+    expect(isMutationDeadLetter(mutation({ attempts: 7 }))).toBe(false);
+    expect(isMutationDeadLetter(mutation({ attempts: 8 }))).toBe(true);
   });
 
   it("treats an invalid timestamp as immediately retryable", () => {
