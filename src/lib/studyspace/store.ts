@@ -2,7 +2,8 @@ import type { WorkObject } from "./types";
 
 const DB_NAME = "shadecode-studyspace";
 const DB_VERSION = 2;
-const STORE = "work";
+const LEGACY_STORE = "work";
+const STORE = "workByUser";
 const keyFor = (userId: string, id: string) => `${userId}:${id}`;
 
 type StoredWork = WorkObject & { key: string };
@@ -14,33 +15,35 @@ function openDb(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => {
       const db = request.result;
       const transaction = request.transaction;
+
       if (!db.objectStoreNames.contains(STORE)) {
         const store = db.createObjectStore(STORE, { keyPath: "key" });
         store.createIndex("userId", "userId", { unique: false });
         store.createIndex("updatedAt", "updatedAt", { unique: false });
-      } else if (transaction) {
-        const legacy = transaction.objectStore(STORE);
-        const replacement = db.createObjectStore("work_v2", { keyPath: "key" });
-        replacement.createIndex("userId", "userId", { unique: false });
-        replacement.createIndex("updatedAt", "updatedAt", { unique: false });
+      }
+
+      // Migrate the old unscoped store without deleting it. Legacy rows that do
+      // not carry an owner are intentionally not imported into the new store.
+      if (db.objectStoreNames.contains(LEGACY_STORE) && transaction) {
+        const legacy = transaction.objectStore(LEGACY_STORE);
+        const target = transaction.objectStore(STORE);
         legacy.openCursor().onsuccess = (event) => {
           const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
-          if (!cursor) {
-            db.deleteObjectStore(STORE);
-            db.createObjectStore(STORE, { keyPath: "key" });
-            const store = transaction.objectStore(STORE);
-            store.createIndex("userId", "userId", { unique: false });
-            store.createIndex("updatedAt", "updatedAt", { unique: false });
-            return;
-          }
+          if (!cursor) return;
           const value = cursor.value as WorkObject;
-          if (value?.userId) replacement.put({ ...value, key: keyFor(value.userId, value.id) });
+          if (value?.userId && value?.id) {
+            target.put({ ...value, key: keyFor(value.userId, value.id) });
+          }
           cursor.continue();
         };
       }
     };
     request.onerror = () => reject(request.error ?? new Error("Could not open StudySpace"));
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => db.close();
+      resolve(db);
+    };
   });
 }
 
