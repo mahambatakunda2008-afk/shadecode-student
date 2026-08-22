@@ -10,6 +10,7 @@ import { awardXPClient } from "@/lib/xp/manager";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { withTimeout, TimeoutError } from "@/lib/async/withTimeout";
 import { offlineSync } from "@/lib/offline/sync";
+import PageSkeleton from "@/components/ui/PageSkeleton";
 
 const FETCH_TIMEOUT_MS = 15000;
 interface Subject { id: string; name: string; }
@@ -143,7 +144,7 @@ export default function Tasks() {
     if (deletedSubject) emitCortexEvent({ userId, type: "subject.deleted", source: "tasks", data: { subjectId, subjectName: deletedSubject.name } });
   };
 
-  if (loading) return <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--muted-foreground)" }}>Loading...</div>;
+  if (loading) return <PageSkeleton variant="list" />;
   if (loadError) return <div style={{ padding: "32px 24px", textAlign: "center" }}><p style={{ color: "#ef4444", fontSize: 14, marginBottom: 12 }}>{loadError}</p><button onClick={() => void fetchData()} style={{ padding: "8px 16px", borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--card)", color: "inherit", fontSize: 13, cursor: "pointer" }}>Retry</button></div>;
 
   const xpToNextLevel = Math.max(level * 100, 1);

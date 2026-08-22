@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import PageSkeleton from "@/components/ui/PageSkeleton";
 
 interface Exam {
   id: string;
@@ -91,11 +92,7 @@ export default function Exams() {
     return `${days} days`;
   };
 
-  if (loading) return (
-    <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--muted-foreground)" }}>
-      Loading...
-    </div>
-  );
+  if (loading) return <PageSkeleton variant="cards" />;
 
   const cardStyle = {
     background: "var(--card)",
