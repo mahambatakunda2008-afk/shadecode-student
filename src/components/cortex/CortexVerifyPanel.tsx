@@ -33,13 +33,9 @@ function ResultCard({ result, onRetry, onHelp }: { result: VerifyResult; onRetry
       </div>
       {result.cortexInsight && <p className="mt-5 rounded-2xl bg-[var(--muted)] p-4 text-sm leading-6">{result.cortexInsight}</p>}
     </div>
-
     {result.steps?.length ? <div className="p-5 sm:p-6"><h4 className="font-bold">Step-by-step check</h4><div className="mt-4 space-y-3">{result.steps.map((step, index) => <div key={`${index}-${step.description}`} className="flex gap-3 rounded-2xl border border-[var(--card-border)] p-3.5"><div className="mt-0.5"><StatusIcon status={step.status} /></div><div className="min-w-0"><p className="text-sm font-semibold">Step {index + 1}</p><p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">{step.description}</p>{step.note && <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{step.note}</p>}</div></div>)}</div></div> : null}
-
     {result.feedback && <div className="border-t border-[var(--card-border)] p-5 sm:p-6"><h4 className="font-bold">What to improve</h4><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{result.feedback}</p></div>}
-
     {(result.hint || result.method || result.solution || result.content) && <div className="border-t border-[var(--card-border)] p-5 sm:p-6"><div className="flex items-center gap-2 font-bold"><Lightbulb size={17} /> Cortex guidance</div><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[var(--muted-foreground)]">{result.hint || result.method || result.solution || result.content}</p></div>}
-
     <div className="flex flex-wrap gap-2 border-t border-[var(--card-border)] p-5 sm:p-6">
       <button onClick={onRetry} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-bold"><RotateCcw size={16} /> Try again</button>
       <button onClick={onHelp} className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-white">Ask Cortex <ArrowRight size={16} /></button>
@@ -102,7 +98,6 @@ export default function CortexVerifyPanel() {
         <div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] px-3 py-1.5 text-xs font-bold"><Sparkles size={14} /> CORTEX VERIFY</div><h2 className="text-2xl font-black tracking-tight sm:text-3xl">Check your thinking.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted-foreground)]">Show Cortex your question and working. It checks the reasoning, points out where things went off track, and helps you fix it.</p></div>
         <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]"><span className={`h-2 w-2 rounded-full ${online ? "bg-[var(--primary)]" : "bg-[var(--danger)]"}`} />{online ? "Online" : "Offline"}{queueCount > 0 && <span>· {queueCount} saved</span>}</div>
       </div>
-
       <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-[var(--muted)] p-1.5">
         <button onClick={() => setMode("check")} className={`rounded-xl px-3 py-3 text-sm font-bold transition ${mode === "check" ? "bg-[var(--card)] shadow-sm" : "text-[var(--muted-foreground)]"}`}>Check my work</button>
         <button onClick={() => setMode("help")} className={`rounded-xl px-3 py-3 text-sm font-bold transition ${mode === "help" ? "bg-[var(--card)] shadow-sm" : "text-[var(--muted-foreground)]"}`}>Help me solve</button>
@@ -114,28 +109,21 @@ export default function CortexVerifyPanel() {
         <label className="text-sm font-bold">Subject<select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-3 text-sm font-medium outline-none"><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Computer Science</option><option>Biology</option><option>English</option><option>Other</option></select></label>
         {mode === "help" && <label className="text-sm font-bold">Help level<select value={helpLevel} onChange={(e) => setHelpLevel(e.target.value as typeof helpLevel)} className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-3 text-sm font-medium outline-none"><option value="hint">Give me a hint</option><option value="method">Show me the method</option><option value="solution">Full solution</option></select></label>}
       </div>
-
       <label className="mt-5 block text-sm font-bold">Question <span className="font-normal text-[var(--muted-foreground)]">{mode === "check" ? "optional when your photo contains it" : ""}</span><textarea value={question} onChange={(e) => setQuestion(e.target.value)} rows={3} placeholder="Paste or type the question here…" className="mt-2 w-full resize-y rounded-2xl border border-[var(--card-border)] bg-[var(--muted)] p-4 text-sm leading-6 outline-none focus:ring-2 focus:ring-[var(--primary)]/30" /></label>
-
       {mode === "check" && <label className="mt-4 block text-sm font-bold">Your answer / working <textarea value={studentAnswer} onChange={(e) => setStudentAnswer(e.target.value)} rows={5} placeholder="Show your working or type your answer…" className="mt-2 w-full resize-y rounded-2xl border border-[var(--card-border)] bg-[var(--muted)] p-4 text-sm leading-6 outline-none focus:ring-2 focus:ring-[var(--primary)]/30" /></label>}
-
       <div className="mt-5 rounded-2xl border border-dashed border-[var(--card-border)] bg-[var(--muted)]/50 p-4">
         {preview ? <div><div className="relative overflow-hidden rounded-xl"><img src={preview} alt="Preview of submitted schoolwork" className="max-h-80 w-full object-contain bg-[var(--card)]" /></div><div className="mt-3 flex flex-wrap gap-2"><button onClick={() => fileRef.current?.click()} className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-xs font-bold">Replace image</button><button onClick={clearImage} className="rounded-xl px-3 py-2 text-xs font-bold text-[var(--danger)]">Remove</button></div></div> : <div className="flex flex-col items-center justify-center py-6 text-center"><div className="mb-3 rounded-2xl bg-[var(--card)] p-3 shadow-sm"><ImagePlus size={22} /></div><p className="text-sm font-bold">Add a photo of your work</p><p className="mt-1 max-w-sm text-xs leading-5 text-[var(--muted-foreground)]">Good lighting, the whole question, and all working visible gives Cortex the best chance of grading fairly.</p><div className="mt-4 flex flex-wrap justify-center gap-2"><button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl bg-[var(--card)] px-3.5 py-2.5 text-xs font-bold shadow-sm"><Camera size={15} /> Camera / photo</button></div></div>}
         <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={(e) => onFile(e.target.files?.[0])} className="hidden" />
       </div>
-
       {!online && <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--muted)] p-4"><WifiOff size={18} className="mt-0.5 shrink-0" /><div><p className="text-sm font-bold">Offline mode</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Your submission can be saved to this account and retried automatically when you reconnect.</p></div></div>}
-
       {error && <div role="alert" className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--card-border)] p-4 text-sm"><AlertTriangle size={18} className="mt-0.5 shrink-0" /><span>{error}</span></div>}
-
       <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button onClick={reset} disabled={loading} className="rounded-xl px-4 py-3 text-sm font-bold text-[var(--muted-foreground)]">Clear</button>
-        <button onClick={() => void submit()} disabled={loading || !userId || (mode === "check" ? !image : (!question && !image))} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50">{loading ? <><Loader2 size={17} className="animate-spin" /> Cortex is checking…</> : mode === "check" ? <>Verify my work <ArrowRight size={17} /></> : <>Help me <Lightbulb size={17} /></>}</button>
+        <button onClick={() => void submit()} disabled={loading || !userId || (mode === "check" ? (!question && !studentAnswer && !image) : (!question && !image))} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50">{loading ? <><Loader2 size={17} className="animate-spin" /> Cortex is checking…</> : mode === "check" ? <>Verify my work <ArrowRight size={17} /></> : <>Help me <Lightbulb size={17} /></>}</button>
       </div>
       {!userId && <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">Sign in to use Cortex Verify and keep your offline work private.</p>}
       <div className="mt-5 flex items-center justify-center gap-2 text-[11px] text-[var(--muted-foreground)]"><ShieldCheck size={13} /> Your offline submissions stay scoped to your account.</div>
     </div>
-
     {result && <ResultCard result={result} onRetry={() => { setMode("check"); }} onHelp={() => { setMode("help"); }} />}
   </section>;
 }
