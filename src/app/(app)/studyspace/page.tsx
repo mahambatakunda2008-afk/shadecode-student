@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { StudySpaceMode, WorkObject } from "@/lib/studyspace/types";
 import { saveWorkObject } from "@/lib/studyspace/store";
 import AdaptiveNextMove from "@/components/studyspace/AdaptiveNextMove";
+import { createClient } from "@/lib/supabase/client";
 
 const modes: { id: StudySpaceMode; label: string; description: string }[] = [
   { id: "workmate", label: "Workmate", description: "Bring questions, answers, working or images." },
@@ -25,6 +26,8 @@ export default function StudySpacePage() {
   const [subject, setSubject] = useState(initialSubject);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -33,23 +36,41 @@ export default function StudySpacePage() {
 
   useEffect(() => setSubject(initialSubject), [initialSubject]);
 
+  useEffect(() => {
+    let mounted = true;
+    const supabase = createClient();
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (mounted) setUserId(user?.id ?? null);
+    });
+    return () => { mounted = false; };
+  }, []);
+
   const current = useMemo(() => modes.find((item) => item.id === mode)!, [mode]);
 
   async function save() {
-    const now = new Date().toISOString();
-    const work: WorkObject = {
-      id: crypto.randomUUID(),
-      mode,
-      lessonId: mode === "lesson" ? lessonId : undefined,
-      subject: subject.trim() || undefined,
-      prompt: prompt.trim() || undefined,
-      response: response.trim() || undefined,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await saveWorkObject(work);
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+    if (!userId || saving) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      const now = new Date().toISOString();
+      const work: WorkObject = {
+        id: crypto.randomUUID(),
+        userId,
+        mode,
+        syncState: "local",
+        lessonId: mode === "lesson" ? lessonId : undefined,
+        subject: subject.trim() || undefined,
+        prompt: prompt.trim() || undefined,
+        response: response.trim() || undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await saveWorkObject(work);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1800);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -81,7 +102,7 @@ export default function StudySpacePage() {
               <h2 style={{ margin: 0 }}>{current.label}</h2>
               <p style={{ margin: "5px 0 18px", color: "var(--muted-foreground)" }}>{current.description}</p>
             </div>
-            <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Saved locally</span>
+            <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>{saved ? "Saved offline ✓" : userId ? "Ready" : "Checking account…"}</span>
           </div>
 
           {mode === "lesson" && lessonId && <p style={{ marginTop: 0, fontSize: 13, color: "var(--muted-foreground)" }}>Linked lesson: {lessonId}</p>}
@@ -96,9 +117,8 @@ export default function StudySpacePage() {
           <textarea value={response} onChange={(event) => setResponse(event.target.value)} placeholder="Write your answer, reasoning, working or notes here..." rows={8} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
 
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button onClick={save} style={{ border: 0, borderRadius: 8, padding: "11px 16px", background: "var(--primary)", color: "white", fontWeight: 750, cursor: "pointer" }}>Save work</button>
+            <button disabled={!userId || saving} onClick={save} style={{ border: 0, borderRadius: 8, padding: "11px 16px", background: "var(--primary)", color: "white", fontWeight: 750, cursor: userId && !saving ? "pointer" : "not-allowed", opacity: userId && !saving ? 1 : 0.6 }}>{saving ? "Saving…" : "Save work"}</button>
             <button onClick={() => router.push(`/workmate?mode=${mode}`)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>Open Workmate</button>
-            {saved && <span role="status" style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Saved offline ✓</span>}
           </div>
         </section>
       </div>
