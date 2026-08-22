@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = "shadecode-offline";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export interface OfflineLesson {
   id: string;
@@ -25,6 +25,9 @@ export interface OfflineProgress { lessonId: string; userId: string; completed: 
 export interface OfflineTask { id: string; userId: string; subject_id: string; title: string; completed: boolean; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
 export interface OfflineSubject { id: string; userId: string; name: string; lastUpdated: string; lastSyncedAt?: string; synced: boolean; }
 
+const PROGRESS_STORE = "progressByUser";
+const progressKey = (userId: string, lessonId: string) => `${userId}:${lessonId}`;
+
 class OfflineStorage {
   private db: IDBDatabase | null = null;
 
@@ -32,9 +35,14 @@ class OfflineStorage {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => { this.db = request.result; resolve(); };
+      request.onsuccess = () => {
+        this.db = request.result;
+        this.db.onversionchange = () => this.db?.close();
+        resolve();
+      };
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const transaction = request.transaction;
         if (!db.objectStoreNames.contains("lessons")) {
           const store = db.createObjectStore("lessons", { keyPath: "id" });
           store.createIndex("subject", "subject", { unique: false });
@@ -53,12 +61,35 @@ class OfflineStorage {
           store.createIndex("userId", "userId", { unique: false });
           store.createIndex("synced", "synced", { unique: false });
         }
+        if (!db.objectStoreNames.contains(PROGRESS_STORE)) {
+          const store = db.createObjectStore(PROGRESS_STORE, { keyPath: "key" });
+          store.createIndex("userId", "userId", { unique: false });
+          store.createIndex("lessonId", "lessonId", { unique: false });
+          store.createIndex("synced", "synced", { unique: false });
+
+          // Migrate legacy progress rows. The old store was keyed only by lessonId,
+          // so if two accounts shared a device, only the latest row could survive.
+          // Preserve the surviving row under its correct account-scoped key.
+          if (db.objectStoreNames.contains("progress") && transaction) {
+            const legacy = transaction.objectStore("progress");
+            const target = store;
+            legacy.openCursor().onsuccess = (cursorEvent) => {
+              const cursor = (cursorEvent.target as IDBRequest<IDBCursorWithValue | null>).result;
+              if (!cursor) return;
+              const value = cursor.value as OfflineProgress;
+              if (value?.userId && value?.lessonId) {
+                target.put({ ...value, key: progressKey(value.userId, value.lessonId) });
+              }
+              cursor.continue();
+            };
+          }
+        }
         if (!db.objectStoreNames.contains("tasks")) {
           const store = db.createObjectStore("tasks", { keyPath: "id" });
           store.createIndex("userId", "userId", { unique: false });
           store.createIndex("synced", "synced", { unique: false });
-        } else if (request.transaction) {
-          const store = request.transaction.objectStore("tasks");
+        } else if (transaction) {
+          const store = transaction.objectStore("tasks");
           if (!store.indexNames.contains("userId")) store.createIndex("userId", "userId", { unique: false });
           const cursorRequest = store.openCursor();
           cursorRequest.onsuccess = () => {
@@ -85,20 +116,30 @@ class OfflineStorage {
   async getNotes(lessonId: string): Promise<OfflineNotes | null> { return this.get("notes", lessonId); }
   async saveQuiz(quiz: OfflineQuiz): Promise<void> { if (!this.db) await this.init(); return this.put("quizzes", quiz); }
   async getQuiz(lessonId: string): Promise<OfflineQuiz | null> { return this.get("quizzes", lessonId); }
-  async saveProgress(progress: OfflineProgress): Promise<void> { if (!this.db) await this.init(); return this.put("progress", progress); }
-  async getProgress(lessonId: string): Promise<OfflineProgress | null> { return this.get("progress", lessonId); }
+
+  async saveProgress(progress: OfflineProgress): Promise<void> {
+    if (!progress.userId) throw new Error("Offline progress requires an authenticated user");
+    if (!this.db) await this.init();
+    return this.put(PROGRESS_STORE, { ...progress, key: progressKey(progress.userId, progress.lessonId) });
+  }
+
+  async getProgress(lessonId: string, userId?: string): Promise<OfflineProgress | null> {
+    if (!userId) return null;
+    const row = await this.get<OfflineProgress & { key: string }>(PROGRESS_STORE, progressKey(userId, lessonId));
+    return row ? { ...row, lessonId, userId } : null;
+  }
 
   async getUnsyncedProgress(): Promise<OfflineProgress[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
-      const request = this.db!.transaction(["progress"], "readonly").objectStore("progress").getAll();
+      const request = this.db!.transaction([PROGRESS_STORE], "readonly").objectStore(PROGRESS_STORE).getAll();
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve((request.result || []).filter((progress: OfflineProgress) => progress.synced === false));
     });
   }
 
-  async markProgressSynced(lessonId: string): Promise<void> {
-    const progress = await this.getProgress(lessonId);
+  async markProgressSynced(lessonId: string, userId: string): Promise<void> {
+    const progress = await this.getProgress(lessonId, userId);
     if (progress) { progress.synced = true; progress.lastSyncedAt = new Date().toISOString(); await this.saveProgress(progress); }
   }
 
@@ -128,7 +169,7 @@ class OfflineStorage {
 
   private async put(storeName: string, value: unknown): Promise<void> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readwrite").objectStore(storeName).put(value); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
   private async get<T>(storeName: string, key: IDBValidKey): Promise<T | null> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readonly").objectStore(storeName).get(key); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result || null); }); }
-  private async getAll<T>(storeName: string): Promise<T[]> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readonly").objectStore(storeName).getAll(); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result || []); }); }
+  private async getAll<T>(storeName: string): Promise<T[]> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { if (!this.db) return reject(new Error("Offline database is not initialized")); const request = this.db.transaction([storeName], "readonly").objectStore(storeName).getAll(); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result || []); }); }
   private async delete(storeName: string, key: IDBValidKey): Promise<void> { if (!this.db) await this.init(); return new Promise((resolve, reject) => { const request = this.db!.transaction([storeName], "readwrite").objectStore(storeName).delete(key); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
 }
 
