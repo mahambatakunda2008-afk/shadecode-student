@@ -34,8 +34,12 @@ export function retryDelayMs(attempts: number): number {
   return Math.min(BASE_RETRY_MS * 2 ** (attempts - 1), MAX_RETRY_MS);
 }
 
+export function isMutationDeadLetter(mutation: OfflineMutation): boolean {
+  return mutation.attempts >= MAX_ATTEMPTS;
+}
+
 export function isMutationReady(mutation: OfflineMutation, now = Date.now()): boolean {
-  if (mutation.attempts >= MAX_ATTEMPTS) return false;
+  if (isMutationDeadLetter(mutation)) return false;
   if (!mutation.lastAttemptAt) return true;
   const lastAttempt = Date.parse(mutation.lastAttemptAt);
   if (!Number.isFinite(lastAttempt)) return true;
@@ -102,6 +106,25 @@ class MutationQueue {
   async listReady(ownerId: string, now = Date.now()): Promise<OfflineMutation[]> {
     const rows = await this.list(ownerId);
     return rows.filter((mutation) => isMutationReady(mutation, now));
+  }
+
+  async listDeadLetters(ownerId: string): Promise<OfflineMutation[]> {
+    const rows = await this.list(ownerId);
+    return rows.filter(isMutationDeadLetter);
+  }
+
+  /** Reset a failed mutation so the next connectivity cycle retries it immediately. */
+  async retry(id: string, ownerId: string): Promise<void> {
+    if (!ownerId) return;
+    await this.init();
+    const current = await this.get(id);
+    if (!current || current.ownerId !== ownerId) return;
+    await this.put({
+      ...current,
+      attempts: 0,
+      lastAttemptAt: undefined,
+      lastError: undefined,
+    });
   }
 
   async remove(id: string, ownerId: string): Promise<void> {
