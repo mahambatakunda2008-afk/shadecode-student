@@ -10,7 +10,6 @@ export type CortexEventType =
 export type CortexEventSource = "dashboard" | "tasks" | "timetable" | "exam";
 export interface CortexEventData { [key: string]: string | number | boolean | null | undefined; }
 export interface CortexEvent { id: string; userId: string; type: CortexEventType; source: CortexEventSource; createdAt: string; data?: CortexEventData; }
-/** Reuse the same id when an offline event is retried so it cannot be counted twice. */
 export interface CortexEventInput { userId: string; type: CortexEventType; source: CortexEventSource; data?: CortexEventData; id?: string; }
 
 export interface CortexSnapshot {
