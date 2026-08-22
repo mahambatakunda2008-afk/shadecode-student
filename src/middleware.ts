@@ -17,11 +17,6 @@ function applySecurityHeaders(res: NextResponse) {
   return res;
 }
 
-/**
- * Rejects with a distinguishable error after `ms` if `promise` hasn't
- * settled -- Edge-runtime-safe (setTimeout is supported there), no
- * external dependency.
- */
 class EdgeTimeoutError extends Error {}
 function withEdgeTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -34,44 +29,15 @@ function withEdgeTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * Edge route guard.
- *
- * Authentication is validated by Supabase on every protected request.
- * Onboarding is validated from the authoritative user_profiles row, not a
- * client-writable cookie. The cookie is retained only as a compatibility
- * hint for older clients; it is never trusted for access control.
- *
- * IMPORTANT: this file must live at src/middleware.ts, not project-root
- * middleware.ts -- see the 2026-08-19 fix that moved it here for why.
- *
- * CRITICAL, fixed 2026-08-19 (same day, a few hours later): the first
- * version of this file made three sequential, un-timed-out Supabase calls
- * (auth.getUser(), then rpc('has_role'), then a user_profiles select) on
- * literally every protected page load, blocking on the Edge before the
- * page could even start rendering. Next.js middleware blocks the entire
- * response until it resolves -- so any transient Supabase slowness meant
- * every page hung indefinitely with no way for the browser's own loading
- * state to ever resolve. Confirmed via a direct owner report ("ALL pages
- * hanging on loading state forever") within hours of that version
- * shipping. Fixed by: parallelizing the two checks that don't depend on
- * each other, and wrapping every Supabase call in a hard timeout with an
- * explicit, intentional fallback -- this file must never be able to hang
- * the entire app again, regardless of Supabase's own availability.
- *
- * Timeout fallback philosophy: auth itself still fails closed (a timed-out
- * identity check redirects to login, same as an explicit auth failure --
- * letting unverified traffic through isn't an option). The onboarding/
- * admin-role check fails OPEN on timeout or error: the user is already
- * known-authenticated by that point, so the worst case of "let the request
- * through without perfect onboarding enforcement" is a far smaller harm
- * than "the entire app is unusable because Supabase had a slow moment."
+ * Edge route guard. Authentication is validated by Supabase on every
+ * protected request. The root landing page is special: it remains public for
+ * signed-out visitors, but an authenticated student is redirected to the
+ * dashboard so the marketing page is never the app home.
  */
-
 const AUTH_TIMEOUT_MS = 6000;
 const PROFILE_CHECK_TIMEOUT_MS = 4000;
 
 const PUBLIC_PREFIXES = [
-  '/',
   '/auth',
   '/api',
   '/_next',
@@ -81,12 +47,17 @@ const PUBLIC_PREFIXES = [
 ];
 
 function isPublic(path: string): boolean {
-  return PUBLIC_PREFIXES.some(p => p === '/' ? path === '/' : path.startsWith(p));
+  return PUBLIC_PREFIXES.some(p => path.startsWith(p));
 }
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
-  if (isPublic(pathname)) return NextResponse.next();
+  const isRoot = pathname === '/';
+
+  // Everything except `/` can use the cheap public bypass. `/` needs an
+  // identity check because its response differs intentionally for anonymous
+  // and authenticated visitors.
+  if (!isRoot && isPublic(pathname)) return NextResponse.next();
 
   let response = NextResponse.next({ request: req });
 
@@ -126,22 +97,27 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     const result = await withEdgeTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS);
     user = result.data.user;
   } catch (err) {
-    // Timed out or errored -- can't confirm identity, so this still fails
-    // closed (redirect to login), but it is now a BOUNDED wait, not an
-    // indefinite hang. That's the actual fix.
     if (err instanceof EdgeTimeoutError) {
       console.error('[middleware] auth.getUser() timed out:', err.message);
     }
+    // `/` is public when identity cannot be established. Protected routes
+    // still fail closed to login.
+    if (isRoot) return applySecurityHeaders(NextResponse.next());
     return redirectPreservingSession('/auth/login', { redirect: pathname });
   }
 
   if (!user) {
+    if (isRoot) return applySecurityHeaders(response);
     return redirectPreservingSession('/auth/login', { redirect: pathname });
   }
 
-  // Admin-role and onboarding-state checks run in parallel (previously
-  // sequential) and are bounded by a single shared timeout. Both depend
-  // only on the already-resolved user.id, not on each other.
+  // This is the critical landing-page rule: authenticated users never enter
+  // the public marketing shell, whether they typed `/`, clicked a stale
+  // bookmark, or followed an old app-home link.
+  if (isRoot) {
+    return redirectPreservingSession('/dashboard');
+  }
+
   let adminCheck: boolean | null = null;
   let profile: { onboarding_completed: boolean | null } | null = null;
   let checksFailed = false;
@@ -164,18 +140,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Admins are platform operators, not student accounts. They must not be
-  // blocked by the student onboarding gate.
   if (adminCheck === true) {
     return response;
   }
 
-  // Fail OPEN here, deliberately, unlike the auth check above: the user is
-  // already verified-authenticated at this point, so if we can't establish
-  // onboarding state (timeout, RLS issue, transient DB error), letting the
-  // request through is a far smaller harm than hanging or blocking the
-  // entire app. Onboarding enforcement is a UX nicety on top of a working
-  // app, not a security boundary the way authentication is.
   if (checksFailed) {
     applySecurityHeaders(response);
     return response;
