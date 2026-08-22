@@ -26,6 +26,7 @@ export default function StudySpacePage() {
   const [subject, setSubject] = useState(initialSubject);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
+  const [canvasData, setCanvasData] = useState("");
   const [saved, setSaved] = useState(false);
   const [showCanvas, setShowCanvas] = useState(mode === "canvas");
 
@@ -50,6 +51,7 @@ export default function StudySpacePage() {
       subject: subject.trim() || undefined,
       prompt: prompt.trim() || undefined,
       response: response.trim() || undefined,
+      attachments: canvasData ? [canvasData] : undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -110,7 +112,7 @@ export default function StudySpacePage() {
             {saved && <span role="status" style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Saved offline ✓</span>}
           </div>
 
-          {showCanvas && <StudyCanvas storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} />}
+          {showCanvas && <StudyCanvas storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} />}
         </section>
       </div>
     </main>
