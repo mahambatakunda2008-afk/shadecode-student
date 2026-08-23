@@ -1,66 +1,39 @@
-import type { ReactNode }      from 'react';
-import { redirect }            from 'next/navigation';
-import { cookies }             from 'next/headers';
-import { TourProvider }        from '@/context/TourContext';
-import { ProductTour }         from '@/components/tour/ProductTour';
+import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
+import { TourProvider } from '@/context/TourContext';
+import { ProductTour } from '@/components/tour/ProductTour';
 import { getUserProfileFlags } from '@/lib/user-profile';
 
 /**
- * app/(dashboard)/layout.tsx
- * ───────────────────────────
- * This is the critical connection point in the entire flow.
+ * Dashboard-specific layout.
  *
- * What it does:
- *   1. Hard-guards: cookie check before any DB call (fast path)
- *   2. Fetches onboardingCompleted + tourCompleted from the DB
- *   3. Passes both flags to TourProvider
- *   4. TourProvider auto-starts the tour when:
- *        onboardingCompleted === true && tourCompleted === false
- *   5. ProductTour renders into a portal — invisible until the tour fires
+ * Authentication and onboarding access are enforced by the root app layout
+ * and middleware. Do not add a second client/server cookie gate here: the
+ * previous `onboarding_complete` cookie gate could disagree with the
+ * canonical `user_profiles.onboarding_completed` value and create a
+ * `/dashboard` <-> `/onboarding` redirect loop.
  *
- * Data-tour targets
- * ─────────────────
- * Add these attributes to your dashboard components so the spotlight knows
- * which elements to highlight:
- *
- *   data-tour-target="dashboard-overview"   → main stats/welcome section
- *   data-tour-target="knowledge-units"      → KnowledgeUnit list/grid
- *   data-tour-target="adaptive-tutor"       → AI tutor widget/card
- *   data-tour-target="start-learning"       → primary CTA button
- *   data-tour-target="progress-tracking"    → progress bars / mastery section
+ * This layout only loads the profile flags needed by the product tour.
  */
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  // ── Fast gate: cookie is set immediately by the server action ───────────────
-  const jar = await cookies();
-  if (jar.get('onboarding_complete')?.value !== '1') {
+  const profile = await getUserProfileFlags();
+
+  // Middleware normally guarantees this, but keep a defensive server-side
+  // guard for direct/internal navigation and stale deployments.
+  if (!profile) {
+    redirect('/auth/login?error=profile_unavailable');
+  }
+
+  if (!profile.onboardingCompleted) {
     redirect('/onboarding');
   }
 
-  // ── DB flags — determines whether the tour should auto-start ───────────────
-  const profile = await getUserProfileFlags();
-
-  const onboardingCompleted = profile?.onboardingCompleted ?? false;
-  const tourCompleted       = profile?.tourCompleted       ?? false;
-
-  console.log({
-    route: '/dashboard',
-    profileExists: profile !== null,
-    onboardingCompleted,
-    tourCompleted,
-    userId: profile?.userId,
-  });
-
   return (
     <TourProvider
-      onboardingCompleted={onboardingCompleted}
-      tourCompleted={tourCompleted}
+      onboardingCompleted={profile.onboardingCompleted}
+      tourCompleted={profile.tourCompleted}
     >
       {children}
-
-      {/*
-        ProductTour is portal-rendered into document.body so it escapes
-        every stacking context in the dashboard layout. Safe to mount here.
-      */}
       <ProductTour />
     </TourProvider>
   );
