@@ -20,7 +20,8 @@ export type CortexEventType =
   | "quiz_completed"
   | "challenge_completed"
   | "study_session_started"
-  | "study_session_finished";
+  | "study_session_finished"
+  | "verify.completed";
 
 /* ─────────────────────────────────────────────
    CONTEXT FOR AI INSIGHTS (ENGINE USE)
@@ -39,7 +40,8 @@ export type CortexEventSource =
   | "lesson"
   | "quiz"
   | "challenge"
-  | "study-session";
+  | "study-session"
+  | "verify";
 
 export interface CortexEventData {
   [key: string]: boolean | number | string | null | undefined;
