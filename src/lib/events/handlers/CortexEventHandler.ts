@@ -6,7 +6,7 @@
 
 import { UnifiedEvent, EventHandler } from "../types";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
-import { CortexEventInput, CortexEventSource } from "@/lib/cortex/types";
+import { CortexEventInput, CortexEventSource, CortexEventType } from "@/lib/cortex/types";
 
 const SOURCE_BY_EVENT: Record<UnifiedEvent["type"], CortexEventSource> = {
   lesson_started: "lesson",
@@ -16,6 +16,16 @@ const SOURCE_BY_EVENT: Record<UnifiedEvent["type"], CortexEventSource> = {
   challenge_completed: "challenge",
   study_session_started: "study-session",
   study_session_finished: "study-session",
+};
+
+const TYPE_BY_EVENT: Record<UnifiedEvent["type"], CortexEventType> = {
+  lesson_started: "lesson_started",
+  lesson_completed: "lesson_completed",
+  quiz_completed: "quiz_completed",
+  exam_completed: "exam.completed",
+  challenge_completed: "challenge_completed",
+  study_session_started: "study_session_started",
+  study_session_finished: "study_session_finished",
 };
 
 function normalizeData(data: Record<string, unknown> | undefined): CortexEventInput["data"] {
@@ -58,7 +68,7 @@ export class CortexEventHandler implements EventHandler {
     return {
       id: event.id,
       userId: event.userId,
-      type: event.type,
+      type: TYPE_BY_EVENT[event.type],
       source: SOURCE_BY_EVENT[event.type],
       data: normalizeData(event.data as Record<string, unknown>),
     };
