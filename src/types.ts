@@ -10,7 +10,7 @@ export type CortexEventType =
 export type CortexEventSource = "dashboard" | "tasks" | "timetable" | "exam";
 export interface CortexEventData { [key: string]: string | number | boolean | null | undefined; }
 export interface CortexEvent { id: string; userId: string; type: CortexEventType; source: CortexEventSource; createdAt: string; data?: CortexEventData; }
-export interface CortexEventInput { userId: string; type: CortexEventType; source: CortexEventSource; data?: CortexEventData; }
+export interface CortexEventInput { userId: string; type: CortexEventType; source: CortexEventSource; data?: CortexEventData; id?: string; }
 
 export interface CortexSnapshot {
   streak: number; level: number; xp: number;

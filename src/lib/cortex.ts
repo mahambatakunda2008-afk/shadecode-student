@@ -15,7 +15,7 @@ const eventStore: CortexEvent[] = [];
 
 function toEvent(input: CortexEventInput): CortexEvent {
   return {
-    id: crypto.randomUUID(),
+    id: input.id ?? crypto.randomUUID(),
     userId: input.userId,
     type: input.type,
     source: input.source,
@@ -47,6 +47,26 @@ export async function emitCortexEventDurable(
   });
 
   if (error) {
+    // Offline retries may replay the same event ID. Treat an existing matching
+    // record as an acknowledgement, not as a second learning event.
+    const duplicate = await supabase
+      .from("cortex_events")
+      .select("id,user_id,type,source,created_at,data")
+      .eq("id", event.id)
+      .eq("user_id", event.userId)
+      .maybeSingle();
+
+    if (!duplicate.error && duplicate.data) {
+      return {
+        id: duplicate.data.id,
+        userId: duplicate.data.user_id,
+        type: duplicate.data.type,
+        source: duplicate.data.source,
+        createdAt: duplicate.data.created_at,
+        data: duplicate.data.data ?? {},
+      };
+    }
+
     console.error("Failed to persist Cortex event:", error);
     throw new Error("Cortex event persistence failed");
   }
@@ -148,6 +168,7 @@ export async function updateCortexFromExam(params: {
   subject: string;
   score: number;
   maxScore: number;
+  eventId?: string;
 }) {
   if (!params.userId || !params.subject || params.maxScore <= 0) {
     throw new Error("Invalid exam data for Cortex update");
@@ -156,6 +177,7 @@ export async function updateCortexFromExam(params: {
   const percentage = Math.round((params.score / params.maxScore) * 100);
 
   await emitCortexEventDurable({
+    id: params.eventId,
     userId: params.userId,
     type: "exam.completed",
     source: "exam",
