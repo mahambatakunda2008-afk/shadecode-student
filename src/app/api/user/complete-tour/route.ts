@@ -20,8 +20,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
-
-export const config = {
-  // This route should be accessible via POST only.
-  methods: ['POST'],
-};
