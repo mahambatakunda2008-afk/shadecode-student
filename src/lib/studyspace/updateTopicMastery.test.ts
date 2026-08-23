@@ -35,6 +35,7 @@ const evidence: LearningEvidence = {
   weakAreas: ["Damping"],
   strongAreas: ["Period"],
   timeSpentMs: 120000,
+  createdAt: "2026-08-22T08:03:00.000Z",
 };
 
 describe("updateTopicMasteryFromEvidence", () => {
