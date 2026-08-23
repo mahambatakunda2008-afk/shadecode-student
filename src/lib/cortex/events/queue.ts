@@ -60,10 +60,14 @@ function buildEventFingerprint(event: CortexEvent) {
   });
 }
 
+function createEventId(input: CortexEventInput) {
+  return input.id ?? `${input.type}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function createCortexEvent(input: CortexEventInput): CortexEvent {
   return {
     ...input,
-    id: `${input.type}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+    id: createEventId(input),
     createdAt: new Date().toISOString(),
   };
 }
@@ -75,8 +79,16 @@ export function enqueueCortexEvent(input: CortexEventInput) {
 
   const nextEvent = createCortexEvent(input);
   const state = readState();
-  const nextFingerprint = buildEventFingerprint(nextEvent);
 
+  const alreadyQueued = state.events.some(
+    (event) => event.userId === nextEvent.userId && event.id === nextEvent.id,
+  );
+
+  if (alreadyQueued) {
+    return;
+  }
+
+  const nextFingerprint = buildEventFingerprint(nextEvent);
   const duplicate = state.events.some((event) => {
     const createdAt = new Date(event.createdAt).getTime();
     return (

@@ -14,7 +14,15 @@ export type CortexEventType =
   | "timetable.saved"
   | "exam.completed"
   | "exam.question.answered"
-  | "exam.marking.completed";
+  | "exam.marking.completed"
+  | "lesson_started"
+  | "lesson_completed"
+  | "quiz_completed"
+  | "challenge_completed"
+  | "study_session_started"
+  | "study_session_finished"
+  | "verify.completed";
+
 /* ─────────────────────────────────────────────
    CONTEXT FOR AI INSIGHTS (ENGINE USE)
 ───────────────────────────────────────────── */
@@ -28,7 +36,12 @@ export type CortexEventSource =
   | "dashboard"
   | "tasks"
   | "timetable"
-  | "exam";
+  | "exam"
+  | "lesson"
+  | "quiz"
+  | "challenge"
+  | "study-session"
+  | "verify";
 
 export interface CortexEventData {
   [key: string]: boolean | number | string | null | undefined;
@@ -44,6 +57,7 @@ export interface CortexEvent {
 }
 
 export interface CortexEventInput {
+  id?: string;
   userId: string;
   type: CortexEventType;
   source: CortexEventSource;
