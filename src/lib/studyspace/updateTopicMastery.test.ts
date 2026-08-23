@@ -1,17 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LearningEvidence } from "./evidence";
 
-const { selectChain, maybeSingle, updateChain, update, insert } = vi.hoisted(() => ({
-  selectChain: { eq: vi.fn() },
+const { maybeSingle, update, insert } = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
-  updateChain: { eq: vi.fn() },
   update: vi.fn(),
   insert: vi.fn(),
 }));
-
-selectChain.eq.mockReturnValueOnce(selectChain).mockReturnValueOnce(selectChain);
-selectChain.eq.mockReturnValueOnce({ maybeSingle });
-updateChain.eq.mockReturnValue(update);
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
@@ -23,7 +17,10 @@ vi.mock("@/lib/supabase/client", () => ({
           }),
         }),
       }),
-      update: () => ({ eq: update }),
+      update: (payload: unknown) => {
+        update(payload);
+        return { eq: vi.fn().mockResolvedValue({ error: null }) };
+      },
       insert,
     }),
   }),
@@ -64,7 +61,7 @@ describe("updateTopicMasteryFromEvidence", () => {
 
   it("blends a repeat assessment with the previous mastery score", async () => {
     maybeSingle.mockResolvedValue({ data: { id: "mastery-1", mastery_score: 70 }, error: null });
-    update.mockResolvedValue({ error: null });
+    update.mockResolvedValue(undefined);
 
     await updateTopicMasteryFromEvidence("user-1", evidence);
 
