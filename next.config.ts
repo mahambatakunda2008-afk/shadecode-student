@@ -1,61 +1,39 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import withPWA from "@ducanh2912/next-pwa";
 
+/**
+ * PWA must never own the authenticated application's document/RSC boot path.
+ * Next.js is responsible for navigation and server components; the service
+ * worker is only an offline asset layer.
+ */
 const nextConfig = withPWA({
   dest: "public",
   register: true,
+  skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
-  fallbacks: { document: "/offline" },
+  fallbacks: false,
   workboxOptions: {
+    cleanupOutdatedCaches: true,
     runtimeCaching: [
       {
         urlPattern: ({ request, url }: { request: Request; url: URL }) =>
-          request.mode === "navigate" && url.pathname !== "/",
-        handler: "NetworkFirst",
+          request.method === "GET" &&
+          url.origin === self.location.origin &&
+          (request.destination === "script" || request.destination === "style" || request.destination === "font"),
+        handler: "StaleWhileRevalidate",
         options: {
-          cacheName: "shadecode-pages",
-          networkTimeoutSeconds: 2,
-          expiration: { maxEntries: 96, maxAgeSeconds: 7 * 24 * 60 * 60 },
-          cacheableResponse: { statuses: [200] },
+          cacheName: "shadecode-static-v3",
+          expiration: { maxEntries: 384, maxAgeSeconds: 30 * 24 * 60 * 60 },
         },
       },
       {
         urlPattern: ({ request, url }: { request: Request; url: URL }) =>
           request.method === "GET" &&
           url.origin === self.location.origin &&
-          url.searchParams.has("_rsc"),
-        handler: "NetworkFirst",
-        options: {
-          cacheName: "shadecode-rsc",
-          networkTimeoutSeconds: 1,
-          expiration: { maxEntries: 240, maxAgeSeconds: 14 * 24 * 60 * 60 },
-          cacheableResponse: { statuses: [200] },
-        },
-      },
-      {
-        urlPattern: ({ request }: { request: Request }) =>
-          request.method === "GET" &&
-          (request.destination === "script" || request.destination === "style"),
-        handler: "StaleWhileRevalidate",
-        options: {
-          cacheName: "shadecode-static",
-          expiration: { maxEntries: 384, maxAgeSeconds: 30 * 24 * 60 * 60 },
-        },
-      },
-      {
-        urlPattern: /^\/api\/.*/i,
-        method: "GET",
-        handler: "StaleWhileRevalidate",
-        options: {
-          cacheName: "shadecode-api",
-          expiration: { maxEntries: 128, maxAgeSeconds: 24 * 60 * 60 },
-        },
-      },
-      {
-        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+          /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i.test(url.pathname),
         handler: "CacheFirst",
         options: {
-          cacheName: "shadecode-images",
+          cacheName: "shadecode-images-v3",
           expiration: { maxEntries: 128, maxAgeSeconds: 30 * 24 * 60 * 60 },
         },
       },
