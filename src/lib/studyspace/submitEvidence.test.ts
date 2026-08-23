@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkObject } from "./types";
 
-const { saveWorkObject, emitCortexEvent } = vi.hoisted(() => ({
+const { saveWorkObject, emitCortexEvent, updateTopicMasteryFromEvidence, invalidateCache } = vi.hoisted(() => ({
   saveWorkObject: vi.fn().mockResolvedValue(undefined),
   emitCortexEvent: vi.fn(),
+  updateTopicMasteryFromEvidence: vi.fn().mockResolvedValue(undefined),
+  invalidateCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("./store", () => ({ saveWorkObject }));
 vi.mock("@/lib/cortex/events/emit", () => ({ emitCortexEvent }));
+vi.mock("./updateTopicMastery", () => ({ updateTopicMasteryFromEvidence }));
+vi.mock("@/lib/recommendation-engine", () => ({
+  recommendationEngine: { invalidateCache },
+}));
 
 import { submitStudySpaceEvidence } from "./submitEvidence";
 
@@ -33,12 +39,17 @@ describe("submitStudySpaceEvidence", () => {
   beforeEach(() => {
     saveWorkObject.mockClear();
     emitCortexEvent.mockClear();
+    updateTopicMasteryFromEvidence.mockClear();
+    invalidateCache.mockClear();
   });
 
-  it("persists the work and emits one stable learning event", async () => {
+  it("persists the work, syncs mastery, invalidates recommendations, and emits one stable learning event", async () => {
     const evidence = await submitStudySpaceEvidence(work, "user-1");
+    await Promise.resolve();
 
     expect(saveWorkObject).toHaveBeenCalledWith(work);
+    expect(updateTopicMasteryFromEvidence).toHaveBeenCalledWith("user-1", evidence);
+    expect(invalidateCache).toHaveBeenCalledWith("user-1");
     expect(emitCortexEvent).toHaveBeenCalledTimes(1);
     expect(emitCortexEvent).toHaveBeenCalledWith(expect.objectContaining({
       id: `studyspace:${work.id}:${work.updatedAt}`,
