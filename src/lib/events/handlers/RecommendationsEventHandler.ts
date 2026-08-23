@@ -13,7 +13,9 @@ export class RecommendationsEventHandler implements EventHandler {
 
   async handle(event: UnifiedEvent): Promise<void> {
     try {
-      // Invalidate recommendation cache on relevant events
+      // Invalidate recommendation cache on relevant unified events.
+      // StudySpace assessment invalidation is handled at its own submission
+      // boundary because it is emitted through the Cortex event pipeline.
       await this.invalidateRecommendations(event);
     } catch (error) {
       console.error("[RecommendationsEventHandler] Error:", error);
@@ -21,7 +23,6 @@ export class RecommendationsEventHandler implements EventHandler {
   }
 
   private async invalidateRecommendations(event: UnifiedEvent): Promise<void> {
-    // Invalidate cache for events that should trigger recommendation updates
     const invalidateEvents = [
       "lesson_completed",
       "quiz_completed",
@@ -30,12 +31,8 @@ export class RecommendationsEventHandler implements EventHandler {
     ];
 
     if (invalidateEvents.includes(event.type)) {
-      // Invalidate recommendation engine cache
       await recommendationEngine.invalidateCache(event.userId);
-      
-      // Invalidate intelligence engine cache
       await intelligenceEngine.invalidateCache(event.userId);
-      
       console.log(`[Recommendations] Invalidated cache for ${event.type}`);
     }
   }

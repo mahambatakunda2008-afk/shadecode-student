@@ -21,7 +21,8 @@ export type CortexEventType =
   | "challenge_completed"
   | "study_session_started"
   | "study_session_finished"
-  | "verify.completed";
+  | "verify.completed"
+  | "studyspace.assessment.completed";
 
 /* ─────────────────────────────────────────────
    CONTEXT FOR AI INSIGHTS (ENGINE USE)
@@ -41,7 +42,8 @@ export type CortexEventSource =
   | "quiz"
   | "challenge"
   | "study-session"
-  | "verify";
+  | "verify"
+  | "studyspace";
 
 export interface CortexEventData {
   [key: string]: boolean | number | string | null | undefined;
