@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkObject } from "./types";
 
-const saveWorkObject = vi.fn().mockResolvedValue(undefined);
-const emitCortexEvent = vi.fn();
+const { saveWorkObject, emitCortexEvent } = vi.hoisted(() => ({
+  saveWorkObject: vi.fn().mockResolvedValue(undefined),
+  emitCortexEvent: vi.fn(),
+}));
 
 vi.mock("./store", () => ({ saveWorkObject }));
 vi.mock("@/lib/cortex/events/emit", () => ({ emitCortexEvent }));
