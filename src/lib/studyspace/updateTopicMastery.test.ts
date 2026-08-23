@@ -1,18 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LearningEvidence } from "./evidence";
 
-const { maybeSingle, update, insert } = vi.hoisted(() => ({
+const { selectChain, maybeSingle, updateChain, update, insert } = vi.hoisted(() => ({
+  selectChain: { eq: vi.fn() },
   maybeSingle: vi.fn(),
+  updateChain: { eq: vi.fn() },
   update: vi.fn(),
   insert: vi.fn(),
 }));
+
+selectChain.eq.mockReturnValueOnce(selectChain).mockReturnValueOnce(selectChain);
+selectChain.eq.mockReturnValueOnce({ maybeSingle });
+updateChain.eq.mockReturnValue(update);
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
-          eq: () => ({ maybeSingle }),
+          eq: () => ({
+            eq: () => ({ maybeSingle }),
+          }),
         }),
       }),
       update: () => ({ eq: update }),
