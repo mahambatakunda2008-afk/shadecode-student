@@ -35,6 +35,10 @@ function safeObservationTime(value?: string): string | undefined {
   return Number.isNaN(Date.parse(value)) ? undefined : value;
 }
 
+/**
+ * Creates a deliberately conservative initial state. This is a state estimate,
+ * not a claim that the student's true cognitive state equals these numbers.
+ */
 export function createInitialLearningState(topicId: string): TopicLearningState {
   return {
     topicId,
@@ -51,6 +55,13 @@ export function createInitialLearningState(topicId: string): TopicLearningState 
   };
 }
 
+/**
+ * Applies one observable learning event to a topic state.
+ *
+ * This is intentionally bounded and interpretable. It should later be
+ * calibrated against real outcomes rather than treated as a validated
+ * cognitive-science model.
+ */
 export function updateLearningState(
   previous: TopicLearningState,
   observation: LearningObservation,
