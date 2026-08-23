@@ -1,8 +1,9 @@
-import type { WorkObject } from "./types";
+import type { StudySessionState, WorkObject } from "./types";
 
 const DB_NAME = "shadecode-studyspace";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = "work";
+const SESSION_STORE = "sessions";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -11,6 +12,7 @@ function openDb(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(SESSION_STORE)) db.createObjectStore(SESSION_STORE, { keyPath: "workId" });
     };
     request.onerror = () => reject(request.error ?? new Error("Could not open StudySpace"));
     request.onsuccess = () => resolve(request.result);
@@ -57,6 +59,39 @@ export async function deleteWorkObject(id: string): Promise<void> {
     tx.objectStore(STORE).delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error("Could not delete work"));
+  });
+  db.close();
+}
+
+export async function saveStudySession(session: StudySessionState): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(SESSION_STORE, "readwrite");
+    tx.objectStore(SESSION_STORE).put(session);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Could not save study session"));
+  });
+  db.close();
+}
+
+export async function getStudySession(workId: string): Promise<StudySessionState | undefined> {
+  const db = await openDb();
+  const value = await new Promise<StudySessionState | undefined>((resolve, reject) => {
+    const request = db.transaction(SESSION_STORE, "readonly").objectStore(SESSION_STORE).get(workId);
+    request.onsuccess = () => resolve(request.result as StudySessionState | undefined);
+    request.onerror = () => reject(request.error ?? new Error("Could not load study session"));
+  });
+  db.close();
+  return value;
+}
+
+export async function deleteStudySession(workId: string): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(SESSION_STORE, "readwrite");
+    tx.objectStore(SESSION_STORE).delete(workId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Could not delete study session"));
   });
   db.close();
 }

@@ -7,3 +7,5 @@ export * from "./profile";
 export * from "./profile-adaptive";
 export * from "./next-action";
 export * from "./lessonEvidence";
+export * from "./exam-evidence";
+export * from "./session";

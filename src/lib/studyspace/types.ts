@@ -29,3 +29,12 @@ export type WorkObject = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type StudySessionState = {
+  workId: string;
+  mode: StudySpaceMode;
+  status: "active" | "paused" | "submitted" | "synced";
+  startedAt: string;
+  updatedAt: string;
+  remainingMs?: number;
+};
