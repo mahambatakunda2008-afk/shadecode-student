@@ -1,22 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-
+/**
+ * Intentionally inert while the PWA layer is being rebuilt.
+ *
+ * A stale service worker can survive deployments and intercept the very HTML,
+ * RSC and asset requests needed to boot Next.js. Registration must therefore
+ * not be part of application startup until the worker lifecycle is verified.
+ */
 export default function ServiceWorkerRegistration() {
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-
-    const register = () => {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((error) => {
-        console.warn("[offline] service worker registration failed", error);
-      });
-    };
-
-    if (document.readyState === "complete") register();
-    else window.addEventListener("load", register, { once: true });
-
-    return () => window.removeEventListener("load", register);
-  }, []);
-
   return null;
 }
