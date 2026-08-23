@@ -1,38 +1,21 @@
 import type { ReactNode } from 'react';
-import { redirect } from 'next/navigation';
 import { TourProvider } from '@/context/TourContext';
 import { ProductTour } from '@/components/tour/ProductTour';
-import { getUserProfileFlags } from '@/lib/user-profile';
 
 /**
- * Dashboard-specific layout.
+ * Dashboard presentation wrapper.
  *
- * Authentication and onboarding access are enforced by the root app layout
- * and middleware. Do not add a second client/server cookie gate here: the
- * previous `onboarding_complete` cookie gate could disagree with the
- * canonical `user_profiles.onboarding_completed` value and create a
- * `/dashboard` <-> `/onboarding` redirect loop.
+ * Authentication and access control are handled by middleware and the
+ * application shell. This layout must not perform Supabase queries on the
+ * critical navigation path: a stalled profile query would keep Next.js'
+ * loading UI visible even though the app itself is healthy.
  *
- * This layout only loads the profile flags needed by the product tour.
+ * The tour has its own local fast-path and can be hydrated with authoritative
+ * profile state later without blocking the dashboard render.
  */
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const profile = await getUserProfileFlags();
-
-  // Middleware normally guarantees this, but keep a defensive server-side
-  // guard for direct/internal navigation and stale deployments.
-  if (!profile) {
-    redirect('/auth/login?error=profile_unavailable');
-  }
-
-  if (!profile.onboardingCompleted) {
-    redirect('/onboarding');
-  }
-
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <TourProvider
-      onboardingCompleted={profile.onboardingCompleted}
-      tourCompleted={profile.tourCompleted}
-    >
+    <TourProvider onboardingCompleted={false} tourCompleted={true}>
       {children}
       <ProductTour />
     </TourProvider>
