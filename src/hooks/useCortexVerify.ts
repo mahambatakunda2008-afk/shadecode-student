@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { enqueue, getAll, remove, CortexAttempt } from "../lib/offline/cortex-queue";
-import { createClient } from "../lib/supabase/client";
+import { emitCortexEvent } from "@/lib/cortex/events/emit";
+import { createClient } from "@/lib/supabase/client";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -54,6 +55,23 @@ async function currentUserId() {
   return data.user.id;
 }
 
+function recordVerifyEvent(attempt: CortexAttempt, result: VerifyResult) {
+  emitCortexEvent({
+    id: attempt.id,
+    userId: attempt.userId,
+    type: "verify.completed",
+    source: "verify",
+    data: {
+      mode: attempt.mode,
+      subject: attempt.subject || null,
+      score: typeof result.score === "number" ? result.score : null,
+      correct: result.correct === true,
+      needsRetake: result.needsRetake === true,
+      confidence: typeof result.confidence === "number" ? result.confidence : null,
+    },
+  });
+}
+
 async function sendAttemptNow(attempt: CortexAttempt) {
   try {
     const fd = new FormData();
@@ -74,6 +92,7 @@ async function sendAttemptNow(attempt: CortexAttempt) {
     try { data = await response.json(); } catch { throw new Error("Cortex returned an invalid response."); }
     if (!response.ok) throw new Error(data.error || "Cortex provider error.");
     if (!data || typeof data !== "object") throw new Error("Invalid Cortex response.");
+    recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
     return data as VerifyResult;
   } catch (err) {
