@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getWorkObject } from "@/lib/studyspace/store";
 import { recordLessonEvidence } from "@/lib/studyspace/lessonEvidence";
+import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { downloadManager } from "@/lib/offline/downloadManager";
 
 export default function LessonEvidenceRecorder() {
@@ -17,10 +18,30 @@ export default function LessonEvidenceRecorder() {
     try { lessonId = decodeURIComponent(match[1]); } catch { return; }
     let cancelled = false;
 
-    const captureCompletedLesson = async (progress: number, subject?: string, topic?: string, updatedAt?: string) => {
+    const captureCompletedLesson = async (
+      progress: number,
+      subject?: string,
+      topic?: string,
+      updatedAt?: string,
+      userId?: string,
+    ) => {
       if (cancelled) return;
       try {
         await recordLessonEvidence({ lessonId, subject, topic, progress, createdAt: updatedAt });
+        if (userId && progress >= 100) {
+          emitCortexEvent({
+            id: `lesson:${lessonId}:${updatedAt ?? "completed"}`,
+            userId,
+            type: "lesson_completed",
+            source: "lesson",
+            data: {
+              lessonId,
+              subject: subject ?? null,
+              topic: topic ?? null,
+              progress,
+            },
+          });
+        }
       } catch {
         // Evidence capture is best-effort and must never block learning.
       }
@@ -42,12 +63,12 @@ export default function LessonEvidenceRecorder() {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (!response.ok || cancelled) {
-          await captureCompletedLesson(100);
+          await captureCompletedLesson(100, undefined, undefined, undefined, session.user.id);
           return;
         }
 
         const data = await response.json() as { lesson?: { subject?: string; title?: string; updated_at?: string } };
-        await captureCompletedLesson(100, data.lesson?.subject, data.lesson?.title, data.lesson?.updated_at);
+        await captureCompletedLesson(100, data.lesson?.subject, data.lesson?.title, data.lesson?.updated_at, session.user.id);
       } catch {
         // The local progress record is already the durable fallback.
       }
@@ -73,7 +94,7 @@ export default function LessonEvidenceRecorder() {
         const lesson = data.lesson;
         if (!lesson || lesson.progress !== 100 || cancelled) return;
 
-        await captureCompletedLesson(100, lesson.subject, lesson.title, lesson.updated_at);
+        await captureCompletedLesson(100, lesson.subject, lesson.title, lesson.updated_at, session.user.id);
       } catch {
         // Evidence capture is best-effort and must never block lesson viewing.
       }
