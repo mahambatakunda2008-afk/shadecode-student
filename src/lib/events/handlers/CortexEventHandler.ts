@@ -18,27 +18,29 @@ const SOURCE_BY_EVENT: Record<UnifiedEvent["type"], CortexEventSource> = {
   study_session_finished: "study-session",
 };
 
-function normalizeData(data: Record<string, unknown> | undefined) {
+function normalizeData(data: Record<string, unknown> | undefined): CortexEventInput["data"] {
   if (!data) {
     return undefined;
   }
 
-  return Object.keys(data).reduce<CortexEventInput["data"]>((result, key) => {
+  const result: NonNullable<CortexEventInput["data"]> = {};
+
+  for (const key of Object.keys(data)) {
     const value = data[key];
 
     if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      result![key] = value;
-      return result;
+      result[key] = value;
+      continue;
     }
 
     try {
-      result![key] = JSON.stringify(value);
+      result[key] = JSON.stringify(value);
     } catch {
-      result![key] = String(value);
+      result[key] = String(value);
     }
+  }
 
-    return result;
-  }, {});
+  return result;
 }
 
 export class CortexEventHandler implements EventHandler {
