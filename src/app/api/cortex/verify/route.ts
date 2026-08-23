@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const PROVIDER_TIMEOUT_MS = 20_000;
 const GEMINI_KEYS = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
 const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
 
@@ -41,6 +42,20 @@ Student answer/working: ${studentAnswer || "The student's working is in the imag
 Assess the student's actual reasoning. Distinguish a correct method with an arithmetic slip from a fundamentally incorrect method. Do not invent missing work. If the image is unreadable, set needsRetake=true instead of guessing. Score the work fairly and explain the first important mistake. ${CHECK_SCHEMA}`;
 }
 
+async function withTimeout<T>(promise: Promise<T>, ms = PROVIDER_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Provider request timed out")), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function gemini(prompt: string, image?: { data: string; mimeType: string }) {
   let lastError: unknown;
   for (const key of GEMINI_KEYS) {
@@ -50,7 +65,7 @@ async function gemini(prompt: string, image?: { data: string; mimeType: string }
         const model = client.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: "application/json", maxOutputTokens: 5000 } });
         const parts: any[] = [prompt];
         if (image) parts.push({ inlineData: image });
-        const result = await model.generateContent(parts);
+        const result = await withTimeout(model.generateContent(parts));
         return { text: result.response.text(), provider: "gemini", model: modelName };
       } catch (error) { lastError = error; }
     }
@@ -63,21 +78,18 @@ async function openAI(prompt: string, image?: { data: string; mimeType: string }
   if (!key) throw new Error("OpenAI provider is not configured");
   const content: any[] = [{ type: "text", text: prompt }];
   if (image) content.push({ type: "image_url", image_url: { url: `data:${image.mimeType};base64,${image.data}` } });
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await withTimeout(fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: "gpt-4o-mini", response_format: { type: "json_object" }, max_tokens: 5000, messages: [{ role: "user", content }] }),
-  });
+  }));
   const data = await response.json();
   if (!response.ok) throw new Error(data?.error?.message || `OpenAI HTTP ${response.status}`);
   return { text: data.choices?.[0]?.message?.content || "", provider: "openai", model: "gpt-4o-mini" };
 }
 
 async function runStructured(prompt: string, image?: { data: string; mimeType: string }) {
-  const providers = [
-    () => gemini(prompt, image),
-    () => openAI(prompt, image),
-  ];
+  const providers = [() => gemini(prompt, image), () => openAI(prompt, image)];
   let lastError: unknown;
   for (const provider of providers) {
     try {
@@ -122,11 +134,7 @@ export async function POST(req: Request) {
     if (mode === "help") {
       const level = String(formData.get("level") || "hint");
       if (!question && !image) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
-      const instruction = level === "hint"
-        ? "Give a short hint that nudges the student without revealing the answer."
-        : level === "method"
-          ? "Explain the method and steps without giving the final answer."
-          : "Give a complete worked solution because the student explicitly requested it.";
+      const instruction = level === "hint" ? "Give a short hint that nudges the student without revealing the answer." : level === "method" ? "Explain the method and steps without giving the final answer." : "Give a complete worked solution because the student explicitly requested it.";
       const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Help level: ${level}. ${instruction} Return ONLY JSON with keys level, hint, method, solution, finalAnswer, content as appropriate. Keep explanations student-friendly.`;
       return NextResponse.json(await runStructured(prompt, image));
     }
