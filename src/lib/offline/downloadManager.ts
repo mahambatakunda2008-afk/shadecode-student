@@ -34,9 +34,7 @@ class DownloadManager {
     });
 
     try {
-      // Calculate size estimate
       const size = JSON.stringify(lessonData).length;
-
       const data = lessonData as any; // eslint-disable-line @typescript-eslint/no-explicit-any
       const offlineLesson: OfflineLesson = {
         id: lessonId,
@@ -49,7 +47,6 @@ class DownloadManager {
         size,
       };
 
-      // Simulate download progress
       for (let i = 0; i <= 100; i += 10) {
         await new Promise(resolve => setTimeout(resolve, 50));
         const progress = this.activeDownloads.get(downloadId);
@@ -60,13 +57,11 @@ class DownloadManager {
       }
 
       await offlineStorage.saveLesson(offlineLesson);
-
       const progress = this.activeDownloads.get(downloadId);
       if (progress) {
         progress.progress = 100;
         progress.status = "completed";
       }
-
       onProgress?.(100);
     } catch (error) {
       const progress = this.activeDownloads.get(downloadId);
@@ -99,7 +94,6 @@ class DownloadManager {
         downloadedAt: new Date().toISOString(),
       };
 
-      // Simulate download progress
       for (let i = 0; i <= 100; i += 20) {
         await new Promise(resolve => setTimeout(resolve, 30));
         const progress = this.activeDownloads.get(downloadId);
@@ -110,13 +104,11 @@ class DownloadManager {
       }
 
       await offlineStorage.saveNotes(offlineNotes);
-
       const progress = this.activeDownloads.get(downloadId);
       if (progress) {
         progress.progress = 100;
         progress.status = "completed";
       }
-
       onProgress?.(100);
     } catch (error) {
       const progress = this.activeDownloads.get(downloadId);
@@ -151,7 +143,6 @@ class DownloadManager {
         downloadedAt: new Date().toISOString(),
       };
 
-      // Simulate download progress
       for (let i = 0; i <= 100; i += 20) {
         await new Promise(resolve => setTimeout(resolve, 30));
         const progress = this.activeDownloads.get(downloadId);
@@ -162,13 +153,11 @@ class DownloadManager {
       }
 
       await offlineStorage.saveQuiz(offlineQuiz);
-
       const progress = this.activeDownloads.get(downloadId);
       if (progress) {
         progress.progress = 100;
         progress.status = "completed";
       }
-
       onProgress?.(100);
     } catch (error) {
       const progress = this.activeDownloads.get(downloadId);
@@ -197,26 +186,20 @@ class DownloadManager {
     };
 
     try {
-      // Download lesson
       await this.downloadLesson(lessonId, lessonData, updateProgress);
       currentStep++;
-
-      // Download notes if available
       if (notesContent) {
         await this.downloadNotes(lessonId, notesContent, updateProgress);
         currentStep++;
       } else {
         currentStep++;
       }
-
-      // Download quiz if available
       if (quizData) {
         await this.downloadQuiz(lessonId, quizData, updateProgress);
         currentStep++;
       } else {
         currentStep++;
       }
-
       onProgress?.(100);
     } catch (error) {
       throw error;
@@ -275,8 +258,8 @@ class DownloadManager {
     await offlineStorage.saveProgress(offlineProgress);
   }
 
-  async getOfflineProgress(lessonId: string): Promise<OfflineProgress | null> {
-    return await offlineStorage.getProgress(lessonId);
+  async getOfflineProgress(lessonId: string, userId: string): Promise<OfflineProgress | null> {
+    return await offlineStorage.getProgress(lessonId, userId);
   }
 
   async syncProgress(userId: string): Promise<void> {
@@ -286,7 +269,6 @@ class DownloadManager {
       if (progress.userId !== userId) continue;
 
       try {
-        // Sync to server
         await fetch("/api/learn/progress", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -298,7 +280,7 @@ class DownloadManager {
           }),
         });
 
-        await offlineStorage.markProgressSynced(progress.lessonId);
+        await offlineStorage.markProgressSynced(progress.lessonId, userId);
       } catch (error) {
         console.error("Failed to sync progress:", error);
         log.offlineSyncFailed({
