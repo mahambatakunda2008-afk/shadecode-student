@@ -11,9 +11,7 @@ const securityHeaders: Record<string, string> = {
 };
 
 function applySecurityHeaders(res: NextResponse) {
-  for (const [key, value] of Object.entries(securityHeaders)) {
-    res.headers.set(key, value);
-  }
+  for (const [key, value] of Object.entries(securityHeaders)) res.headers.set(key, value);
   return res;
 }
 
@@ -23,61 +21,48 @@ function withEdgeTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     const timer = setTimeout(() => reject(new EdgeTimeoutError(`Timed out after ${ms}ms`)), ms);
     promise.then(
       (value) => { clearTimeout(timer); resolve(value); },
-      (err) => { clearTimeout(timer); reject(err); }
+      (err) => { clearTimeout(timer); reject(err); },
     );
   });
 }
 
 /**
- * Edge route guard. Authentication is validated by Supabase on every
- * protected request. The root landing page is special: it remains public for
- * signed-out visitors, but an authenticated student is redirected to the
- * dashboard so the marketing page is never the app home.
+ * Middleware is intentionally kept on the critical path as small as possible.
+ * It owns authentication/security, not application data loading.
+ *
+ * Previous versions performed admin + onboarding database queries for every
+ * authenticated navigation. A slow Supabase RPC could therefore leave the
+ * Next.js loading UI visible indefinitely before the actual page even began
+ * rendering. Those checks now happen in the application layer, where they
+ * cannot block the initial document response.
  */
 const AUTH_TIMEOUT_MS = 6000;
-const PROFILE_CHECK_TIMEOUT_MS = 4000;
-
-const PUBLIC_PREFIXES = [
-  '/auth',
-  '/api',
-  '/_next',
-  '/favicon',
-  '/images',
-  '/fonts',
-];
+const PUBLIC_PREFIXES = ['/auth', '/api', '/_next', '/favicon', '/images', '/fonts'];
 
 function isPublic(path: string): boolean {
-  return PUBLIC_PREFIXES.some(p => path.startsWith(p));
+  return PUBLIC_PREFIXES.some((p) => path.startsWith(p));
 }
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
   const isRoot = pathname === '/';
 
-  // Everything except `/` can use the cheap public bypass. `/` needs an
-  // identity check because its response differs intentionally for anonymous
-  // and authenticated visitors.
   if (!isRoot && isPublic(pathname)) return NextResponse.next();
 
   let response = NextResponse.next({ request: req });
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
+        getAll() { return req.cookies.getAll(); },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
           response = NextResponse.next({ request: req });
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         },
       },
-    }
+    },
   );
 
   function redirectPreservingSession(destination: string, extraParams?: Record<string, string>) {
@@ -88,80 +73,27 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
     const redirectResponse = NextResponse.redirect(url);
     response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
-    applySecurityHeaders(redirectResponse);
-    return redirectResponse;
+    return applySecurityHeaders(redirectResponse);
   }
 
-  let user;
   try {
-    const result = await withEdgeTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS);
-    user = result.data.user;
-  } catch (err) {
-    if (err instanceof EdgeTimeoutError) {
-      console.error('[middleware] auth.getUser() timed out:', err.message);
+    const { data: { user } } = await withEdgeTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS);
+
+    if (!user) {
+      if (isRoot) return applySecurityHeaders(response);
+      return redirectPreservingSession('/auth/login', { redirect: pathname });
     }
-    // `/` is public when identity cannot be established. Protected routes
-    // still fail closed to login.
+
+    // Authenticated root launches directly into the app. No profile/RPC query
+    // is allowed to delay this redirect.
+    if (isRoot) return redirectPreservingSession('/dashboard');
+
+    return applySecurityHeaders(response);
+  } catch (err) {
+    console.error('[middleware] authentication check failed:', err);
     if (isRoot) return applySecurityHeaders(NextResponse.next());
-    return redirectPreservingSession('/auth/login', { redirect: pathname });
+    return redirectPreservingSession('/auth/login', { redirect: pathname, error: 'session_check' });
   }
-
-  if (!user) {
-    if (isRoot) return applySecurityHeaders(response);
-    return redirectPreservingSession('/auth/login', { redirect: pathname });
-  }
-
-  // This is the critical landing-page rule: authenticated users never enter
-  // the public marketing shell, whether they typed `/`, clicked a stale
-  // bookmark, or followed an old app-home link.
-  if (isRoot) {
-    return redirectPreservingSession('/dashboard');
-  }
-
-  let adminCheck: boolean | null = null;
-  let profile: { onboarding_completed: boolean | null } | null = null;
-  let checksFailed = false;
-
-  try {
-    const [adminResult, profileResult] = await withEdgeTimeout(
-      Promise.all([
-        supabase.rpc('has_role', { user_id: user.id, role_name: 'admin' }),
-        supabase.from('user_profiles').select('onboarding_completed').eq('user_id', user.id).maybeSingle(),
-      ]),
-      PROFILE_CHECK_TIMEOUT_MS
-    );
-    if (!adminResult.error) adminCheck = Boolean(adminResult.data);
-    if (!profileResult.error) profile = profileResult.data;
-    else checksFailed = true;
-  } catch (err) {
-    checksFailed = true;
-    if (err instanceof EdgeTimeoutError) {
-      console.error('[middleware] admin/onboarding checks timed out:', err.message);
-    }
-  }
-
-  if (adminCheck === true) {
-    return response;
-  }
-
-  if (checksFailed) {
-    applySecurityHeaders(response);
-    return response;
-  }
-
-  const onboardingComplete = profile?.onboarding_completed === true;
-  const onOnboarding = pathname.startsWith('/onboarding');
-
-  if (!onboardingComplete && !onOnboarding) {
-    return redirectPreservingSession('/onboarding');
-  }
-
-  if (onboardingComplete && onOnboarding) {
-    return redirectPreservingSession('/dashboard');
-  }
-
-  applySecurityHeaders(response);
-  return response;
 }
 
 export const config = {
