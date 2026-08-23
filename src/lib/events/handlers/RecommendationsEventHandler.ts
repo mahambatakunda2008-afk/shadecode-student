@@ -21,12 +21,15 @@ export class RecommendationsEventHandler implements EventHandler {
   }
 
   private async invalidateRecommendations(event: UnifiedEvent): Promise<void> {
-    // Invalidate cache for events that should trigger recommendation updates
+    // These events change the student's learning state and can therefore
+    // change the next-best action. StudySpace assessment is important because
+    // it updates topic mastery before recommendations are consumed.
     const invalidateEvents = [
       "lesson_completed",
       "quiz_completed",
       "exam_completed",
       "study_session_finished",
+      "studyspace_assessment_completed",
     ];
 
     if (invalidateEvents.includes(event.type)) {
