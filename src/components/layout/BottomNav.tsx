@@ -13,35 +13,38 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const { tasksBadge, tasksUrgent, examsBadge, examsUrgent } = useNavBadges();
 
-  // Only tasks/exams have live data to show; everything else keeps
-  // whatever (currently nothing) is on the static nav item.
   const resolveBadge = (href: string, staticBadge?: string, staticUrgent?: boolean) => {
     if (href === "/tasks") return { badge: tasksBadge, urgent: tasksUrgent };
     if (href === "/exams") return { badge: examsBadge, urgent: examsUrgent };
     return { badge: staticBadge, urgent: staticUrgent };
   };
 
-  // Close drawer on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  useEffect(() => setOpen(false), [pathname]);
 
-  // Lock body scroll when drawer open
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previous;
     };
   }, [open]);
 
-  const anyMoreActive = BOTTOM_MORE.some(({ href }) =>
-    isRouteActive(pathname, href)
-  );
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  const anyMoreActive = BOTTOM_MORE.some(({ href }) => isRouteActive(pathname, href));
 
   return (
     <>
-      {/* ── Bottom tab bar ──────────────────────────────────────────── */}
       <nav
+        aria-label="Primary navigation"
         className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
@@ -52,161 +55,56 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-1 flex-col items-center justify-center gap-[5px] pt-[10px] pb-[9px] relative"
+              aria-current={active ? "page" : undefined}
+              className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[5px] px-1 pt-[10px] pb-[9px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
             >
-              {/* Icon with pill indicator */}
-              <div
-                className={cn(
-                  "relative w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
-                  active ? "bg-[var(--primary-glow)]" : "bg-transparent"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "w-[20px] h-[20px] transition-all duration-200",
-                    active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
-                  )}
-                  strokeWidth={active ? 2.2 : 1.8}
-                />
-                {badge && (
-                  <span
-                    className={cn(
-                      "absolute -top-[5px] -right-[7px]",
-                      "min-w-[15px] h-[15px] px-[3px] rounded-full",
-                      "text-[8px] font-bold flex items-center justify-center leading-none",
-                      urgent
-                        ? "bg-[var(--danger)] text-white"
-                        : "bg-[var(--primary)] text-white"
-                    )}
-                  >
-                    {badge}
-                  </span>
-                )}
+              <div className={cn("relative flex h-[26px] w-10 items-center justify-center rounded-full transition-all duration-200", active ? "bg-[var(--primary-glow)]" : "bg-transparent")}>
+                <Icon className={cn("h-5 w-5 transition-all duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} />
+                {badge && <span aria-label={`${badge} notification`} className={cn("absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[8px] font-bold leading-none", urgent ? "bg-[var(--danger)] text-white" : "bg-[var(--primary)] text-white")}>{badge}</span>}
               </div>
-              {/* Label */}
-              <span
-                className={cn(
-                  "text-[10px] font-medium leading-none transition-colors duration-200",
-                  active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
-                )}
-              >
-                {label}
-              </span>
+              <span className={cn("truncate text-[10px] font-medium leading-none transition-colors duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{label}</span>
             </Link>
           );
         })}
 
-        {/* More button */}
         <button
+          type="button"
+          aria-label="Open more navigation"
+          aria-expanded={open}
           onClick={() => setOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-[5px] pt-[10px] pb-[9px] cursor-pointer"
+          className="flex min-w-0 flex-1 flex-col items-center justify-center gap-[5px] px-1 pt-[10px] pb-[9px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
         >
-          <div
-            className={cn(
-              "w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
-              anyMoreActive || open ? "bg-[var(--primary-glow)]" : "bg-transparent"
-            )}
-          >
-            <MoreHorizontal
-              className={cn(
-                "w-[20px] h-[20px] transition-colors duration-200",
-                anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
-              )}
-              strokeWidth={1.8}
-            />
+          <div className={cn("flex h-[26px] w-10 items-center justify-center rounded-full transition-all duration-200", anyMoreActive || open ? "bg-[var(--primary-glow)]" : "bg-transparent")}>
+            <MoreHorizontal className={cn("h-5 w-5 transition-colors duration-200", anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={1.8} />
           </div>
-          <span
-            className={cn(
-              "text-[10px] font-medium leading-none transition-colors duration-200",
-              anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
-            )}
-          >
-            More
-          </span>
+          <span className={cn("text-[10px] font-medium leading-none transition-colors duration-200", anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>More</span>
         </button>
       </nav>
 
-      {/* ── Backdrop ────────────────────────────────────────────────── */}
-      {open && (
-        <div
-          className="fixed inset-0 z-[9998] bg-black/60"
-          style={{ animation: "ssc-fadeIn 0.15s ease forwards" }}
-          onClick={() => setOpen(false)}
-        />
-      )}
+      {open && <div className="fixed inset-0 z-[9998] bg-black/60" role="presentation" onClick={() => setOpen(false)} />}
 
-      {/* ── More drawer ─────────────────────────────────────────────── */}
       {open && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="More navigation"
           className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[22px] border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
-          style={{
-            animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-            paddingBottom:
-              "max(env(safe-area-inset-bottom, 0px), 20px)",
-          }}
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)", animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
         >
-          {/* Drag handle */}
-          <div className="w-8 h-[3px] bg-[var(--surface-3)] rounded-full mx-auto mt-[14px] mb-[18px]" />
-
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 mb-[18px]">
-            <span className="text-[14px] font-semibold text-[var(--foreground)]">
-              More
-            </span>
-            <button
-              onClick={() => setOpen(false)}
-              className="ssc-icon-button h-7 w-7 rounded-full"
-            >
-              <X className="w-[14px] h-[14px]" />
-            </button>
+          <div className="mx-auto mb-[18px] mt-[14px] h-[3px] w-8 rounded-full bg-[var(--surface-3)]" />
+          <div className="mb-[18px] flex items-center justify-between px-5">
+            <span className="text-[14px] font-semibold text-[var(--foreground)]">More</span>
+            <button type="button" aria-label="Close more navigation" onClick={() => setOpen(false)} className="ssc-icon-button h-7 w-7 rounded-full"><X className="h-[14px] w-[14px]" /></button>
           </div>
-
-          {/* 3-column grid */}
           <div className="grid grid-cols-3 gap-[10px] px-4 pb-2">
             {BOTTOM_MORE.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
               const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
               const active = isRouteActive(pathname, href);
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center gap-2",
-                    "py-[18px] px-2 rounded-2xl border transition-all duration-150",
-                    active
-                      ? "bg-[var(--primary-glow)] border-[var(--primary)]/30"
-                      : "bg-[var(--surface-2)] border-[var(--card-border)] active:bg-[var(--surface-3)]"
-                  )}
-                >
-                  {badge && (
-                    <span
-                      className={cn(
-                        "absolute top-2 right-2",
-                        "min-w-[16px] h-4 px-1 rounded-full",
-                        "text-[8px] font-bold flex items-center justify-center leading-none",
-                        urgent
-                          ? "bg-[var(--danger-soft)] text-[var(--danger)]"
-                          : "bg-[var(--primary-glow)] text-[var(--primary)]"
-                      )}
-                    >
-                      {badge}
-                    </span>
-                  )}
-                  <Icon
-                    className={cn(
-                      "w-[21px] h-[21px] transition-colors duration-150",
-                      active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
-                    )}
-                    strokeWidth={active ? 2.2 : 1.8}
-                  />
-                  <span
-                    className={cn(
-                      "text-[11px] font-medium text-center leading-tight",
-                      active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
-                    )}
-                  >
-                    {label}
-                  </span>
+                <Link key={href} href={href} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)} className={cn("relative flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-2xl border px-2 py-[18px] outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--primary)]", active ? "border-[var(--primary)]/30 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface-2)] active:bg-[var(--surface-3)]")}>
+                  {badge && <span aria-label={`${badge} notification`} className={cn("absolute right-2 top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[8px] font-bold leading-none", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)]" : "bg-[var(--primary-glow)] text-[var(--primary)]")}>{badge}</span>}
+                  <Icon className={cn("h-[21px] w-[21px] transition-colors duration-150", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} />
+                  <span className={cn("text-center text-[11px] font-medium leading-tight", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{label}</span>
                 </Link>
               );
             })}
@@ -214,17 +112,7 @@ export function BottomNav() {
         </div>
       )}
 
-      {/* ── Keyframes ───────────────────────────────────────────────── */}
-      <style>{`
-        @keyframes ssc-slideUp {
-          from { transform: translateY(100%); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @keyframes ssc-fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-      `}</style>
+      <style>{`@keyframes ssc-slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
     </>
   );
 }
