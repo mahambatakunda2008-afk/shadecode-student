@@ -9,7 +9,7 @@ export interface EvaluationMetrics {
   engagement: number;
 }
 
-export interface EvaluationThresholds extends EvaluationMetrics {}
+export type EvaluationThresholds = EvaluationMetrics;
 
 export interface EvaluationResult {
   decision: EvaluationDecision;

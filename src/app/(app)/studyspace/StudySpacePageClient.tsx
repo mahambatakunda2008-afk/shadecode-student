@@ -16,7 +16,7 @@ const modes: { id: StudySpaceMode; label: string; description: string }[] = [
   { id: "canvas", label: "Canvas", description: "Write, sketch and reason freely." },
 ];
 
-export default function StudySpaceClient() {
+export default function StudySpacePageClient() {
   const router = useRouter();
   const params = useSearchParams();
   const initialMode = params.get("mode") as StudySpaceMode | null;

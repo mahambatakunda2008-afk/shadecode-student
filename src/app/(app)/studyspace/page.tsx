@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import StudySpaceClient from "./StudySpaceClient";
+import StudySpacePageClient from "./StudySpacePageClient";
 
 export default function StudySpacePage() {
   return (
-    <Suspense>
-      <StudySpaceClient />
+    <Suspense fallback={<main style={{ minHeight: "60vh", display: "grid", placeItems: "center", padding: 24 }}>Loading StudySpace…</main>}>
+      <StudySpacePageClient />
     </Suspense>
   );
 }
