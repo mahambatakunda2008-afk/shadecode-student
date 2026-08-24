@@ -99,7 +99,7 @@ export function useNavBadges(): NavBadges {
         let examsUrgent = false;
         if (nearestExamDate) {
           const days = Math.ceil(
-            (new Date(nearestExamDate).getTime() - Date.now().getTime()) /
+            (new Date(nearestExamDate).getTime() - Date.now()) /
               (1000 * 60 * 60 * 24),
           );
           examsBadge = days <= 0 ? "Today" : `${days}d`;
