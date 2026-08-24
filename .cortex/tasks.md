@@ -130,6 +130,10 @@ The strategic roadmap above does not replace the verified implementation backlog
 - [ ] 🔴 **Security Audit**
   - Review auth, RLS, API routes, service-role usage, uploads, secrets and AI-provider boundaries.
 
+- [x] 🔴 **Production outage response (2026-08-24, unplanned)**
+  - Two independent build-blocking bugs on `main` (`useNavBadges.ts` `Date.now().getTime()`, `/studyspace` missing Suspense boundary) had every deployment in `ERROR` state, including production. Fixed both directly on `main`, verified via a full local `next build`, confirmed `READY` on Vercel.
+  - Discovered PR #230 (exam simulation redesign) was independently chasing the same two bugs; merged current `main` into it, resolved the one resulting conflict, verified, and merged the completed `ExamWorkspace` redesign into `main`. See `DEVLOG.md` for full detail.
+
 - [x] 🔴 **Product Observability Audit**
   - Identify missing activation, retention, error, latency and AI-cost events.
 
