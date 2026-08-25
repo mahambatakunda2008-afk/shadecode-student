@@ -191,6 +191,29 @@ Before declaring implementation complete, verify as appropriate:
 
 Do not claim a check passed if it was not actually run.
 
+**Addendum, 2026-08-24 (production outage post-mortem):** `main` has no GitHub branch
+protection (confirmed via API: `Branch not protected`). Given ADR-2026-08-08-001 (Claude
+pushes directly to `main`, no PR gate), this means the Verification Gate above is the
+*only* thing standing between a broken change and a broken production deployment for any
+agent using that direct-push path -- there is no server-side backstop. Branch protection's
+"require status checks" only gates PR merges, not direct pushes, so it cannot fix this
+without also removing the no-PR workflow the owner explicitly chose; that trade-off is the
+owner's call, not an individual agent's, and is not made here.
+
+Given that, for any direct-to-`main` push, two items on the list above stop being
+situational and become mandatory, because this session found both skipped in practice
+despite the gate's "as appropriate" existing on paper:
+
+- **lint is not optional.** `npx tsc --noEmit` passing does not imply `npm run lint`
+  passes -- they check different things (`@typescript-eslint/no-empty-object-type` sat on
+  `main` as a lint *error* for hours, invisible to typecheck, and would have failed CI on
+  every push in that window had anyone checked). Run both before every direct push to
+  `main`, not just when a change looks lint-relevant.
+- **"CI status" means check it *after* pushing, not just before.** On a direct-push
+  branch there is no pre-merge gate to satisfy; CI only runs once the commit is already
+  live. Treat a push to `main` as incomplete until the corresponding GitHub Actions run
+  and Vercel deployment are both confirmed green -- not merely triggered.
+
 ## 15. Security
 
 Agents must never commit secrets, API keys, PATs, service-role keys, or private credentials.
