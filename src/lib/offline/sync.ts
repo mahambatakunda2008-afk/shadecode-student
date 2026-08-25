@@ -34,9 +34,7 @@ export class OfflineSync {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
     }
-    if (typeof window !== "undefined" && this.onlineHandler) {
-      window.removeEventListener("online", this.onlineHandler);
-    }
+    if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler);
     this.onlineHandler = null;
   }
 
@@ -68,17 +66,10 @@ export class OfflineSync {
     return { supabase, user };
   }
 
-  /**
-   * Bridge the local-first operation log into the one durable network queue.
-   * An operation is acknowledged locally only after it has been durably
-   * accepted by mutationQueue. If network sync later fails, the mutation
-   * remains retryable in that queue.
-   */
   private async bridgeLocalOperations(): Promise<void> {
     const auth = await this.getCurrentUser();
     if (!auth) return;
     const operations = await localOperationStore.list(auth.user.id);
-
     for (const operation of operations) {
       try {
         const mutation = this.operationToMutation(operation);
@@ -91,30 +82,39 @@ export class OfflineSync {
   }
 
   private operationToMutation(operation: LocalOperation): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> {
-    const store = operation.entity === "task" ? "tasks" : operation.entity === "subject" ? "subjects" : null;
-    if (!store) throw new Error(`Unsupported local-first entity: ${operation.entity}`);
+    if (operation.entity !== "task" && operation.entity !== "subject") {
+      throw new Error(`Unsupported local-first entity: ${operation.entity}`);
+    }
+    const store = operation.entity === "task" ? "tasks" : "subjects";
 
     if (operation.kind === "delete") {
-      return {
-        operation: "delete",
-        store,
-        payload: { id: operation.entityId, user_id: operation.userId },
-      };
+      return { operation: "delete", store, payload: { id: operation.entityId, user_id: operation.userId } };
     }
 
-    const payload = operation.payload;
-    if (!payload || typeof payload !== "object") throw new Error(`Local ${operation.entity} operation has no payload`);
-    const value = payload as Record<string, unknown>;
+    const raw = operation.payload;
+    if (!raw || typeof raw !== "object") throw new Error(`Local ${operation.entity} operation has no payload`);
+    const value = raw as Record<string, unknown>;
     const id = typeof value.id === "string" ? value.id : operation.entityId;
-    return {
-      operation: operation.kind === "create" ? "create" : "update",
-      store,
-      payload: {
-        ...value,
+
+    if (operation.entity === "task") {
+      const payload: Record<string, unknown> = {
         id,
         user_id: operation.userId,
-        ...(operation.entity === "task" && typeof value.userId === "string" ? { userId: undefined } : {}),
-      },
+        subject_id: value.subject_id,
+        title: value.title,
+        completed: value.completed,
+      };
+      if (operation.kind === "update") delete payload.subject_id;
+      if (operation.kind === "update") delete payload.title;
+      if (operation.kind === "update") delete payload.completed;
+      if (operation.kind === "update" && typeof value.completed === "boolean") payload.completed = value.completed;
+      return { operation: operation.kind, store, payload };
+    }
+
+    return {
+      operation: operation.kind,
+      store,
+      payload: { id, user_id: operation.userId, name: value.name },
     };
   }
 
@@ -123,7 +123,6 @@ export class OfflineSync {
     if (!auth) return;
     const { supabase, user } = auth;
     const mutations = await mutationQueue.listReady(user.id);
-
     for (const mutation of mutations) {
       try {
         const payload = mutation.payload as Record<string, unknown>;
@@ -139,12 +138,11 @@ export class OfflineSync {
         } else if (mutation.operation === "update") {
           const id = payload.id;
           if (typeof id !== "string") throw new Error("Update mutation requires a string id");
-          const { id: _id, user_id: _userId, userId: _legacyUserId, ...changes } = payload;
+          const { id: _id, user_id: _userId, ...changes } = payload;
           const { error } = await supabase.from(table).update(changes).eq("id", id).eq("user_id", user.id);
           if (error) throw error;
         } else {
-          const { userId: _legacyUserId, ...insertPayload } = payload;
-          const { error } = await supabase.from(table).upsert({ ...insertPayload, user_id: user.id });
+          const { error } = await supabase.from(table).upsert({ ...payload, user_id: user.id });
           if (error) throw error;
         }
         await mutationQueue.remove(mutation.id, user.id);
@@ -165,9 +163,7 @@ export class OfflineSync {
         const { error } = await supabase.from("tasks").upsert({ id: task.id, user_id: user.id, subject_id: task.subject_id, title: task.title, completed: task.completed });
         if (error) throw error;
         await offlineStorage.markTaskSynced(task.id, user.id);
-      } catch (error) {
-        console.error("[OfflineSync] Failed to sync task:", task.id, error);
-      }
+      } catch (error) { console.error("[OfflineSync] Failed to sync task:", task.id, error); }
     }
   }
 
@@ -181,9 +177,7 @@ export class OfflineSync {
         const { error } = await supabase.from("subjects").upsert({ id: subject.id, user_id: user.id, name: subject.name });
         if (error) throw error;
         await offlineStorage.markSubjectSynced(subject.id, user.id);
-      } catch (error) {
-        console.error("[OfflineSync] Failed to sync subject:", subject.id, error);
-      }
+      } catch (error) { console.error("[OfflineSync] Failed to sync subject:", subject.id, error); }
     }
   }
 
@@ -197,9 +191,7 @@ export class OfflineSync {
         const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", user.id);
         if (error) throw error;
         await offlineStorage.markProgressSynced(progress.lessonId, user.id);
-      } catch (error) {
-        console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error);
-      }
+      } catch (error) { console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error); }
     }
   }
 
