@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkCompleteness, validateLessonStructure } from "./validators";
+import type { StructuredLesson } from "./templates";
 
 function lesson(overrides: Record<string, unknown> = {}) {
   return {
@@ -25,19 +26,19 @@ describe("Learn quality gate", () => {
   it("accepts a complete structured lesson", () => {
     const value = lesson();
     expect(validateLessonStructure(value).isValid).toBe(true);
-    expect(checkCompleteness(value).coverage).toBe(100);
+    expect(checkCompleteness(value as unknown as StructuredLesson).coverage).toBe(100);
   });
 
   it("rejects a lesson without practice", () => {
     const value = lesson();
     (value.content.practice as unknown[]) = [];
     expect(validateLessonStructure(value).warnings.some((w) => w.field === "content.practice")).toBe(true);
-    expect(checkCompleteness(value).isComplete).toBe(false);
+    expect(checkCompleteness(value as unknown as StructuredLesson).isComplete).toBe(false);
   });
 
   it("rejects missing learning metadata", () => {
     const value = lesson();
-    value.metadata = { difficulty: "intermediate" };
+    (value.metadata as unknown) = { difficulty: "intermediate" };
     expect(validateLessonStructure(value).isValid).toBe(false);
   });
 });

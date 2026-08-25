@@ -1,15 +1,15 @@
-import type { LearnerAcademicContext } from './context';
+import type { LearnerContext } from './context';
 
 export interface RouteScope {
-  stage: LearnerAcademicContext['stage'];
+  stage: LearnerContext['stage'];
   subjects: string[];
   board: string;
-  qualification: string;
+  qualification?: string;
   syllabusCode?: string;
   syllabusYear?: string;
 }
 
-export function toRouteScope(context: LearnerAcademicContext): RouteScope {
+export function toRouteScope(context: LearnerContext): RouteScope {
   return {
     stage: context.stage,
     subjects: [...context.subjects],

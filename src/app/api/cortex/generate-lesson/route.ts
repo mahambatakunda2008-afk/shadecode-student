@@ -118,7 +118,7 @@ Do not pad the lesson with generic motivational text. Do not invent syllabus fac
     }
 
     lesson.id = `lesson_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-    lesson.createdAt = new Date().toISOString();
+    lesson.createdAt = new Date();
 
     if (shouldCache(JSON.stringify(lesson), "lesson")) {
       try {

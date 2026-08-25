@@ -44,7 +44,10 @@ export function snapLine(points: Point[], angleIncrement = Math.PI / 12): Point[
   const fit = fitLine(points);
   if (!fit || fit.length === 0) return points;
   const a = snapAngle(fit.angle, angleIncrement);
-  return [fit.start, { x: fit.start.x + Math.cos(a) * fit.length, y: fit.start.y + Math.sin(a) * fit.length }];
+  const dx = fit.end.x - fit.start.x;
+  const dy = fit.end.y - fit.start.y;
+  const projectedLength = dx * Math.cos(a) + dy * Math.sin(a);
+  return [fit.start, { x: fit.start.x + Math.cos(a) * projectedLength, y: fit.start.y + Math.sin(a) * projectedLength }];
 }
 
 export function joinEndpoint(point: Point, endpoints: Point[], radius: number): Point {

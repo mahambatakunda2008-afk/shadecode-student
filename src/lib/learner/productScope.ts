@@ -1,13 +1,13 @@
-import type { LearnerAcademicContext } from './context';
+import type { LearnerContext } from './context';
 
 export interface ProductScope {
-  academic: LearnerAcademicContext;
+  academic: LearnerContext;
   subjectIds: string[];
   allowCrossCurriculumBrowse: boolean;
   allowCrossStageBrowse: boolean;
 }
 
-export function buildProductScope(context: LearnerAcademicContext): ProductScope {
+export function buildProductScope(context: LearnerContext): ProductScope {
   return {
     academic: context,
     subjectIds: [...context.subjects],
@@ -16,10 +16,10 @@ export function buildProductScope(context: LearnerAcademicContext): ProductScope
   };
 }
 
-export function scopeQuery<T extends Record<string, unknown>>(query: T, context: LearnerAcademicContext): T & {
-  learnerStage: LearnerAcademicContext['stage'];
+export function scopeQuery<T extends Record<string, unknown>>(query: T, context: LearnerContext): T & {
+  learnerStage: LearnerContext['stage'];
   curriculumBoard: string;
-  qualification: string;
+  qualification?: string;
   syllabusCode?: string;
   syllabusYear?: string;
 } {
@@ -33,7 +33,7 @@ export function scopeQuery<T extends Record<string, unknown>>(query: T, context:
   };
 }
 
-export function canUseSubject(subject: string, context: LearnerAcademicContext): boolean {
+export function canUseSubject(subject: string, context: LearnerContext): boolean {
   const normalized = subject.trim().toLowerCase();
   return context.subjects.some(item => item.trim().toLowerCase() === normalized);
 }
