@@ -16,9 +16,20 @@ export function buildProductScope(context: LearnerContext): ProductScope {
   };
 }
 
+export function hasCompleteAcademicContext(context: LearnerContext): boolean {
+  return Boolean(
+    context.onboardingComplete &&
+    context.board &&
+    context.qualification &&
+    context.syllabusCode &&
+    context.syllabusYear &&
+    context.subjects.length > 0,
+  );
+}
+
 export function scopeQuery<T extends Record<string, unknown>>(query: T, context: LearnerContext): T & {
   learnerStage: LearnerContext['stage'];
-  curriculumBoard: string;
+  curriculumBoard: LearnerContext['board'];
   qualification?: string;
   syllabusCode?: string;
   syllabusYear?: string;
@@ -31,6 +42,26 @@ export function scopeQuery<T extends Record<string, unknown>>(query: T, context:
     syllabusCode: context.syllabusCode,
     syllabusYear: context.syllabusYear,
   };
+}
+
+export function buildAcademicCacheKey(
+  context: LearnerContext,
+  subject: string,
+  artifact: string,
+  version: string,
+): string {
+  const normalizedSubject = subject.trim().toLowerCase();
+  return [
+    'academic',
+    version,
+    context.stage,
+    context.board,
+    context.qualification ?? 'unknown-qualification',
+    context.syllabusCode ?? 'unknown-syllabus',
+    context.syllabusYear ?? 'unknown-year',
+    normalizedSubject,
+    artifact.trim().toLowerCase(),
+  ].join(':');
 }
 
 export function canUseSubject(subject: string, context: LearnerContext): boolean {
