@@ -82,9 +82,7 @@ export class OfflineSync {
   }
 
   private operationToMutation(operation: LocalOperation): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> {
-    if (operation.entity !== "task" && operation.entity !== "subject") {
-      throw new Error(`Unsupported local-first entity: ${operation.entity}`);
-    }
+    if (operation.entity !== "task" && operation.entity !== "subject") throw new Error(`Unsupported local-first entity: ${operation.entity}`);
     const store = operation.entity === "task" ? "tasks" : "subjects";
 
     if (operation.kind === "delete") {
@@ -97,25 +95,17 @@ export class OfflineSync {
     const id = typeof value.id === "string" ? value.id : operation.entityId;
 
     if (operation.entity === "task") {
-      const payload: Record<string, unknown> = {
-        id,
-        user_id: operation.userId,
-        subject_id: value.subject_id,
-        title: value.title,
-        completed: value.completed,
-      };
-      if (operation.kind === "update") delete payload.subject_id;
-      if (operation.kind === "update") delete payload.title;
-      if (operation.kind === "update") delete payload.completed;
-      if (operation.kind === "update" && typeof value.completed === "boolean") payload.completed = value.completed;
-      return { operation: operation.kind, store, payload };
+      if (operation.kind === "create") {
+        return { operation: "create", store, payload: { id, user_id: operation.userId, subject_id: value.subject_id, title: value.title, completed: value.completed } };
+      }
+      const changes: Record<string, unknown> = {};
+      if (typeof value.subject_id === "string") changes.subject_id = value.subject_id;
+      if (typeof value.title === "string") changes.title = value.title;
+      if (typeof value.completed === "boolean") changes.completed = value.completed;
+      return { operation: "update", store, payload: { id, user_id: operation.userId, ...changes } };
     }
 
-    return {
-      operation: operation.kind,
-      store,
-      payload: { id, user_id: operation.userId, name: value.name },
-    };
+    return { operation: operation.kind, store, payload: { id, user_id: operation.userId, name: value.name } };
   }
 
   private async syncMutations(): Promise<void> {
@@ -145,6 +135,8 @@ export class OfflineSync {
           const { error } = await supabase.from(table).upsert({ ...payload, user_id: user.id });
           if (error) throw error;
         }
+        if (table === "tasks" && typeof payload.id === "string" && mutation.operation !== "delete") await offlineStorage.markTaskSynced(payload.id, user.id);
+        if (table === "subjects" && typeof payload.id === "string" && mutation.operation !== "delete") await offlineStorage.markSubjectSynced(payload.id, user.id);
         await mutationQueue.remove(mutation.id, user.id);
       } catch (error) {
         await mutationQueue.recordFailure(mutation.id, user.id, error);
