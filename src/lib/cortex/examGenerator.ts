@@ -230,7 +230,7 @@ export async function generateExam(subject: string, topics: string[], difficulty
 
     const finalQuestions = questions.slice(0, safeCount);
     const generatedTopics = Array.isArray(parsed.topics)
-      ? parsed.topics.filter((t): t is string => typeof t === "string" && t.trim()).map(cleanTopic).slice(0, 20)
+      ? parsed.topics.filter((t): t is string => typeof t === "string" && Boolean(t.trim())).map(cleanTopic).slice(0, 20)
       : safeTopics;
 
     return {
