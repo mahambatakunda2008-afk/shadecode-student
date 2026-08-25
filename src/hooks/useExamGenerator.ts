@@ -41,8 +41,8 @@ export interface MarkingReport {
   recommendedActions: string[];
 }
 
-const EXAM_CACHE_PREFIX = "shadecode:exam:";
-const REPORT_CACHE_PREFIX = "shadecode:exam-report:";
+const EXAM_CACHE_PREFIX = "shadecode:exam:v3:";
+const REPORT_CACHE_PREFIX = "shadecode:exam-report:v2:";
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 8000;
 
