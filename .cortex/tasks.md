@@ -123,9 +123,10 @@ The strategic roadmap above does not replace the verified implementation backlog
   - Audit current Exam Hub ingestion, past-paper metadata and syllabus mappings.
   - Define canonical question/topic/assessment entities before building prediction features.
 
-- [ ] 🔴 **Offline Sync Architecture Audit**
+- [x] 🔴 **Offline Sync Architecture Audit**
   - Inventory current offline/PWA behavior, caching, persistence and mutation paths.
   - Produce a sync contract before implementing P2P or deeper offline functionality.
+  - Delivered: `docs/audits/2026-08-24-offline-sync-architecture-audit.md`. Full inventory of 8 offline/PWA components across 4 IndexedDB databases. Key finding: 4 independent write/sync mechanisms, 2 of which (progress sync, task/subject sync) overlap or duplicate for the same entities without coordinating; a complete encrypted local-first/multi-device sync system (`src/lib/local-first/*`, 620 lines) exists but is unreachable — zero navigation links to `/sync`. Dead legacy `localStorage` write-queue in `src/lib/offline/index.ts` removed (zero callers). Remaining findings need a product decision, not further unilateral engineering — see doc §5 for the proposed sync contract.
 
 - [ ] 🔴 **Security Audit**
   - Review auth, RLS, API routes, service-role usage, uploads, secrets and AI-provider boundaries.
