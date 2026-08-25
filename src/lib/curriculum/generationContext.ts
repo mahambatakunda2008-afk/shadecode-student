@@ -1,8 +1,8 @@
-import type { LearnerAcademicContext } from '@/lib/learner/context';
+import type { LearnerContext } from '@/lib/learner/context';
 import type { CurriculumNode } from './catalog';
 
 export interface GenerationContext {
-  learner: LearnerAcademicContext;
+  learner: LearnerContext;
   curriculumNode?: CurriculumNode;
   pedagogicalDifficulty: 'foundation' | 'standard' | 'challenging' | 'exam';
   generationVersion: string;
@@ -15,30 +15,18 @@ export interface GenerationQualityResult {
 }
 
 export function buildGenerationContext(
-  learner: LearnerAcademicContext,
+  learner: LearnerContext,
   curriculumNode?: CurriculumNode,
   pedagogicalDifficulty: GenerationContext['pedagogicalDifficulty'] = 'standard',
 ): GenerationContext {
-  return {
-    learner,
-    curriculumNode,
-    pedagogicalDifficulty,
-    generationVersion: 'curriculum-grounded-v1',
-  };
+  return { learner, curriculumNode, pedagogicalDifficulty, generationVersion: 'curriculum-grounded-v1' };
 }
 
-export function validateGenerationScope(
-  context: GenerationContext,
-  requestedSubject: string,
-): GenerationQualityResult {
+export function validateGenerationScope(context: GenerationContext, requestedSubject: string): GenerationQualityResult {
   const reasons: string[] = [];
   const subject = requestedSubject.trim().toLowerCase();
-  if (!context.learner.subjects.some(value => value.toLowerCase() === subject)) {
-    reasons.push('Requested subject is not enrolled in the learner academic context.');
-  }
-  if (!context.learner.board || !context.learner.qualification) {
-    reasons.push('Curriculum board and qualification are required.');
-  }
+  if (!context.learner.subjects.some(value => value.toLowerCase() === subject)) reasons.push('Requested subject is not enrolled in the learner academic context.');
+  if (!context.learner.board || !context.learner.qualification) reasons.push('Curriculum board and qualification are required.');
   if (context.curriculumNode) {
     if (context.curriculumNode.subject.toLowerCase() !== subject) reasons.push('Curriculum node subject does not match requested subject.');
     if (context.learner.syllabusYear && context.curriculumNode.syllabusYear !== context.learner.syllabusYear) reasons.push('Curriculum node is from a different syllabus year.');
@@ -51,7 +39,7 @@ export function buildCurriculumGroundingPrompt(context: GenerationContext): stri
   return [
     `Learner stage: ${learner.stage}`,
     `Curriculum board: ${learner.board}`,
-    `Qualification: ${learner.qualification}`,
+    `Qualification: ${learner.qualification ?? 'not specified'}`,
     `Syllabus code: ${learner.syllabusCode ?? 'not specified'}`,
     `Syllabus year: ${learner.syllabusYear ?? 'not specified'}`,
     `Enrolled subjects: ${learner.subjects.join(', ')}`,
