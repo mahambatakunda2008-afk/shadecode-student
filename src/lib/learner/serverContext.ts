@@ -21,26 +21,20 @@ function asStage(value: unknown): EducationStage | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase().replace(/[- ]+/g, '_');
   const aliases: Record<string, EducationStage> = {
-    primary: 'primary',
-    secondary: 'secondary',
-    o_level: 'secondary',
-    igcse: 'secondary',
-    advanced_secondary: 'advanced_secondary',
-    a_level: 'advanced_secondary',
-    tertiary: 'tertiary',
-    university: 'tertiary',
-    polytechnic: 'tertiary',
-    tvet: 'tertiary',
+    primary: 'primary', secondary: 'secondary', o_level: 'secondary', igcse: 'secondary',
+    advanced_secondary: 'advanced_secondary', a_level: 'advanced_secondary',
+    tertiary: 'tertiary', university: 'tertiary', polytechnic: 'tertiary', tvet: 'tertiary',
   };
   return aliases[normalized];
 }
 
 function cleanArray(value: unknown): string[] {
-  return Array.isArray(value) ? [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim()).filter(Boolean))] : [];
+  return Array.isArray(value)
+    ? [...new Set(value.filter((item): item is string => typeof item === 'string').map(item => item.trim()).filter(Boolean))]
+    : [];
 }
 
 export async function getServerLearnerContext(request: NextRequest): Promise<LearnerContext> {
-  let response = new Response();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -51,13 +45,12 @@ export async function getServerLearnerContext(request: NextRequest): Promise<Lea
       },
     },
   );
-  void response;
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) throw new Error('UNAUTHENTICATED');
 
   const [{ data: profile, error: profileError }, { data: academic, error: academicError }, { data: subjects, error: subjectsError }] = await Promise.all([
-    supabase.from('user_profiles').select('education_level, learning_goal, subject_interests, onboarding_completed, enrolled_courses').eq('user_id', user.id).maybeSingle(),
+    supabase.from('user_profiles').select('education_level, subject_interests, onboarding_completed, enrolled_courses').eq('user_id', user.id).maybeSingle(),
     supabase.from('academic_contexts').select('pathway, institution, programme, year_level, semester, courses').eq('user_id', user.id).maybeSingle(),
     supabase.from('subjects').select('name').eq('user_id', user.id),
   ]);
@@ -72,13 +65,14 @@ export async function getServerLearnerContext(request: NextRequest): Promise<Lea
   const qualification = typeof metadata.qualification === 'string' ? metadata.qualification : academic?.programme ?? undefined;
   const syllabusCode = typeof metadata.syllabus_code === 'string' ? metadata.syllabus_code : undefined;
   const syllabusYear = typeof metadata.syllabus_year === 'string' ? metadata.syllabus_year : undefined;
-  const subjectsFromDb = (subjects ?? []).map(row => row.name);
-  const subjectInterests = cleanArray(profile?.subject_interests);
-  const enrolledCourses = cleanArray(profile?.enrolled_courses);
-  const academicCourses = cleanArray(academic?.courses);
-  const enrolledSubjects = [...new Set([...subjectsFromDb, ...subjectInterests, ...enrolledCourses, ...academicCourses])];
+  const enrolledSubjects = [...new Set([
+    ...(subjects ?? []).map(row => row.name),
+    ...cleanArray(profile?.subject_interests),
+    ...cleanArray(profile?.enrolled_courses),
+    ...cleanArray(academic?.courses),
+  ])];
 
-  if (!stage || !board || !qualification || !enrolledSubjects.length) {
+  if (!stage || !board || !qualification || !enrolledSubjects.length || !profile?.onboarding_completed) {
     throw new Error('ACADEMIC_CONTEXT_INCOMPLETE');
   }
 
@@ -95,6 +89,6 @@ export async function getServerLearnerContext(request: NextRequest): Promise<Lea
     subjects: enrolledSubjects,
     timezone: typeof metadata.timezone === 'string' ? metadata.timezone : undefined,
     locale: typeof metadata.locale === 'string' ? metadata.locale : undefined,
-    onboardingComplete: Boolean(profile?.onboarding_completed),
+    onboardingComplete: true,
   };
 }
