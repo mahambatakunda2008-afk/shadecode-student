@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { fitLine, joinEndpoint, snapAngle, snapLine, smooth, straighten } from './diagramGeometry';
+import { distance, fitLine, joinEndpoint, snapAngle, snapLine, smooth, straighten } from './diagramGeometry';
 
 describe('diagram geometry', () => {
   it('fits a straight line', () => {
     const fit = fitLine([{ x: 0, y: 0 }, { x: 5, y: 0 }]);
     expect(fit?.length).toBe(5);
     expect(fit?.error).toBe(0);
+  });
+
+  it('handles zero-length lines', () => {
+    const fit = fitLine([{ x: 4, y: 4 }, { x: 4, y: 4 }]);
+    expect(fit?.length).toBe(0);
+    expect(fit?.error).toBe(0);
+  });
+
+  it('calculates point distance', () => {
+    expect(distance({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
   });
 
   it('snaps angles', () => {
@@ -28,8 +38,12 @@ describe('diagram geometry', () => {
     expect(result[1].y).toBeCloseTo(0);
   });
 
-  it('joins a nearby endpoint', () => {
-    expect(joinEndpoint({ x: 9, y: 10 }, [{ x: 10, y: 10 }], 2)).toEqual({ x: 10, y: 10 });
+  it('returns the nearest endpoint inside the radius', () => {
+    expect(joinEndpoint({ x: 9, y: 10 }, [{ x: 10, y: 10 }, { x: 20, y: 20 }], 2)).toEqual({ x: 10, y: 10 });
+  });
+
+  it('leaves a point unchanged when no endpoint is close enough', () => {
+    expect(joinEndpoint({ x: 0, y: 0 }, [{ x: 10, y: 10 }], 2)).toEqual({ x: 0, y: 0 });
   });
 
   it('smooths interior points without changing endpoints', () => {
@@ -37,5 +51,10 @@ describe('diagram geometry', () => {
     expect(result[0]).toEqual({ x: 0, y: 0 });
     expect(result[2]).toEqual({ x: 10, y: 0 });
     expect(result[1].y).toBeLessThan(10);
+  });
+
+  it('does not alter short strokes', () => {
+    const points = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
+    expect(smooth(points)).toEqual(points);
   });
 });
