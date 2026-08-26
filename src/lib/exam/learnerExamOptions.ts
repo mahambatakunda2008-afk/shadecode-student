@@ -15,11 +15,11 @@ const FALLBACK_LEVEL: ExamLevelOption = {
 };
 
 export function getLearnerExamLevel(context: LearnerContext): ExamLevelOption {
-  const stage = context.stage.toLowerCase();
-  if (stage.includes('primary')) return { id: 'primary', label: 'Primary', difficulty: 'easy', curriculum: `${context.board} ${context.qualification}`.trim() };
-  if (stage.includes('secondary') || stage.includes('o-level') || stage.includes('igcse')) return { id: 'secondary', label: context.qualification || 'Secondary', difficulty: 'medium', curriculum: `${context.board} ${context.qualification}`.trim() };
-  if (stage.includes('a-level') || stage.includes('advanced')) return { id: 'advanced', label: context.qualification || 'Advanced Level', difficulty: 'exam', curriculum: `${context.board} ${context.qualification}`.trim() };
-  if (stage.includes('university') || stage.includes('tertiary')) return { id: 'tertiary', label: context.qualification || 'University', difficulty: 'hard', curriculum: `${context.board} ${context.qualification}`.trim() };
+  const stage = context.stage;
+  if (stage === 'primary') return { id: 'primary', label: 'Primary', difficulty: 'easy', curriculum: `${context.board} ${context.qualification}`.trim() };
+  if (stage === 'lower_secondary' || stage === 'upper_secondary') return { id: 'secondary', label: context.qualification || 'Secondary', difficulty: 'medium', curriculum: `${context.board} ${context.qualification}`.trim() };
+  if (stage === 'advanced_secondary') return { id: 'advanced', label: context.qualification || 'Advanced Level', difficulty: 'exam', curriculum: `${context.board} ${context.qualification}`.trim() };
+  if (stage === 'tertiary') return { id: 'tertiary', label: context.qualification || 'University', difficulty: 'hard', curriculum: `${context.board} ${context.qualification}`.trim() };
   return FALLBACK_LEVEL;
 }
 
