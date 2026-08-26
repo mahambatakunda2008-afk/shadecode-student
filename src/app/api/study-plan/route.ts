@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     const { data: masteryRows, error: masteryError } = await supabase
       .from("topic_mastery")
-      .select("subject, topic, mastery_score")
+      .select("subject, topic, mastery_score, attempts, last_attempted")
       .eq("user_id", user.id)
       .in("subject", subjects)
       .lt("mastery_score", 60);
@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
         rows.map((row) => ({
           topicId: `${subject}:${row.topic}`,
           masteryScore: Number(row.mastery_score ?? 0),
-          evidenceCount: 1,
+          evidenceCount: Math.max(0, Number(row.attempts ?? 1)),
+          lastSeenAt: row.last_attempted,
         })),
       );
       const ranked = rankNextTopics(graph).map((node) => node.topicId.slice(`${subject}:`.length));

@@ -22,6 +22,7 @@ This section is the strategic layer above the feature backlog. It prevents Corte
   - Track mastery, confidence, evidence, recency, misconceptions and decay.
   - Connect subjects/courses → topics → questions → mistakes → lessons → assessments.
   - Use existing `topic_mastery` as the seed rather than creating a second competing mastery system.
+  - Progress (2026-08-25): `src/lib/mastery/graph.ts` already implements mastery/confidence/recency-decay/misconception/prerequisite-weighted scoring — but its one live caller (`/api/study-plan`) was silently discarding real `topic_mastery.attempts`/`last_attempted` data (hardcoded `evidenceCount: 1`, no `lastSeenAt`), flattening recency/confidence scoring for every topic uniformly. Fixed — see `docs/BLUEPRINT_GAP_MATRIX.md`'s 2026-08-25 update. Still missing: no `prerequisite`/`related` topic edges exist anywhere (graph always gets an empty edge list), so the ranking's prerequisite-pressure term is currently inert. That's the next real increment here, not a re-wire.
 
 - [ ] 🔴 **Assessment Intelligence & Past-Paper Intelligence**
   - Make past papers, mark schemes, syllabuses and question metadata machine-readable.
