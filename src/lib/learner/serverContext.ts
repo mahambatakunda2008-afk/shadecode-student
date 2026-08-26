@@ -21,7 +21,8 @@ function asStage(value: unknown): EducationStage | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase().replace(/[- ]+/g, '_');
   const aliases: Record<string, EducationStage> = {
-    primary: 'primary', secondary: 'secondary', o_level: 'secondary', igcse: 'secondary',
+    primary: 'primary', secondary: 'upper_secondary', o_level: 'upper_secondary', igcse: 'upper_secondary',
+    form_1_2: 'lower_secondary', lower_secondary: 'lower_secondary',
     advanced_secondary: 'advanced_secondary', a_level: 'advanced_secondary',
     tertiary: 'tertiary', university: 'tertiary', polytechnic: 'tertiary', tvet: 'tertiary',
   };
