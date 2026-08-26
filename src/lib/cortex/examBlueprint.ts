@@ -1,3 +1,11 @@
+export type CurriculumScope = {
+  stage?: string | null;
+  board?: string | null;
+  qualification?: string | null;
+  syllabusCode?: string | null;
+  syllabusYear?: string | null;
+};
+
 export type ExamBlueprint = {
   subject: string;
   topic: string;
@@ -8,6 +16,7 @@ export type ExamBlueprint = {
   includeDiagrams: boolean;
   diagramTypes: string[];
   marksTarget: number;
+  curriculum?: CurriculumScope;
 };
 
 const DIAGRAM_SUBJECTS = new Set(["physics", "mathematics", "chemistry", "biology", "geography"]);
@@ -17,6 +26,7 @@ export function buildExamBlueprint(input: {
   topic?: string | null;
   difficulty: string;
   questionCount: number;
+  curriculum?: CurriculumScope | null;
 }): ExamBlueprint {
   const subject = input.subject.trim();
   const topic = (input.topic || subject).trim();
@@ -52,5 +62,6 @@ export function buildExamBlueprint(input: {
     includeDiagrams,
     diagramTypes,
     marksTarget: count * (input.difficulty.toLowerCase() === "hard" ? 4 : 2),
+    curriculum: input.curriculum || undefined,
   };
 }
