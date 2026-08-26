@@ -4,21 +4,10 @@ import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schema
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
+import { resolveCurriculum } from "@/lib/curriculum/resolver";
+import { getLearnerContextForUser } from "@/lib/learner/serverContext";
 
 export const dynamic = "force-dynamic";
-
-// NOTE: this used to have its own separate prompt + JSON parsing + no
-// fallback content, entirely independent from src/lib/cortex/examGenerator.ts
-// (which the /api/cortex/generate-exam route already used). That meant this
-// route -- the one exam-sim/page.tsx actually calls -- had no fallback exam
-// to fall back on when the AI providers failed, unlike the other path.
-// Delegating to the shared generator fixes that: on AI failure this now
-// returns a usable fallback exam instead of a hard error.
-//
-// Exam generation requests 6000 tokens per attempt and can fall through
-// several provider retries -- the default serverless timeout was killing
-// the request before the fallback chain finished, which is why this
-// "usually failed" even with a working fallback exam behind it.
 export const maxDuration = 90;
 
 export async function POST(req) {
@@ -27,9 +16,7 @@ export async function POST(req) {
     if (rateLimitCheck) return rateLimitCheck;
 
     const { user, error: authError } = await getVerifiedUser(req);
-    if (!user) {
-      return NextResponse.json({ error: authError || "You need to be signed in to generate an exam." }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: authError || "You need to be signed in to generate an exam." }, { status: 401 });
 
     const body = await req.json();
     const validation = validateRequestBody(body, examGenerateSchema);
@@ -40,32 +27,23 @@ export async function POST(req) {
     }
 
     const { subject, topic, difficulty, questionCount } = validation.data;
-    // userId is intentionally NOT taken from validation.data -- a client-
-    // supplied userId in the request body can't be trusted (anyone could
-    // set it to any value); the server-verified session's user.id is the
-    // only trustworthy source of identity here.
-    const userId = user.id;
+    const supabase = await createSupabaseServerClient();
+    const learner = await getLearnerContextForUser(supabase, user);
+    if (!learner) return NextResponse.json({ error: "Your academic profile is incomplete. Finish onboarding before generating an exam." }, { status: 409 });
 
+    const curriculum = resolveCurriculum(learner, subject, topic);
+    if (!curriculum) return NextResponse.json({ error: "That subject is outside your enrolled academic scope." }, { status: 403 });
+
+    const userId = user.id;
     const topics = topic ? [topic] : [subject];
     const exam = await generateExam(subject, topics, difficulty, questionCount, userId);
+    if (!exam) return NextResponse.json({ error: "Couldn't generate this exam right now. Please try again in a moment." }, { status: 503 });
 
-    if (!exam) {
-      // generateExam() only returns null on a genuinely unexpected internal
-      // error (its own AI-failure path already falls back to fallbackExam()
-      // above this) -- so if we're here, something deeper broke.
-      return NextResponse.json({ error: "Couldn't generate this exam right now. Please try again in a moment." }, { status: 503 });
-    }
-
-    // Background save (don't await, keep response fast)
-    createSupabaseServerClient().then(supabase => {
-      supabase.from('exams').insert({
-        user_id: userId, subject, difficulty, questions: exam.questions
-      }).then(({ error }) => {
-        if (error) console.error("[exam/generate] Background save failed:", error.message);
-      });
+    supabase.from('exams').insert({ user_id: userId, subject, difficulty, questions: exam.questions }).then(({ error }) => {
+      if (error) console.error("[exam/generate] Background save failed:", error.message);
     });
 
-    return NextResponse.json({ questions: exam.questions, metadata: { subject, topic: topic ?? subject } });
+    return NextResponse.json({ questions: exam.questions, metadata: { subject, topic: topic ?? subject, curriculum } });
   } catch (err) {
     console.error("[exam/generate] Critical route failure:", err);
     return NextResponse.json({ error: "Something went wrong generating this exam. Please try again." }, { status: 500 });
