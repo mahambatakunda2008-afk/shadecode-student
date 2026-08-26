@@ -1,7 +1,7 @@
-/** Cortex exam generation with strict validation and bounded AI execution. */
 import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { getMemory } from "./memory";
+import type { CurriculumResolution } from "@/lib/curriculum/resolver";
 
 export type QuestionType = "multiple_choice" | "short_answer" | "structured" | "essay";
 export interface ExamQuestion {
@@ -25,19 +25,19 @@ export interface GeneratedExam {
   topics: string[];
 }
 
-const GENERATOR_VERSION = "exam-quality-v4";
-const EXAM_SYSTEM_PROMPT = `You are a senior Cambridge/International A-Level exam setter and assessment editor for Shadecode Student.
+const GENERATOR_VERSION = "exam-quality-v5";
+const EXAM_SYSTEM_PROMPT = `You are a senior exam setter and assessment editor for Shadecode Student.
 
 Your job is to write REAL exam questions, not study prompts, definitions, conversation starters, or generic AI questions.
 Return ONLY one valid JSON object. No markdown and no commentary.
 
 QUALITY STANDARD
-- Every question must be answerable from the stated subject/topic and must test a concrete skill or piece of knowledge.
-- Use authentic exam wording: command verbs such as calculate, determine, explain, state, describe, compare, analyse, derive, evaluate, predict, sketch, construct, or discuss where appropriate.
-- Prefer application, interpretation, calculation, multi-step reasoning, data handling, unfamiliar contexts, and common exam traps over trivial recall.
+- Every question must be answerable from the stated curriculum scope and test a concrete skill or piece of knowledge.
+- Use authentic exam wording: calculate, determine, explain, state, describe, compare, analyse, derive, evaluate, predict, sketch, construct, discuss where appropriate.
+- Prefer application, interpretation, calculation, multi-step reasoning, unfamiliar contexts, data handling, and common exam traps over trivial recall.
+- Never invent syllabus claims. If the supplied curriculum metadata is incomplete, stay conservative and do not pretend to know an exact syllabus requirement.
 - Do not invent impossible facts, ambiguous conditions, missing numerical data, or contradictory instructions.
 - Do not repeat the same task with superficial wording changes.
-- Do not use vague phrases such as “a key principle” or “an important concept” without naming the exact examinable target.
 - If a topic is supplied, ALL questions must stay inside that topic. Do not silently substitute a neighbouring topic.
 - Difficulty must be meaningful: easy = direct one-step application, medium = multi-step/application, hard = unfamiliar or integrated reasoning.
 - Marks must match the work required.
@@ -151,7 +151,7 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
 
   const rawType = q.type as string;
   const requestedType: QuestionType = ["multiple_choice", "short_answer", "structured", "essay"].includes(rawType) ? rawType as QuestionType : "short_answer";
-  let options = requestedType === "multiple_choice"
+  const options = requestedType === "multiple_choice"
     ? (Array.isArray(q.options) ? q.options.filter((o): o is string => typeof o === "string" && o.trim().length > 0).map(o => o.trim()).slice(0, 4) : [])
     : undefined;
 
@@ -181,19 +181,29 @@ function isExamPayload(value: unknown): value is { title?: unknown; questions: u
   return !!value && typeof value === "object" && Array.isArray((value as { questions?: unknown }).questions);
 }
 
-function buildPrompt(subject: string, topics: string[], difficulty: string, count: number, memory: Awaited<ReturnType<typeof getMemory>>) {
+function buildPrompt(subject: string, topics: string[], difficulty: string, count: number, memory: Awaited<ReturnType<typeof getMemory>>, curriculum: CurriculumResolution) {
   const cleanTopics = topics.map(cleanTopic).filter(Boolean);
   const primaryTopic = cleanTopics[0] || "the full syllabus";
   const weakAreas = Array.isArray(memory.weakTopics) ? memory.weakTopics : [];
   const candidateCount = Math.min(24, Math.max(count + 3, Math.ceil(count * 1.35)));
-  return `${EXAM_SYSTEM_PROMPT}\n\nEXAM BRIEF\nSubject: ${subject}\nRequested topic(s): ${cleanTopics.join(", ") || "Full syllabus"}\nPrimary topic constraint: ${primaryTopic}\nDifficulty: ${difficulty}\nStudent level: ${memory.level}\nNumber of final questions required: ${count}\nNumber of candidates to generate: ${candidateCount}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${weakAreas.join(", ") || "none"}\n\nIMPORTANT: Generate enough strong candidates for local validation, but do not sacrifice correctness for quantity. If a single topic is requested, do not drift into another topic.`;
+  const curriculumScope = [
+    `Stage: ${curriculum.stage}`,
+    `Board: ${curriculum.board}`,
+    curriculum.qualification && `Qualification: ${curriculum.qualification}`,
+    curriculum.syllabusCode && `Syllabus code: ${curriculum.syllabusCode}`,
+    curriculum.syllabusYear && `Syllabus year: ${curriculum.syllabusYear}`,
+    `Subject: ${curriculum.subject}`,
+    curriculum.topic && `Requested curriculum topic: ${curriculum.topic}`,
+  ].filter(Boolean).join("\n");
+
+  return `${EXAM_SYSTEM_PROMPT}\n\nVERIFIED CURRICULUM SCOPE\n${curriculumScope}\n\nEXAM BRIEF\nSubject: ${subject}\nRequested topic(s): ${cleanTopics.join(", ") || "Full syllabus"}\nPrimary topic constraint: ${primaryTopic}\nDifficulty: ${difficulty}\nStudent level: ${memory.level}\nNumber of final questions required: ${count}\nNumber of candidates to generate: ${candidateCount}\nStrengths: ${(memory.strongSubjects ?? []).join(", ") || "none"}\nWeak areas: ${weakAreas.join(", ") || "none"}\n\nIMPORTANT: The verified curriculum scope is authoritative. Do not substitute another qualification, board, stage, syllabus, or subject. Generate enough strong candidates for local validation, but do not sacrifice correctness for quantity.`;
 }
 
-export async function generateExam(subject: string, topics: string[], difficulty: string, questionCount: number, userId: string): Promise<GeneratedExam | null> {
+export async function generateExam(subject: string, topics: string[], difficulty: string, questionCount: number, userId: string, curriculum: CurriculumResolution): Promise<GeneratedExam | null> {
   const safeCount = Math.max(1, Math.min(20, Math.round(Number(questionCount) || 10)));
   const safeSubject = typeof subject === "string" ? subject.trim().slice(0, 120) : "";
   const safeTopics = Array.isArray(topics) ? topics.filter((topic): topic is string => typeof topic === "string").map(cleanTopic).filter(Boolean).slice(0, 10) : [];
-  if (!safeSubject) return null;
+  if (!safeSubject || !curriculum.verified) return null;
 
   try {
     const memory = await withTimeout(getMemory(userId), MEMORY_BUDGET_MS, {
@@ -204,7 +214,7 @@ export async function generateExam(subject: string, topics: string[], difficulty
       totalStudyTimeMinutes: 0, recentActivity: [],
     } as Awaited<ReturnType<typeof getMemory>>);
 
-    const prompt = buildPrompt(safeSubject, safeTopics, difficulty, safeCount, memory);
+    const prompt = buildPrompt(safeSubject, safeTopics, difficulty, safeCount, memory, curriculum);
     const response = await withTimeout(callAI(prompt, 6000, {
       userId,
       feature: "exam_sim",
@@ -214,7 +224,7 @@ export async function generateExam(subject: string, topics: string[], difficulty
     }), AI_BUDGET_MS + 1000, null);
 
     if (!response) {
-      console.warn(`[ExamGenerator:${GENERATOR_VERSION}] AI generation unavailable; refusing to return generic fake questions.`);
+      console.warn(`[ExamGenerator:${GENERATOR_VERSION}] AI generation unavailable.`);
       return null;
     }
 
