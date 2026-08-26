@@ -425,3 +425,13 @@ Verified each fix with `tsc --noEmit`, full vitest suite, and -- given the stake
 The merge itself is a real feature, not just a bug-chase byproduct: `/exam-sim`'s 983-line monolithic page became a 20-line route delegating to a new `ExamWorkspace` component (timer, question navigator, offline-safe autosave via the shared StudySpace session store, flagging, hint panel, formula reference, attachment upload, full results/review screen with per-topic breakdown) -- sharing infrastructure with StudySpace/Workmate instead of duplicating it. Closed PR #230 on GitHub to reflect the merge.
 
 **Root-cause note for next time:** both outage bugs were on `main` itself, unrelated to the feature branch that was actively (and correctly) fixing its own copies of the same two problems in parallel -- worth remembering that a red PR isn't always the story; check `main`'s own build history first.
+
+## 2026-08-26 — Cortex Auto-Cycle
+
+Addressed a critical authorization boundary for `cortex_insights` by implementing `src/server/services/cortexInsightsService.ts`. The `getCortexInsightById` function now explicitly filters by `profile_id`, ensuring user data isolation for AI-generated content. This moves the project closer to audit completion by reconciling a potential security finding and establishing a clear, secure data access pattern.
+
+**Task:** Enforce authorization boundary for Cortex Insights
+
+**Change:** Created or updated `src/server/services/cortexInsightsService.ts` to implement `getCortexInsightById`. This function is responsible for retrieving a single `cortex_insight` and crucially includes an explicit filter by `profile_id`. This ensures that a user can only access insights that belong to them, establishing a secure authorization boundary at the service layer. This directly addresses potential security findings related to unauthorized access to AI-generated content and provides a robust point for future regression testing.
+
+---
