@@ -3,6 +3,7 @@ import type { LearnerContext } from '@/lib/learner/context';
 
 export type CurriculumResolution = {
   board: CurriculumBoard;
+  stage: LearnerContext['stage'];
   qualification?: string;
   syllabusCode?: string;
   syllabusYear?: string;
@@ -20,6 +21,7 @@ export function resolveCurriculum(context: LearnerContext, subject: string, topi
 
   return {
     board: context.board,
+    stage: context.stage,
     qualification: context.qualification,
     syllabusCode: context.syllabusCode,
     syllabusYear: context.syllabusYear,
@@ -32,6 +34,7 @@ export function resolveCurriculum(context: LearnerContext, subject: string, topi
 
 export function curriculumPrompt(resolution: CurriculumResolution): string {
   const parts = [
+    `Stage: ${resolution.stage}`,
     `Board: ${resolution.board}`,
     resolution.qualification && `Qualification: ${resolution.qualification}`,
     resolution.syllabusCode && `Syllabus code: ${resolution.syllabusCode}`,
