@@ -1,0 +1,1 @@
+Viewport controls are isolated and ready for CI verification.
