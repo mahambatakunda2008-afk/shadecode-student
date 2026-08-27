@@ -1,11 +1,10 @@
-import { getSupabaseClient } from '@/lib/supabase/server'; // Assuming this utility exists
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 interface CortexInsight {
   id: string;
-  profile_id: string;
-  content: string; // Placeholder for AI-generated content
+  user_id: string;
+  insight: string;
   created_at: string;
-  // Add other relevant fields from the 'cortex_insights' table as necessary
 }
 
 /**
@@ -29,13 +28,13 @@ export async function getCortexInsightById(
   }
 
   try {
-    const supabase = getSupabaseClient(); // Get the appropriate Supabase client (e.g., service_role or authenticated client)
+    const supabase = await createSupabaseServerClient(); // Get the appropriate Supabase client (e.g., service_role or authenticated client)
 
     const { data, error } = await supabase
       .from('cortex_insights')
       .select('*') // Select all columns for the insight
       .eq('id', insightId) // Filter by the specific insight ID
-      .eq('profile_id', userId) // CRITICAL: Enforce authorization boundary - filter by the user's profile ID
+      .eq('user_id', userId) // CRITICAL: Enforce authorization boundary - filter by the user's own ID
       .maybeSingle(); // Expect zero or one row
 
     if (error) {
