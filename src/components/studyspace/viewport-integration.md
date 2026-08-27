@@ -1,1 +1,0 @@
-Viewport integration notes: StudyCanvasViewport composes the existing StudyCanvas with bounded zoom/pan state and reusable controls. Document coordinates remain owned by StudyCanvas.
