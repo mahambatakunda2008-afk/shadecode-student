@@ -12,16 +12,16 @@ export function evaluateExpression(input: string): CalculatorResult {
   if (!tokens) return { ok: false, error: "invalid_expression" };
   let position = 0;
   const parsePrimary = (): number | null => {
-    const token = tokens[position];
-    if (token === "(") { position++; const value = parseAdditive(); if (tokens[position] !== ")") return null; position++; return value; }
+    const token = tokens![position];
+    if (token === "(") { position++; const value = parseAdditive(); if (tokens![position] !== ")") return null; position++; return value; }
     if (token === "+" || token === "-") { position++; const value = parsePrimary(); return value === null ? null : token === "-" ? -value : value; }
     if (!token || !/^\d+(?:\.\d+)?$/.test(token)) return null;
     position++; const value = Number(token); return Number.isFinite(value) ? value : null;
   };
   const parseMultiplicative = (): number | null => {
     let left = parsePrimary();
-    while (left !== null && (tokens[position] === "*" || tokens[position] === "/" || tokens[position] === "%")) {
-      const op = tokens[position++]; const right = parsePrimary(); if (right === null) return null;
+    while (left !== null && (tokens![position] === "*" || tokens![position] === "/" || tokens![position] === "%")) {
+      const op = tokens![position++]; const right = parsePrimary(); if (right === null) return null;
       if ((op === "/" || op === "%") && right === 0) throw new Error("division_by_zero");
       left = op === "*" ? left * right : op === "/" ? left / right : left % right;
       if (!Number.isFinite(left) || Math.abs(left) > MAX_ABS) throw new Error("overflow");
@@ -30,8 +30,8 @@ export function evaluateExpression(input: string): CalculatorResult {
   };
   function parseAdditive(): number | null {
     let left = parseMultiplicative();
-    while (left !== null && (tokens[position] === "+" || tokens[position] === "-")) {
-      const op = tokens[position++]; const right = parseMultiplicative(); if (right === null) return null;
+    while (left !== null && (tokens![position] === "+" || tokens![position] === "-")) {
+      const op = tokens![position++]; const right = parseMultiplicative(); if (right === null) return null;
       left = op === "+" ? left + right : left - right;
       if (!Number.isFinite(left) || Math.abs(left) > MAX_ABS) throw new Error("overflow");
     }
