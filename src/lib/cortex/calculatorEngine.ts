@@ -8,8 +8,9 @@ const MAX_ABS = 1e100;
 export function evaluateExpression(input: string): CalculatorResult {
   const source = input.trim();
   if (!source || source.length > MAX_LENGTH) return { ok: false, error: "invalid_expression" };
-  const tokens = tokenize(source);
-  if (!tokens) return { ok: false, error: "invalid_expression" };
+  const tokenized = tokenize(source);
+  if (!tokenized) return { ok: false, error: "invalid_expression" };
+  const tokens = tokenized;
   let position = 0;
   const parsePrimary = (): number | null => {
     const token = tokens[position];
