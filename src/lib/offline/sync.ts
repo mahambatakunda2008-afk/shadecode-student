@@ -11,6 +11,8 @@ import { offlineStorage, type OfflineProgress, type OfflineTask, type OfflineSub
 import { mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
 import { localOperationStore } from "@/lib/local-first/operation-store";
+import { localTasks } from "@/lib/local-first/tasks";
+import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
 
 export class OfflineSync {
@@ -44,6 +46,8 @@ export class OfflineSync {
     try {
       await this.bridgeLocalOperations();
       await this.syncMutations();
+      // These methods remain as a migration safety net for records created by
+      // older versions before the local operation log was authoritative.
       await Promise.all([this.syncTasks(), this.syncSubjects(), this.syncProgress()]);
     } catch (error) {
       console.error("[OfflineSync] Sync failed:", error);
@@ -52,10 +56,57 @@ export class OfflineSync {
     }
   }
 
+  /**
+   * Compatibility entry point used by older UI code. Tasks and subjects now
+   * become local-first writes rather than bypassing the operation log.
+   */
   async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> {
     const supabase = createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) throw new Error("Cannot queue offline mutation without an authenticated user");
+
+    if (input.store === "tasks") {
+      const payload = input.payload as Record<string, unknown>;
+      const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
+      if (input.operation === "create") {
+        await localTasks.create({
+          id,
+          userId: user.id,
+          subject_id: typeof payload.subject_id === "string" ? payload.subject_id : "",
+          title: typeof payload.title === "string" ? payload.title : "",
+          completed: typeof payload.completed === "boolean" ? payload.completed : false,
+        });
+      } else if (input.operation === "update") {
+        if (payload.completed === true) await localTasks.complete(id, user.id);
+        else {
+          const existing = await localTasks.get(id, user.id);
+          if (!existing) throw new Error("Cannot update an offline task that is not locally cached");
+          await localTasks.create({
+            id,
+            userId: user.id,
+            subject_id: typeof payload.subject_id === "string" ? payload.subject_id : existing.subject_id,
+            title: typeof payload.title === "string" ? payload.title : existing.title,
+            completed: typeof payload.completed === "boolean" ? payload.completed : existing.completed,
+          });
+        }
+      } else if (input.operation === "delete") {
+        await localTasks.remove(id, user.id);
+      }
+      return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: user.id } as OfflineMutation<T>;
+    }
+
+    if (input.store === "subjects") {
+      const payload = input.payload as Record<string, unknown>;
+      const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
+      if (input.operation === "delete") {
+        await localSubjects.remove(id, user.id);
+      } else {
+        const existing = await localSubjects.get(id, user.id);
+        await localSubjects.save({ id, userId: user.id, name: typeof payload.name === "string" ? payload.name : existing?.name ?? "" });
+      }
+      return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: user.id } as OfflineMutation<T>;
+    }
+
     return mutationQueue.enqueue({ ...input, ownerId: user.id });
   }
 
