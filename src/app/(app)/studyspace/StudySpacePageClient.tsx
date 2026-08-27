@@ -6,6 +6,7 @@ import type { StudySpaceMode, WorkObject } from "@/lib/studyspace/types";
 import { saveWorkObject } from "@/lib/studyspace/store";
 import AdaptiveNextMove from "@/components/studyspace/AdaptiveNextMove";
 import StudyCanvas from "@/components/studyspace/StudyCanvas";
+import { Calculator } from "@/components/tools/Calculator";
 
 const modes: { id: StudySpaceMode; label: string; description: string }[] = [
   { id: "workmate", label: "Workmate", description: "Bring questions, answers, working or images." },
@@ -29,6 +30,7 @@ export default function StudySpacePageClient() {
   const [canvasData, setCanvasData] = useState("");
   const [saved, setSaved] = useState(false);
   const [showCanvas, setShowCanvas] = useState(mode === "canvas");
+  const [showCalculator, setShowCalculator] = useState(false);
 
   useEffect(() => {
     if (initialMode && modes.some((item) => item.id === initialMode)) setMode(initialMode);
@@ -105,13 +107,15 @@ export default function StudySpacePageClient() {
             <textarea value={response} onChange={(event) => setResponse(event.target.value)} placeholder="Write your answer, reasoning, working or notes here..." rows={8} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
           </>}
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: showCanvas ? 18 : 0 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: showCanvas || showCalculator ? 18 : 0 }}>
             <button onClick={save} style={{ border: 0, borderRadius: 8, padding: "11px 16px", background: "var(--primary)", color: "white", fontWeight: 750, cursor: "pointer" }}>Save work</button>
             {mode !== "canvas" && <button type="button" onClick={() => setShowCanvas((value) => !value)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>{showCanvas ? "Hide Canvas" : "Open Canvas"}</button>}
+            <button type="button" onClick={() => setShowCalculator((value) => !value)} aria-expanded={showCalculator} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>{showCalculator ? "Hide Calculator" : "Open Calculator"}</button>
             <button onClick={() => router.push(`/workmate?mode=${mode}`)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>Open Workmate</button>
             {saved && <span role="status" style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Saved offline ✓</span>}
           </div>
 
+          {showCalculator && <div style={{ marginBottom: 18 }}><Calculator /></div>}
           {showCanvas && <StudyCanvas storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} />}
         </section>
       </div>
