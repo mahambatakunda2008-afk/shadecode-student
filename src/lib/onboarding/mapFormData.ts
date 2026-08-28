@@ -1,9 +1,11 @@
 import type { OnboardingFormData } from "@/types";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 
-/** Maps onboarding UI vocabulary to the canonical profile payload. */
+/** Maps granular onboarding vocabulary to the current profile storage buckets. */
 const STUDY_LEVEL_TO_EDUCATION: Record<string, EducationLevel> = {
-  "high-school": "secondary",
+  primary: "basic",
+  "lower-secondary": "secondary",
+  "upper-secondary": "secondary",
   "a-level": "secondary",
   university: "university",
   tvet: "tvet",
