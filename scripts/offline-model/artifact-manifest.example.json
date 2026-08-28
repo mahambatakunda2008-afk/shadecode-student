@@ -1,0 +1,21 @@
+{
+  "id": "shadecode-compact-1",
+  "tier": "compact",
+  "runtime": "webgpu",
+  "version": "0.1.0",
+  "sourceModel": "RECORD_SOURCE_MODEL_AND_LICENSE",
+  "compression": {
+    "distillation": true,
+    "pruning": "structured",
+    "quantization": "int4"
+  },
+  "sizeBytes": 0,
+  "sha256": "RECORD_ARTIFACT_SHA256",
+  "artifactUrl": "RECORD_RELEASE_ARTIFACT_URL",
+  "benchmark": {
+    "qualityScore": 0,
+    "peakMemoryMB": 0,
+    "loadMs": 0,
+    "tokensPerSecond": 0
+  }
+}
