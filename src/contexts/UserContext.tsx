@@ -4,11 +4,16 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo, t
 import { createBrowserClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { offlineSync } from "@/lib/offline/sync";
+import type { StudyLevel } from "@/types";
 
 export interface UserProfile {
   id: string; full_name: string | null; first_name: string | null; email: string | null; avatar_url: string | null;
   level: number; xp: number; xp_to_next_level: number; streak: number; weekly_xp: number;
   focus_minutes_today: number; avg_score: number | null; streak_message: string | null; created_at: string; updated_at: string;
+  study_level: StudyLevel | null;
+  subjects: string[] | null;
+  daily_goal_minutes: number | null;
+  study_style: "structured" | "flexible" | null;
 }
 
 export interface UserContextValue { user: User | null; profile: UserProfile | null; loading: boolean; refreshProfile: () => Promise<void>; }
@@ -46,7 +51,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (typeof navigator !== "undefined" && !navigator.onLine) return;
     try {
       const result = await withTimeout(
-        supabase.from("profiles").select(`id, full_name, first_name, email, avatar_url, level, xp, xp_to_next_level, streak, weekly_xp, focus_minutes_today, avg_score, streak_message, created_at, updated_at`).eq("id", userId).single(),
+        supabase.from("profiles").select(`id, full_name, first_name, email, avatar_url, level, xp, xp_to_next_level, streak, weekly_xp, focus_minutes_today, avg_score, streak_message, created_at, updated_at, study_level, subjects, daily_goal_minutes, study_style`).eq("id", userId).single(),
         PROFILE_FETCH_TIMEOUT_MS
       );
       if (result.error || !result.data) return;
@@ -71,11 +76,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           void fetchProfile(currentUser.id);
         } else { setProfile(null); setLoading(false); }
-      } catch {
-        // Middleware has already protected this route. Never leave the UI in a
-        // permanent loading state because browser auth storage/network stalled.
-        setLoading(false);
-      }
+      } catch { setLoading(false); }
     };
     void initAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -88,11 +89,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
-    // Sync is explicitly background work. It must never participate in render.
-    const timer = window.setTimeout(() => {
-      void offlineSync.startAutoSync();
-      void offlineSync.syncAll();
-    }, 1500);
+    const timer = window.setTimeout(() => { void offlineSync.startAutoSync(); void offlineSync.syncAll(); }, 1500);
     return () => { window.clearTimeout(timer); offlineSync.stopAutoSync(); };
   }, [user]);
 
