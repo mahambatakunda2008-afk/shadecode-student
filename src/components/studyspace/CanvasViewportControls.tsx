@@ -22,7 +22,8 @@ export default function CanvasViewportControls({ value = DEFAULT_CANVAS_VIEW, on
     update(wheelZoom(view, event.deltaY, event.clientX - rect.left, event.clientY - rect.top));
   };
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!(event.button === 1 || (event.button === 0 && (event.shiftKey || event.currentTarget.dataset.pan === "true")))) return;
+    if (!(event.button === 1 || (event.button === 0 && event.shiftKey))) return;
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     panRef.current = { x: event.clientX, y: event.clientY, view };
   };
