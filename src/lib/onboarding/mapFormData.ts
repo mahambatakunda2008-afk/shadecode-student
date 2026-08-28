@@ -1,8 +1,8 @@
-import type { OnboardingFormData } from "@/types";
+import type { OnboardingFormData, StudyLevel } from "@/types";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 
-/** Maps granular onboarding vocabulary to the current profile storage buckets. */
-const STUDY_LEVEL_TO_EDUCATION: Record<string, EducationLevel> = {
+/** Maps granular onboarding vocabulary to both the canonical experience and legacy storage bucket. */
+const STUDY_LEVEL_TO_EDUCATION: Record<StudyLevel, EducationLevel> = {
   primary: "basic",
   "lower-secondary": "secondary",
   "upper-secondary": "secondary",
@@ -32,9 +32,13 @@ const SUBJECT_ID_TO_INTEREST: Record<string, SubjectInterest> = {
 
 export interface OnboardingApiPayload {
   education_level: EducationLevel;
+  study_level: StudyLevel;
   learning_goal: LearningGoal;
   subject_interests: SubjectInterest[];
   goals: string[];
+  display_name?: string;
+  daily_goal_minutes?: number;
+  study_style?: "structured" | "flexible";
   institution?: string;
   programme?: string;
   year_level?: string;
@@ -43,7 +47,8 @@ export interface OnboardingApiPayload {
 }
 
 export function mapOnboardingFormData(form: Partial<OnboardingFormData>): OnboardingApiPayload {
-  const education_level = STUDY_LEVEL_TO_EDUCATION[form.studyLevel ?? ""] ?? "secondary";
+  const study_level = (form.studyLevel ?? "upper-secondary") as StudyLevel;
+  const education_level = STUDY_LEVEL_TO_EDUCATION[study_level] ?? "secondary";
   const goals = form.goals ?? [];
   const learning_goal = goals
     .map((goal) => GOAL_LABEL_TO_LEARNING_GOAL[goal])
@@ -54,9 +59,13 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
 
   return {
     education_level,
+    study_level,
     learning_goal,
     subject_interests,
     goals,
+    display_name: form.displayName?.trim() || undefined,
+    daily_goal_minutes: Number.isFinite(form.dailyGoalMinutes) ? form.dailyGoalMinutes : 30,
+    study_style: form.studyStyle === "structured" ? "structured" : "flexible",
     institution: form.institution?.trim() || undefined,
     programme: form.programme?.trim() || undefined,
     year_level: form.yearLevel?.trim() || undefined,
