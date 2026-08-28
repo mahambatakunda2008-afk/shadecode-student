@@ -6,14 +6,17 @@ import { trackEvent } from '@/lib/traction/client';
 import type { StepProps } from '@/types';
 
 const LEVELS = [
-  { id: 'high-school', label: 'High School', emoji: '📚', desc: 'GCSE & equivalent' },
-  { id: 'a-level', label: 'A-Level', emoji: '🎓', desc: 'AS / A2 exams' },
-  { id: 'university', label: 'University', emoji: '🏛️', desc: 'Degree / undergraduate' },
-  { id: 'tvet', label: 'Polytechnic / TVET', emoji: '🛠️', desc: 'Technical & practical study' },
-  { id: 'professional', label: 'Professional', emoji: '💼', desc: 'Certifications' },
+  { id: 'primary', label: 'Primary', emoji: '🌱', desc: 'Foundations & primary school' },
+  { id: 'lower-secondary', label: 'Lower Secondary', emoji: '📘', desc: 'Junior secondary / middle school' },
+  { id: 'upper-secondary', label: 'Upper Secondary', emoji: '📚', desc: 'Senior secondary / GCSE & equivalent' },
+  { id: 'a-level', label: 'A-Level', emoji: '🎓', desc: 'AS / A2 / Sixth Form' },
+  { id: 'university', label: 'University', emoji: '🏛️', desc: 'Degree / undergraduate study' },
+  { id: 'tvet', label: 'Polytechnic / TVET', emoji: '🛠️', desc: 'Technical, vocational & practical study' },
+  { id: 'professional', label: 'Professional', emoji: '💼', desc: 'Professional qualifications & certifications' },
 ] as const;
 
 const POST_SECONDARY_LEVELS = new Set(['university', 'tvet', 'professional']);
+const ADVANCED_SCHOOL_LEVELS = new Set(['upper-secondary', 'a-level']);
 
 const fieldStyle = {
   width: '100%', boxSizing: 'border-box' as const, padding: '10px 12px', borderRadius: 10,
@@ -29,12 +32,13 @@ export function WelcomeStep({ data, onUpdate, onNext }: StepProps) {
   const [demoAnswer, setDemoAnswer] = useState('');
   const demoCorrect = demoAnswer.trim() === '42';
   const isPostSecondary = POST_SECONDARY_LEVELS.has(data.studyLevel ?? '');
+  const isAdvancedSchool = ADVANCED_SCHOOL_LEVELS.has(data.studyLevel ?? '');
 
   useEffect(() => { const r = requestAnimationFrame(() => setIn(true)); return () => cancelAnimationFrame(r); }, []);
 
   const handleNext = () => {
     if (!name.trim()) return setError('Please enter your name.');
-    if (!data.studyLevel) return setError('Please select your study level.');
+    if (!data.studyLevel) return setError('Please select your education level.');
     if (isPostSecondary && !data.programme?.trim()) return setError('Please enter your programme or qualification.');
     onUpdate({ displayName: name.trim() });
     void trackEvent('onboarding_step_completed', { step: 'profile', studyLevel: data.studyLevel });
@@ -46,7 +50,7 @@ export function WelcomeStep({ data, onUpdate, onNext }: StepProps) {
   return (
     <div style={{ opacity: in_ ? 1 : 0, transform: in_ ? 'translateY(0)' : 'translateY(10px)', transition: 'opacity 0.3s ease, transform 0.3s ease' }}>
       <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgb(124,58,237)', marginBottom: 4 }}>Welcome</p>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.92)', marginBottom: 4 }}>Let&apos;s get you studying</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.92)', marginBottom: 4 }}>Let's get you studying</h2>
       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 18 }}>Tell Shadecode where you are academically so Cortex can build the right study context.</p>
 
       <button type="button" onClick={openDemo} style={{ width: '100%', marginBottom: 20, padding: '12px 14px', borderRadius: 12, textAlign: 'left', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(63,200,255,0.12), rgba(124,58,237,0.12))', border: '1px solid rgba(63,200,255,0.2)', color: 'rgba(255,255,255,0.9)' }}>
@@ -72,7 +76,7 @@ export function WelcomeStep({ data, onUpdate, onNext }: StepProps) {
       </div>
 
       <div style={{ marginBottom: isPostSecondary ? 16 : 24 }}>
-        <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>Study level</label>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>Education level</label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {LEVELS.map(level => {
             const active = data.studyLevel === level.id;
@@ -94,6 +98,15 @@ export function WelcomeStep({ data, onUpdate, onNext }: StepProps) {
             <input value={(data.courses ?? []).join(', ')} onChange={e => onUpdate({ courses: e.target.value.split(',').map(v => v.trim()).filter(Boolean) })} placeholder="Courses / modules (comma separated)" style={fieldStyle} />
           </div>
           <p style={{ marginTop: 9, fontSize: 10, lineHeight: 1.5, color: 'rgba(255,255,255,0.38)' }}>You can change these later. Shadecode uses them to organize your study around your actual programme rather than a school exam board.</p>
+        </div>
+      )}
+
+      {isAdvancedSchool && (
+        <div style={{ marginBottom: 20, padding: 14, borderRadius: 12, background: 'rgba(63,200,255,0.05)', border: '1px solid rgba(63,200,255,0.14)' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.82)', marginBottom: 5 }}>Senior school context</div>
+          <p style={{ margin: 0, fontSize: 10, lineHeight: 1.5, color: 'rgba(255,255,255,0.42)' }}>
+            Shadecode will use your level to tune explanations, practice difficulty and exam preparation. Your exact exam board or curriculum can be refined in your subjects and settings.
+          </p>
         </div>
       )}
 
