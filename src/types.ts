@@ -41,7 +41,16 @@ export type CortexAIProvider = "local" | "gemini";
 export interface CortexAIResponse<T extends CortexAIRequestType = CortexAIRequestType> { requestType: T; provider: CortexAIProvider; cached: boolean; fingerprint: string; cacheKey: string; data: CortexAIResponseDataMap[T]; }
 export interface CortexCacheEntry<T = unknown> { createdAt: string; value: T; }
 
-export type StudyLevel = 'high-school' | 'a-level' | 'university' | 'tvet' | 'professional';
+/** User-facing academic stages. Storage mapping remains backward-compatible. */
+export type StudyLevel =
+  | 'primary'
+  | 'lower-secondary'
+  | 'upper-secondary'
+  | 'a-level'
+  | 'university'
+  | 'tvet'
+  | 'professional';
+
 export type StudyStyle = 'structured' | 'flexible';
 export interface OnboardingFormData {
   displayName: string;
