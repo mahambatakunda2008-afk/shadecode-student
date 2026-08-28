@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { StudySpaceMode, WorkObject } from "@/lib/studyspace/types";
 import { saveWorkObject } from "@/lib/studyspace/store";
 import AdaptiveNextMove from "@/components/studyspace/AdaptiveNextMove";
-import StudyCanvas from "@/components/studyspace/StudyCanvas";
+import StudyCanvasViewport from "@/components/studyspace/StudyCanvasViewport";
 import { Calculator } from "@/components/tools/Calculator";
 
 const modes: { id: StudySpaceMode; label: string; description: string }[] = [
@@ -35,27 +35,22 @@ export default function StudySpacePageClient() {
   useEffect(() => {
     if (initialMode && modes.some((item) => item.id === initialMode)) setMode(initialMode);
   }, [initialMode]);
-
   useEffect(() => setSubject(initialSubject), [initialSubject]);
-
   useEffect(() => {
     if (mode === "canvas") setShowCanvas(true);
   }, [mode]);
-
   const current = useMemo(() => modes.find((item) => item.id === mode)!, [mode]);
 
   async function save() {
     const now = new Date().toISOString();
     const work: WorkObject = {
-      id: crypto.randomUUID(),
-      mode,
+      id: crypto.randomUUID(), mode,
       lessonId: mode === "lesson" ? lessonId : undefined,
       subject: subject.trim() || undefined,
       prompt: prompt.trim() || undefined,
       response: response.trim() || undefined,
       attachments: canvasData ? [canvasData] : undefined,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now, updatedAt: now,
     };
     await saveWorkObject(work);
     setSaved(true);
@@ -72,9 +67,7 @@ export default function StudySpacePageClient() {
         </div>
         <button onClick={() => router.back()} style={{ border: "1px solid var(--card-border)", background: "var(--muted)", borderRadius: 8, padding: "9px 12px", cursor: "pointer" }}>Back</button>
       </header>
-
       <AdaptiveNextMove subject={subject.trim() || undefined} />
-
       <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 18 }}>
         <nav aria-label="StudySpace modes" style={{ display: "grid", gap: 8, alignContent: "start" }}>
           {modes.map((item) => (
@@ -84,29 +77,20 @@ export default function StudySpacePageClient() {
             </button>
           ))}
         </nav>
-
         <section style={{ border: "1px solid var(--card-border)", borderRadius: 14, padding: 20, background: "var(--card)" }} aria-label="StudySpace work surface">
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-            <div>
-              <h2 style={{ margin: 0 }}>{current.label}</h2>
-              <p style={{ margin: "5px 0 18px", color: "var(--muted-foreground)" }}>{current.description}</p>
-            </div>
+            <div><h2 style={{ margin: 0 }}>{current.label}</h2><p style={{ margin: "5px 0 18px", color: "var(--muted-foreground)" }}>{current.description}</p></div>
             <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Saved locally</span>
           </div>
-
           {mode === "lesson" && lessonId && <p style={{ marginTop: 0, fontSize: 13, color: "var(--muted-foreground)" }}>Linked lesson: {lessonId}</p>}
-
           <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Subject <span style={{ fontWeight: 400, color: "var(--muted-foreground)" }}>(optional)</span></label>
           <input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Any subject, or leave blank" style={{ width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
-
           {mode !== "canvas" && <>
             <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Question / task</label>
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Paste a question, assignment, essay prompt, code problem, diagram task, or anything you are working on..." rows={7} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
-
             <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Your work / answer</label>
             <textarea value={response} onChange={(event) => setResponse(event.target.value)} placeholder="Write your answer, reasoning, working or notes here..." rows={8} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
           </>}
-
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: showCanvas || showCalculator ? 18 : 0 }}>
             <button onClick={save} style={{ border: 0, borderRadius: 8, padding: "11px 16px", background: "var(--primary)", color: "white", fontWeight: 750, cursor: "pointer" }}>Save work</button>
             {mode !== "canvas" && <button type="button" onClick={() => setShowCanvas((value) => !value)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>{showCanvas ? "Hide Canvas" : "Open Canvas"}</button>}
@@ -114,9 +98,8 @@ export default function StudySpacePageClient() {
             <button onClick={() => router.push(`/workmate?mode=${mode}`)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>Open Workmate</button>
             {saved && <span role="status" style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Saved offline ✓</span>}
           </div>
-
           {showCalculator && <div style={{ marginBottom: 18 }}><Calculator /></div>}
-          {showCanvas && <StudyCanvas storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} />}
+          {showCanvas && <StudyCanvasViewport storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} />}
         </section>
       </div>
     </main>
