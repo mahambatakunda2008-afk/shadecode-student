@@ -27,22 +27,25 @@ export default function ProjectWorkspacePage() {
 
   if (!project || !stage) return <main className="mx-auto max-w-3xl px-4 py-12"><h1 className="text-2xl font-bold text-[var(--foreground)]">Project not found</h1><Link href="/projects" className="mt-4 inline-flex text-sm font-semibold text-[var(--primary)]">Back to Projects</Link></main>;
 
+  const currentProject = project;
+  const currentStage = stage;
+
   function addEvidence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!evidenceTitle.trim() || !evidenceContent.trim()) return;
-    const updated = projects.map((item) => item.id !== project.id ? item : ({
+    const updated = projects.map((item) => item.id !== currentProject.id ? item : ({
       ...item,
       status: "active" as const,
       updatedAt: new Date().toISOString(),
-      evidence: [...item.evidence, { id: `evidence-${Date.now()}`, type: evidenceType, title: evidenceTitle.trim(), content: evidenceContent.trim(), createdAt: new Date().toISOString(), stageId: stage.id, source: "learner" as const }],
+      evidence: [...item.evidence, { id: `evidence-${Date.now()}`, type: evidenceType, title: evidenceTitle.trim(), content: evidenceContent.trim(), createdAt: new Date().toISOString(), stageId: currentStage.id, source: "learner" as const }],
     }));
     setProjects(updated); saveProjects(updated); setEvidenceTitle(""); setEvidenceContent("");
   }
 
   function moveStage() {
-    if (stageIndex >= project.stages.length - 1) return;
-    const nextStage = project.stages[stageIndex + 1];
-    const updated = projects.map((item) => item.id !== project.id ? item : ({ ...item, currentStageId: nextStage.id, status: "active" as const, updatedAt: new Date().toISOString() }));
+    if (stageIndex >= currentProject.stages.length - 1) return;
+    const nextStage = currentProject.stages[stageIndex + 1];
+    const updated = projects.map((item) => item.id !== currentProject.id ? item : ({ ...item, currentStageId: nextStage.id, status: "active" as const, updatedAt: new Date().toISOString() }));
     setProjects(updated); saveProjects(updated);
   }
 
