@@ -15,16 +15,13 @@ export default function StudyCanvasViewport({ storageKey, height, onChange, clas
     transformOrigin: "0 0",
     width: "max-content",
   };
-
   return (
     <section className={className} aria-label="Study canvas">
-      <div className="mb-2 flex justify-end">
-        <CanvasZoomControls value={view} onChange={setView} />
-      </div>
+      <div className="mb-2 flex justify-end"><CanvasZoomControls value={view} onChange={setView} /></div>
       <div className="overflow-hidden rounded-xl touch-none">
         <CanvasViewportControls value={view} onChange={setView} className="relative overflow-hidden">
           <div data-pan="true" style={canvasStyle}>
-            <StudyCanvas storageKey={storageKey} height={height} onChange={onChange} />
+            <StudyCanvas storageKey={storageKey} height={height} zoom={view.zoom} onChange={onChange} />
           </div>
         </CanvasViewportControls>
       </div>
