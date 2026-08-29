@@ -4,12 +4,24 @@ import { recordCortexInsight } from '@/lib/cortex';
 
 export const dynamic = "force-dynamic";
 
+function getBearerToken(request) {
+  const header = request.headers.get('authorization');
+  return header?.startsWith('Bearer ') ? header.slice(7).trim() || null : null;
+}
+
 export async function PUT(request, { params }) {
   const { id } = params;
   const supabase = createServerClient();
 
-  // Get user from session
-  const { data: { user } } = await supabase.auth.getUser();
+  // Get user from the caller's own session token. createServerClient() uses
+  // the service-role key (needed below for recordCortexInsight), which
+  // carries no ambient session -- auth.getUser() must be given the token
+  // explicitly or it can never resolve a real user, matching the pattern
+  // used by every other authenticated route in this codebase.
+  const token = getBearerToken(request);
+  const { data: { user } } = token
+    ? await supabase.auth.getUser(token)
+    : { data: { user: null } };
 
   if (!user) {
     return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
