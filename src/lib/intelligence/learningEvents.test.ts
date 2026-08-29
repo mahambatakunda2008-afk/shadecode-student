@@ -31,6 +31,10 @@ describe("canonical learning events", () => {
     expect(normalizeLearningEvent({ ...base, type: "emotion.detected" }).status).toBe("unsupported");
   });
 
+  it("rejects malformed timestamps instead of silently converting them to epoch time", () => {
+    expect(normalizeLearningEvent({ ...base, occurredAt: "not-a-date" }).status).toBe("unsupported");
+  });
+
   it("does not accept a replay twice", () => {
     const result = normalizeLearningEvent(base);
     expect(result.status).toBe("accepted");
