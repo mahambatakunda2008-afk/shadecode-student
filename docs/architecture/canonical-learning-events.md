@@ -19,7 +19,7 @@ The source event ID is retained so replay and debugging do not lose provenance. 
 
 The first contract supports lesson views/completions, question attempts, quiz completion, exam start/completion, Project Studio evidence/stage events, mistake review and task completion.
 
-Unsupported event types are explicitly skipped. They are never silently re-labelled as a different learning signal.
+Unsupported event types are explicitly skipped. They are never silently re-labelled as a different learning signal. Malformed timestamps are also rejected rather than being coerced to an artificial epoch timestamp.
 
 ## Evidence policy
 
@@ -29,6 +29,10 @@ Deterministic event metadata is evidence. Mastery, retention and recommendations
 
 The current `LearningEventInbox` provides the deterministic contract and testable duplicate guard. Production persistence must use the same canonical event ID as a server-side idempotency key before high-consequence downstream writes.
 
+## Current production state
+
+A `learning_events` table already exists in the live Supabase project, but it predates this normalized contract and has a different column shape (`type`, `subject`, `topic`, `score`, `time_spent`, `metadata`, `created_at`). It must not be treated as if it were already a canonical-event store. The normalized event layer remains deliberately separate until a migration can preserve existing data and establish a unique server-side idempotency key safely.
+
 ## Next integration
 
-Migrate existing unified event emitters onto this contract one surface at a time, beginning with lesson/question/exam actions. Do not create a second event schema or replace `topic_mastery`, weak-area computation, retention ranking, or recommendation semantics.
+Migrate existing unified event emitters onto this contract one surface at a time, beginning with lesson/question/exam actions. Then introduce server-side persistence keyed by the canonical event ID and connect only supported events to Student Intelligence. Do not create a second event schema or replace `topic_mastery`, weak-area computation, retention ranking, or recommendation semantics.
