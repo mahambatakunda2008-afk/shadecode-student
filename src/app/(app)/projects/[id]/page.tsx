@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, ClipboardList, Lightbulb, Plus, ShieldCheck } from "lucide-react";
 import { useParams } from "next/navigation";
-import { loadProjects, saveProjects } from "@/lib/projects/store";
+import { loadProjectsLocalFirst, saveProjectsLocal } from "@/lib/projects/store";
 import { ProjectEvidenceType, StudentProject } from "@/lib/projects/types";
+import { inspectProjectIntegrity } from "@/lib/projects/projectIntegrity";
 
 const evidenceTypes: { value: ProjectEvidenceType; label: string }[] = [
   { value: "note", label: "Note" }, { value: "observation", label: "Observation" }, { value: "interview", label: "Interview" },
@@ -15,20 +16,36 @@ const evidenceTypes: { value: ProjectEvidenceType; label: string }[] = [
 
 export default function ProjectWorkspacePage() {
   const params = useParams<{ id: string }>();
-  const [projects, setProjects] = useState<StudentProject[]>(() => loadProjects());
-  const project = projects.find((item) => item.id === params.id);
+  const [projects, setProjects] = useState<StudentProject[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [evidenceTitle, setEvidenceTitle] = useState("");
   const [evidenceContent, setEvidenceContent] = useState("");
   const [evidenceType, setEvidenceType] = useState<ProjectEvidenceType>("note");
 
+  useEffect(() => {
+    let active = true;
+    void loadProjectsLocalFirst().then((items) => {
+      if (active) { setProjects(items); setLoaded(true); }
+    });
+    return () => { active = false; };
+  }, []);
+
+  const project = projects.find((item) => item.id === params.id);
   const stageIndex = useMemo(() => project ? Math.max(0, project.stages.findIndex((stage) => stage.id === project.currentStageId)) : 0, [project]);
   const stage = project?.stages[stageIndex];
   const stageEvidence = project?.evidence.filter((item) => item.stageId === stage?.id) ?? [];
+  const integrityFlags = project ? inspectProjectIntegrity(project) : [];
 
+  if (!loaded) return <main className="mx-auto max-w-3xl px-4 py-12"><p className="text-sm text-[var(--muted-foreground)]">Opening your project locally…</p></main>;
   if (!project || !stage) return <main className="mx-auto max-w-3xl px-4 py-12"><h1 className="text-2xl font-bold text-[var(--foreground)]">Project not found</h1><Link href="/projects" className="mt-4 inline-flex text-sm font-semibold text-[var(--primary)]">Back to Projects</Link></main>;
 
   const currentProject = project;
   const currentStage = stage;
+
+  function persist(updated: StudentProject[]) {
+    setProjects(updated);
+    void saveProjectsLocal(updated);
+  }
 
   function addEvidence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,14 +56,14 @@ export default function ProjectWorkspacePage() {
       updatedAt: new Date().toISOString(),
       evidence: [...item.evidence, { id: `evidence-${Date.now()}`, type: evidenceType, title: evidenceTitle.trim(), content: evidenceContent.trim(), createdAt: new Date().toISOString(), stageId: currentStage.id, source: "learner" as const }],
     }));
-    setProjects(updated); saveProjects(updated); setEvidenceTitle(""); setEvidenceContent("");
+    persist(updated); setEvidenceTitle(""); setEvidenceContent("");
   }
 
   function moveStage() {
     if (stageIndex >= currentProject.stages.length - 1) return;
     const nextStage = currentProject.stages[stageIndex + 1];
     const updated = projects.map((item) => item.id !== currentProject.id ? item : ({ ...item, currentStageId: nextStage.id, status: "active" as const, updatedAt: new Date().toISOString() }));
-    setProjects(updated); saveProjects(updated);
+    persist(updated);
   }
 
   return (
@@ -57,7 +74,7 @@ export default function ProjectWorkspacePage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
         <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Stage {stageIndex + 1} of {project.stages.length}</p><h2 className="mt-2 text-2xl font-bold text-[var(--foreground)]">{stage.title}</h2><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{stage.description}</p><div className="mt-5 rounded-xl bg-[var(--surface-2)] p-4"><p className="text-sm font-semibold text-[var(--foreground)]">Your job</p><p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{stage.learnerAction}</p></div><div className="mt-4 rounded-xl border border-[var(--card-border)] p-4"><p className="text-sm font-semibold text-[var(--foreground)]">Evidence to collect</p><p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{stage.evidencePrompt}</p></div><div className="mt-6 flex items-center gap-3"><button type="button" onClick={moveStage} disabled={stageIndex >= project.stages.length - 1} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-40">Complete stage <CheckCircle2 className="h-4 w-4" /></button><span className="text-xs text-[var(--muted-foreground)]">Only move on when your evidence is ready.</span></div></section>
 
-        <aside className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><div className="flex items-center gap-2"><Lightbulb className="h-5 w-5 text-[var(--primary)]" /><h2 className="font-bold text-[var(--foreground)]">Cortex coach</h2></div><p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">Start with the task in front of you. Ask Cortex to explain the stage, brainstorm questions, review your notes, or help you decide what evidence you still need.</p><div className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] p-3"><ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--primary)]" /><p className="text-xs leading-5 text-[var(--muted-foreground)]"><strong className="text-[var(--foreground)]">Evidence rule:</strong> Shadecode will help you structure real work, but it must not turn invented interviews, results, measurements or observations into project evidence.</p></div></aside>
+        <aside className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><div className="flex items-center gap-2"><Lightbulb className="h-5 w-5 text-[var(--primary)]" /><h2 className="font-bold text-[var(--foreground)]">Cortex coach</h2></div><p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">Start with the task in front of you. Ask Cortex to explain the stage, brainstorm questions, review your notes, or help you decide what evidence you still need.</p><div className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] p-3"><ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--primary)]" /><p className="text-xs leading-5 text-[var(--muted-foreground)]"><strong className="text-[var(--foreground)]">Evidence rule:</strong> Shadecode will help you structure real work, but it must not turn invented interviews, results, measurements or observations into project evidence.</p></div>{integrityFlags.length > 0 && <div className="mt-4 space-y-2">{integrityFlags.map((flag) => <div key={flag.code} className="rounded-xl border border-[var(--card-border)] p-3 text-xs leading-5 text-[var(--muted-foreground)]"><strong className="text-[var(--foreground)]">{flag.severity === "blocking" ? "Needs attention" : "Project check"}:</strong> {flag.message}</div>)}</div>}</aside>
       </div>
 
       <section className="mt-6 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-[var(--primary)]" /><div><h2 className="font-bold text-[var(--foreground)]">Evidence notebook</h2><p className="text-xs text-[var(--muted-foreground)]">Capture what you actually did, found, measured or received.</p></div></div><form onSubmit={addEvidence} className="mt-5 grid gap-3 md:grid-cols-[1fr_180px]"><input required value={evidenceTitle} onChange={(e) => setEvidenceTitle(e.target.value)} placeholder="Evidence title" className="rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)]" /><select value={evidenceType} onChange={(e) => setEvidenceType(e.target.value as ProjectEvidenceType)} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none">{evidenceTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select><textarea required value={evidenceContent} onChange={(e) => setEvidenceContent(e.target.value)} rows={4} placeholder="Write your actual notes, findings, response, measurement, source details, etc." className="resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] md:col-span-2" /><div className="md:col-span-2 flex justify-end"><button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]"><Plus className="h-4 w-4" /> Save evidence</button></div></form><div className="mt-6 space-y-3">{stageEvidence.length === 0 ? <p className="rounded-xl border border-dashed border-[var(--card-border)] p-5 text-sm text-[var(--muted-foreground)]">No evidence captured for this stage yet. That's okay. Start with the first real thing you did.</p> : stageEvidence.map((item) => <article key={item.id} className="rounded-xl border border-[var(--card-border)] p-4"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-[var(--foreground)]">{item.title}</h3><span className="rounded-md bg-[var(--primary-glow)] px-2 py-1 text-[10px] font-semibold text-[var(--primary)]">{item.type.replaceAll("_", " ")}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]">{item.content}</p></article>)}</div></section>
