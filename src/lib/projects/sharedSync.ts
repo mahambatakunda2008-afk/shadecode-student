@@ -16,6 +16,14 @@ export async function queueProjectUpsert(project: StudentProject): Promise<void>
   const ownerId = await currentOwnerId();
   if (!ownerId) return;
   await mutationQueue.enqueue({ ownerId, operation: "update", store: "projects", payload: project });
+  for (const evidence of project.evidence) {
+    await mutationQueue.enqueue({
+      ownerId,
+      operation: "update",
+      store: "project_evidence",
+      payload: { ...evidence, projectId: project.id },
+    });
+  }
 }
 
 export async function queueProjectDelete(projectId: string): Promise<void> {
