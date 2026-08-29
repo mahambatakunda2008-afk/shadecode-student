@@ -15,9 +15,14 @@ async function currentOwnerId(): Promise<string | null> {
 export async function queueProjectUpsert(project: StudentProject): Promise<void> {
   const ownerId = await currentOwnerId();
   if (!ownerId) return;
-  await mutationQueue.enqueue({ ownerId, operation: "update", store: "projects", payload: { ...project, user_id: ownerId } });
+  await mutationQueue.enqueue({ ownerId, operation: "create", store: "projects", payload: { ...project, user_id: ownerId } });
   for (const evidence of project.evidence) {
-    await mutationQueue.enqueue({ ownerId, operation: "update", store: "project_evidence", payload: { ...evidence, projectId: project.id, user_id: ownerId } });
+    await mutationQueue.enqueue({
+      ownerId,
+      operation: "create",
+      store: "project_evidence",
+      payload: { ...evidence, projectId: project.id, user_id: ownerId },
+    });
   }
 }
 
