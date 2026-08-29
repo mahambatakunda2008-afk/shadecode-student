@@ -1,0 +1,22 @@
+{
+  "baseModel": "RECORD_APPROVED_BASE_MODEL",
+  "teacherModel": "RECORD_APPROVED_TEACHER_MODEL",
+  "dataset": "path/to/validated-shadecode-distillation.jsonl",
+  "targetTiers": ["micro", "compact", "enhanced"],
+  "steps": {
+    "distillation": true,
+    "structuredPruning": true,
+    "quantization": "int4",
+    "runtimeConversion": ["wasm", "webgpu", "native"]
+  },
+  "evaluation": {
+    "benchmark": "SHADECODE_BENCHMARK",
+    "minimumQualityScore": 0.85,
+    "minimumIntegrityPassRate": 0.98,
+    "maxRegression": 0.03
+  },
+  "artifact": {
+    "format": "versioned-release-artifact",
+    "requireSha256": true
+  }
+}
