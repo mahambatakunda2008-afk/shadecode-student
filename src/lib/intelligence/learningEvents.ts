@@ -76,13 +76,18 @@ export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormal
   const source = input.source.trim();
   if (!sourceEventId || !userId || !source) return { status: "unsupported", sourceEventId, source };
 
+  const occurredAt = input.occurredAt ?? new Date().toISOString();
+  if (!Number.isFinite(Date.parse(occurredAt))) {
+    return { status: "unsupported", sourceEventId, source };
+  }
+
   return {
     status: "accepted",
     event: {
       eventId: canonicalEventId(userId, source, sourceEventId),
       userId,
       kind,
-      occurredAt: input.occurredAt ?? new Date(0).toISOString(),
+      occurredAt,
       source,
       sourceEventId,
       subjectId: input.subjectId,
