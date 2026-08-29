@@ -450,3 +450,47 @@ Completed a new test file, `src/tests/server/api/tasks.test.ts`, adding regressi
 This improvement directly addresses the requirement for comprehensive authorization boundary testing.
 
 ---
+
+## 2026-08-29 — Correction to the two entries above
+
+Both auto-generated entries above describe states that turned out to be
+inaccurate by the time the code actually shipped -- flagging clearly rather
+than silently rewriting history, since this log is meant to be a truthful
+record of what happened, not just what was intended.
+
+**2026-08-26 entry:** claims `getCortexInsightById` filters by `profile_id`.
+It didn't -- that was the version as originally written, and it wouldn't
+have worked: `cortex_insights`' real column (confirmed via
+`information_schema`) is `user_id`, not `profile_id`. The PR also imported
+a nonexistent `getSupabaseClient` export. Both fixed before merge
+(`d9701ce`); the shipped function correctly filters by `user_id`, backed
+by a real RLS policy (`auth.uid() = user_id`) as defense in depth. See the
+2026-08-24 security audit entry above for the fuller context this work
+grew out of.
+
+**2026-08-29 entry:** describes tests for "the `/api/tasks` endpoint"
+retrieving a user's tasks. No such `GET /api/tasks` endpoint exists in
+this codebase, and never has -- tasks are fetched client-side via direct
+Supabase queries under RLS (`src/app/(app)/tasks/page.tsx`). The original
+test file was written entirely against SvelteKit conventions
+(`'+server.ts'` routes, `$lib`/`$env` path aliases, `locals.safeGetSession()`)
+that don't exist in this Next.js App Router project -- it could not have
+passed typecheck. Rewritten from scratch against the one task-related
+route that actually exists and matters,
+`src/app/api/tasks/[id]/complete/route.js`'s `PUT` handler, which turned
+out to have its own real, independent bug found while writing a correct
+test for it: `createServerClient()` there uses the Supabase service-role
+key with zero session context, and the route called
+`supabase.auth.getUser()` with no token argument -- unable to ever
+resolve a real user, so every legitimate request would have 401'd. Fixed
+alongside the test (merged as `f9fbaa2`). That route is currently
+unreachable from the real app (task completion happens client-side
+instead), so this was live-but-dead code, not a production regression --
+but a real bug nonetheless, and exactly what regression coverage for an
+authorization boundary should exist to catch.
+
+**General note for future auto-generated entries:** write these once the
+code is actually verified working (`tsc`, lint, and the tests actually
+executed and passing), not from the intent behind a commit -- several
+entries in this log describe what a change was supposed to do rather
+than what it verifiably does once merged.
