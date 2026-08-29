@@ -75,6 +75,7 @@ async function pruneProjectSnapshots(projectId: string): Promise<void> {
       for (const snapshot of snapshots.slice(MAX_SNAPSHOTS_PER_PROJECT)) tx.objectStore(STORE).delete(snapshot.id);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error("Could not prune recovery snapshots"));
+      tx.onabort = () => reject(tx.error ?? new Error("Recovery prune transaction aborted"));
     });
   } finally { db.close(); }
 }
