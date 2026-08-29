@@ -5,9 +5,10 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, ClipboardList, Lightbulb, Plus, ShieldCheck } from "lucide-react";
 import { useParams } from "next/navigation";
 import { loadProjectsLocalFirst, saveProjectsLocal } from "@/lib/projects/store";
-import { ProjectEvidenceType, StudentProject } from "@/lib/projects/types";
+import { ProjectEvidenceType, ProjectOutline, StudentProject } from "@/lib/projects/types";
 import { inspectProjectIntegrity } from "@/lib/projects/projectIntegrity";
 import { ProjectRecoveryPanel } from "@/components/projects/ProjectRecoveryPanel";
+import ProjectDocumentPanel from "@/components/projects/ProjectDocumentPanel";
 
 const evidenceTypes: { value: ProjectEvidenceType; label: string }[] = [
   { value: "note", label: "Note" }, { value: "observation", label: "Observation" }, { value: "interview", label: "Interview" },
@@ -79,6 +80,12 @@ export default function ProjectWorkspacePage() {
     await persist(projects.map((item) => item.id === currentProject.id ? next : item));
   }
 
+  async function saveOutline(outline: ProjectOutline) {
+    const now = new Date().toISOString();
+    const updated = projects.map((item) => item.id !== currentProject.id ? item : ({ ...item, outline, updatedAt: now }));
+    await persist(updated);
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
       <Link href="/projects" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]"><ArrowLeft className="h-4 w-4" /> Projects</Link>
@@ -88,6 +95,7 @@ export default function ProjectWorkspacePage() {
         <aside className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><div className="flex items-center gap-2"><Lightbulb className="h-5 w-5 text-[var(--primary)]" /><h2 className="font-bold text-[var(--foreground)]">Cortex coach</h2></div><p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">Start with the task in front of you. Ask Cortex to explain the stage, brainstorm questions, review your notes, or help you decide what evidence you still need.</p><div className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] p-3"><ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--primary)]" /><p className="text-xs leading-5 text-[var(--muted-foreground)]"><strong className="text-[var(--foreground)]">Evidence rule:</strong> Shadecode will help you structure real work, but it must not turn invented interviews, results, measurements or observations into project evidence.</p></div>{integrityFlags.length > 0 && <div className="mt-4 space-y-2">{integrityFlags.map((flag) => <div key={flag.code} className="rounded-xl border border-[var(--card-border)] p-3 text-xs leading-5 text-[var(--muted-foreground)]"><strong className="text-[var(--foreground)]">{flag.severity === "blocking" ? "Needs attention" : "Project check"}:</strong> {flag.message}</div>)}</div>}</aside>
       </div>
       <section className="mt-6 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-6"><div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-[var(--primary)]" /><div><h2 className="font-bold text-[var(--foreground)]">Evidence notebook</h2><p className="text-xs text-[var(--muted-foreground)]">Capture what you actually did, found, measured or received.</p></div></div><form onSubmit={addEvidence} className="mt-5 grid gap-3 md:grid-cols-[1fr_180px]"><input required value={evidenceTitle} onChange={(e) => setEvidenceTitle(e.target.value)} placeholder="Evidence title" className="rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)]" /><select value={evidenceType} onChange={(e) => setEvidenceType(e.target.value as ProjectEvidenceType)} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none">{evidenceTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select><textarea required value={evidenceContent} onChange={(e) => setEvidenceContent(e.target.value)} rows={4} placeholder="Write your actual notes, findings, response, measurement, source details, etc." className="resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 text-sm outline-none focus:border-[var(--primary)] md:col-span-2" /><div className="md:col-span-2 flex justify-end"><button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]"><Plus className="h-4 w-4" /> Save evidence</button></div></form><div className="mt-6 space-y-3">{stageEvidence.length === 0 ? <p className="rounded-xl border border-dashed border-[var(--card-border)] p-5 text-sm text-[var(--muted-foreground)]">No evidence captured for this stage yet. That's okay. Start with the first real thing you did.</p> : stageEvidence.map((item) => <article key={item.id} className="rounded-xl border border-[var(--card-border)] p-4"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-[var(--foreground)]">{item.title}</h3><span className="rounded-md bg-[var(--primary-glow)] px-2 py-1 text-[10px] font-semibold text-[var(--primary)]">{item.type.replaceAll("_", " ")}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]">{item.content}</p></article>)}</div></section>
+      <ProjectDocumentPanel project={currentProject} onSave={saveOutline} />
       <div className="mt-6"><ProjectRecoveryPanel project={currentProject} onRestore={restoreProject} /></div>
     </main>
   );
