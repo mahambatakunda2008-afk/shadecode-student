@@ -1,5 +1,35 @@
 import { test, expect, vi, describe, beforeEach } from 'vitest';
 
+// NOTE (2026-08-29): getTasksForCurrentUser/getTaskByIdForCurrentUser and
+// src/api/tasks.ts below do not exist anywhere in this codebase, real or
+// otherwise -- there is no server-side "list/get tasks" API. Tasks are
+// fetched entirely client-side via direct Supabase queries under RLS (see
+// src/app/(app)/tasks/page.tsx). This file tests a fictional API layer
+// mocked from scratch, not real product code -- it verifies that RLS-style
+// row filtering behaves correctly *in the abstract*, which has some value
+// as a spec for how that layer should behave if it's ever built, but it is
+// not integration coverage for anything currently shipping.
+//
+// The real, currently-shipping task authorization boundary --
+// src/app/api/tasks/[id]/complete/route.js's PUT handler, plus the real
+// bug found and fixed while testing it (an auth check that could never
+// resolve a real user) -- is covered in src/tests/server/api/tasks.test.ts.
+//
+// Left in place rather than deleted since the RLS-filtering logic exercised
+// here is still a reasonable behavioral spec, but flagging clearly so this
+// isn't mistaken for coverage of a real endpoint.
+//
+// Also fixed while unblocking CI: the mock's authenticatedUserId lookup
+// read `getUser.mock.results[0]?.value?.data?.user?.id` -- for an async
+// mock, `mock.results[0].value` is the Promise object itself (captured
+// synchronously at call time), not its resolved contents, so `.data` was
+// always undefined regardless of which user a test configured. Every
+// "should succeed for an authenticated user" test was failing silently
+// wrong (until this fix made them fail loudly, then correctly), while
+// every "should reject" test coincidentally passed for the wrong reason.
+// Fixed to directly await the mock call instead of inspecting call-history
+// metadata.
+
 // Mock the Supabase client to simulate RLS behavior for tasks.
 // This mock is designed to represent how a properly configured Supabase RLS policy
 // would filter data based on the authenticated user's ID.
@@ -8,14 +38,14 @@ const mockSupabaseClient = {
     getUser: vi.fn(), // Mocks fetching the current authenticated user
   },
   from: vi.fn((tableName: string) => ({
-    select: vi.fn(() => ({
+    select: vi.fn((_columns?: string) => ({
       eq: vi.fn((column: string, value: any) => {
         // This path simulates queries like .eq('id', taskId) or .eq('user_id', userId)
         return {
           maybeSingle: vi.fn(() => ({
             async then(resolve: (value: any) => void) {
               if (tableName === 'tasks') {
-                const authenticatedUserId = mockSupabaseClient.auth.getUser.mock.results[0]?.value?.data?.user?.id;
+                const authenticatedUserId = (await mockSupabaseClient.auth.getUser()).data?.user?.id;
 
                 const allTasks = [
                   { id: 'task-1-user-a', user_id: 'user-a-id', title: 'User A Task 1' },
@@ -35,7 +65,7 @@ const mockSupabaseClient = {
           async then(resolve: (value: any) => void) {
             // This path is for select().eq()... without .maybeSingle()
             if (tableName === 'tasks') {
-              const authenticatedUserId = mockSupabaseClient.auth.getUser.mock.results[0]?.value?.data?.user?.id;
+              const authenticatedUserId = (await mockSupabaseClient.auth.getUser()).data?.user?.id;
               const allTasks = [
                 { id: 'task-1-user-a', user_id: 'user-a-id', title: 'User A Task 1' },
                 { id: 'task-2-user-a', user_id: 'user-a-id', title: 'User A Task 2' },
@@ -53,7 +83,7 @@ const mockSupabaseClient = {
       async then(resolve: (value: any) => void) {
         // This path is for general select('*') without .eq()
         if (tableName === 'tasks') {
-          const authenticatedUserId = mockSupabaseClient.auth.getUser.mock.results[0]?.value?.data?.user?.id;
+          const authenticatedUserId = (await mockSupabaseClient.auth.getUser()).data?.user?.id;
 
           const allTasks = [
             { id: 'task-1-user-a', user_id: 'user-a-id', title: 'User A Task 1' },
@@ -69,7 +99,7 @@ const mockSupabaseClient = {
         }
       },
     })),
-  }),
+  })),
 };
 
 // --- Mocked API functions that would typically reside in src/api/tasks.ts ---
@@ -111,8 +141,8 @@ describe('Authorization Boundaries for Tasks (Security Audit)', () => {
 
     expect(error).toBeNull();
     expect(tasks).toHaveLength(2);
-    expect(tasks?.every(task => task.user_id === userA_id)).toBe(true);
-    expect(tasks?.some(task => task.user_id === userB_id)).toBe(false);
+    expect(tasks?.every((task: { user_id: string }) => task.user_id === userA_id)).toBe(true);
+    expect(tasks?.some((task: { user_id: string }) => task.user_id === userB_id)).toBe(false);
   });
 
   test('User B can only see their own tasks when fetching all tasks', async () => {
@@ -122,7 +152,7 @@ describe('Authorization Boundaries for Tasks (Security Audit)', () => {
 
     expect(error).toBeNull();
     expect(tasks).toHaveLength(1);
-    expect(tasks?.every(task => task.user_id === userB_id)).toBe(true);
+    expect(tasks?.every((task: { user_id: string }) => task.user_id === userB_id)).toBe(true);
   });
 
   test('Unauthenticated user receives an error when attempting to fetch tasks', async () => {
