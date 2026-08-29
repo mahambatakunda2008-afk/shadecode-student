@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ShadecodeDistillationExample",
+  "type": "object",
+  "required": ["id", "capability", "subject", "level", "prompt", "response", "verification"],
+  "properties": {
+    "id": {"type": "string"},
+    "capability": {"enum": ["tutor", "project-coach", "study-planner", "question-generator", "summarizer"]},
+    "subject": {"type": "string"},
+    "qualification": {"type": "string"},
+    "board": {"type": "string"},
+    "level": {"type": "string"},
+    "language": {"type": "string"},
+    "difficulty": {"type": "string"},
+    "prompt": {"type": "string"},
+    "response": {"type": "string"},
+    "verification": {
+      "type": "object",
+      "required": ["type", "status"],
+      "properties": {
+        "type": {"type": "string"},
+        "status": {"enum": ["verified", "reviewed", "synthetic"]},
+        "source": {"type": "string"}
+      }
+    },
+    "integrityTags": {"type": "array", "items": {"type": "string"}}
+  }
+}
