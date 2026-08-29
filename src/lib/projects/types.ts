@@ -34,6 +34,15 @@ export type ProjectEvidence = {
   source: "learner" | "teacher" | "imported";
 };
 
+export type ProjectOutline = {
+  problem: string;
+  objectives: string;
+  methodology: string;
+  findings: string;
+  conclusion: string;
+  reflection: string;
+};
+
 export type StudentProject = {
   id: string;
   title: string;
@@ -47,6 +56,7 @@ export type StudentProject = {
   currentStageId: string;
   stages: ProjectStage[];
   evidence: ProjectEvidence[];
+  outline?: ProjectOutline;
   createdAt: string;
   updatedAt: string;
 };
