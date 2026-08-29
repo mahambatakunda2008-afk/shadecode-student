@@ -16,12 +16,14 @@ The repository is in an active hardening phase. Major product foundations are me
 - Canonical learning-event normalization foundation with stable, user-scoped identities.
 - Deterministic replay/idempotency tests for the canonical event contract.
 - Public landing page refreshed to match the actual product direction and avoid fabricated learner metrics.
+- Curriculum coverage analysis hardened so completion counts are derived from the active catalog rather than raw/stale progress IDs.
+- Project recovery transaction handling hardened so aborted snapshot-pruning transactions are surfaced rather than treated as successful cleanup.
 
 ## In progress
 
 ### 1. Cortex event integration
 
-The canonical event contract now exists. The next step is migrating real product emitters onto it, then persisting idempotency keys server-side and feeding supported events into the existing Student Intelligence layer.
+The canonical event contract now exists and rejects malformed timestamps instead of coercing invalid input into an artificial epoch. A legacy `learning_events` table exists in production, but its schema predates the normalized contract, so it is intentionally not reused as though it were already canonical. The next step is migrating real product emitters onto the normalized contract, then adding a server-side idempotency key without losing legacy data.
 
 ### 2. Learning Experience v2
 
@@ -29,11 +31,15 @@ The next layer is deeper curriculum coverage, structured diagrams, shared Questi
 
 ### 3. Canvas and shared tooling
 
-Complete the intelligent/reversible geometry assistance, shared-canvas adoption and calculator/tool end-to-end verification. Release only after browser smoke checks and deterministic tests pass.
+Complete intelligent/reversible geometry assistance, shared-canvas adoption and calculator/tool end-to-end verification. Release only after browser smoke checks and deterministic tests pass.
 
 ### 4. Local-first synchronization
 
 Continue entity migration, revision/version semantics and safe hydration. XP must become an append-only event ledger before more aggressive offline reconciliation is enabled.
+
+### 5. Project Studio completion gate
+
+The product surface is materially built. The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior and clear sync state in the UI. The existing project model and recovery system should be extended, not replaced.
 
 ## Explicitly deferred
 
