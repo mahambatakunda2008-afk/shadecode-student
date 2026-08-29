@@ -39,14 +39,16 @@ export async function createProjectSnapshot(project: StudentProject, reason: Pro
     createdAt: Date.now(),
   };
   const db = await openDb();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(snapshot);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Could not create recovery snapshot"));
-  });
-  db.close();
-  await pruneProjectSnapshots(project.id);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(snapshot);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("Could not create recovery snapshot"));
+      tx.onabort = () => reject(tx.error ?? new Error("Recovery snapshot transaction aborted"));
+    });
+  } finally { db.close(); }
+  try { await pruneProjectSnapshots(project.id); } catch { /* cleanup must never invalidate a successful snapshot */ }
   return snapshot;
 }
 
@@ -67,11 +69,12 @@ async function pruneProjectSnapshots(projectId: string): Promise<void> {
   const snapshots = await listProjectSnapshots(projectId);
   if (snapshots.length <= MAX_SNAPSHOTS_PER_PROJECT) return;
   const db = await openDb();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    for (const snapshot of snapshots.slice(MAX_SNAPSHOTS_PER_PROJECT)) tx.objectStore(STORE).delete(snapshot.id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Could not prune recovery snapshots"));
-  });
-  db.close();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      for (const snapshot of snapshots.slice(MAX_SNAPSHOTS_PER_PROJECT)) tx.objectStore(STORE).delete(snapshot.id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("Could not prune recovery snapshots"));
+    });
+  } finally { db.close(); }
 }
