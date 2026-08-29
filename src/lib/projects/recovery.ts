@@ -9,7 +9,7 @@ export type ProjectSnapshot = {
   id: string;
   projectId: string;
   project: StudentProject;
-  reason: "autosave" | "manual" | "delete";
+  reason: "autosave" | "manual" | "before-delete" | "before-restore";
   createdAt: number;
 };
 
@@ -30,16 +30,24 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function createProjectSnapshot(project: StudentProject, reason: ProjectSnapshot["reason"] = "autosave"): Promise<void> {
+export async function createProjectSnapshot(project: StudentProject, reason: ProjectSnapshot["reason"] = "autosave"): Promise<ProjectSnapshot> {
+  const snapshot: ProjectSnapshot = {
+    id: `${project.id}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`,
+    projectId: project.id,
+    project: structuredClone(project),
+    reason,
+    createdAt: Date.now(),
+  };
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put({ id: `${project.id}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`, projectId: project.id, project: structuredClone(project), reason, createdAt: Date.now() } satisfies ProjectSnapshot);
+    tx.objectStore(STORE).put(snapshot);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error("Could not create recovery snapshot"));
   });
   db.close();
   await pruneProjectSnapshots(project.id);
+  return snapshot;
 }
 
 export async function listProjectSnapshots(projectId: string): Promise<ProjectSnapshot[]> {
