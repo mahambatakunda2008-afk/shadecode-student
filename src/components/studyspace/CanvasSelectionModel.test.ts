@@ -6,7 +6,7 @@ describe("Canvas selection model", () => {
     expect(selectionBounds([
       { x: 10, y: 20, width: 30, height: 10, rotation: 0 },
       { x: 50, y: 5, width: 20, height: 25, rotation: 0 },
-    ])).toEqual({ x: 10, y: 5, width: 60, height: 30, rotation: 0 });
+    ])).toEqual({ x: 10, y: 5, width: 60, height: 25, rotation: 0 });
   });
 
   it("transforms without mutating the original bounds", () => {
