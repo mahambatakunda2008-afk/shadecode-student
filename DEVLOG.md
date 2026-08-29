@@ -435,3 +435,18 @@ Addressed a critical authorization boundary for `cortex_insights` by implementin
 **Change:** Created or updated `src/server/services/cortexInsightsService.ts` to implement `getCortexInsightById`. This function is responsible for retrieving a single `cortex_insight` and crucially includes an explicit filter by `profile_id`. This ensures that a user can only access insights that belong to them, establishing a secure authorization boundary at the service layer. This directly addresses potential security findings related to unauthorized access to AI-generated content and provides a robust point for future regression testing.
 
 ---
+
+## 2026-08-29 — Cortex Auto-Cycle
+
+Completed a new test file, `src/tests/server/api/tasks.test.ts`, adding regression coverage for authorization boundaries on the `/api/tasks` endpoint. This addresses a critical part of the security audit by ensuring users can only access their own data, preventing unauthorized access and data leakage. Feeling good about shoring up our authorization logic.
+
+**Task:** Add regression tests for task API authorization boundary
+
+**Change:** Creates `src/tests/server/api/tasks.test.ts` to add regression coverage for the `/api/tasks` endpoint. These tests simulate various user authentication states and database responses to ensure that:
+1. An authenticated user can successfully retrieve only their own tasks.
+2. An authenticated user cannot inadvertently retrieve or access another user's tasks.
+3. An unauthenticated user is properly denied access (401 Unauthorized).
+4. The API handles internal database errors gracefully (500 Internal Server Error).
+This improvement directly addresses the requirement for comprehensive authorization boundary testing.
+
+---
