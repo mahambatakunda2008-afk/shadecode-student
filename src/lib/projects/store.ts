@@ -83,6 +83,11 @@ export function createProject(input: {
   return project;
 }
 
+/** Compatibility entry point retained for the existing Project Studio pages. */
+export function buildInitialWorkPlan(project: StudentProject): StudentProject["workPlan"] {
+  return buildProjectWorkPlan(project.subject, project.requirements ?? DEFAULT_PROJECT_REQUIREMENTS);
+}
+
 /** Rebuilds the production plan after a learner edits the project requirements. */
 export function rebuildProjectWorkPlan(project: StudentProject): StudentProject {
   const requirements = project.requirements ?? DEFAULT_PROJECT_REQUIREMENTS;
