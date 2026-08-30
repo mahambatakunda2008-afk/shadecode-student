@@ -93,14 +93,13 @@ export function getTopicPriority(topic: CurriculumTopic, studentProgress: Studen
 
 export function getRecommendedStudyOrder(studentProgress: StudentProgress): string[] {
   const topics = getCurriculum(studentProgress).topics;
-  const completed = new Set(studentProgress.completedTopics);
   const remaining = topics.map((topic, index) => ({ topic, index, priority: getTopicPriority(topic, studentProgress) }));
   remaining.sort((a, b) => b.priority - a.priority || a.index - b.index);
 
   const ordered: string[] = [];
   const added = new Set<string>();
   while (ordered.length < topics.length) {
-    const candidate = remaining.find(({ topic }) => !added.has(topic.id) && topic.prerequisites.every((id) => added.has(id) || completed.has(id)));
+    const candidate = remaining.find(({ topic }) => !added.has(topic.id) && topic.prerequisites.every((id) => added.has(id)));
     if (!candidate) {
       const fallback = remaining.find(({ topic }) => !added.has(topic.id));
       if (!fallback) break;
