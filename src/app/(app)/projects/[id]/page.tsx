@@ -10,6 +10,7 @@ import { inspectProjectIntegrity } from "@/lib/projects/projectIntegrity";
 import { getProjectCoachAdvice } from "@/lib/projects/coach";
 import { ProjectRecoveryPanel } from "@/components/projects/ProjectRecoveryPanel";
 import ProjectDocumentPanel from "@/components/projects/ProjectDocumentPanel";
+import { emitProjectEvidenceAdded, emitProjectStageCompleted } from "@/lib/projects/learningEvents";
 
 const evidenceTypes: { value: ProjectEvidenceType; label: string }[] = [
   { value: "note", label: "Note" }, { value: "observation", label: "Observation" }, { value: "interview", label: "Interview" },
@@ -60,13 +61,16 @@ export default function ProjectWorkspacePage() {
     event.preventDefault();
     if (!evidenceTitle.trim() || !evidenceContent.trim()) return;
     const now = new Date().toISOString();
+    const evidenceId = newUuid();
     const updated = projects.map((item) => item.id !== currentProject.id ? item : ({
       ...item,
       status: "active" as const,
       updatedAt: now,
-      evidence: [...item.evidence, { id: newUuid(), type: evidenceType, title: evidenceTitle.trim(), content: evidenceContent.trim(), createdAt: now, stageId: currentStage.id, source: "learner" as const }],
+      evidence: [...item.evidence, { id: evidenceId, type: evidenceType, title: evidenceTitle.trim(), content: evidenceContent.trim(), createdAt: now, stageId: currentStage.id, source: "learner" as const }],
     }));
-    void persist(updated); setEvidenceTitle(""); setEvidenceContent("");
+    void persist(updated);
+    void emitProjectEvidenceAdded(currentProject.id, evidenceId, currentStage.id, currentProject.subject);
+    setEvidenceTitle(""); setEvidenceContent("");
   }
 
   function moveStage() {
@@ -74,6 +78,7 @@ export default function ProjectWorkspacePage() {
     const nextStage = currentProject.stages[stageIndex + 1];
     const updated = projects.map((item) => item.id !== currentProject.id ? item : ({ ...item, currentStageId: nextStage.id, status: "active" as const, updatedAt: new Date().toISOString() }));
     void persist(updated);
+    void emitProjectStageCompleted(currentProject.id, currentStage.id, nextStage.id, currentProject.subject);
   }
 
   async function restoreProject(restored: StudentProject) {
