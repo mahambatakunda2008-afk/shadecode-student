@@ -39,6 +39,13 @@ export function isMutationReady(mutation: OfflineMutation, now = Date.now()): bo
   return now - lastAttempt >= retryDelayMs(mutation.attempts);
 }
 
+function payloadEntityId(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const value = payload as Record<string, unknown>;
+  const id = value.id ?? value.projectId ?? value.project_id;
+  return typeof id === "string" && id ? id : null;
+}
+
 class MutationQueue {
   private db: IDBDatabase | null = null;
 
@@ -63,6 +70,25 @@ class MutationQueue {
     if (!input.ownerId) throw new Error("Offline mutation requires an authenticated owner");
     if (!USER_SCOPED_MUTATION_STORES.has(input.store)) throw new Error(`Offline mutation store is not approved: ${input.store}`);
     await this.init();
+
+    const entityId = payloadEntityId(input.payload);
+    if (entityId) {
+      const existing = (await this.list(input.ownerId)).find(
+        (mutation) => mutation.store === input.store && payloadEntityId(mutation.payload) === entityId,
+      );
+      if (existing) {
+        const replacement: OfflineMutation<T> = {
+          ...existing,
+          operation: input.operation,
+          payload: input.payload,
+          lastAttemptAt: undefined,
+          lastError: undefined,
+        };
+        await this.put(replacement);
+        return replacement;
+      }
+    }
+
     const mutation: OfflineMutation<T> = { ...input, id: createMutationId(), createdAt: new Date().toISOString(), attempts: 0 };
     await this.put(mutation);
     return mutation;
