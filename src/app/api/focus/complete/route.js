@@ -27,12 +27,14 @@ export async function POST(req) {
     if (sessionError) return NextResponse.json({ error: sessionError.message }, { status: 500 });
 
     if (xpEarned > 0) {
-      const { data: profile, error: profileError } = await supabase.from("profiles").select("xp, level").eq("id", user.id).single();
-      if (profileError) return NextResponse.json({ ok: true, persisted: true, xpAwarded: 0, warning: "Session saved; XP could not be updated." });
-      const newXp = Math.max(0, Number(profile?.xp) || 0) + xpEarned;
-      const newLevel = Math.floor(newXp / 100) + 1;
-      const { error: xpError } = await supabase.from("profiles").update({ xp: newXp, level: newLevel }).eq("id", user.id);
-      if (xpError) return NextResponse.json({ ok: true, persisted: true, xpAwarded: 0, warning: "Session saved; XP could not be updated." });
+      const { data: xpResult, error: xpError } = await supabase.rpc("increment_profile_xp", {
+        p_user_id: user.id,
+        p_amount: xpEarned,
+      });
+      if (xpError || !xpResult?.length) {
+        console.error("[focus/complete] atomic XP update failed", xpError?.message);
+        return NextResponse.json({ ok: true, persisted: true, xpAwarded: 0, warning: "Session saved; XP could not be updated." });
+      }
     }
 
     return NextResponse.json({ ok: true, persisted: true, xpAwarded: xpEarned });
