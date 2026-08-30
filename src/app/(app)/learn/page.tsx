@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import LearnPageResilient from "./LearnPageResilient";
+import LearnPageClient from "./LearnPageClient";
 
 function LearnFallback() {
-  return <div style={{ minHeight: "70vh", display: "grid", placeItems: "center", color: "var(--muted-foreground)" }}>Loading Learn…</div>;
+  return <main className="min-h-[60vh] grid place-items-center bg-[var(--background)]"><div className="text-sm text-[var(--muted-foreground)]">Loading Learn…</div></main>;
 }
 
 export default function LearnPage() {
-  return <Suspense fallback={<LearnFallback />}><LearnPageResilient /></Suspense>;
+  return <Suspense fallback={<LearnFallback />}><LearnPageClient /></Suspense>;
 }
