@@ -54,17 +54,31 @@ const TYPE_MAP: Record<string, LearningEventKind> = {
   "task.completed": "task_completed",
 };
 
-function hashString(input: string): string {
-  let hash = 2166136261;
+/**
+ * Stable 128-bit FNV-1a-style identity represented as two independent 64-bit lanes.
+ * This is an identifier, not a security primitive. Database uniqueness remains the
+ * final collision guard because canonical event IDs are also stored server-side.
+ */
+function hashLane(input: string, seed: bigint): bigint {
+  let hash = seed;
+  const prime = 1099511628211n;
+  const mask = 0xffffffffffffffffn;
   for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
+    hash ^= BigInt(input.charCodeAt(index));
+    hash = (hash * prime) & mask;
   }
-  return (hash >>> 0).toString(16).padStart(8, "0");
+  return hash;
+}
+
+function toHex(value: bigint): string {
+  return value.toString(16).padStart(16, "0");
 }
 
 export function canonicalEventId(userId: string, source: string, sourceEventId: string): string {
-  return `le_${hashString(`${userId}\u0000${source}\u0000${sourceEventId}`)}`;
+  const input = `${userId}\u0000${source}\u0000${sourceEventId}`;
+  const first = hashLane(input, 14695981039346656037n);
+  const second = hashLane(`shadecode:event:${input}`, 1099511628211n);
+  return `le_${toHex(first)}${toHex(second)}`;
 }
 
 export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormalizationResult {
