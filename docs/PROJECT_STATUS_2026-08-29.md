@@ -2,7 +2,7 @@
 
 ## Release posture
 
-The repository is in an active hardening phase. Major product foundations are merged, but the strategic roadmap is not being represented as finished when only foundations exist.
+The repository is in an active hardening and integration phase. Major product foundations are merged, but the strategic roadmap is not represented as finished when only foundations exist.
 
 ## Completed / materially shipped
 
@@ -11,7 +11,7 @@ The repository is in an active hardening phase. Major product foundations are me
 - Project document/outline assembly.
 - Academic-stage experience surfaces across the supported learner journey.
 - Canonical academic profile foundation.
-- Shared StudySpace/Canvas foundations already present in the repository.
+- Shared StudySpace/Canvas foundations.
 - Local-first synchronization primitives and offline foundations.
 - Canonical learning-event normalization foundation with stable, user-scoped identities.
 - Deterministic replay/idempotency tests for the canonical event contract.
@@ -19,6 +19,7 @@ The repository is in an active hardening phase. Major product foundations are me
 - Curriculum coverage analysis hardened so completion counts are derived from the active catalog rather than raw/stale progress IDs.
 - Project recovery transaction handling hardened so aborted snapshot-pruning transactions are surfaced rather than treated as successful cleanup.
 - Project Studio workspace progress now reports stage progress using the active stage position, including the first stage.
+- Offline mutation queue now coalesces pending mutations for the same authenticated user, store and entity instead of accumulating stale writes while a device remains offline.
 
 ## In progress
 
@@ -36,7 +37,7 @@ Complete intelligent/reversible geometry assistance, shared-canvas adoption and 
 
 ### 4. Local-first synchronization
 
-Continue entity migration, revision/version semantics and safe hydration. XP must become an append-only event ledger before more aggressive offline reconciliation is enabled.
+Continue entity migration, revision/version semantics and safe hydration. The shared queue is now bounded and coalesces duplicate pending entity writes, but authenticated reconnect processing still needs end-to-end browser verification.
 
 ### 5. Project Studio completion gate
 
