@@ -7,7 +7,8 @@ The repository is in an active hardening and integration phase. Major product fo
 ## Completed / materially shipped
 
 - Project Studio staged workflow with learner-owned evidence capture.
-- Project Studio now captures the complete project intake: teacher brief, deliverable, required sections/rubric, constraints, materials, physical work, digital work, output format and preferred assistance level.
+- Project Studio captures teacher brief, deliverable, required sections/rubric, constraints, materials, physical work, digital work, output format and assistance level.
+- Project Studio now builds a deterministic first-pass production plan at project creation and can rebuild it after requirements change. Subject/project signals route the plan toward science, fieldwork, software, design/prototype, commerce and general deliverables.
 - Project Studio creates and surfaces a work-ready plan that separates digital preparation from physical learner-owned work.
 - Project integrity checks and recovery support.
 - Project document/outline assembly.
@@ -20,7 +21,7 @@ The repository is in an active hardening and integration phase. Major product fo
 - Public landing page refreshed to match the actual product direction and avoid fabricated learner metrics.
 - Curriculum coverage analysis hardened so completion counts are derived from the active catalog rather than raw/stale progress IDs.
 - Project recovery transaction handling hardened so aborted snapshot-pruning transactions are surfaced rather than treated as successful cleanup.
-- Project Studio workspace progress now reports stage progress using the active stage position, including the first stage.
+- Project Studio workspace progress reports stage progress using the active stage position, including the first stage.
 - Offline mutation queue coalesces pending mutations for the same authenticated user, store and entity instead of accumulating stale writes while offline.
 - Canonical learning-event API ingress authenticates the user server-side and persists normalized events into the durable Cortex event store.
 - Durable Cortex event storage has a unique canonical-event identity index for safe replay/idempotency.
@@ -29,19 +30,19 @@ The repository is in an active hardening and integration phase. Major product fo
 - Shared server-side Cortex event bridge added for authenticated product mutations.
 - Assessment ingestion hardened for PDF line boundaries, provenance and subpart-aware extraction.
 - Project Studio event helpers added for evidence and stage lifecycle events.
-- Exam Simulation now emits `exam.completed` through the canonical event ingress.
-- Client Cortex events now persist in a bounded local queue while offline or when a request fails, then flush automatically when connectivity returns.
-- The authenticated app shell installs the Cortex reconnect flusher globally, so queued events do not depend on the learner revisiting the originating module.
+- Exam Simulation emits `exam.completed` through the canonical event ingress.
+- Client Cortex events persist in a bounded local queue while offline or when a request fails, then flush automatically when connectivity returns.
+- Authenticated app shell installs the Cortex reconnect flusher globally.
 
 ## In progress
 
 ### 1. Project work execution
 
-Project Studio now has enough structured intake to stop treating every project as a generic six-stage checklist. The next execution layer should route the intake to the appropriate builder: report/document, research pack, presentation, software/code, model/prototype instructions, calculations/diagrams or mixed deliverables. AI may prepare legitimate digital artefacts and drafts quickly, but must never fabricate physical evidence or claim that unperformed work happened.
+Project Studio has moved beyond a generic tracker: requirements now generate a deterministic production plan with subject-aware scaffolding. The next execution layer is an actual worker that can prepare legitimate digital artefacts from the plan: research packs, reports, presentations, calculations, diagrams, software/code and model/prototype specifications. Generated material must remain labelled and editable, while real-world evidence stays learner-owned.
 
 ### 2. Cortex event integration
 
-The durable canonical event contract is implemented. Learn, task completion and Exam completion now emit real events, while Project Studio and the remaining Exam lifecycle events need final browser-level validation. Downstream Student Intelligence consumers still need end-to-end validation against real event data.
+The durable canonical event contract is implemented. Learn, task completion and Exam completion emit real events. Project Studio and remaining Exam lifecycle events need final browser-level validation. Downstream Student Intelligence consumers still need end-to-end validation against real event data.
 
 ### 3. Learning Experience v2
 
@@ -53,21 +54,27 @@ Complete intelligent/reversible geometry assistance, shared-canvas adoption and 
 
 ### 5. Local-first synchronization
 
-The shared queue is bounded and coalesces duplicate pending entity writes. Cortex telemetry now has its own bounded reconnect-safe queue. Remaining work is authenticated reconnect verification, revision/version semantics and safe hydration for every major entity type.
+The shared queue is bounded and coalesces duplicate pending entity writes. Cortex telemetry has its own bounded reconnect-safe queue. Remaining work is authenticated reconnect verification, revision/version semantics and safe hydration for every major entity type.
 
 ### 6. Project Studio completion gate
 
-The product surface is materially built. The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artefact persistence and clear sync state in the UI.
+The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artefact persistence, worker output quality and clear sync state in the UI.
 
 ## Academic integrity boundary
 
-Project Studio is designed around a useful distinction:
-
-**AI can do:** research organization, outlines, calculations, explanations, code, diagrams, draft reports, presentation structure, checklists, model specifications, templates and other digital/scaffolding work where the assignment permits it.
+**AI can:** organize research, create outlines, calculations, explanations, code, diagrams, draft reports, presentation structure, checklists, model specifications, templates and other permitted digital/scaffolding work.
 
 **The learner must still do:** real interviews, field observations, measurements, experiments, physical construction, attendance/signatures, teacher verification and any other evidence that requires a real-world action.
 
-The system should label generated material as generated/draft/scaffolding and keep learner evidence separately attributable.
+Generated material should be labelled as generated/draft/scaffolding and learner evidence should remain separately attributable.
+
+## Product direction
+
+The intended Project Studio journey is:
+
+`Teacher brief → requirements → production plan → digital worker → physical-work checklist → learner evidence → analysis → document/artefact assembly → rubric check → final submission pack`
+
+The worker should optimize for speed without pretending that real-world work happened. Students should be able to spend less time formatting and organizing and more time doing the parts that genuinely require them.
 
 ## Security follow-up
 
