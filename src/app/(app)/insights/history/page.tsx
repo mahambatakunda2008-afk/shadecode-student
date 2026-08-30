@@ -201,7 +201,7 @@ export default function InsightHistoryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0a10] text-white">
+    <div className="min-h-screen bg-[var(--background)] text-white">
       <div className="max-w-2xl mx-auto px-5 py-8">
 
         {/* ── Header ── */}

@@ -12,7 +12,7 @@ export default function WinPage() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#0a0a10] text-white px-6 text-center">
+    <div className="h-screen flex flex-col items-center justify-center bg-[var(--background)] text-white px-6 text-center">
       <div className="text-4xl mb-4">🎉</div>
 
       <h1 className="text-2xl font-semibold mb-2">

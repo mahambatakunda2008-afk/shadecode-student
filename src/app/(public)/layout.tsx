@@ -35,7 +35,7 @@ export default async function PublicLayout({
   return (
     // Full-height, dark background — auth pages and landing use this as their canvas.
     // No sidebar, no nav injection, no context providers here.
-    <div className="min-h-screen bg-[#0a0a10] text-white antialiased">
+    <div className="min-h-screen bg-[var(--background)] text-white antialiased">
       {children}
     </div>
   );

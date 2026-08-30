@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ExamShareCard, { ExamResult } from '@/components/ExamShareCard'
 import Link from 'next/link'
+import { BrandMark } from '@/components/brand/BrandMark'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -64,13 +65,14 @@ export default async function ResultPage({ params }: Props) {
   if (!result) notFound()
 
   return (
-    <main className="min-h-screen bg-[#08080c] flex flex-col items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4 py-12">
       {/* Brand header */}
       <Link
         href="/"
-        className="flex items-center gap-2 mb-10 text-indigo-400 hover:text-indigo-300 transition-colors"
+        className="flex items-center gap-2 mb-10 text-[#67E8F9] hover:text-[#22D3EE] transition-colors"
       >
-        <span className="text-xl font-bold tracking-tight">◈ Shadecode Student</span>
+        <BrandMark className="h-6 w-6 text-[#22D3EE]" aria-hidden="true" />
+        <span className="text-xl font-bold tracking-tight">Shadecode Student</span>
       </Link>
 
       {/* Eyebrow */}
@@ -90,7 +92,7 @@ export default async function ResultPage({ params }: Props) {
       {/* Footer nudge */}
       <p className="mt-8 text-xs text-slate-600 text-center max-w-xs">
         Free AI-powered exam practice across 14 subjects.{' '}
-        <Link href="/auth/signup" className="text-indigo-400 hover:text-indigo-300">
+        <Link href="/auth/signup" className="text-[#67E8F9] hover:text-[#22D3EE]">
           Start studying →
         </Link>
       </p>

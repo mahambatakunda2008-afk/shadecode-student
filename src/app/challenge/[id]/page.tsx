@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { BrandMark } from '@/components/brand/BrandMark'
 
 interface Challenge {
   id: string
@@ -92,11 +93,12 @@ export default async function ChallengePage({ params }: Props) {
   )
 
   return (
-    <main className="min-h-screen bg-[#08080c] flex flex-col items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4 py-12">
 
       {/* Brand */}
-      <Link href="/" className="flex items-center gap-2 mb-10 text-indigo-400 hover:text-indigo-300 transition-colors">
-        <span className="text-xl font-bold tracking-tight">◈ Shadecode Student</span>
+      <Link href="/" className="flex items-center gap-2 mb-10 text-[#67E8F9] hover:text-[#22D3EE] transition-colors">
+        <BrandMark className="h-6 w-6 text-[#22D3EE]" aria-hidden="true" />
+        <span className="text-xl font-bold tracking-tight">Shadecode Student</span>
       </Link>
 
       <div className="w-full max-w-md space-y-6">
@@ -115,8 +117,8 @@ export default async function ChallengePage({ params }: Props) {
         </div>
 
         {/* Score card */}
-        <div className="relative rounded-2xl border border-white/10 bg-[#0f0f14] overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/6 via-transparent to-indigo-600/6 pointer-events-none" />
+        <div className="relative rounded-2xl border border-white/10 bg-[var(--surface)] overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#22D3EE]/6 via-transparent to-[#7A3CFF]/6 pointer-events-none" />
 
           <div className="px-6 pt-5 pb-4 border-b border-white/5 flex items-center justify-between">
             <div>
@@ -169,7 +171,7 @@ export default async function ChallengePage({ params }: Props) {
         <div className="space-y-3">
           <Link
             href={acceptUrl}
-            className="block w-full text-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-4 text-base transition-colors duration-200 shadow-[0_0_24px_rgba(99,102,241,0.3)]"
+            className="block w-full text-center rounded-xl bg-[#22D3EE] hover:bg-[#67E8F9] text-[#06111C] font-bold py-4 px-4 text-base transition-colors duration-200 shadow-[0_0_24px_rgba(34,211,238,0.3)]"
           >
             Accept Challenge →
           </Link>
@@ -186,7 +188,7 @@ export default async function ChallengePage({ params }: Props) {
 
         <p className="text-center text-xs text-slate-600">
           Free · No card required ·{' '}
-          <Link href="/auth/signup" className="text-indigo-400 hover:text-indigo-300">
+          <Link href="/auth/signup" className="text-[#67E8F9] hover:text-[#22D3EE]">
             Create account to track your score
           </Link>
         </p>
