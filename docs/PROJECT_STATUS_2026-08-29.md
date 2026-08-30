@@ -10,7 +10,10 @@ The repository is in an active hardening and integration phase. Major product fo
 - Project Studio captures teacher brief, deliverable, required sections/rubric, constraints, materials, physical work, digital work, output format and assistance level.
 - Project Studio builds a deterministic first-pass production plan at project creation and can rebuild it after requirements change.
 - Subject/project signals route production planning toward science, fieldwork, software, design/prototype, commerce and general deliverables.
-- Project Studio now has an executable worker-plan layer that turns the production plan into typed tasks with inputs, outputs, learner-evidence requirements and blockers.
+- Project Studio has an executable worker-plan layer that turns the production plan into typed tasks with inputs, outputs, learner-evidence requirements and blockers.
+- Project Worker now executes ready tasks into editable, explicitly generated scaffolds for research packs, reports, presentations, software specifications, model/prototype specifications and calculation workspaces.
+- Project artifacts carry explicit provenance. Generated drafts cannot be promoted to real-world evidence; learner evidence and teacher-provided evidence remain attributable.
+- Project Studio can assemble a submission-pack readiness view showing missing brief/deliverable/rubric/evidence before final packaging.
 - Worker planning explicitly blocks tasks that depend on real-world observations, measurements, interviews, responses, construction or testing until attributable learner evidence exists.
 - Project integrity checks and recovery support.
 - Project document/outline assembly.
@@ -38,9 +41,9 @@ The repository is in an active hardening and integration phase. Major product fo
 
 ## In progress
 
-### 1. Project work execution
+### 1. Project Worker execution
 
-The worker-plan layer is now present. The next step is execution: generating actual editable artefacts from individual worker tasks, persisting them in StudySpace, tracking generated-vs-learner evidence provenance, and allowing the learner to review/edit before submission.
+The worker contract and deterministic safe scaffold generation are now present. The next step is connecting these executors to the authenticated Project Studio UI, persisting generated artifacts in StudySpace, and adding optional LLM-assisted generation behind the same provenance contract.
 
 ### 2. Cortex event integration
 
@@ -60,7 +63,7 @@ The shared queue is bounded and coalesces duplicate pending entity writes. Corte
 
 ### 6. Project Studio completion gate
 
-The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artefact persistence, worker execution quality and clear sync state in the UI.
+The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artifact persistence, worker execution quality and clear sync state in the UI.
 
 ## Academic integrity boundary
 
