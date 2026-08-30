@@ -17,24 +17,12 @@ export interface QuizQuestion {
   explanation: string;
 }
 
-export type DiagramKind =
-  | "auto"
-  | "flowchart"
-  | "graph"
-  | "geometry"
-  | "forces"
-  | "circuit"
-  | "ray"
-  | "wave"
-  | "biology"
-  | "chemistry"
-  | "data_structure";
+export type DiagramKind = "auto" | "flowchart" | "graph" | "geometry" | "forces" | "circuit" | "ray" | "wave" | "biology" | "chemistry" | "data_structure";
 
 export interface DiagramBlock {
   kind: DiagramKind;
   title?: string;
   description?: string;
-  /** Structured, renderer-safe diagram data. Never render arbitrary HTML/SVG from AI. */
   nodes?: Array<{ id: string; label: string; x?: number; y?: number; shape?: "box" | "circle" | "point" }>;
   edges?: Array<{ from: string; to: string; label?: string; directed?: boolean }>;
   labels?: Array<{ text: string; x?: number; y?: number }>;
@@ -43,18 +31,7 @@ export interface DiagramBlock {
 }
 
 export interface LessonBlock {
-  type:
-    | "intro"
-    | "concept"
-    | "example"
-    | "tip"
-    | "warning"
-    | "summary"
-    | "reflection"
-    | "formula"
-    | "diagram"
-    | "checkpoint"
-    | "practice";
+  type: "intro" | "concept" | "example" | "tip" | "warning" | "summary" | "reflection" | "formula" | "diagram" | "checkpoint" | "practice";
   title?: string;
   content: string;
   formula?: string;
@@ -79,7 +56,6 @@ export interface MathResult {
 }
 
 export type LessonDifficulty = "easy" | "medium" | "hard";
-
 export interface LearnSubject { id: string; name: string; lessonCount: number; }
 
 export interface LearnLesson {
@@ -91,6 +67,7 @@ export interface LearnLesson {
   difficulty: LessonDifficulty;
   progress: number;
   completed: boolean;
+  updated_at?: string;
   blocks?: LessonBlock[];
 }
 
