@@ -1,4 +1,4 @@
-# Shadecode Student Project Status — 2026-08-30
+# Shadecode Student Project Status — 2026-08-31
 
 ## Release posture
 
@@ -8,8 +8,10 @@ The repository is in an active hardening and integration phase. Major product fo
 
 - Project Studio staged workflow with learner-owned evidence capture.
 - Project Studio captures teacher brief, deliverable, required sections/rubric, constraints, materials, physical work, digital work, output format and assistance level.
-- Project Studio now builds a deterministic first-pass production plan at project creation and can rebuild it after requirements change. Subject/project signals route the plan toward science, fieldwork, software, design/prototype, commerce and general deliverables.
-- Project Studio creates and surfaces a work-ready plan that separates digital preparation from physical learner-owned work.
+- Project Studio builds a deterministic first-pass production plan at project creation and can rebuild it after requirements change.
+- Subject/project signals route production planning toward science, fieldwork, software, design/prototype, commerce and general deliverables.
+- Project Studio now has an executable worker-plan layer that turns the production plan into typed tasks with inputs, outputs, learner-evidence requirements and blockers.
+- Worker planning explicitly blocks tasks that depend on real-world observations, measurements, interviews, responses, construction or testing until attributable learner evidence exists.
 - Project integrity checks and recovery support.
 - Project document/outline assembly.
 - Academic-stage experience surfaces across the supported learner journey.
@@ -38,7 +40,7 @@ The repository is in an active hardening and integration phase. Major product fo
 
 ### 1. Project work execution
 
-Project Studio has moved beyond a generic tracker: requirements now generate a deterministic production plan with subject-aware scaffolding. The next execution layer is an actual worker that can prepare legitimate digital artefacts from the plan: research packs, reports, presentations, calculations, diagrams, software/code and model/prototype specifications. Generated material must remain labelled and editable, while real-world evidence stays learner-owned.
+The worker-plan layer is now present. The next step is execution: generating actual editable artefacts from individual worker tasks, persisting them in StudySpace, tracking generated-vs-learner evidence provenance, and allowing the learner to review/edit before submission.
 
 ### 2. Cortex event integration
 
@@ -58,7 +60,7 @@ The shared queue is bounded and coalesces duplicate pending entity writes. Corte
 
 ### 6. Project Studio completion gate
 
-The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artefact persistence, worker output quality and clear sync state in the UI.
+The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artefact persistence, worker execution quality and clear sync state in the UI.
 
 ## Academic integrity boundary
 
@@ -66,15 +68,15 @@ The remaining finish-line work is verification of offline browser behavior, auth
 
 **The learner must still do:** real interviews, field observations, measurements, experiments, physical construction, attendance/signatures, teacher verification and any other evidence that requires a real-world action.
 
-Generated material should be labelled as generated/draft/scaffolding and learner evidence should remain separately attributable.
+Generated material must be labelled as generated/draft/scaffolding, and learner evidence must remain separately attributable. Worker tasks that require real-world evidence should remain blocked until that evidence is supplied.
 
 ## Product direction
 
 The intended Project Studio journey is:
 
-`Teacher brief → requirements → production plan → digital worker → physical-work checklist → learner evidence → analysis → document/artefact assembly → rubric check → final submission pack`
+`Teacher brief → requirements → production plan → worker tasks → digital artefacts → physical-work checklist → learner evidence → analysis → document/artefact assembly → rubric check → final submission pack`
 
-The worker should optimize for speed without pretending that real-world work happened. Students should be able to spend less time formatting and organizing and more time doing the parts that genuinely require them.
+The worker should optimize for speed without pretending that real-world work happened. Students should spend less time formatting and organizing and more time doing the parts that genuinely require them.
 
 ## Security follow-up
 
