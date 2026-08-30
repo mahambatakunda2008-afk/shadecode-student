@@ -22,16 +22,18 @@ The repository is in an active hardening and integration phase. Major product fo
 - Offline mutation queue now coalesces pending mutations for the same authenticated user, store and entity instead of accumulating stale writes while a device remains offline.
 - Canonical learning-event API ingress authenticates the user server-side and persists normalized events into the durable Cortex event store.
 - Durable Cortex event storage now has a unique canonical-event identity index, making repeated submissions safely idempotent.
-- Learn now emits non-blocking `lesson.viewed` events through the canonical event pipeline.
-- Project Studio now emits non-blocking `project.evidence_added` and `project.stage_completed` events through the canonical event pipeline.
-- Exam Simulation now has shared canonical event helpers for `exam.started`, `question.attempted` and `exam.completed`, ready for lifecycle wiring.
-- Assessment ingestion now preserves question provenance and subpart boundaries in its extraction tests.
+- Canonical event identity strengthened to a deterministic 128-bit identifier with regression coverage.
+- Learn emits `lesson.viewed` through the canonical event ingress without blocking lesson navigation.
+- Task completion emits `task.completed` through the canonical event pipeline.
+- Shared server-side Cortex event bridge added for authenticated product mutations.
+- Assessment ingestion hardened for PDF line boundaries, provenance and subpart-aware extraction.
+- Project Studio event helpers added for evidence and stage lifecycle events.
 
 ## In progress
 
 ### 1. Cortex event integration
 
-The canonical event contract is now persisted through the authenticated `/api/intelligence/events` boundary. Learn and Project Studio have real emitters. Exam Simulation has the shared event helpers but still needs lifecycle wiring and end-to-end verification. The legacy `learning_events` table remains untouched because its schema predates the canonical contract. Next: complete Exam lifecycle emission and consume durable events downstream in Student Intelligence.
+The canonical event contract is durable through the authenticated `/api/intelligence/events` boundary. Learn and task completion now emit real canonical events, and Project Studio/Exam lifecycle helpers are prepared. Remaining work is wiring the exact Exam lifecycle mutations and validating downstream Student Intelligence consumers.
 
 ### 2. Learning Experience v2
 
@@ -47,7 +49,7 @@ Continue entity migration, revision/version semantics and safe hydration. The sh
 
 ### 5. Project Studio completion gate
 
-The product surface is materially built. The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior and clear sync state in the UI. The existing project model and recovery system should be extended, not replaced.
+The product surface is materially built. The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior and clear sync state in the UI.
 
 ## Security follow-up
 
