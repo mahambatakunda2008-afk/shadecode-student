@@ -3,6 +3,7 @@ import { getLocalRecord, putLocalRecord } from "../offline/indexedDb";
 import { atomicallySaveProject, atomicallyDeleteProject } from "./localProjectRepository";
 import { createProjectSnapshot } from "./recovery";
 import { queueProjectDelete, queueProjectUpsert } from "./sharedSync";
+import { buildProjectWorkPlan } from "./workPlanBuilder";
 
 const STORAGE_KEY = "shadecode-project-studio-v1";
 const ENTITY = "student-project";
@@ -61,7 +62,7 @@ export function createProject(input: {
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
   const requirements: ProjectRequirements = { ...DEFAULT_PROJECT_REQUIREMENTS, ...(input.requirements ?? {}) };
-  return {
+  const project: StudentProject = {
     id,
     title: input.title.trim() || "Untitled project",
     subject: input.subject.trim() || "General",
@@ -74,22 +75,21 @@ export function createProject(input: {
     currentStageId: ZIMBABWE_SBA_PROJECT_STAGES[0].id,
     stages: ZIMBABWE_SBA_PROJECT_STAGES,
     evidence: [],
+    outline: undefined,
     createdAt: now,
     updatedAt: now,
   };
+  project.workPlan = buildProjectWorkPlan(project.subject, requirements, now);
+  return project;
 }
 
-export function buildInitialWorkPlan(project: StudentProject): NonNullable<StudentProject["workPlan"]> {
-  const r = project.requirements ?? DEFAULT_PROJECT_REQUIREMENTS;
-  const physical = r.physicalWork.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
-  const digital = r.digitalWork.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
-  const deliverables = r.deliverable.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
+/** Rebuilds the production plan after a learner edits the project requirements. */
+export function rebuildProjectWorkPlan(project: StudentProject): StudentProject {
+  const requirements = project.requirements ?? DEFAULT_PROJECT_REQUIREMENTS;
   return {
-    generatedAt: new Date().toISOString(),
-    summary: `Build a ${r.preferredFormat} project for ${project.subject}, using the supplied brief and requirements. AI can prepare the digital/scaffolding work; real observations, measurements, interviews, construction and other physical evidence remain learner-owned.`,
-    digitalTasks: digital.length ? digital : ["Convert the teacher brief into a structured project plan", "Prepare the report/presentation/model specification", "Create draft digital artefacts where the requirements allow it"],
-    physicalTasks: physical.length ? physical : ["Complete any required observations, measurements, interviews or practical construction", "Capture dated evidence of physical work and real-world results"],
-    requiredEvidence: ["Teacher brief/rubric", "Sources used", "Real observations or measurements where required", "Development/test evidence", "Final artefact or presentation"],
-    deliverables: deliverables.length ? deliverables : ["Final project document", "Required artefact/model/prototype", "Presentation evidence if required"],
+    ...project,
+    requirements,
+    workPlan: buildProjectWorkPlan(project.subject, requirements),
+    updatedAt: new Date().toISOString(),
   };
 }
