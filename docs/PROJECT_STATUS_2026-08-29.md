@@ -18,6 +18,7 @@ The repository is in an active hardening phase. Major product foundations are me
 - Public landing page refreshed to match the actual product direction and avoid fabricated learner metrics.
 - Curriculum coverage analysis hardened so completion counts are derived from the active catalog rather than raw/stale progress IDs.
 - Project recovery transaction handling hardened so aborted snapshot-pruning transactions are surfaced rather than treated as successful cleanup.
+- Project Studio workspace progress now reports stage progress using the active stage position, including the first stage.
 
 ## In progress
 
