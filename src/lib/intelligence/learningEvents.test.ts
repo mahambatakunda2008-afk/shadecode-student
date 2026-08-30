@@ -23,8 +23,17 @@ describe("canonical learning events", () => {
     }
   });
 
+  it("uses a 128-bit hexadecimal identity", () => {
+    const id = canonicalEventId("user-a", "learn", "evt-123");
+    expect(id).toMatch(/^le_[0-9a-f]{32}$/);
+  });
+
   it("keeps users isolated in the event identity", () => {
     expect(canonicalEventId("user-a", "learn", "evt-123")).not.toBe(canonicalEventId("user-b", "learn", "evt-123"));
+  });
+
+  it("keeps source boundaries isolated", () => {
+    expect(canonicalEventId("user-a", "learn", "evt-123")).not.toBe(canonicalEventId("user-a", "exam", "evt-123"));
   });
 
   it("explicitly skips unsupported event types", () => {
