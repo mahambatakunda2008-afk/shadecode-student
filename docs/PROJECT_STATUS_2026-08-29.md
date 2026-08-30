@@ -13,27 +13,29 @@ The repository is in an active hardening and integration phase. Major product fo
 - Canonical academic profile foundation.
 - Shared StudySpace/Canvas foundations.
 - Local-first synchronization primitives and offline foundations.
-- Canonical learning-event normalization foundation with stable, user-scoped identities.
+- Canonical learning-event normalization with stable, user-scoped 128-bit identities.
 - Deterministic replay/idempotency tests for the canonical event contract.
 - Public landing page refreshed to match the actual product direction and avoid fabricated learner metrics.
 - Curriculum coverage analysis hardened so completion counts are derived from the active catalog rather than raw/stale progress IDs.
 - Project recovery transaction handling hardened so aborted snapshot-pruning transactions are surfaced rather than treated as successful cleanup.
 - Project Studio workspace progress now reports stage progress using the active stage position, including the first stage.
-- Offline mutation queue now coalesces pending mutations for the same authenticated user, store and entity instead of accumulating stale writes while a device remains offline.
+- Offline mutation queue coalesces pending mutations for the same authenticated user, store and entity instead of accumulating stale writes while offline.
 - Canonical learning-event API ingress authenticates the user server-side and persists normalized events into the durable Cortex event store.
-- Durable Cortex event storage now has a unique canonical-event identity index, making repeated submissions safely idempotent.
-- Canonical event identity strengthened to a deterministic 128-bit identifier with regression coverage.
+- Durable Cortex event storage has a unique canonical-event identity index for safe replay/idempotency.
 - Learn emits `lesson.viewed` through the canonical event ingress without blocking lesson navigation.
 - Task completion emits `task.completed` through the canonical event pipeline.
 - Shared server-side Cortex event bridge added for authenticated product mutations.
 - Assessment ingestion hardened for PDF line boundaries, provenance and subpart-aware extraction.
 - Project Studio event helpers added for evidence and stage lifecycle events.
+- Exam Simulation now emits `exam.completed` through the canonical event ingress.
+- Client Cortex events now persist in a bounded local queue while offline or when a request fails, then flush automatically when connectivity returns.
+- The authenticated app shell installs the Cortex reconnect flusher globally, so queued events do not depend on the learner revisiting the originating module.
 
 ## In progress
 
 ### 1. Cortex event integration
 
-The canonical event contract is durable through the authenticated `/api/intelligence/events` boundary. Learn and task completion now emit real canonical events, and Project Studio/Exam lifecycle helpers are prepared. Remaining work is wiring the exact Exam lifecycle mutations and validating downstream Student Intelligence consumers.
+The durable canonical event contract is implemented. Learn, task completion and Exam completion now emit real events, while Project Studio and the remaining Exam lifecycle events need final browser-level validation. Downstream Student Intelligence consumers still need end-to-end validation against real event data.
 
 ### 2. Learning Experience v2
 
@@ -45,7 +47,7 @@ Complete intelligent/reversible geometry assistance, shared-canvas adoption and 
 
 ### 4. Local-first synchronization
 
-Continue entity migration, revision/version semantics and safe hydration. The shared queue is bounded and coalesces duplicate pending entity writes, but authenticated reconnect processing still needs end-to-end browser verification.
+The shared queue is bounded and coalesces duplicate pending entity writes. Cortex telemetry now has its own bounded reconnect-safe queue. Remaining work is authenticated reconnect verification, revision/version semantics and safe hydration for every major entity type.
 
 ### 5. Project Studio completion gate
 
