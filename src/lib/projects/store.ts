@@ -1,4 +1,4 @@
-import { StudentProject, ZIMBABWE_SBA_PROJECT_STAGES } from "./types";
+import { DEFAULT_PROJECT_REQUIREMENTS, StudentProject, ZIMBABWE_SBA_PROJECT_STAGES } from "./types";
 import { getLocalRecord, putLocalRecord } from "../offline/indexedDb";
 import { atomicallySaveProject, atomicallyDeleteProject } from "./localProjectRepository";
 import { createProjectSnapshot } from "./recovery";
@@ -47,17 +47,49 @@ export async function deleteProjectLocal(project: StudentProject): Promise<void>
 }
 
 export function createProject(input: {
-  title: string; subject: string; board: string; academicStage: StudentProject["academicStage"]; gradeOrForm?: string; brief?: string; dueDate?: string;
+  title: string;
+  subject: string;
+  board: string;
+  academicStage: StudentProject["academicStage"];
+  gradeOrForm?: string;
+  brief?: string;
+  dueDate?: string;
+  requirements?: Partial<StudentProject["requirements"]>;
 }): StudentProject {
   const now = new Date().toISOString();
   const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+  const requirements = { ...DEFAULT_PROJECT_REQUIREMENTS, ...(input.requirements ?? {}) };
   return {
     id,
-    title: input.title.trim() || "Untitled project", subject: input.subject.trim() || "General", board: input.board.trim() || "Not specified",
-    academicStage: input.academicStage, gradeOrForm: input.gradeOrForm?.trim() || undefined, brief: input.brief?.trim() || undefined,
-    dueDate: input.dueDate || undefined, status: "planning", currentStageId: ZIMBABWE_SBA_PROJECT_STAGES[0].id,
-    stages: ZIMBABWE_SBA_PROJECT_STAGES, evidence: [], createdAt: now, updatedAt: now,
+    title: input.title.trim() || "Untitled project",
+    subject: input.subject.trim() || "General",
+    board: input.board.trim() || "Not specified",
+    academicStage: input.academicStage,
+    gradeOrForm: input.gradeOrForm?.trim() || undefined,
+    brief: input.brief?.trim() || undefined,
+    requirements,
+    status: "planning",
+    currentStageId: ZIMBABWE_SBA_PROJECT_STAGES[0].id,
+    stages: ZIMBABWE_SBA_PROJECT_STAGES,
+    evidence: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export function buildInitialWorkPlan(project: StudentProject): NonNullable<StudentProject["workPlan"]> {
+  const r = project.requirements ?? DEFAULT_PROJECT_REQUIREMENTS;
+  const physical = r.physicalWork.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
+  const digital = r.digitalWork.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
+  const deliverables = r.deliverable.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
+  return {
+    generatedAt: new Date().toISOString(),
+    summary: `Build a ${r.preferredFormat} project for ${project.subject}, using the supplied brief and requirements. AI can prepare the digital/scaffolding work; real observations, measurements, interviews, construction and other physical evidence remain learner-owned.`,
+    digitalTasks: digital.length ? digital : ["Convert the teacher brief into a structured project plan", "Prepare the report/presentation/model specification", "Create draft digital artefacts where the requirements allow it"],
+    physicalTasks: physical.length ? physical : ["Complete any required observations, measurements, interviews or practical construction", "Capture dated evidence of physical work and real-world results"],
+    requiredEvidence: ["Teacher brief/rubric", "Sources used", "Real observations or measurements where required", "Development/test evidence", "Final artefact or presentation"],
+    deliverables: deliverables.length ? deliverables : ["Final project document", "Required artefact/model/prototype", "Presentation evidence if required"],
   };
 }
