@@ -68,7 +68,7 @@ export default function LearnPageResilient() {
       setLessons(data.lessons ?? []);
       setSummary(data.summary ?? null);
       const syncedAt = new Date().toISOString();
-      await Promise.all((data.lessons ?? []).map(lesson => offlineStorage.saveLesson({ id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, difficulty: lesson.difficulty, downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length })));
+      await Promise.all((data.lessons ?? []).map((lesson: LearnLesson) => offlineStorage.saveLesson({ id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, difficulty: lesson.difficulty, downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length })));
     } catch (e) { setError(e instanceof FetchTimeoutError ? "Cloud sync timed out. Device data is still available." : e instanceof Error ? e.message : "Cloud sync failed."); }
   }
 

@@ -33,8 +33,8 @@ vi.mock('@/lib/supabaseClient', () => ({
   createServerClient: () => mockSupabase,
 }));
 
-vi.mock('@/lib/cortex', () => ({
-  recordCortexInsight: vi.fn(async () => undefined),
+vi.mock('@/lib/intelligence/serverLearningEvents', () => ({
+  emitServerLearningEvent: vi.fn(async () => true),
 }));
 
 const owner = { id: 'user-1-id', email: 'owner@example.com' };
