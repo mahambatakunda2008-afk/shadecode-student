@@ -34,6 +34,32 @@ export type ProjectEvidence = {
   source: "learner" | "teacher" | "imported";
 };
 
+/**
+ * The project intake is deliberately richer than a title + brief. It is the
+ * contract Cortex needs to produce useful scaffolding, documents, models and
+ * code while keeping real-world evidence and physical actions learner-owned.
+ */
+export type ProjectRequirements = {
+  deliverable: string;
+  requiredSections: string;
+  teacherRubric: string;
+  constraints: string;
+  materials: string;
+  physicalWork: string;
+  digitalWork: string;
+  preferredFormat: "report" | "model" | "prototype" | "presentation" | "software" | "mixed";
+  assistanceLevel: "coach" | "build_with_me" | "prepare_draft";
+};
+
+export type ProjectWorkPlan = {
+  generatedAt: string;
+  summary: string;
+  digitalTasks: string[];
+  physicalTasks: string[];
+  requiredEvidence: string[];
+  deliverables: string[];
+};
+
 export type ProjectOutline = {
   problem: string;
   objectives: string;
@@ -51,6 +77,8 @@ export type StudentProject = {
   academicStage: ProjectAcademicStage;
   gradeOrForm?: string;
   brief?: string;
+  requirements?: ProjectRequirements;
+  workPlan?: ProjectWorkPlan;
   status: ProjectStatus;
   dueDate?: string;
   currentStageId: string;
@@ -59,6 +87,18 @@ export type StudentProject = {
   outline?: ProjectOutline;
   createdAt: string;
   updatedAt: string;
+};
+
+export const DEFAULT_PROJECT_REQUIREMENTS: ProjectRequirements = {
+  deliverable: "",
+  requiredSections: "",
+  teacherRubric: "",
+  constraints: "",
+  materials: "",
+  physicalWork: "",
+  digitalWork: "",
+  preferredFormat: "mixed",
+  assistanceLevel: "build_with_me",
 };
 
 export const ZIMBABWE_SBA_PROJECT_STAGES: ProjectStage[] = [
