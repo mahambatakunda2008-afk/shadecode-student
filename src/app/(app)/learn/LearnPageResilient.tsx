@@ -30,18 +30,17 @@ export default function LearnPageResilient() {
   const [summary, setSummary] = useState<LearnSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
+  const [offline, setOffline] = useState(false);
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [generating, setGenerating] = useState(false);
 
+  useEffect(() => { setOffline(!navigator.onLine); const on = () => setOffline(false); const off = () => setOffline(true); window.addEventListener("online", on); window.addEventListener("offline", off); return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); }; }, []);
   useEffect(() => { setSubject(params.get("subject")?.trim() ?? ""); setTopic(params.get("topic")?.trim() ?? ""); }, [params]);
-  useEffect(() => { const on = () => setOffline(false); const off = () => setOffline(true); window.addEventListener("online", on); window.addEventListener("offline", off); return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); }; }, []);
 
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
-      // DEVICE-FIRST: paint cached lessons before touching auth/cloud.
       const local = await readDeviceLessons();
       if (!cancelled && local.length) { setLessons(local); setLoading(false); }
       if (cancelled || !navigator.onLine) { if (!cancelled) setLoading(false); return; }
@@ -52,7 +51,7 @@ export default function LearnPageResilient() {
         const session = result.data.session;
         if (!session) { setLoading(false); return; }
         setToken(session.access_token);
-        void load(session.access_token);
+        await load(session.access_token);
       } catch (e) {
         if (!cancelled && !local.length) setError(e instanceof Error && e.message === "Timed out" ? "Cloud sync took too long. Your device data remains available." : "Cloud sync unavailable. Your device data remains available.");
       } finally { if (!cancelled) setLoading(false); }
@@ -68,8 +67,9 @@ export default function LearnPageResilient() {
       setSubjects(data.subjects ?? []);
       setLessons(data.lessons ?? []);
       setSummary(data.summary ?? null);
-      for (const lesson of data.lessons ?? []) await offlineStorage.saveLesson({ id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, difficulty: lesson.difficulty, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(lesson).length });
-    } catch (e) { if (!lessons.length) setError(e instanceof FetchTimeoutError ? "Cloud sync timed out. Device data is still available." : e instanceof Error ? e.message : "Cloud sync failed."); }
+      const syncedAt = new Date().toISOString();
+      await Promise.all((data.lessons ?? []).map(lesson => offlineStorage.saveLesson({ id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, difficulty: lesson.difficulty, downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length })));
+    } catch (e) { setError(e instanceof FetchTimeoutError ? "Cloud sync timed out. Device data is still available." : e instanceof Error ? e.message : "Cloud sync failed."); }
   }
 
   async function generate() {
