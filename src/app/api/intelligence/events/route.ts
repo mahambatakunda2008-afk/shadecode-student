@@ -21,14 +21,7 @@ function safeMetadata(value: unknown): Record<string, string | number | boolean 
   return output;
 }
 
-/**
- * Canonical learning-event ingress.
- *
- * Authentication is authoritative: the client may not submit an arbitrary userId.
- * Until the legacy learning_events table has been migrated to the canonical schema,
- * this endpoint intentionally returns the normalized event rather than persisting it.
- * That prevents a partial migration from silently destroying provenance/idempotency.
- */
+/** Authenticated canonical learning-event ingress and durable idempotent persistence. */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -56,7 +49,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unsupported or invalid learning event", source: normalized.source, sourceEventId: normalized.sourceEventId }, { status: 400 });
     }
 
-    return NextResponse.json({ accepted: true, persisted: false, event: normalized.event });
+    const { data: persisted, error: persistError } = await supabase.rpc("insert_canonical_cortex_event", {
+      p_user_id: user.id,
+      p_event: normalized.event,
+    });
+    if (persistError) {
+      console.error("[learning-events] persistence failed:", persistError);
+      return NextResponse.json({ error: "Failed to persist learning event" }, { status: 500 });
+    }
+
+    return NextResponse.json({ accepted: true, persisted: true, duplicateSafe: true, event: normalized.event, recordId: persisted?.id ?? null });
   } catch (error) {
     console.error("[learning-events] ingress failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
