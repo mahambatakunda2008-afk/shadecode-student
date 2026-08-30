@@ -1,4 +1,5 @@
 import type { LearningEventKind } from "./learningEvents";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 
 export type LearningEventInput = {
   source: string;
@@ -14,6 +15,7 @@ export type LearningEventInput = {
 
 const QUEUE_KEY = "shadecode:cortex:event-queue:v1";
 const MAX_QUEUE = 200;
+const POST_TIMEOUT_MS = 7_000;
 let flushing = false;
 
 function readQueue(): LearningEventInput[] {
@@ -38,13 +40,13 @@ function enqueue(input: LearningEventInput) {
 
 async function post(input: LearningEventInput): Promise<boolean> {
   try {
-    const response = await fetch("/api/intelligence/events", {
+    const response = await fetchWithTimeout("/api/intelligence/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(input),
       keepalive: true,
-    });
+    }, POST_TIMEOUT_MS);
     return response.ok;
   } catch { return false; }
 }
