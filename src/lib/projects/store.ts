@@ -1,4 +1,4 @@
-import { DEFAULT_PROJECT_REQUIREMENTS, StudentProject, ZIMBABWE_SBA_PROJECT_STAGES } from "./types";
+import { DEFAULT_PROJECT_REQUIREMENTS, ProjectRequirements, StudentProject, ZIMBABWE_SBA_PROJECT_STAGES } from "./types";
 import { getLocalRecord, putLocalRecord } from "../offline/indexedDb";
 import { atomicallySaveProject, atomicallyDeleteProject } from "./localProjectRepository";
 import { createProjectSnapshot } from "./recovery";
@@ -54,13 +54,13 @@ export function createProject(input: {
   gradeOrForm?: string;
   brief?: string;
   dueDate?: string;
-  requirements?: Partial<StudentProject["requirements"]>;
+  requirements?: Partial<ProjectRequirements>;
 }): StudentProject {
   const now = new Date().toISOString();
   const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
-  const requirements = { ...DEFAULT_PROJECT_REQUIREMENTS, ...(input.requirements ?? {}) };
+  const requirements: ProjectRequirements = { ...DEFAULT_PROJECT_REQUIREMENTS, ...(input.requirements ?? {}) };
   return {
     id,
     title: input.title.trim() || "Untitled project",
