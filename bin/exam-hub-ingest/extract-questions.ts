@@ -50,6 +50,23 @@ function parseMetadata(filePath: string): Metadata | null {
   return { syllabusId: syllabusId.toLowerCase(), level: null, session: SESSIONS[season.toLowerCase()], year: 2000 + Number(yy), paperNumber: Number(code[0]), variant: Number(code[1]), kind: 'qp' };
 }
 
+function pageTextFromItems(items: Array<Record<string, unknown>>): string {
+  const lines: Array<{ y: number; text: string }> = [];
+  for (const item of items) {
+    const text = typeof item.str === 'string' ? item.str.trim() : '';
+    if (!text) continue;
+    const transform = Array.isArray(item.transform) ? item.transform : [];
+    const y = typeof transform[5] === 'number' ? transform[5] : Number.NaN;
+    const previous = Number.isFinite(y) ? lines[lines.length - 1] : undefined;
+    if (previous && Math.abs(previous.y - y) <= 2.5) {
+      previous.text = `${previous.text} ${text}`.trim();
+    } else {
+      lines.push({ y: Number.isFinite(y) ? y : (previous?.y ?? 0), text });
+    }
+  }
+  return lines.map((line) => line.text).join('\n');
+}
+
 async function extractPdfPages(filePath: string): Promise<ExtractedPage[]> {
   const data = fs.readFileSync(filePath);
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
@@ -59,10 +76,7 @@ async function extractPdfPages(filePath: string): Promise<ExtractedPage[]> {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push({
-      pageNumber,
-      text: content.items.map((item) => ('str' in item ? item.str ?? '' : '')).join(' '),
-    });
+    pages.push({ pageNumber, text: pageTextFromItems(content.items as Array<Record<string, unknown>>) });
   }
   return pages;
 }
