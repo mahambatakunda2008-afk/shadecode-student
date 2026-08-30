@@ -1,4 +1,4 @@
-# Shadecode Student Project Status — 2026-08-29
+# Shadecode Student Project Status — 2026-08-30
 
 ## Release posture
 
@@ -20,12 +20,14 @@ The repository is in an active hardening and integration phase. Major product fo
 - Project recovery transaction handling hardened so aborted snapshot-pruning transactions are surfaced rather than treated as successful cleanup.
 - Project Studio workspace progress now reports stage progress using the active stage position, including the first stage.
 - Offline mutation queue now coalesces pending mutations for the same authenticated user, store and entity instead of accumulating stale writes while a device remains offline.
+- Canonical learning-event API ingress authenticates the user server-side and persists normalized events into the durable Cortex event store.
+- Durable Cortex event storage now has a unique canonical-event identity index, making repeated submissions safely idempotent.
 
 ## In progress
 
 ### 1. Cortex event integration
 
-The canonical event contract now exists and rejects malformed timestamps instead of coercing invalid input into an artificial epoch. A legacy `learning_events` table exists in production, but its schema predates the normalized contract, so it is intentionally not reused as though it were already canonical. The next step is migrating real product emitters onto the normalized contract, then adding a server-side idempotency key without losing legacy data.
+The canonical event contract is now persisted through the authenticated `/api/intelligence/events` boundary. The legacy `learning_events` table remains untouched because its schema predates the canonical contract. Next: wire real Learn, Exam and Project Studio emitters into the endpoint and consume the durable events downstream in Student Intelligence.
 
 ### 2. Learning Experience v2
 
@@ -37,11 +39,15 @@ Complete intelligent/reversible geometry assistance, shared-canvas adoption and 
 
 ### 4. Local-first synchronization
 
-Continue entity migration, revision/version semantics and safe hydration. The shared queue is now bounded and coalesces duplicate pending entity writes, but authenticated reconnect processing still needs end-to-end browser verification.
+Continue entity migration, revision/version semantics and safe hydration. The shared queue is bounded and coalesces duplicate pending entity writes, but authenticated reconnect processing still needs end-to-end browser verification.
 
 ### 5. Project Studio completion gate
 
 The product surface is materially built. The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior and clear sync state in the UI. The existing project model and recovery system should be extended, not replaced.
+
+## Security follow-up
+
+Supabase security advisors still report pre-existing warnings, including several callable `SECURITY DEFINER` functions and disabled leaked-password protection. The new canonical event persistence function is intentionally `SECURITY INVOKER`, validates the authenticated user, and has no public execute grant. Existing warnings should be remediated separately without changing unrelated authorization behavior blindly.
 
 ## Explicitly deferred
 
