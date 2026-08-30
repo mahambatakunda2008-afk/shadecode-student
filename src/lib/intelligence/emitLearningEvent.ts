@@ -36,4 +36,16 @@ export function lessonCompletedEvent(lessonId: string, subject?: string, topic?:
   return emitLearningEvent({ source: "learn", sourceEventId: `lesson-complete:${lessonId}`, type: "lesson.completed", subjectId: subject, topicId: topic, entityId: lessonId });
 }
 
+export function examStartedEvent(examId: string, subject?: string, topic?: string) {
+  return emitLearningEvent({ source: "exam-sim", sourceEventId: `exam-start:${examId}`, type: "exam.started", subjectId: subject, topicId: topic, entityId: examId });
+}
+
+export function questionAttemptedEvent(examId: string, questionId: string | number, subject?: string, topic?: string, metadata?: Record<string, string | number | boolean | null>) {
+  return emitLearningEvent({ source: "exam-sim", sourceEventId: `question-attempt:${examId}:${questionId}`, type: "question.attempted", subjectId: subject, topicId: topic, entityId: String(questionId), attemptId: examId, metadata });
+}
+
+export function examCompletedEvent(examId: string, subject?: string, topic?: string, metadata?: Record<string, string | number | boolean | null>) {
+  return emitLearningEvent({ source: "exam-sim", sourceEventId: `exam-complete:${examId}`, type: "exam.completed", subjectId: subject, topicId: topic, entityId: examId, attemptId: examId, metadata });
+}
+
 export type { LearningEventKind };
