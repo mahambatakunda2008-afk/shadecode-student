@@ -36,7 +36,12 @@ export async function syncProjectMutations(): Promise<{ synced: number; failed: 
           const { error } = await supabase.from("projects").upsert(projectRow(mutation.payload as Record<string, unknown>, user.id), { onConflict: "id" });
           if (error) throw error;
         }
-      } else if (mutation.operation !== "delete") {
+      } else if (mutation.operation === "delete") {
+        const id = (mutation.payload as { id?: string }).id;
+        if (!id) throw new Error("Project evidence delete mutation is missing an id");
+        const { error } = await supabase.from("project_evidence").delete().eq("id", id).eq("user_id", user.id);
+        if (error) throw error;
+      } else {
         const { error } = await supabase.from("project_evidence").upsert(evidenceRow(mutation.payload as Record<string, unknown>, user.id), { onConflict: "id" });
         if (error) throw error;
       }
