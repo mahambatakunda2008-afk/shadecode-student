@@ -1,16 +1,10 @@
 import { Suspense } from "react";
-import LearnPageClient from "./LearnPageClient";
-import LearnPrefillBridge from "@/components/learn/LearnPrefillBridge";
-import AdaptiveLessonContext from "@/components/learn/AdaptiveLessonContext";
-import AcademicLearnContext from "@/components/learn/AcademicLearnContext";
+import LearnPageResilient from "./LearnPageResilient";
+
+function LearnFallback() {
+  return <div style={{ minHeight: "70vh", display: "grid", placeItems: "center", color: "var(--muted-foreground)" }}>Loading Learn…</div>;
+}
 
 export default function LearnPage() {
-  return (
-    <Suspense>
-      <LearnPrefillBridge />
-      <AcademicLearnContext />
-      <AdaptiveLessonContext />
-      <LearnPageClient />
-    </Suspense>
-  );
+  return <Suspense fallback={<LearnFallback />}><LearnPageResilient /></Suspense>;
 }
