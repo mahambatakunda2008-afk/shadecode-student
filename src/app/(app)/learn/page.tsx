@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import LearnPageClient from "./LearnPageClientV2";
+import LearnPageResilient from "./LearnPageResilient";
 
 function LearnFallback() {
   return (
@@ -15,5 +15,5 @@ function LearnFallback() {
 }
 
 export default function LearnPage() {
-  return <Suspense fallback={<LearnFallback />}><LearnPageClient /></Suspense>;
+  return <Suspense fallback={<LearnFallback />}><LearnPageResilient /></Suspense>;
 }
