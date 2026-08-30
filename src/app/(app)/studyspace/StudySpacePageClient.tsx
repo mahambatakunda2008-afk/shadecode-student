@@ -32,74 +32,36 @@ export default function StudySpacePageClient() {
   const [showCanvas, setShowCanvas] = useState(mode === "canvas");
   const [showCalculator, setShowCalculator] = useState(false);
 
-  useEffect(() => {
-    if (initialMode && modes.some((item) => item.id === initialMode)) setMode(initialMode);
-  }, [initialMode]);
+  useEffect(() => { if (initialMode && modes.some((item) => item.id === initialMode)) setMode(initialMode); }, [initialMode]);
   useEffect(() => setSubject(initialSubject), [initialSubject]);
-  useEffect(() => {
-    if (mode === "canvas") setShowCanvas(true);
-  }, [mode]);
+  useEffect(() => { if (mode === "canvas") setShowCanvas(true); }, [mode]);
   const current = useMemo(() => modes.find((item) => item.id === mode)!, [mode]);
 
   async function save() {
     const now = new Date().toISOString();
-    const work: WorkObject = {
-      id: crypto.randomUUID(), mode,
-      lessonId: mode === "lesson" ? lessonId : undefined,
-      subject: subject.trim() || undefined,
-      prompt: prompt.trim() || undefined,
-      response: response.trim() || undefined,
-      attachments: canvasData ? [canvasData] : undefined,
-      createdAt: now, updatedAt: now,
-    };
-    await saveWorkObject(work);
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+    const work: WorkObject = { id: crypto.randomUUID(), mode, lessonId: mode === "lesson" ? lessonId : undefined, subject: subject.trim() || undefined, prompt: prompt.trim() || undefined, response: response.trim() || undefined, attachments: canvasData ? [canvasData] : undefined, createdAt: now, updatedAt: now };
+    try { await saveWorkObject(work); setSaved(true); window.setTimeout(() => setSaved(false), 1800); } catch { setSaved(false); }
   }
 
   return (
-    <main style={{ padding: "24px", maxWidth: 1100, margin: "0 auto" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 }}>
-        <div>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--primary)" }}>SHADECODE</p>
-          <h1 style={{ margin: "4px 0", fontSize: 32, fontWeight: 850 }}>StudySpace</h1>
-          <p style={{ margin: 0, color: "var(--muted-foreground)" }}>One workspace for lessons, learning, working, practice, assessment and exams.</p>
-        </div>
-        <button onClick={() => router.back()} style={{ border: "1px solid var(--card-border)", background: "var(--muted)", borderRadius: 8, padding: "9px 12px", cursor: "pointer" }}>Back</button>
+    <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div><p className="m-0 text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--primary)]">SHADECODE</p><h1 className="m-1 text-3xl font-black tracking-tight">StudySpace</h1><p className="m-0 text-sm text-[var(--muted-foreground)]">One workspace for lessons, learning, working, practice, assessment and exams.</p></div>
+        <button onClick={() => router.back()} className="self-start rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-2 text-sm">Back</button>
       </header>
       <AdaptiveNextMove subject={subject.trim() || undefined} />
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 18 }}>
-        <nav aria-label="StudySpace modes" style={{ display: "grid", gap: 8, alignContent: "start" }}>
-          {modes.map((item) => (
-            <button key={item.id} onClick={() => setMode(item.id)} aria-current={mode === item.id ? "page" : undefined} style={{ textAlign: "left", border: "1px solid var(--card-border)", borderRadius: 10, padding: 13, background: mode === item.id ? "var(--primary)" : "var(--card)", color: "var(--foreground)", cursor: "pointer" }}>
-              <strong>{item.label}</strong>
-              <span style={{ display: "block", fontSize: 12, marginTop: 4, opacity: 0.8 }}>{item.description}</span>
-            </button>
-          ))}
+      <div className="mt-5 grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <nav aria-label="StudySpace modes" className="grid content-start gap-2 sm:grid-cols-2 lg:grid-cols-1">
+          {modes.map((item) => <button key={item.id} onClick={() => setMode(item.id)} aria-current={mode === item.id ? "page" : undefined} className={`rounded-xl border p-3 text-left transition ${mode === item.id ? "border-[var(--primary)] bg-[var(--primary)] text-white" : "border-[var(--card-border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--muted)]"}`}><strong className="text-sm">{item.label}</strong><span className="mt-1 block text-xs opacity-80">{item.description}</span></button>)}
         </nav>
-        <section style={{ border: "1px solid var(--card-border)", borderRadius: 14, padding: 20, background: "var(--card)" }} aria-label="StudySpace work surface">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-            <div><h2 style={{ margin: 0 }}>{current.label}</h2><p style={{ margin: "5px 0 18px", color: "var(--muted-foreground)" }}>{current.description}</p></div>
-            <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Saved locally</span>
-          </div>
-          {mode === "lesson" && lessonId && <p style={{ marginTop: 0, fontSize: 13, color: "var(--muted-foreground)" }}>Linked lesson: {lessonId}</p>}
-          <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Subject <span style={{ fontWeight: 400, color: "var(--muted-foreground)" }}>(optional)</span></label>
-          <input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Any subject, or leave blank" style={{ width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
-          {mode !== "canvas" && <>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Question / task</label>
-            <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Paste a question, assignment, essay prompt, code problem, diagram task, or anything you are working on..." rows={7} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
-            <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Your work / answer</label>
-            <textarea value={response} onChange={(event) => setResponse(event.target.value)} placeholder="Write your answer, reasoning, working or notes here..." rows={8} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: 12, borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--muted)", color: "var(--foreground)", marginBottom: 14 }} />
-          </>}
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: showCanvas || showCalculator ? 18 : 0 }}>
-            <button onClick={save} style={{ border: 0, borderRadius: 8, padding: "11px 16px", background: "var(--primary)", color: "white", fontWeight: 750, cursor: "pointer" }}>Save work</button>
-            {mode !== "canvas" && <button type="button" onClick={() => setShowCanvas((value) => !value)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>{showCanvas ? "Hide Canvas" : "Open Canvas"}</button>}
-            <button type="button" onClick={() => setShowCalculator((value) => !value)} aria-expanded={showCalculator} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>{showCalculator ? "Hide Calculator" : "Open Calculator"}</button>
-            <button onClick={() => router.push(`/workmate?mode=${mode}`)} style={{ border: "1px solid var(--card-border)", borderRadius: 8, padding: "10px 14px", background: "var(--muted)", color: "var(--foreground)", cursor: "pointer" }}>Open Workmate</button>
-            {saved && <span role="status" style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Saved offline ✓</span>}
-          </div>
-          {showCalculator && <div style={{ marginBottom: 18 }}><Calculator /></div>}
-          {showCanvas && <StudyCanvasViewport storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} />}
+        <section className="min-w-0 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 sm:p-5" aria-label="StudySpace work surface">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="m-0 text-xl font-black">{current.label}</h2><p className="m-1 text-sm text-[var(--muted-foreground)]">{current.description}</p></div><span className="text-xs text-[var(--muted-foreground)]">{saved ? "Saved ✓" : "Local-first workspace"}</span></div>
+          {mode === "lesson" && lessonId && <p className="text-xs text-[var(--muted-foreground)]">Linked lesson: {lessonId}</p>}
+          <label className="mt-4 block text-sm font-bold">Subject <span className="font-normal text-[var(--muted-foreground)]">(optional)</span><input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Any subject, or leave blank" className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-3 text-sm text-[var(--foreground)] outline-none" /></label>
+          {mode !== "canvas" && <><label className="mt-4 block text-sm font-bold">Question / task<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Paste a question, assignment, essay prompt, code problem, diagram task, or anything you are working on..." rows={6} className="mt-2 w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-3 text-sm text-[var(--foreground)] outline-none" /></label><label className="mt-4 block text-sm font-bold">Your work / answer<textarea value={response} onChange={(e) => setResponse(e.target.value)} placeholder="Write your answer, reasoning, working or notes here..." rows={7} className="mt-2 w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--muted)] p-3 text-sm text-[var(--foreground)] outline-none" /></label></>}
+          <div className="mt-4 flex flex-wrap gap-2"><button onClick={() => void save()} className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-white">Save work</button>{mode !== "canvas" && <button type="button" onClick={() => setShowCanvas((v) => !v)} className="rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-2.5 text-sm">{showCanvas ? "Hide Canvas" : "Open Canvas"}</button>}<button type="button" onClick={() => setShowCalculator((v) => !v)} aria-expanded={showCalculator} className="rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-2.5 text-sm">{showCalculator ? "Hide Calculator" : "Open Calculator"}</button><button onClick={() => router.push(`/workmate?mode=${mode}`)} className="rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3 py-2.5 text-sm">Open Workmate</button></div>
+          {showCalculator && <div className="mt-4"><Calculator /></div>}
+          {showCanvas && <div className="mt-4 min-w-0"><StudyCanvasViewport storageKey={`shadecode-canvas:${mode}:${subject.trim().toLowerCase() || "general"}`} onChange={setCanvasData} /></div>}
         </section>
       </div>
     </main>
