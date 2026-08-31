@@ -32,6 +32,10 @@ export async function getLessonCache(userId: string): Promise<LocalLessonList | 
   return record?.userId === userId && !record.deletedAt ? record.payload : null;
 }
 
+/**
+ * Lesson lists are derived/cache data, not learner mutations. Persist them via
+ * server-style hydration so refreshing Learn never creates a sync operation.
+ */
 export async function saveLessonCache(userId: string, data: Omit<LocalLessonList, "cachedAt">): Promise<LocalRecord<LocalLessonList>> {
   requireUser(userId);
   const lessons = data.lessons.map((lesson) => ({
@@ -39,12 +43,19 @@ export async function saveLessonCache(userId: string, data: Omit<LocalLessonList
     progress: Math.min(100, Math.max(0, Number.isFinite(lesson.progress) ? lesson.progress : 0)),
     completed: Boolean(lesson.completed),
   }));
-  return localFirstStore.upsert({
+  const payload: LocalLessonList = { ...data, lessons, cachedAt: new Date().toISOString() };
+  const existing = await localFirstStore.get<LocalLessonList>(cacheId(userId));
+  const record: LocalRecord<LocalLessonList> = {
     id: cacheId(userId),
     entity: "lesson_cache",
     userId,
-    payload: { ...data, lessons, cachedAt: new Date().toISOString() },
-  });
+    payload,
+    updatedAt: Date.now(),
+    deviceId: "server",
+    version: 0,
+  };
+  if (!existing || existing.userId !== userId || record.updatedAt >= existing.updatedAt) await localFirstStore.hydrate(record);
+  return (await localFirstStore.get<LocalLessonList>(cacheId(userId))) ?? record;
 }
 
 export async function clearLessonCache(userId: string): Promise<void> {
