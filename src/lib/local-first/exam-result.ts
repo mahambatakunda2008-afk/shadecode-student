@@ -1,7 +1,11 @@
 import type { LocalRecord } from "./types";
 import { localFirstStore } from "./store";
-import type { ExamQuestion, ExamResult, ExamResults } from "@/components/exam/ExamWorkspace";
 import { markExamLocally } from "./exam-marker";
+
+type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured"; question: string; options?: string[]; marks: number; topic: string };
+type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
+type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
+type ExamAnswer = { questionId: number; answer: string; timeSpent: number };
 
 export interface LocalExamResult extends ExamResults {
   attemptId: string;
@@ -9,7 +13,7 @@ export interface LocalExamResult extends ExamResults {
   topic?: string;
   level: string;
   questions: ExamQuestion[];
-  answers: Array<{ questionId: number; answer: string; timeSpent: number }>;
+  answers: ExamAnswer[];
   source: "local-deterministic" | "server";
   pendingServerMark: boolean;
   submittedAt: string;
@@ -24,7 +28,7 @@ export async function submitExamLocally(input: {
   topic?: string;
   level: string;
   questions: ExamQuestion[];
-  answers: Array<{ questionId: number; answer: string; timeSpent: number }>;
+  answers: ExamAnswer[];
   timeTaken: number;
 }): Promise<LocalRecord<LocalExamResult>> {
   if (!input.userId) throw new Error("Exam result requires an authenticated user");
