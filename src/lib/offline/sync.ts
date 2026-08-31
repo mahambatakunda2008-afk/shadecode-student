@@ -1,16 +1,11 @@
 /**
- * Offline data synchronization logic.
- *
- * Local-first domains write to IndexedDB first. The local operation log is
- * then bridged into the existing durable mutation queue, which remains the
- * single network transport. This keeps the UI responsive without creating a
- * second independent retry system.
+ * Offline synchronization. Local-first writes are bridged into the durable
+ * mutation queue; the queue is the only network transport.
  */
-
 import { offlineStorage, type OfflineProgress, type OfflineTask, type OfflineSubject } from "./storage";
 import { mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
-import { localOperationStore } from "@/lib/local-first/operation-store";
+import { localFirstStore } from "@/lib/local-first/store";
 import { localTasks } from "@/lib/local-first/tasks";
 import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
@@ -32,10 +27,7 @@ export class OfflineSync {
   }
 
   stopAutoSync(): void {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-      this.syncInterval = null;
-    }
+    if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
     if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler);
     this.onlineHandler = null;
   }
@@ -46,8 +38,6 @@ export class OfflineSync {
     try {
       await this.bridgeLocalOperations();
       await this.syncMutations();
-      // These methods remain as a migration safety net for records created by
-      // older versions before the local operation log was authoritative.
       await Promise.all([this.syncTasks(), this.syncSubjects(), this.syncProgress()]);
     } catch (error) {
       console.error("[OfflineSync] Sync failed:", error);
@@ -56,10 +46,6 @@ export class OfflineSync {
     }
   }
 
-  /**
-   * Compatibility entry point used by older UI code. Tasks and subjects now
-   * become local-first writes rather than bypassing the operation log.
-   */
   async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> {
     const supabase = createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -69,41 +55,20 @@ export class OfflineSync {
       const payload = input.payload as Record<string, unknown>;
       const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
       if (input.operation === "create") {
-        await localTasks.create({
-          id,
-          userId: user.id,
-          subject_id: typeof payload.subject_id === "string" ? payload.subject_id : "",
-          title: typeof payload.title === "string" ? payload.title : "",
-          completed: typeof payload.completed === "boolean" ? payload.completed : false,
-        });
+        await localTasks.create({ id, userId: user.id, subject_id: typeof payload.subject_id === "string" ? payload.subject_id : "", title: typeof payload.title === "string" ? payload.title : "", completed: typeof payload.completed === "boolean" ? payload.completed : false });
       } else if (input.operation === "update") {
-        if (payload.completed === true) await localTasks.complete(id, user.id);
-        else {
-          const existing = await localTasks.get(id, user.id);
-          if (!existing) throw new Error("Cannot update an offline task that is not locally cached");
-          await localTasks.create({
-            id,
-            userId: user.id,
-            subject_id: typeof payload.subject_id === "string" ? payload.subject_id : existing.subject_id,
-            title: typeof payload.title === "string" ? payload.title : existing.title,
-            completed: typeof payload.completed === "boolean" ? payload.completed : existing.completed,
-          });
-        }
-      } else if (input.operation === "delete") {
-        await localTasks.remove(id, user.id);
-      }
+        const existing = await localTasks.get(id, user.id);
+        if (!existing) throw new Error("Cannot update an offline task that is not locally cached");
+        await localTasks.create({ id, userId: user.id, subject_id: typeof payload.subject_id === "string" ? payload.subject_id : existing.subject_id, title: typeof payload.title === "string" ? payload.title : existing.title, completed: typeof payload.completed === "boolean" ? payload.completed : existing.completed });
+      } else await localTasks.remove(id, user.id);
       return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: user.id } as OfflineMutation<T>;
     }
 
     if (input.store === "subjects") {
       const payload = input.payload as Record<string, unknown>;
       const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
-      if (input.operation === "delete") {
-        await localSubjects.remove(id, user.id);
-      } else {
-        const existing = await localSubjects.get(id, user.id);
-        await localSubjects.save({ id, userId: user.id, name: typeof payload.name === "string" ? payload.name : existing?.name ?? "" });
-      }
+      if (input.operation === "delete") await localSubjects.remove(id, user.id);
+      else await localSubjects.save({ id, userId: user.id, name: typeof payload.name === "string" ? payload.name : "" });
       return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: user.id } as OfflineMutation<T>;
     }
 
@@ -120,12 +85,11 @@ export class OfflineSync {
   private async bridgeLocalOperations(): Promise<void> {
     const auth = await this.getCurrentUser();
     if (!auth) return;
-    const operations = await localOperationStore.list(auth.user.id);
+    const operations = await localFirstStore.listPendingOperations(auth.user.id);
     for (const operation of operations) {
       try {
         const mutation = this.operationToMutation(operation);
         await mutationQueue.enqueue({ ...mutation, ownerId: auth.user.id });
-        await localOperationStore.remove(operation.id);
       } catch (error) {
         console.error("[OfflineSync] Failed to bridge local operation:", operation.id, error);
       }
@@ -135,27 +99,19 @@ export class OfflineSync {
   private operationToMutation(operation: LocalOperation): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> {
     if (operation.entity !== "task" && operation.entity !== "subject") throw new Error(`Unsupported local-first entity: ${operation.entity}`);
     const store = operation.entity === "task" ? "tasks" : "subjects";
-
-    if (operation.kind === "delete") {
-      return { operation: "delete", store, payload: { id: operation.entityId, user_id: operation.userId } };
-    }
-
+    if (operation.kind === "delete") return { operation: "delete", store, payload: { id: operation.entityId, user_id: operation.userId } };
     const raw = operation.payload;
     if (!raw || typeof raw !== "object") throw new Error(`Local ${operation.entity} operation has no payload`);
     const value = raw as Record<string, unknown>;
     const id = typeof value.id === "string" ? value.id : operation.entityId;
-
     if (operation.entity === "task") {
-      if (operation.kind === "create") {
-        return { operation: "create", store, payload: { id, user_id: operation.userId, subject_id: value.subject_id, title: value.title, completed: value.completed } };
-      }
+      if (operation.kind === "create") return { operation: "create", store, payload: { id, user_id: operation.userId, subject_id: value.subject_id, title: value.title, completed: value.completed } };
       const changes: Record<string, unknown> = {};
       if (typeof value.subject_id === "string") changes.subject_id = value.subject_id;
       if (typeof value.title === "string") changes.title = value.title;
       if (typeof value.completed === "boolean") changes.completed = value.completed;
       return { operation: "update", store, payload: { id, user_id: operation.userId, ...changes } };
     }
-
     return { operation: operation.kind, store, payload: { id, user_id: operation.userId, name: value.name } };
   }
 
@@ -186,8 +142,12 @@ export class OfflineSync {
           const { error } = await supabase.from(table).upsert({ ...payload, user_id: user.id });
           if (error) throw error;
         }
-        if (table === "tasks" && typeof payload.id === "string" && mutation.operation !== "delete") await offlineStorage.markTaskSynced(payload.id, user.id);
-        if (table === "subjects" && typeof payload.id === "string" && mutation.operation !== "delete") await offlineStorage.markSubjectSynced(payload.id, user.id);
+
+        const entity = table === "tasks" ? "task" : table === "subjects" ? "subject" : null;
+        const entityId = typeof payload.id === "string" ? payload.id : null;
+        if (entity && entityId) await localFirstStore.acknowledgeEntityOperations(user.id, entity, entityId);
+        if (table === "tasks" && entityId && mutation.operation !== "delete") await offlineStorage.markTaskSynced(entityId, user.id);
+        if (table === "subjects" && entityId && mutation.operation !== "delete") await offlineStorage.markSubjectSynced(entityId, user.id);
         await mutationQueue.remove(mutation.id, user.id);
       } catch (error) {
         await mutationQueue.recordFailure(mutation.id, user.id, error);
@@ -206,6 +166,7 @@ export class OfflineSync {
         const { error } = await supabase.from("tasks").upsert({ id: task.id, user_id: user.id, subject_id: task.subject_id, title: task.title, completed: task.completed });
         if (error) throw error;
         await offlineStorage.markTaskSynced(task.id, user.id);
+        await localFirstStore.acknowledgeEntityOperations(user.id, "task", task.id);
       } catch (error) { console.error("[OfflineSync] Failed to sync task:", task.id, error); }
     }
   }
@@ -220,6 +181,7 @@ export class OfflineSync {
         const { error } = await supabase.from("subjects").upsert({ id: subject.id, user_id: user.id, name: subject.name });
         if (error) throw error;
         await offlineStorage.markSubjectSynced(subject.id, user.id);
+        await localFirstStore.acknowledgeEntityOperations(user.id, "subject", subject.id);
       } catch (error) { console.error("[OfflineSync] Failed to sync subject:", subject.id, error); }
     }
   }
@@ -239,8 +201,7 @@ export class OfflineSync {
   }
 
   async saveTaskLocally(taskId: string): Promise<void> {
-    const auth = await this.getCurrentUser();
-    if (!auth) return;
+    const auth = await this.getCurrentUser(); if (!auth) return;
     const { supabase, user } = auth;
     const { data: task, error } = await supabase.from("tasks").select("*").eq("id", taskId).eq("user_id", user.id).single();
     if (error || !task) return;
@@ -248,8 +209,7 @@ export class OfflineSync {
   }
 
   async saveProgressLocally(lessonId: string, userId: string): Promise<void> {
-    const auth = await this.getCurrentUser();
-    if (!auth || auth.user.id !== userId) return;
+    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return;
     const { supabase, user } = auth;
     const { data: lesson, error } = await supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", user.id).single();
     if (error || !lesson) return;
@@ -259,8 +219,7 @@ export class OfflineSync {
   async getTasks(userId: string): Promise<OfflineTask[]> {
     const localTasks = await offlineStorage.getTasksForUser(userId);
     if (localTasks.length > 0) return localTasks;
-    const auth = await this.getCurrentUser();
-    if (!auth || auth.user.id !== userId) return [];
+    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return [];
     const { data: tasks, error } = await auth.supabase.from("tasks").select("*").eq("user_id", auth.user.id);
     if (error) return [];
     for (const task of tasks || []) await offlineStorage.saveTask({ id: task.id, userId: task.user_id ?? userId, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true });
@@ -270,8 +229,7 @@ export class OfflineSync {
   async getSubjects(userId: string): Promise<OfflineSubject[]> {
     const localSubjects = await offlineStorage.getSubjectsForUser(userId);
     if (localSubjects.length > 0) return localSubjects;
-    const auth = await this.getCurrentUser();
-    if (!auth || auth.user.id !== userId) return [];
+    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return [];
     const { data: subjects, error } = await auth.supabase.from("subjects").select("*").eq("user_id", auth.user.id);
     if (error) return [];
     for (const subject of subjects || []) await offlineStorage.saveSubject({ id: subject.id, userId: subject.user_id ?? userId, name: subject.name, lastUpdated: new Date().toISOString(), synced: true });
@@ -281,8 +239,7 @@ export class OfflineSync {
   async getProgress(lessonId: string, userId: string): Promise<OfflineProgress | null> {
     const localProgress = await offlineStorage.getProgress(lessonId, userId);
     if (localProgress?.userId === userId) return localProgress;
-    const auth = await this.getCurrentUser();
-    if (!auth || auth.user.id !== userId) return null;
+    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return null;
     const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
     if (error || !lesson) return null;
     const progress: OfflineProgress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true };
