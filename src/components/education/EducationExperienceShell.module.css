@@ -1,4 +1,11 @@
-.shell { --education-gap: 1rem; --education-radius: 1rem; --education-motion-duration: 180ms; --education-content-width: 1480px; }
+.shell {
+  --education-gap: 1rem;
+  --education-radius: 1rem;
+  --education-motion-duration: 180ms;
+  --education-content-width: 1480px;
+  --education-control-min-height: 2.75rem;
+  --education-copy-scale: 1;
+}
 .shell[data-education-density="airy"] { --education-gap: 1.35rem; --education-radius: 1.35rem; }
 .shell[data-education-density="balanced"] { --education-gap: 1rem; --education-radius: 1rem; }
 .shell[data-education-density="dense"] { --education-gap: .7rem; --education-radius: .8rem; }
@@ -8,8 +15,11 @@
 .shell[data-education-interaction="touch"] { --education-control-min-height: 3.25rem; }
 .shell[data-education-interaction="mixed"] { --education-control-min-height: 2.75rem; }
 .shell[data-education-interaction="precision"] { --education-control-min-height: 2.35rem; }
-.shell[data-education-stage="early_primary"] { --education-radius: 1.5rem; }
-.shell[data-education-stage="upper_primary"] { --education-radius: 1.25rem; }
+.shell[data-education-stage="early_primary"] { --education-radius: 1.5rem; --education-copy-scale: 1.06; }
+.shell[data-education-stage="upper_primary"] { --education-radius: 1.25rem; --education-copy-scale: 1.03; }
 .shell[data-education-stage="junior_secondary"] { --education-radius: 1.1rem; }
 .shell[data-education-stage="senior_secondary"], .shell[data-education-stage="a_level"] { --education-radius: .9rem; }
+.shell :global(.education-card) { border-radius: var(--education-radius); transition: border-radius var(--education-motion-duration) ease, transform var(--education-motion-duration) ease; }
+.shell :global(.education-control) { min-height: var(--education-control-min-height); }
+.shell :global(.education-copy) { font-size: calc(1em * var(--education-copy-scale)); }
 @media (prefers-reduced-motion: reduce) { .shell { --education-motion-duration: 0ms; } }
