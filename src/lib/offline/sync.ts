@@ -171,7 +171,7 @@ export class OfflineSync {
     const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return;
     const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
     if (error || !lesson) return;
-    await localFirstStore.saveProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() });
+    await localFirstStore.hydrateProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() }, Date.parse(lesson.updated_at ?? "") || Date.now());
   }
 
   async getTasks(userId: string): Promise<OfflineTask[]> {
@@ -201,7 +201,7 @@ export class OfflineSync {
     const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
     if (error || !lesson) return null;
     const progress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true } as const;
-    await offlineStorage.saveProgress(progress);
+    await localFirstStore.hydrateProgress(progress, Date.parse(lesson.updated_at ?? "") || Date.now());
     return progress;
   }
 }
