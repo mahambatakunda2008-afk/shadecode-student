@@ -1,6 +1,9 @@
 /**
  * IndexedDB storage for offline lesson content and local-first personal data.
+ * Lesson progress is persisted through the canonical local-first operation log.
  */
+import { localFirstStore } from "@/lib/local-first/store";
+
 const DB_NAME = "shadecode-offline";
 const DB_VERSION = 6;
 
@@ -55,10 +58,34 @@ class OfflineStorage {
   async getNotes(lessonId: string): Promise<OfflineNotes | null> { await this.init(); return this.get("notes", lessonId); }
   async saveQuiz(quiz: OfflineQuiz): Promise<void> { await this.init(); return this.put("quizzes", quiz); }
   async getQuiz(lessonId: string): Promise<OfflineQuiz | null> { await this.init(); return this.get("quizzes", lessonId); }
-  async saveProgress(progress: OfflineProgress): Promise<void> { if (!progress.userId) throw new Error("Offline progress requires an authenticated user"); await this.init(); return this.put(PROGRESS_STORE, { ...progress, key: progressKey(progress.userId, progress.lessonId) }); }
-  async getProgress(lessonId: string, userId?: string): Promise<OfflineProgress | null> { if (!userId) return null; await this.init(); const row = await this.get<OfflineProgress & { key: string }>(PROGRESS_STORE, progressKey(userId, lessonId)); return row ? { ...row, lessonId, userId } : null; }
-  async getUnsyncedProgress(): Promise<OfflineProgress[]> { await this.init(); return this.unsynced(PROGRESS_STORE); }
-  async markProgressSynced(lessonId: string, userId: string): Promise<void> { const progress = await this.getProgress(lessonId, userId); if (progress) { progress.synced = true; progress.lastSyncedAt = new Date().toISOString(); await this.saveProgress(progress); } }
+
+  /** Compatibility facade: progress now lives in the canonical local-first store. */
+  async saveProgress(progress: OfflineProgress): Promise<void> {
+    if (!progress.userId) throw new Error("Offline progress requires an authenticated user");
+    await localFirstStore.saveProgress({ lessonId: progress.lessonId, userId: progress.userId, completed: progress.completed, progress: progress.progress, quizScore: progress.quizScore, lastUpdated: progress.lastUpdated });
+  }
+
+  async getProgress(lessonId: string, userId?: string): Promise<OfflineProgress | null> {
+    if (!userId) return null;
+    const progress = await localFirstStore.getProgress(lessonId, userId);
+    if (!progress) return null;
+    return { ...progress, synced: false };
+  }
+
+  async getUnsyncedProgress(): Promise<OfflineProgress[]> {
+    const progressRows = await localFirstStore.listPendingProgress("");
+    return progressRows.map((progress) => ({ ...progress, synced: false }));
+  }
+
+  async getUnsyncedProgressForUser(userId: string): Promise<OfflineProgress[]> {
+    const progressRows = await localFirstStore.listPendingProgress(userId);
+    return progressRows.map((progress) => ({ ...progress, synced: false }));
+  }
+
+  async markProgressSynced(lessonId: string, userId: string): Promise<void> {
+    await localFirstStore.acknowledgeProgress(userId, lessonId);
+  }
+
   async saveTask(task: OfflineTask): Promise<void> { await this.init(); return this.put("tasks", task); }
   async getTask(id: string): Promise<OfflineTask | null> { await this.init(); return this.get("tasks", id); }
   async getTaskForUser(id: string, userId: string): Promise<OfflineTask | null> { const task = await this.getTask(id); return task?.userId === userId ? task : null; }
