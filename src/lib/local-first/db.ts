@@ -94,10 +94,7 @@ class LocalFirstDB {
       let deviceId: string | null = null;
       request.onsuccess = () => {
         const value = request.result?.value;
-        if (typeof value === "string" && value) {
-          deviceId = value;
-          return;
-        }
+        if (typeof value === "string" && value) { deviceId = value; return; }
         deviceId = createId();
         store.put({ key: DEVICE_ID_KEY, value: deviceId });
       };
@@ -117,7 +114,7 @@ class LocalFirstDB {
   }
 
   /** Atomically allocates the device sequence/Lamport clock and persists record + operation. */
-  async mutateRecord<T>(input: { id: string; entity: LocalRecord["entity"]; userId: string; payload: T; deviceId: string; deletedAt?: number }): Promise<LocalRecord<T>> {
+  async mutateRecord<T>(input: { id: string; entity: LocalRecord["entity"]; entityId?: string; userId: string; payload: T; deviceId: string; deletedAt?: number }): Promise<LocalRecord<T>> {
     if (!input.userId) throw new Error("Local mutation requires an authenticated user");
     await this.init();
     return new Promise<LocalRecord<T>>((resolve, reject) => {
@@ -132,8 +129,8 @@ class LocalFirstDB {
       let lamport = 0;
       let result: LocalRecord<T> | undefined;
       let mutationStarted = false;
-
       const fail = (error: unknown) => { if (!mutationStarted) reject(error); transaction.abort(); };
+
       existingRequest.onsuccess = () => {
         existing = existingRequest.result as LocalRecord | undefined;
         if (existing && existing.userId !== input.userId) return fail(new Error("Refusing to mutate a record owned by another user"));
@@ -146,21 +143,12 @@ class LocalFirstDB {
           lamport += 1;
           sequence += 1;
           const now = Date.now();
-          result = {
-            id: input.id,
-            entity: input.entity,
-            userId: input.userId,
-            payload: input.payload,
-            updatedAt: now,
-            deviceId: input.deviceId,
-            version: lamport,
-            ...(input.deletedAt === undefined ? {} : { deletedAt: input.deletedAt }),
-          };
+          result = { id: input.id, entity: input.entity, userId: input.userId, payload: input.payload, updatedAt: now, deviceId: input.deviceId, version: lamport, ...(input.deletedAt === undefined ? {} : { deletedAt: input.deletedAt }) };
           const operation: LocalOperation<T> = {
             id: createOperationId(input.deviceId, sequence),
             recordId: input.id,
             entity: input.entity,
-            entityId: input.id,
+            entityId: input.entityId ?? input.id,
             userId: input.userId,
             deviceId: input.deviceId,
             kind: input.deletedAt === undefined ? (existing && !existing.deletedAt ? "update" : "create") : "delete",
@@ -242,10 +230,7 @@ class LocalFirstDB {
       const transaction = this.db!.transaction(STORES.operations, "readwrite");
       const store = transaction.objectStore(STORES.operations);
       const request = store.get(id);
-      request.onsuccess = () => {
-        const operation = request.result as LocalOperation | undefined;
-        if (operation) store.put({ ...operation, syncedAt });
-      };
+      request.onsuccess = () => { const operation = request.result as LocalOperation | undefined; if (operation) store.put({ ...operation, syncedAt }); };
       request.onerror = () => reject(request.error);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -260,17 +245,8 @@ class LocalFirstDB {
       const lamportRequest = store.get(LAMPORT_KEY);
       const sequenceKey = `${SEQUENCE_PREFIX}${deviceId}`;
       const sequenceRequest = store.get(sequenceKey);
-      let lamport = 0;
-      let sequence = 0;
-      let ready = 0;
-      const finish = () => {
-        ready += 1;
-        if (ready !== 2) return;
-        lamport = Math.max(lamport, remoteLamport) + 1;
-        sequence += 1;
-        store.put({ key: LAMPORT_KEY, value: lamport });
-        store.put({ key: sequenceKey, value: sequence });
-      };
+      let lamport = 0; let sequence = 0; let ready = 0;
+      const finish = () => { ready += 1; if (ready !== 2) return; lamport = Math.max(lamport, remoteLamport) + 1; sequence += 1; store.put({ key: LAMPORT_KEY, value: lamport }); store.put({ key: sequenceKey, value: sequence }); };
       lamportRequest.onsuccess = () => { lamport = typeof lamportRequest.result?.value === "number" ? lamportRequest.result.value : 0; finish(); };
       sequenceRequest.onsuccess = () => { sequence = typeof sequenceRequest.result?.value === "number" ? sequenceRequest.result.value : 0; finish(); };
       lamportRequest.onerror = () => reject(lamportRequest.error);
@@ -282,19 +258,11 @@ class LocalFirstDB {
   }
 
   async putMeta(meta: LocalMeta): Promise<void> {
-    await this.transaction<void>(STORES.meta, "readwrite", (store, resolve, reject) => {
-      const request = store.put(meta);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    await this.transaction<void>(STORES.meta, "readwrite", (store, resolve, reject) => { const request = store.put(meta); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
   }
 
   async getMeta(key: string): Promise<LocalMeta | null> {
-    return this.transaction<LocalMeta | null>(STORES.meta, "readonly", (store, resolve, reject) => {
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result ?? null);
-      request.onerror = () => reject(request.error);
-    });
+    return this.transaction<LocalMeta | null>(STORES.meta, "readonly", (store, resolve, reject) => { const request = store.get(key); request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); });
   }
 
   async clearUser(userId: string): Promise<void> {
@@ -303,12 +271,9 @@ class LocalFirstDB {
     await this.init();
     await new Promise<void>((resolve, reject) => {
       const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite");
-      const recordStore = transaction.objectStore(STORES.records);
-      const operationStore = transaction.objectStore(STORES.operations);
-      records.forEach((record) => recordStore.delete(record.id));
-      operations.forEach((operation) => operationStore.delete(operation.id));
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
+      const recordStore = transaction.objectStore(STORES.records); const operationStore = transaction.objectStore(STORES.operations);
+      records.forEach((record) => recordStore.delete(record.id)); operations.forEach((operation) => operationStore.delete(operation.id));
+      transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error);
     });
   }
 }
