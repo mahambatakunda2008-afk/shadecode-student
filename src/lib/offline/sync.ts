@@ -1,9 +1,8 @@
 /**
- * Offline synchronization. The canonical local-first store is the source of
- * truth for task/subject mutations; the mutation queue is the only network
- * transport. Legacy progress storage remains until progress is migrated.
+ * Offline synchronization. The canonical local-first store is the source of truth
+ * for learner mutations; the mutation queue is the network transport.
  */
-import { offlineStorage, type OfflineProgress, type OfflineTask, type OfflineSubject } from "./storage";
+import { offlineStorage, type OfflineTask, type OfflineSubject } from "./storage";
 import { mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
 import { localFirstStore } from "@/lib/local-first/store";
@@ -50,24 +49,16 @@ export class OfflineSync {
   async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> {
     const auth = await this.getCurrentUser();
     if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user");
-
     if (input.store === "tasks") {
       const payload = input.payload as Record<string, unknown>;
       const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
       if (input.operation === "delete") await localTasks.remove(id, auth.user.id);
       else {
         const existing = await localTasks.get(id, auth.user.id);
-        await localTasks.create({
-          id,
-          userId: auth.user.id,
-          subject_id: typeof payload.subject_id === "string" ? payload.subject_id : existing?.subject_id ?? "",
-          title: typeof payload.title === "string" ? payload.title : existing?.title ?? "",
-          completed: typeof payload.completed === "boolean" ? payload.completed : existing?.completed ?? false,
-        });
+        await localTasks.create({ id, userId: auth.user.id, subject_id: typeof payload.subject_id === "string" ? payload.subject_id : existing?.subject_id ?? "", title: typeof payload.title === "string" ? payload.title : existing?.title ?? "", completed: typeof payload.completed === "boolean" ? payload.completed : existing?.completed ?? false });
       }
       return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: auth.user.id } as OfflineMutation<T>;
     }
-
     if (input.store === "subjects") {
       const payload = input.payload as Record<string, unknown>;
       const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
@@ -75,7 +66,6 @@ export class OfflineSync {
       else await localSubjects.save({ id, userId: auth.user.id, name: typeof payload.name === "string" ? payload.name : "" });
       return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: auth.user.id } as OfflineMutation<T>;
     }
-
     return mutationQueue.enqueue({ ...input, ownerId: auth.user.id });
   }
 
@@ -160,7 +150,7 @@ export class OfflineSync {
     const auth = await this.getCurrentUser();
     if (!auth) return;
     const { supabase, user } = auth;
-    const unsyncedProgress = (await offlineStorage.getUnsyncedProgress()).filter((progress) => progress.userId === user.id);
+    const unsyncedProgress = await offlineStorage.getUnsyncedProgressForUser(user.id);
     for (const progress of unsyncedProgress) {
       try {
         const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", user.id);
@@ -181,7 +171,7 @@ export class OfflineSync {
     const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return;
     const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
     if (error || !lesson) return;
-    await offlineStorage.saveProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true });
+    await localFirstStore.saveProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() });
   }
 
   async getTasks(userId: string): Promise<OfflineTask[]> {
@@ -204,13 +194,13 @@ export class OfflineSync {
     return localSubjects.list(userId);
   }
 
-  async getProgress(lessonId: string, userId: string): Promise<OfflineProgress | null> {
+  async getProgress(lessonId: string, userId: string) {
     const localProgress = await offlineStorage.getProgress(lessonId, userId);
     if (localProgress?.userId === userId) return localProgress;
     const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return null;
     const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
     if (error || !lesson) return null;
-    const progress: OfflineProgress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true };
+    const progress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true } as const;
     await offlineStorage.saveProgress(progress);
     return progress;
   }
