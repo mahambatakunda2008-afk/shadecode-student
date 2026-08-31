@@ -8,15 +8,15 @@ export interface LocalOperation<T = unknown> {
   deviceId: string;
   userId: string;
   entity: LocalEntity;
-  /** Stable entity key used by sync and replay. */
   entityId: string;
-  /** Backwards-compatible alias for the local record key. */
   recordId?: string;
   kind: LocalOperationKind;
   payload?: T;
   timestamp: string;
   sequence: number;
   lamport: number;
+  /** Undefined means pending; set when the remote relay has accepted it. */
+  syncedAt?: string;
 }
 
 export interface Tombstone {
@@ -31,9 +31,7 @@ export interface Tombstone {
 }
 
 export function createOperationId(deviceId: string, sequence: number): string {
-  if (!deviceId || !Number.isSafeInteger(sequence) || sequence < 1) {
-    throw new Error("Invalid operation identity");
-  }
+  if (!deviceId || !Number.isSafeInteger(sequence) || sequence < 1) throw new Error("Invalid operation identity");
   return `${deviceId}:${sequence}`;
 }
 
@@ -46,24 +44,9 @@ export function compareOperations(a: LocalOperation, b: LocalOperation): number 
 
 export function createTombstone(operation: LocalOperation): Tombstone {
   if (operation.kind !== "delete") throw new Error("Tombstones require delete operations");
-  return {
-    entity: operation.entity,
-    entityId: operation.entityId,
-    userId: operation.userId,
-    operationId: operation.id,
-    deviceId: operation.deviceId,
-    timestamp: operation.timestamp,
-    sequence: operation.sequence,
-    lamport: operation.lamport,
-  };
+  return { entity: operation.entity, entityId: operation.entityId, userId: operation.userId, operationId: operation.id, deviceId: operation.deviceId, timestamp: operation.timestamp, sequence: operation.sequence, lamport: operation.lamport };
 }
 
 export function isOperationSuppressed(operation: LocalOperation, tombstones: Tombstone[]): boolean {
-  return tombstones.some(
-    (tombstone) =>
-      tombstone.userId === operation.userId &&
-      tombstone.entity === operation.entity &&
-      tombstone.entityId === operation.entityId &&
-      tombstone.lamport >= operation.lamport,
-  );
+  return tombstones.some((tombstone) => tombstone.userId === operation.userId && tombstone.entity === operation.entity && tombstone.entityId === operation.entityId && tombstone.lamport >= operation.lamport);
 }
