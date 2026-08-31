@@ -14,6 +14,7 @@ export type LocalExamAnswer = { questionId: number; answer: string; timeSpent: n
 
 export type LocalExamAttempt = {
   attemptId: string;
+  userId?: string;
   subject: string;
   topic: string;
   level: number;
@@ -28,6 +29,7 @@ export type LocalExamAttempt = {
   canvas?: string;
   status: "active" | "submitted";
   updatedAt: string;
+  submittedAt?: string;
 };
 
 const key = (userId: string, attemptId: string) => `exam_attempt:${userId}:${attemptId}`;
@@ -54,13 +56,13 @@ export async function saveExamAttempt(userId: string, attempt: LocalExamAttempt)
     id: key(userId, attempt.attemptId),
     entity: "exam_attempt",
     userId,
-    payload: { ...attempt, seconds, totalSeconds, current, updatedAt: new Date().toISOString() },
+    payload: { ...attempt, userId, seconds, totalSeconds, current, updatedAt: new Date().toISOString() },
   });
 }
 
-export async function deleteExamAttempt(userId: string, attemptId: string): Promise<LocalRecord<LocalExamAttempt>> {
+export async function deleteExamAttempt(userId: string, attemptId: string): Promise<void> {
   requireUser(userId);
   const existing = await getExamAttempt(userId, attemptId);
   if (!existing) throw new Error("Exam attempt not found");
-  return localFirstStore.remove(key(userId, attemptId), userId);
+  await localFirstStore.remove({ id: key(userId, attemptId), entity: "exam_attempt", userId });
 }
