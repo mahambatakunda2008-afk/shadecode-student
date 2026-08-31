@@ -1,9 +1,11 @@
-# *
+# Public crawl policy for Shadecode Student
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /settings
+Disallow: /sync
+Disallow: /offline
 
-# Host
 Host: https://shadecodestudent.vercel.app
-
-# Sitemaps
 Sitemap: https://shadecodestudent.vercel.app/sitemap.xml
