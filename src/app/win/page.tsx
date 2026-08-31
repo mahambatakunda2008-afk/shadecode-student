@@ -25,7 +25,7 @@ export default function WinPage() {
 
       <button
         onClick={() => router.replace("/")}
-        className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition"
+        className="px-6 py-3 rounded-xl bg-[var(--primary)] hover:opacity-90 text-white font-semibold transition"
       >
         Continue
       </button>

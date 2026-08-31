@@ -87,7 +87,7 @@ export default function AchievementsPage() {
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />
       </div>
     );
   }
@@ -113,7 +113,7 @@ export default function AchievementsPage() {
         </div>
         <div className="h-3 bg-[var(--muted)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-[#22D3EE] to-[#7A3CFF] rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -146,7 +146,7 @@ export default function AchievementsPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               filter === f.key
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20"
                 : "bg-[var(--surface-2)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
             }`}
           >

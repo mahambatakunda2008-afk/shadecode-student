@@ -23,10 +23,10 @@ export default function GlobalErrorBoundary({
 
   return (
     <html lang="en">
-      <body className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 p-6 relative overflow-hidden font-sans">
+      <body className="min-h-screen flex items-center justify-center bg-[#06111C] text-slate-100 p-6 relative overflow-hidden font-sans">
         {/* Background ambient glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 w-full max-w-md bg-white/10 border border-white/10 shadow-2xl rounded-2xl p-8 text-center">
           {/* Animated Icon */}
@@ -54,7 +54,7 @@ export default function GlobalErrorBoundary({
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => reset()}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 active:scale-98 text-white text-sm font-medium rounded-xl shadow-lg shadow-rose-600/15 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-600 to-violet-600 hover:from-rose-500 hover:to-violet-500 active:scale-98 text-white text-sm font-medium rounded-xl shadow-lg shadow-rose-600/15 transition-all cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
               Reload Application

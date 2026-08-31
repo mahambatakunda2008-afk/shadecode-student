@@ -83,9 +83,9 @@ function InsightSkeleton() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20
+      <div className="w-16 h-16 rounded-2xl bg-[#22D3EE]/10 border border-[#22D3EE]/20
         flex items-center justify-center mb-5">
-        <BrainCircuit className="w-7 h-7 text-indigo-400" />
+        <BrainCircuit className="w-7 h-7 text-[#67E8F9]" />
       </div>
       <h3 className="text-[16px] font-bold text-white/80 mb-2">
         Cortex is watching
@@ -97,9 +97,9 @@ function EmptyState() {
       <Link
         href="/dashboard"
         className="flex items-center gap-2 px-4 py-2 rounded-lg
-          bg-indigo-500/15 border border-indigo-500/25
-          text-indigo-400 text-[13px] font-medium
-          hover:bg-indigo-500/20 transition-colors"
+          bg-[#22D3EE]/15 border border-[#22D3EE]/25
+          text-[#67E8F9] text-[13px] font-medium
+          hover:bg-[#22D3EE]/20 transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Dashboard
@@ -119,10 +119,10 @@ function PatternSummaryBanner({ insights }: { insights: Insight[] }) {
 
   return (
     <div className="flex items-center gap-3 p-4 rounded-xl mb-6
-      bg-indigo-500/[0.06] border border-indigo-500/15">
-      <div className="w-8 h-8 rounded-lg bg-indigo-500/15
+      bg-[#22D3EE]/[0.06] border border-[#22D3EE]/15">
+      <div className="w-8 h-8 rounded-lg bg-[#22D3EE]/15
         flex items-center justify-center flex-shrink-0">
-        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+        <Sparkles className="w-3.5 h-3.5 text-[#67E8F9]" />
       </div>
       <p className="text-[12.5px] text-white/60 leading-relaxed">
         <span className="text-white/85 font-semibold">"{pattern.theme}"</span>{" "}
@@ -141,13 +141,13 @@ function InsightCard({ insight }: { insight: Insight }) {
       bg-white/[0.025] border border-white/[0.06]
       hover:bg-white/[0.04] hover:border-white/[0.09]
       transition-colors">
-      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20
+      <div className="w-8 h-8 rounded-lg bg-[#22D3EE]/10 border border-[#22D3EE]/20
         flex items-center justify-center flex-shrink-0 mt-0.5">
-        <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
+        <BrainCircuit className="w-3.5 h-3.5 text-[#67E8F9]" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] text-white/75 leading-relaxed">
-          <span className="text-indigo-400 font-semibold">Cortex: </span>
+          <span className="text-[#67E8F9] font-semibold">Cortex: </span>
           {insight.insight}
         </p>
         <div className="flex items-center gap-1.5 mt-2">
@@ -216,10 +216,10 @@ export default function InsightHistoryPage() {
           </Link>
 
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/15
-              border border-indigo-500/25
+            <div className="w-9 h-9 rounded-xl bg-[#22D3EE]/15
+              border border-[#22D3EE]/25
               flex items-center justify-center flex-shrink-0">
-              <BrainCircuit className="w-4.5 h-4.5 text-indigo-400" />
+              <BrainCircuit className="w-4.5 h-4.5 text-[#67E8F9]" />
             </div>
             <div>
               <h1 className="text-[20px] font-bold text-white leading-tight">
