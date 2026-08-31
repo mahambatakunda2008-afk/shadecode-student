@@ -1,5 +1,4 @@
 import { localFirstDB } from "./db";
-import { createOperationId } from "./operations";
 import type { LocalEntity, LocalOperation, LocalRecord, SyncBundle, SyncResult } from "./types";
 
 export interface LocalProgress {
@@ -21,11 +20,7 @@ function progressRecordId(userId: string, lessonId: string): string {
 }
 
 async function getDeviceId(): Promise<string> {
-  const existing = await localFirstDB.getMeta("deviceId");
-  if (typeof existing?.value === "string") return existing.value;
-  const deviceId = createId();
-  await localFirstDB.putMeta({ key: "deviceId", value: deviceId });
-  return deviceId;
+  return localFirstDB.getOrCreateDeviceId(createId);
 }
 
 function compareRecords(a: LocalRecord, b: LocalRecord): number {
@@ -59,42 +54,19 @@ export class LocalFirstStore {
     if (!existing || compareRecords(record, existing) > 0) await localFirstDB.putRecord(record);
   }
 
+  /** Local mutation with atomic clock allocation + record + operation persistence. */
   async upsert<T>(input: { id?: string; entity: LocalEntity; userId: string; payload: T }): Promise<LocalRecord<T>> {
     if (!input.userId) throw new Error("Local mutation requires an authenticated user");
-    const deviceId = await getDeviceId();
     const id = input.id ?? createId();
-    const existing = await localFirstDB.getRecord<T>(id);
-    if (existing && existing.userId !== input.userId) throw new Error("Refusing to mutate a record owned by another user");
-    const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
-    const now = Date.now();
-    const record: LocalRecord<T> = { id, entity: input.entity, userId: input.userId, payload: input.payload, updatedAt: now, deviceId, version: clock.lamport };
-    const operation: LocalOperation<T> = {
-      id: createOperationId(deviceId, clock.sequence), recordId: id, entity: input.entity, entityId: id,
-      userId: input.userId, deviceId, kind: existing && !existing.deletedAt ? "update" : "create", payload: input.payload,
-      timestamp: new Date(now).toISOString(), sequence: clock.sequence, lamport: clock.lamport,
-    };
-    await localFirstDB.putRecordAndOperation(record, operation);
-    return record;
+    return localFirstDB.mutateRecord({ id, entity: input.entity, userId: input.userId, payload: input.payload, deviceId: await getDeviceId() });
   }
 
   /** Local progress mutation. The physical key is user-scoped while entityId remains the lesson ID. */
   async saveProgress(progress: LocalProgress): Promise<LocalRecord<LocalProgress>> {
     if (!progress.userId || !progress.lessonId) throw new Error("Progress requires an authenticated user and lesson");
     const id = progressRecordId(progress.userId, progress.lessonId);
-    const existing = await localFirstDB.getRecord<LocalProgress>(id);
-    if (existing && existing.userId !== progress.userId) throw new Error("Refusing to mutate progress owned by another user");
-    const deviceId = await getDeviceId();
-    const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
-    const now = Date.now();
-    const payload = { ...progress, lastUpdated: progress.lastUpdated || new Date(now).toISOString() };
-    const record: LocalRecord<LocalProgress> = { id, entity: "progress", userId: progress.userId, payload, updatedAt: now, deviceId, version: clock.lamport };
-    const operation: LocalOperation<LocalProgress> = {
-      id: createOperationId(deviceId, clock.sequence), recordId: id, entity: "progress", entityId: progress.lessonId,
-      userId: progress.userId, deviceId, kind: existing && !existing.deletedAt ? "update" : "create", payload,
-      timestamp: new Date(now).toISOString(), sequence: clock.sequence, lamport: clock.lamport,
-    };
-    await localFirstDB.putRecordAndOperation(record, operation);
-    return record;
+    const payload = { ...progress, lastUpdated: progress.lastUpdated || new Date().toISOString() };
+    return localFirstDB.mutateRecord({ id, entity: "progress", userId: progress.userId, payload, deviceId: await getDeviceId() });
   }
 
   /** Server hydration for progress. Unlike saveProgress, this cannot create a pending operation. */
@@ -136,17 +108,14 @@ export class LocalFirstStore {
 
   async remove(input: { id: string; entity: LocalEntity; userId: string }): Promise<void> {
     if (!input.userId) throw new Error("Local mutation requires an authenticated user");
-    const deviceId = await getDeviceId();
-    const existing = await localFirstDB.getRecord(input.id);
-    if (existing && existing.userId !== input.userId) throw new Error("Refusing to delete a record owned by another user");
-    const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
-    const now = Date.now();
-    const tombstone: LocalRecord = { id: input.id, entity: input.entity, userId: input.userId, payload: null, updatedAt: now, deviceId, version: clock.lamport, deletedAt: now };
-    const operation: LocalOperation = {
-      id: createOperationId(deviceId, clock.sequence), recordId: input.id, entity: input.entity, entityId: input.id,
-      userId: input.userId, deviceId, kind: "delete", timestamp: new Date(now).toISOString(), sequence: clock.sequence, lamport: clock.lamport,
-    };
-    await localFirstDB.putRecordAndOperation(tombstone, operation);
+    await localFirstDB.mutateRecord({
+      id: input.id,
+      entity: input.entity,
+      userId: input.userId,
+      payload: null,
+      deviceId: await getDeviceId(),
+      deletedAt: Date.now(),
+    });
   }
 
   async exportBundle(userId: string): Promise<SyncBundle> {
