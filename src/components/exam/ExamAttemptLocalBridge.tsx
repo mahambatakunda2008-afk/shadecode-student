@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getExamAttempt, saveExamAttempt, type LocalExamAttempt } from "@/lib/local-first/exam-attempt";
 import { localFirstStore } from "@/lib/local-first/store";
+import { buildFallbackExam } from "@/lib/exam/fallbackExam";
 
 const LEGACY_KEY = "shadecode-exam-workspace";
 
@@ -21,6 +22,14 @@ type LegacyExam = {
   canvas?: string;
   level?: number;
   count?: number;
+};
+
+type Props = {
+  children: ReactNode;
+  subject?: string;
+  topic?: string;
+  count?: number;
+  level?: number;
 };
 
 function parse(raw: string | null): LegacyExam | null {
@@ -88,7 +97,40 @@ function toLegacy(attempt: LocalExamAttempt): LegacyExam {
   };
 }
 
-export default function ExamAttemptLocalBridge({ children }: { children: ReactNode }) {
+function seedOfflineAttempt(subject: string, topic: string, count: number, level: number): LegacyExam | null {
+  if (!subject.trim()) return null;
+  const difficulty = level >= 2 ? "hard" : level <= 0 ? "easy" : "medium";
+  const generated = buildFallbackExam(subject, topic, difficulty, count);
+  if (!generated.questions.length) return null;
+  const questions = generated.questions.map((question, index) => ({
+    id: index + 1,
+    type: question.type,
+    question: question.question,
+    options: question.options,
+    marks: question.marks,
+    topic: question.topic,
+    modelAnswer: question.modelAnswer,
+    markingCriteria: question.markingCriteria,
+  })) as LocalExamAttempt["questions"];
+  const totalSeconds = Math.max(300, Math.round(generated.durationMinutes * 60));
+  return {
+    workId: `exam:offline:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`,
+    subject,
+    topic,
+    questions,
+    answers: [],
+    current: 0,
+    seconds: totalSeconds,
+    totalSeconds,
+    startedAt: Date.now(),
+    flags: [],
+    canvas: "",
+    level: Math.max(0, Math.min(2, Math.floor(level))),
+    count: questions.length,
+  };
+}
+
+export default function ExamAttemptLocalBridge({ children, subject = "", topic = "", count = 10, level = 1 }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -126,10 +168,22 @@ export default function ExamAttemptLocalBridge({ children }: { children: ReactNo
           .map((record) => record.payload as LocalExamAttempt)
           .filter((attempt) => attempt.status === "active")
           .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
-        if (!active || cancelled) return;
-        const legacy = JSON.stringify(toLegacy(active));
-        localStorage.setItem(key, legacy);
-        lastRaw.current = legacy;
+        if (active && !cancelled) {
+          const legacy = JSON.stringify(toLegacy(active));
+          localStorage.setItem(key, legacy);
+          lastRaw.current = legacy;
+          return;
+        }
+
+        if (!navigator.onLine && subject.trim() && !cancelled) {
+          const seeded = seedOfflineAttempt(subject, topic, count, level);
+          if (seeded) {
+            const legacy = JSON.stringify(seeded);
+            localStorage.setItem(key, legacy);
+            await saveExamAttempt(userId, toAttempt(seeded));
+            lastRaw.current = legacy;
+          }
+        }
       } catch {
         // Local recovery is best-effort and must never make the route hang.
       } finally {
@@ -152,7 +206,7 @@ export default function ExamAttemptLocalBridge({ children }: { children: ReactNo
     };
     const timer = window.setInterval(() => void sync(), 1000);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [authReady, userId]);
+  }, [authReady, count, level, subject, topic, userId]);
 
   if (!hydrated) return null;
   return <>{children}</>;
