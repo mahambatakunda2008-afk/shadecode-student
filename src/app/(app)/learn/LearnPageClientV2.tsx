@@ -12,7 +12,6 @@ const GENERATE_TIMEOUT_MS = 65000;
 type Difficulty = "easy" | "medium" | "hard";
 type Lesson = LocalLessonList["lessons"][number];
 type Subject = LocalLessonList["subjects"][number];
-type Summary = NonNullable<LocalLessonList["summary"]>;
 type LearnData = Omit<LocalLessonList, "cachedAt">;
 
 function timeoutSignal(ms: number) {
@@ -79,11 +78,9 @@ export default function LearnPageClientV2() {
 
   const refreshFromLocal = useCallback(async (id: string) => {
     const cached = await getLessonCache(id);
-    if (cached) {
-      setData({ subjects: cached.subjects, lessons: cached.lessons, summary: cached.summary });
-      return true;
-    }
-    return false;
+    if (!cached) return false;
+    setData({ subjects: cached.subjects, lessons: cached.lessons, summary: cached.summary });
+    return true;
   }, []);
 
   const refreshFromServer = useCallback(async (id: string, accessToken: string, silent = false) => {
@@ -91,7 +88,6 @@ export default function LearnPageClientV2() {
     if (!silent) setRefreshing(true);
     try {
       const fresh = await requestJson<LearnData>("/api/learn", { headers: { Authorization: `Bearer ${accessToken}` } }, REQUEST_TIMEOUT_MS);
-      if (id !== userId && userId !== null) return;
       setData(fresh);
       await saveLessonCache(id, fresh);
       setOffline(false);
@@ -99,11 +95,11 @@ export default function LearnPageClientV2() {
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unable to refresh Learn.";
       setOffline(!navigator.onLine || message === "REQUEST_TIMEOUT");
-      if (data.lessons.length === 0) setError(message === "REQUEST_TIMEOUT" ? "Learn took too long to respond. Your offline lessons are still available after retry." : "Couldn't refresh your lessons.");
+      setError(message === "REQUEST_TIMEOUT" ? "Learn took too long to respond. Your offline lessons are still available." : "Couldn't refresh your lessons. Your local lessons are still available.");
     } finally {
       if (!silent) setRefreshing(false);
     }
-  }, [data.lessons.length, userId]);
+  }, []);
 
   useEffect(() => {
     const selected = params.get("subject");
@@ -115,12 +111,11 @@ export default function LearnPageClientV2() {
       const id = session.user.id;
       setUserId(id);
       setToken(session.access_token);
-      const hasCache = await refreshFromLocal(id);
+      await refreshFromLocal(id);
       if (!alive) return;
       setLoading(false);
       if (!navigator.onLine) { setOffline(true); return; }
       await refreshFromServer(id, session.access_token, true);
-      if (!hasCache) setLoading(false);
     }).catch((e) => {
       if (!alive) return;
       setLoading(false);
@@ -164,10 +159,7 @@ export default function LearnPageClientV2() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary)]"><Sparkles className="h-4 w-4" /> Learn</div><h1 className="mt-1 text-3xl font-black tracking-tight">Turn a topic into a lesson.</h1><p className="mt-1 max-w-2xl text-sm text-[var(--muted-foreground)]">Generate focused lessons, continue where you left off, and keep your learning workspace available even when the connection misbehaves.</p></div>
-          <button type="button" onClick={() => token && userId && void refreshFromServer(userId, token)} disabled={refreshing || offline} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-4 text-sm font-semibold disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh</button>
-        </header>
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary)]"><Sparkles className="h-4 w-4" /> Learn</div><h1 className="mt-1 text-3xl font-black tracking-tight">Turn a topic into a lesson.</h1><p className="mt-1 max-w-2xl text-sm text-[var(--muted-foreground)]">Generate focused lessons, continue where you left off, and keep your learning workspace available even when the connection misbehaves.</p></div><button type="button" onClick={() => token && userId && void refreshFromServer(userId, token)} disabled={refreshing || offline} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-4 text-sm font-semibold disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh</button></header>
         {(offline || error) && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="mt-0.5 rounded-lg bg-[var(--primary-glow)] p-2">{offline ? <WifiOff className="h-4 w-4 text-[var(--primary)]" /> : <AlertCircle className="h-4 w-4 text-[var(--primary)]" />}</div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{offline ? "You're offline" : "Learn couldn't refresh"}</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{error || "Showing your most recently cached lessons. You can keep reading and retry when connected."}</p></div></div>}
         <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-sm sm:p-6"><div className="flex items-center gap-2"><Zap className="h-5 w-5 text-[var(--primary)]" /><h2 className="font-bold">Generate a lesson</h2></div><div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1.5fr_auto]"><select value={subject} onChange={(e) => setSubject(e.target.value)} className="min-h-12 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm outline-none focus:border-[var(--primary)]"><option value="">Choose a subject</option>{data.subjects.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}</select><input value={topic} onChange={(e) => setTopic(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void generate(); }} placeholder="e.g. Deformation of solids" className="min-h-12 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 text-sm outline-none focus:border-[var(--primary)]" /><button type="button" onClick={() => void generate()} disabled={!subject || !topic.trim() || generating || offline} className="min-h-12 rounded-xl bg-[var(--primary)] px-5 text-sm font-bold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50">{generating ? "Generating…" : "Generate"}</button></div><div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Lesson difficulty">{([['easy','Guided'],['medium','Standard'],['hard','Challenge']] as const).map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={difficulty === value} onClick={() => setDifficulty(value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${difficulty === value ? "border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] text-[var(--muted-foreground)]"}`}>{label}</button>)}</div>{generateError && <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--destructive,#ef4444)]"><AlertCircle className="h-4 w-4" /> {generateError}</p>}</section>
         <section><div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">Subjects</h2><span className="text-xs text-[var(--muted-foreground)]">{data.subjects.length} available</span></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.subjects.map((item: Subject) => <button key={item.id} type="button" onClick={() => setSubject(item.name)} className={`rounded-2xl border p-4 text-left transition ${subject === item.name ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--card)] hover:border-[var(--primary)]"}`}><div className="flex items-center justify-between gap-3"><BookOpen className="h-5 w-5 text-[var(--primary)]" /><span className="text-xs text-[var(--muted-foreground)]">{item.lessonCount} lessons</span></div><p className="mt-4 font-bold">{item.name}</p></button>)}</div></section>
