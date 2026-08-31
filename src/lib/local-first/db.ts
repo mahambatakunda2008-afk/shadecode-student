@@ -5,6 +5,7 @@ const DB_NAME = "shadecode-local-first";
 const DB_VERSION = 2;
 const STORES = { records: "records", operations: "operations", meta: "meta" } as const;
 const LAMPORT_KEY = "lamport";
+const DEVICE_ID_KEY = "deviceId";
 const SEQUENCE_PREFIX = "sequence:";
 
 class LocalFirstDB {
@@ -16,7 +17,11 @@ class LocalFirstDB {
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => { this.db = request.result; resolve(); };
+      request.onsuccess = () => {
+        this.db = request.result;
+        this.db.onversionchange = () => { this.db?.close(); this.db = null; };
+        resolve();
+      };
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORES.records)) {
@@ -80,11 +85,105 @@ class LocalFirstDB {
     });
   }
 
+  async getOrCreateDeviceId(createId: () => string): Promise<string> {
+    await this.init();
+    return new Promise<string>((resolve, reject) => {
+      const transaction = this.db!.transaction(STORES.meta, "readwrite");
+      const store = transaction.objectStore(STORES.meta);
+      const request = store.get(DEVICE_ID_KEY);
+      let deviceId: string | null = null;
+      request.onsuccess = () => {
+        const value = request.result?.value;
+        if (typeof value === "string" && value) {
+          deviceId = value;
+          return;
+        }
+        deviceId = createId();
+        store.put({ key: DEVICE_ID_KEY, value: deviceId });
+      };
+      request.onerror = () => reject(request.error);
+      transaction.oncomplete = () => resolve(deviceId!);
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error ?? new Error("Device identity transaction aborted"));
+    });
+  }
+
   async putRecord(record: LocalRecord): Promise<void> {
     await this.transaction<void>(STORES.records, "readwrite", (store, resolve, reject) => {
       const request = store.put(record);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  /** Atomically allocates the device sequence/Lamport clock and persists record + operation. */
+  async mutateRecord<T>(input: { id: string; entity: LocalRecord["entity"]; userId: string; payload: T; deviceId: string; deletedAt?: number }): Promise<LocalRecord<T>> {
+    if (!input.userId) throw new Error("Local mutation requires an authenticated user");
+    await this.init();
+    return new Promise<LocalRecord<T>>((resolve, reject) => {
+      const transaction = this.db!.transaction([STORES.records, STORES.operations, STORES.meta], "readwrite");
+      const records = transaction.objectStore(STORES.records);
+      const operations = transaction.objectStore(STORES.operations);
+      const meta = transaction.objectStore(STORES.meta);
+      const existingRequest = records.get(input.id);
+      const sequenceKey = `${SEQUENCE_PREFIX}${input.deviceId}`;
+      let existing: LocalRecord | undefined;
+      let sequence = 0;
+      let lamport = 0;
+      let result: LocalRecord<T> | undefined;
+      let mutationStarted = false;
+
+      const fail = (error: unknown) => { if (!mutationStarted) reject(error); transaction.abort(); };
+      existingRequest.onsuccess = () => {
+        existing = existingRequest.result as LocalRecord | undefined;
+        if (existing && existing.userId !== input.userId) return fail(new Error("Refusing to mutate a record owned by another user"));
+        const lamportRequest = meta.get(LAMPORT_KEY);
+        const sequenceRequest = meta.get(sequenceKey);
+        let ready = 0;
+        const finishClock = () => {
+          ready += 1;
+          if (ready !== 2) return;
+          lamport += 1;
+          sequence += 1;
+          const now = Date.now();
+          result = {
+            id: input.id,
+            entity: input.entity,
+            userId: input.userId,
+            payload: input.payload,
+            updatedAt: now,
+            deviceId: input.deviceId,
+            version: lamport,
+            ...(input.deletedAt === undefined ? {} : { deletedAt: input.deletedAt }),
+          };
+          const operation: LocalOperation<T> = {
+            id: createOperationId(input.deviceId, sequence),
+            recordId: input.id,
+            entity: input.entity,
+            entityId: input.id,
+            userId: input.userId,
+            deviceId: input.deviceId,
+            kind: input.deletedAt === undefined ? (existing && !existing.deletedAt ? "update" : "create") : "delete",
+            ...(input.deletedAt === undefined ? { payload: input.payload } : {}),
+            timestamp: new Date(now).toISOString(),
+            sequence,
+            lamport,
+          };
+          mutationStarted = true;
+          records.put(result);
+          operations.put(operation);
+          meta.put({ key: LAMPORT_KEY, value: lamport });
+          meta.put({ key: sequenceKey, value: sequence });
+        };
+        lamportRequest.onsuccess = () => { lamport = typeof lamportRequest.result?.value === "number" ? lamportRequest.result.value : 0; finishClock(); };
+        sequenceRequest.onsuccess = () => { sequence = typeof sequenceRequest.result?.value === "number" ? sequenceRequest.result.value : 0; finishClock(); };
+        lamportRequest.onerror = () => fail(lamportRequest.error);
+        sequenceRequest.onerror = () => fail(sequenceRequest.error);
+      };
+      existingRequest.onerror = () => fail(existingRequest.error);
+      transaction.oncomplete = () => result ? resolve(result) : reject(new Error("Local mutation completed without a result"));
+      transaction.onerror = () => { if (!mutationStarted) reject(transaction.error); };
+      transaction.onabort = () => { if (!mutationStarted) reject(transaction.error ?? new Error("Local mutation aborted")); };
     });
   }
 
