@@ -90,19 +90,21 @@ function toLegacy(attempt: LocalExamAttempt): LegacyExam {
 
 export default function ExamAttemptLocalBridge({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const lastRaw = useRef<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     void createClient().auth.getUser().then(({ data }) => {
       if (alive) setUserId(data.user?.id ?? null);
-    }).finally(() => { if (alive) setReady(true); });
+    }).finally(() => { if (alive) setAuthReady(true); });
     return () => { alive = false; };
   }, []);
 
   useEffect(() => {
-    if (!ready || !userId) return;
+    if (!authReady) return;
+    if (!userId) { setHydrated(true); return; }
     let cancelled = false;
 
     const hydrate = async () => {
@@ -129,10 +131,13 @@ export default function ExamAttemptLocalBridge({ children }: { children: ReactNo
         localStorage.setItem(key, legacy);
         lastRaw.current = legacy;
       } catch {
-        // Recovery is best-effort; never block the exam UI.
+        // Local recovery is best-effort and must never make the route hang.
+      } finally {
+        if (!cancelled) setHydrated(true);
       }
     };
 
+    void hydrate();
     const sync = async () => {
       try {
         const raw = localStorage.getItem(`${LEGACY_KEY}:${userId}`);
@@ -142,18 +147,13 @@ export default function ExamAttemptLocalBridge({ children }: { children: ReactNo
         if (!saved) return;
         await saveExamAttempt(userId, toAttempt(saved));
       } catch {
-        // The workspace remains usable through its existing local fallback.
+        // The existing local workspace remains a fallback if IndexedDB is unavailable.
       }
     };
-
-    void hydrate().finally(() => {
-      if (!cancelled) setReady(true);
-    });
     const timer = window.setInterval(() => void sync(), 1000);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [ready, userId]);
+  }, [authReady, userId]);
 
-  // Auth is optional for the setup screen, but never delay it indefinitely.
-  if (!ready) return null;
+  if (!hydrated) return null;
   return <>{children}</>;
 }
