@@ -1,5 +1,6 @@
 import { saveExamAttempt, type LocalExamAttempt } from "./exam-attempt";
 import { submitExamLocally } from "./exam-result";
+import { queueExamSubmission } from "./exam-submission-queue";
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 
 export async function submitExamOffline(attempt: LocalExamAttempt, questions: ExamQuestion[], now = new Date().toISOString()): Promise<ExamResults> {
@@ -8,7 +9,7 @@ export async function submitExamOffline(attempt: LocalExamAttempt, questions: Ex
   if (!questions.length) throw new Error("Cannot submit an empty exam");
   if (!Number.isFinite(Date.parse(now))) throw new Error("Exam submission has an invalid timestamp");
 
-  const resultRecord = await submitExamLocally({
+  const pending = {
     userId: attempt.userId,
     attemptId: attempt.attemptId,
     subject: attempt.subject,
@@ -18,7 +19,10 @@ export async function submitExamOffline(attempt: LocalExamAttempt, questions: Ex
     answers: attempt.answers,
     timeTaken: Math.max(0, attempt.totalSeconds - attempt.seconds),
     submittedAt: now,
-  });
+  };
+
+  await queueExamSubmission(pending);
+  const resultRecord = await submitExamLocally(pending);
 
   await saveExamAttempt(attempt.userId, {
     ...attempt,
