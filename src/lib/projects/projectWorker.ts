@@ -70,7 +70,9 @@ export function buildProjectWorkerPlan(project: StudentProject): ProjectWorkerPl
   const blockers: string[] = [];
   if (!project.brief?.trim()) blockers.push("Teacher brief is missing.");
   if (!r.deliverable.trim()) blockers.push("Final deliverable is not specified.");
-  if (r.teacherRubric.trim()) blockers.push(...plan.requiredEvidence.filter((e) => /measurement|observation|interview|response|prototype|test/i.test(e)).map((e) => `Real evidence still required: ${e}`));
+  blockers.push(...plan.requiredEvidence
+    .filter((e) => /measurement|observation|interview|response|prototype|test/i.test(e))
+    .map((e) => `Real evidence still required: ${e}`));
   if (r.physicalWork.trim()) blockers.push("Learner-owned physical work must be completed and evidenced before final claims are assembled.");
 
   const nextAction = blockers.length ? blockers[0] : tasks.find((t) => t.status === "ready")?.title ?? "Review the generated work plan.";
