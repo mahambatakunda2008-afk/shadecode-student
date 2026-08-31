@@ -1,0 +1,18 @@
+# Shadecode Student
+
+> AI-powered learning platform for students. Study smarter. Live sharper.
+
+## Public resources
+
+- [Home](https://shadecodestudent.vercel.app/)
+- [Privacy Policy](https://shadecodestudent.vercel.app/privacy.html)
+- [Terms of Service](https://shadecodestudent.vercel.app/terms.html)
+- [Security](https://shadecodestudent.vercel.app/security.html)
+
+## Product
+
+Shadecode Student provides study planning, learning, practice, examination simulation, mathematics assistance, analytics, gamification, and optional AI-assisted learning features. The product is designed with local-first and offline-capable operation as a core direction.
+
+## AI output
+
+AI-generated content is educational assistance, not authoritative examination guidance. Users should verify important academic information against their syllabus, teachers, textbooks, and official examination materials.
