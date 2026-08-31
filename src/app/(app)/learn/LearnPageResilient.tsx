@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { offlineStorage } from "@/lib/offline/storage";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetchWithTimeout";
 import { lessonViewedEvent } from "@/lib/intelligence/emitLearningEvent";
@@ -25,7 +26,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 async function readDeviceLessons(userId?: string): Promise<LearnLesson[]> {
   try {
     const rows = await withTimeout(offlineStorage.getAllLessons(), LOCAL_TIMEOUT);
-    const lessons = await Promise.all(rows.map(async row => {
+    return await Promise.all(rows.map(async row => {
       const progress = userId ? await offlineStorage.getProgress(row.id, userId).catch(() => null) : null;
       return {
         id: row.id,
@@ -38,7 +39,6 @@ async function readDeviceLessons(userId?: string): Promise<LearnLesson[]> {
         completed: progress?.completed ?? row.completed ?? false,
       };
     }));
-    return lessons;
   } catch { return []; }
 }
 
@@ -62,13 +62,13 @@ export default function LearnPageResilient() {
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
-      let session: Awaited<ReturnType<ReturnType<typeof createClient>["auth"]["getSession"]>>["data"]["session"] = null;
+      let session: Session | null = null;
       try {
         const sb = createClient();
         const result = await Promise.race([sb.auth.getSession(), new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), AUTH_TIMEOUT))]);
         session = result.data.session;
         if (session && !cancelled) setToken(session.access_token);
-      } catch { /* Cached device data can still boot without auth/network. */ }
+      } catch { /* Device lessons must remain bootable without auth/network. */ }
 
       const local = await readDeviceLessons(session?.user.id);
       if (cancelled) return;
