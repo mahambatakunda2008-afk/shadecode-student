@@ -17,12 +17,14 @@ export interface LocalExamResult extends ExamResults {
 
 const resultId = (userId: string, attemptId: string) => `exam_result:${userId}:${attemptId}`;
 
-export async function submitExamLocally(input: { userId: string; attemptId: string; subject: string; topic?: string; level: string; questions: ExamQuestion[]; answers: ExamAnswer[]; timeTaken: number }): Promise<LocalRecord<LocalExamResult>> {
+export async function submitExamLocally(input: { userId: string; attemptId: string; subject: string; topic?: string; level: string; questions: ExamQuestion[]; answers: ExamAnswer[]; timeTaken: number; submittedAt?: string }): Promise<LocalRecord<LocalExamResult>> {
   if (!input.userId) throw new Error("Exam result requires an authenticated user");
   if (!input.attemptId) throw new Error("Exam result requires an attempt ID");
   if (!Array.isArray(input.questions) || input.questions.length === 0) throw new Error("Exam result requires questions");
+  const submittedAt = input.submittedAt ?? new Date().toISOString();
+  if (!Number.isFinite(Date.parse(submittedAt))) throw new Error("Exam result has an invalid submission time");
   const marked = markExamLocally(input.questions, input.answers, input.timeTaken);
-  const result: LocalExamResult = { ...marked, attemptId: input.attemptId, subject: input.subject, topic: input.topic, level: input.level, questions: input.questions, answers: input.answers, source: "local-deterministic", pendingServerMark: input.questions.some((q) => q.type !== "multiple_choice"), submittedAt: new Date().toISOString() };
+  const result: LocalExamResult = { ...marked, attemptId: input.attemptId, subject: input.subject, topic: input.topic, level: input.level, questions: input.questions, answers: input.answers, source: "local-deterministic", pendingServerMark: input.questions.some((q) => q.type !== "multiple_choice"), submittedAt };
   return localFirstStore.upsert({ id: resultId(input.userId, input.attemptId), entity: "exam_result", userId: input.userId, payload: result });
 }
 
