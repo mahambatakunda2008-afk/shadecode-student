@@ -1,4 +1,4 @@
 Contact: mailto:shadecodetech@gmail.com
-Policy: https://shadecodestudent.vercel.app/security.txt
+Policy: https://shadecodestudent.vercel.app/security.html
 Preferred-Languages: en
 Expires: 2027-08-31T00:00:00.000Z
