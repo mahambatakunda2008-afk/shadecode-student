@@ -10,10 +10,16 @@ export interface OfflineMutation<T = unknown> {
   attempts: number;
   lastAttemptAt?: string;
   lastError?: string;
+  /** Local record revision captured when the mutation was queued. */
+  clientVersion?: number;
+  /** Remote revision the client last observed, used for conflict detection. */
+  baseVersion?: number;
+  /** Stable per-install identity, distinct from the authenticated user. */
+  deviceId?: string;
 }
 
 const DB_NAME = "shadecode-offline-mutations";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE = "mutations";
 const MAX_ATTEMPTS = 8;
 const BASE_RETRY_MS = 5_000;
@@ -42,7 +48,7 @@ export function isMutationReady(mutation: OfflineMutation, now = Date.now()): bo
 function payloadEntityId(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const value = payload as Record<string, unknown>;
-  const id = value.id ?? value.projectId ?? value.project_id;
+  const id = value.id ?? value.entityId ?? value.projectId ?? value.project_id;
   return typeof id === "string" && id ? id : null;
 }
 
@@ -77,13 +83,7 @@ class MutationQueue {
         (mutation) => mutation.store === input.store && payloadEntityId(mutation.payload) === entityId,
       );
       if (existing) {
-        const replacement: OfflineMutation<T> = {
-          ...existing,
-          operation: input.operation,
-          payload: input.payload,
-          lastAttemptAt: undefined,
-          lastError: undefined,
-        };
+        const replacement: OfflineMutation<T> = { ...existing, ...input, id: existing.id, createdAt: existing.createdAt, attempts: 0, lastAttemptAt: undefined, lastError: undefined };
         await this.put(replacement);
         return replacement;
       }
@@ -108,6 +108,7 @@ class MutationQueue {
   async listFailed(ownerId: string): Promise<OfflineMutation[]> { return (await this.list(ownerId)).filter((mutation) => mutation.attempts >= MAX_ATTEMPTS); }
   async getStatus(ownerId: string): Promise<{ pending: number; failed: number }> { const rows = await this.list(ownerId); return { pending: rows.filter((m) => m.attempts < MAX_ATTEMPTS).length, failed: rows.filter((m) => m.attempts >= MAX_ATTEMPTS).length }; }
   async resetFailed(ownerId: string): Promise<void> { for (const mutation of await this.listFailed(ownerId)) await this.put({ ...mutation, attempts: 0, lastAttemptAt: undefined, lastError: undefined }); }
+  async clearOwner(ownerId: string): Promise<void> { for (const mutation of await this.list(ownerId)) await this.remove(mutation.id, ownerId); }
 
   async remove(id: string, ownerId: string): Promise<void> {
     if (!ownerId) return;
