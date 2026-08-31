@@ -5,6 +5,7 @@ export interface LocalXpState {
   totalXp: number;
   level: number;
   updatedAt: string;
+  appliedEventIds?: string[];
 }
 
 export interface LocalStreakState {
@@ -34,17 +35,30 @@ export async function getXp(userId: string): Promise<LocalXpState | null> {
 }
 
 /**
- * Local XP foundation. Callers that can award the same logical reward more than
- * once should supply an idempotency key through the event layer before using this
- * primitive; read/modify/write is intentionally not the cross-tab authority.
+ * Local XP primitive. When an idempotency key is supplied, the reward is only
+ * applied once for that key on the current local record. Cross-tab atomicity
+ * remains a responsibility of the underlying IndexedDB transaction layer.
  */
-export async function awardXp(userId: string, amount: number): Promise<LocalRecord<LocalXpState>> {
+export async function awardXp(userId: string, amount: number, idempotencyKey?: string): Promise<LocalRecord<LocalXpState>> {
   if (!userId) throw new Error("XP requires an authenticated user");
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("XP amount must be positive");
+  if (idempotencyKey !== undefined && !idempotencyKey.trim()) throw new Error("XP idempotency key cannot be empty");
+
   const current = await getXp(userId);
+  const appliedEventIds = current?.appliedEventIds ?? [];
+  if (idempotencyKey && appliedEventIds.includes(idempotencyKey)) {
+    return (await localFirstStore.get<LocalXpState>(xpId(userId)))!;
+  }
+
   const totalXp = Math.max(0, Math.floor((current?.totalXp ?? 0) + amount));
   const level = levelForXp(totalXp);
-  return localFirstStore.upsert({ id: xpId(userId), entity: "xp", userId, payload: { totalXp, level, updatedAt: new Date().toISOString() } });
+  const nextEventIds = idempotencyKey ? [...appliedEventIds, idempotencyKey].slice(-500) : appliedEventIds;
+  return localFirstStore.upsert({
+    id: xpId(userId),
+    entity: "xp",
+    userId,
+    payload: { totalXp, level, updatedAt: new Date().toISOString(), appliedEventIds: nextEventIds },
+  });
 }
 
 export async function getStreak(userId: string): Promise<LocalStreakState | null> {
