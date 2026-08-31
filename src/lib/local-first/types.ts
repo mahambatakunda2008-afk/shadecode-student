@@ -1,14 +1,9 @@
-/**
- * Local-first domain primitives.
- *
- * The device is the primary data plane. Remote services are optional relays,
- * backups, and coordination points rather than the source of truth.
- */
-
+/** Local-first domain primitives. The device is the primary data plane. */
 import type { LocalOperation } from "./operations";
 
 export type LocalEntity =
   | "task"
+  | "subject"
   | "progress"
   | "xp"
   | "streak"
