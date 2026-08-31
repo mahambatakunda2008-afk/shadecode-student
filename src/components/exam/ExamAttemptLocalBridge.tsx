@@ -24,13 +24,7 @@ type LegacyExam = {
   count?: number;
 };
 
-type Props = {
-  children: ReactNode;
-  subject?: string;
-  topic?: string;
-  count?: number;
-  level?: number;
-};
+type Props = { children: ReactNode; subject?: string; topic?: string; count?: number; level?: number };
 
 function parse(raw: string | null): LegacyExam | null {
   if (!raw) return null;
@@ -44,34 +38,34 @@ function parse(raw: string | null): LegacyExam | null {
       topic: value.topic || "",
       questions: value.questions,
       answers: value.answers,
-      current: Number.isFinite(value.current) ? value.current : 0,
-      seconds: Number.isFinite(value.seconds) ? value.seconds : 0,
-      totalSeconds: Number.isFinite(value.totalSeconds) ? value.totalSeconds : value.seconds || 0,
-      startedAt: value.startedAt,
+      current: Number.isFinite(value.current) ? Number(value.current) : 0,
+      seconds: Number.isFinite(value.seconds) ? Number(value.seconds) : 0,
+      totalSeconds: Number.isFinite(value.totalSeconds) ? Number(value.totalSeconds) : Number(value.seconds || 0),
+      startedAt: Number(value.startedAt),
       flags: Array.isArray(value.flags) ? value.flags : [],
       canvas: typeof value.canvas === "string" ? value.canvas : "",
-      level: Number.isFinite(value.level) ? value.level : 1,
-      count: Number.isFinite(value.count) ? value.count : value.questions.length,
+      level: Number.isFinite(value.level) ? Number(value.level) : 1,
+      count: Number.isFinite(value.count) ? Number(value.count) : value.questions.length,
     };
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-function toAttempt(saved: LegacyExam): LocalExamAttempt {
-  const totalSeconds = Math.max(0, Math.floor(saved.totalSeconds));
+function toAttempt(saved: LegacyExam, userId: string): LocalExamAttempt {
+  const totalSeconds = Math.max(0, Math.floor(Number(saved.totalSeconds) || 0));
+  const count = Math.max(1, Math.floor(Number(saved.count) || saved.questions.length));
   return {
     attemptId: saved.workId,
+    userId,
     subject: saved.subject,
     topic: saved.topic || "",
-    level: Math.max(0, Math.min(2, Math.floor(saved.level ?? 1))),
-    count: Math.max(1, Math.floor(saved.count ?? saved.questions.length)),
+    level: Math.max(0, Math.min(2, Math.floor(Number(saved.level) || 0))),
+    count,
     questions: saved.questions,
     answers: saved.answers,
-    current: Math.max(0, Math.min(saved.questions.length - 1, Math.floor(saved.current))),
-    seconds: Math.max(0, Math.min(totalSeconds, Math.floor(saved.seconds))),
+    current: Math.max(0, Math.min(saved.questions.length - 1, Math.floor(Number(saved.current) || 0))),
+    seconds: Math.max(0, Math.min(totalSeconds, Math.floor(Number(saved.seconds) || 0))),
     totalSeconds,
-    startedAt: saved.startedAt,
+    startedAt: Number(saved.startedAt),
     flags: saved.flags || [],
     canvas: saved.canvas || "",
     status: "active",
@@ -80,21 +74,7 @@ function toAttempt(saved: LegacyExam): LocalExamAttempt {
 }
 
 function toLegacy(attempt: LocalExamAttempt): LegacyExam {
-  return {
-    workId: attempt.attemptId,
-    subject: attempt.subject,
-    topic: attempt.topic,
-    questions: attempt.questions,
-    answers: attempt.answers,
-    current: attempt.current,
-    seconds: attempt.seconds,
-    totalSeconds: attempt.totalSeconds,
-    startedAt: attempt.startedAt,
-    flags: attempt.flags,
-    canvas: attempt.canvas,
-    level: attempt.level,
-    count: attempt.count,
-  };
+  return { workId: attempt.attemptId, subject: attempt.subject, topic: attempt.topic, questions: attempt.questions, answers: attempt.answers, current: attempt.current, seconds: attempt.seconds, totalSeconds: attempt.totalSeconds, startedAt: attempt.startedAt, flags: attempt.flags, canvas: attempt.canvas, level: attempt.level, count: attempt.count };
 }
 
 function seedOfflineAttempt(subject: string, topic: string, count: number, level: number): LegacyExam | null {
@@ -102,32 +82,9 @@ function seedOfflineAttempt(subject: string, topic: string, count: number, level
   const difficulty = level >= 2 ? "hard" : level <= 0 ? "easy" : "medium";
   const generated = buildFallbackExam(subject, topic, difficulty, count);
   if (!generated.questions.length) return null;
-  const questions = generated.questions.map((question, index) => ({
-    id: index + 1,
-    type: question.type,
-    question: question.question,
-    options: question.options,
-    marks: question.marks,
-    topic: question.topic,
-    modelAnswer: question.modelAnswer,
-    markingCriteria: question.markingCriteria,
-  })) as LocalExamAttempt["questions"];
+  const questions = generated.questions.map((question, index) => ({ id: index + 1, type: question.type, question: question.question, options: question.options, marks: question.marks, topic: question.topic, modelAnswer: question.modelAnswer, markingCriteria: question.markingCriteria })) as LocalExamAttempt["questions"];
   const totalSeconds = Math.max(300, Math.round(generated.durationMinutes * 60));
-  return {
-    workId: `exam:offline:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`,
-    subject,
-    topic,
-    questions,
-    answers: [],
-    current: 0,
-    seconds: totalSeconds,
-    totalSeconds,
-    startedAt: Date.now(),
-    flags: [],
-    canvas: "",
-    level: Math.max(0, Math.min(2, Math.floor(level))),
-    count: questions.length,
-  };
+  return { workId: `exam:offline:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`, subject, topic, questions, answers: [], current: 0, seconds: totalSeconds, totalSeconds, startedAt: Date.now(), flags: [], canvas: "", level: Math.max(0, Math.min(2, Math.floor(Number(level) || 0))), count: questions.length };
 }
 
 export default function ExamAttemptLocalBridge({ children, subject = "", topic = "", count = 10, level = 1 }: Props) {
@@ -138,9 +95,7 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
 
   useEffect(() => {
     let alive = true;
-    void createClient().auth.getUser().then(({ data }) => {
-      if (alive) setUserId(data.user?.id ?? null);
-    }).finally(() => { if (alive) setAuthReady(true); });
+    void createClient().auth.getUser().then(({ data }) => { if (alive) setUserId(data.user?.id ?? null); }).finally(() => { if (alive) setAuthReady(true); });
     return () => { alive = false; };
   }, []);
 
@@ -148,7 +103,6 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
     if (!authReady) return;
     if (!userId) { setHydrated(true); return; }
     let cancelled = false;
-
     const hydrate = async () => {
       try {
         const key = `${LEGACY_KEY}:${userId}`;
@@ -157,40 +111,24 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
           const saved = parse(raw);
           if (saved) {
             const existing = await getExamAttempt(userId, saved.workId);
-            if (!existing) await saveExamAttempt(userId, toAttempt(saved));
+            if (!existing) await saveExamAttempt(userId, toAttempt(saved, userId));
             lastRaw.current = raw;
             return;
           }
         }
         const records = await localFirstStore.list(userId);
-        const active = records
-          .filter((record) => record.entity === "exam_attempt" && !record.deletedAt)
-          .map((record) => record.payload as LocalExamAttempt)
-          .filter((attempt) => attempt.status === "active")
-          .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
+        const active = records.filter((record) => record.entity === "exam_attempt" && !record.deletedAt).map((record) => record.payload as LocalExamAttempt).filter((attempt) => attempt.status === "active").sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
         if (active && !cancelled) {
           const legacy = JSON.stringify(toLegacy(active));
-          localStorage.setItem(key, legacy);
-          lastRaw.current = legacy;
-          return;
+          localStorage.setItem(key, legacy); lastRaw.current = legacy; return;
         }
-
         if (!navigator.onLine && subject.trim() && !cancelled) {
           const seeded = seedOfflineAttempt(subject, topic, count, level);
-          if (seeded) {
-            const legacy = JSON.stringify(seeded);
-            localStorage.setItem(key, legacy);
-            await saveExamAttempt(userId, toAttempt(seeded));
-            lastRaw.current = legacy;
-          }
+          if (seeded) { const legacy = JSON.stringify(seeded); localStorage.setItem(key, legacy); await saveExamAttempt(userId, toAttempt(seeded, userId)); lastRaw.current = legacy; }
         }
-      } catch {
-        // Local recovery is best-effort and must never make the route hang.
-      } finally {
-        if (!cancelled) setHydrated(true);
-      }
+      } catch { /* Local recovery is best-effort and must never make the route hang. */ }
+      finally { if (!cancelled) setHydrated(true); }
     };
-
     void hydrate();
     const sync = async () => {
       try {
@@ -199,10 +137,8 @@ export default function ExamAttemptLocalBridge({ children, subject = "", topic =
         lastRaw.current = raw;
         const saved = parse(raw);
         if (!saved) return;
-        await saveExamAttempt(userId, toAttempt(saved));
-      } catch {
-        // The existing local workspace remains a fallback if IndexedDB is unavailable.
-      }
+        await saveExamAttempt(userId, toAttempt(saved, userId));
+      } catch { /* Existing local workspace remains the fallback if IndexedDB is unavailable. */ }
     };
     const timer = window.setInterval(() => void sync(), 1000);
     return () => { cancelled = true; window.clearInterval(timer); };
