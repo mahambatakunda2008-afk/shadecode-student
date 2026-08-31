@@ -24,6 +24,7 @@ export const metadata: Metadata = {
   keywords: ["Shadecode Student", "AI learning platform", "Computer Science", "A Level", "AS Level", "Zimbabwe students", "education"],
   authors: [{ name: "Shadecode" }],
   creator: "Shadecode",
+  alternates: { canonical: "/" },
   manifest: "/manifest.json",
   openGraph: { type: "website", locale: "en_US", url: "https://shadecodestudent.vercel.app", siteName: "Shadecode Student", title: "Shadecode Student", description: "Study smarter. Live sharper. An AI-powered learning platform for students.", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Shadecode Student — Study smarter. Live sharper." }] },
   twitter: { card: "summary_large_image", title: "Shadecode Student", description: "Study smarter. Live sharper.", images: ["/og-image.png"] },
@@ -53,8 +54,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <BandwidthProvider>
               <RouteNavigationGuard />
               {children}
-
-              {/* Everything below is deliberately outside the critical page UI. */}
               <ServiceWorkerRegistration />
               <OfflineShell />
               <PWAInstallPrompt />
