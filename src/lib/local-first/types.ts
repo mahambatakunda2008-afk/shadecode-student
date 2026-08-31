@@ -5,6 +5,8 @@
  * backups, and coordination points rather than the source of truth.
  */
 
+import type { LocalOperation } from "./operations";
+
 export type LocalEntity =
   | "task"
   | "progress"
@@ -28,17 +30,7 @@ export interface LocalRecord<T = unknown> {
   deletedAt?: number;
 }
 
-export interface LocalOperation {
-  id: string;
-  recordId: string;
-  entity: LocalEntity;
-  userId: string;
-  deviceId: string;
-  lamport: number;
-  timestamp: number;
-  type: "upsert" | "delete";
-  payload?: unknown;
-}
+export type { LocalOperation };
 
 export interface LocalMeta {
   key: string;
@@ -46,11 +38,12 @@ export interface LocalMeta {
 }
 
 export interface SyncBundle {
-  version: 1;
+  version: 2;
   exportedAt: number;
   userId: string;
   deviceId: string;
   lamport: number;
+  sequence: number;
   records: LocalRecord[];
   operations: LocalOperation[];
 }
