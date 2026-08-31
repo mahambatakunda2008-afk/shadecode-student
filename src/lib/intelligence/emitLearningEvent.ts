@@ -98,8 +98,6 @@ async function post(input: LearningEventInput): Promise<PostResult> {
       keepalive: true,
     }, POST_TIMEOUT_MS);
     if (response.ok) return "sent";
-    // Invalid/unsupported events must not be retried forever. Auth failures are
-    // retained for the owning account because a session may refresh shortly.
     if (response.status >= 400 && response.status < 500 && response.status !== 401) return "drop";
     return "retry";
   } catch {
@@ -107,9 +105,13 @@ async function post(input: LearningEventInput): Promise<PostResult> {
   }
 }
 
-function backoffMs(attempts: number): number {
+export function learningEventBackoffMs(attempts: number): number {
   const exponent = Math.min(Math.max(attempts, 0), 6);
   return Math.min(1_000 * 2 ** exponent, MAX_BACKOFF_MS);
+}
+
+export function shouldSendQueuedLearningEvent(queuedUserId: string, currentUserId: string, nextAttemptAt: number, now: number): boolean {
+  return queuedUserId === currentUserId && nextAttemptAt <= now;
 }
 
 export async function flushLearningEvents(): Promise<void> {
@@ -124,8 +126,7 @@ export async function flushLearningEvents(): Promise<void> {
     const remaining: QueuedLearningEvent[] = [];
 
     for (const queued of queue) {
-      // Never send one account's offline events while another account is signed in.
-      if (queued.userId !== userId || queued.nextAttemptAt > now) {
+      if (!shouldSendQueuedLearningEvent(queued.userId, userId, queued.nextAttemptAt, now)) {
         remaining.push(queued);
         continue;
       }
@@ -133,7 +134,7 @@ export async function flushLearningEvents(): Promise<void> {
       const result = await post(queued.input);
       if (result === "retry") {
         const attempts = queued.attempts + 1;
-        remaining.push({ ...queued, attempts, nextAttemptAt: Date.now() + backoffMs(attempts) });
+        remaining.push({ ...queued, attempts, nextAttemptAt: Date.now() + learningEventBackoffMs(attempts) });
       }
     }
     writeQueue(remaining);
