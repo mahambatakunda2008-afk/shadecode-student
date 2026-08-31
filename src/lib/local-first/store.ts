@@ -22,38 +22,20 @@ function compareRecords(a: LocalRecord, b: LocalRecord): number {
 }
 
 export class LocalFirstStore {
-  async deviceId(): Promise<string> {
-    return getDeviceId();
-  }
+  async deviceId(): Promise<string> { return getDeviceId(); }
+  async get<T>(id: string): Promise<LocalRecord<T> | null> { return localFirstDB.getRecord<T>(id); }
+  async list(userId: string): Promise<LocalRecord[]> { return localFirstDB.getRecords(userId); }
+  async listOperations(userId: string): Promise<LocalOperation[]> { return localFirstDB.getOperations(userId); }
+  async listPendingOperations(userId: string): Promise<LocalOperation[]> { return localFirstDB.getPendingOperations(userId); }
+  async acknowledgeOperation(id: string): Promise<void> { await localFirstDB.markOperationSynced(id); }
 
-  async get<T>(id: string): Promise<LocalRecord<T> | null> {
-    return localFirstDB.getRecord<T>(id);
-  }
-
-  async list(userId: string): Promise<LocalRecord[]> {
-    return localFirstDB.getRecords(userId);
-  }
-
-  async upsert<T>(input: {
-    id?: string;
-    entity: LocalEntity;
-    userId: string;
-    payload: T;
-  }): Promise<LocalRecord<T>> {
+  async upsert<T>(input: { id?: string; entity: LocalEntity; userId: string; payload: T }): Promise<LocalRecord<T>> {
     const deviceId = await getDeviceId();
     const id = input.id ?? createId();
     const existing = await localFirstDB.getRecord<T>(id);
     const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
     const now = Date.now();
-    const record: LocalRecord<T> = {
-      id,
-      entity: input.entity,
-      userId: input.userId,
-      payload: input.payload,
-      updatedAt: now,
-      deviceId,
-      version: clock.lamport,
-    };
+    const record: LocalRecord<T> = { id, entity: input.entity, userId: input.userId, payload: input.payload, updatedAt: now, deviceId, version: clock.lamport };
     const operation: LocalOperation<T> = {
       id: createOperationId(deviceId, clock.sequence),
       recordId: id,
@@ -67,7 +49,6 @@ export class LocalFirstStore {
       sequence: clock.sequence,
       lamport: clock.lamport,
     };
-
     await localFirstDB.putRecordAndOperation(record, operation);
     return record;
   }
@@ -77,16 +58,7 @@ export class LocalFirstStore {
     const existing = await localFirstDB.getRecord(input.id);
     const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
     const now = Date.now();
-    const tombstone: LocalRecord = {
-      id: input.id,
-      entity: input.entity,
-      userId: input.userId,
-      payload: null,
-      updatedAt: now,
-      deviceId,
-      version: clock.lamport,
-      deletedAt: now,
-    };
+    const tombstone: LocalRecord = { id: input.id, entity: input.entity, userId: input.userId, payload: null, updatedAt: now, deviceId, version: clock.lamport, deletedAt: now };
     const operation: LocalOperation = {
       id: createOperationId(deviceId, clock.sequence),
       recordId: input.id,
@@ -99,7 +71,6 @@ export class LocalFirstStore {
       sequence: clock.sequence,
       lamport: clock.lamport,
     };
-
     await localFirstDB.putRecordAndOperation(tombstone, operation);
   }
 
@@ -111,7 +82,6 @@ export class LocalFirstStore {
       localFirstDB.getMeta("lamport"),
     ]);
     const sequenceMeta = await localFirstDB.getMeta(`sequence:${deviceId}`);
-
     return {
       version: 2,
       exportedAt: Date.now(),
@@ -126,52 +96,33 @@ export class LocalFirstStore {
 
   async importBundle(bundle: SyncBundle, expectedUserId?: string): Promise<SyncResult> {
     if (bundle.version !== 2) throw new Error("Unsupported Shadecode sync bundle version");
-    if (expectedUserId && bundle.userId !== expectedUserId) {
-      throw new Error("This sync bundle belongs to a different account");
-    }
+    if (expectedUserId && bundle.userId !== expectedUserId) throw new Error("This sync bundle belongs to a different account");
 
     let imported = 0;
     let skipped = 0;
     let conflicts = 0;
-
-    const remoteOperations = [...bundle.operations].sort((a, b) => a.lamport - b.lamport || a.sequence - b.sequence);
     const localOperations = await localFirstDB.getOperations(bundle.userId);
     const knownOperationIds = new Set(localOperations.map((operation) => operation.id));
 
-    for (const operation of remoteOperations) {
+    for (const operation of bundle.operations) {
       if (knownOperationIds.has(operation.id)) continue;
-      await localFirstDB.putOperation(operation);
+      await localFirstDB.putOperation({ ...operation, syncedAt: operation.syncedAt ?? new Date().toISOString() });
     }
 
     for (const remote of bundle.records) {
       const local = await localFirstDB.getRecord(remote.id);
-      if (!local) {
-        await localFirstDB.putRecord(remote);
-        imported += 1;
-        continue;
-      }
-
+      if (!local) { await localFirstDB.putRecord(remote); imported += 1; continue; }
       const comparison = compareRecords(remote, local);
-      if (comparison > 0) {
-        await localFirstDB.putRecord(remote);
-        imported += 1;
-        if (local.deviceId !== remote.deviceId) conflicts += 1;
-      } else {
-        skipped += 1;
-      }
+      if (comparison > 0) { await localFirstDB.putRecord(remote); imported += 1; if (local.deviceId !== remote.deviceId) conflicts += 1; }
+      else skipped += 1;
     }
 
     const localLamport = await localFirstDB.getMeta("lamport");
-    if (bundle.lamport > (typeof localLamport?.value === "number" ? localLamport.value : 0)) {
-      await localFirstDB.putMeta({ key: "lamport", value: bundle.lamport });
-    }
-
+    if (bundle.lamport > (typeof localLamport?.value === "number" ? localLamport.value : 0)) await localFirstDB.putMeta({ key: "lamport", value: bundle.lamport });
     return { imported, skipped, conflicts };
   }
 
-  async clearUser(userId: string): Promise<void> {
-    await localFirstDB.clearUser(userId);
-  }
+  async clearUser(userId: string): Promise<void> { await localFirstDB.clearUser(userId); }
 }
 
 export const localFirstStore = new LocalFirstStore();
