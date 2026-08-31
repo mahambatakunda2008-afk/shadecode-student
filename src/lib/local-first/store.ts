@@ -2,9 +2,22 @@ import { localFirstDB } from "./db";
 import { createOperationId } from "./operations";
 import type { LocalEntity, LocalOperation, LocalRecord, SyncBundle, SyncResult } from "./types";
 
+export interface LocalProgress {
+  lessonId: string;
+  userId: string;
+  completed: boolean;
+  progress: number;
+  quizScore?: number;
+  lastUpdated: string;
+}
+
 function createId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function progressRecordId(userId: string, lessonId: string): string {
+  return `progress:${userId}:${lessonId}`;
 }
 
 async function getDeviceId(): Promise<string> {
@@ -62,6 +75,49 @@ export class LocalFirstStore {
     };
     await localFirstDB.putRecordAndOperation(record, operation);
     return record;
+  }
+
+  /** Progress is user-scoped, so its physical record key must not collide across accounts. */
+  async saveProgress(progress: LocalProgress): Promise<LocalRecord<LocalProgress>> {
+    if (!progress.userId || !progress.lessonId) throw new Error("Progress requires an authenticated user and lesson");
+    const id = progressRecordId(progress.userId, progress.lessonId);
+    const existing = await localFirstDB.getRecord<LocalProgress>(id);
+    if (existing && existing.userId !== progress.userId) throw new Error("Refusing to mutate progress owned by another user");
+    const deviceId = await getDeviceId();
+    const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
+    const now = Date.now();
+    const payload = { ...progress, lastUpdated: progress.lastUpdated || new Date(now).toISOString() };
+    const record: LocalRecord<LocalProgress> = { id, entity: "progress", userId: progress.userId, payload, updatedAt: now, deviceId, version: clock.lamport };
+    const operation: LocalOperation<LocalProgress> = {
+      id: createOperationId(deviceId, clock.sequence), recordId: id, entity: "progress", entityId: progress.lessonId,
+      userId: progress.userId, deviceId, kind: existing && !existing.deletedAt ? "update" : "create", payload,
+      timestamp: new Date(now).toISOString(), sequence: clock.sequence, lamport: clock.lamport,
+    };
+    await localFirstDB.putRecordAndOperation(record, operation);
+    return record;
+  }
+
+  async getProgress(lessonId: string, userId: string): Promise<LocalProgress | null> {
+    if (!lessonId || !userId) return null;
+    const record = await localFirstDB.getRecord<LocalProgress>(progressRecordId(userId, lessonId));
+    if (!record || record.userId !== userId || record.deletedAt) return null;
+    return record.payload;
+  }
+
+  async listPendingProgress(userId: string): Promise<LocalProgress[]> {
+    if (!userId) return [];
+    const operations = await localFirstDB.getPendingOperations(userId);
+    const progressIds = new Set(operations.filter((op) => op.entity === "progress" && op.kind !== "delete").map((op) => op.entityId));
+    const result: LocalProgress[] = [];
+    for (const lessonId of progressIds) {
+      const progress = await this.getProgress(lessonId, userId);
+      if (progress) result.push(progress);
+    }
+    return result;
+  }
+
+  async acknowledgeProgress(userId: string, lessonId: string): Promise<void> {
+    await this.acknowledgeEntityOperations(userId, "progress", lessonId);
   }
 
   async remove(input: { id: string; entity: LocalEntity; userId: string }): Promise<void> {
