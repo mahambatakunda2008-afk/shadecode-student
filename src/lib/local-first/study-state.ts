@@ -48,7 +48,7 @@ export async function finishStudySession(userId: string, session: LocalStudySess
   const durationSeconds = Math.max(0, Math.floor(session.durationSeconds));
   const record = await localFirstStore.upsert({
     id: sessionId(userId, session.sessionId),
-    entity: "study_state",
+    entity: "study_session",
     userId,
     payload: { ...session, durationSeconds },
   });
