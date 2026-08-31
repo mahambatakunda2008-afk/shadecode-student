@@ -16,7 +16,8 @@ export type LocalEntity =
   | "study_session"
   | "lesson_cache"
   | "exam_attempt"
-  | "exam_result";
+  | "exam_result"
+  | "exam_submission";
 
 export interface LocalRecord<T = unknown> {
   id: string;
