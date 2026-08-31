@@ -41,7 +41,7 @@ export async function saveLessonCache(userId: string, data: Omit<LocalLessonList
   }));
   return localFirstStore.upsert({
     id: cacheId(userId),
-    entity: "settings",
+    entity: "lesson_cache",
     userId,
     payload: { ...data, lessons, cachedAt: new Date().toISOString() },
   });
@@ -49,5 +49,5 @@ export async function saveLessonCache(userId: string, data: Omit<LocalLessonList
 
 export async function clearLessonCache(userId: string): Promise<void> {
   requireUser(userId);
-  await localFirstStore.remove({ id: cacheId(userId), entity: "settings", userId });
+  await localFirstStore.remove({ id: cacheId(userId), entity: "lesson_cache", userId });
 }
