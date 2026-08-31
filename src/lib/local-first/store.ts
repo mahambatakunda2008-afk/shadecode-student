@@ -37,6 +37,12 @@ export class LocalFirstStore {
     }
   }
 
+  /** Store server hydration without creating a new local mutation. */
+  async hydrate<T>(record: LocalRecord<T>): Promise<void> {
+    const existing = await localFirstDB.getRecord<T>(record.id);
+    if (!existing || compareRecords(record, existing) > 0) await localFirstDB.putRecord(record);
+  }
+
   async upsert<T>(input: { id?: string; entity: LocalEntity; userId: string; payload: T }): Promise<LocalRecord<T>> {
     const deviceId = await getDeviceId();
     const id = input.id ?? createId();
@@ -46,7 +52,7 @@ export class LocalFirstStore {
     const record: LocalRecord<T> = { id, entity: input.entity, userId: input.userId, payload: input.payload, updatedAt: now, deviceId, version: clock.lamport };
     const operation: LocalOperation<T> = {
       id: createOperationId(deviceId, clock.sequence), recordId: id, entity: input.entity, entityId: id,
-      userId: input.userId, deviceId, kind: existing ? "update" : "create", payload: input.payload,
+      userId: input.userId, deviceId, kind: existing && !existing.deletedAt ? "update" : "create", payload: input.payload,
       timestamp: new Date(now).toISOString(), sequence: clock.sequence, lamport: clock.lamport,
     };
     await localFirstDB.putRecordAndOperation(record, operation);
