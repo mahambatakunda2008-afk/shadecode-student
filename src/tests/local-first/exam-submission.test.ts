@@ -2,7 +2,36 @@ import { describe, expect, it, vi } from "vitest";
 import { submitExamOffline } from "@/lib/local-first/exam-submission";
 
 vi.mock("@/lib/local-first/exam-attempt", () => ({ saveExamAttempt: vi.fn() }));
-vi.mock("@/lib/local-first/exam-result", () => ({ saveExamResult: vi.fn() }));
+vi.mock("@/lib/local-first/exam-result", () => ({
+  submitExamLocally: vi.fn(async (input: { attemptId: string; subject: string; topic?: string; level: string; questions: typeof questions; answers: typeof attempt.answers; timeTaken: number }) => ({
+    id: `exam_result:${input.attemptId}`,
+    userId: "user-1",
+    entity: "exam_result",
+    payload: {
+      totalScore: 1,
+      maxScore: 3,
+      percentage: 33,
+      grade: "U",
+      weakAreas: ["Reasoning"],
+      strongAreas: [],
+      cortexInsight: "Written answers remain queued for deeper marking.",
+      results: [
+        { questionId: 1, score: 1, maxScore: 1, correct: true, feedback: "Correct.", modelAnswer: "4", topic: "Arithmetic" },
+        { questionId: 2, score: 0, maxScore: 2, correct: false, feedback: "Saved for marking.", modelAnswer: "A reason", topic: "Reasoning" },
+      ],
+      timeTaken: input.timeTaken,
+      source: "local-deterministic" as const,
+      attemptId: input.attemptId,
+      subject: input.subject,
+      topic: input.topic,
+      level: input.level,
+      questions: input.questions,
+      answers: input.answers,
+      pendingServerMark: true,
+      submittedAt: "2026-08-31T08:00:20.000Z",
+    },
+  })),
+}));
 
 const attempt = {
   attemptId: "attempt-1",
