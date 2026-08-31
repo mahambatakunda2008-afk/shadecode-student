@@ -8,7 +8,10 @@ export interface LocalOperation<T = unknown> {
   deviceId: string;
   userId: string;
   entity: LocalEntity;
+  /** Stable entity key used by sync and replay. */
   entityId: string;
+  /** Backwards-compatible alias for the local record key. */
+  recordId?: string;
   kind: LocalOperationKind;
   payload?: T;
   timestamp: string;
@@ -55,10 +58,7 @@ export function createTombstone(operation: LocalOperation): Tombstone {
   };
 }
 
-export function isOperationSuppressed(
-  operation: LocalOperation,
-  tombstones: Tombstone[],
-): boolean {
+export function isOperationSuppressed(operation: LocalOperation, tombstones: Tombstone[]): boolean {
   return tombstones.some(
     (tombstone) =>
       tombstone.userId === operation.userId &&
