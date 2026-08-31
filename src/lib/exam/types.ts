@@ -20,3 +20,16 @@ export type ExamResult = {
   modelAnswer: string;
   topic: string;
 };
+
+export type ExamResults = {
+  totalScore: number;
+  maxScore: number;
+  percentage: number;
+  grade: string;
+  weakAreas: string[];
+  strongAreas: string[];
+  cortexInsight: string;
+  results: ExamResult[];
+  timeTaken: number;
+  source?: "local-deterministic" | "server";
+};
