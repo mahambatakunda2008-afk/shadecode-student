@@ -12,7 +12,8 @@ export type LocalEntity =
   | "timetable"
   | "goal"
   | "settings"
-  | "study_state";
+  | "study_state"
+  | "study_session";
 
 export interface LocalRecord<T = unknown> {
   id: string;
