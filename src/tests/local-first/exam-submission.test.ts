@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { submitExamOffline } from "@/lib/local-first/exam-submission";
+import type { LocalExamAttempt } from "@/lib/local-first/exam-attempt";
 
 vi.mock("@/lib/local-first/exam-attempt", () => ({ saveExamAttempt: vi.fn() }));
 vi.mock("@/lib/local-first/exam-result", () => ({
@@ -33,28 +34,29 @@ vi.mock("@/lib/local-first/exam-result", () => ({
   })),
 }));
 
-const attempt = {
-  attemptId: "attempt-1",
-  userId: "user-1",
-  subject: "Mathematics",
-  topic: "Arithmetic",
-  level: "A-Level",
-  questions: [],
-  answers: [{ questionId: 1, answer: "4", timeSpent: 5 }, { questionId: 2, answer: "Because", timeSpent: 10 }],
-  currentQuestion: 0,
-  remainingSeconds: 100,
-  totalSeconds: 120,
-  flags: [],
-  canvasState: "",
-  status: "active" as const,
-  startedAt: "2026-08-31T08:00:00.000Z",
-  updatedAt: "2026-08-31T08:00:10.000Z",
-};
-
 const questions = [
   { id: 1, type: "multiple_choice" as const, question: "2 + 2?", options: ["3", "4"], marks: 1, topic: "Arithmetic", modelAnswer: "4" },
   { id: 2, type: "short_answer" as const, question: "Explain why.", marks: 2, topic: "Reasoning", modelAnswer: "A reason" },
 ];
+
+const attempt: LocalExamAttempt = {
+  attemptId: "attempt-1",
+  userId: "user-1",
+  subject: "Mathematics",
+  topic: "Arithmetic",
+  level: 1,
+  count: questions.length,
+  questions: questions.map(({ modelAnswer: _modelAnswer, ...question }) => question),
+  answers: [{ questionId: 1, answer: "4", timeSpent: 5 }, { questionId: 2, answer: "Because", timeSpent: 10 }],
+  current: 0,
+  seconds: 100,
+  totalSeconds: 120,
+  flags: [],
+  canvas: "",
+  status: "active",
+  startedAt: Date.parse("2026-08-31T08:00:00.000Z"),
+  updatedAt: "2026-08-31T08:00:10.000Z",
+};
 
 describe("submitExamOffline", () => {
   it("marks safe objective work, persists a submitted attempt and result", async () => {
