@@ -4,7 +4,7 @@ import type { LocalOperation } from "./operations";
 export type LocalEntity =
   | "task" | "subject" | "progress" | "xp" | "streak" | "achievement" | "insight"
   | "timetable" | "goal" | "settings" | "study_state" | "study_session" | "lesson_cache"
-  | "exam_attempt" | "exam_result" | "exam_submission" | "education_profile";
+  | "exam_attempt" | "exam_result" | "exam_submission" | "education_profile" | "dashboard_slice";
 
 export interface LocalRecord<T = unknown> {
   id: string;
@@ -44,3 +44,5 @@ export interface EncryptedSyncBundle {
 }
 
 export interface SyncResult { imported: number; skipped: number; conflicts: number; }
+
+export interface DashboardSlice<T = unknown> { data: T; cachedAt: number; source: "local" | "remote"; }
