@@ -77,7 +77,7 @@ export class LocalFirstStore {
     return record;
   }
 
-  /** Progress is user-scoped, so its physical record key must not collide across accounts. */
+  /** Local progress mutation. The physical key is user-scoped while entityId remains the lesson ID. */
   async saveProgress(progress: LocalProgress): Promise<LocalRecord<LocalProgress>> {
     if (!progress.userId || !progress.lessonId) throw new Error("Progress requires an authenticated user and lesson");
     const id = progressRecordId(progress.userId, progress.lessonId);
@@ -95,6 +95,20 @@ export class LocalFirstStore {
     };
     await localFirstDB.putRecordAndOperation(record, operation);
     return record;
+  }
+
+  /** Server hydration for progress. Unlike saveProgress, this cannot create a pending operation. */
+  async hydrateProgress(progress: LocalProgress, updatedAt?: number): Promise<void> {
+    if (!progress.userId || !progress.lessonId) throw new Error("Progress hydration requires an authenticated user and lesson");
+    await this.hydrate({
+      id: progressRecordId(progress.userId, progress.lessonId),
+      entity: "progress",
+      userId: progress.userId,
+      payload: progress,
+      updatedAt: updatedAt ?? (Date.parse(progress.lastUpdated) || Date.now()),
+      deviceId: "server",
+      version: 0,
+    });
   }
 
   async getProgress(lessonId: string, userId: string): Promise<LocalProgress | null> {
