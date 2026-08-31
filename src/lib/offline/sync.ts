@@ -9,6 +9,10 @@ import { localTasks } from "@/lib/local-first/tasks";
 import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
 
+function progressRecordId(userId: string, lessonId: string): string {
+  return `progress:${userId}:${lessonId}`;
+}
+
 export class OfflineSync {
   private syncInProgress = false;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
@@ -145,7 +149,7 @@ export class OfflineSync {
     }
   }
 
-  /** Progress is synchronized directly from the canonical local-first operation state. */
+  /** Progress is synchronized from the canonical local-first state. Only operations included in the successful write are acknowledged. */
   private async syncProgress(): Promise<void> {
     const auth = await this.getCurrentUser();
     if (!auth) return;
@@ -155,7 +159,10 @@ export class OfflineSync {
       try {
         const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", user.id);
         if (error) throw error;
-        await localFirstStore.acknowledgeProgress(user.id, progress.lessonId);
+
+        const currentRecord = await localFirstStore.get(progressRecordId(user.id, progress.lessonId));
+        const throughLamport = currentRecord?.entity === "progress" && currentRecord.userId === user.id ? currentRecord.version : undefined;
+        await localFirstStore.acknowledgeEntityOperations(user.id, "progress", progress.lessonId, throughLamport);
       } catch (error) {
         console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error);
       }
