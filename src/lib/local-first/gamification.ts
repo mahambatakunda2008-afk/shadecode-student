@@ -43,14 +43,22 @@ export async function getStreak(userId: string): Promise<LocalStreakState | null
   return record?.userId === userId && !record.deletedAt ? record.payload : null;
 }
 
+function utcDayKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function dayDistance(from: string, to: string): number {
+  const left = Date.parse(`${from}T00:00:00Z`);
+  const right = Date.parse(`${to}T00:00:00Z`);
+  return Math.round((right - left) / 86400000);
+}
+
 export async function recordStudyDay(userId: string, date = new Date()): Promise<LocalRecord<LocalStreakState>> {
   if (!userId) throw new Error("Streak requires an authenticated user");
-  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const key = day.toISOString().slice(0, 10);
+  const key = utcDayKey(date);
   const current = await getStreak(userId);
   if (current?.lastStudyDate === key) return (await localFirstStore.get<LocalStreakState>(streakId(userId)))!;
-  const previous = current?.lastStudyDate ? new Date(`${current.lastStudyDate}T00:00:00`) : null;
-  const consecutive = previous && (day.getTime() - previous.getTime()) === 86400000;
+  const consecutive = current?.lastStudyDate ? dayDistance(current.lastStudyDate, key) === 1 : false;
   const nextCurrent = consecutive ? current!.current + 1 : 1;
   const longest = Math.max(current?.longest ?? 0, nextCurrent);
   return localFirstStore.upsert({ id: streakId(userId), entity: "streak", userId, payload: { current: nextCurrent, longest, lastStudyDate: key, updatedAt: new Date().toISOString() } });
