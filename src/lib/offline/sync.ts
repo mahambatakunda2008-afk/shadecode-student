@@ -2,7 +2,6 @@
  * Offline synchronization. The canonical local-first store is the source of truth
  * for learner mutations; the mutation queue is the network transport.
  */
-import { offlineStorage, type OfflineTask, type OfflineSubject } from "./storage";
 import { mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
 import { localFirstStore } from "@/lib/local-first/store";
@@ -146,17 +145,20 @@ export class OfflineSync {
     }
   }
 
+  /** Progress is synchronized directly from the canonical local-first operation state. */
   private async syncProgress(): Promise<void> {
     const auth = await this.getCurrentUser();
     if (!auth) return;
     const { supabase, user } = auth;
-    const unsyncedProgress = await offlineStorage.getUnsyncedProgressForUser(user.id);
+    const unsyncedProgress = await localFirstStore.listPendingProgress(user.id);
     for (const progress of unsyncedProgress) {
       try {
         const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", user.id);
         if (error) throw error;
-        await offlineStorage.markProgressSynced(progress.lessonId, user.id);
-      } catch (error) { console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error); }
+        await localFirstStore.acknowledgeProgress(user.id, progress.lessonId);
+      } catch (error) {
+        console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error);
+      }
     }
   }
 
@@ -174,7 +176,7 @@ export class OfflineSync {
     await localFirstStore.hydrateProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() }, Date.parse(lesson.updated_at ?? "") || Date.now());
   }
 
-  async getTasks(userId: string): Promise<OfflineTask[]> {
+  async getTasks(userId: string): Promise<Array<{ id: string; userId: string; subject_id: string; title: string; completed: boolean }>> {
     const local = await localTasks.list(userId);
     if (local.length > 0) return local;
     const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return [];
@@ -184,7 +186,7 @@ export class OfflineSync {
     return localTasks.list(userId);
   }
 
-  async getSubjects(userId: string): Promise<OfflineSubject[]> {
+  async getSubjects(userId: string): Promise<Array<{ id: string; userId: string; name: string }>> {
     const local = await localSubjects.list(userId);
     if (local.length > 0) return local;
     const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return [];
@@ -195,12 +197,12 @@ export class OfflineSync {
   }
 
   async getProgress(lessonId: string, userId: string) {
-    const localProgress = await offlineStorage.getProgress(lessonId, userId);
+    const localProgress = await localFirstStore.getProgress(lessonId, userId);
     if (localProgress?.userId === userId) return localProgress;
     const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return null;
     const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
     if (error || !lesson) return null;
-    const progress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString(), synced: true } as const;
+    const progress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() } as const;
     await localFirstStore.hydrateProgress(progress, Date.parse(lesson.updated_at ?? "") || Date.now());
     return progress;
   }
