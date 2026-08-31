@@ -1,37 +1,18 @@
 import { localFirstDB } from "./db";
-import type {
-  LocalEntity,
-  LocalOperation,
-  LocalRecord,
-  SyncBundle,
-  SyncResult,
-} from "./types";
-
-const DEVICE_KEY = "deviceId";
-const LAMPORT_KEY = "lamport";
+import { createOperationId } from "./operations";
+import type { LocalEntity, LocalOperation, LocalRecord, SyncBundle, SyncResult } from "./types";
 
 function createId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 async function getDeviceId(): Promise<string> {
-  const existing = await localFirstDB.getMeta(DEVICE_KEY);
+  const existing = await localFirstDB.getMeta("deviceId");
   if (typeof existing?.value === "string") return existing.value;
-
   const deviceId = createId();
-  await localFirstDB.putMeta({ key: DEVICE_KEY, value: deviceId });
+  await localFirstDB.putMeta({ key: "deviceId", value: deviceId });
   return deviceId;
-}
-
-async function nextLamport(remoteLamport = 0): Promise<number> {
-  const existing = await localFirstDB.getMeta(LAMPORT_KEY);
-  const current = typeof existing?.value === "number" ? existing.value : 0;
-  const next = Math.max(current, remoteLamport) + 1;
-  await localFirstDB.putMeta({ key: LAMPORT_KEY, value: next });
-  return next;
 }
 
 function compareRecords(a: LocalRecord, b: LocalRecord): number {
@@ -62,41 +43,39 @@ export class LocalFirstStore {
     const deviceId = await getDeviceId();
     const id = input.id ?? createId();
     const existing = await localFirstDB.getRecord<T>(id);
-    const lamport = await nextLamport(existing?.version ?? 0);
+    const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
+    const now = Date.now();
     const record: LocalRecord<T> = {
       id,
       entity: input.entity,
       userId: input.userId,
       payload: input.payload,
-      updatedAt: Date.now(),
+      updatedAt: now,
       deviceId,
-      version: lamport,
+      version: clock.lamport,
     };
-
-    await localFirstDB.putRecord(record);
-    await localFirstDB.putOperation({
-      id: createId(),
+    const operation: LocalOperation<T> = {
+      id: createOperationId(deviceId, clock.sequence),
       recordId: id,
       entity: input.entity,
+      entityId: id,
       userId: input.userId,
       deviceId,
-      lamport,
-      timestamp: record.updatedAt,
-      type: "upsert",
+      kind: existing ? "update" : "create",
       payload: input.payload,
-    });
+      timestamp: new Date(now).toISOString(),
+      sequence: clock.sequence,
+      lamport: clock.lamport,
+    };
 
+    await localFirstDB.putRecordAndOperation(record, operation);
     return record;
   }
 
-  async remove(input: {
-    id: string;
-    entity: LocalEntity;
-    userId: string;
-  }): Promise<void> {
+  async remove(input: { id: string; entity: LocalEntity; userId: string }): Promise<void> {
     const deviceId = await getDeviceId();
     const existing = await localFirstDB.getRecord(input.id);
-    const lamport = await nextLamport(existing?.version ?? 0);
+    const clock = await localFirstDB.nextClock(deviceId, existing?.version ?? 0);
     const now = Date.now();
     const tombstone: LocalRecord = {
       id: input.id,
@@ -105,44 +84,48 @@ export class LocalFirstStore {
       payload: null,
       updatedAt: now,
       deviceId,
-      version: lamport,
+      version: clock.lamport,
       deletedAt: now,
     };
-
-    await localFirstDB.putRecord(tombstone);
-    await localFirstDB.putOperation({
-      id: createId(),
+    const operation: LocalOperation = {
+      id: createOperationId(deviceId, clock.sequence),
       recordId: input.id,
       entity: input.entity,
+      entityId: input.id,
       userId: input.userId,
       deviceId,
-      lamport,
-      timestamp: now,
-      type: "delete",
-    });
+      kind: "delete",
+      timestamp: new Date(now).toISOString(),
+      sequence: clock.sequence,
+      lamport: clock.lamport,
+    };
+
+    await localFirstDB.putRecordAndOperation(tombstone, operation);
   }
 
   async exportBundle(userId: string): Promise<SyncBundle> {
-    const [records, operations] = await Promise.all([
+    const [records, operations, deviceId, lamportMeta] = await Promise.all([
       localFirstDB.getRecords(userId),
       localFirstDB.getOperations(userId),
+      getDeviceId(),
+      localFirstDB.getMeta("lamport"),
     ]);
-    const deviceId = await getDeviceId();
-    const meta = await localFirstDB.getMeta(LAMPORT_KEY);
+    const sequenceMeta = await localFirstDB.getMeta(`sequence:${deviceId}`);
 
     return {
-      version: 1,
+      version: 2,
       exportedAt: Date.now(),
       userId,
       deviceId,
-      lamport: typeof meta?.value === "number" ? meta.value : 0,
+      lamport: typeof lamportMeta?.value === "number" ? lamportMeta.value : 0,
+      sequence: typeof sequenceMeta?.value === "number" ? sequenceMeta.value : 0,
       records,
       operations,
     };
   }
 
   async importBundle(bundle: SyncBundle, expectedUserId?: string): Promise<SyncResult> {
-    if (bundle.version !== 1) throw new Error("Unsupported Shadecode sync bundle version");
+    if (bundle.version !== 2) throw new Error("Unsupported Shadecode sync bundle version");
     if (expectedUserId && bundle.userId !== expectedUserId) {
       throw new Error("This sync bundle belongs to a different account");
     }
@@ -150,6 +133,15 @@ export class LocalFirstStore {
     let imported = 0;
     let skipped = 0;
     let conflicts = 0;
+
+    const remoteOperations = [...bundle.operations].sort((a, b) => a.lamport - b.lamport || a.sequence - b.sequence);
+    const localOperations = await localFirstDB.getOperations(bundle.userId);
+    const knownOperationIds = new Set(localOperations.map((operation) => operation.id));
+
+    for (const operation of remoteOperations) {
+      if (knownOperationIds.has(operation.id)) continue;
+      await localFirstDB.putOperation(operation);
+    }
 
     for (const remote of bundle.records) {
       const local = await localFirstDB.getRecord(remote.id);
@@ -169,14 +161,11 @@ export class LocalFirstStore {
       }
     }
 
-    const localOperations = await localFirstDB.getOperations(bundle.userId);
-    const knownOperationIds = new Set(localOperations.map((operation) => operation.id));
-    for (const operation of bundle.operations) {
-      if (knownOperationIds.has(operation.id)) continue;
-      await localFirstDB.putOperation(operation);
+    const localLamport = await localFirstDB.getMeta("lamport");
+    if (bundle.lamport > (typeof localLamport?.value === "number" ? localLamport.value : 0)) {
+      await localFirstDB.putMeta({ key: "lamport", value: bundle.lamport });
     }
 
-    await nextLamport(bundle.lamport);
     return { imported, skipped, conflicts };
   }
 
