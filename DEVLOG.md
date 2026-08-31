@@ -554,3 +554,13 @@ warranted (e.g. splitting into dated archive files for length), that
 should be a deliberate, visible decision -- not a side effect of an
 unrelated docs pass.
 
+
+## 2026-08-31 — Cortex Auto-Cycle
+
+Completed a security audit task by refactoring the task update and view API (`src/server/api/tasks/[taskId].ts`) to include explicit server-side authorization checks. This enhancement ensures that users can only modify or view their own tasks, adding a critical defense layer against unauthorized data manipulation and reinforcing authorization boundaries for better system integrity. This directly addresses the audit findings and improves overall API security.
+
+**Task:** Enforce task ownership on task management API
+
+**Change:** Refactored the `src/server/api/tasks/[taskId].ts` API handler to include robust server-side authorization checks for both `GET` and `PUT` requests. For `PUT` requests, the handler now retrieves the authenticated user's ID, fetches the task to verify its `user_id`, and only proceeds with the update if the `user_id` matches the authenticated user. If not, a `403 Forbidden` error is returned. For `GET` requests, the query is explicitly filtered by `user_id` to ensure only owners can view tasks. This change significantly strengthens authorization boundaries, prevents unauthorized data manipulation, and lays the groundwork for comprehensive regression coverage on user-specific data access.
+
+---
