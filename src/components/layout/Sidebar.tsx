@@ -43,10 +43,7 @@ export function Sidebar() {
   const initials = firstName.slice(0, 2).toUpperCase();
   const xpPercent = profile ? Math.min(Math.round((profile.xp / (profile.xp_to_next_level || 1000)) * 100), 100) : 0;
 
-  const supabase = useMemo(
-    () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),
-    []
-  );
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -57,7 +54,11 @@ export function Sidebar() {
   };
 
   function navItemClass(active: boolean) {
-    return cn("group relative flex items-center justify-between min-h-[40px] px-3 py-[11px] rounded-[9px] overflow-hidden", "text-[13px] leading-none transition-all duration-200 outline-none", active ? "bg-[var(--primary-glow)] text-[var(--foreground)] font-semibold shadow-sm" : "font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]");
+    return cn(
+      "education-control group relative flex items-center justify-between px-3 py-[11px] rounded-[9px] overflow-hidden",
+      "text-[13px] leading-none transition-all duration-200 outline-none",
+      active ? "bg-[var(--primary-glow)] text-[var(--foreground)] font-semibold shadow-sm" : "font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]"
+    );
   }
 
   function iconClass(active: boolean) {
@@ -70,10 +71,10 @@ export function Sidebar() {
       <div className="mx-4 mb-3 flex-shrink-0 border-t border-[var(--card-border)]" />
 
       {profile && (
-        <div className="mx-3 mb-3 flex-shrink-0 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 shadow-sm">
+        <div className="education-card mx-3 mb-3 flex-shrink-0 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 shadow-sm">
           <div className="flex items-center gap-2.5 mb-2">
             <div className="w-7 h-7 rounded-full bg-[var(--primary-glow)] border border-[var(--card-border)] flex items-center justify-center flex-shrink-0"><span className="text-[10px] font-bold text-[var(--primary)]">{initials}</span></div>
-            <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-[var(--foreground)] truncate leading-none">{firstName}</p><p className="text-[11px] text-[var(--muted-foreground)] mt-[3px] leading-none">{experience.shortLabel} · Level {profile.level}</p></div>
+            <div className="education-copy flex-1 min-w-0"><p className="text-[12px] font-semibold text-[var(--foreground)] truncate leading-none">{firstName}</p><p className="text-[11px] text-[var(--muted-foreground)] mt-[3px] leading-none">{experience.shortLabel} · Level {profile.level}</p></div>
             {profile.streak > 0 && <div className="flex items-center gap-1 flex-shrink-0"><Flame className="w-3 h-3 text-[var(--warning)]" /><span className="text-[11px] font-bold text-[var(--warning)] tabular-nums leading-none">{profile.streak}</span></div>}
           </div>
           <div className="flex items-center gap-2"><div className="flex-1 h-[3px] rounded-full bg-[var(--surface-3)] overflow-hidden"><div className="h-full rounded-full transition-all duration-700 bg-[var(--primary)]" style={{ width: `${xpPercent}%` }} /></div><span className="text-[10px] text-[var(--muted-foreground)] leading-none tabular-nums flex-shrink-0">{profile.xp}<span className="opacity-50">/{profile.xp_to_next_level}</span></span></div>
@@ -90,7 +91,7 @@ export function Sidebar() {
               {items.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
                 const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
                 const active = isRouteActive(pathname, href);
-                return <Link key={href} href={href} className={navItemClass(active)}>{active && <span className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]" aria-hidden="true" />}<div className="flex items-center gap-2.5"><Icon className={iconClass(active)} strokeWidth={active ? 2 : 1.8} /><span>{label}</span></div>{badge && <span className={cn("px-[6px] py-[3px] rounded-md text-[10px] font-bold leading-none tabular-nums", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]" : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]")}>{badge}</span>}</Link>;
+                return <Link key={href} href={href} className={navItemClass(active)}><span className="education-copy flex items-center gap-2.5">{active && <span className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]" aria-hidden="true" />}<Icon className={iconClass(active)} strokeWidth={active ? 2 : 1.8} /><span>{label}</span></span>{badge && <span className={cn("px-[6px] py-[3px] rounded-md text-[10px] font-bold leading-none tabular-nums", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]" : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]")}>{badge}</span>}</Link>;
               })}
             </div>
           </div>;
@@ -98,8 +99,8 @@ export function Sidebar() {
       </nav>
 
       <div className="flex-shrink-0 px-3 pb-4 pt-3 border-t border-[var(--card-border)] flex flex-col gap-[2px]">
-        <Link href={NAV_ITEMS.settings.href} className={navItemClass(isRouteActive(pathname, NAV_ITEMS.settings.href))}>{isRouteActive(pathname, NAV_ITEMS.settings.href) && <span className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]" aria-hidden="true" />}<div className="flex items-center gap-2.5"><NAV_ITEMS.settings.icon className={iconClass(isRouteActive(pathname, NAV_ITEMS.settings.href))} strokeWidth={1.8} /><span>Settings</span></div></Link>
-        <button onClick={handleSignOut} className={cn("group relative flex items-center gap-2.5 min-h-[40px] px-3 py-[11px] rounded-[9px] w-full text-left cursor-pointer", "text-[13px] font-medium leading-none transition-all duration-200 text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]")}><LogOut className="w-[18px] h-[18px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150" strokeWidth={1.8} /><span>Sign out</span></button>
+        <Link href={NAV_ITEMS.settings.href} className={navItemClass(isRouteActive(pathname, NAV_ITEMS.settings.href))}><span className="education-copy flex items-center gap-2.5"><NAV_ITEMS.settings.icon className={iconClass(isRouteActive(pathname, NAV_ITEMS.settings.href))} strokeWidth={1.8} /><span>Settings</span></span></Link>
+        <button onClick={handleSignOut} className={cn("education-control group relative flex items-center gap-2.5 px-3 py-[11px] rounded-[9px] w-full text-left cursor-pointer", "text-[13px] font-medium leading-none transition-all duration-200 text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]")}><LogOut className="w-[18px] h-[18px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150" strokeWidth={1.8} /><span className="education-copy">Sign out</span></button>
       </div>
     </aside>
   );
