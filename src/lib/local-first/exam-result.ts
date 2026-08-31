@@ -1,11 +1,7 @@
 import type { LocalRecord } from "./types";
 import { localFirstStore } from "./store";
 import { markExamLocally } from "./exam-marker";
-
-type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured"; question: string; options?: string[]; marks: number; topic: string };
-type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
-type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
-type ExamAnswer = { questionId: number; answer: string; timeSpent: number };
+import type { ExamAnswer, ExamQuestion, ExamResults } from "@/lib/exam/types";
 
 export interface LocalExamResult extends ExamResults {
   attemptId: string;
@@ -35,7 +31,7 @@ export async function submitExamLocally(input: {
   if (!input.attemptId) throw new Error("Exam result requires an attempt ID");
   if (!Array.isArray(input.questions) || input.questions.length === 0) throw new Error("Exam result requires questions");
 
-  const marked = markExamLocally(input.questions, input.answers);
+  const marked = markExamLocally(input.questions, input.answers, input.timeTaken);
   const result: LocalExamResult = {
     ...marked,
     attemptId: input.attemptId,
@@ -45,7 +41,7 @@ export async function submitExamLocally(input: {
     questions: input.questions,
     answers: input.answers,
     source: "local-deterministic",
-    pendingServerMark: marked.results.some((item) => item.feedback === "Pending deeper marking") || input.questions.some((q) => q.type !== "multiple_choice"),
+    pendingServerMark: input.questions.some((q) => q.type !== "multiple_choice"),
     submittedAt: new Date().toISOString(),
   };
 
@@ -54,6 +50,16 @@ export async function submitExamLocally(input: {
     entity: "exam_result",
     userId: input.userId,
     payload: result,
+  });
+}
+
+export async function saveExamResult(record: LocalRecord<LocalExamResult>) {
+  if (!record.userId || !record.id) throw new Error("Exam result record requires identity");
+  return localFirstStore.upsert({
+    id: record.id,
+    entity: "exam_result",
+    userId: record.userId,
+    payload: record.payload,
   });
 }
 
