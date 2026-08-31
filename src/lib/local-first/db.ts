@@ -1,13 +1,17 @@
 import type { LocalMeta, LocalOperation, LocalRecord } from "./types";
+import { createOperationId } from "./operations";
 
 const DB_NAME = "shadecode-local-first";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORES = {
   records: "records",
   operations: "operations",
   meta: "meta",
 } as const;
+
+const LAMPORT_KEY = "lamport";
+const SEQUENCE_PREFIX = "sequence:";
 
 class LocalFirstDB {
   private db: IDBDatabase | null = null;
@@ -20,7 +24,6 @@ class LocalFirstDB {
 
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
-
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         this.db = request.result;
@@ -41,6 +44,40 @@ class LocalFirstDB {
           store.createIndex("userId", "userId", { unique: false });
           store.createIndex("lamport", "lamport", { unique: false });
           store.createIndex("timestamp", "timestamp", { unique: false });
+          store.createIndex("deviceId", "deviceId", { unique: false });
+          store.createIndex("sequence", "sequence", { unique: false });
+        } else if (request.oldVersion < 2) {
+          const store = request.transaction!.objectStore(STORES.operations);
+          if (!store.indexNames.contains("deviceId")) store.createIndex("deviceId", "deviceId", { unique: false });
+          if (!store.indexNames.contains("sequence")) store.createIndex("sequence", "sequence", { unique: false });
+
+          const perDevice = new Map<string, number>();
+          const cursorRequest = store.openCursor();
+          cursorRequest.onsuccess = () => {
+            const cursor = cursorRequest.result;
+            if (!cursor) return;
+            const old = cursor.value as Record<string, unknown>;
+            if (old.kind === undefined && typeof old.type === "string") {
+              const deviceId = typeof old.deviceId === "string" ? old.deviceId : "legacy";
+              const sequence = (perDevice.get(deviceId) ?? 0) + 1;
+              perDevice.set(deviceId, sequence);
+              const migrated = {
+                id: createOperationId(deviceId, sequence),
+                deviceId,
+                userId: String(old.userId ?? ""),
+                entity: String(old.entity ?? "study_state"),
+                entityId: String(old.recordId ?? ""),
+                kind: old.type === "delete" ? "delete" : "update",
+                payload: old.payload,
+                timestamp: new Date(Number(old.timestamp ?? Date.now())).toISOString(),
+                sequence,
+                lamport: Number(old.lamport ?? sequence),
+              };
+              cursor.delete();
+              store.put(migrated);
+            }
+            cursor.continue();
+          };
         }
 
         if (!db.objectStoreNames.contains(STORES.meta)) {
@@ -56,7 +93,6 @@ class LocalFirstDB {
     run: (store: IDBObjectStore, resolve: (value: T) => void, reject: (reason?: unknown) => void) => void,
   ): Promise<T> {
     await this.init();
-
     return new Promise<T>((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, mode);
       const store = transaction.objectStore(storeName);
@@ -70,6 +106,18 @@ class LocalFirstDB {
       const request = store.put(record);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  async putRecordAndOperation(record: LocalRecord, operation: LocalOperation): Promise<void> {
+    await this.init();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite");
+      transaction.objectStore(STORES.records).put(record);
+      transaction.objectStore(STORES.operations).put(operation);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error ?? new Error("Local mutation aborted"));
     });
   }
 
@@ -100,8 +148,45 @@ class LocalFirstDB {
   async getOperations(userId: string): Promise<LocalOperation[]> {
     return this.transaction<LocalOperation[]>(STORES.operations, "readonly", (store, resolve, reject) => {
       const request = store.index("userId").getAll(userId);
-      request.onsuccess = () => resolve(request.result ?? []);
+      request.onsuccess = () => resolve((request.result ?? []).filter((operation) => operation?.kind));
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  async nextClock(deviceId: string, remoteLamport = 0): Promise<{ sequence: number; lamport: number }> {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(STORES.meta, "readwrite");
+      const store = transaction.objectStore(STORES.meta);
+      const lamportRequest = store.get(LAMPORT_KEY);
+      const sequenceKey = `${SEQUENCE_PREFIX}${deviceId}`;
+      const sequenceRequest = store.get(sequenceKey);
+
+      let lamport = 0;
+      let sequence = 0;
+      let ready = 0;
+      const finish = () => {
+        ready += 1;
+        if (ready !== 2) return;
+        lamport = Math.max(lamport, remoteLamport) + 1;
+        sequence += 1;
+        store.put({ key: LAMPORT_KEY, value: lamport });
+        store.put({ key: sequenceKey, value: sequence });
+      };
+
+      lamportRequest.onsuccess = () => {
+        lamport = typeof lamportRequest.result?.value === "number" ? lamportRequest.result.value : 0;
+        finish();
+      };
+      sequenceRequest.onsuccess = () => {
+        sequence = typeof sequenceRequest.result?.value === "number" ? sequenceRequest.result.value : 0;
+        finish();
+      };
+      lamportRequest.onerror = () => reject(lamportRequest.error);
+      sequenceRequest.onerror = () => reject(sequenceRequest.error);
+      transaction.oncomplete = () => resolve({ sequence, lamport });
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error ?? new Error("Clock transaction aborted"));
     });
   }
 
@@ -125,7 +210,6 @@ class LocalFirstDB {
     const records = await this.getRecords(userId);
     const operations = await this.getOperations(userId);
     await this.init();
-
     await new Promise<void>((resolve, reject) => {
       const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite");
       const recordStore = transaction.objectStore(STORES.records);
