@@ -18,8 +18,9 @@ class LocalFirstDB {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => { this.db = request.result; this.db.onversionchange = () => { this.db?.close(); this.db = null; }; resolve(); };
-      request.onupgradeneeded = () => {
+      request.onupgradeneeded = (event) => {
         const db = request.result;
+        const oldVersion = event.oldVersion;
         if (!db.objectStoreNames.contains(STORES.records)) {
           const store = db.createObjectStore(STORES.records, { keyPath: "id" });
           store.createIndex("userId", "userId", { unique: false }); store.createIndex("entity", "entity", { unique: false }); store.createIndex("updatedAt", "updatedAt", { unique: false });
@@ -27,7 +28,7 @@ class LocalFirstDB {
         if (!db.objectStoreNames.contains(STORES.operations)) {
           const store = db.createObjectStore(STORES.operations, { keyPath: "id" });
           store.createIndex("userId", "userId", { unique: false }); store.createIndex("lamport", "lamport", { unique: false }); store.createIndex("timestamp", "timestamp", { unique: false }); store.createIndex("deviceId", "deviceId", { unique: false }); store.createIndex("sequence", "sequence", { unique: false });
-        } else if (request.oldVersion < 2) {
+        } else if (oldVersion < 2) {
           const store = request.transaction!.objectStore(STORES.operations);
           if (!store.indexNames.contains("deviceId")) store.createIndex("deviceId", "deviceId", { unique: false });
           if (!store.indexNames.contains("sequence")) store.createIndex("sequence", "sequence", { unique: false });
@@ -61,11 +62,8 @@ class LocalFirstDB {
     });
   }
 
-  async putRecord(record: LocalRecord): Promise<void> {
-    await this.transaction<void>(STORES.records, "readwrite", (store, resolve, reject) => { const request = store.put(record); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
-  }
+  async putRecord(record: LocalRecord): Promise<void> { await this.transaction<void>(STORES.records, "readwrite", (store, resolve, reject) => { const request = store.put(record); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
 
-  /** Atomically allocates the device sequence/Lamport clock and persists record + operation. */
   async mutateRecord<T>(input: { id: string; entity: LocalRecord["entity"]; entityId?: string; userId: string; payload: T; deviceId: string; deletedAt?: number }): Promise<LocalRecord<T>> {
     if (!input.userId) throw new Error("Local mutation requires an authenticated user");
     await this.init();
@@ -94,10 +92,7 @@ class LocalFirstDB {
     });
   }
 
-  async putRecordAndOperation(record: LocalRecord, operation: LocalOperation): Promise<void> {
-    await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite"); transaction.objectStore(STORES.records).put(record); transaction.objectStore(STORES.operations).put(operation); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error ?? new Error("Local mutation aborted")); });
-  }
-
+  async putRecordAndOperation(record: LocalRecord, operation: LocalOperation): Promise<void> { await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite"); transaction.objectStore(STORES.records).put(record); transaction.objectStore(STORES.operations).put(operation); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error ?? new Error("Local mutation aborted")); }); }
   async getRecord<T = unknown>(id: string): Promise<LocalRecord<T> | null> { return this.transaction<LocalRecord<T> | null>(STORES.records, "readonly", (store, resolve, reject) => { const request = store.get(id); request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
   async getRecords(userId: string): Promise<LocalRecord[]> { return this.transaction<LocalRecord[]>(STORES.records, "readonly", (store, resolve, reject) => { const request = store.index("userId").getAll(userId); request.onsuccess = () => resolve(request.result ?? []); request.onerror = () => reject(request.error); }); }
   async putOperation(operation: LocalOperation): Promise<void> { await this.transaction<void>(STORES.operations, "readwrite", (store, resolve, reject) => { const request = store.put(operation); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
