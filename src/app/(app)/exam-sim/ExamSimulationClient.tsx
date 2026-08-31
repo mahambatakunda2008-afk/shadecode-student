@@ -20,6 +20,7 @@ export default function ExamSimulationClient() {
   const subject = decode(params.get("subject") || params.get("sub"));
   const topic = decode(params.get("topic"));
   const count = Number(params.get("count") || params.get("cnt") || 10);
+  const safeCount = [5, 10, 15, 20].includes(count) ? count : 10;
 
   const handleFinished = (result: ExamResults) => {
     void examCompletedEvent(examInstanceId, subject || undefined, topic || undefined, {
@@ -32,12 +33,12 @@ export default function ExamSimulationClient() {
   };
 
   return (
-    <ExamAttemptLocalBridge>
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}>
       <AcademicExamContext />
       <ExamWorkspace
         initialSubject={subject}
         initialTopic={topic}
-        initialQuestionCount={[5, 10, 15, 20].includes(count) ? count : 10}
+        initialQuestionCount={safeCount}
         onExit={() => router.push("/dashboard")}
         onFinished={handleFinished}
       />
