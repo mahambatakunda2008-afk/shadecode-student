@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getLocalExperience } from "@/lib/education/localExperience";
 import type { ExperienceProfile } from "@/lib/education/experience";
+import styles from "./EducationExperienceShell.module.css";
 
 const FALLBACK: ExperienceProfile = {
   stage: "senior_secondary", label: "Senior Secondary",
@@ -26,5 +27,5 @@ export default function EducationExperienceShell({ children }: { children: React
     })();
     return () => { alive = false; };
   }, []);
-  return <div data-education-stage={profile.stage} data-education-density={profile.ui.density} data-education-motion={profile.ui.motion} data-education-interaction={profile.ui.interaction} data-education-rewards={profile.rewards} data-education-label={profile.label} className={`education-experience education-stage-${profile.stage}`}>{children}</div>;
+  return <div className={styles.shell} data-education-stage={profile.stage} data-education-density={profile.ui.density} data-education-motion={profile.ui.motion} data-education-interaction={profile.ui.interaction} data-education-rewards={profile.rewards} data-education-label={profile.label}>{children}</div>;
 }
