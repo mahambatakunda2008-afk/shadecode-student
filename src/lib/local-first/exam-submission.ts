@@ -4,6 +4,7 @@ import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 
 export async function submitExamOffline(attempt: LocalExamAttempt, questions: ExamQuestion[], now = new Date().toISOString()): Promise<ExamResults> {
   if (attempt.status === "submitted") throw new Error("Exam attempt has already been submitted");
+  if (!attempt.userId) throw new Error("Exam submission requires an authenticated user");
   if (!questions.length) throw new Error("Cannot submit an empty exam");
 
   const resultRecord = await submitExamLocally({
@@ -11,18 +12,18 @@ export async function submitExamOffline(attempt: LocalExamAttempt, questions: Ex
     attemptId: attempt.attemptId,
     subject: attempt.subject,
     topic: attempt.topic,
-    level: attempt.level,
+    level: String(attempt.level),
     questions,
     answers: attempt.answers,
-    timeTaken: Math.max(0, attempt.totalSeconds - attempt.remainingSeconds),
+    timeTaken: Math.max(0, attempt.totalSeconds - attempt.seconds),
   });
 
-  await saveExamAttempt({
+  await saveExamAttempt(attempt.userId, {
     ...attempt,
     status: "submitted",
     updatedAt: now,
     submittedAt: now,
-    remainingSeconds: 0,
+    seconds: 0,
   });
 
   return resultRecord.payload;
