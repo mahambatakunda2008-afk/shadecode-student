@@ -6,6 +6,7 @@ export async function submitExamOffline(attempt: LocalExamAttempt, questions: Ex
   if (attempt.status === "submitted") throw new Error("Exam attempt has already been submitted");
   if (!attempt.userId) throw new Error("Exam submission requires an authenticated user");
   if (!questions.length) throw new Error("Cannot submit an empty exam");
+  if (!Number.isFinite(Date.parse(now))) throw new Error("Exam submission has an invalid timestamp");
 
   const resultRecord = await submitExamLocally({
     userId: attempt.userId,
@@ -16,6 +17,7 @@ export async function submitExamOffline(attempt: LocalExamAttempt, questions: Ex
     questions,
     answers: attempt.answers,
     timeTaken: Math.max(0, attempt.totalSeconds - attempt.seconds),
+    submittedAt: now,
   });
 
   await saveExamAttempt(attempt.userId, {
