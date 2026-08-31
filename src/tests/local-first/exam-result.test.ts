@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
 
 const questions = [
