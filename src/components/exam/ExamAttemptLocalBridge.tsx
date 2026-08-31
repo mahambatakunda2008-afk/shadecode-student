@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getExamAttempt, saveExamAttempt, type LocalExamAttempt } from "@/lib/local-first/exam-attempt";
+import { localFirstStore } from "@/lib/local-first/store";
 
 const LEGACY_KEY = "shadecode-exam-workspace";
 
@@ -69,6 +70,24 @@ function toAttempt(saved: LegacyExam): LocalExamAttempt {
   };
 }
 
+function toLegacy(attempt: LocalExamAttempt): LegacyExam {
+  return {
+    workId: attempt.attemptId,
+    subject: attempt.subject,
+    topic: attempt.topic,
+    questions: attempt.questions,
+    answers: attempt.answers,
+    current: attempt.current,
+    seconds: attempt.seconds,
+    totalSeconds: attempt.totalSeconds,
+    startedAt: attempt.startedAt,
+    flags: attempt.flags,
+    canvas: attempt.canvas,
+    level: attempt.level,
+    count: attempt.count,
+  };
+}
+
 export default function ExamAttemptLocalBridge({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -88,38 +107,31 @@ export default function ExamAttemptLocalBridge({ children }: { children: ReactNo
 
     const hydrate = async () => {
       try {
-        const records = await (await import("@/lib/local-first/store")).localFirstStore.list(userId);
+        const key = `${LEGACY_KEY}:${userId}`;
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const saved = parse(raw);
+          if (saved) {
+            const existing = await getExamAttempt(userId, saved.workId);
+            if (!existing) await saveExamAttempt(userId, toAttempt(saved));
+            lastRaw.current = raw;
+            return;
+          }
+        }
+        const records = await localFirstStore.list(userId);
         const active = records
           .filter((record) => record.entity === "exam_attempt" && !record.deletedAt)
           .map((record) => record.payload as LocalExamAttempt)
           .filter((attempt) => attempt.status === "active")
           .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
         if (!active || cancelled) return;
-        const raw = localStorage.getItem(`${LEGACY_KEY}:${userId}`);
-        if (!raw) {
-          const legacy: LegacyExam = {
-            workId: active.attemptId,
-            subject: active.subject,
-            topic: active.topic,
-            questions: active.questions,
-            answers: active.answers,
-            current: active.current,
-            seconds: active.seconds,
-            totalSeconds: active.totalSeconds,
-            startedAt: active.startedAt,
-            flags: active.flags,
-            canvas: active.canvas,
-            level: active.level,
-            count: active.count,
-          };
-          localStorage.setItem(`${LEGACY_KEY}:${userId}`, JSON.stringify(legacy));
-        }
+        const legacy = JSON.stringify(toLegacy(active));
+        localStorage.setItem(key, legacy);
+        lastRaw.current = legacy;
       } catch {
-        // Local recovery must never block the exam UI.
+        // Recovery is best-effort; never block the exam UI.
       }
     };
-
-    void hydrate();
 
     const sync = async () => {
       try {
@@ -128,18 +140,20 @@ export default function ExamAttemptLocalBridge({ children }: { children: ReactNo
         lastRaw.current = raw;
         const saved = parse(raw);
         if (!saved) return;
-        const attempt = toAttempt(saved);
-        const existing = await getExamAttempt(userId, attempt.attemptId);
-        if (!existing || existing.updatedAt !== attempt.updatedAt) await saveExamAttempt(userId, attempt);
+        await saveExamAttempt(userId, toAttempt(saved));
       } catch {
-        // The legacy workspace remains a local fallback if IndexedDB is unavailable.
+        // The workspace remains usable through its existing local fallback.
       }
     };
 
+    void hydrate().finally(() => {
+      if (!cancelled) setReady(true);
+    });
     const timer = window.setInterval(() => void sync(), 1000);
-    void sync();
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [ready, userId]);
 
+  // Auth is optional for the setup screen, but never delay it indefinitely.
+  if (!ready) return null;
   return <>{children}</>;
 }
