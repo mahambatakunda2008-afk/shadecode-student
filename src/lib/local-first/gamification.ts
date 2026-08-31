@@ -24,17 +24,26 @@ const xpId = (userId: string) => `xp:${userId}`;
 const streakId = (userId: string) => `streak:${userId}`;
 const achievementId = (userId: string, id: string) => `achievement:${userId}:${id}`;
 
+function levelForXp(totalXp: number): number {
+  return Math.max(1, Math.floor(totalXp / 100) + 1);
+}
+
 export async function getXp(userId: string): Promise<LocalXpState | null> {
   const record = await localFirstStore.get<LocalXpState>(xpId(userId));
   return record?.userId === userId && !record.deletedAt ? record.payload : null;
 }
 
+/**
+ * Local XP foundation. Callers that can award the same logical reward more than
+ * once should supply an idempotency key through the event layer before using this
+ * primitive; read/modify/write is intentionally not the cross-tab authority.
+ */
 export async function awardXp(userId: string, amount: number): Promise<LocalRecord<LocalXpState>> {
   if (!userId) throw new Error("XP requires an authenticated user");
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("XP amount must be positive");
   const current = await getXp(userId);
   const totalXp = Math.max(0, Math.floor((current?.totalXp ?? 0) + amount));
-  const level = Math.max(1, Math.floor(Math.sqrt(totalXp / 100)) + 1);
+  const level = levelForXp(totalXp);
   return localFirstStore.upsert({ id: xpId(userId), entity: "xp", userId, payload: { totalXp, level, updatedAt: new Date().toISOString() } });
 }
 
