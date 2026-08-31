@@ -15,13 +15,6 @@ function base64ToBytes(value: string): Uint8Array {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-/**
- * Normalize a typed-array view to a concrete ArrayBuffer.
- *
- * Recent TypeScript DOM typings distinguish ArrayBuffer from ArrayBufferLike
- * for Web Crypto BufferSource parameters. Keeping the conversion here makes
- * the crypto boundary explicit without changing the bytes we encrypt.
- */
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
@@ -36,14 +29,8 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
     false,
     ["deriveKey"],
   );
-
   return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: toArrayBuffer(salt),
-      iterations: PBKDF2_ITERATIONS,
-      hash: "SHA-256",
-    },
+    { name: "PBKDF2", salt: toArrayBuffer(salt), iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
     material,
     { name: "AES-GCM", length: 256 },
     false,
@@ -52,10 +39,9 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 }
 
 export async function encryptBundle(bundle: SyncBundle, passphrase: string): Promise<EncryptedSyncBundle> {
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    throw new Error("Web Crypto is unavailable in this environment");
-  }
+  if (typeof crypto === "undefined" || !crypto.subtle) throw new Error("Web Crypto is unavailable in this environment");
   if (passphrase.length < 8) throw new Error("Sync passphrase must be at least 8 characters");
+  if (bundle.version !== 2) throw new Error("Only canonical sync bundles can be encrypted");
 
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
@@ -79,10 +65,7 @@ export async function encryptBundle(bundle: SyncBundle, passphrase: string): Pro
   };
 }
 
-export async function decryptBundle(
-  encrypted: EncryptedSyncBundle,
-  passphrase: string,
-): Promise<SyncBundle> {
+export async function decryptBundle(encrypted: EncryptedSyncBundle, passphrase: string): Promise<SyncBundle> {
   if (encrypted.version !== 1 || encrypted.algorithm !== "AES-GCM" || encrypted.kdf !== "PBKDF2-SHA-256") {
     throw new Error("Unsupported Shadecode encrypted bundle");
   }
@@ -99,7 +82,7 @@ export async function decryptBundle(
       toArrayBuffer(ciphertext),
     );
     const bundle = JSON.parse(new TextDecoder().decode(plaintext)) as SyncBundle;
-    if (bundle.version !== 1 || !bundle.userId || !Array.isArray(bundle.records)) {
+    if (bundle.version !== 2 || !bundle.userId || !Array.isArray(bundle.records) || !Array.isArray(bundle.operations)) {
       throw new Error("Invalid sync bundle");
     }
     return bundle;
