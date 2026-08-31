@@ -6,7 +6,7 @@ import ExamWorkspace from "@/components/exam/ExamWorkspace";
 import ExamAttemptLocalBridge from "@/components/exam/ExamAttemptLocalBridge";
 import AcademicExamContext from "@/components/exam/AcademicExamContext";
 import { examCompletedEvent } from "@/lib/intelligence/emitLearningEvent";
-import type { ExamResults } from "@/components/exam/ExamWorkspace";
+import type { ExamResults } from "@/lib/exam/types";
 
 function decode(value: string | null) {
   if (!value) return "";
