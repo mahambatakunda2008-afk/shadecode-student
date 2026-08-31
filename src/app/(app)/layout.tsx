@@ -14,6 +14,7 @@ import { AdminBottomNav } from "@/components/layout/AdminBottomNav";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import LessonEvidenceRecorder from "@/components/studyspace/LessonEvidenceRecorder";
+import EducationExperienceShell from "@/components/education/EducationExperienceShell";
 import { installLearningEventSync } from "@/lib/intelligence/emitLearningEvent";
 
 const ADMIN_CACHE_PREFIX = "shadecode:admin:";
@@ -22,10 +23,7 @@ const ROLE_REFRESH_TIMEOUT_MS = 4_000;
 
 function readBooleanCache(prefix: string, userId: string): boolean | null {
   if (typeof window === "undefined") return null;
-  try {
-    const value = window.localStorage.getItem(`${prefix}${userId}`);
-    return value === null ? null : value === "true";
-  } catch { return null; }
+  try { const value = window.localStorage.getItem(`${prefix}${userId}`); return value === null ? null : value === "true"; } catch { return null; }
 }
 function writeBooleanCache(prefix: string, userId: string, value: boolean): void {
   if (typeof window === "undefined") return;
@@ -74,5 +72,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router, supabase]);
 
   if (isAdmin) return <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><AdminSidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><AdminBottomNav /></div></div>;
-  return <UserProvider><AchievementsProvider><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><AchievementToast /><FeedbackWidget /></div></AchievementsProvider></UserProvider>;
+  return <UserProvider><AchievementsProvider><EducationExperienceShell><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><AchievementToast /><FeedbackWidget /></div></EducationExperienceShell></AchievementsProvider></UserProvider>;
 }
