@@ -1,7 +1,7 @@
 "use client";
 
-import TasksLocalFirst from "@/components/tasks/TasksLocalFirst";
+import TasksLocalFirstV2 from "@/components/tasks/TasksLocalFirstV2";
 
 export default function Tasks() {
-  return <TasksLocalFirst />;
+  return <TasksLocalFirstV2 />;
 }
