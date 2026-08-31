@@ -66,7 +66,7 @@ export class LocalFirstStore {
     if (!progress.userId || !progress.lessonId) throw new Error("Progress requires an authenticated user and lesson");
     const id = progressRecordId(progress.userId, progress.lessonId);
     const payload = { ...progress, lastUpdated: progress.lastUpdated || new Date().toISOString() };
-    return localFirstDB.mutateRecord({ id, entity: "progress", userId: progress.userId, payload, deviceId: await getDeviceId() });
+    return localFirstDB.mutateRecord({ id, entity: "progress", entityId: progress.lessonId, userId: progress.userId, payload, deviceId: await getDeviceId() });
   }
 
   /** Server hydration for progress. Unlike saveProgress, this cannot create a pending operation. */
@@ -108,14 +108,7 @@ export class LocalFirstStore {
 
   async remove(input: { id: string; entity: LocalEntity; userId: string }): Promise<void> {
     if (!input.userId) throw new Error("Local mutation requires an authenticated user");
-    await localFirstDB.mutateRecord({
-      id: input.id,
-      entity: input.entity,
-      userId: input.userId,
-      payload: null,
-      deviceId: await getDeviceId(),
-      deletedAt: Date.now(),
-    });
+    await localFirstDB.mutateRecord({ id: input.id, entity: input.entity, userId: input.userId, payload: null, deviceId: await getDeviceId(), deletedAt: Date.now() });
   }
 
   async exportBundle(userId: string): Promise<SyncBundle> {
