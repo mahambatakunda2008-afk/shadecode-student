@@ -23,6 +23,7 @@ type QueuedLearningEvent = {
 
 const QUEUE_KEY = "shadecode:cortex:event-queue:v2";
 const LEGACY_QUEUE_KEY = "shadecode:cortex:event-queue:v1";
+const LAST_USER_KEY = "shadecode:cortex:event-queue:last-user:v1";
 const MAX_QUEUE = 200;
 const POST_TIMEOUT_MS = 7_000;
 const MAX_BACKOFF_MS = 60_000;
@@ -59,6 +60,10 @@ async function currentUserId(): Promise<string | null> {
 
 async function migrateLegacyQueue(userId: string | null): Promise<void> {
   if (!userId || typeof window === "undefined" || localStorage.getItem(QUEUE_KEY)) return;
+  // v1 records did not carry an owner. Only migrate them when this browser has
+  // a recorded last-owner identity, preventing an account switch from inheriting
+  // another student's queued events.
+  if (localStorage.getItem(LAST_USER_KEY) !== userId) return;
   try {
     const raw = localStorage.getItem(LEGACY_QUEUE_KEY);
     if (!raw) return;
@@ -78,6 +83,7 @@ function enqueue(userId: string, input: LearningEventInput) {
   if (queue.some(item => item.userId === userId && item.input.source === input.source && item.input.sourceEventId === input.sourceEventId)) return;
   queue.push({ userId, input, attempts: 0, nextAttemptAt: 0 });
   writeQueue(queue);
+  try { localStorage.setItem(LAST_USER_KEY, userId); } catch {}
 }
 
 type PostResult = "sent" | "retry" | "drop";
@@ -128,8 +134,6 @@ export async function flushLearningEvents(): Promise<void> {
       if (result === "retry") {
         const attempts = queued.attempts + 1;
         remaining.push({ ...queued, attempts, nextAttemptAt: Date.now() + backoffMs(attempts) });
-      } else if (result === "drop") {
-        // Permanently invalid events are removed rather than becoming a poison queue item.
       }
     }
     writeQueue(remaining);
@@ -140,6 +144,7 @@ export async function emitLearningEvent(input: LearningEventInput): Promise<bool
   if (typeof window === "undefined") return false;
   const userId = await currentUserId();
   if (!userId) return false;
+  try { localStorage.setItem(LAST_USER_KEY, userId); } catch {}
   if (!navigator.onLine) { enqueue(userId, input); return false; }
   const result = await post(input);
   if (result === "retry") enqueue(userId, input);
