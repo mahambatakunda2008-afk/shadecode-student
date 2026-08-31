@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ExamWorkspace from "@/components/exam/ExamWorkspace";
+import ExamAttemptLocalBridge from "@/components/exam/ExamAttemptLocalBridge";
 import AcademicExamContext from "@/components/exam/AcademicExamContext";
 import { examCompletedEvent } from "@/lib/intelligence/emitLearningEvent";
 import type { ExamResults } from "@/components/exam/ExamWorkspace";
@@ -31,7 +32,7 @@ export default function ExamSimulationClient() {
   };
 
   return (
-    <>
+    <ExamAttemptLocalBridge>
       <AcademicExamContext />
       <ExamWorkspace
         initialSubject={subject}
@@ -40,6 +41,6 @@ export default function ExamSimulationClient() {
         onExit={() => router.push("/dashboard")}
         onFinished={handleFinished}
       />
-    </>
+    </ExamAttemptLocalBridge>
   );
 }
