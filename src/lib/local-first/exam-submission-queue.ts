@@ -19,12 +19,7 @@ const idFor = (userId: string, attemptId: string) => `exam_submission:${userId}:
 export async function queueExamSubmission(input: PendingExamSubmission) {
   if (!input.userId || !input.attemptId) throw new Error("Queued exam submission requires identity");
   if (!Number.isFinite(Date.parse(input.submittedAt))) throw new Error("Queued exam submission has an invalid timestamp");
-  return localFirstStore.upsert({
-    id: idFor(input.userId, input.attemptId),
-    entity: "exam_submission",
-    userId: input.userId,
-    payload: input,
-  });
+  return localFirstStore.upsert({ id: idFor(input.userId, input.attemptId), entity: "exam_submission", userId: input.userId, payload: input });
 }
 
 export async function getQueuedExamSubmission(userId: string, attemptId: string) {
