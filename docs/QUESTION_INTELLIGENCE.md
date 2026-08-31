@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Turn legitimate past-paper content into machine-readable assessment evidence without inventing curriculum mappings.
+Turn legitimate past-paper content into machine-readable assessment evidence and expose that evidence to Cortex without inventing curriculum mappings.
 
 ## Pipeline
 
-`past_papers -> PDF extraction -> exam_questions -> topic mapping -> attempts -> topic_mastery -> Cortex recommendations`
+`past_papers -> PDF extraction -> exam_questions -> verified topic mapping -> attempts -> topic_mastery -> Cortex recommendations`
 
 ## Current guarantees
 
@@ -15,9 +15,29 @@ Turn legitimate past-paper content into machine-readable assessment evidence wit
 - `--apply` is required before database writes.
 - `(paper_id, question_number)` is the canonical duplicate boundary.
 - Marks are retained only when explicitly detected.
-- Topic, subtopic, difficulty and page are left null when evidence is unavailable.
+- Topic, subtopic and difficulty remain null when evidence is unavailable.
+- Source page provenance is retained for extracted questions.
 - The authenticated question API only exposes records permitted by Supabase RLS.
 - Search is capped at 50 results per request.
+- Cortex question help uses the indexed question text as its evidence instead of asking the model to reconstruct the paper.
+- Cortex paper analysis reads indexed questions and returns an analysis without silently writing AI guesses into curriculum fields.
+- Gemini is the first provider; the existing OpenAI fallback is used only when configured.
+
+## Cortex integration
+
+`POST /api/exam-hub/cortex` supports two modes:
+
+### `question-help`
+
+Input: `subject`, `question`.
+
+Returns structured learning support: concept, hint, method, worked explanation, final answer and an exam tip.
+
+### `paper-analysis`
+
+Input: `paperId`, optional `subject`.
+
+The route loads up to 80 indexed questions for the authenticated paper and asks Cortex to identify observable topics, repeated question patterns, high-yield revision areas and a practical revision plan. The response explicitly treats recurrence as evidence, not a guaranteed prediction.
 
 ## Mapping policy
 
@@ -30,21 +50,10 @@ Acceptable evidence includes:
 3. A reviewed mapping table with provenance.
 4. A model suggestion that remains pending until reviewed.
 
-## Next mapping stage
-
-Build a reviewable mapping queue rather than silently writing model guesses into `exam_questions.topic_id`.
-
-Each proposed mapping should retain:
-
-- question ID
-- proposed topic ID
-- confidence
-- evidence/source
-- model/version if AI-assisted
-- reviewer
-- review timestamp
-- final decision
+AI paper analysis is therefore advisory. It does not populate `exam_questions.topic_id` or approve `exam_question_topic_proposals`.
 
 ## Failure behavior
 
 Malformed PDFs, ambiguous metadata, duplicate papers and unsupported filenames must fail closed and appear in the ingestion report. They must never produce fabricated question metadata.
+
+If a paper has no indexed questions, Cortex paper analysis returns a clear indexing-required response instead of attempting to read the PDF indirectly.
