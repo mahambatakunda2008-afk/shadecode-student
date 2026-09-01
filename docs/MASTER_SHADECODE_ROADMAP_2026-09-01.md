@@ -189,8 +189,27 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 4. **Verification:** authenticated, offline, reconnect, replay/idempotency, and E2E coverage.
 5. **Primary vertical slice:** My Day → activity → attempt → feedback → learning event → mastery → next activity.
 6. **Student hardening:** stabilize Exam Simulation and connect the mature evidence loop to existing Student surfaces.
-7. **Campus foundation:** extend shared platform contracts only where real Campus requirements demand them.
+7. **Campus foundation:** extend shared platform contracts only where real Campus requirements demand it.
 
 ## 5. Documentation synchronization contract
 
 Whenever engineering changes a capability, update the relevant architecture/status document in the same workstream. Do not describe a prototype as shipped. The repository, production database and deployment behavior are the sources of truth.
+
+## 6. September 1 engineering checkpoint
+
+- **Offline sync revision protocol:** 🟢 core protocol merged to `main` in commit `85474ab84073a2923102d650eb888d4f55aec5b7`.
+- **Conflict persistence:** 🟢 IndexedDB conflict store and local conflict recording are implemented.
+- **Authenticated OCC relay:** 🟢 `/api/sync` accepts authenticated `tasks`, `subjects`, and `learn_lessons` mutations with `baseVersion`, `clientVersion`, and `deviceId`.
+- **Production database protocol:** 🟢 hardened `apply_sync_mutation` is SECURITY INVOKER and production conflict behavior has been transaction-tested.
+- **Education profile sync:** 🔵 intentionally deferred because the live `user_profiles` schema does not currently contain the education fields assumed by the older prototype. Do not mark this as shipped until schema and contract are aligned.
+- **Dashboard device-first launch:** 🟡 cache fallback exists, but the dashboard still has a blocking initial auth/exams gate before its UI can mount. This is the next hardening target.
+- **Production deployment:** 🟡 latest Vercel deployment is still an older/main build; the September 1 sync commit has not yet produced a new `main` deployment at checkpoint time. Verify deployment before calling the new sync code production-shipped.
+
+## 7. Immediate next engineering moves
+
+1. Remove the dashboard's network-dependent mount gate so cached/local state can paint first.
+2. Make authentication/session discovery non-blocking where the existing shell can safely remain mounted.
+3. Keep exams and Cortex reconciliation as background work, never as a prerequisite for first paint.
+4. Replace any source-string-only sync tests with behavioral tests covering accepted, replayed/idempotent, stale-conflict, and offline-queue scenarios.
+5. Browser-verify dashboard launch offline and reconnect behavior, then update this matrix from 🟡 to 🟢 only when observed.
+6. Return to education-profile synchronization only after the database contract is explicitly aligned.
