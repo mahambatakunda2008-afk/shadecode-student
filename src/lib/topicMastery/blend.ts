@@ -1,16 +1,12 @@
 /**
  * src/lib/topicMastery/blend.ts
  *
- * Pure logic for updating a topic_mastery row from a new exam attempt.
- *
- * Context: the `topic_mastery` table (user_id, subject, topic,
- * mastery_score, last_score, attempts, last_attempted, trend) has existed
- * in the schema with a real unique constraint (user_id, subject, topic)
- * since before this session, but had zero producers and zero consumers
- * anywhere in the codebase -- fully orphaned. This module is the producer
- * side: it decides how a topic's mastery_score should move given one more
- * graded attempt.
+ * Compatibility projection for the production `topic_mastery` row.
+ * The mastery score transition itself is shared with Cortex so exam results
+ * and individual learning observations cannot drift into separate formulas.
  */
+
+import { transitionMastery } from "@/lib/intelligence/masteryTransition";
 
 export interface ExistingMastery {
   mastery_score: number;
@@ -25,43 +21,21 @@ export interface MasteryUpdate {
 }
 
 /**
- * Blends a new attempt's percentage into an existing mastery_score using
- * a simple exponential moving average (70% history / 30% new attempt),
- * rather than overwriting outright -- a single bad exam shouldn't erase
- * a topic's established mastery, and a single lucky guess shouldn't
- * inflate it. Weights are a deliberately simple, honestly-labeled
- * heuristic, not a validated psychometric model.
- *
- * `trend` is the raw delta this attempt caused (positive = improving,
- * negative = declining) -- used downstream by retentionRisk.ts as an
- * extra risk signal for topics that are actively getting worse, not
- * just old.
+ * Applies one graded topic percentage using the platform's shared EMA rule.
+ * `trend` is the change caused by this evidence and remains useful to
+ * downstream retention-risk logic.
  */
 export function blendMastery(
   existing: ExistingMastery | null,
-  newAttemptPercentage: number
+  newAttemptPercentage: number,
 ): MasteryUpdate {
-  const clampedNew = Math.max(0, Math.min(100, newAttemptPercentage));
-
-  if (!existing) {
-    return {
-      mastery_score: clampedNew,
-      last_score: clampedNew,
-      attempts: 1,
-      trend: 0, // no prior data to compare against yet
-    };
-  }
-
-  const HISTORY_WEIGHT = 0.7;
-  const NEW_ATTEMPT_WEIGHT = 0.3;
-  const blended = Math.round(
-    existing.mastery_score * HISTORY_WEIGHT + clampedNew * NEW_ATTEMPT_WEIGHT
-  );
+  const mastery = transitionMastery(existing?.mastery_score ?? null, newAttemptPercentage);
+  const lastScore = Math.max(0, Math.min(100, Number.isFinite(newAttemptPercentage) ? newAttemptPercentage : 0));
 
   return {
-    mastery_score: blended,
-    last_score: clampedNew,
-    attempts: existing.attempts + 1,
-    trend: blended - existing.mastery_score,
+    mastery_score: mastery,
+    last_score: lastScore,
+    attempts: (existing?.attempts ?? 0) + 1,
+    trend: existing ? mastery - existing.mastery_score : 0,
   };
 }
