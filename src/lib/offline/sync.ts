@@ -1,218 +1,34 @@
-/**
- * Offline synchronization. The canonical local-first store is the source of truth
- * for learner mutations; the mutation queue is the network transport.
- */
+/** Offline synchronization. The device is the primary data plane; the mutation queue is network transport. */
 import { mutationQueue, type OfflineMutation } from "./mutationQueue";
 import { createClient } from "@/lib/supabase/client";
 import { localFirstStore } from "@/lib/local-first/store";
 import { localTasks } from "@/lib/local-first/tasks";
 import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
+import type { LocalEntity, LocalConflict } from "@/lib/local-first/types";
 
-function progressRecordId(userId: string, lessonId: string): string {
-  return `progress:${userId}:${lessonId}`;
-}
+const REMOTE_TABLES: Record<string, string> = { tasks: "tasks", subjects: "subjects", learn_lessons: "learn_lessons" };
+const STORE_TO_ENTITY: Record<string, LocalEntity> = { tasks: "task", subjects: "subject", learn_lessons: "progress" };
+
+function progressRecordId(userId: string, lessonId: string): string { return `progress:${userId}:${lessonId}`; }
 
 export class OfflineSync {
   private syncInProgress = false;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
   private onlineHandler: (() => void) | null = null;
-
-  startAutoSync(): void {
-    if (this.syncInterval) return;
-    if (typeof window !== "undefined") {
-      this.onlineHandler = () => void this.syncAll();
-      window.addEventListener("online", this.onlineHandler);
-    }
-    this.syncInterval = setInterval(() => {
-      if (typeof navigator !== "undefined" && navigator.onLine) void this.syncAll();
-    }, 30000);
-  }
-
-  stopAutoSync(): void {
-    if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
-    if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler);
-    this.onlineHandler = null;
-  }
-
-  async syncAll(): Promise<void> {
-    if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return;
-    this.syncInProgress = true;
-    try {
-      await this.bridgeLocalOperations();
-      await this.syncMutations();
-      await this.syncProgress();
-    } catch (error) {
-      console.error("[OfflineSync] Sync failed:", error);
-    } finally {
-      this.syncInProgress = false;
-    }
-  }
-
-  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> {
-    const auth = await this.getCurrentUser();
-    if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user");
-    if (input.store === "tasks") {
-      const payload = input.payload as Record<string, unknown>;
-      const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
-      if (input.operation === "delete") await localTasks.remove(id, auth.user.id);
-      else {
-        const existing = await localTasks.get(id, auth.user.id);
-        await localTasks.create({ id, userId: auth.user.id, subject_id: typeof payload.subject_id === "string" ? payload.subject_id : existing?.subject_id ?? "", title: typeof payload.title === "string" ? payload.title : existing?.title ?? "", completed: typeof payload.completed === "boolean" ? payload.completed : existing?.completed ?? false });
-      }
-      return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: auth.user.id } as OfflineMutation<T>;
-    }
-    if (input.store === "subjects") {
-      const payload = input.payload as Record<string, unknown>;
-      const id = typeof payload.id === "string" ? payload.id : crypto.randomUUID();
-      if (input.operation === "delete") await localSubjects.remove(id, auth.user.id);
-      else await localSubjects.save({ id, userId: auth.user.id, name: typeof payload.name === "string" ? payload.name : "" });
-      return { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), attempts: 0, ownerId: auth.user.id } as OfflineMutation<T>;
-    }
-    return mutationQueue.enqueue({ ...input, ownerId: auth.user.id });
-  }
-
-  private async getCurrentUser() {
-    const supabase = createClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return null;
-    return { supabase, user };
-  }
-
-  private async bridgeLocalOperations(): Promise<void> {
-    const auth = await this.getCurrentUser();
-    if (!auth) return;
-    const operations = await localFirstStore.listPendingOperations(auth.user.id);
-    for (const operation of operations) {
-      try {
-        if (operation.entity !== "task" && operation.entity !== "subject") continue;
-        const mutation = this.operationToMutation(operation);
-        await mutationQueue.enqueue({ ...mutation, ownerId: auth.user.id });
-      } catch (error) {
-        console.error("[OfflineSync] Failed to bridge local operation:", operation.id, error);
-      }
-    }
-  }
-
-  private operationToMutation(operation: LocalOperation): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> {
-    const store = operation.entity === "task" ? "tasks" : "subjects";
-    if (operation.kind === "delete") return { operation: "delete", store, payload: { id: operation.entityId, user_id: operation.userId } };
-    const raw = operation.payload;
-    if (!raw || typeof raw !== "object") throw new Error(`Local ${operation.entity} operation has no payload`);
-    const value = raw as Record<string, unknown>;
-    const id = typeof value.id === "string" ? value.id : operation.entityId;
-    if (operation.entity === "task") {
-      if (operation.kind === "create") return { operation: "create", store, payload: { id, user_id: operation.userId, subject_id: value.subject_id, title: value.title, completed: value.completed } };
-      const changes: Record<string, unknown> = {};
-      if (typeof value.subject_id === "string") changes.subject_id = value.subject_id;
-      if (typeof value.title === "string") changes.title = value.title;
-      if (typeof value.completed === "boolean") changes.completed = value.completed;
-      return { operation: "update", store, payload: { id, user_id: operation.userId, ...changes } };
-    }
-    return { operation: operation.kind, store, payload: { id, user_id: operation.userId, name: value.name } };
-  }
-
-  private async syncMutations(): Promise<void> {
-    const auth = await this.getCurrentUser();
-    if (!auth) return;
-    const { supabase, user } = auth;
-    const mutations = await mutationQueue.listReady(user.id);
-    for (const mutation of mutations) {
-      try {
-        const payload = mutation.payload as Record<string, unknown>;
-        if (payload.user_id !== undefined && payload.user_id !== user.id) throw new Error("Queued mutation user_id does not match the authenticated user");
-        const table = mutation.store;
-        if (!table || table.includes(".") || table.includes("/") || !/^[a-zA-Z0-9_]+$/.test(table)) throw new Error(`Invalid offline mutation store: ${table}`);
-        if (mutation.operation === "delete") {
-          const id = payload.id;
-          if (typeof id !== "string") throw new Error("Delete mutation requires a string id");
-          const { error } = await supabase.from(table).delete().eq("id", id).eq("user_id", user.id);
-          if (error) throw error;
-        } else if (mutation.operation === "update") {
-          const id = payload.id;
-          if (typeof id !== "string") throw new Error("Update mutation requires a string id");
-          const { id: _id, user_id: _userId, ...changes } = payload;
-          const { error } = await supabase.from(table).update(changes).eq("id", id).eq("user_id", user.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from(table).upsert({ ...payload, user_id: user.id });
-          if (error) throw error;
-        }
-        const entity = table === "tasks" ? "task" : table === "subjects" ? "subject" : null;
-        const entityId = typeof payload.id === "string" ? payload.id : null;
-        if (entity && entityId) await localFirstStore.acknowledgeEntityOperations(user.id, entity, entityId);
-        await mutationQueue.remove(mutation.id, user.id);
-      } catch (error) {
-        await mutationQueue.recordFailure(mutation.id, user.id, error);
-        console.error("[OfflineSync] Failed queued mutation:", mutation.id, error);
-      }
-    }
-  }
-
-  /** Progress is synchronized from the canonical local-first state. Only operations included in the successful write are acknowledged. */
-  private async syncProgress(): Promise<void> {
-    const auth = await this.getCurrentUser();
-    if (!auth) return;
-    const { supabase, user } = auth;
-    const unsyncedProgress = await localFirstStore.listPendingProgress(user.id);
-    for (const progress of unsyncedProgress) {
-      try {
-        const { error } = await supabase.from("learn_lessons").update({ progress: progress.progress, updated_at: new Date().toISOString() }).eq("id", progress.lessonId).eq("user_id", user.id);
-        if (error) throw error;
-
-        const currentRecord = await localFirstStore.get(progressRecordId(user.id, progress.lessonId));
-        const throughLamport = currentRecord?.entity === "progress" && currentRecord.userId === user.id ? currentRecord.version : undefined;
-        await localFirstStore.acknowledgeEntityOperations(user.id, "progress", progress.lessonId, throughLamport);
-      } catch (error) {
-        console.error("[OfflineSync] Failed to sync progress:", progress.lessonId, error);
-      }
-    }
-  }
-
-  async saveTaskLocally(taskId: string): Promise<void> {
-    const auth = await this.getCurrentUser(); if (!auth) return;
-    const { data: task, error } = await auth.supabase.from("tasks").select("*").eq("id", taskId).eq("user_id", auth.user.id).single();
-    if (error || !task) return;
-    await localFirstStore.hydrate({ id: task.id, entity: "task", userId: auth.user.id, payload: { id: task.id, userId: auth.user.id, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.parse(task.updated_at ?? "") || Date.now(), deviceId: "server", version: 0 });
-  }
-
-  async saveProgressLocally(lessonId: string, userId: string): Promise<void> {
-    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return;
-    const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
-    if (error || !lesson) return;
-    await localFirstStore.hydrateProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() }, Date.parse(lesson.updated_at ?? "") || Date.now());
-  }
-
-  async getTasks(userId: string): Promise<Array<{ id: string; userId: string; subject_id: string; title: string; completed: boolean }>> {
-    const local = await localTasks.list(userId);
-    if (local.length > 0) return local;
-    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return [];
-    const { data: tasks, error } = await auth.supabase.from("tasks").select("*").eq("user_id", auth.user.id);
-    if (error) return [];
-    for (const task of tasks || []) await this.saveTaskLocally(task.id);
-    return localTasks.list(userId);
-  }
-
-  async getSubjects(userId: string): Promise<Array<{ id: string; userId: string; name: string }>> {
-    const local = await localSubjects.list(userId);
-    if (local.length > 0) return local;
-    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return [];
-    const { data: subjects, error } = await auth.supabase.from("subjects").select("*").eq("user_id", auth.user.id);
-    if (error) return [];
-    for (const subject of subjects || []) await localFirstStore.hydrate({ id: subject.id, entity: "subject", userId: auth.user.id, payload: { id: subject.id, userId: auth.user.id, name: subject.name, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.parse(subject.updated_at ?? "") || Date.now(), deviceId: "server", version: 0 });
-    return localSubjects.list(userId);
-  }
-
-  async getProgress(lessonId: string, userId: string) {
-    const localProgress = await localFirstStore.getProgress(lessonId, userId);
-    if (localProgress?.userId === userId) return localProgress;
-    const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return null;
-    const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single();
-    if (error || !lesson) return null;
-    const progress = { lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: new Date().toISOString() } as const;
-    await localFirstStore.hydrateProgress(progress, Date.parse(lesson.updated_at ?? "") || Date.now());
-    return progress;
-  }
+  startAutoSync(): void { if (this.syncInterval) return; if (typeof window !== "undefined") { this.onlineHandler = () => void this.syncAll(); window.addEventListener("online", this.onlineHandler); } this.syncInterval = setInterval(() => { if (typeof navigator !== "undefined" && navigator.onLine) void this.syncAll(); }, 30000); }
+  stopAutoSync(): void { if (this.syncInterval) clearInterval(this.syncInterval); this.syncInterval = null; if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler); this.onlineHandler = null; }
+  async syncAll(): Promise<void> { if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return; this.syncInProgress = true; try { await this.bridgeLocalOperations(); await this.syncMutations(); } catch (error) { console.error("[OfflineSync] Sync failed:", error); } finally { this.syncInProgress = false; } }
+  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">): Promise<OfflineMutation<T>> { const auth = await this.getCurrentUser(); if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user"); return mutationQueue.enqueue({ ...input, ownerId: auth.user.id }); }
+  private async getCurrentUser() { const supabase = createClient(); const { data: { session } } = await supabase.auth.getSession(); if (!session?.user) return null; return { supabase, user: session.user }; }
+  private async bridgeLocalOperations(): Promise<void> { const auth = await this.getCurrentUser(); if (!auth) return; const operations = await localFirstStore.listPendingOperations(auth.user.id), deviceId = await localFirstStore.deviceId(); for (const operation of operations) { if (operation.entity === "learning_event" || operation.entity === "education_profile") continue; try { await mutationQueue.enqueue({ ...this.operationToMutation(operation, deviceId), ownerId: auth.user.id }); } catch (error) { console.error("[OfflineSync] Failed to bridge local operation:", operation.id, error); } } }
+  private operationToMutation(operation: LocalOperation, deviceId: string): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> { const store = operation.entity === "task" ? "tasks" : operation.entity === "subject" ? "subjects" : operation.entity === "progress" ? "learn_lessons" : null; if (!store) throw new Error(`Unsupported local sync entity: ${operation.entity}`); const payload = operation.kind === "delete" ? { id: operation.entityId, user_id: operation.userId } : operation.payload; if (!payload || typeof payload !== "object") throw new Error(`Local ${operation.entity} operation has no payload`); return { operation: operation.kind, store, payload: { ...(payload as Record<string, unknown>), id: operation.entityId, user_id: operation.userId }, clientVersion: operation.lamport, baseVersion: operation.baseVersion ?? 0, deviceId }; }
+  private async reconcileConflict(mutation: OfflineMutation, result: Record<string, unknown>, userId: string): Promise<void> { const entity = STORE_TO_ENTITY[mutation.store]; if (!entity) return; const payload = mutation.payload as Record<string, unknown>, entityId = typeof payload.id === "string" ? payload.id : null; if (!entityId) return; const localOps = await localFirstStore.listOperations(userId), loser = localOps.find((op) => op.entity === entity && op.entityId === entityId && !op.syncedAt && op.lamport === mutation.clientVersion); if (!loser) return; let winnerPayload: Record<string, unknown> | null = null; const table = REMOTE_TABLES[mutation.store], auth = await this.getCurrentUser(); if (table && auth) { const { data } = await auth.supabase.from(table).select("*").eq("id", entityId).eq("user_id", userId).maybeSingle(); if (data) winnerPayload = data as Record<string, unknown>; } const serverVersion = typeof result.currentVersion === "number" ? result.currentVersion : Math.max(mutation.baseVersion ?? 0, 0); const winner: LocalOperation = { id: `server:${mutation.store}:${entityId}:${serverVersion}`, recordId: entityId, entityId, entity, userId, deviceId: typeof result.currentDeviceId === "string" ? result.currentDeviceId : "server", kind: winnerPayload ? "update" : "delete", payload: winnerPayload ?? {}, timestamp: new Date().toISOString(), sequence: serverVersion, lamport: serverVersion, baseVersion: Math.max(serverVersion - 1, 0), syncedAt: new Date().toISOString() }; const conflict: LocalConflict = { id: `${loser.id}:conflict:${serverVersion}`, userId, entity, entityId, winner, loser, reason: "causal-order", createdAt: Date.now() }; await localFirstStore.recordConflict(conflict); if (winnerPayload) await localFirstStore.hydrate({ id: entityId, entity, userId, payload: winnerPayload, updatedAt: Date.now(), deviceId: winner.deviceId, version: loser.lamport, syncVersion: serverVersion }); await localFirstStore.acknowledgeOperation(loser.id); await mutationQueue.remove(mutation.id, userId); }
+  private async syncMutations(): Promise<void> { const auth = await this.getCurrentUser(); if (!auth) return; const { user } = auth; for (const mutation of await mutationQueue.listReady(user.id)) { try { const payload = mutation.payload as Record<string, unknown>; if (payload.user_id !== undefined && payload.user_id !== user.id) throw new Error("Queued mutation user_id does not match authenticated user"); const response = await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ operation: mutation.operation, store: mutation.store, payload, clientVersion: mutation.clientVersion ?? 0, baseVersion: mutation.baseVersion ?? 0, deviceId: mutation.deviceId ?? await localFirstStore.deviceId() }) }); let result: Record<string, unknown> | null = null; try { result = await response.json(); } catch {} if (response.status === 409 && result?.status === "conflict") { await this.reconcileConflict(mutation, result, user.id); continue; } if (!response.ok) throw new Error(typeof result?.error === "string" ? result.error : `Sync failed (${response.status})`); if (result?.status !== "accepted" && result?.status !== "already-applied") throw new Error("Sync endpoint returned an unknown result"); const entity = STORE_TO_ENTITY[mutation.store], entityId = typeof payload.id === "string" ? payload.id : null, acceptedVersion = typeof result.version === "number" ? result.version : null; if (entity && entityId) { await localFirstStore.acknowledgeEntityOperations(user.id, entity, entityId, mutation.clientVersion); if (acceptedVersion !== null) await localFirstStore.markRecordSynced(user.id, entity, entityId, acceptedVersion); } await mutationQueue.remove(mutation.id, user.id); } catch (error) { await mutationQueue.recordFailure(mutation.id, user.id, error); console.error("[OfflineSync] Failed queued mutation:", mutation.id, error); } } }
+  async saveTaskLocally(taskId: string): Promise<void> { const auth = await this.getCurrentUser(); if (!auth) return; const { data: task, error } = await auth.supabase.from("tasks").select("*").eq("id", taskId).eq("user_id", auth.user.id).single(); if (error || !task) return; await localFirstStore.hydrate({ id: task.id, entity: "task", userId: auth.user.id, payload: { id: task.id, userId: auth.user.id, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.parse(task.updated_at ?? "") || Date.now(), deviceId: "server", version: 0, syncVersion: 0 }); }
+  async saveProgressLocally(lessonId: string, userId: string): Promise<void> { const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return; const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single(); if (error || !lesson) return; await localFirstStore.hydrateProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: lesson.updated_at ?? new Date().toISOString() }, Date.parse(lesson.updated_at ?? "") || Date.now()); }
+  async getTasks(userId: string) { const local = await localTasks.list(userId); if (local.length > 0) return local; const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return []; const { data: tasks, error } = await auth.supabase.from("tasks").select("*").eq("user_id", auth.user.id); if (error) return []; for (const task of tasks || []) await this.saveTaskLocally(task.id); return localTasks.list(userId); }
+  async getSubjects(userId: string) { const local = await localSubjects.list(userId); if (local.length > 0) return local; const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return []; const { data: subjects, error } = await auth.supabase.from("subjects").select("*").eq("user_id", auth.user.id); if (error) return []; for (const subject of subjects || []) await localFirstStore.hydrate({ id: subject.id, entity: "subject", userId: auth.user.id, payload: { id: subject.id, userId: auth.user.id, name: subject.name, lastUpdated: new Date().toISOString(), synced: true }, updatedAt: Date.parse(subject.updated_at ?? "") || Date.now(), deviceId: "server", version: 0, syncVersion: 0 }); return localSubjects.list(userId); }
+  async getProgress(lessonId: string, userId: string) { const local = await localFirstStore.getProgress(lessonId, userId); if (local?.userId === userId) return local; await this.saveProgressLocally(lessonId, userId); return localFirstStore.getProgress(lessonId, userId); }
 }
-
 export const offlineSync = new OfflineSync();
