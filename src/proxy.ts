@@ -14,7 +14,7 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
-export async function middleware(req: NextRequest): Promise<NextResponse> {
+export async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
   // CRITICAL: the first document must never wait for Supabase. The root page
@@ -49,7 +49,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
     return response;
   } catch (error) {
-    console.error('[middleware] protected auth check failed:', error);
+    console.error('[proxy] protected auth check failed:', error);
     const url = req.nextUrl.clone();
     url.pathname = '/auth/login';
     url.searchParams.set('redirect', pathname);

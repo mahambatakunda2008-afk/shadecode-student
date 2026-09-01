@@ -2,7 +2,8 @@
 import { ImageResponse } from 'next/og'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-export const runtime = 'edge'
+// Node.js runtime (Edge runtime is deprecated in Next.js 16)
+export const runtime = 'nodejs'
 export const alt = 'Shadecode Student Exam Result'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'

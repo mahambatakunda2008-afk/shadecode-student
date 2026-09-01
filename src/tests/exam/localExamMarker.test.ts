@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
-import type { ExamQuestion } from "@/components/exam/ExamWorkspace";
+import type { ExamQuestion } from "@/lib/exam/types";
 
 const questions: ExamQuestion[] = [
   { id: 1, type: "multiple_choice", question: "Which quantity is force divided by area?", options: ["Stress", "Strain", "Extension", "Length"], marks: 1, topic: "Deformation", modelAnswer: "Stress" },
