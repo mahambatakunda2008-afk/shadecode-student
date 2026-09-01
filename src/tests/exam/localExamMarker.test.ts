@@ -3,7 +3,7 @@ import { markExamOffline } from "@/lib/local-first/exam-marker";
 import type { ExamQuestion } from "@/components/exam/ExamWorkspace";
 
 const questions: ExamQuestion[] = [
-  { id: 1, type: "multiple_choice", question: "Which quantity is force divided by area?", options: ["Stress", "Strain", "Extension", "Length"], marks: 1, topic: "Deformation" },
+  { id: 1, type: "multiple_choice", question: "Which quantity is force divided by area?", options: ["Stress", "Strain", "Extension", "Length"], marks: 1, topic: "Deformation", modelAnswer: "Stress" },
   { id: 2, type: "short_answer", question: "Define Young modulus.", marks: 3, topic: "Deformation" },
 ];
 
