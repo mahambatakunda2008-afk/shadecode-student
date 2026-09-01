@@ -9,44 +9,55 @@ The offline layer is account-scoped and currently supports durable local reads p
 - `tasks`
 - `subjects`
 - `learn_lessons` progress
+- `education_profile`
 
 The generic mutation queue is intentionally allowlisted. It must not become a generic arbitrary-table write API.
 
 ## Identity and authorization
 
-1. A mutation is queued only while a Supabase-authenticated user exists.
+1. A mutation is queued only while a Supabase-authenticated session exists.
 2. Every queued mutation carries the authenticated `ownerId`.
 3. Sync only reads mutations belonging to the currently authenticated user.
 4. A supplied `payload.user_id`, when present, must equal the authenticated user.
-5. Delete/update operations require an explicit record id and add `user_id = auth.uid()` to the server query.
-6. Inserts/upserts force `user_id` to the authenticated user.
+5. Delete/update operations require an explicit record id.
+6. The server RPC derives ownership from `auth.uid()` and never trusts a client-supplied owner id.
 7. Supabase RLS remains authoritative. Offline state is never treated as an authorization source.
 
 ## Sync lifecycle
 
-`authenticated session -> start auto-sync -> flush queued mutations -> refresh local caches`
+`local mutation -> operation journal -> mutation queue -> /api/sync -> revision-checked RPC -> acknowledge -> persist server revision`
 
 - A sync is attempted when connectivity returns.
 - A periodic retry runs every 30 seconds while online.
 - Concurrent sync runs are coalesced by an in-progress guard.
-- Signing out stops automatic sync.
 - Failed mutations remain queued and record an attempt/error rather than being silently discarded.
+- Client auth lookup uses the locally persisted Supabase session so normal queue inspection does not require a network round trip.
+
+## Versioning and OCC
+
+There are **two different clocks** and they must never be conflated:
+
+- `LocalRecord.version` and `LocalOperation.lamport` are local Lamport-clock values used for deterministic device ordering.
+- `LocalRecord.syncVersion` and `LocalOperation.baseVersion` represent the server-side per-record revision used for optimistic concurrency control.
+
+The server stores revisions in `sync_revisions(user_id, store, record_id)` and applies mutations atomically through `apply_sync_mutation(...)`.
+
+A mutation is accepted only when `baseVersion === currentVersion`. On success the server increments the record revision and the client persists the returned revision in `syncVersion`. A stale mutation receives a conflict response and is reconciled against the server winner.
+
+This separation prevents an unrelated local mutation on another entity from accidentally becoming the base version for a record.
 
 ## Conflict policy
 
 The current policy is **server-authoritative last successful write** for the supported simple records.
 
-This is deliberately conservative. Do not introduce field-level merges until the affected entity has an explicit version/conflict model.
+When optimistic concurrency detects a stale base revision:
 
-### Required future versioning
+1. Keep the server revision as the winner.
+2. Record a `LocalConflict` with the rejected local operation as loser.
+3. Hydrate the winning server payload when available.
+4. Acknowledge/remove the rejected transport mutation so it cannot loop forever.
 
-For exams, focus sessions, timetable entries, achievements, XP and richer lesson state, add:
-
-- `updated_at` or a monotonic revision
-- operation id / idempotency key
-- tombstone for deletes
-- deterministic conflict policy
-- retry classification (transient vs permanent)
+Do not introduce field-level merges until the affected entity has an explicit merge model.
 
 ## Cache rules
 
@@ -54,6 +65,7 @@ For exams, focus sessions, timetable entries, achievements, XP and richer lesson
 - A local record from another account must never be returned to the current account.
 - Remote reads populate the local cache after successful authentication.
 - Empty local state is not proof that remote state is empty.
+- Server revision metadata must survive hydration and successful sync.
 
 ## Extension order
 
@@ -70,4 +82,4 @@ Each addition must include an explicit mutation contract, RLS verification, conf
 
 ## P2P boundary
 
-Peer-to-peer exchange is **not** part of the current sync protocol. Future P2P transport may exchange permitted educational assets, but cloud synchronization remains the authoritative account/state reconciliation path until a separate trust and encryption design is approved.
+Peer-to-peer exchange is **not** part of the current sync protocol. Future P2P transport may exchange permitted educational assets, but cloud synchronization remains the account/state reconciliation path until a separate trust and encryption design is approved.
