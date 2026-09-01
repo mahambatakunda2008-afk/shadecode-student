@@ -4,6 +4,21 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-01 — Account-scoped offline learning-event queue
+
+A final offline audit found a subtle but important identity problem: the previous browser event queue stored source events without an account owner. A queued event could therefore survive an account switch and potentially be delivered under the next authenticated session.
+
+**Fixed:**
++- [HIGH] Bumped the learning-event queue to `v2` and store an explicit owner identity alongside every queued event.
++- [HIGH] Queue flushing now requires the remembered active learner ID and only sends events owned by that learner.
++- [HIGH] Events from another account remain isolated instead of being uploaded under the current session.
++- [HIGH] Events cannot be queued offline when there is no remembered learner identity, avoiding anonymous evidence that could later be misattributed.
++- [MEDIUM] Existing v1 queue data is intentionally not migrated because its owner cannot be established safely.
++
+**Security boundary:** the server remains authoritative for authenticated identity. The local owner ID is only a routing/isolation guard and never grants authorization.
+
+---
+
 ## 2026-09-01 — First Discovery vertical slice: Number Explorer
 
 The first Primary experience slice is now in the product, built on the shared learning spine rather than a Primary-only analytics system.
@@ -15,9 +30,9 @@ The first Primary experience slice is now in the product, built on the shared le
 +- [HIGH] Each attempt emits a canonical `question.attempted` event with deterministic source identity and graded evidence metadata; the final activity emits `quiz.completed` evidence.
 +- [HIGH] Primary dashboard routing now sends Primary learners to Discovery instead of the general Secondary Learn surface.
 +- [MEDIUM] The activity uses the shared `updateLearningState` reducer for mastery rather than creating a Primary-specific scoring algorithm.
-+
+
 **Verification boundary:** the UI and local state path are implemented, but browser E2E verification and authenticated reconnect/replay verification still remain before this slice is marked production-complete.
-+
+
 ---
 
 ## 2026-09-01 — Sync ownership hardening and graded evidence preservation
@@ -31,12 +46,12 @@ This pass used the live Supabase project to audit the actual revision protocol r
 +- [HIGH] The repository now contains the matching Supabase migration so live database behavior is represented in source history.
 +- [HIGH] The canonical event-to-observation adapter now preserves graded `percentage`/`evidenceScore` metadata instead of silently collapsing scored evidence to binary correctness.
 +- [HIGH] Regression coverage was extended for graded evidence mapping.
-+
+
 **Current sync boundary:**
 +`local record → authenticated queued mutation → /api/sync → revision check → owner-safe database mutation → version acknowledgement → local hydration`.
-+
+
 **Important remaining gate:** the richer reducer and projection are now deterministic and defined in code, but durable projection must still be wired into the selected evidence consumers without double-counting existing exam aggregates. Authenticated/offline/replay E2E coverage is also still required.
-+
+
 ---
 
 ## 2026-09-01 — Mastery transition reconciliation and exam evidence hardening
