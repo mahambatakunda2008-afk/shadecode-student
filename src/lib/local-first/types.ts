@@ -4,7 +4,8 @@ import type { LocalOperation } from "./operations";
 export type LocalEntity =
   | "task" | "subject" | "progress" | "xp" | "streak" | "achievement" | "insight"
   | "timetable" | "goal" | "settings" | "study_state" | "study_session" | "lesson_cache"
-  | "exam_attempt" | "exam_result" | "exam_submission" | "education_profile" | "dashboard_slice";
+  | "exam_attempt" | "exam_result" | "exam_submission" | "education_profile" | "dashboard_slice"
+  | "learning_event";
 
 export interface LocalRecord<T = unknown> {
   id: string;
