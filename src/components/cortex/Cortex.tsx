@@ -6,6 +6,7 @@ import { getQueuedCortexEvents, subscribeToCortexEvents, clearQueuedCortexEvents
 import { buildCortexFingerprint, resolveCortexExtension } from "@/lib/cortex/runtime/engine";
 import { createCortexCacheKey, getCachedCortexInsight, setCachedCortexInsight } from "@/lib/cortex/runtime/cache";
 import { CortexEvent, CortexSnapshot } from "@/lib/cortex/types";
+import { getXp, getStreak } from "@/lib/local-first/gamification";
 import CurriculumProgressCard from '@/components/CurriculumProgressCard';
 import LearningJourney from '@/components/LearningJourney';
 
@@ -35,9 +36,20 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     const localTasks = local.filter((r) => r.entity === "task" && !r.deletedAt).map((r) => r.payload as TaskRecord).slice(0, 20);
     const localSubjects = local.filter((r) => r.entity === "subject" && !r.deletedAt).map((r) => r.payload as SubjectRecord);
     const localProgress = local.filter((r) => r.entity === "progress" && !r.deletedAt);
-    if (localTasks.length || localSubjects.length || localProgress.length) {
+    const [localXp, localStreak] = await Promise.all([getXp(userId).catch(() => null), getStreak(userId).catch(() => null)]);
+    const hasLocalSnapshot = localTasks.length || localSubjects.length || localProgress.length || localXp || localStreak;
+    if (hasLocalSnapshot) {
       const completedTasks = localTasks.filter((task) => task.completed);
-      return { streak: 0, level: 1, xp: 0, totalTasks: localTasks.length, completedTasks: completedTasks.length, pendingTasks: localTasks.length - completedTasks.length, subjects: localSubjects.map((s) => s.name), recentTaskTitles: localTasks.slice(0, 5).map((t) => t.title) };
+      return {
+        streak: localStreak?.current ?? 0,
+        level: localXp?.level ?? 1,
+        xp: localXp?.totalXp ?? 0,
+        totalTasks: localTasks.length,
+        completedTasks: completedTasks.length,
+        pendingTasks: localTasks.length - completedTasks.length,
+        subjects: localSubjects.map((s) => s.name),
+        recentTaskTitles: localTasks.slice(0, 5).map((t) => t.title),
+      };
     }
     if (typeof navigator !== "undefined" && !navigator.onLine) return null;
     const [{ data: tasks }, { data: profile }, { data: subjects }] = await Promise.all([
@@ -54,6 +66,7 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   const persistInsight = useEffectEvent(async (insight: string, fingerprint: string, processedEvents: CortexEvent[]) => {
     const cacheKey = createCortexCacheKey(userId, fingerprint);
     if (insights[0]?.insight === insight) { setCachedCortexInsight(cacheKey, insight); clearQueuedCortexEvents(userId, processedEvents.map((e) => e.id)); return true; }
+    if (typeof navigator !== "undefined" && !navigator.onLine) return false;
     const { data: saved, error } = await supabase.from("cortex_insights").insert({ user_id: userId, insight }).select().single();
     if (error || !saved) { console.error("Cortex insight save error:", error); return false; }
     setCachedCortexInsight(cacheKey, insight); clearQueuedCortexEvents(userId, processedEvents.map((e) => e.id)); addInsightToState(saved as Insight); return true;
