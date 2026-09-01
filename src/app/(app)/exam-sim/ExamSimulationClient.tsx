@@ -27,7 +27,8 @@ export default function ExamSimulationClient() {
       void questionAttemptedEvent(
         examInstanceId,
         question.questionId,
-        question.topic || topic || subject || undefined,
+        subject || undefined,
+        question.topic || topic || undefined,
         {
           correct: question.correct,
           score: question.score,
