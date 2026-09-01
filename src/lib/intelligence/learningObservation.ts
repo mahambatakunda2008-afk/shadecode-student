@@ -12,6 +12,7 @@ export function learningEventToObservation(
   if (!event.topicId) return null;
 
   const correct = readBoolean(event.metadata.correct);
+  const evidenceScore = readNumber(event.metadata.evidenceScore ?? event.metadata.percentage);
   const confidence = readNumber(event.metadata.confidence);
   const responseSeconds = readNumber(event.metadata.responseSeconds);
   const difficulty = readNumber(event.metadata.difficulty);
@@ -21,6 +22,7 @@ export function learningEventToObservation(
       return {
         topicId: event.topicId,
         correct: correct ?? false,
+        evidenceScore,
         confidence,
         responseSeconds,
         difficulty,
@@ -34,6 +36,7 @@ export function learningEventToObservation(
       return {
         topicId: event.topicId,
         correct: correct ?? true,
+        evidenceScore,
         confidence,
         responseSeconds,
         difficulty,
@@ -44,6 +47,7 @@ export function learningEventToObservation(
       return {
         topicId: event.topicId,
         correct: true,
+        evidenceScore,
         confidence,
         responseSeconds,
         difficulty,
