@@ -46,7 +46,7 @@ The canonical contract currently recognizes:
 - `mistake.reviewed`
 - `task.completed`
 
-`src/lib/intelligence/learningObservation.ts` is the explicit adapter from canonical product events into the narrower Cortex/SLS `LearningObservation` contract. `src/lib/cortex/learningEvents.ts` remains the legacy/narrow reducer adapter and is not a second canonical event system.
+`src/lib/intelligence/learningObservation.ts` is the explicit adapter from canonical product events into the narrower Cortex/SLS `LearningObservation` contract. It preserves optional graded `percentage`/`evidenceScore` metadata so a scored observation can use its actual percentage instead of being collapsed to binary correctness. `src/lib/cortex/learningEvents.ts` remains the legacy/narrow reducer adapter and is not a second canonical event system.
 
 ## Mastery boundary
 
@@ -54,11 +54,11 @@ The canonical event RPC is intentionally **persistence-only**. It authenticates 
 
 The score transition is now centralized in `src/lib/intelligence/masteryTransition.ts`. Both `src/lib/cortex/learningState.ts` and `src/lib/topicMastery/blend.ts` use the same 70/30 history/evidence EMA rule. This removes the previous disagreement where Cortex applied a difficulty-adjusted binary formula while production exam mastery used a separate EMA formula.
 
-The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) remain separate evidence signals. Their persistence and calibration should be unified only after their semantics are explicitly defined.
+The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) are reduced by the same pure `reduceLearningObservation` function. Their coefficients are deliberately conservative heuristics and remain candidates for future calibration rather than claims of validated psychometrics.
 
-The exam marking route continues to project graded topic percentages into `topic_mastery` through `blendMastery`. The canonical event stream remains durable evidence for future replay/reduction and does not independently update that row.
+The `projectTopicMastery` function projects the already-reduced state into the durable `topic_mastery` shape without recomputing mastery. The production exam marking route continues to use the compatibility `blendMastery` projection for existing exam behavior while the richer reducer is available for new evidence-driven integrations.
 
-**Rule:** there must be one score transition rule and one future authoritative state reducer. Until the reducer is implemented, event persistence and existing production scoring remain separate so evidence cannot be double-counted.
+**Rule:** there must be one score transition rule and one authoritative richer-state reducer. Event persistence must never independently mutate mastery.
 
 ## Offline contract
 
@@ -88,8 +88,7 @@ Before marking the evidence spine production-complete:
 
 ## Next engineering pass
 
-- define the authoritative richer-state reducer and persistence projection;
-- add response-time metadata to exam question evidence where the final answer timing is available;
 - audit the sync revision protocol against all local-first stores;
 - add authenticated/offline/replay E2E coverage;
+- wire durable rich-state projection into the selected evidence consumers without double-counting exam aggregates;
 - then build the first Primary activity on the shared learning spine.
