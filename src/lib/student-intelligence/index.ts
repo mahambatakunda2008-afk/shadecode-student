@@ -1,49 +1,22 @@
 /**
  * /lib/student-intelligence/index.ts
- *
  * Unified Student Intelligence Layer - Main Entry Point
  */
 
-import { StudentIntelligence } from "./types";
-import { progressService } from "./services/progress";
-import { performanceService } from "./services/performance";
-import { activityService } from "./services/activity";
-import { intelligenceEngine } from "./services/intelligence";
+import type { StudentIntelligence } from "./types";
+import { progressService, performanceService, activityService, intelligenceEngine } from "./deviceFirstServices";
 
-/**
- * Get complete student intelligence for a user
- */
+/** Get complete student intelligence for a user. */
 export async function getStudentIntelligence(userId: string): Promise<StudentIntelligence | null> {
   try {
-    // Get data from all services
     const [progress, performance, activity, intelligence] = await Promise.all([
       progressService.getProgress(userId),
       performanceService.getPerformance(userId),
       activityService.getActivity(userId),
       intelligenceEngine.getIntelligence(userId),
     ]);
-
-    if (!progress.success || !progress.data) {
-      console.error("[StudentIntelligence] Failed to get progress data");
-      return null;
-    }
-
-    if (!performance.success || !performance.data) {
-      console.error("[StudentIntelligence] Failed to get performance data");
-      return null;
-    }
-
-    if (!activity.success || !activity.data) {
-      console.error("[StudentIntelligence] Failed to get activity data");
-      return null;
-    }
-
-    if (!intelligence.success || !intelligence.data) {
-      console.error("[StudentIntelligence] Failed to get intelligence data");
-      return null;
-    }
-
-    const studentIntelligence: StudentIntelligence = {
+    if (!progress.success || !progress.data || !performance.success || !performance.data || !activity.success || !activity.data || !intelligence.success || !intelligence.data) return null;
+    return {
       userId,
       progress: progress.data,
       performance: performance.data,
@@ -53,17 +26,12 @@ export async function getStudentIntelligence(userId: string): Promise<StudentInt
       lastUpdated: new Date().toISOString(),
       cacheKey: `usil:${userId}:${Date.now()}`,
     };
-
-    return studentIntelligence;
   } catch (error) {
     console.error("[StudentIntelligence] Error getting student intelligence:", error);
     return null;
   }
 }
 
-/**
- * Invalidate all caches for a user
- */
 export async function invalidateAllCaches(userId: string): Promise<void> {
   await Promise.all([
     progressService.invalidateCache(userId),
@@ -73,11 +41,5 @@ export async function invalidateAllCaches(userId: string): Promise<void> {
   ]);
 }
 
-// Export services for direct access
-export { progressService } from "./services/progress";
-export { performanceService } from "./services/performance";
-export { activityService } from "./services/activity";
-export { intelligenceEngine } from "./services/intelligence";
-
-// Export types
+export { progressService, performanceService, activityService, intelligenceEngine } from "./deviceFirstServices";
 export * from "./types";
