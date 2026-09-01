@@ -7,6 +7,7 @@ import { buildCortexFingerprint, resolveCortexExtension } from "@/lib/cortex/run
 import { createCortexCacheKey, getCachedCortexInsight, setCachedCortexInsight } from "@/lib/cortex/runtime/cache";
 import { CortexEvent, CortexSnapshot } from "@/lib/cortex/types";
 import { getXp, getStreak } from "@/lib/local-first/gamification";
+import { projectLearningEvents } from "@/lib/local-first/event-projections";
 import CurriculumProgressCard from '@/components/CurriculumProgressCard';
 import LearningJourney from '@/components/LearningJourney';
 
@@ -20,7 +21,6 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   const [processing, setProcessing] = useState(false);
   const [supabase] = useState(() => createClient());
   const analysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const finishProcessing = useEffectEvent(() => setTimeout(() => setProcessing(false), 300));
   const addInsightToState = useEffectEvent((saved: Insight) => {
     setInsights((previous) => {
@@ -29,7 +29,6 @@ export default function Cortex({ userId, trigger }: CortexProps) {
       return [nextInsight, ...previous.filter((item) => item.id !== saved.id)].slice(0, 4);
     });
   });
-
   const loadSnapshot = useEffectEvent(async (): Promise<CortexSnapshot | null> => {
     const local = await import("@/lib/local-first/store").then(({ localFirstStore }) => localFirstStore.list(userId)).catch(() => []);
     const localTasks = local.filter((r) => r.entity === "task" && !r.deletedAt).map((r) => r.payload as TaskRecord).slice(0, 20);
@@ -52,7 +51,6 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     const completedTasks = typedTasks.filter((task) => task.completed);
     return { streak: Number(profile.streak ?? 0), level: Number(profile.level ?? 1), xp: Number(profile.xp ?? 0), totalTasks: typedTasks.length, completedTasks: completedTasks.length, pendingTasks: typedTasks.length - completedTasks.length, subjects: ((subjects ?? []) as SubjectRecord[]).map((s) => s.name), recentTaskTitles: typedTasks.slice(0, 5).map((t) => t.title) };
   });
-
   const persistInsight = useEffectEvent(async (insight: string, fingerprint: string, processedEvents: CortexEvent[]) => {
     const cacheKey = createCortexCacheKey(userId, fingerprint);
     if (insights[0]?.insight === insight) { setCachedCortexInsight(cacheKey, insight); clearQueuedCortexEvents(userId, processedEvents.map((e) => e.id)); return true; }
@@ -61,12 +59,12 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     if (error || !saved) { console.error("Cortex insight save error:", error); return false; }
     setCachedCortexInsight(cacheKey, insight); clearQueuedCortexEvents(userId, processedEvents.map((e) => e.id)); addInsightToState(saved as Insight); return true;
   });
-
   const runAnalysis = useEffectEvent(async () => {
     if (!userId || processing) return;
     setProcessing(true);
     const queuedEvents = getQueuedCortexEvents(userId);
     try {
+      await projectLearningEvents(queuedEvents);
       const snapshot = await loadSnapshot();
       if (!snapshot) return;
       const fingerprint = buildCortexFingerprint(snapshot, queuedEvents);
@@ -83,11 +81,9 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     } catch (error) { console.error("Cortex analysis error:", error); }
     finally { finishProcessing(); }
   });
-
   useEffect(() => { void runAnalysis(); }, [trigger, userId]);
   useEffect(() => { const unsubscribe = subscribeToCortexEvents(userId, () => void runAnalysis()); return unsubscribe; }, [userId]);
   useEffect(() => () => { if (analysisTimerRef.current) clearTimeout(analysisTimerRef.current); }, []);
-
   return (
     <section className="space-y-4" aria-label="Cortex AI">
       <div className="rounded-2xl border p-4">
