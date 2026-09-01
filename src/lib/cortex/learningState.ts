@@ -18,14 +18,38 @@ export interface TopicLearningState {
 export interface LearningObservation {
   topicId: string;
   correct: boolean;
+  /** Optional graded percentage for evidence that is richer than binary correctness. */
+  evidenceScore?: number;
   confidence?: number;
   responseSeconds?: number;
   difficulty?: number;
   observedAt?: string;
 }
 
+export interface TopicMasteryProjection {
+  mastery_score: number;
+  last_score: number;
+  attempts: number;
+  trend: number;
+  retention: number;
+  confidence: number;
+  stability: number;
+  exposure: number;
+  error_rate: number;
+  response_speed: number;
+  prerequisite_health: number;
+  recent_improvement: number;
+  uncertainty: number;
+}
+
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
+}
+
+function observationEvidence(observation: LearningObservation): number {
+  return observation.evidenceScore == null
+    ? observationScore(observation.correct)
+    : clamp(observation.evidenceScore);
 }
 
 /**
@@ -49,13 +73,11 @@ export function createInitialLearningState(topicId: string): TopicLearningState 
 }
 
 /**
- * Applies one observable learning event to a topic state.
- *
- * The mastery score uses the shared platform transition. Other dimensions
- * remain separate evidence signals until they have a stable persistence
- * contract of their own.
+ * The authoritative pure richer-state transition for one observable learning
+ * event. All dimensions are deterministic and bounded so the same observation
+ * can be safely replayed offline or on the server without a second algorithm.
  */
-export function updateLearningState(
+export function reduceLearningObservation(
   previous: TopicLearningState,
   observation: LearningObservation,
 ): TopicLearningState {
@@ -64,7 +86,8 @@ export function updateLearningState(
   }
 
   const priorMastery = previous.mastery;
-  const mastery = transitionMastery(priorMastery, observationScore(observation.correct));
+  const evidence = observationEvidence(observation);
+  const mastery = transitionMastery(priorMastery, evidence);
   const errorRate = clamp(previous.errorRate * 0.85 + (observation.correct ? 0 : 100) * 0.15);
   const confidence = clamp(
     previous.confidence * 0.8 + clamp(observation.confidence ?? previous.confidence) * 0.2,
@@ -72,7 +95,7 @@ export function updateLearningState(
   const responseSpeed = observation.responseSeconds == null
     ? previous.responseSpeed
     : clamp(100 - observation.responseSeconds / 3);
-  const exposure = clamp(previous.exposure + 1);
+  const exposure = Math.max(0, Math.floor(previous.exposure) + 1);
   const recentImprovement = clamp(mastery - priorMastery, -100, 100);
   const uncertainty = clamp(previous.uncertainty * 0.92);
 
@@ -90,3 +113,37 @@ export function updateLearningState(
     lastObservedAt: observation.observedAt ?? previous.lastObservedAt,
   };
 }
+
+/**
+ * Projects the pure learning state into the durable topic_mastery shape.
+ * This is a projection only. It never performs I/O and therefore cannot create
+ * a second mastery algorithm or mutate state during event persistence.
+ */
+export function projectTopicMastery(
+  previous: Pick<TopicLearningState, "mastery"> & Partial<Omit<TopicLearningState, "mastery">> | null,
+  next: TopicLearningState,
+  evidenceScore: number,
+  attempts: number,
+): TopicMasteryProjection {
+  const previousMastery = previous?.mastery ?? null;
+  const mastery = transitionMastery(previousMastery, evidenceScore);
+
+  return {
+    mastery_score: mastery,
+    last_score: clamp(evidenceScore),
+    attempts: Math.max(0, Math.floor(attempts)),
+    trend: previousMastery == null ? 0 : Number((mastery - previousMastery).toFixed(2)),
+    retention: next.retention,
+    confidence: next.confidence,
+    stability: next.stability,
+    exposure: next.exposure,
+    error_rate: next.errorRate,
+    response_speed: next.responseSpeed,
+    prerequisite_health: next.prerequisiteHealth,
+    recent_improvement: next.recentImprovement,
+    uncertainty: next.uncertainty,
+  };
+}
+
+/** Backwards-compatible name for existing Cortex callers. */
+export const updateLearningState = reduceLearningObservation;
