@@ -1,7 +1,8 @@
-/** Cortex Router: memory first, optional compact local inference, then resilient TeacherAI. */
+/** Cortex Router: device-first memory, optional compact local inference, then resilient TeacherAI. */
 import { CortexMemory } from "./memory";
 import { TeacherAI } from "./teacher";
 import { CompactLocalModel } from "./compactLocalModel";
+import { listLocalCortexInteractions, saveLocalCortexInteraction } from "@/lib/local-first/cortex-interactions";
 
 interface RoutingDecision { isComplex: boolean; confidence: number; reason: string; }
 export interface CortexRouterResponse { source: "memory" | "local" | "teacher"; answer: string; timestamp: string; metadata?: { complexity: "simple" | "complex"; confidence: number; routingReason: string }; }
@@ -13,13 +14,16 @@ export class CortexRouter {
   private teacher = new TeacherAI();
   private compactLocalModel = new CompactLocalModel();
   private readonly useCompactLocalModel: boolean;
+  private hydratedUsers = new Set<string>();
 
   constructor(options: CortexRouterOptions = {}) { this.useCompactLocalModel = options.useCompactLocalModel === true; }
 
   async handle(request: CortexRouterRequest): Promise<CortexRouterResponse> {
     const { userId, question } = request;
+    if (!userId?.trim()) throw new Error("Cortex requires an authenticated user");
+    await this.hydrateUserMemory(userId);
     const cachedAnswer = this.memory.retrieve(userId, question);
-    if (cachedAnswer) return { source: "memory", answer: cachedAnswer, timestamp: new Date().toISOString(), metadata: { complexity: "simple", confidence: 1, routingReason: "Retrieved from memory cache" } };
+    if (cachedAnswer) return { source: "memory", answer: cachedAnswer, timestamp: new Date().toISOString(), metadata: { complexity: "simple", confidence: 1, routingReason: "Retrieved from device memory" } };
 
     const routingDecision = this.decideRoute(question);
     let answer: string;
@@ -28,17 +32,22 @@ export class CortexRouter {
       source = "local";
       answer = this.compactLocalModel.infer(question).answer;
     } else {
-      // The former default LocalModel was a placeholder response generator,
-      // which meant ordinary questions could technically succeed while
-      // returning no educational answer. Production now uses TeacherAI for
-      // both simple and complex questions; the compact local model remains
-      // an explicit edge/offline experiment only.
       source = "teacher";
       answer = await this.teacher.generateResponse(question, request.context, userId);
     }
 
-    this.memory.save(userId, question, answer);
-    return { source, answer, timestamp: new Date().toISOString(), metadata: { complexity: routingDecision.isComplex ? "complex" : "simple", confidence: routingDecision.confidence, routingReason: routingDecision.reason } };
+    const timestamp = new Date().toISOString();
+    const entry = { userId, question: question.trim(), answer: answer.trim(), timestamp };
+    this.memory.save(userId, entry.question, entry.answer);
+    void saveLocalCortexInteraction(userId, entry).catch(() => undefined);
+    return { source, answer, timestamp, metadata: { complexity: routingDecision.isComplex ? "complex" : "simple", confidence: routingDecision.confidence, routingReason: routingDecision.reason } };
+  }
+
+  private async hydrateUserMemory(userId: string): Promise<void> {
+    if (this.hydratedUsers.has(userId)) return;
+    const entries = await listLocalCortexInteractions(userId);
+    for (const entry of entries.reverse()) this.memory.save(userId, entry.question, entry.answer);
+    this.hydratedUsers.add(userId);
   }
 
   private decideRoute(question: string): RoutingDecision {
@@ -58,7 +67,7 @@ export class CortexRouter {
   }
 
   getMemoryStats() { return this.memory.getStats(); }
-  clearMemory(userId: string) { this.memory.clearUser(userId); }
+  clearMemory(userId: string) { this.memory.clearUser(userId); this.hydratedUsers.delete(userId); }
 }
 
 export const cortexRouter = new CortexRouter();
