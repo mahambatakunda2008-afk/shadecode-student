@@ -2,7 +2,7 @@
  * Shared mastery transition.
  *
  * This is the single score-transition rule used by both Cortex learning
- * observations and the legacy topic_mastery exam projection. Keeping the
+ * observations and the production topic_mastery exam projection. Keeping the
  * transition pure makes offline replay deterministic and prevents separate
  * mastery algorithms from drifting apart.
  *
@@ -18,12 +18,13 @@ export function clampMastery(value: number): number {
 }
 
 export function transitionMastery(
-  previousMastery: number,
+  previousMastery: number | null,
   evidenceScore: number,
 ): number {
-  const previous = clampMastery(previousMastery);
   const evidence = clampMastery(evidenceScore);
+  if (previousMastery == null) return evidence;
 
+  const previous = clampMastery(previousMastery);
   return Math.round(
     previous * MASTERY_HISTORY_WEIGHT + evidence * MASTERY_EVIDENCE_WEIGHT,
   );
