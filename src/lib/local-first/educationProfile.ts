@@ -1,6 +1,6 @@
 import { localFirstDB } from "./db";
 import type { LocalRecord } from "./types";
-import { resolveEducationExperience, type EducationProfile } from "@/lib/education/resolver";
+import { resolveEducationExperience, type EducationProfile } from "@/lib/education/localProfile";
 
 export type LocalEducationProfile = EducationProfile & {
   syncedAt?: number;
