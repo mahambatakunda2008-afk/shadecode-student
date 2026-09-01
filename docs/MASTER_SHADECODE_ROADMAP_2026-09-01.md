@@ -33,10 +33,10 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Capability | Status | Current truth / next move |
 |---|---|---|
 | Cortex intelligence layer | 🟡 | Existing production surface; unify evidence, state and recommendations. |
-| Canonical learning events | 🟢 | Canonical ingress and durable `cortex_events` exist. |
+| Canonical learning events | 🟢 | Canonical authenticated ingress and durable `cortex_events` exist; ingress is persistence-only. |
 | Event idempotency | 🟢 | Canonical identity is enforced by durable storage. |
 | Learning observation adapter | 🟢 | Canonical events translate into Cortex observations. |
-| Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; semantics need reconciliation. |
+| Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; event-driven and local semantics are being reconciled before further mutation. |
 | Retention / confidence / stability / exposure | 🔵 | Durable fields exist; calibrated learning model remains. |
 | Error rate / response speed | 🔵 | Durable fields exist; richer evidence semantics remain. |
 | Prerequisite health | 🔵 | Durable field exists; graph-backed inference remains. |
@@ -178,187 +178,19 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Experience | Status | Scope |
 |---|---|---|
 | Shadecode Student | 🟢 | Current production experience for Secondary/Cambridge/ZIMSEC. |
-| Shadecode Discovery | 🔵 | Primary foundation and first-activity contract defined. |
-| Shadecode Campus | 🔵 | University/college/polytechnic/TVET foundation direction. |
-| Primary → Secondary continuity | ⚪ | Requires shared learner state/curriculum mapping. |
-| Secondary → tertiary continuity | 🔵 | Architecture direction defined. |
+| Shadecode Discovery | 🔵 | Primary experience foundation/design; first activity is next major vertical slice. |
+| Shadecode Campus | 🔵 | University/Polytechnic/TVET architecture foundation; product surface remains planned. |
 
-**Primary:** own UX and content model, including reading adventures, phonics, handwriting, mental maths, stories, puzzles, science, drawing-to-understand, listen/respond, curiosity, world exploration, local language, careers, child-safe Cortex and parent/teacher companions.
+## 4. Current execution order
 
-**Student:** secondary learning, Cambridge/ZIMSEC, mastery, revision, past papers, Exam Simulation, assignments, projects, planning, Cortex, analytics, careers and university preparation.
+1. **Evidence spine:** canonical event ingress, offline queue, durable persistence, deterministic observation.
+2. **Mastery reconciliation:** choose and implement one authoritative state-transition algorithm before broadening event-driven mastery.
+3. **Offline sync protocol:** audit revision/conflict semantics across all local-first entities.
+4. **Verification:** authenticated, offline, reconnect, replay/idempotency, and E2E coverage.
+5. **Primary vertical slice:** My Day → activity → attempt → feedback → learning event → mastery → next activity.
+6. **Student hardening:** stabilize Exam Simulation and connect the mature evidence loop to existing Student surfaces.
+7. **Campus foundation:** extend shared platform contracts only where real Campus requirements demand them.
 
-**Campus:** university, college, polytechnic and TVET structures, programmes, modules, terms/semesters, coursework, assignments, research, projects, portfolios, labs, skills, internships, scholarships and careers.
+## 5. Documentation synchronization contract
 
-## H. Teacher / School / Parent
-
-| Capability | Status | Current truth / next move |
-|---|---|---|
-| Teacher intelligence | ⚪ | Planned. |
-| Marking assistant | 🔵 | Direction; safeguards required. |
-| Intervention recommendations | 🔵 | Cortex dependency. |
-| Classroom knowledge map | ⚪ | Planned. |
-| Student progress intelligence | 🔵 | Analytics foundations; aggregation remains. |
-| Teacher assessments | 🔵 | Planned. |
-| School challenges | ⚪ | Planned. |
-| School resource distribution | 🔵 | Future platform. |
-| Parent companion | ⚪ | Planned. |
-| Parent progress summaries | ⚪ | Planned, privacy-conscious. |
-| Parent/teacher boundaries | 🔵 | Architecture requirement. |
-| School-local environment | ⚪ | Future infrastructure. |
-
-## I. Knowledge / Resources
-
-| Capability | Status | Current truth / next move |
-|---|---|---|
-| Exam Hub | 🟡 | Existing surface. |
-| Shadecode Library | 🔵 | Strategic direction. |
-| Past-paper database | 🟡 | Ingestion work exists; metadata/mapping remain. |
-| Document intelligence | 🔵 | Direction/foundation. |
-| Authorized-source provenance | 🔵 | Required architecture. |
-| One-tap offline packs | ⚪ | Planned. |
-| Subject/level packs | ⚪ | Planned packaging system. |
-| Local school resource hub | ⚪ | Future. |
-| Peer resource exchange | 🔬 | Research only until single-device offline and authenticated sync mature. |
-
-## J. Local-First / Offline Runtime
-
-| Capability | Status | Current truth / next move |
-|---|---|---|
-| Offline-first principle | 🟢 | Explicit product/architecture requirement. |
-| Local persistence | 🟡 | Foundations exist; coverage incomplete. |
-| Offline learning state | 🟡 | Pure local engine exists; product coverage remains. |
-| Offline lessons | 🟡 | Partial. |
-| Offline questions | 🟡 | Partial. |
-| Offline exams | 🔴 | Needs robust Exam Simulation integration. |
-| Offline projects | 🔵 | Direction/foundations. |
-| Offline resources | 🟡 | PWA/resource foundations; packs remain. |
-| Offline event queue | 🟢 | Bounded reconnect-safe Cortex queue exists. |
-| Deterministic synchronization | 🔵 | Live sync-revision protocol history exists; repository/runtime integration audit remains. |
-| Conflict resolution | ⚪ | Required for mature multi-device sync. |
-| Local AI | 🔬 | Research. |
-| Compressed models | 🔬 | Research. |
-| Device-first intelligence | 🔵 | Architecture direction. |
-| School local hub | ⚪ | Future. |
-| Device-to-device / P2P | 🔬 | Research only. |
-
-## K. Trust / Safety / Platform
-
-| Capability | Status | Current truth / next move |
-|---|---|---|
-| Supabase Auth | 🟢 | Existing. |
-| RLS | 🟢 | Existing and authoritative. |
-| Canonical durable evidence | 🟢 | `cortex_events` production foundation. |
-| Data ownership | 🟡 | Foundation; memory/export/delete UX remains. |
-| Memory controls | ⚪ | Planned. |
-| AI-origin labelling | 🔵 | Required; expand UX. |
-| Provenance | 🟡 | Existing project/paper direction; broaden. |
-| Deterministic calculations | 🟡 | Separation principle exists; audit AI math workflows. |
-| No fabricated evidence | 🟢 | Explicit architecture requirement. |
-| Academic integrity | 🟡 | Project integrity foundations; expand across AI workflows. |
-| Child safety | 🔵 | Primary requirement; implementation needed. |
-| Accessibility | 🟡 | Existing work; comprehensive audit remains. |
-| Performance | 🟡 | Ongoing reliability concern. |
-| Observability | 🟡 | Sentry/CI foundations exist. |
-| Deployment reliability | 🟡 | Prior Vercel issues require regression coverage. |
-| PWA | 🟡 | Existing. |
-| Mobile packaging | 🔵 | APK/native path remains future. |
-| Desktop | 🔵 | Direction/foundation. |
-
-## L. Business / Ecosystem
-
-| Capability | Status | Current truth / next move |
-|---|---|---|
-| Free core learning | ⚪ | Commercial decision after value/retention validation. |
-| Student paid tier | ⚪ | Experimental. |
-| Learning packs | ⚪ | Product/commercial opportunity. |
-| School plans | ⚪ | Future. |
-| Certification / exam prep | ⚪ | Future. |
-| Education API / infrastructure | 🔬 | Long-term possibility. |
-| Hardware | 🔬 | Long-term research, never current blocker. |
-| Careers/opportunity network | 🟡 | Careers surface exists; network expansion remains. |
-
----
-
-# 4. Verified 2026-09-01 Engineering State
-
-- Canonical learning events are durably persisted in `public.cortex_events` with canonical event identity and authenticated ingress.
-- Supported evidence can update the established `public.topic_mastery` store; no second mastery table was introduced.
-- Durable topic-state fields now include retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty.
-- Browser Cortex events use a bounded local queue and reconnect flushing.
-- Learn, task completion, Exam Simulation and Project Studio have canonical-event integrations at the helper level; remaining browser-level call-site validation is still required.
-- The repository has substantial local-first infrastructure for tasks, subjects and lesson progress, plus a separate Cortex event queue.
-- The live database has sync-revision protocol history; its complete entity coverage and repository migration representation still need audit.
-- A recent local verification pass reported clean typecheck, lint and production build, with the full test suite at 391/394 passing and 3 todo. This is a historical verification snapshot, not a substitute for rerunning the current head after subsequent documentation commits.
-
-# 5. Current Execution Board
-
-### P0 — Trust the spine
-
-1. Audit every real lesson/question/exam action against canonical event emission.
-2. Reconcile `updateLearningState`, `blendMastery` and durable `topic_mastery` semantics. **Do not broaden the server formula until this is resolved.**
-3. Audit sync-revision protocol and local persistence coverage.
-4. Add authenticated persistence, replay and offline recovery E2E coverage.
-5. Stabilize Exam Simulation and Learn, including browser smoke verification.
-6. Verify evidence → state → recommendation behavior.
-
-### P1 — Make Cortex genuinely adaptive
-
-1. Mistake taxonomy.
-2. Prerequisite graph.
-3. Learning DNA.
-4. Retention/forgetting model.
-5. Intervention engine.
-6. Next-best-action engine.
-7. Learning Replay.
-
-### P2 — Expand Learning + Assessment
-
-1. Question Forge.
-2. Paper Intelligence.
-3. Personalized revision.
-4. Concept Atlas.
-5. Mistake Museum.
-6. Personal Textbook.
-7. Snap & Learn / handwriting intelligence.
-
-### P3 — Expand education contexts
-
-1. Primary Discovery first real activity.
-2. Primary child-safe Cortex and companion boundaries.
-3. Campus academic structure.
-4. Teacher/school workflows.
-5. Parent companion.
-
-### P4 — Deep local-first capability
-
-1. Offline learning packs.
-2. Broader offline coverage.
-3. Deterministic sync/conflict resolution.
-4. Local model experiments.
-5. School-local hub research.
-
----
-
-# 6. Documentation Synchronization Contract
-
-When implementation advances, update as applicable:
-
-- this master roadmap;
-- `docs/PRODUCT_VISION_2026-09-01.md`;
-- architecture documents;
-- README;
-- public landing page/product copy;
-- relevant feature contracts;
-- issue/PR descriptions;
-- migration records when database changes are introduced;
-- `DEVLOG.md` for significant engineering passes.
-
-Do not claim a capability is shipped until verified in repository/runtime. Do not leave strategic decisions only in chat.
-
-# 7. Definition of Done for the First Major Milestone
-
-A trustworthy learning-OS spine where a real learner action can be performed, persisted locally/offline, synchronized safely, converted into canonical evidence, reflected in learner state, and used to produce a demonstrably better next action.
-
-Once that spine is reliable, the rest of Shadecode can grow around it without becoming feature soup.
-
-**Last updated:** 2026-09-01
+Whenever engineering changes a capability, update the relevant architecture/status document in the same workstream. Do not describe a prototype as shipped. The repository, production database and deployment behavior are the sources of truth.
