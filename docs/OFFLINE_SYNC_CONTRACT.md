@@ -1,6 +1,6 @@
 # Shadecode Student Offline Sync Contract
 
-**Status:** implemented for current offline stores; revision protocol exists in the database and is under integration audit.
+**Status:** implemented for current offline stores; revision protocol is live and the authenticated relay is hardened for account ownership.
 **Updated:** 2026-09-01
 
 ## Scope
@@ -20,9 +20,12 @@ The generic mutation queue is intentionally allowlisted. It must not become a ge
 2. Every queued mutation carries the authenticated `ownerId`.
 3. Sync only reads mutations belonging to the currently authenticated user.
 4. A supplied `payload.user_id`, when present, must equal the authenticated user.
-5. Delete/update operations require an explicit record id and add `user_id = auth.uid()` to the server query.
-6. Inserts/upserts force `user_id` to the authenticated user.
-7. Supabase RLS remains authoritative. Offline state is never treated as an authorization source.
+5. The server relay requires an explicit record id and passes the authenticated identity into the database mutation function.
+6. The database mutation function rejects existing records owned by another user before any upsert or delete is attempted.
+7. Deletes are constrained by `user_id = auth.uid()`.
+8. Inserts/upserts force `user_id` to the authenticated user and only update an existing row when its owner matches.
+9. Legacy `subjects` rows with NULL ownership are not claimable through offline sync.
+10. Supabase RLS remains authoritative. Offline state is never treated as an authorization source.
 
 ## Sync lifecycle
 
@@ -37,15 +40,17 @@ The generic mutation queue is intentionally allowlisted. It must not become a ge
 
 ## Conflict policy
 
-The current policy is **server-authoritative last successful write** for supported simple records.
+The current policy is **server-authoritative last successful write** for supported simple records, with optimistic concurrency controlled by `baseVersion`.
+
+A stale base version returns a conflict instead of silently overwriting newer server state. A replay from the same device/client version is returned as `already-applied`.
 
 This is deliberately conservative. Do not introduce field-level merges until the affected entity has an explicit version/conflict model.
 
 ## Revision protocol status
 
-The production database contains a sync-revision protocol migration. The repository still needs to reconcile its migration/source representation and verify which product entities actually participate in the protocol.
+The production database contains a sync-revision protocol. The repository now contains a migration that reconciles the latest ownership-hardening behavior with the database source history.
 
-Until that audit is complete, documentation must not claim that every offline entity has revision-aware synchronization.
+The protocol currently participates in `tasks`, `subjects`, and `learn_lessons`. It is not a claim that every local-first entity has revision-aware synchronization.
 
 ### Required versioning for richer entities
 
