@@ -4,6 +4,25 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-01 — Mastery transition reconciliation and exam evidence hardening
+
+This cycle closed an important intelligence seam without opening a parallel system or PR. Canonical exam evidence is now question-level, durable event ingress is persistence-only, and the score transition shared by Cortex and production topic mastery is centralized.
+
+**Verified this cycle:**
+- [HIGH] Exam Simulation emits one canonical `question.attempted` event per final graded question, alongside the aggregate `exam.completed` event. Events use deterministic exam/question identity and carry correctness, score, max score and derived percentage metadata.
+- [HIGH] Canonical event persistence is intentionally separated from mastery mutation. The durable `/api/intelligence/events` path no longer independently updates `topic_mastery`, preventing double-counting when exam marking already persists graded topic results.
+- [HIGH] Added `src/lib/intelligence/masteryTransition.ts` as the shared pure score-transition rule. Cortex `updateLearningState` and production `blendMastery` now use the same 70/30 history/evidence EMA heuristic.
+- [HIGH] Added regression coverage for the shared transition, including first evidence, bounds and deterministic correctness mapping.
+- [MEDIUM] The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) remain separate until their persistence and calibration semantics are explicitly unified. No speculative second reducer was introduced.
+- [MEDIUM] Per-question response timing remains available in the exam answer model but is not yet populated reliably by the workspace timer, so timing is not fabricated into learning evidence.
+
+**Current architecture:**
+`product action → canonical event → authenticated durable evidence → shared mastery transition → learner state → Cortex/recommendation`.
+
+**Next engineering gate:** define the authoritative richer-state reducer and persistence projection, audit revision-based offline sync, add authenticated/offline/replay E2E coverage, then build the first Discovery Primary activity on the shared learning spine.
+
+---
+
 ## 2026-09-01 — Master roadmap synchronization and learning-evidence audit
 
 This cycle reconciles the product roadmap with the repository's actual state before expanding the feature surface. The master roadmap now explicitly covers the full Shadecode learning operating system, while Discovery, Student and Campus remain experience boundaries rather than the entire roadmap.
@@ -12,11 +31,11 @@ This cycle reconciles the product roadmap with the repository's actual state bef
 - [HIGH] Documentation baseline is synchronized around the master roadmap, platform boundaries, canonical learning events, offline sync contract, product vision and current project status.
 - [HIGH] Canonical learning-event delivery is confirmed as local-first and queue-backed. The browser emitter posts to `/api/intelligence/events`, queues failures/offline events locally, deduplicates queued source/sourceEventId pairs, and flushes on reconnect.
 - [HIGH] Learn currently emits lesson-view evidence from the lesson launcher. The canonical helper also exposes lesson-completion, exam, and question-attempt event builders, but repository search shows some builders are not yet wired to real product actions. This is an integration gap, not a reason to create another event system.
-- [HIGH] Exam Simulation currently emits exam-completion evidence from the finished-result boundary. Question-attempt evidence still needs to be attached to the actual answer/submission path so Cortex receives question-level evidence rather than only aggregate results.
-- [HIGH] Mastery semantics remain intentionally blocked from broadening until the local Cortex learning-state heuristic, exam `blendMastery` logic and durable `topic_mastery` RPC update path are reconciled. Multiple competing mastery algorithms must not be allowed to fight over the learner state.
+- [HIGH] Exam Simulation now emits aggregate completion and final graded question-attempt evidence through the canonical helper.
+- [HIGH] Mastery semantics were intentionally blocked from broadening until the local Cortex learning-state heuristic, exam `blendMastery` logic and durable `topic_mastery` RPC update path were reconciled. The durable RPC is now persistence-only and the score transition is shared.
 - [MEDIUM] Primary remains the next experience slice, but it must use the same canonical evidence → local persistence → mastery → Cortex recommendation spine rather than introducing a Primary-only intelligence contract.
 
-**Next engineering gate:** wire real learner actions to canonical events, reconcile one authoritative mastery calculation path, audit the live revision/sync protocol, then add authenticated/offline/replay verification before expanding the Primary vertical slice.
+**Next engineering gate:** define the richer-state reducer, audit the live revision/sync protocol, add authenticated/offline/replay verification, then add the first Primary activity.
 
 ---
 
@@ -46,4 +65,3 @@ Refreshed the public product positioning and release documentation around the ac
 ## Historical entries
 
 Earlier Cortex cycles remain below this line as the audit trail. Do not delete them when adding future entries.
-
