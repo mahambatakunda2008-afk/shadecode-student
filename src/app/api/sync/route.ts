@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ type Body = { operation?: "create" | "update" | "delete"; store?: string; payloa
 function bad(message: string, status = 400) { return NextResponse.json({ ok: false, error: message }, { status }); }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return bad("Authentication required", 401);
   let body: Body;
