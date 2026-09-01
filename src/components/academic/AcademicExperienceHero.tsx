@@ -9,7 +9,7 @@ export default function AcademicExperienceHero() {
   const { profile } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
 
-  const primaryHref = experience.stage === "university" ? "/curriculum" : experience.stage === "tvet" ? "/workmate" : "/learn";
+  const primaryHref = experience.stage === "primary" ? "/discovery" : experience.stage === "university" ? "/curriculum" : experience.stage === "tvet" ? "/workmate" : "/learn";
   const secondaryHref = experience.showExamSim ? "/exam-sim" : experience.stage === "university" ? "/studyspace" : "/tasks";
 
   return (
