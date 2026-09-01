@@ -63,7 +63,6 @@ export function updateLearningState(
     throw new Error("Learning observation topic does not match state topic");
   }
 
-  const difficulty = clamp(observation.difficulty ?? 50);
   const priorMastery = previous.mastery;
   const mastery = transitionMastery(priorMastery, observationScore(observation.correct));
   const errorRate = clamp(previous.errorRate * 0.85 + (observation.correct ? 0 : 100) * 0.15);
