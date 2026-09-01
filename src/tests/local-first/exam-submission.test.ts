@@ -3,6 +3,7 @@ import { submitExamOffline } from "@/lib/local-first/exam-submission";
 import type { LocalExamAttempt } from "@/lib/local-first/exam-attempt";
 
 vi.mock("@/lib/local-first/exam-attempt", () => ({ saveExamAttempt: vi.fn() }));
+vi.mock("@/lib/local-first/exam-submission-queue", () => ({ queueExamSubmission: vi.fn(async () => ({ id: "queued" })) }));
 vi.mock("@/lib/local-first/exam-result", () => ({
   submitExamLocally: vi.fn(async (input: { attemptId: string; subject: string; topic?: string; level: string; questions: typeof questions; answers: typeof attempt.answers; timeTaken: number }) => ({
     id: `exam_result:${input.attemptId}`,
