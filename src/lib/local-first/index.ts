@@ -12,4 +12,6 @@ export * from "./study-state";
 export * from "./failureRecovery";
 export * from "./retry";
 export * from "./cortex-insights";
+export * from "./cortex-memory";
+export * from "./cortex-interactions";
 export * from "./study-plan";
