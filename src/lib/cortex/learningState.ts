@@ -115,24 +115,22 @@ export function reduceLearningObservation(
 }
 
 /**
- * Projects the pure learning state into the durable topic_mastery shape.
- * This is a projection only. It never performs I/O and therefore cannot create
- * a second mastery algorithm or mutate state during event persistence.
+ * Projects the already-reduced learning state into the durable topic_mastery
+ * shape. It intentionally uses `next.mastery` rather than recalculating it.
  */
 export function projectTopicMastery(
-  previous: Pick<TopicLearningState, "mastery"> & Partial<Omit<TopicLearningState, "mastery">> | null,
+  previous: Pick<TopicLearningState, "mastery"> | null,
   next: TopicLearningState,
   evidenceScore: number,
   attempts: number,
 ): TopicMasteryProjection {
   const previousMastery = previous?.mastery ?? null;
-  const mastery = transitionMastery(previousMastery, evidenceScore);
 
   return {
-    mastery_score: mastery,
+    mastery_score: clamp(next.mastery),
     last_score: clamp(evidenceScore),
     attempts: Math.max(0, Math.floor(attempts)),
-    trend: previousMastery == null ? 0 : Number((mastery - previousMastery).toFixed(2)),
+    trend: previousMastery == null ? 0 : Number((next.mastery - previousMastery).toFixed(2)),
     retention: next.retention,
     confidence: next.confidence,
     stability: next.stability,
