@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getQueuedCortexEvents, subscribeToCortexEvents, clearQueuedCortexEvents } from "@/lib/cortex/events/queue";
+import { getQueuedCortexEventsAsync, subscribeToCortexEvents, clearQueuedCortexEvents } from "@/lib/cortex/events/queue";
 import { buildCortexFingerprint, resolveCortexExtension } from "@/lib/cortex/runtime/engine";
 import { createCortexCacheKey, getCachedCortexInsight, setCachedCortexInsight } from "@/lib/cortex/runtime/cache";
 import { CortexEvent, CortexSnapshot } from "@/lib/cortex/types";
@@ -62,8 +62,8 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   const runAnalysis = useEffectEvent(async () => {
     if (!userId || processing) return;
     setProcessing(true);
-    const queuedEvents = getQueuedCortexEvents(userId);
     try {
+      const queuedEvents = await getQueuedCortexEventsAsync(userId);
       await projectLearningEvents(queuedEvents);
       const snapshot = await loadSnapshot();
       if (!snapshot) return;
