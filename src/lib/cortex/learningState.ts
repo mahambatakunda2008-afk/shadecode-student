@@ -1,3 +1,5 @@
+import { observationScore, transitionMastery } from "@/lib/intelligence/masteryTransition";
+
 export interface TopicLearningState {
   topicId: string;
   mastery: number;
@@ -49,9 +51,9 @@ export function createInitialLearningState(topicId: string): TopicLearningState 
 /**
  * Applies one observable learning event to a topic state.
  *
- * This is intentionally bounded and interpretable. It should later be
- * calibrated against real outcomes rather than treated as a validated
- * cognitive-science model.
+ * The mastery score uses the shared platform transition. Other dimensions
+ * remain separate evidence signals until they have a stable persistence
+ * contract of their own.
  */
 export function updateLearningState(
   previous: TopicLearningState,
@@ -62,10 +64,8 @@ export function updateLearningState(
   }
 
   const difficulty = clamp(observation.difficulty ?? 50);
-  const responseQuality = observation.correct ? 1 : 0;
   const priorMastery = previous.mastery;
-  const learningSignal = (responseQuality * 100 - 50) * (0.5 + difficulty / 200);
-  const mastery = clamp(priorMastery + learningSignal * 0.12);
+  const mastery = transitionMastery(priorMastery, observationScore(observation.correct));
   const errorRate = clamp(previous.errorRate * 0.85 + (observation.correct ? 0 : 100) * 0.15);
   const confidence = clamp(
     previous.confidence * 0.8 + clamp(observation.confidence ?? previous.confidence) * 0.2,
