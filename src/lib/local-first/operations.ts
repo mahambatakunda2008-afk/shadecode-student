@@ -15,6 +15,8 @@ export interface LocalOperation<T = unknown> {
   timestamp: string;
   sequence: number;
   lamport: number;
+  /** Server revision this operation was based on. Undefined means never synchronized. */
+  baseVersion?: number;
   /** Undefined means pending; set when the remote relay has accepted it. */
   syncedAt?: string;
 }
