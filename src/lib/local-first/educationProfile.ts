@@ -3,7 +3,7 @@ import type { LocalRecord } from "./types";
 import { resolveExperienceFromProfile, type EducationProfile } from "@/lib/education/localProfile";
 
 export type LocalEducationProfile = EducationProfile & { syncedAt?: number };
-const idFor = (userId: string) => `education_profile:${userId}`;
+const idFor = (userId: string) => `education-profile:${userId}`;
 
 export async function saveLocalEducationProfile(userId: string, profile: EducationProfile): Promise<LocalRecord<LocalEducationProfile>> {
   if (!userId) throw new Error("Education profile requires an authenticated user");
