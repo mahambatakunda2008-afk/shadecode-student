@@ -1,6 +1,6 @@
 # Canonical Learning Events
 
-**Status:** implemented foundation + authenticated durable ingress + idempotent state application  
+**Status:** implemented foundation + authenticated durable ingress + idempotent persistence  
 **Updated:** 2026-09-01
 
 Shadecode Student uses one normalized learning-event contract between product actions and Cortex/Student Intelligence. The canonical contract is shared platform infrastructure for Discovery, Student and Campus.
@@ -18,7 +18,7 @@ Canonical normalization + deterministic eventId
    ↓
 public.cortex_events (durable, idempotent)
    ↓
-Learning observation / mastery state
+Learning observation / authoritative state transition
    ↓
 Cortex context + recommendations
 ```
@@ -29,7 +29,7 @@ The browser emitter is a delivery mechanism, not a second source of truth. When 
 
 `eventId = canonicalEventId(userId, source, sourceEventId)`.
 
-The database enforces uniqueness on the canonical event ID. Replaying the same source event therefore does not create another durable event or apply the same durable state transition twice.
+The database enforces uniqueness on the canonical event ID. Replaying the same source event therefore does not create another durable event.
 
 ## Supported signals
 
@@ -48,16 +48,18 @@ The canonical contract currently recognizes:
 
 `src/lib/intelligence/learningObservation.ts` is the explicit adapter from canonical product events into the narrower Cortex/SLS `LearningObservation` contract. `src/lib/cortex/learningEvents.ts` remains the legacy/narrow reducer adapter and is not a second canonical event system.
 
-## Important mastery boundary
+## Mastery boundary
 
-There are currently two established mastery producers that must be reconciled before event-driven mastery is broadened:
+The canonical event RPC is intentionally **persistence-only**. It authenticates the caller, validates canonical identity, stores the event in `public.cortex_events`, and returns the existing row on replay. It does **not** mutate `topic_mastery`.
+
+This boundary is deliberate. The repository currently has two established learning-state algorithms:
 
 1. `src/lib/cortex/learningState.ts` updates a richer local topic state from individual observations.
 2. `src/lib/topicMastery/blend.ts` updates the production `topic_mastery` row from graded exam topic percentages using a deliberately simple 70/30 EMA heuristic.
 
-The exam marking route currently uses `blendMastery` for graded topic results. The durable event RPC can also apply supported evidence to `topic_mastery`, so these algorithms must not be allowed to independently mutate the same learner state with incompatible math.
+The exam marking route already uses `blendMastery` for graded topic results. Allowing the event-ingress RPC to independently mutate the same `topic_mastery` row would double-count evidence and make replay semantics dependent on which producer arrived first.
 
-**Rule:** event persistence may continue independently, but new mastery mutations should wait until the pure learning-state semantics are reconciled and one authoritative state-transition path is selected.
+**Rule:** events are durable evidence. A future single authoritative reducer may consume that evidence and update learner state. Until that reducer is selected and implemented, event persistence and existing production scoring remain separate.
 
 ## Offline contract
 
@@ -66,7 +68,7 @@ Core learning actions remain usable without a network connection. The canonical 
 ## Current integration status
 
 - Learn: lesson-view evidence is wired; lesson-completion/question-level coverage still requires call-site audit.
-- Exam Simulation: aggregate exam-completion evidence is wired. Question-attempt helper exists but is not yet wired into the actual answer interaction path.
+- Exam Simulation: aggregate completion **and final graded question-attempt evidence** are now emitted through the canonical helper. Each question event carries correctness and score metadata and uses deterministic exam/question identity.
 - Project Studio: existing event integrations are present and should remain on the canonical ingress.
 - Primary: first activity must use this same evidence spine rather than creating a separate Primary analytics contract.
 
@@ -86,8 +88,8 @@ Before marking the evidence spine production-complete:
 
 ## Next engineering pass
 
-- reconcile `updateLearningState` and `blendMastery` semantics;
-- wire real question-attempt evidence with correctness, confidence and response-time metadata where available;
+- reconcile `updateLearningState` and `blendMastery` semantics and define one authoritative reducer;
+- add response-time metadata to exam question evidence where the final answer timing is available;
 - audit the sync revision protocol against all local-first stores;
 - add authenticated/offline/replay E2E coverage;
 - then build the first Primary activity on the shared learning spine.
