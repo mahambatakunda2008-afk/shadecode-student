@@ -7,7 +7,6 @@ const ALLOWED = new Set(["tasks", "subjects", "learn_lessons", "education_profil
 const ID_RE = /^[A-Za-z0-9:_-]{1,200}$/;
 
 type Body = { operation?: "create" | "update" | "delete"; store?: string; payload?: Record<string, unknown>; clientVersion?: number; baseVersion?: number; deviceId?: string };
-
 function bad(message: string, status = 400) { return NextResponse.json({ ok: false, error: message }, { status }); }
 
 export async function POST(request: Request) {
@@ -26,17 +25,21 @@ export async function POST(request: Request) {
   const id = typeof payload.id === "string" ? payload.id : null;
   if (!id || !ID_RE.test(id)) return bad("A valid record id is required");
   if (store === "learning_events") return bad("Learning events must use /api/intelligence/events", 409);
-  if (operation === "delete") {
-    const { data: existing, error } = await supabase.from(store).select("id").eq("id", id).eq("user_id", user.id).maybeSingle();
-    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    if (!existing) return NextResponse.json({ ok: true, status: "already-applied", id });
-    const { error: deleteError } = await supabase.from(store).delete().eq("id", id).eq("user_id", user.id);
-    if (deleteError) return NextResponse.json({ ok: false, error: deleteError.message }, { status: 500 });
-    return NextResponse.json({ ok: true, status: "accepted", id });
-  }
-  const safePayload = Object.fromEntries(Object.entries(payload).filter(([key]) => key !== "user_id" && key !== "created_at"));
-  const writePayload = { ...safePayload, id, user_id: user.id };
-  const { error } = await supabase.from(store).upsert(writePayload, { onConflict: "id" });
+  if (baseVersion === undefined) return bad("baseVersion is required for revision-safe sync");
+
+  const { data, error } = await supabase.rpc("apply_sync_mutation", {
+    p_store: store,
+    p_operation: operation,
+    p_record_id: id,
+    p_payload: payload,
+    p_base_version: baseVersion,
+    p_client_version: clientVersion,
+    p_device_id: deviceId ?? null,
+  });
+
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, status: "accepted", id, clientVersion, baseVersion: baseVersion ?? null, deviceId: deviceId ?? null });
+  const result = (data ?? {}) as Record<string, unknown>;
+  if (result.status === "conflict") return NextResponse.json(result, { status: 409 });
+  if (result.status === "accepted") return NextResponse.json(result, { status: 200 });
+  return NextResponse.json({ ok: false, error: "Unexpected sync result" }, { status: 500 });
 }
