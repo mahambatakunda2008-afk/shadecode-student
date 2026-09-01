@@ -25,11 +25,21 @@ describe("canonical learning event → observation adapter", () => {
     expect(observation).toEqual({
       topicId: "fractions",
       correct: true,
+      evidenceScore: undefined,
       confidence: 85,
       responseSeconds: 12,
       difficulty: 60,
       observedAt: "2026-09-01T10:00:00.000Z",
     });
+  });
+
+  it("preserves a graded percentage as richer evidence", () => {
+    const observation = learningEventToObservation({
+      ...baseEvent,
+      metadata: { ...baseEvent.metadata, percentage: 72 },
+    });
+
+    expect(observation?.evidenceScore).toBe(72);
   });
 
   it("does not invent topic observations for events without a topic", () => {
