@@ -1,5 +1,6 @@
 import type { LearningEventKind } from "./learningEvents";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { getRememberedUserId } from "@/lib/local-first/identity";
 
 export type LearningEventInput = {
   source: string;
@@ -13,28 +14,31 @@ export type LearningEventInput = {
   metadata?: Record<string, string | number | boolean | null>;
 };
 
-const QUEUE_KEY = "shadecode:cortex:event-queue:v1";
+type QueuedLearningEvent = { ownerId: string; input: LearningEventInput };
+
+const QUEUE_KEY = "shadecode:cortex:event-queue:v2";
 const MAX_QUEUE = 200;
 const POST_TIMEOUT_MS = 7_000;
 let flushing = false;
 
-function readQueue(): LearningEventInput[] {
+function readQueue(): QueuedLearningEvent[] {
   if (typeof window === "undefined") return [];
   try {
     const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
-    return Array.isArray(parsed) ? parsed.slice(-MAX_QUEUE) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is QueuedLearningEvent => Boolean(item?.ownerId && item?.input?.sourceEventId));
   } catch { return []; }
 }
 
-function writeQueue(queue: LearningEventInput[]) {
+function writeQueue(queue: QueuedLearningEvent[]) {
   if (typeof window === "undefined") return;
   try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-MAX_QUEUE))); } catch {}
 }
 
-function enqueue(input: LearningEventInput) {
+function enqueue(input: LearningEventInput, ownerId: string) {
   const queue = readQueue();
-  if (queue.some(item => item.source === input.source && item.sourceEventId === input.sourceEventId)) return;
-  queue.push(input);
+  if (queue.some(item => item.ownerId === ownerId && item.input.source === input.source && item.input.sourceEventId === input.sourceEventId)) return;
+  queue.push({ ownerId, input });
   writeQueue(queue);
 }
 
@@ -53,12 +57,18 @@ async function post(input: LearningEventInput): Promise<boolean> {
 
 export async function flushLearningEvents(): Promise<void> {
   if (typeof window === "undefined" || flushing || !navigator.onLine) return;
+  const activeUserId = getRememberedUserId();
+  if (!activeUserId) return;
   flushing = true;
   try {
     const queue = readQueue();
-    const remaining: LearningEventInput[] = [];
-    for (const event of queue) {
-      if (!(await post(event))) remaining.push(event);
+    const remaining: QueuedLearningEvent[] = [];
+    for (const queued of queue) {
+      if (queued.ownerId !== activeUserId) {
+        remaining.push(queued);
+        continue;
+      }
+      if (!(await post(queued.input))) remaining.push(queued);
     }
     writeQueue(remaining);
   } finally { flushing = false; }
@@ -66,10 +76,14 @@ export async function flushLearningEvents(): Promise<void> {
 
 export async function emitLearningEvent(input: LearningEventInput): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  if (!navigator.onLine) { enqueue(input); return false; }
+  const ownerId = getRememberedUserId();
+  if (!navigator.onLine) {
+    if (ownerId) enqueue(input, ownerId);
+    return false;
+  }
   const sent = await post(input);
-  if (!sent) enqueue(input);
-  else void flushLearningEvents();
+  if (!sent && ownerId) enqueue(input, ownerId);
+  else if (sent) void flushLearningEvents();
   return sent;
 }
 
