@@ -19,6 +19,7 @@ export type ExamResult = {
   feedback: string;
   modelAnswer: string;
   topic: string;
+  timeSpent?: number;
 };
 
 export type ExamResults = {
