@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ExamWorkspace from "@/components/exam/ExamWorkspace";
 import ExamAttemptLocalBridge from "@/components/exam/ExamAttemptLocalBridge";
 import AcademicExamContext from "@/components/exam/AcademicExamContext";
-import { examCompletedEvent } from "@/lib/intelligence/emitLearningEvent";
+import { examCompletedEvent, questionAttemptedEvent } from "@/lib/intelligence/emitLearningEvent";
 import type { ExamResults } from "@/lib/exam/types";
 
 function decode(value: string | null) {
@@ -23,6 +23,22 @@ export default function ExamSimulationClient() {
   const safeCount = [5, 10, 15, 20].includes(count) ? count : 10;
 
   const handleFinished = (result: ExamResults) => {
+    for (const question of result.results) {
+      void questionAttemptedEvent(
+        examInstanceId,
+        question.questionId,
+        question.topic || topic || subject || undefined,
+        {
+          correct: question.correct,
+          score: question.score,
+          maxScore: question.maxScore,
+          percentage: question.maxScore > 0
+            ? Math.round((question.score / question.maxScore) * 100)
+            : 0,
+        },
+      );
+    }
+
     void examCompletedEvent(examInstanceId, subject || undefined, topic || undefined, {
       percentage: result.percentage,
       totalScore: result.totalScore,
