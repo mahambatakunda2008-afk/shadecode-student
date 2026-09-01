@@ -2,9 +2,9 @@
 
 **A personal learning system that continuously learns how you learn.**
 
-Shadecode Student is an AI-assisted learning platform built around one idea: studying should not be a collection of disconnected tools. Lessons, questions, mistakes, exams, projects, revision and progress should become useful evidence that helps decide what the learner should do next.
+Shadecode Student is the current production experience in the wider Shadecode education platform. It is built around one idea: studying should not be a collection of disconnected tools. Lessons, questions, mistakes, exams, projects, revision and progress should become useful evidence that helps decide what the learner should do next.
 
-Built with a strong focus on Cambridge and ZIMSEC learners, and expanding across secondary school, university and polytechnic study, Shadecode Student combines learning, assessment, project work, planning, gamification, analytics and **Cortex**, its learning-intelligence layer.
+Built with a strong focus on Cambridge and ZIMSEC learners, Shadecode is expanding across primary, secondary, university, college and polytechnic/TVET study. The long-term product family is **Shadecode Discovery** for Primary, **Shadecode Student** for Secondary and exam-focused learning, and **Shadecode Campus** for tertiary/project-oriented learning. They share a common intelligence foundation rather than becoming cloned codebases.
 
 > **Observe → Understand → Predict → Act → Evaluate → Learn**
 
@@ -23,13 +23,29 @@ Built with a strong focus on Cambridge and ZIMSEC learners, and expanding across
 
 Feature maturity varies. The project distinguishes shipped foundations from strategic roadmap items instead of presenting prototypes as finished intelligence.
 
-## Architecture direction
+## Shared platform direction
 
-The core architecture is intentionally model-independent:
+Shadecode is converging on a shared platform with three specialized experiences:
 
-`student action → learning event → canonical normalization → idempotency → Student Intelligence → intervention → measured outcome`
+| Experience | Learner context | Primary design goal |
+|---|---|---|
+| **Discovery** | Primary | Curiosity, play, foundations and safe exploration |
+| **Student** | Secondary, Cambridge, ZIMSEC | Mastery, independence, revision and exam readiness |
+| **Campus** | University, college, polytechnic/TVET | Coursework, research, projects, skills and careers |
 
-The canonical learning-event foundation preserves source event IDs, scopes identity to the learner, explicitly skips unsupported mappings and provides deterministic replay tests. See `docs/architecture/canonical-learning-events.md`.
+Underneath them is **Cortex OS**, a shared learning-intelligence layer for learner state, curriculum, evidence, mastery, memory, interventions and local-first intelligence. The learner's useful academic history can persist across transitions without forcing every education level into one UI or data model.
+
+See `docs/PRODUCT_VISION_2026-09-01.md`, `docs/PRIMARY_DISCOVERY_V1.md` and `docs/architecture/PLATFORM_BOUNDARIES.md` for the product and architecture records.
+
+## Canonical learning evidence
+
+The core architecture is:
+
+`product action → source event → canonical normalization → authenticated durable persistence → learning observation/mastery state → intervention → measured outcome`
+
+The canonical event boundary is `POST /api/intelligence/events`. Events are persisted idempotently in `public.cortex_events`, preserving canonical identity and source provenance. Browser delivery is queue-backed for offline/retry behavior. Topic learning state continues to use the established `topic_mastery` store rather than introducing a competing mastery system.
+
+See `docs/architecture/canonical-learning-events.md` for the implementation contract.
 
 Cortex should reuse the existing mastery, weak-area, retention and recommendation semantics. A foundation model can explain, tutor or generate content, but it must not become the deterministic source of truth for learning state.
 
@@ -40,18 +56,20 @@ Cortex should reuse the existing mastery, weak-area, retention and recommendatio
 1. Harden canonical learning-event ingestion and connect major product actions.
 2. Continue migrating high-value entities onto the local-first operation path.
 3. Finish shared Canvas/tooling verification and browser smoke coverage.
-4. Expand assessment intelligence and curriculum coverage.
+4. Expand assessment intelligence and curriculum coverage, including Primary foundations.
 5. Keep Project Studio, Learn, Exam Simulation and Cortex surfaces coherent as one product.
 
 ### Next
 
+- Primary Discovery first activity loop and age-specific UX;
 - deep, coverage-driven lessons;
 - subject-aware structured diagrams;
 - shared Question Forge across learning and assessment;
 - Shadecode Library with provenance for authorized sources;
 - Concept Atlas and Mistake Museum;
 - Paper Intelligence and stronger revision loops;
-- Learning Replay and measurable intervention outcomes.
+- Learning Replay and measurable intervention outcomes;
+- University/Polytechnic/Campus workflows.
 
 ### Later research
 
@@ -60,6 +78,7 @@ Cortex should reuse the existing mastery, weak-area, retention and recommendatio
 - small specialized local models;
 - quantization and knowledge distillation;
 - retrieval/caching and intelligent model routing;
+- school-local infrastructure;
 - distributed/peer infrastructure only after single-device offline reliability and authenticated sync are mature.
 
 ## Evidence and safety principles
@@ -70,16 +89,17 @@ Cortex should reuse the existing mastery, weak-area, retention and recommendatio
 - Server-side authorization and RLS remain authoritative.
 - Do not introduce peer-to-peer student data sharing or foundation-model training as hidden dependencies.
 - Prefer reversible, observable changes over silent mutations.
+- Primary experiences require stronger child-safety and teacher/parent boundaries.
 
 ## Offline and intelligence strategy
 
-Shadecode is being engineered for real student conditions, including unreliable connectivity. The goal is not merely to cache the shell. Saved lessons, questions, diagrams, notes and learning state should progressively become usable offline, with deterministic synchronization when connectivity returns.
+Shadecode is being engineered for real student conditions, including unreliable connectivity. Offline is a product requirement, not a fallback screen. The goal is for lessons, questions, diagrams, notes, progress, timetable, tasks, projects and selected intelligence to progressively remain useful without an internet connection, with deterministic synchronization when connectivity returns.
 
 For AI, the project investigates **useful intelligence at low latency, low cost and small device footprint**. Compression is an engineering tool, not the product goal. Quantization, distillation, specialization, retrieval, caching and routing are evaluated according to actual learning utility.
 
 ## Positioning
 
-Shadecode Student is not trying to win by being another general-purpose chatbot. Its potential moat is:
+Shadecode is not trying to win by being another general-purpose chatbot. Its potential moat is:
 
 **deep curriculum + persistent learner state + adaptive intervention + offline/edge intelligence + measurable learning outcomes.**
 
@@ -122,7 +142,10 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 
 ## Documentation map
 
-- `docs/architecture/canonical-learning-events.md` — canonical learning-event contract
+- `docs/PRODUCT_VISION_2026-09-01.md` — expanded product vision and three-experience direction
+- `docs/PRIMARY_DISCOVERY_V1.md` — Primary Discovery first implementation contract
+- `docs/architecture/PLATFORM_BOUNDARIES.md` — shared platform and experience ownership
+- `docs/architecture/canonical-learning-events.md` — canonical learning-event contract and durable implementation
 - `docs/PROJECT_STATUS_2026-08-29.md` — current product truth and release posture
 - `docs/architecture/project-studio-finish-line.md` — Project Studio completion boundary
 - `docs/LEARNING_EXPERIENCE_V2.md` — Learning Experience direction
