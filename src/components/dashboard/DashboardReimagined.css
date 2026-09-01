@@ -17,7 +17,7 @@
 .dashboard-ambient-two { width: 220px; height: 220px; left: -80px; top: 520px; background: hsl(190 90% 55% / .07); }
 
 .dashboard-header { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:24px; }
-.dashboard-header h1 { margin:5px 0 7px; font-size:clamp(2rem,4vw,3.15rem); line-height:1.02; letter-spacing:-.055em; font-weight:720; color:var(--dashboard-ink); }
+.dashboard-header h2 { margin:5px 0 7px; font-size:clamp(2rem,4vw,3.15rem); line-height:1.02; letter-spacing:-.055em; font-weight:720; color:var(--dashboard-ink); }
 .dashboard-header p:not(.dashboard-kicker) { margin:0; max-width:700px; color:var(--dashboard-muted); font-size:.95rem; line-height:1.65; }
 .dashboard-kicker { display:flex; align-items:center; gap:7px; margin:0; color:var(--primary); font-size:.72rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
 .dashboard-header-stat { min-width:145px; padding:13px 16px; border:1px solid color-mix(in srgb, var(--card-border) 70%, transparent); border-radius:18px; background:color-mix(in srgb, var(--card) 82%, transparent); box-shadow:0 14px 40px color-mix(in srgb, var(--foreground) 4%, transparent); }
@@ -44,10 +44,6 @@
 
 .dashboard-momentum { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:28px; }
 
-.dashboard-quick-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px; }
-.dashboard-quick-action { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:14px 8px; border-radius:16px; border:1px solid color-mix(in srgb, var(--card-border) 70%, transparent); background:color-mix(in srgb, var(--card) 82%, transparent); color:var(--dashboard-ink); cursor:pointer; transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease; }
-.dashboard-quick-action:hover { border-color:color-mix(in srgb, var(--primary) 32%, transparent); transform:translateY(-2px); box-shadow:0 12px 28px color-mix(in srgb, var(--foreground) 5%, transparent); }
-.dashboard-quick-action span { font-size:.68rem; font-weight:650; text-align:center; }
 .dashboard-metric { display:flex; align-items:center; gap:11px; min-width:0; padding:12px 13px; border:1px solid color-mix(in srgb, var(--card-border) 65%, transparent); border-radius:17px; background:color-mix(in srgb, var(--card) 86%, transparent); transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease; }
 .dashboard-metric:hover { border-color:color-mix(in srgb, var(--primary) 30%, transparent); transform:translateY(-2px); box-shadow:0 12px 28px color-mix(in srgb, var(--foreground) 5%, transparent); }
 .dashboard-metric-icon { display:grid; place-items:center; width:36px; height:36px; flex:none; border-radius:11px; background:color-mix(in srgb, var(--primary) 9%, transparent); color:var(--primary); }
@@ -132,13 +128,12 @@
 @media (max-width: 760px) {
   .dashboard-header { align-items:flex-start; flex-direction:column; }
   .dashboard-header-stat { display:none; }
-  .dashboard-header h1 { font-size:2.15rem; }
+  .dashboard-header h2 { font-size:2.15rem; }
   .dashboard-hero { border-radius:22px; }
   .dashboard-hero-content { padding:21px 19px 18px; }
   .dashboard-hero-copy { align-items:stretch; flex-direction:column; gap:17px; }
   .dashboard-primary-action { justify-content:center; }
   .dashboard-momentum { grid-template-columns:repeat(2,1fr); }
-  .dashboard-quick-actions { grid-template-columns:repeat(2,1fr); }
   .dashboard-subject-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .dashboard-side-column { display:flex; }
 }
@@ -152,8 +147,8 @@
   .dashboard-subject-tile { min-height:78px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-subject-tile,.dashboard-primary-action,.dashboard-today-row,.dashboard-recent-row,.dashboard-exam-row,.dashboard-metric,.dashboard-quick-action { transition:none; }
-  .dashboard-subject-tile:hover,.dashboard-primary-action:hover,.dashboard-today-row:hover,.dashboard-recent-row:hover,.dashboard-exam-row:hover,.dashboard-metric:hover,.dashboard-quick-action:hover { transform:none; }
+  .dashboard-subject-tile,.dashboard-primary-action,.dashboard-today-row,.dashboard-recent-row,.dashboard-exam-row,.dashboard-metric { transition:none; }
+  .dashboard-subject-tile:hover,.dashboard-primary-action:hover,.dashboard-today-row:hover,.dashboard-recent-row:hover,.dashboard-exam-row:hover,.dashboard-metric:hover { transform:none; }
   .dashboard-skeleton::after { animation:none; }
   .dashboard-hero-orb,.dashboard-live-dot::after { animation:none; }
   .dashboard-progress-ring { transition:none; }
