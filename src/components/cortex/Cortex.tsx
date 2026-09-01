@@ -22,7 +22,6 @@ export default function Cortex({ userId, trigger }: CortexProps) {
   const analysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const finishProcessing = useEffectEvent(() => setTimeout(() => setProcessing(false), 300));
-
   const addInsightToState = useEffectEvent((saved: Insight) => {
     setInsights((previous) => {
       const nextInsight = { ...saved, isNew: true };
@@ -40,16 +39,7 @@ export default function Cortex({ userId, trigger }: CortexProps) {
     const hasLocalSnapshot = localTasks.length || localSubjects.length || localProgress.length || localXp || localStreak;
     if (hasLocalSnapshot) {
       const completedTasks = localTasks.filter((task) => task.completed);
-      return {
-        streak: localStreak?.current ?? 0,
-        level: localXp?.level ?? 1,
-        xp: localXp?.totalXp ?? 0,
-        totalTasks: localTasks.length,
-        completedTasks: completedTasks.length,
-        pendingTasks: localTasks.length - completedTasks.length,
-        subjects: localSubjects.map((s) => s.name),
-        recentTaskTitles: localTasks.slice(0, 5).map((t) => t.title),
-      };
+      return { streak: localStreak?.current ?? 0, level: localXp?.level ?? 1, xp: localXp?.totalXp ?? 0, totalTasks: localTasks.length, completedTasks: completedTasks.length, pendingTasks: localTasks.length - completedTasks.length, subjects: localSubjects.map((s) => s.name), recentTaskTitles: localTasks.slice(0, 5).map((t) => t.title) };
     }
     if (typeof navigator !== "undefined" && !navigator.onLine) return null;
     const [{ data: tasks }, { data: profile }, { data: subjects }] = await Promise.all([
