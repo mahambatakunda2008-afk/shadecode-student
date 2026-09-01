@@ -66,8 +66,12 @@ export async function getStreak(userId: string): Promise<LocalStreakState | null
   return record?.userId === userId && !record.deletedAt ? record.payload : null;
 }
 
-function utcDayKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
+/** Use the learner's device-local calendar day. Offline streaks should not jump at UTC midnight. */
+function localDayKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function dayDistance(from: string, to: string): number {
@@ -78,7 +82,7 @@ function dayDistance(from: string, to: string): number {
 
 export async function recordStudyDay(userId: string, date = new Date()): Promise<LocalRecord<LocalStreakState>> {
   if (!userId) throw new Error("Streak requires an authenticated user");
-  const key = utcDayKey(date);
+  const key = localDayKey(date);
   const current = await getStreak(userId);
   if (current?.lastStudyDate === key) return (await localFirstStore.get<LocalStreakState>(streakId(userId)))!;
   const consecutive = current?.lastStudyDate ? dayDistance(current.lastStudyDate, key) === 1 : false;
