@@ -1,9 +1,9 @@
-import type { LocalMeta, LocalOperation, LocalRecord } from "./types";
+import type { LocalMeta, LocalOperation, LocalRecord, LocalConflict } from "./types";
 import { createOperationId } from "./operations";
 
 const DB_NAME = "shadecode-local-first";
-const DB_VERSION = 2;
-const STORES = { records: "records", operations: "operations", meta: "meta" } as const;
+const DB_VERSION = 4;
+const STORES = { records: "records", operations: "operations", meta: "meta", conflicts: "conflicts" } as const;
 const LAMPORT_KEY = "lamport";
 const DEVICE_ID_KEY = "deviceId";
 const SEQUENCE_PREFIX = "sequence:";
@@ -44,6 +44,7 @@ class LocalFirstDB {
           };
         }
         if (!db.objectStoreNames.contains(STORES.meta)) db.createObjectStore(STORES.meta, { keyPath: "key" });
+        if (!db.objectStoreNames.contains(STORES.conflicts)) { const store = db.createObjectStore(STORES.conflicts, { keyPath: "id" }); store.createIndex("userId", "userId", { unique: false }); store.createIndex("entity", "entity", { unique: false }); store.createIndex("createdAt", "createdAt", { unique: false }); }
       };
     });
   }
@@ -77,8 +78,9 @@ class LocalFirstDB {
         const lamportRequest = meta.get(LAMPORT_KEY); const sequenceRequest = meta.get(sequenceKey); let ready = 0;
         const finishClock = () => {
           ready += 1; if (ready !== 2) return; lamport += 1; sequence += 1; const now = Date.now();
-          result = { id: input.id, entity: input.entity, userId: input.userId, payload: input.payload, updatedAt: now, deviceId: input.deviceId, version: lamport, ...(input.deletedAt === undefined ? {} : { deletedAt: input.deletedAt }) };
-          const operation: LocalOperation<T> = { id: createOperationId(input.deviceId, sequence), recordId: input.id, entity: input.entity, entityId: input.entityId ?? input.id, userId: input.userId, deviceId: input.deviceId, kind: input.deletedAt === undefined ? (existing && !existing.deletedAt ? "update" : "create") : "delete", ...(input.deletedAt === undefined ? { payload: input.payload } : {}), timestamp: new Date(now).toISOString(), sequence, lamport };
+          const baseVersion = existing?.syncVersion ?? 0;
+          result = { id: input.id, entity: input.entity, userId: input.userId, payload: input.payload, updatedAt: now, deviceId: input.deviceId, version: lamport, syncVersion: baseVersion, ...(input.deletedAt === undefined ? {} : { deletedAt: input.deletedAt }) };
+          const operation: LocalOperation<T> = { id: createOperationId(input.deviceId, sequence), recordId: input.id, entity: input.entity, entityId: input.entityId ?? input.id, userId: input.userId, deviceId: input.deviceId, kind: input.deletedAt === undefined ? (existing && !existing.deletedAt ? "update" : "create") : "delete", ...(input.deletedAt === undefined ? { payload: input.payload } : {}), timestamp: new Date(now).toISOString(), sequence, lamport, baseVersion };
           records.put(result); operations.put(operation); meta.put({ key: LAMPORT_KEY, value: lamport }); meta.put({ key: sequenceKey, value: sequence });
         };
         lamportRequest.onsuccess = () => { lamport = typeof lamportRequest.result?.value === "number" ? lamportRequest.result.value : 0; finishClock(); };
@@ -99,10 +101,13 @@ class LocalFirstDB {
   async getOperations(userId: string): Promise<LocalOperation[]> { return this.transaction<LocalOperation[]>(STORES.operations, "readonly", (store, resolve, reject) => { const request = store.index("userId").getAll(userId); request.onsuccess = () => resolve((request.result ?? []).filter((operation) => operation?.kind)); request.onerror = () => reject(request.error); }); }
   async getPendingOperations(userId: string): Promise<LocalOperation[]> { return (await this.getOperations(userId)).filter((operation) => !operation.syncedAt); }
   async markOperationSynced(id: string, syncedAt = new Date().toISOString()): Promise<void> { await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction(STORES.operations, "readwrite"); const store = transaction.objectStore(STORES.operations); const request = store.get(id); request.onsuccess = () => { const operation = request.result as LocalOperation | undefined; if (operation) store.put({ ...operation, syncedAt }); }; request.onerror = () => reject(request.error); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); }); }
+  async markRecordSynced(userId: string, entity: LocalRecord["entity"], entityId: string, syncVersion: number): Promise<void> { if (!userId || !Number.isSafeInteger(syncVersion) || syncVersion < 0) return; const records = await this.getRecords(userId); const record = records.find((candidate) => candidate.entity === entity && candidate.id === entityId); if (!record) return; await this.putRecord({ ...record, syncVersion }); }
+  async putConflict(conflict: LocalConflict): Promise<void> { await this.transaction<void>(STORES.conflicts, "readwrite", (store, resolve, reject) => { const request = store.put(conflict); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
+  async getConflicts(userId: string): Promise<LocalConflict[]> { return this.transaction<LocalConflict[]>(STORES.conflicts, "readonly", (store, resolve, reject) => { const request = store.index("userId").getAll(userId); request.onsuccess = () => resolve(request.result ?? []); request.onerror = () => reject(request.error); }); }
   async nextClock(deviceId: string, remoteLamport = 0): Promise<{ sequence: number; lamport: number }> { await this.init(); return new Promise((resolve, reject) => { const transaction = this.db!.transaction(STORES.meta, "readwrite"); const store = transaction.objectStore(STORES.meta); const lamportRequest = store.get(LAMPORT_KEY); const sequenceKey = `${SEQUENCE_PREFIX}${deviceId}`; const sequenceRequest = store.get(sequenceKey); let lamport = 0; let sequence = 0; let ready = 0; const finish = () => { ready += 1; if (ready !== 2) return; lamport = Math.max(lamport, remoteLamport) + 1; sequence += 1; store.put({ key: LAMPORT_KEY, value: lamport }); store.put({ key: sequenceKey, value: sequence }); }; lamportRequest.onsuccess = () => { lamport = typeof lamportRequest.result?.value === "number" ? lamportRequest.result.value : 0; finish(); }; sequenceRequest.onsuccess = () => { sequence = typeof sequenceRequest.result?.value === "number" ? sequenceRequest.result.value : 0; finish(); }; lamportRequest.onerror = () => reject(lamportRequest.error); sequenceRequest.onerror = () => reject(sequenceRequest.error); transaction.oncomplete = () => resolve({ sequence, lamport }); transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error ?? new Error("Clock transaction aborted")); }); }
   async putMeta(meta: LocalMeta): Promise<void> { await this.transaction<void>(STORES.meta, "readwrite", (store, resolve, reject) => { const request = store.put(meta); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
   async getMeta(key: string): Promise<LocalMeta | null> { return this.transaction<LocalMeta | null>(STORES.meta, "readonly", (store, resolve, reject) => { const request = store.get(key); request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
-  async clearUser(userId: string): Promise<void> { const records = await this.getRecords(userId); const operations = await this.getOperations(userId); await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction([STORES.records, STORES.operations], "readwrite"); const recordStore = transaction.objectStore(STORES.records); const operationStore = transaction.objectStore(STORES.operations); records.forEach((record) => recordStore.delete(record.id)); operations.forEach((operation) => operationStore.delete(operation.id)); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); }); }
+  async clearUser(userId: string): Promise<void> { const records = await this.getRecords(userId); const operations = await this.getOperations(userId); const conflicts = await this.getConflicts(userId); await this.init(); await new Promise<void>((resolve, reject) => { const transaction = this.db!.transaction([STORES.records, STORES.operations, STORES.conflicts], "readwrite"); const recordStore = transaction.objectStore(STORES.records); const operationStore = transaction.objectStore(STORES.operations); const conflictStore = transaction.objectStore(STORES.conflicts); records.forEach((record) => recordStore.delete(record.id)); operations.forEach((operation) => operationStore.delete(operation.id)); conflicts.forEach((conflict) => conflictStore.delete(conflict.id)); transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error); }); }
 }
 
 export const localFirstDB = new LocalFirstDB();
