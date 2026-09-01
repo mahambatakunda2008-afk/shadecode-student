@@ -1,8 +1,10 @@
-# Shadecode Student Project Status — 2026-08-31
+# Shadecode Student Project Status — 2026-09-01
 
 ## Release posture
 
 The repository is in an active hardening and integration phase. Major product foundations are merged, but the strategic roadmap is not represented as finished when only foundations exist.
+
+**Authoritative master scope:** `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md` tracks the complete Shadecode scope across Cortex, Learning, Assessment, Creation, Engagement, Primary, Student, Campus, Teacher/School, Parent, Knowledge, Offline/Local-first, Trust/Platform and Business. This status file records current engineering/release posture; the master roadmap is the broader feature matrix.
 
 ## Completed / materially shipped
 
@@ -38,32 +40,40 @@ The repository is in an active hardening and integration phase. Major product fo
 - Exam Simulation emits `exam.completed` through the canonical event ingress.
 - Client Cortex events persist in a bounded local queue while offline or when a request fails, then flush automatically when connectivity returns.
 - Authenticated app shell installs the Cortex reconnect flusher globally.
+- Richer durable `topic_mastery` learning-state fields added for retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty.
+- Canonical Cortex event persistence is idempotent and can apply supported learning evidence to the existing `topic_mastery` store without creating a second mastery table.
+- Canonical learning-event architecture documentation reconciled with the durable production implementation.
+- Master Shadecode roadmap/status matrix created to preserve the complete product scope discussed on 2026-09-01.
 
 ## In progress
 
-### 1. Project Worker execution
-
-The worker contract and deterministic safe scaffold generation are now present. The next step is connecting these executors to the authenticated Project Studio UI, persisting generated artifacts in StudySpace, and adding optional LLM-assisted generation behind the same provenance contract.
-
-### 2. Cortex event integration
+### 1. Cortex event integration
 
 The durable canonical event contract is implemented. Learn, task completion and Exam completion emit real events. Project Studio and remaining Exam lifecycle events need final browser-level validation. Downstream Student Intelligence consumers still need end-to-end validation against real event data.
 
-### 3. Learning Experience v2
+### 2. Mastery semantics reconciliation
+
+The local `updateLearningState()` engine, existing `blendMastery` semantics and durable `topic_mastery` update path must be reconciled before broadening event-driven mastery updates. Avoid parallel mathematical definitions of mastery.
+
+### 3. Local-first synchronization
+
+The shared queue is bounded and coalesces duplicate pending entity writes. Cortex telemetry has its own bounded reconnect-safe queue. The live database also has sync-revision protocol history that requires an explicit audit. Remaining work is authenticated reconnect verification, revision/version semantics and safe hydration for every major entity type.
+
+### 4. Learning Experience v2
 
 The next layer is deeper curriculum coverage, structured diagrams, shared Question Forge, source provenance, Library workflows, Concept Atlas, Mistake Museum, Paper Intelligence and Learning Replay.
 
-### 4. Canvas and shared tooling
+### 5. Canvas and shared tooling
 
 Complete intelligent/reversible geometry assistance, shared-canvas adoption and calculator/tool end-to-end verification. Release only after browser smoke checks and deterministic tests pass.
-
-### 5. Local-first synchronization
-
-The shared queue is bounded and coalesces duplicate pending entity writes. Cortex telemetry has its own bounded reconnect-safe queue. Remaining work is authenticated reconnect verification, revision/version semantics and safe hydration for every major entity type.
 
 ### 6. Project Studio completion gate
 
 The remaining finish-line work is verification of offline browser behavior, authenticated reconnect/synchronization, duplicate/replay behavior, generated-artifact persistence, worker execution quality and clear sync state in the UI.
+
+### 7. Primary / Campus / people surfaces
+
+Primary Discovery, Campus/TVET, Teacher/School and Parent capabilities are being treated as shared-platform consumers, not separate cloned systems. The first Primary activity must use the canonical learning evidence spine.
 
 ## Academic integrity boundary
 
