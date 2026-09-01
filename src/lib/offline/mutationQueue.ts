@@ -8,6 +8,9 @@ export interface OfflineMutation<T = unknown> {
   payload: T;
   createdAt: string;
   attempts: number;
+  clientVersion?: number;
+  baseVersion?: number;
+  deviceId?: string;
   lastAttemptAt?: string;
   lastError?: string;
 }
@@ -48,7 +51,6 @@ function payloadEntityId(payload: unknown): string | null {
 
 class MutationQueue {
   private db: IDBDatabase | null = null;
-
   private async init(): Promise<void> {
     if (this.db) return;
     if (typeof indexedDB === "undefined") throw new Error("Offline mutation queue requires IndexedDB");
@@ -65,35 +67,23 @@ class MutationQueue {
       };
     });
   }
-
   async enqueue<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts">): Promise<OfflineMutation<T>> {
     if (!input.ownerId) throw new Error("Offline mutation requires an authenticated owner");
     if (!USER_SCOPED_MUTATION_STORES.has(input.store)) throw new Error(`Offline mutation store is not approved: ${input.store}`);
     await this.init();
-
     const entityId = payloadEntityId(input.payload);
     if (entityId) {
-      const existing = (await this.list(input.ownerId)).find(
-        (mutation) => mutation.store === input.store && payloadEntityId(mutation.payload) === entityId,
-      );
+      const existing = (await this.list(input.ownerId)).find((mutation) => mutation.store === input.store && payloadEntityId(mutation.payload) === entityId);
       if (existing) {
-        const replacement: OfflineMutation<T> = {
-          ...existing,
-          operation: input.operation,
-          payload: input.payload,
-          lastAttemptAt: undefined,
-          lastError: undefined,
-        };
+        const replacement: OfflineMutation<T> = { ...existing, ...input, id: existing.id, createdAt: existing.createdAt, attempts: 0, lastAttemptAt: undefined, lastError: undefined };
         await this.put(replacement);
         return replacement;
       }
     }
-
     const mutation: OfflineMutation<T> = { ...input, id: createMutationId(), createdAt: new Date().toISOString(), attempts: 0 };
     await this.put(mutation);
     return mutation;
   }
-
   async list(ownerId: string): Promise<OfflineMutation[]> {
     if (!ownerId) return [];
     await this.init();
@@ -103,28 +93,12 @@ class MutationQueue {
       request.onsuccess = () => resolve(((request.result ?? []) as OfflineMutation[]).sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
     });
   }
-
   async listReady(ownerId: string, now = Date.now()): Promise<OfflineMutation[]> { return (await this.list(ownerId)).filter((mutation) => isMutationReady(mutation, now)); }
   async listFailed(ownerId: string): Promise<OfflineMutation[]> { return (await this.list(ownerId)).filter((mutation) => mutation.attempts >= MAX_ATTEMPTS); }
   async getStatus(ownerId: string): Promise<{ pending: number; failed: number }> { const rows = await this.list(ownerId); return { pending: rows.filter((m) => m.attempts < MAX_ATTEMPTS).length, failed: rows.filter((m) => m.attempts >= MAX_ATTEMPTS).length }; }
   async resetFailed(ownerId: string): Promise<void> { for (const mutation of await this.listFailed(ownerId)) await this.put({ ...mutation, attempts: 0, lastAttemptAt: undefined, lastError: undefined }); }
-
-  async remove(id: string, ownerId: string): Promise<void> {
-    if (!ownerId) return;
-    await this.init();
-    const current = await this.get(id);
-    if (!current || current.ownerId !== ownerId) return;
-    await new Promise<void>((resolve, reject) => { const request = this.db!.transaction(STORE, "readwrite").objectStore(STORE).delete(id); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); });
-  }
-
-  async recordFailure(id: string, ownerId: string, error: unknown): Promise<void> {
-    if (!ownerId) return;
-    await this.init();
-    const current = await this.get(id);
-    if (!current || current.ownerId !== ownerId) return;
-    await this.put({ ...current, attempts: Math.min(current.attempts + 1, MAX_ATTEMPTS), lastAttemptAt: new Date().toISOString(), lastError: error instanceof Error ? error.message : String(error) });
-  }
-
+  async remove(id: string, ownerId: string): Promise<void> { if (!ownerId) return; await this.init(); const current = await this.get(id); if (!current || current.ownerId !== ownerId) return; await new Promise<void>((resolve, reject) => { const request = this.db!.transaction(STORE, "readwrite").objectStore(STORE).delete(id); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
+  async recordFailure(id: string, ownerId: string, error: unknown): Promise<void> { if (!ownerId) return; await this.init(); const current = await this.get(id); if (!current || current.ownerId !== ownerId) return; await this.put({ ...current, attempts: Math.min(current.attempts + 1, MAX_ATTEMPTS), lastAttemptAt: new Date().toISOString(), lastError: error instanceof Error ? error.message : String(error) }); }
   private async get(id: string): Promise<OfflineMutation | null> { return new Promise((resolve, reject) => { const request = this.db!.transaction(STORE, "readonly").objectStore(STORE).get(id); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(request.result ?? null); }); }
   private async put(value: OfflineMutation): Promise<void> { await new Promise<void>((resolve, reject) => { const request = this.db!.transaction(STORE, "readwrite").objectStore(STORE).put(value); request.onerror = () => reject(request.error); request.onsuccess = () => resolve(); }); }
 }
