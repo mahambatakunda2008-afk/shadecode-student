@@ -9,6 +9,8 @@ export type LocalEntity =
 export interface LocalRecord<T = unknown> {
   id: string;
   entity: LocalEntity;
+  /** Stable domain/entity identifier when it differs from the storage record id. */
+  entityId?: string;
   userId: string;
   payload: T;
   updatedAt: number;
