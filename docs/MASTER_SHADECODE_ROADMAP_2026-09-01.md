@@ -35,9 +35,9 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Cortex intelligence layer | 🟡 | Existing production surface; unify evidence, state and recommendations. |
 | Canonical learning events | 🟢 | Canonical authenticated ingress and durable `cortex_events` exist; ingress is persistence-only. |
 | Event idempotency | 🟢 | Canonical identity is enforced by durable storage. |
-| Learning observation adapter | 🟢 | Canonical events translate into Cortex observations. |
-| Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; event-driven and local semantics are being reconciled before further mutation. |
-| Retention / confidence / stability / exposure | 🔵 | Durable fields exist; calibrated learning model remains. |
+| Learning observation adapter | 🟢 | Canonical events translate into Cortex observations, including optional graded percentage evidence. |
+| Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; shared score transition and pure richer reducer exist, but durable richer projection is not yet wired into all evidence consumers. |
+| Retention / confidence / stability / exposure | 🔵 | Durable fields exist; deterministic reducer exists; calibration remains. |
 | Error rate / response speed | 🔵 | Durable fields exist; richer evidence semantics remain. |
 | Prerequisite health | 🔵 | Durable field exists; graph-backed inference remains. |
 | Recent improvement / uncertainty | 🔵 | Durable fields exist; longitudinal semantics remain. |
@@ -171,23 +171,23 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Weekly leagues | ⚪ | Planned. |
 | Friend battles | ⚪ | Planned with safety controls. |
 | Controlled class challenges | ⚪ | Planned. |
-| Primary-safe rewards | 🔵 | Primary design requirement. |
+| Primary-safe rewards | 🟡 | First Discovery activity now has child-safe local star rewards; broader reward system remains. |
 
 ## G. Education Experiences
 
 | Experience | Status | Scope |
 |---|---|---|
 | Shadecode Student | 🟢 | Current production experience for Secondary/Cambridge/ZIMSEC. |
-| Shadecode Discovery | 🔵 | Primary experience foundation/design; first activity is next major vertical slice. |
+| Shadecode Discovery | 🟣 | First Primary Number Explorer vertical slice is implemented at `/discovery`; browser/E2E verification remains. |
 | Shadecode Campus | 🔵 | University/Polytechnic/TVET architecture foundation; product surface remains planned. |
 
 ## 4. Current execution order
 
 1. **Evidence spine:** canonical event ingress, offline queue, durable persistence, deterministic observation.
-2. **Mastery reconciliation:** choose and implement one authoritative state-transition algorithm before broadening event-driven mastery.
-3. **Offline sync protocol:** audit revision/conflict semantics across all local-first entities.
-4. **Verification:** authenticated, offline, reconnect, replay/idempotency, and E2E coverage.
-5. **Primary vertical slice:** My Day → activity → attempt → feedback → learning event → mastery → next activity.
+2. **Mastery reconciliation:** shared score transition and deterministic richer reducer are now defined; wire durable rich-state projection without double-counting exam aggregates.
+3. **Offline sync protocol:** authenticated revision/conflict path is live for `tasks`, `subjects`, and `learn_lessons`; ownership hardening is now represented in source migration.
+4. **Verification:** authenticated, offline, reconnect, replay/idempotency, and browser/E2E coverage.
+5. **Primary vertical slice:** Number Explorer exists; verify the complete My Day → activity → attempt → feedback → learning event → mastery → next activity loop, then add the next Primary activity.
 6. **Student hardening:** stabilize Exam Simulation and connect the mature evidence loop to existing Student surfaces.
 7. **Campus foundation:** extend shared platform contracts only where real Campus requirements demand it.
 
@@ -200,16 +200,17 @@ Whenever engineering changes a capability, update the relevant architecture/stat
 - **Offline sync revision protocol:** 🟢 core protocol merged to `main` in commit `85474ab84073a2923102d650eb888d4f55aec5b7`.
 - **Conflict persistence:** 🟢 IndexedDB conflict store and local conflict recording are implemented.
 - **Authenticated OCC relay:** 🟢 `/api/sync` accepts authenticated `tasks`, `subjects`, and `learn_lessons` mutations with `baseVersion`, `clientVersion`, and `deviceId`.
-- **Production database protocol:** 🟢 hardened `apply_sync_mutation` is SECURITY INVOKER and production conflict behavior has been transaction-tested.
-- **Education profile sync:** 🔵 intentionally deferred because the live `user_profiles` schema does not currently contain the education fields assumed by the older prototype. Do not mark this as shipped until schema and contract are aligned.
-- **Dashboard device-first launch:** 🟡 cache fallback exists, but the dashboard still has a blocking initial auth/exams gate before its UI can mount. This is the next hardening target.
-- **Production deployment:** 🟡 latest Vercel deployment is still an older/main build; the September 1 sync commit has not yet produced a new `main` deployment at checkpoint time. Verify deployment before calling the new sync code production-shipped.
+- **Ownership hardening:** 🟢 live `apply_sync_mutation` now rejects cross-account record collisions and cannot claim legacy NULL-owned subjects through sync; matching migration is committed to `main`.
+- **Canonical graded evidence:** 🟢 percentage/evidenceScore metadata now survives the canonical event → observation adapter.
+- **Education profile sync:** 🔵 intentionally deferred because the live `user_profiles` schema does not currently contain the education fields assumed by the older prototype.
+- **Dashboard device-first launch:** 🟢 the current dashboard route paints its shell immediately; `UserContext` restores cached profile before network auth/profile work and uses bounded auth/profile timeouts.
+- **Discovery Primary:** 🟣 first Number Explorer activity implemented with local resume state and canonical learning events; browser verification is still required.
+- **Production deployment:** 🟡 do not call the latest engineering changes production-shipped until the corresponding Vercel deployment is observed and browser-verified.
 
 ## 7. Immediate next engineering moves
 
-1. Remove the dashboard's network-dependent mount gate so cached/local state can paint first.
-2. Make authentication/session discovery non-blocking where the existing shell can safely remain mounted.
-3. Keep exams and Cortex reconciliation as background work, never as a prerequisite for first paint.
-4. Replace any source-string-only sync tests with behavioral tests covering accepted, replayed/idempotent, stale-conflict, and offline-queue scenarios.
-5. Browser-verify dashboard launch offline and reconnect behavior, then update this matrix from 🟡 to 🟢 only when observed.
-6. Return to education-profile synchronization only after the database contract is explicitly aligned.
+1. Add browser/E2E coverage for `/discovery`, offline resume, canonical event replay, and sync conflicts.
+2. Wire the richer state projection into one selected evidence consumer, with event-level idempotency, before enabling broad event-driven mastery updates.
+3. Stabilize and browser-verify Exam Simulation.
+4. Audit Learn completion/question evidence call sites.
+5. Add the next Primary activity only after the first loop is verified.
