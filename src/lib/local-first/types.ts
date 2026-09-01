@@ -7,7 +7,19 @@ export type LocalEntity =
   | "exam_attempt" | "exam_result" | "exam_submission" | "education_profile" | "dashboard_slice"
   | "learning_event";
 
-export interface LocalRecord<T = unknown> { id: string; entity: LocalEntity; userId: string; payload: T; updatedAt: number; deviceId: string; version: number; deletedAt?: number; }
+export interface LocalRecord<T = unknown> {
+  id: string;
+  entity: LocalEntity;
+  userId: string;
+  payload: T;
+  updatedAt: number;
+  deviceId: string;
+  /** Local Lamport version used for deterministic ordering on the device. */
+  version: number;
+  /** Last server-side sync revision observed for this record. Kept separate from Lamport time. */
+  syncVersion?: number;
+  deletedAt?: number;
+}
 export type { LocalOperation };
 export interface LocalMeta { key: string; value: string | number | boolean; }
 export interface SyncBundle { version: 2; exportedAt: number; userId: string; deviceId: string; lamport: number; sequence: number; records: LocalRecord[]; operations: LocalOperation[]; }
