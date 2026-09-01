@@ -1,6 +1,6 @@
 # Canonical Learning Events
 
-**Status:** implemented foundation + authenticated durable ingress + idempotent persistence  
+**Status:** implemented foundation + authenticated durable ingress + idempotent persistence + shared mastery transition  
 **Updated:** 2026-09-01
 
 Shadecode Student uses one normalized learning-event contract between product actions and Cortex/Student Intelligence. The canonical contract is shared platform infrastructure for Discovery, Student and Campus.
@@ -18,7 +18,7 @@ Canonical normalization + deterministic eventId
    ↓
 public.cortex_events (durable, idempotent)
    ↓
-Learning observation / authoritative state transition
+Learning observation / shared mastery transition
    ↓
 Cortex context + recommendations
 ```
@@ -52,14 +52,13 @@ The canonical contract currently recognizes:
 
 The canonical event RPC is intentionally **persistence-only**. It authenticates the caller, validates canonical identity, stores the event in `public.cortex_events`, and returns the existing row on replay. It does **not** mutate `topic_mastery`.
 
-This boundary is deliberate. The repository currently has two established learning-state algorithms:
+The score transition is now centralized in `src/lib/intelligence/masteryTransition.ts`. Both `src/lib/cortex/learningState.ts` and `src/lib/topicMastery/blend.ts` use the same 70/30 history/evidence EMA rule. This removes the previous disagreement where Cortex applied a difficulty-adjusted binary formula while production exam mastery used a separate EMA formula.
 
-1. `src/lib/cortex/learningState.ts` updates a richer local topic state from individual observations.
-2. `src/lib/topicMastery/blend.ts` updates the production `topic_mastery` row from graded exam topic percentages using a deliberately simple 70/30 EMA heuristic.
+The richer Cortex dimensions (retention, confidence, stability, exposure, error rate, response speed, prerequisite health, recent improvement and uncertainty) remain separate evidence signals. Their persistence and calibration should be unified only after their semantics are explicitly defined.
 
-The exam marking route already uses `blendMastery` for graded topic results. Allowing the event-ingress RPC to independently mutate the same `topic_mastery` row would double-count evidence and make replay semantics dependent on which producer arrived first.
+The exam marking route continues to project graded topic percentages into `topic_mastery` through `blendMastery`. The canonical event stream remains durable evidence for future replay/reduction and does not independently update that row.
 
-**Rule:** events are durable evidence. A future single authoritative reducer may consume that evidence and update learner state. Until that reducer is selected and implemented, event persistence and existing production scoring remain separate.
+**Rule:** there must be one score transition rule and one future authoritative state reducer. Until the reducer is implemented, event persistence and existing production scoring remain separate so evidence cannot be double-counted.
 
 ## Offline contract
 
@@ -68,7 +67,7 @@ Core learning actions remain usable without a network connection. The canonical 
 ## Current integration status
 
 - Learn: lesson-view evidence is wired; lesson-completion/question-level coverage still requires call-site audit.
-- Exam Simulation: aggregate completion **and final graded question-attempt evidence** are now emitted through the canonical helper. Each question event carries correctness and score metadata and uses deterministic exam/question identity.
+- Exam Simulation: aggregate completion and final graded question-attempt evidence are emitted through the canonical helper. Each question event carries correctness and score metadata and uses deterministic exam/question identity.
 - Project Studio: existing event integrations are present and should remain on the canonical ingress.
 - Primary: first activity must use this same evidence spine rather than creating a separate Primary analytics contract.
 
@@ -82,13 +81,14 @@ Before marking the evidence spine production-complete:
 4. duplicate source-event replay is idempotent;
 5. canonical event persistence is durable;
 6. learning observation mapping is deterministic;
-7. mastery transition is performed by one reconciled algorithm;
-8. real Learn, Exam Simulation and Project Studio actions are covered by integration/E2E tests;
-9. the first Discovery activity uses the same contract.
+7. the shared mastery transition is covered by unit tests;
+8. one authoritative richer-state reducer is selected and implemented;
+9. real Learn, Exam Simulation and Project Studio actions are covered by integration/E2E tests;
+10. the first Discovery activity uses the same contract.
 
 ## Next engineering pass
 
-- reconcile `updateLearningState` and `blendMastery` semantics and define one authoritative reducer;
+- define the authoritative richer-state reducer and persistence projection;
 - add response-time metadata to exam question evidence where the final answer timing is available;
 - audit the sync revision protocol against all local-first stores;
 - add authenticated/offline/replay E2E coverage;
