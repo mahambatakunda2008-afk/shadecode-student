@@ -1,6 +1,6 @@
 import { localFirstDB } from "./db";
 import type { LocalRecord } from "./types";
-import { resolveEducationExperience, type EducationProfile } from "@/lib/education/localProfile";
+import { resolveExperienceFromProfile, type EducationProfile } from "@/lib/education/localProfile";
 
 export type LocalEducationProfile = EducationProfile & { syncedAt?: number };
 const idFor = (userId: string) => `education_profile:${userId}`;
@@ -20,5 +20,5 @@ export async function getLocalEducationProfile(userId: string): Promise<LocalEdu
 
 export async function getLocalEducationExperience(userId: string) {
   const profile = await getLocalEducationProfile(userId);
-  return profile ? resolveEducationExperience(profile) : null;
+  return profile ? resolveExperienceFromProfile(profile) : null;
 }
