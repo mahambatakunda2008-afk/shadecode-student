@@ -1,6 +1,6 @@
 export type ExamQuestion = {
   id: number;
-  type: "multiple_choice" | "short_answer" | "structured";
+  type: "multiple_choice" | "short_answer" | "structured" | "essay";
   question: string;
   options?: string[];
   marks: number;

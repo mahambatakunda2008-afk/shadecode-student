@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
 import { downloadManager } from "@/lib/offline/downloadManager";
+import { offlineStorage } from "@/lib/offline/storage";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
 
@@ -117,11 +118,45 @@ export default function LessonDetailPage() {
   useEffect(() => {
     (async () => {
       const sb = createClient();
-      const { data: { session } } = await sb.auth.getSession();
-      if (!session) { router.push("/login"); return; }
-      setAccessToken(session.access_token);
-      setCurrentUser(session.user.id);
-      await loadLesson(session.access_token);
+      let session = null;
+      try {
+        const { data } = await sb.auth.getSession();
+        session = data?.session;
+      } catch {}
+
+      if (session) {
+        setAccessToken(session.access_token);
+        setCurrentUser(session.user.id);
+        await loadLesson(session.access_token);
+      } else {
+        // Device offline or unauthenticated fallback - check local cache
+        try {
+          const cached = await offlineStorage.getLesson(lessonId);
+          if (cached) {
+            setLesson({
+              id: cached.id,
+              title: cached.title,
+              subject: cached.subject,
+              description: cached.description ?? "",
+              difficulty: cached.difficulty ?? "medium",
+              progress: cached.progress ?? 0,
+              completed: cached.completed ?? false,
+              blocks: (cached.blocks as unknown as LessonBlock[]) ?? [],
+              updated_at: cached.lastSyncedAt,
+            });
+            setLastSavedProgress(cached.progress ?? 0);
+            setLoading(false);
+            return;
+          }
+        } catch {}
+
+        if (navigator.onLine) {
+          router.push("/login");
+        } else {
+          setError("You are currently offline and this lesson has not been cached on this device yet.");
+          setLoading(false);
+        }
+      }
     })();
   }, [lessonId]);
 
@@ -139,20 +174,58 @@ export default function LessonDetailPage() {
         throw new Error(message);
       }
       const d = await r.json();
-      setLesson(d.lesson ?? null);
-      setLastSavedProgress(d.lesson?.progress ?? 0);
+      if (d.lesson) {
+        setLesson(d.lesson);
+        setLastSavedProgress(d.lesson?.progress ?? 0);
 
-      // Restore scroll position for incomplete lessons
-      if (d.lesson && !d.lesson.completed && d.lesson.progress > 0 && d.lesson.progress < 100) {
-        // Get saved scroll position from localStorage
-        const savedScroll = localStorage.getItem(`lesson_scroll_${lessonId}`);
-        if (savedScroll) {
-          setTimeout(() => {
-            window.scrollTo({ top: parseInt(savedScroll), behavior: 'smooth' });
-          }, 100);
+        // Cache locally for offline viewing
+        void offlineStorage.saveLesson({
+          id: d.lesson.id,
+          title: d.lesson.title,
+          subject: d.lesson.subject,
+          description: d.lesson.description,
+          blocks: d.lesson.blocks,
+          difficulty: d.lesson.difficulty,
+          progress: d.lesson.progress,
+          completed: d.lesson.completed,
+          downloadedAt: new Date().toISOString(),
+          lastSyncedAt: new Date().toISOString(),
+          size: JSON.stringify(d.lesson).length,
+        }).catch(() => undefined);
+
+        // Restore scroll position for incomplete lessons
+        if (!d.lesson.completed && d.lesson.progress > 0 && d.lesson.progress < 100) {
+          const savedScroll = localStorage.getItem(`lesson_scroll_${lessonId}`);
+          if (savedScroll) {
+            setTimeout(() => {
+              window.scrollTo({ top: parseInt(savedScroll), behavior: 'smooth' });
+            }, 100);
+          }
         }
+      } else {
+        throw new Error("Lesson content not found.");
       }
     } catch (err) {
+      // Fallback to offline cached lesson if fetch failed
+      try {
+        const cached = await offlineStorage.getLesson(lessonId);
+        if (cached) {
+          setLesson({
+            id: cached.id,
+            title: cached.title,
+            subject: cached.subject,
+            description: cached.description ?? "",
+            difficulty: cached.difficulty ?? "medium",
+            progress: cached.progress ?? 0,
+            completed: cached.completed ?? false,
+            blocks: (cached.blocks as unknown as LessonBlock[]) ?? [],
+            updated_at: cached.lastSyncedAt,
+          });
+          setLastSavedProgress(cached.progress ?? 0);
+          return;
+        }
+      } catch {}
+
       console.error("[lesson] Failed to load lesson:", lessonId, err);
       setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
     } finally {

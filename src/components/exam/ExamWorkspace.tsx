@@ -11,8 +11,10 @@ import StudyCanvas from "@/components/studyspace/StudyCanvas";
 import { createStudySession, deleteStudySession, getStudySession, saveStudySession } from "@/lib/studyspace/session";
 import { saveWorkObject } from "@/lib/studyspace/store";
 import type { StudySpaceMode } from "@/lib/studyspace/types";
+import { buildFallbackExam } from "@/lib/exam/fallbackExam";
+import { markExamOffline } from "@/lib/local-first/exam-marker";
 
-export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured"; question: string; options?: string[]; marks: number; topic: string };
+export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
 export type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
 type Answer = { questionId: number; answer: string; timeSpent: number };
@@ -51,15 +53,189 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const go = (index: number) => { if (questions[index]) { setCurrent(index); setHint(null); } };
   const flag = () => q && setFlags((old) => old.includes(q.id) ? old.filter((x) => x !== q.id) : [...old, q.id]);
 
-  const generate = async () => { if (!subject || !online || generating) return; setGenerating(true); setError(null); try { const { data: { session } } = await createClient().auth.getSession(); const res = await fetchWithTimeout("/api/exam/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) }, body: JSON.stringify({ subject, topic: topic ? `${topic} (${LEVELS[level].curriculum})` : `${subject} (${LEVELS[level].curriculum})`, difficulty: LEVELS[level].api, questionCount: count }) }, 100000); const data = await res.json(); if (!res.ok || !Array.isArray(data.questions)) throw new Error(data.error || "No questions were generated."); const total = count * 120; workId.current = `exam:${id()}`; setQuestions(data.questions); setAnswers([]); setFlags([]); setCurrent(0); setTotalSeconds(total); setSeconds(total); setStartedAt(Date.now()); setMode("exam"); setResumeId(null); setPanel("canvas"); } catch (e) { setError(e instanceof FetchTimeoutError ? "Generation took too long. Try again on a stronger connection." : e instanceof Error ? e.message : "Could not generate the exam."); } finally { setGenerating(false); } };
+  const generate = async () => {
+    if (!subject || generating) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      if (!online) {
+        const difficulty = LEVELS[level].api;
+        const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
+        const generated = buildFallbackExam(subject, cleanTopic, difficulty, count);
+        const total = count * 120;
+        workId.current = `exam:offline:${id()}`;
+        setQuestions(generated.questions.map((q, idx) => ({
+          id: idx + 1,
+          type: q.type,
+          question: q.question,
+          options: q.options,
+          marks: q.marks,
+          topic: q.topic,
+          modelAnswer: q.modelAnswer,
+          markingCriteria: q.markingCriteria,
+        })));
+        setAnswers([]);
+        setFlags([]);
+        setCurrent(0);
+        setTotalSeconds(total);
+        setSeconds(total);
+        setStartedAt(Date.now());
+        setMode("exam");
+        setResumeId(null);
+        setPanel("canvas");
+        return;
+      }
+
+      const { data: { session } } = await createClient().auth.getSession();
+      const res = await fetchWithTimeout("/api/exam/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({
+          subject,
+          topic: topic ? `${topic} (${LEVELS[level].curriculum})` : `${subject} (${LEVELS[level].curriculum})`,
+          difficulty: LEVELS[level].api,
+          questionCount: count
+        })
+      }, 45000);
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.questions)) throw new Error(data.error || "No questions were generated.");
+      const total = count * 120;
+      workId.current = `exam:${id()}`;
+      setQuestions(data.questions);
+      setAnswers([]);
+      setFlags([]);
+      setCurrent(0);
+      setTotalSeconds(total);
+      setSeconds(total);
+      setStartedAt(Date.now());
+      setMode("exam");
+      setResumeId(null);
+      setPanel("canvas");
+    } catch (e) {
+      // Graceful fallback to offline questions if online generation fails
+      const difficulty = LEVELS[level].api;
+      const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
+      const generated = buildFallbackExam(subject, cleanTopic, difficulty, count);
+      if (generated && generated.questions.length > 0) {
+        const total = count * 120;
+        workId.current = `exam:fallback:${id()}`;
+        setQuestions(generated.questions.map((q, idx) => ({
+          id: idx + 1,
+          type: q.type,
+          question: q.question,
+          options: q.options,
+          marks: q.marks,
+          topic: q.topic,
+          modelAnswer: q.modelAnswer,
+          markingCriteria: q.markingCriteria,
+        })));
+        setAnswers([]);
+        setFlags([]);
+        setCurrent(0);
+        setTotalSeconds(total);
+        setSeconds(total);
+        setStartedAt(Date.now());
+        setMode("exam");
+        setResumeId(null);
+        setPanel("canvas");
+      } else {
+        setError(e instanceof FetchTimeoutError ? "Generation took too long. Standard paper loaded." : e instanceof Error ? e.message : "Could not generate the exam.");
+      }
+    } finally {
+      setGenerating(false);
+    }
+  };
   const resume = async () => { if (!resumeId || !userId) return; try { const raw = localStorage.getItem(`${KEY}:${userId}`); if (!raw) return; const saved = JSON.parse(raw) as { workId: string; subject: string; topic: string; questions: ExamQuestion[]; answers: Answer[]; current: number; seconds: number; totalSeconds: number; startedAt: number; flags: number[]; level: number; count: number }; const session = await getStudySession(saved.workId); if (!session) return; workId.current = saved.workId; setSubject(saved.subject); setTopic(saved.topic); setLevel(saved.level); setCount(saved.count); setQuestions(saved.questions); setAnswers(saved.answers); setCurrent(saved.current); setTotalSeconds(saved.totalSeconds); setSeconds(Math.max(0, Math.round((session.remainingMs ?? saved.seconds * 1000) / 1000))); setStartedAt(saved.startedAt); setFlags(saved.flags || []); setMode("exam"); setResumeId(null); } catch { setError("That saved exam could not be restored."); } };
   const askHint = async () => { if (!q || hintLoading) return; setHintLoading(true); setPanel("hint"); try { const response = await help({ mode: "help", subject, question: q.question, level: "hint" }); setHint(response?.hint || response?.content || (online ? "Cortex could not produce a hint right now." : "You're offline. Keep working on the Canvas and ask Cortex when you reconnect.")); } finally { setHintLoading(false); } };
-  const submit = async () => { if (submitRef.current || !questions.length || !online) return; submitRef.current = true; setConfirmSubmit(false); setMode("marking"); try { const { data: { session } } = await createClient().auth.getSession(); const res = await fetchWithTimeout("/api/exam/mark", { method: "POST", headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) }, body: JSON.stringify({ subject, difficulty: LEVELS[level].curriculum, questions, answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current }) }, 100000); const data = await res.json(); if (!res.ok) throw new Error(data.error || "Marking failed."); setResults(data); if (userId) { const correct = data.results?.filter((r: ExamResult) => r.correct).length ?? 0; await createClient().from("exam_results").insert({ user_id: userId, subject, topic: topic || null, difficulty: LEVELS[level].label, score: data.percentage, total_questions: questions.length, correct_answers: correct, weak_areas: data.weakAreas ?? [], time_taken: totalRef.current - secondsRef.current }); } if (workId.current) { const sessionState = await getStudySession(workId.current); if (sessionState) await saveStudySession({ ...sessionState, status: "submitted", updatedAt: new Date().toISOString(), remainingMs: 0 }); } localStorage.removeItem(`${KEY}:${userId}`); setMode("results"); onFinished?.(data); } catch (e) { setError(e instanceof FetchTimeoutError ? "Marking timed out. Your exam is still saved. Try again when the connection is stable." : e instanceof Error ? e.message : "Marking failed. Your work is still saved."); setMode("exam"); } finally { submitRef.current = false; } };
+  const submit = async () => {
+    if (submitRef.current || !questions.length) return;
+    submitRef.current = true;
+    setConfirmSubmit(false);
+    setMode("marking");
+    try {
+      let markingData: ExamResults | null = null;
+      if (online) {
+        try {
+          const { data: { session } } = await createClient().auth.getSession();
+          const res = await fetchWithTimeout("/api/exam/mark", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+            },
+            body: JSON.stringify({
+              subject,
+              difficulty: LEVELS[level].curriculum,
+              questions,
+              answers: answersRef.current,
+              timeTaken: totalRef.current - secondsRef.current
+            })
+          }, 35000);
+          if (res.ok) {
+            markingData = await res.json();
+          }
+        } catch {
+          // Cloud mark failed, proceed to local deterministic marking
+        }
+      }
+
+      if (!markingData) {
+        const timeTaken = totalRef.current - secondsRef.current;
+        const localMarked = markExamOffline(questions, answersRef.current, timeTaken);
+        markingData = {
+          totalScore: localMarked.totalScore,
+          maxScore: localMarked.maxScore,
+          percentage: localMarked.percentage,
+          grade: localMarked.grade,
+          weakAreas: localMarked.weakAreas,
+          strongAreas: localMarked.strongAreas,
+          cortexInsight: localMarked.cortexInsight,
+          results: localMarked.results,
+          timeTaken: localMarked.timeTaken,
+        };
+      }
+
+      setResults(markingData);
+      if (userId) {
+        const correct = markingData.results?.filter((r: ExamResult) => r.correct).length ?? 0;
+        try {
+          await createClient().from("exam_results").insert({
+            user_id: userId,
+            subject,
+            topic: topic || null,
+            difficulty: LEVELS[level].label,
+            score: markingData.percentage,
+            total_questions: questions.length,
+            correct_answers: correct,
+            weak_areas: markingData.weakAreas ?? [],
+            time_taken: totalRef.current - secondsRef.current
+          });
+        } catch {}
+      }
+      if (workId.current) {
+        try {
+          const sessionState = await getStudySession(workId.current);
+          if (sessionState) await saveStudySession({ ...sessionState, status: "submitted", updatedAt: new Date().toISOString(), remainingMs: 0 });
+        } catch {}
+      }
+      localStorage.removeItem(`${KEY}:${userId}`);
+      setMode("results");
+      onFinished?.(markingData);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Marking failed. Your work is still saved.");
+      setMode("exam");
+    } finally {
+      submitRef.current = false;
+    }
+  };
   const reset = async () => { if (workId.current) await deleteStudySession(workId.current).catch(() => undefined); localStorage.removeItem(`${KEY}:${userId}`); workId.current = null; setMode("setup"); setQuestions([]); setAnswers([]); setFlags([]); setResults(null); setSeconds(0); setTotalSeconds(0); setResumeId(null); };
   const calc = () => { try { if (!/^[0-9+\-*/().%\s]+$/.test(calculator)) throw new Error("Basic arithmetic only"); const value = Function(`"use strict"; return (${calculator})`)(); setCalcResult(Number.isFinite(value) ? String(value) : "Invalid"); } catch (e) { setCalcResult(e instanceof Error ? e.message : "Invalid"); } };
   const attach = (file?: File) => { if (!file || !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) return; const reader = new FileReader(); reader.onload = () => setAttachment(String(reader.result || "")); reader.readAsDataURL(file); };
 
-  if (mode === "setup") return <div className="min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8"><div className="mx-auto max-w-6xl"><div className="mb-6 flex justify-between gap-4"><div><div className="mb-2 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-500"><Sparkles size={13} /> Exam Simulation</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Build your exam room.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">A realistic exam workstation with a paper view, Canvas, timer, marking, Cortex help and offline-safe autosave.</p></div><button onClick={onExit} className="hidden h-fit rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-bold sm:block">Exit</button></div>{resumeId && <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4"><div className="flex gap-3"><Save className="text-cyan-500" size={19} /><div><p className="text-sm font-bold">Unfinished exam saved</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Resume it even without a connection.</p></div></div><button onClick={() => void resume()} className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-black text-slate-950">Resume</button></div>}<div className="grid gap-5 lg:grid-cols-[1.3fr_.7fr]"><section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7"><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Exam blueprint</p><h2 className="mt-1 text-xl font-black">Choose your paper</h2><label className="mt-6 block text-sm font-bold">Subject<select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3.5 py-3 text-sm"><option value="">Choose a subject…</option>{SUBJECTS.map((s) => <option key={s}>{s}</option>)}</select></label><label className="mt-4 block text-sm font-bold">Topic <span className="font-normal text-[var(--muted-foreground)]">optional</span><input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. mechanics, calculus, organic chemistry" className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3.5 py-3 text-sm" /></label><p className="mt-5 text-sm font-bold">Level</p><div className="mt-2 grid gap-2 sm:grid-cols-3">{LEVELS.map((item, i) => <button key={item.label} onClick={() => setLevel(i)} className={`rounded-2xl border p-4 text-left ${level === i ? "border-cyan-500/50 bg-cyan-500/10" : "border-[var(--card-border)] bg-[var(--muted)]"}`}><div className="flex justify-between text-sm font-black">{item.label}<span className="h-2.5 w-2.5 rounded-full" style={{ background: item.accent }} /></div><p className="mt-1 text-xs text-[var(--muted-foreground)]">{item.curriculum}</p></button>)}</div><p className="mt-5 text-sm font-bold">Questions</p><div className="mt-2 grid grid-cols-4 gap-2">{COUNTS.map((n) => <button key={n} onClick={() => setCount(n)} className={`rounded-xl border py-3 text-sm font-black ${count === n ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-500" : "border-[var(--card-border)] bg-[var(--muted)]"}`}>{n}</button>)}</div>{error && <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm">{error}</div>}{!online && <div className="mt-4 flex gap-3 rounded-2xl bg-[var(--muted)] p-4 text-xs"><CloudOff size={18} /><span>Offline: saved exams can resume, but a new AI paper needs a connection.</span></div>}<button disabled={!subject || !online || generating} onClick={() => void generate()} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">{generating ? <><Loader2 size={18} className="animate-spin" /> Cortex is building your paper…</> : <>Enter exam room <ArrowRight size={18} /></>}</button></section><div className="space-y-3">{[[Clock3, "Real exam pacing", "Visible timer, question timing and review controls."], [Pencil, "Working matters", "Use Canvas for calculations, diagrams and rough work."], [Sparkles, "Cortex after the paper", "Weak areas, strong areas and next revision moves."], [CloudOff, "Offline-safe", "Answers and session state stay on this device when the network drops."]].map(([Icon, title, text]) => <div key={String(title)} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><Icon size={18} className="text-cyan-500" /><p className="mt-3 text-sm font-black">{String(title)}</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{String(text)}</p></div>)}</div></div></div></div>;
+  if (mode === "setup") return <div className="min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8"><div className="mx-auto max-w-6xl"><div className="mb-6 flex justify-between gap-4"><div><div className="mb-2 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-500"><Sparkles size={13} /> Exam Simulation</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Build your exam room.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">A realistic exam workstation with a paper view, Canvas, timer, marking, Cortex help and offline-safe autosave.</p></div><button onClick={onExit} className="hidden h-fit rounded-xl border border-[var(--card-border)] px-4 py-2.5 text-sm font-bold sm:block">Exit</button></div>{resumeId && <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4"><div className="flex gap-3"><Save className="text-cyan-500" size={19} /><div><p className="text-sm font-bold">Unfinished exam saved</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Resume it even without a connection.</p></div></div><button onClick={() => void resume()} className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-black text-slate-950">Resume</button></div>}<div className="grid gap-5 lg:grid-cols-[1.3fr_.7fr]"><section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7"><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Exam blueprint</p><h2 className="mt-1 text-xl font-black">Choose your paper</h2><label className="mt-6 block text-sm font-bold">Subject<select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3.5 py-3 text-sm"><option value="">Choose a subject…</option>{SUBJECTS.map((s) => <option key={s}>{s}</option>)}</select></label><label className="mt-4 block text-sm font-bold">Topic <span className="font-normal text-[var(--muted-foreground)]">optional</span><input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. mechanics, calculus, organic chemistry" className="mt-2 w-full rounded-xl border border-[var(--card-border)] bg-[var(--muted)] px-3.5 py-3 text-sm" /></label><p className="mt-5 text-sm font-bold">Level</p><div className="mt-2 grid gap-2 sm:grid-cols-3">{LEVELS.map((item, i) => <button key={item.label} onClick={() => setLevel(i)} className={`rounded-2xl border p-4 text-left ${level === i ? "border-cyan-500/50 bg-cyan-500/10" : "border-[var(--card-border)] bg-[var(--muted)]"}`}><div className="flex justify-between text-sm font-black">{item.label}<span className="h-2.5 w-2.5 rounded-full" style={{ background: item.accent }} /></div><p className="mt-1 text-xs text-[var(--muted-foreground)]">{item.curriculum}</p></button>)}</div><p className="mt-5 text-sm font-bold">Questions</p><div className="mt-2 grid grid-cols-4 gap-2">{COUNTS.map((n) => <button key={n} onClick={() => setCount(n)} className={`rounded-xl border py-3 text-sm font-black ${count === n ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-500" : "border-[var(--card-border)] bg-[var(--muted)]"}`}>{n}</button>)}</div>{error && <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm">{error}</div>}{!online && <div className="mt-4 flex gap-3 rounded-2xl bg-[var(--muted)] p-4 text-xs"><CloudOff size={18} /><span>Offline mode active: standard syllabus papers and local marking ready on device.</span></div>}<button disabled={!subject || generating} onClick={() => void generate()} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">{generating ? <><Loader2 size={18} className="animate-spin" /> Cortex is building your paper…</> : <>Enter exam room <ArrowRight size={18} /></>}</button></section><div className="space-y-3">{[[Clock3, "Real exam pacing", "Visible timer, question timing and review controls."], [Pencil, "Working matters", "Use Canvas for calculations, diagrams and rough work."], [Sparkles, "Cortex after the paper", "Weak areas, strong areas and next revision moves."], [CloudOff, "Offline-safe", "Answers and session state stay on this device when the network drops."]].map(([Icon, title, text]) => <div key={String(title)} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><Icon size={18} className="text-cyan-500" /><p className="mt-3 text-sm font-black">{String(title)}</p><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{String(text)}</p></div>)}</div></div></div></div>;
   if (mode === "marking") return <div className="flex min-h-[70vh] items-center justify-center text-center"><div><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-500"><Loader2 className="animate-spin" size={30} /></div><h2 className="mt-5 text-2xl font-black">Cortex is marking your paper</h2><p className="mt-2 text-sm text-[var(--muted-foreground)]">Checking answers and preparing your learning feedback.</p></div></div>;
   if (mode === "results" && results) return <Results results={results} subject={subject} topic={topic} onNew={() => void reset()} onExit={onExit} />;
   if (!q) return null;
@@ -75,7 +251,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   {panel === "upload" && <Panel title="Attach working" onClose={() => setPanel("canvas")}><div className="text-center"><Paperclip className="mx-auto text-cyan-500" size={22} /><p className="mt-2 text-sm font-bold">Add a photo of your working</p><button onClick={() => fileRef.current?.click()} className="mt-3 rounded-xl bg-[var(--muted)] px-4 py-2.5 text-xs font-black">Choose image</button></div></Panel>}<input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => attach(e.target.files?.[0])} />
   {error && <div className="mt-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm">{error}</div>}<div className="mt-3 flex items-center justify-between rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-2.5"><button disabled={current === 0} onClick={() => go(current - 1)} className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black disabled:opacity-30"><ArrowLeft size={15} /> Previous</button><span className="hidden text-[11px] text-[var(--muted-foreground)] sm:block">Q{qNo}/{questions.length} · {answered.has(q.id) ? "Answered" : "Not answered"}</span><button onClick={() => current === questions.length - 1 ? setConfirmSubmit(true) : go(current + 1)} className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-xs font-black text-slate-950">{current === questions.length - 1 ? "Review & submit" : "Next"}<ArrowRight size={15} /></button></div><div className="mt-2 flex justify-between px-1 text-[11px] text-[var(--muted-foreground)]"><span>{online ? "Online · changes saved locally" : "Offline · working safely saved"}</span><span>{savedAt ? `Saved ${new Date(savedAt).toLocaleTimeString()}` : "Autosaving…"}</span></div></main>
   <aside className="hidden space-y-3 lg:block"><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="flex justify-between text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]"><span>Time remaining</span><Clock3 size={15} className={danger ? "text-red-500" : "text-cyan-500"} /></div><div className={`mt-3 text-center font-mono text-4xl font-black ${danger ? "text-red-500" : ""}`}>{time(seconds)}</div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--muted)]"><div className={`h-full rounded-full ${danger ? "bg-red-500" : "bg-cyan-500"}`} style={{ width: `${timerPercent}%` }} /></div><p className="mt-2 text-center text-[11px] text-[var(--muted-foreground)]">of {time(totalSeconds)}</p></div><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Question navigator</p><p className="mt-1 text-sm font-black">{answered.size}/{questions.length} answered</p></div><Grid2X2 size={16} className="text-cyan-500" /></div><div className="mt-4 grid grid-cols-5 gap-2">{questions.map((question, i) => <button key={question.id} onClick={() => go(i)} className={`relative h-9 rounded-lg text-xs font-black ${i === current ? "bg-cyan-500 text-slate-950" : answered.has(question.id) ? "bg-emerald-500/15 text-emerald-500" : "bg-[var(--muted)]"}`}>{i + 1}{flags.includes(question.id) && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-500" />}</button>)}</div><button onClick={() => setConfirmSubmit(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-3 py-2.5 text-xs font-black text-cyan-500"><Check size={15} /> Review & submit</button></div><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="flex justify-between text-xs font-bold"><span>Progress</span><span className="text-cyan-500">{progress}%</span></div><div className="mt-3 h-2 rounded-full bg-[var(--muted)]"><div className="h-full rounded-full bg-cyan-500" style={{ width: `${progress}%` }} /></div><div className="mt-3 grid grid-cols-2 gap-2 text-center"><Stat label="Answered" value={String(answered.size)} /><Stat label="Flagged" value={String(flags.length)} /></div></div></aside></div>
-  {confirmSubmit && <Modal title="Submit exam?" onClose={() => setConfirmSubmit(false)}><div className="space-y-4"><div className="grid grid-cols-3 gap-2"><Stat label="Answered" value={`${answered.size}/${questions.length}`} /><Stat label="Flagged" value={String(flags.length)} /><Stat label="Time" value={time(totalSeconds - seconds)} /></div>{!online && <p className="rounded-xl bg-amber-500/5 p-3 text-xs">You're offline. Keep working and reconnect before submitting for marking.</p>}<div className="flex gap-2"><button onClick={() => setConfirmSubmit(false)} className="flex-1 rounded-xl border border-[var(--card-border)] px-4 py-3 text-sm font-bold">Keep working</button><button onClick={() => void submit()} disabled={!online} className="flex-1 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-slate-950 disabled:opacity-40">Submit for marking</button></div></div></Modal>}
+  {confirmSubmit && <Modal title="Submit exam?" onClose={() => setConfirmSubmit(false)}><div className="space-y-4"><div className="grid grid-cols-3 gap-2"><Stat label="Answered" value={`${answered.size}/${questions.length}`} /><Stat label="Flagged" value={String(flags.length)} /><Stat label="Time" value={time(totalSeconds - seconds)} /></div>{!online && <p className="rounded-xl bg-amber-500/5 p-3 text-xs">You're offline. Your answers will be marked locally with deterministic scoring and synced when reconnected.</p>}<div className="flex gap-2"><button onClick={() => setConfirmSubmit(false)} className="flex-1 rounded-xl border border-[var(--card-border)] px-4 py-3 text-sm font-bold">Keep working</button><button onClick={() => void submit()} className="flex-1 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-slate-950">{online ? "Submit for marking" : "Mark offline"}</button></div></div></Modal>}
   {mobileNav && <div className="fixed inset-0 z-50 lg:hidden"><button onClick={() => setMobileNav(false)} className="absolute inset-0 bg-black/50" /><div className="absolute inset-y-0 left-0 w-[88%] max-w-sm overflow-auto bg-[var(--card)] p-4"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Question paper</p><p className="mt-1 text-lg font-black">{subject}</p></div><button onClick={() => setMobileNav(false)}><X size={18} /></button></div><div className="mt-4 space-y-1">{questions.map((question, i) => <button key={question.id} onClick={() => { go(i); setMobileNav(false); }} className={`flex w-full items-center gap-3 rounded-xl p-3 text-left ${i === current ? "bg-cyan-500 text-slate-950" : "hover:bg-[var(--muted)]"}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black">{i + 1}</span><span className="flex-1 text-sm font-semibold">{question.topic}</span>{flags.includes(question.id) && <Flag size={14} fill="currentColor" />}</button>)}</div></div></div>}
   </div>;
 }
