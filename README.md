@@ -35,6 +35,8 @@ Shadecode is converging on a shared platform with three specialized experiences:
 
 Underneath them is **Cortex OS**, a shared learning-intelligence layer for learner state, curriculum, evidence, mastery, memory, interventions and local-first intelligence. The learner's useful academic history can persist across transitions without forcing every education level into one UI or data model.
 
+**Master scope and live progress:** `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md` is the authoritative matrix for all discussed workstreams, including Cortex, Learning, Assessment, Creation, Engagement, Primary, Student, Campus, Teacher/School, Parent, Knowledge, Offline/Local-first, Trust/Platform and Business. It is broader than the three-experience architecture.
+
 See `docs/PRODUCT_VISION_2026-09-01.md`, `docs/PRIMARY_DISCOVERY_V1.md` and `docs/architecture/PLATFORM_BOUNDARIES.md` for the product and architecture records.
 
 ## Canonical learning evidence
@@ -51,35 +53,30 @@ Cortex should reuse the existing mastery, weak-area, retention and recommendatio
 
 ## Product roadmap
 
-### Now
+The complete roadmap is maintained in `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md`.
 
-1. Harden canonical learning-event ingestion and connect major product actions.
-2. Continue migrating high-value entities onto the local-first operation path.
-3. Finish shared Canvas/tooling verification and browser smoke coverage.
-4. Expand assessment intelligence and curriculum coverage, including Primary foundations.
-5. Keep Project Studio, Learn, Exam Simulation and Cortex surfaces coherent as one product.
+### Current priority
 
-### Next
+1. Make the existing learning evidence spine trustworthy.
+2. Reconcile local learning-state, existing mastery blending and durable mastery semantics.
+3. Audit offline persistence and sync/revision behavior.
+4. Stabilize Learn and Exam Simulation.
+5. Connect real learner actions to evidence, state and useful next actions.
+6. Expand assessment intelligence and curriculum coverage.
+7. Build Primary, Campus, Teacher/School and Parent capabilities on the shared spine instead of cloning systems.
 
-- Primary Discovery first activity loop and age-specific UX;
-- deep, coverage-driven lessons;
-- subject-aware structured diagrams;
-- shared Question Forge across learning and assessment;
-- Shadecode Library with provenance for authorized sources;
-- Concept Atlas and Mistake Museum;
-- Paper Intelligence and stronger revision loops;
-- Learning Replay and measurable intervention outcomes;
-- University/Polytechnic/Campus workflows.
+### Direction after the spine is trustworthy
 
-### Later research
-
-- privacy-conscious learner-state modelling;
-- adaptive intervention selection;
-- small specialized local models;
-- quantization and knowledge distillation;
-- retrieval/caching and intelligent model routing;
-- school-local infrastructure;
-- distributed/peer infrastructure only after single-device offline reliability and authenticated sync are mature.
+- Mistake intelligence and prerequisite graph;
+- Learning DNA and retention/forgetting intelligence;
+- Question Forge and Paper Intelligence;
+- Concept Atlas, Mistake Museum and Personal Textbook;
+- Snap & Learn and handwriting intelligence;
+- Primary Discovery activity loops;
+- Campus/TVET academic workflows;
+- teacher and parent intelligence;
+- offline learning packs and local AI research;
+- school-local infrastructure research.
 
 ## Evidence and safety principles
 
@@ -142,7 +139,8 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 
 ## Documentation map
 
-- `docs/PRODUCT_VISION_2026-09-01.md` — expanded product vision and three-experience direction
+- `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md` — **authoritative master scope, status matrix and execution priorities**
+- `docs/PRODUCT_VISION_2026-09-01.md` — expanded product vision and platform direction
 - `docs/PRIMARY_DISCOVERY_V1.md` — Primary Discovery first implementation contract
 - `docs/architecture/PLATFORM_BOUNDARIES.md` — shared platform and experience ownership
 - `docs/architecture/canonical-learning-events.md` — canonical learning-event contract and durable implementation
@@ -153,6 +151,10 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 - `docs/ARCHITECTURE.md` — system architecture
 - `docs/AUDIT_2026-08.md` — reliability/schema audit history
 - `.cortex/tasks.md` — executable engineering roadmap
+
+## Documentation synchronization rule
+
+The master roadmap is updated whenever meaningful implementation changes. Architecture changes update architecture records; user-visible capabilities update product copy and the public landing page where appropriate; database changes are recorded in migrations; discovered differences between documentation and runtime are resolved in favor of verified runtime behavior.
 
 ## Engineering discipline
 
