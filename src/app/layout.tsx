@@ -12,6 +12,7 @@ import OfflineShell from "@/components/OfflineShell";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import InAppSurvey from "@/components/traction/InAppSurvey";
 import TractionBootstrap from "@/components/traction/TractionBootstrap";
+import StudentWebMCP from "@/components/webmcp/StudentWebMCP";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <BandwidthProvider>
               <RouteNavigationGuard />
               {children}
+              <StudentWebMCP />
               <ServiceWorkerRegistration />
               <OfflineShell />
               <PWAInstallPrompt />
