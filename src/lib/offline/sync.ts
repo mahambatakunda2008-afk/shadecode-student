@@ -7,26 +7,117 @@ import { localSubjects } from "@/lib/local-first/subjects";
 import type { LocalOperation } from "@/lib/local-first/operations";
 import type { LocalEntity, LocalConflict } from "@/lib/local-first/types";
 
-const REMOTE_TABLES:Record<string,string>={tasks:"tasks",subjects:"subjects",learn_lessons:"learn_lessons",education_profile:"user_profiles"};
-const STORE_TO_ENTITY:Record<string,LocalEntity>={tasks:"task",subjects:"subject",learn_lessons:"progress",education_profile:"education_profile"};
+const REMOTE_TABLES: Record<string, string> = { tasks: "tasks", subjects: "subjects", learn_lessons: "learn_lessons", education_profile: "user_profiles" };
+const STORE_TO_ENTITY: Record<string, LocalEntity> = { tasks: "task", subjects: "subject", learn_lessons: "progress", education_profile: "education_profile" };
 
 export class OfflineSync {
- private syncInProgress=false; private syncInterval:ReturnType<typeof setInterval>|null=null; private onlineHandler:(()=>void)|null=null;
- startAutoSync(){if(this.syncInterval)return;if(typeof window!=="undefined"){this.onlineHandler=()=>void this.syncAll();window.addEventListener("online",this.onlineHandler);}this.syncInterval=setInterval(()=>{if(typeof navigator==="undefined"||navigator.onLine)void this.syncAll();},30000);}
- stopAutoSync(){if(this.syncInterval)clearInterval(this.syncInterval);this.syncInterval=null;if(typeof window!=="undefined"&&this.onlineHandler)window.removeEventListener("online",this.onlineHandler);this.onlineHandler=null;}
- async syncAll(){if(this.syncInProgress||(typeof navigator!=="undefined"&&!navigator.onLine))return;this.syncInProgress=true;try{await this.bridgeLocalOperations();await this.syncMutations();}catch(error){console.error("[OfflineSync] Sync failed:",error);}finally{this.syncInProgress=false;}}
- async queueMutation<T>(input:Omit<OfflineMutation<T>,"id"|"createdAt"|"attempts"|"ownerId">){const auth=await this.getCurrentUser();if(!auth)throw new Error("Cannot queue offline mutation without an authenticated user");return mutationQueue.enqueue({...input,ownerId:auth.user.id});}
- private async getCurrentUser(){const supabase=createClient();const{data:{user},error}=await supabase.auth.getUser();if(error||!user)return null;return{supabase,user};}
- private async bridgeLocalOperations(){const auth=await this.getCurrentUser();if(!auth)return;const operations=await localFirstStore.listPendingOperations(auth.user.id),deviceId=await localFirstStore.deviceId();for(const operation of operations){try{if(operation.entity==="learning_event")continue;const mutation=this.operationToMutation(operation,deviceId);await mutationQueue.enqueue({...mutation,ownerId:auth.user.id});}catch(error){console.error("[OfflineSync] Failed to bridge local operation:",operation.id,error);}}}
- private operationToMutation(operation:LocalOperation,deviceId:string):Omit<OfflineMutation,"id"|"createdAt"|"attempts"|"ownerId">{const store=operation.entity==="task"?"tasks":operation.entity==="subject"?"subjects":operation.entity==="progress"?"learn_lessons":operation.entity==="education_profile"?"education_profile":null;if(!store)throw new Error(`Local entity is not yet supported by the remote adapter: ${operation.entity}`);const payload=operation.kind==="delete"?{id:operation.entityId,user_id:operation.userId}:operation.payload;if(!payload||typeof payload!=="object")throw new Error(`Local ${operation.entity} operation has no payload`);return{operation:operation.kind,store,payload:{...(payload as Record<string,unknown>),id:operation.entityId,user_id:operation.userId},clientVersion:operation.lamport,baseVersion:operation.lamport>0?operation.lamport-1:0,deviceId};}
- private async reconcileConflict(mutation:OfflineMutation,result:Record<string,unknown>,userId:string){const entity=STORE_TO_ENTITY[mutation.store];if(!entity)return;const payload=mutation.payload as Record<string,unknown>,entityId=typeof payload.id==="string"?payload.id:null;if(!entityId)return;const localOps=await localFirstStore.listOperations(userId),loser=localOps.find(op=>op.entity===entity&&op.entityId===entityId&&!op.syncedAt&&op.lamport===mutation.clientVersion);if(!loser)return;let winnerPayload:Record<string,unknown>|null=null;if(result.currentRecord&&typeof result.currentRecord==="object"&&!Array.isArray(result.currentRecord))winnerPayload=result.currentRecord as Record<string,unknown>;if(!winnerPayload){const table=REMOTE_TABLES[mutation.store],auth=await this.getCurrentUser();if(table&&auth){const{data}=await auth.supabase.from(table).select("*").eq("id",entityId).eq("user_id",userId).maybeSingle();if(data)winnerPayload=data as Record<string,unknown>;}}const serverVersion=typeof result.currentVersion==="number"?result.currentVersion:Math.max((mutation.baseVersion??0)+1,(mutation.clientVersion??0)+1);const winner:LocalOperation={id:`server:${mutation.store}:${entityId}:${serverVersion}`,recordId:entityId,entity,entityId,userId,deviceId:typeof result.currentDeviceId==="string"?result.currentDeviceId:"server",kind:mutation.operation,payload:winnerPayload??{},timestamp:new Date().toISOString(),sequence:serverVersion,lamport:serverVersion,syncedAt:new Date().toISOString()};const conflict:LocalConflict={id:`${loser.id}:conflict:${serverVersion}`,userId,entity,entityId,winner,loser,reason:"causal-order",createdAt:Date.now()};await localFirstStore.recordConflict(conflict);if(winnerPayload)await localFirstStore.hydrate({id:entityId,entity,userId,payload:winnerPayload,updatedAt:Date.now(),deviceId:winner.deviceId,version:serverVersion});await localFirstStore.acknowledgeOperation(loser.id);await mutationQueue.remove(mutation.id,userId);}
- private async syncMutations(){const auth=await this.getCurrentUser();if(!auth)return;const{user}=auth;for(const mutation of await mutationQueue.listReady(user.id)){try{const payload=mutation.payload as Record<string,unknown>;if(payload.user_id!==undefined&&payload.user_id!==user.id)throw new Error("Queued mutation user_id does not match the authenticated user");if(mutation.store==="learning_events"){if(mutation.operation!=="create"&&mutation.operation!=="update")throw new Error("Learning events are append-only");const eventPayload={...payload};delete eventPayload.id;delete eventPayload.user_id;const response=await fetch("/api/intelligence/events",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify({eventId:payload.id,event:eventPayload,clientVersion:mutation.clientVersion,deviceId:mutation.deviceId})});if(!response.ok&&response.status!==409)throw new Error(`Learning event sync failed (${response.status})`);await mutationQueue.remove(mutation.id,user.id);continue;}
- const response=await fetch("/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify({operation:mutation.operation,store:mutation.store,payload,clientVersion:mutation.clientVersion,baseVersion:mutation.baseVersion,deviceId:mutation.deviceId})});let result:Record<string,unknown>|null=null;try{result=await response.json();}catch{}if(response.status===409&&result?.status==="conflict"){await this.reconcileConflict(mutation,result,user.id);continue;}if(!response.ok)throw new Error(typeof result?.error==="string"?result.error:`Sync failed (${response.status})`);if(result?.status!=="accepted"&&result?.status!=="already-applied")throw new Error("Sync endpoint returned an unknown result");const entity=STORE_TO_ENTITY[mutation.store];const entityId=typeof payload.id==="string"?payload.id:null;if(entity&&entityId)await localFirstStore.acknowledgeEntityOperations(user.id,entity,entityId,mutation.clientVersion);await mutationQueue.remove(mutation.id,user.id);}catch(error){await mutationQueue.recordFailure(mutation.id,user.id,error);console.error("[OfflineSync] Failed queued mutation:",mutation.id,error);}}}
- async saveTaskLocally(taskId:string){const auth=await this.getCurrentUser();if(!auth)return;const{data:task,error}=await auth.supabase.from("tasks").select("*").eq("id",taskId).eq("user_id",auth.user.id).single();if(error||!task)return;await localFirstStore.hydrate({id:task.id,entity:"task",userId:auth.user.id,payload:{id:task.id,userId:auth.user.id,subject_id:task.subject_id,title:task.title,completed:task.completed,lastUpdated:task.updated_at??new Date().toISOString(),synced:true},updatedAt:Date.parse(task.updated_at??"")||Date.now(),deviceId:"server",version:0});}
- async saveProgressLocally(lessonId:string,userId:string){const auth=await this.getCurrentUser();if(!auth||auth.user.id!==userId)return;const{data:lesson,error}=await auth.supabase.from("learn_lessons").select("*").eq("id",lessonId).eq("user_id",auth.user.id).single();if(error||!lesson)return;await localFirstStore.hydrateProgress({lessonId:lesson.id,userId:auth.user.id,completed:lesson.progress===100,progress:lesson.progress,lastUpdated:lesson.updated_at??new Date().toISOString()},Date.parse(lesson.updated_at??"")||Date.now());}
- async getTasks(userId:string){const local=await localTasks.list(userId);if(local.length>0)return local;const auth=await this.getCurrentUser();if(!auth||auth.user.id!==userId)return[];const{data:tasks,error}=await auth.supabase.from("tasks").select("*").eq("user_id",auth.user.id);if(error)return[];for(const task of tasks||[])await this.saveTaskLocally(task.id);return localTasks.list(userId);}
- async getSubjects(userId:string){const local=await localSubjects.list(userId);if(local.length>0)return local;const auth=await this.getCurrentUser();if(!auth||auth.user.id!==userId)return[];const{data:subjects,error}=await auth.supabase.from("subjects").select("*").eq("user_id",auth.user.id);if(error)return[];for(const subject of subjects||[])await localFirstStore.hydrate({id:subject.id,entity:"subject",userId:auth.user.id,payload:{id:subject.id,userId:auth.user.id,name:subject.name,lastUpdated:subject.updated_at??new Date().toISOString(),synced:true},updatedAt:Date.parse(subject.updated_at??"")||Date.now(),deviceId:"server",version:0});return localSubjects.list(userId);}
- async getEducationProfile(userId:string){const local=await localFirstStore.getEducationProfile(userId);if(local)return local;const auth=await this.getCurrentUser();if(!auth||auth.user.id!==userId)return null;const{data,error}=await auth.supabase.from("user_profiles").select("education_stage,education_grade,education_year,education_curriculum,education_subjects,updated_at").eq("user_id",userId).maybeSingle();if(error||!data)return null;const profile={userId,educationStage:data.education_stage??undefined,educationGrade:typeof data.education_grade==="number"?data.education_grade:undefined,educationYear:data.education_year??undefined,educationCurriculum:data.education_curriculum??undefined,educationSubjects:Array.isArray(data.education_subjects)?data.education_subjects.filter((s):s is string=>typeof s==="string"):[],updatedAt:data.updated_at??new Date().toISOString()};await localFirstStore.hydrateEducationProfile(profile,Date.parse(profile.updatedAt)||Date.now());return profile;}
- async getProgress(lessonId:string,userId:string){const local=await localFirstStore.getProgress(lessonId,userId);if(local?.userId===userId)return local;await this.saveProgressLocally(lessonId,userId);return localFirstStore.getProgress(lessonId,userId);}
+  private syncInProgress = false;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private onlineHandler: (() => void) | null = null;
+
+  startAutoSync() {
+    if (this.syncInterval) return;
+    if (typeof window !== "undefined") { this.onlineHandler = () => void this.syncAll(); window.addEventListener("online", this.onlineHandler); }
+    this.syncInterval = setInterval(() => { if (typeof navigator === "undefined" || navigator.onLine) void this.syncAll(); }, 30000);
+  }
+  stopAutoSync() {
+    if (this.syncInterval) clearInterval(this.syncInterval);
+    this.syncInterval = null;
+    if (typeof window !== "undefined" && this.onlineHandler) window.removeEventListener("online", this.onlineHandler);
+    this.onlineHandler = null;
+  }
+  async syncAll() {
+    if (this.syncInProgress || (typeof navigator !== "undefined" && !navigator.onLine)) return;
+    this.syncInProgress = true;
+    try { await this.bridgeLocalOperations(); await this.syncMutations(); }
+    catch (error) { console.error("[OfflineSync] Sync failed:", error); }
+    finally { this.syncInProgress = false; }
+  }
+  async queueMutation<T>(input: Omit<OfflineMutation<T>, "id" | "createdAt" | "attempts" | "ownerId">) {
+    const auth = await this.getCurrentUser();
+    if (!auth) throw new Error("Cannot queue offline mutation without an authenticated user");
+    return mutationQueue.enqueue({ ...input, ownerId: auth.user.id });
+  }
+  private async getCurrentUser() {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+    return { supabase, user: session.user };
+  }
+  private async bridgeLocalOperations() {
+    const auth = await this.getCurrentUser();
+    if (!auth) return;
+    const operations = await localFirstStore.listPendingOperations(auth.user.id), deviceId = await localFirstStore.deviceId();
+    for (const operation of operations) {
+      try {
+        if (operation.entity === "learning_event") continue;
+        const mutation = this.operationToMutation(operation, deviceId);
+        await mutationQueue.enqueue({ ...mutation, ownerId: auth.user.id });
+      } catch (error) { console.error("[OfflineSync] Failed to bridge local operation:", operation.id, error); }
+    }
+  }
+  private operationToMutation(operation: LocalOperation, deviceId: string): Omit<OfflineMutation, "id" | "createdAt" | "attempts" | "ownerId"> {
+    const store = operation.entity === "task" ? "tasks" : operation.entity === "subject" ? "subjects" : operation.entity === "progress" ? "learn_lessons" : operation.entity === "education_profile" ? "education_profile" : null;
+    if (!store) throw new Error(`Local entity is not yet supported by the remote adapter: ${operation.entity}`);
+    const payload = operation.kind === "delete" ? { id: operation.entityId, user_id: operation.userId } : operation.payload;
+    if (!payload || typeof payload !== "object") throw new Error(`Local ${operation.entity} operation has no payload`);
+    return { operation: operation.kind, store, payload: { ...(payload as Record<string, unknown>), id: operation.entityId, user_id: operation.userId }, clientVersion: operation.lamport, baseVersion: operation.baseVersion ?? 0, deviceId };
+  }
+  private async reconcileConflict(mutation: OfflineMutation, result: Record<string, unknown>, userId: string) {
+    const entity = STORE_TO_ENTITY[mutation.store];
+    if (!entity) return;
+    const payload = mutation.payload as Record<string, unknown>, entityId = typeof payload.id === "string" ? payload.id : null;
+    if (!entityId) return;
+    const localOps = await localFirstStore.listOperations(userId), loser = localOps.find(op => op.entity === entity && op.entityId === entityId && !op.syncedAt && op.lamport === mutation.clientVersion);
+    if (!loser) return;
+    let winnerPayload: Record<string, unknown> | null = null;
+    if (result.currentRecord && typeof result.currentRecord === "object" && !Array.isArray(result.currentRecord)) winnerPayload = result.currentRecord as Record<string, unknown>;
+    if (!winnerPayload) {
+      const table = REMOTE_TABLES[mutation.store], auth = await this.getCurrentUser();
+      if (table && auth) { const { data } = await auth.supabase.from(table).select("*").eq("id", entityId).eq("user_id", userId).maybeSingle(); if (data) winnerPayload = data as Record<string, unknown>; }
+    }
+    const serverVersion = typeof result.currentVersion === "number" ? result.currentVersion : Math.max(mutation.baseVersion ?? 0, 0);
+    const winner: LocalOperation = { id: `server:${mutation.store}:${entityId}:${serverVersion}`, recordId: entityId, entity, entityId, userId, deviceId: typeof result.currentDeviceId === "string" ? result.currentDeviceId : "server", kind: mutation.operation, payload: winnerPayload ?? {}, timestamp: new Date().toISOString(), sequence: serverVersion, lamport: serverVersion, baseVersion: Math.max(serverVersion - 1, 0), syncedAt: new Date().toISOString() };
+    const conflict: LocalConflict = { id: `${loser.id}:conflict:${serverVersion}`, userId, entity, entityId, winner, loser, reason: "causal-order", createdAt: Date.now() };
+    await localFirstStore.recordConflict(conflict);
+    if (winnerPayload) await localFirstStore.hydrate({ id: entityId, entity, userId, payload: winnerPayload, updatedAt: Date.now(), deviceId: winner.deviceId, version: loser.lamport, syncVersion: serverVersion });
+    await localFirstStore.acknowledgeOperation(loser.id);
+    await mutationQueue.remove(mutation.id, userId);
+  }
+  private async syncMutations() {
+    const auth = await this.getCurrentUser();
+    if (!auth) return;
+    const { user } = auth;
+    for (const mutation of await mutationQueue.listReady(user.id)) {
+      try {
+        const payload = mutation.payload as Record<string, unknown>;
+        if (payload.user_id !== undefined && payload.user_id !== user.id) throw new Error("Queued mutation user_id does not match the authenticated user");
+        if (mutation.store === "learning_events") {
+          if (mutation.operation !== "create" && mutation.operation !== "update") throw new Error("Learning events are append-only");
+          const eventPayload = { ...payload }; delete eventPayload.id; delete eventPayload.user_id;
+          const response = await fetch("/api/intelligence/events", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ eventId: payload.id, event: eventPayload, clientVersion: mutation.clientVersion, deviceId: mutation.deviceId }) });
+          if (!response.ok && response.status !== 409) throw new Error(`Learning event sync failed (${response.status})`);
+          await mutationQueue.remove(mutation.id, user.id); continue;
+        }
+        const response = await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ operation: mutation.operation, store: mutation.store, payload, clientVersion: mutation.clientVersion, baseVersion: mutation.baseVersion ?? 0, deviceId: mutation.deviceId }) });
+        let result: Record<string, unknown> | null = null; try { result = await response.json(); } catch {}
+        if (response.status === 409 && result?.status === "conflict") { await this.reconcileConflict(mutation, result, user.id); continue; }
+        if (!response.ok) throw new Error(typeof result?.error === "string" ? result.error : `Sync failed (${response.status})`);
+        if (result?.status !== "accepted" && result?.status !== "already-applied") throw new Error("Sync endpoint returned an unknown result");
+        const entity = STORE_TO_ENTITY[mutation.store], entityId = typeof payload.id === "string" ? payload.id : null, acceptedVersion = typeof result?.version === "number" ? result.version : null;
+        if (entity && entityId) {
+          await localFirstStore.acknowledgeEntityOperations(user.id, entity, entityId, mutation.clientVersion);
+          if (acceptedVersion !== null) await localFirstStore.markRecordSynced(user.id, entity, entityId, acceptedVersion);
+        }
+        await mutationQueue.remove(mutation.id, user.id);
+      } catch (error) { await mutationQueue.recordFailure(mutation.id, user.id, error); console.error("[OfflineSync] Failed queued mutation:", mutation.id, error); }
+    }
+  }
+  async saveTaskLocally(taskId: string) { const auth = await this.getCurrentUser(); if (!auth) return; const { data: task, error } = await auth.supabase.from("tasks").select("*").eq("id", taskId).eq("user_id", auth.user.id).single(); if (error || !task) return; await localFirstStore.hydrate({ id: task.id, entity: "task", userId: auth.user.id, payload: { id: task.id, userId: auth.user.id, subject_id: task.subject_id, title: task.title, completed: task.completed, lastUpdated: task.updated_at ?? new Date().toISOString(), synced: true }, updatedAt: Date.parse(task.updated_at ?? "") || Date.now(), deviceId: "server", version: 0, syncVersion: 0 }); }
+  async saveProgressLocally(lessonId: string, userId: string) { const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return; const { data: lesson, error } = await auth.supabase.from("learn_lessons").select("*").eq("id", lessonId).eq("user_id", auth.user.id).single(); if (error || !lesson) return; await localFirstStore.hydrateProgress({ lessonId: lesson.id, userId: auth.user.id, completed: lesson.progress === 100, progress: lesson.progress, lastUpdated: lesson.updated_at ?? new Date().toISOString() }, Date.parse(lesson.updated_at ?? "") || Date.now()); }
+  async getTasks(userId: string) { const local = await localTasks.list(userId); if (local.length > 0) return local; const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return []; const { data: tasks, error } = await auth.supabase.from("tasks").select("*").eq("user_id", auth.user.id); if (error) return []; for (const task of tasks || []) await this.saveTaskLocally(task.id); return localTasks.list(userId); }
+  async getSubjects(userId: string) { const local = await localSubjects.list(userId); if (local.length > 0) return local; const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return []; const { data: subjects, error } = await auth.supabase.from("subjects").select("*").eq("user_id", auth.user.id); if (error) return []; for (const subject of subjects || []) await localFirstStore.hydrate({ id: subject.id, entity: "subject", userId: auth.user.id, payload: { id: subject.id, userId: auth.user.id, name: subject.name, lastUpdated: subject.updated_at ?? new Date().toISOString(), synced: true }, updatedAt: Date.parse(subject.updated_at ?? "") || Date.now(), deviceId: "server", version: 0, syncVersion: 0 }); return localSubjects.list(userId); }
+  async getEducationProfile(userId: string) { const local = await localFirstStore.getEducationProfile(userId); if (local) return local; const auth = await this.getCurrentUser(); if (!auth || auth.user.id !== userId) return null; const { data, error } = await auth.supabase.from("user_profiles").select("education_stage,education_grade,education_year,education_curriculum,education_subjects,updated_at").eq("user_id", userId).maybeSingle(); if (error || !data) return null; const profile = { userId, educationStage: data.education_stage ?? undefined, educationGrade: typeof data.education_grade === "number" ? data.education_grade : undefined, educationYear: data.education_year ?? undefined, educationCurriculum: data.education_curriculum ?? undefined, educationSubjects: Array.isArray(data.education_subjects) ? data.education_subjects.filter((s): s is string => typeof s === "string") : [], updatedAt: data.updated_at ?? new Date().toISOString() }; await localFirstStore.hydrateEducationProfile(profile, Date.parse(profile.updatedAt) || Date.now()); return profile; }
+  async getProgress(lessonId: string, userId: string) { const local = await localFirstStore.getProgress(lessonId, userId); if (local?.userId === userId) return local; await this.saveProgressLocally(lessonId, userId); return localFirstStore.getProgress(lessonId, userId); }
 }
-export const offlineSync=new OfflineSync();
+export const offlineSync = new OfflineSync();
