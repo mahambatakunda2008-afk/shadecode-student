@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js";
 import { updateCortexFromExam, emitCortexEvent } from "@/lib/cortex";
 import { emitExamCompleted } from "@/lib/events";
@@ -100,6 +101,32 @@ function observationForExam(topic, percentage, observedAt) {
   };
 }
 
+function buildProjectionEventId(userId, attemptId, payload) {
+  const identity = attemptId?.trim()
+    ? `attempt:${attemptId.trim()}`
+    : `legacy:${JSON.stringify({ subject: payload.subject, difficulty: payload.difficulty, questions: payload.questions, answers: payload.answers, timeTaken: payload.timeTaken })}`;
+  const digest = createHash("sha256").update(identity).digest("hex");
+  return `exam-mastery:${userId}:${digest}`;
+}
+
+async function claimMasteryProjection(svc, userId, eventId, payload) {
+  const { error } = await svc.from("cortex_events").insert({
+    user_id: userId,
+    type: "exam.mastery.projected",
+    source: "exam-mark",
+    data: {
+      eventId,
+      sourceEventId: eventId,
+      subject: payload.subject,
+      attemptId: payload.attemptId || null,
+      projectedAt: new Date().toISOString(),
+    },
+  });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  throw error;
+}
+
 export async function POST(req) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
@@ -113,7 +140,7 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Validation failed", details: validation.details?.issues.map((e) => ({ field: e.path.join("."), message: e.message })) }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
-    const { subject, difficulty, questions, answers, timeTaken } = validation.data;
+    const { subject, difficulty, questions, answers, timeTaken, attemptId } = validation.data;
     const userId = user.id;
     if (!subject || !questions || !answers) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 
@@ -138,11 +165,12 @@ export async function POST(req) {
     }
 
     const { totalScore, maxScore, percentage, grade } = calculateExamScore(questions, markingData.results);
+    const examId = crypto.randomUUID();
 
     try {
       await updateCortexFromExam({ userId, subject, percentage, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas });
       await emitCortexEvent({ userId, type: "exam.marking.completed", source: "exam", data: { subject, percentage, grade } });
-      await emitExamCompleted(userId, { examId: crypto.randomUUID(), subject, topic: difficulty, score: percentage, totalMarks: maxScore, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, timeSpent: timeTaken }, "exam");
+      await emitExamCompleted(userId, { examId, subject, topic: difficulty, score: percentage, totalMarks: maxScore, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, timeSpent: timeTaken }, "exam");
     } catch (eventError) {
       console.error("[exam/mark] Cortex/event persistence failed:", eventError);
     }
@@ -151,7 +179,7 @@ export async function POST(req) {
       const svc = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
       const { data: existingMemory } = await svc.from("cortex_memory").select("exam_scores").eq("user_id", userId).maybeSingle();
       const priorScores = Array.isArray(existingMemory?.exam_scores) ? existingMemory.exam_scores : [];
-      const newScores = [...priorScores, { examId: crypto.randomUUID(), subject, score: totalScore, totalMarks: maxScore, percentage, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, date: new Date().toISOString() }];
+      const newScores = [...priorScores, { examId, subject, score: totalScore, totalMarks: maxScore, percentage, grade, weakAreas: markingData.weakAreas, strongAreas: markingData.strongAreas, date: new Date().toISOString() }];
       const avgScore = Math.round(newScores.reduce((sum, s) => sum + (s.percentage ?? s.score ?? 0), 0) / newScores.length);
       const { error: memoryError } = await svc.from("cortex_memory").upsert({ user_id: userId, exam_scores: newScores, average_exam_score: avgScore }, { onConflict: "user_id" });
       if (memoryError) console.error("[exam/mark] Failed to persist exam_scores:", memoryError.message);
@@ -161,37 +189,49 @@ export async function POST(req) {
       const svc2 = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
       const topicScores = computeTopicScores(questions, markingData.results);
       if (topicScores.length > 0) {
-        const { data: existingRows } = await svc2.from("topic_mastery").select("topic, mastery_score, attempts, retention, confidence, stability, exposure, error_rate, response_speed, prerequisite_health, recent_improvement, uncertainty, last_attempted").eq("user_id", userId).eq("subject", subject).in("topic", topicScores.map((t) => t.topic));
-        const existingByTopic = new Map((existingRows || []).map((r) => [r.topic, r]));
-        const now = new Date().toISOString();
-        const upsertRows = topicScores.map((t) => {
-          const existing = existingByTopic.get(t.topic);
-          const previousState = rowToLearningState(existing);
-          const baseState = previousState || createInitialLearningState(String(t.topic));
-          const nextState = reduceLearningObservation(baseState, observationForExam(t.topic, t.percentage, now));
-          const update = blendMastery(existing ? { mastery_score: existing.mastery_score, attempts: existing.attempts } : null, t.percentage);
-          return {
-            user_id: userId,
-            subject,
-            topic: t.topic,
-            mastery_score: nextState.mastery,
-            last_score: update.last_score,
-            attempts: update.attempts,
-            trend: update.trend,
-            retention: nextState.retention,
-            confidence: nextState.confidence,
-            stability: nextState.stability,
-            exposure: nextState.exposure,
-            error_rate: nextState.errorRate,
-            response_speed: nextState.responseSpeed,
-            prerequisite_health: nextState.prerequisiteHealth,
-            recent_improvement: nextState.recentImprovement,
-            uncertainty: nextState.uncertainty,
-            last_attempted: now,
-          };
-        });
-        const { error: masteryError } = await svc2.from("topic_mastery").upsert(upsertRows, { onConflict: "user_id,subject,topic" });
-        if (masteryError) console.error("[exam/mark] Failed to persist topic_mastery:", masteryError.message);
+        const projectionEventId = buildProjectionEventId(userId, attemptId, { subject, difficulty, questions, answers, timeTaken });
+        let projectionClaimed = false;
+        try {
+          projectionClaimed = await claimMasteryProjection(svc2, userId, projectionEventId, { subject, attemptId });
+        } catch (claimError) {
+          console.error("[exam/mark] Could not claim mastery projection:", claimError);
+        }
+
+        if (projectionClaimed) {
+          const { data: existingRows } = await svc2.from("topic_mastery").select("topic, mastery_score, attempts, retention, confidence, stability, exposure, error_rate, response_speed, prerequisite_health, recent_improvement, uncertainty, last_attempted").eq("user_id", userId).eq("subject", subject).in("topic", topicScores.map((t) => t.topic));
+          const existingByTopic = new Map((existingRows || []).map((r) => [r.topic, r]));
+          const now = new Date().toISOString();
+          const upsertRows = topicScores.map((t) => {
+            const existing = existingByTopic.get(t.topic);
+            const previousState = rowToLearningState(existing);
+            const baseState = previousState || createInitialLearningState(String(t.topic));
+            const nextState = reduceLearningObservation(baseState, observationForExam(t.topic, t.percentage, now));
+            const update = blendMastery(existing ? { mastery_score: existing.mastery_score, attempts: existing.attempts } : null, t.percentage);
+            return {
+              user_id: userId,
+              subject,
+              topic: t.topic,
+              mastery_score: nextState.mastery,
+              last_score: update.last_score,
+              attempts: update.attempts,
+              trend: update.trend,
+              retention: nextState.retention,
+              confidence: nextState.confidence,
+              stability: nextState.stability,
+              exposure: nextState.exposure,
+              error_rate: nextState.errorRate,
+              response_speed: nextState.responseSpeed,
+              prerequisite_health: nextState.prerequisiteHealth,
+              recent_improvement: nextState.recentImprovement,
+              uncertainty: nextState.uncertainty,
+              last_attempted: now,
+            };
+          });
+          const { error: masteryError } = await svc2.from("topic_mastery").upsert(upsertRows, { onConflict: "user_id,subject,topic" });
+          if (masteryError) console.error("[exam/mark] Failed to persist topic_mastery:", masteryError.message);
+        } else {
+          console.info("[exam/mark] Duplicate exam attempt replay detected; skipped richer mastery projection.");
+        }
       }
     } catch (masteryErr) { console.error("[exam/mark] topic_mastery update threw:", masteryErr); }
 
