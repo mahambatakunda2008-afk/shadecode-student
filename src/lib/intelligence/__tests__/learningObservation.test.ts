@@ -58,6 +58,16 @@ describe("canonical learning event → observation adapter", () => {
     expect(observation?.correct).toBe(true);
   });
 
+  it("does not turn aggregate completion records into a second mastery observation", () => {
+    const observation = learningEventToObservation({
+      ...baseEvent,
+      kind: "quiz_completed",
+      metadata: { percentage: 100, aggregateOnly: true },
+    });
+
+    expect(observation).toBeNull();
+  });
+
   it("ignores events that are not evidence observations", () => {
     expect(
       learningEventToObservation({ ...baseEvent, kind: "lesson_viewed" }),
