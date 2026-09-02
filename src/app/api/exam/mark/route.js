@@ -9,6 +9,7 @@ import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
 import { blendMastery } from "@/lib/topicMastery/blend";
+import { createInitialLearningState, reduceLearningObservation } from "@/lib/cortex/learningState";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -72,6 +73,33 @@ function markDeterministic(questions, answers) {
   return { results, weakAreas, strongAreas, cortexInsight: "This paper was marked locally because AI marking was unavailable. MCQs use exact answers; written responses use conservative keyword overlap, so treat partial written scores as provisional." };
 }
 
+function rowToLearningState(row) {
+  if (!row) return null;
+  return {
+    topicId: String(row.topic),
+    mastery: Number(row.mastery_score) || 0,
+    retention: Number(row.retention) || 0,
+    confidence: Number(row.confidence) || 0,
+    stability: Number(row.stability) || 0,
+    exposure: Number(row.exposure) || 0,
+    errorRate: Number(row.error_rate) || 0,
+    responseSpeed: Number(row.response_speed) || 0,
+    prerequisiteHealth: Number(row.prerequisite_health) || 0,
+    recentImprovement: Number(row.recent_improvement) || 0,
+    uncertainty: Number(row.uncertainty) || 0,
+    lastObservedAt: row.last_attempted || undefined,
+  };
+}
+
+function observationForExam(topic, percentage, observedAt) {
+  return {
+    topicId: String(topic),
+    correct: Number(percentage) >= 50,
+    evidenceScore: Number.isFinite(Number(percentage)) ? Number(percentage) : 0,
+    observedAt,
+  };
+}
+
 export async function POST(req) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter);
@@ -133,13 +161,34 @@ export async function POST(req) {
       const svc2 = createSupabaseServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
       const topicScores = computeTopicScores(questions, markingData.results);
       if (topicScores.length > 0) {
-        const { data: existingRows } = await svc2.from("topic_mastery").select("topic, mastery_score, attempts").eq("user_id", userId).eq("subject", subject).in("topic", topicScores.map((t) => t.topic));
+        const { data: existingRows } = await svc2.from("topic_mastery").select("topic, mastery_score, attempts, retention, confidence, stability, exposure, error_rate, response_speed, prerequisite_health, recent_improvement, uncertainty, last_attempted").eq("user_id", userId).eq("subject", subject).in("topic", topicScores.map((t) => t.topic));
         const existingByTopic = new Map((existingRows || []).map((r) => [r.topic, r]));
         const now = new Date().toISOString();
         const upsertRows = topicScores.map((t) => {
           const existing = existingByTopic.get(t.topic);
+          const previousState = rowToLearningState(existing);
+          const baseState = previousState || createInitialLearningState(String(t.topic));
+          const nextState = reduceLearningObservation(baseState, observationForExam(t.topic, t.percentage, now));
           const update = blendMastery(existing ? { mastery_score: existing.mastery_score, attempts: existing.attempts } : null, t.percentage);
-          return { user_id: userId, subject, topic: t.topic, mastery_score: update.mastery_score, last_score: update.last_score, attempts: update.attempts, trend: update.trend, last_attempted: now };
+          return {
+            user_id: userId,
+            subject,
+            topic: t.topic,
+            mastery_score: nextState.mastery,
+            last_score: update.last_score,
+            attempts: update.attempts,
+            trend: update.trend,
+            retention: nextState.retention,
+            confidence: nextState.confidence,
+            stability: nextState.stability,
+            exposure: nextState.exposure,
+            error_rate: nextState.errorRate,
+            response_speed: nextState.responseSpeed,
+            prerequisite_health: nextState.prerequisiteHealth,
+            recent_improvement: nextState.recentImprovement,
+            uncertainty: nextState.uncertainty,
+            last_attempted: now,
+          };
         });
         const { error: masteryError } = await svc2.from("topic_mastery").upsert(upsertRows, { onConflict: "user_id,subject,topic" });
         if (masteryError) console.error("[exam/mark] Failed to persist topic_mastery:", masteryError.message);
