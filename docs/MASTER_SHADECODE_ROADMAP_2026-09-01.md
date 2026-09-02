@@ -43,9 +43,9 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Event idempotency | 🟢 | Canonical identity is enforced by durable storage. |
 | Account-scoped offline event queue | 🟢 | Queue is owner-scoped and only flushes events for the active learner. |
 | Learning observation adapter | 🟢 | Canonical events translate into Cortex observations, including optional graded percentage evidence. Aggregate-only completions are excluded from mastery observations. |
-| Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; shared score transition and pure richer reducer exist, but durable richer projection is not yet wired into all evidence consumers. |
-| Rich learning-state reducer | 🔵 | Deterministic pure reducer exists for mastery, retention, confidence, stability, exposure, error rate, response speed, improvement and uncertainty. |
-| Durable richer mastery projection | 🟣 | Next major engineering task: persist the reducer output through exactly one authoritative consumer without double-counting existing exam aggregates. |
+| Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; shared score transition and richer reducer now feed the production exam consumer, with broader evidence consumers still to migrate. |
+| Rich learning-state reducer | 🟢 | Deterministic pure reducer exists for mastery, retention, confidence, stability, exposure, error rate, response speed, improvement and uncertainty; first real evidence establishes the mastery baseline. |
+| Durable richer mastery projection | 🟣 | First production consumer is now wired through graded exam topic results. Remaining work is idempotent evidence identity, broader consumer integration and browser verification. |
 | Retention / confidence / stability / exposure | 🔵 | Durable fields exist; deterministic reducer exists; calibration remains. |
 | Error rate / response speed | 🔵 | Durable fields exist; richer evidence semantics remain. |
 | Prerequisite health | 🔵 | Durable field exists; graph-backed inference remains. |
@@ -193,7 +193,7 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 ## 5. Current execution order
 
 1. **Evidence spine:** canonical event ingress, offline queue, durable persistence, deterministic observation.
-2. **Mastery reconciliation:** shared score transition and deterministic richer reducer are defined; wire durable rich-state projection through one authoritative consumer without double-counting existing exam aggregates.
+2. **Mastery reconciliation:** shared score transition and deterministic richer reducer are now implemented; one production exam consumer persists the richer state, while remaining evidence consumers still need migration and idempotency verification.
 3. **Offline sync protocol:** authenticated revision/conflict path is live for `tasks`, `subjects`, and `learn_lessons`; ownership hardening is represented in source migration.
 4. **Verification:** authenticated, offline, reconnect, replay/idempotency, and browser/E2E coverage.
 5. **Primary vertical slice:** Number Explorer now uses a unique activity instance ID so repeated runs cannot collapse into one canonical event identity. Verify the complete My Day → activity → attempt → feedback → learning event → mastery → next activity loop, then add the next Primary activity.
@@ -210,7 +210,8 @@ Whenever engineering changes a capability, update the relevant architecture/stat
 - **Capability registry:** 🟢 added `docs/CAPABILITY_REGISTRY.md` to separate engineering capability completeness from progressive product release.
 - **Discovery event identity:** 🟢 each Number Explorer run now has a unique persisted activity instance ID; question and completion event identities are scoped to that run.
 - **Aggregate evidence semantics:** 🟢 aggregate-only completion events are explicitly excluded from mastery observations to prevent future double-counting when question evidence is already present.
-- **Rich learning-state reducer:** 🔵 deterministic pure reducer exists; durable projection remains the active implementation target.
+- **Richer-state reducer:** 🟢 deterministic pure reducer now treats the initial mastery value as a placeholder and uses the first real evidence as the baseline; later evidence uses the shared 70/30 transition.
+- **Durable richer projection:** 🟣 the graded exam topic consumer now persists the reducer's richer state into `topic_mastery` alongside the existing compatibility fields. Broader consumer migration and idempotent replay verification remain.
 - **Offline sync ownership:** 🟢 live ownership hardening and matching source migration remain in place.
 - **Discovery Primary:** 🟣 first Number Explorer activity remains implemented; browser/E2E verification is still required.
 - **Production deployment:** 🟡 do not call the latest engineering changes production-shipped until the corresponding Vercel deployment is observed and browser-verified.
@@ -218,7 +219,7 @@ Whenever engineering changes a capability, update the relevant architecture/stat
 ## 8. Immediate next engineering moves
 
 1. Add browser/E2E coverage for `/discovery`, offline resume, canonical event replay, and sync conflicts.
-2. Wire the richer state projection into one selected evidence consumer, with event-level idempotency and explicit evidence-source semantics.
+2. Make richer projection idempotent at the evidence-consumer boundary and document which event types are mastery-bearing versus analytics-only.
 3. Stabilize and browser-verify Exam Simulation.
 4. Audit Learn completion/question evidence call sites.
 5. Add the next Primary activity only after the first loop is verified.
