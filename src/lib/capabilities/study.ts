@@ -108,5 +108,11 @@ export function buildStudyCapabilities() {
     create_study_plan: createStudyPlan,
     start_study_session: startStudySession,
     finish_study_session: finishStudySession,
+    // Friendly aliases for the human-facing Cortex command UI. WebMCP keeps
+    // the protocol tool names above stable for agent interoperability.
+    setStudyGoal,
+    createStudyPlan,
+    startStudySession,
+    finishStudySession,
   };
 }
