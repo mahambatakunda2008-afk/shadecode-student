@@ -23,7 +23,11 @@ type ModelContext = {
 };
 
 type WebMCPDocument = Document & { modelContext?: ModelContext };
-type WebMCPWindow = Window & { __shadecodeWebMCPRegistered?: boolean };
+type WebMCPWindow = Window & {
+  __shadecodeWebMCPRegistered?: boolean;
+  __shadecodeWebMCPRegistering?: boolean;
+  __shadecodeWebMCPToolCount?: number;
+};
 
 /**
  * WebMCP is a progressive enhancement. The learning app never depends on it.
@@ -37,7 +41,8 @@ export default function StudentWebMCP() {
     if (!modelContext) return;
 
     const win = window as WebMCPWindow;
-    if (win.__shadecodeWebMCPRegistered) return;
+    if (win.__shadecodeWebMCPRegistered || win.__shadecodeWebMCPRegistering) return;
+    win.__shadecodeWebMCPRegistering = true;
 
     const capabilities = buildStudyCapabilities();
     const safe = (action: () => unknown) => {
@@ -56,11 +61,11 @@ export default function StudentWebMCP() {
           "Read the student's current local-first study context before recommending an action. Returns goals, available time, plan, active session and latest completion.",
         inputSchema: { type: "object", properties: {} },
         annotations: { readOnlyHint: true },
-        execute: async () => ({
+        execute: async () => safe(() => ({
           source: "Shadecode Student local-first capability layer",
           online: navigator.onLine,
           state: capabilities.get_student_study_state(),
-        }),
+        })),
       },
       {
         name: "set_study_goal",
@@ -116,12 +121,14 @@ export default function StudentWebMCP() {
           required: ["subject", "topic"],
         },
         execute: async (input) => safe(() => {
+          const subject = String(input.subject ?? "");
+          const topic = String(input.topic ?? "");
           const state = startStudySession({
-            subject: String(input.subject ?? ""),
-            topic: String(input.topic ?? ""),
+            subject,
+            topic,
             minutes: typeof input.minutes === "number" ? input.minutes : undefined,
           });
-          window.location.assign(`/learn?subject=${encodeURIComponent(String(input.subject))}&topic=${encodeURIComponent(String(input.topic))}`);
+          window.location.assign(`/learn?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`);
           return state;
         }),
       },
@@ -160,17 +167,18 @@ export default function StudentWebMCP() {
       },
     ];
 
-    win.__shadecodeWebMCPRegistered = true;
-
     // Register independently so one malformed/unsupported tool cannot prevent
-    // the remaining workflow from becoming available to an agent.
-    for (const tool of tools) {
-      try {
-        Promise.resolve(modelContext.registerTool(tool)).catch(() => undefined);
-      } catch {
-        // WebMCP is optional. Never allow an agent integration failure to break UI.
-      }
-    }
+    // the remaining workflow from becoming available to an agent. Only mark the
+    // adapter ready after at least one registration succeeds, allowing a retry
+    // when a browser exposes modelContext late or temporarily rejects a tool.
+    void Promise.allSettled(
+      tools.map((tool) => Promise.resolve().then(() => modelContext.registerTool(tool))),
+    ).then((results) => {
+      const registered = results.filter((result) => result.status === "fulfilled").length;
+      win.__shadecodeWebMCPToolCount = registered;
+      win.__shadecodeWebMCPRegistered = registered > 0;
+      win.__shadecodeWebMCPRegistering = false;
+    });
 
     return () => {
       // Current WebMCP registration has no portable unregister contract.
