@@ -154,6 +154,16 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spaci
 .cortex-sidebar { display: none !important; width: 0 !important; overflow: hidden !important; pointer-events: none !important; }
 .cortex-card { display: block !important; }
 @media (min-width: 900px) { .cortex-sidebar { display: flex !important; width: 280px !important; overflow: visible !important; pointer-events: all !important; } .cortex-card { display: none !important; } }
+
+/* Brand guardrails for legacy hard-coded landing-page utilities. Keep the visual language coherent while pages migrate to semantic tokens. */
+[class*="bg-[#22D3EE]"] { background: var(--brand-gradient) !important; }
+[class*="bg-[#22D3EE]/"] { background: color-mix(in srgb, var(--brand-blue) 10%, transparent) !important; }
+[class*="text-[#22D3EE]"] { color: var(--brand-blue) !important; }
+[class*="text-[#67E8F9]"] { color: #8FDFFF !important; }
+
+/* Meaningful UI copy should not collapse into unreadable micro-type. */
+.ssc-page p, .ssc-page li, .ssc-page td, .ssc-page th { font-size: max(14px, 1em); }
+
 @keyframes ssc-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ssc-shimmer { 100% { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
