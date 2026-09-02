@@ -5,6 +5,7 @@ import {
   observationScore,
   transitionMastery,
 } from "../masteryTransition";
+import { createInitialLearningState, reduceLearningObservation } from "@/lib/cortex/learningState";
 
 describe("shared mastery transition", () => {
   it("uses the shared history/evidence weights", () => {
@@ -27,5 +28,34 @@ describe("shared mastery transition", () => {
   it("maps correctness to deterministic evidence scores", () => {
     expect(observationScore(true)).toBe(100);
     expect(observationScore(false)).toBe(0);
+  });
+
+  it("treats the initial placeholder mastery as non-evidence", () => {
+    const initial = createInitialLearningState("fractions");
+    const first = reduceLearningObservation(initial, {
+      topicId: "fractions",
+      correct: true,
+      evidenceScore: 83,
+      observedAt: "2026-09-02T10:00:00.000Z",
+    });
+
+    expect(first.mastery).toBe(83);
+    expect(first.exposure).toBe(1);
+  });
+
+  it("uses the shared transition after the baseline observation", () => {
+    const initial = createInitialLearningState("fractions");
+    const first = reduceLearningObservation(initial, {
+      topicId: "fractions",
+      correct: true,
+      evidenceScore: 83,
+    });
+    const second = reduceLearningObservation(first, {
+      topicId: "fractions",
+      correct: false,
+      evidenceScore: 0,
+    });
+
+    expect(second.mastery).toBe(58.1);
   });
 });
