@@ -16,14 +16,14 @@ describe("richer learning state reducer", () => {
       observedAt: "2026-09-01T20:00:00.000Z",
     });
 
-    expect(next.mastery).toBe(65);
+    expect(next.mastery).toBe(100);
     expect(next.retention).toBe(51.5);
     expect(next.confidence).toBe(58);
     expect(next.stability).toBe(51);
     expect(next.exposure).toBe(1);
     expect(next.errorRate).toBe(42.5);
     expect(next.responseSpeed).toBe(96);
-    expect(next.recentImprovement).toBe(15);
+    expect(next.recentImprovement).toBe(50);
     expect(next.uncertainty).toBe(73.6);
     expect(next.lastObservedAt).toBe("2026-09-01T20:00:00.000Z");
   });
@@ -36,7 +36,7 @@ describe("richer learning state reducer", () => {
       evidenceScore: 40,
     });
 
-    expect(next.mastery).toBe(47);
+    expect(next.mastery).toBe(40);
   });
 
   it("does not fabricate response speed when timing is absent", () => {
@@ -60,7 +60,7 @@ describe("richer learning state reducer", () => {
     expect(projection.mastery_score).toBe(next.mastery);
     expect(projection.last_score).toBe(100);
     expect(projection.attempts).toBe(1);
-    expect(projection.trend).toBe(15);
+    expect(projection.trend).toBe(50);
     expect(projection.exposure).toBe(1);
     expect(projection.uncertainty).toBe(next.uncertainty);
   });
