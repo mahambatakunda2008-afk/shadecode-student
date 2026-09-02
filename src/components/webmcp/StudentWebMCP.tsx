@@ -5,7 +5,6 @@ import {
   buildStudyCapabilities,
   createStudyPlan,
   finishStudySession,
-  getStudyState,
   setStudyGoal,
   startStudySession,
 } from "@/lib/capabilities/study";
@@ -24,7 +23,6 @@ type ModelContext = {
 };
 
 type WebMCPDocument = Document & { modelContext?: ModelContext };
-
 type WebMCPWindow = Window & { __shadecodeWebMCPRegistered?: boolean };
 
 /**
@@ -175,13 +173,10 @@ export default function StudentWebMCP() {
     }
 
     return () => {
-      // Current WebMCP registration is intentionally left alive for the page
-      // lifetime. There is no portable unregister contract in the imperative API.
+      // Current WebMCP registration has no portable unregister contract.
+      // Keep the page-lifetime registration alive instead of inventing cleanup semantics.
     };
   }, []);
 
   return null;
 }
-
-// Keep the imported capability names explicit for bundlers and future adapter tests.
-void getStudyState;
