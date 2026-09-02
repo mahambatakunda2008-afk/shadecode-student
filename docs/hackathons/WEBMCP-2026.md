@@ -13,20 +13,23 @@ AI agent
    ↓
 WebMCP adapter
    ↓
-Shadecode capability layer
+protocol-neutral capability registry
+   ↓
+study capabilities
    ↓
 local-first study state
    ↓
 Shadecode Student + Cortex
 ```
 
-WebMCP does not create a second application, second database, or MCP-only state model. The adapter calls the capability layer used for the agent-facing study actions. This keeps the integration small, testable and replaceable.
+WebMCP does not create a second application, second database, or MCP-only state model. The adapter calls a protocol-neutral capability registry, keeping agent access aligned with product actions and leaving room for future agent protocols.
 
 ## New WebMCP work
 
-Added during the September 2026 submission period:
+Added during the August 25–September 3, 2026 submission period:
 
 - `src/components/webmcp/StudentWebMCP.tsx`
+- `src/lib/capabilities/index.ts`
 - `src/lib/capabilities/study.ts`
 - `src/lib/capabilities/study.test.ts`
 - Global registration from `src/app/layout.tsx`
@@ -39,7 +42,7 @@ Added during the September 2026 submission period:
   - `open_exam_hub`
   - `finish_study_session`
 
-The adapter now treats registration as progressive enhancement: each tool is attempted independently, readiness is recorded only after at least one registration succeeds, and a failed registration can be retried if the browser exposes WebMCP late or temporarily rejects a tool.
+The adapter treats registration as progressive enhancement: each tool is attempted independently, readiness is recorded only after at least one registration succeeds, and the integration does not affect normal app loading when WebMCP is absent.
 
 These changes are intentionally additive to the existing Shadecode Student product. Existing Cortex, Exam Hub, past-paper indexing, local-first storage, and learning flows remain the product foundation.
 
@@ -58,7 +61,7 @@ Expected flow:
 5. Student studies in the normal Shadecode interface.
 6. `open_exam_hub` when practice is needed.
 7. `finish_study_session` records the outcome locally.
-8. The agent can read the updated state and decide what should happen next.
+8. The agent reads the updated state and can decide what should happen next.
 
 The demo is therefore **goal → context → plan → action → practice → completion → adaptation**, not a tool-registration tour.
 
@@ -79,11 +82,10 @@ The demo is therefore **goal → context → plan → action → practice → co
 - No Docker.
 - No localhost service.
 - No student setup step.
-- No cloud AI dependency for the WebMCP state actions.
-- WebMCP failure must never prevent the application from loading or studying.
+- No cloud AI dependency for WebMCP state actions.
+- WebMCP failure never prevents the application from loading or studying.
 - Inputs are validated and bounded before persistence.
-- Each tool registers independently so one failure cannot disable the whole surface.
-- Adapter registration is retry-safe and exposes a small browser-global diagnostic count for debugging.
+- Each tool registers independently.
 - SSR never touches browser WebMCP APIs.
 - Local-first state remains authoritative.
 
@@ -95,7 +97,7 @@ Normal browser automation makes an agent infer buttons, labels, page structure, 
 
 ## Demo video target
 
-Keep the video below three minutes.
+Keep the video below three minutes and include clear audio.
 
 Suggested structure:
 
@@ -112,7 +114,7 @@ WebMCP registration is feature-detected. The component exits without side effect
 
 The local-first capability layer bounds numeric inputs, rejects empty required values, filters empty plan steps, records completion/mastery, and persists a single structured study state. Focused Vitest coverage exercises persistence, normalization, validation, completion, and storage-read failure handling.
 
-For judging, test with a WebMCP-enabled browser as required by the official challenge rules.
+For judging, use ChatGPT's in-app browser or Chrome 149+ with WebMCP enabled, as required by the official challenge rules.
 
 ## Timestamped extension commits
 
@@ -122,6 +124,9 @@ For judging, test with a WebMCP-enabled browser as required by the official chal
 - `90efcd335ed94a14e94f163e7c984eaf6fa5ea75` — clean adapter imports/registration.
 - `5fc23b6d13102048d4e39bb9a2a2fb509dab906d` — add capability-layer tests.
 - `b17dc50210bd6464b9c84891e6e7e327a0e0f6b6` — make tool registration retry-safe and observable.
+- `9625df697e333671430c30c4dc725315fcf0b43c` — refactor adapter to the protocol-neutral capability registry.
+- `7d82e46aeb9c5efac272978890c6f10df1e7ed1d` — align learning-state tests with the shared transition.
+- `5ba1a683855bf54eb8c52e3645ab5d246fcc0aa1` — align shared mastery transition test with deterministic rounding.
 
 ## Competition disclosure
 
@@ -130,16 +135,16 @@ Shadecode Student is a pre-existing product. The WebMCP integration is a meaning
 ## Submission checklist
 
 - [x] WebMCP adapter mounted in the production application.
-- [x] Shared capability layer for WebMCP study actions.
+- [x] Shared protocol-neutral capability registry.
 - [x] Six workflow-level agent tools.
 - [x] Unsupported-browser fallback.
 - [x] Per-tool registration failure isolation.
-- [x] Retry-safe WebMCP registration.
 - [x] Input validation and bounds.
-- [x] Focused capability-layer tests added.
-- [ ] Verify final production deployment after the latest commits.
-- [x] Record exact WebMCP extension commit/date range.
-- [ ] Confirm public repository and accepted open-source licensing requirement before submission. Licensing is intentionally not changed automatically because it is a legal/product decision.
-- [ ] Record final live URL and public repository URL.
-- [ ] Record <3 minute demo with audio and publish on YouTube.
-- [ ] Freeze the submitted project after the deadline.
+- [x] Focused capability-layer tests.
+- [x] Public GitHub repository.
+- [ ] Confirm an open-source license file is present and visible on the repository before submission. This is a required competition condition and remains a deliberate legal/product decision.
+- [ ] Verify final production deployment after the final code commit.
+- [ ] Record final live URL and public repository URL in Devpost.
+- [ ] Record and publish the <3 minute YouTube demo with audio.
+- [ ] Submit on Devpost before September 3, 2026 at 1:00 PM PDT.
+- [ ] After submission, freeze the submitted repo, live project, and Devpost entry until judging ends.
