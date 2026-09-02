@@ -4,6 +4,34 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-02 — Build the capability, release the experience progressively
+
+The product strategy is now explicitly split between **engineering capability completeness** and **progressive product exposure**. Shadecode should not artificially stop building because every capability cannot be shown at once.
+
+**Implemented:**
++- [HIGH] Added `docs/CAPABILITY_REGISTRY.md` as the engineering capability inventory and release matrix.
++- [HIGH] Established the rule: build shared engines, data contracts and offline foundations aggressively; expose capabilities contextually by education level, learner state and release stage.
++- [HIGH] Updated the master roadmap to track both capability completeness and progressive release.
++- [MEDIUM] Preserved the existing boundary that Discovery, Student and Campus are experiences over a shared local-first learning operating system, not three disconnected products.
+
+**Product consequence:** a capability may be built and verified while remaining hidden, contextual or progressive in the default UI. This gives the platform room to grow without overwhelming learners or forcing future architecture rewrites.
+
+---
+
+## 2026-09-02 — Discovery run identity and evidence double-count protection
+
+The first Discovery activity exposed two future evidence-integrity hazards before they could become production debt.
+
+**Fixed:**
++- [HIGH] Number Explorer now persists a unique `activityInstanceId` for each run. Replaying the activity after completion creates a new instance instead of reusing canonical event identities from an earlier run.
++- [HIGH] Question-attempt and completion source event IDs are scoped to the activity instance, preserving durable idempotency while allowing legitimate repeated practice.
++- [HIGH] Aggregate completion events can now be marked `aggregateOnly` and the observation adapter explicitly excludes them from mastery evidence. This prevents question-level evidence plus aggregate completion from silently becoming two mastery transitions later.
++- [MEDIUM] Added regression coverage for the aggregate-only observation boundary.
++
+**Result:** Discovery now has a cleaner evidence contract before the richer server-side projection is enabled.
+
+---
+
 ## 2026-09-01 — Account-scoped offline learning-event queue
 
 A final offline audit found a subtle but important identity problem: the previous browser event queue stored source events without an account owner. A queued event could therefore survive an account switch and potentially be delivered under the next authenticated session.
@@ -14,7 +42,7 @@ A final offline audit found a subtle but important identity problem: the previou
 +- [HIGH] Events from another account remain isolated instead of being uploaded under the current session.
 +- [HIGH] Events cannot be queued offline when there is no remembered learner identity, avoiding anonymous evidence that could later be misattributed.
 +- [MEDIUM] Existing v1 queue data is intentionally not migrated because its owner cannot be established safely.
-+
+
 **Security boundary:** the server remains authoritative for authenticated identity. The local owner ID is only a routing/isolation guard and never grants authorization.
 
 ---
