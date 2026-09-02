@@ -5,11 +5,17 @@ import type { LearningEvent } from "./learningEvents";
  * Translate canonical product events into the small Cortex/SLS observation
  * contract. The canonical event stream remains authoritative; this is an
  * adapter only, so product surfaces do not need to know Cortex internals.
+ *
+ * Aggregate completion events may be useful analytics/provenance records while
+ * their child attempts already provide the mastery evidence. Producers mark
+ * those records with `aggregateOnly` so a future reducer cannot double-count
+ * the same learning activity.
  */
 export function learningEventToObservation(
   event: LearningEvent,
 ): LearningObservation | null {
   if (!event.topicId) return null;
+  if (event.metadata.aggregateOnly === true) return null;
 
   const correct = readBoolean(event.metadata.correct);
   const evidenceScore = readNumber(event.metadata.evidenceScore ?? event.metadata.percentage);
