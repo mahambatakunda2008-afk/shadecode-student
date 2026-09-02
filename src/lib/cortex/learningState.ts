@@ -18,7 +18,6 @@ export interface TopicLearningState {
 export interface LearningObservation {
   topicId: string;
   correct: boolean;
-  /** Optional graded percentage for evidence that is richer than binary correctness. */
   evidenceScore?: number;
   confidence?: number;
   responseSeconds?: number;
@@ -52,10 +51,6 @@ function observationEvidence(observation: LearningObservation): number {
     : clamp(observation.evidenceScore);
 }
 
-/**
- * Creates a deliberately conservative initial state. This is a state estimate,
- * not a claim that the student's true cognitive state equals these numbers.
- */
 export function createInitialLearningState(topicId: string): TopicLearningState {
   return {
     topicId,
@@ -73,9 +68,10 @@ export function createInitialLearningState(topicId: string): TopicLearningState 
 }
 
 /**
- * The authoritative pure richer-state transition for one observable learning
- * event. All dimensions are deterministic and bounded so the same observation
- * can be safely replayed offline or on the server without a second algorithm.
+ * Authoritative pure richer-state transition for one observable learning event.
+ * The initial 50 mastery is a placeholder, not observed evidence. The first
+ * real observation therefore establishes the baseline; later observations use
+ * the shared 70/30 history/evidence transition.
  */
 export function reduceLearningObservation(
   previous: TopicLearningState,
@@ -87,7 +83,9 @@ export function reduceLearningObservation(
 
   const priorMastery = previous.mastery;
   const evidence = observationEvidence(observation);
-  const mastery = transitionMastery(priorMastery, evidence);
+  const mastery = previous.exposure === 0
+    ? transitionMastery(null, evidence)
+    : transitionMastery(priorMastery, evidence);
   const errorRate = clamp(previous.errorRate * 0.85 + (observation.correct ? 0 : 100) * 0.15);
   const confidence = clamp(
     previous.confidence * 0.8 + clamp(observation.confidence ?? previous.confidence) * 0.2,
@@ -114,10 +112,6 @@ export function reduceLearningObservation(
   };
 }
 
-/**
- * Projects the already-reduced learning state into the durable topic_mastery
- * shape. It intentionally uses `next.mastery` rather than recalculating it.
- */
 export function projectTopicMastery(
   previous: Pick<TopicLearningState, "mastery"> | null,
   next: TopicLearningState,
@@ -143,5 +137,4 @@ export function projectTopicMastery(
   };
 }
 
-/** Backwards-compatible name for existing Cortex callers. */
 export const updateLearningState = reduceLearningObservation;
