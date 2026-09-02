@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-02 — Learn completion enters the durable evidence spine
+
+The existing Learn completion path persists lesson progress directly through `/api/learn`. Rather than rewriting that large legacy route in one risky pass, the completion transition now has a database bridge into the canonical durable Cortex event stream.
+
+**Implemented:**
++- [HIGH] Added an `after update of progress` trigger on `learn_lessons` for the `0..99 -> 100` completion transition.
++- [HIGH] The bridge writes a deterministic `lesson.completed` event to `public.cortex_events`, preserving learner, subject and lesson identity.
++- [HIGH] Completion is transition-only and idempotent, so repeated saves at 100% do not create repeated completion evidence.
++- [HIGH] The bridge is persistence/evidence-only. It does not mutate `topic_mastery`, preserving the canonical mastery boundary.
++- [MEDIUM] Offline completion benefits automatically when its later sync changes the durable lesson progress to 100%, without requiring an online AI call.
++- [MEDIUM] Added the matching repository migration so the live schema change is reproducible.
++
+**Boundary:** this is an explicit compatibility bridge while the Learn client/API path is migrated toward direct canonical event emission. Lesson completion now cannot silently disappear from the durable evidence stream, but question-level Learn evidence and richer-state projection still need their own audited integration.
+
+---
+
 ## 2026-09-02 — Exam mastery projection gets a replay boundary
 
 The first durable richer-state consumer now has an explicit idempotency boundary. Graded exam topic evidence is claimed through a deterministic projection event before the richer `topic_mastery` projection is applied.
@@ -42,7 +58,7 @@ The richer Cortex state is no longer only a pure local reducer. The first durabl
 +- [HIGH] The richer reducer now treats its initial 50 mastery as a placeholder. The first real evidence establishes the baseline; subsequent observations use the shared 70/30 history/evidence transition.
 +- [HIGH] Added regression coverage for first-evidence baseline behavior and subsequent 70/30 transitions.
 +- [MEDIUM] Aggregate-only completion events remain excluded from mastery observations, keeping question-level evidence and aggregate results from being double-counted.
-+
+
 **Boundary:** this is the first authoritative durable richer-state projection consumer, not the end of the migration. Other evidence-bearing surfaces still need explicit semantics and idempotent integration before they can write the richer state.
 
 ---
