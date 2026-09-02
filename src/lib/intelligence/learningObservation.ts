@@ -6,10 +6,10 @@ import type { LearningEvent } from "./learningEvents";
  * contract. The canonical event stream remains authoritative; this is an
  * adapter only, so product surfaces do not need to know Cortex internals.
  *
- * Aggregate completion events may be useful analytics/provenance records while
- * their child attempts already provide the mastery evidence. Producers mark
- * those records with `aggregateOnly` so a future reducer cannot double-count
- * the same learning activity.
+ * Aggregate completion events are deliberately analytics-only when their
+ * producer marks them `aggregateOnly`. Child attempts already carry the
+ * evidence used for mastery, so reducing the aggregate again would double-
+ * count the same learning session.
  */
 export function learningEventToObservation(
   event: LearningEvent,
