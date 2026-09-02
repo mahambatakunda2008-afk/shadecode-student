@@ -8,7 +8,7 @@ import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
 import { createInitialLearningState, updateLearningState, type TopicLearningState } from "@/lib/cortex/learningState";
 
 const TOPIC_ID = "primary:number-sense";
-const STORAGE_PREFIX = "shadecode:discovery:number-explorer:v1:";
+const STORAGE_PREFIX = "shadecode:discovery:number-explorer:v2:";
 
 const QUESTIONS = [
   { id: "q1", prompt: "Which number is bigger?", choices: ["4", "7", "2"], answer: "7", hint: "Count the steps from 1. The bigger number is farther along." },
@@ -18,7 +18,18 @@ const QUESTIONS = [
   { id: "q5", prompt: "Which group has more?", choices: ["● ● ●", "● ●", "● ● ● ●"], answer: "● ● ● ●", hint: "Count each group carefully." },
 ] as const;
 
-type SavedState = { questionIndex: number; correct: number; answered: string[]; mastery: TopicLearningState };
+type SavedState = {
+  activityInstanceId: string;
+  questionIndex: number;
+  correct: number;
+  answered: string[];
+  mastery: TopicLearningState;
+};
+
+function createActivityInstanceId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `number-explorer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function storageKey(userId: string) { return `${STORAGE_PREFIX}${userId}`; }
 
@@ -28,7 +39,7 @@ function loadSaved(userId: string): SavedState | null {
     const raw = localStorage.getItem(storageKey(userId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedState;
-    if (!parsed?.mastery || !Array.isArray(parsed.answered)) return null;
+    if (!parsed?.activityInstanceId || !parsed?.mastery || !Array.isArray(parsed.answered)) return null;
     return parsed;
   } catch { return null; }
 }
@@ -37,6 +48,7 @@ export default function DiscoveryNumberExplorer() {
   const { profile } = useUser();
   const learnerId = useMemo(() => profile?.id ?? getRememberedUserId() ?? "device", [profile?.id]);
   const [saved, setSaved] = useState<SavedState | null>(null);
+  const [activityInstanceId, setActivityInstanceId] = useState(() => createActivityInstanceId());
   const [questionIndex, setQuestionIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [answered, setAnswered] = useState<string[]>([]);
@@ -47,7 +59,11 @@ export default function DiscoveryNumberExplorer() {
   useEffect(() => {
     const restored = loadSaved(learnerId);
     setSaved(restored);
-    if (!restored) return;
+    if (!restored) {
+      setActivityInstanceId(createActivityInstanceId());
+      return;
+    }
+    setActivityInstanceId(restored.activityInstanceId);
     setQuestionIndex(Math.min(restored.questionIndex, QUESTIONS.length));
     setCorrectCount(restored.correct);
     setAnswered(restored.answered);
@@ -78,16 +94,16 @@ export default function DiscoveryNumberExplorer() {
     setMastery(nextMastery);
     setCorrectCount(nextCorrect);
     setAnswered(nextAnswered);
-    persist({ questionIndex, correct: nextCorrect, answered: nextAnswered, mastery: nextMastery });
+    persist({ activityInstanceId, questionIndex, correct: nextCorrect, answered: nextAnswered, mastery: nextMastery });
 
     void emitLearningEvent({
       source: "discovery",
-      sourceEventId: `number-explorer:${question.id}`,
+      sourceEventId: `number-explorer:${activityInstanceId}:${question.id}`,
       type: "question.attempted",
       subjectId: "mathematics",
       topicId: TOPIC_ID,
       entityId: question.id,
-      attemptId: "number-explorer-v1",
+      attemptId: activityInstanceId,
       metadata: { correct: isCorrect, percentage: isCorrect ? 100 : 0 },
     });
   }
@@ -97,32 +113,35 @@ export default function DiscoveryNumberExplorer() {
     const nextIndex = questionIndex + 1;
     if (nextIndex >= QUESTIONS.length) {
       setFinished(true);
-      persist({ questionIndex: QUESTIONS.length, correct: correctCount, answered, mastery });
+      persist({ activityInstanceId, questionIndex: QUESTIONS.length, correct: correctCount, answered, mastery });
       void emitLearningEvent({
         source: "discovery",
-        sourceEventId: "number-explorer:complete",
+        sourceEventId: `number-explorer:${activityInstanceId}:complete`,
         type: "quiz.completed",
         subjectId: "mathematics",
         topicId: TOPIC_ID,
-        entityId: "number-explorer-v1",
-        metadata: { percentage: Math.round((correctCount / QUESTIONS.length) * 100) },
+        entityId: activityInstanceId,
+        attemptId: activityInstanceId,
+        metadata: { percentage: Math.round((correctCount / QUESTIONS.length) * 100), aggregateOnly: true },
       });
       return;
     }
     setQuestionIndex(nextIndex);
     setSelected(null);
-    persist({ questionIndex: nextIndex, correct: correctCount, answered, mastery });
+    persist({ activityInstanceId, questionIndex: nextIndex, correct: correctCount, answered, mastery });
   }
 
   function restart() {
     const fresh = createInitialLearningState(TOPIC_ID);
+    const nextActivityInstanceId = createActivityInstanceId();
+    setActivityInstanceId(nextActivityInstanceId);
     setQuestionIndex(0);
     setCorrectCount(0);
     setAnswered([]);
     setMastery(fresh);
     setSelected(null);
     setFinished(false);
-    persist({ questionIndex: 0, correct: 0, answered: [], mastery: fresh });
+    persist({ activityInstanceId: nextActivityInstanceId, questionIndex: 0, correct: 0, answered: [], mastery: fresh });
   }
 
   if (finished) {
