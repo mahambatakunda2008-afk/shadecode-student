@@ -20,7 +20,7 @@ local-first study state
 Shadecode Student + Cortex
 ```
 
-WebMCP does not create a second application, second database, or MCP-only state model. The adapter calls the same capability layer used to perform the agent-facing study actions. This keeps the integration small, testable and replaceable.
+WebMCP does not create a second application, second database, or MCP-only state model. The adapter calls the capability layer used for the agent-facing study actions. This keeps the integration small, testable and replaceable.
 
 ## New WebMCP work
 
@@ -28,6 +28,7 @@ Added during the September 2026 submission period:
 
 - `src/components/webmcp/StudentWebMCP.tsx`
 - `src/lib/capabilities/study.ts`
+- `src/lib/capabilities/study.test.ts`
 - Global registration from `src/app/layout.tsx`
 - Local-first study capability contract
 - Six agent-facing tools:
@@ -37,6 +38,8 @@ Added during the September 2026 submission period:
   - `start_study_session`
   - `open_exam_hub`
   - `finish_study_session`
+
+The adapter now treats registration as progressive enhancement: each tool is attempted independently, readiness is recorded only after at least one registration succeeds, and a failed registration can be retried if the browser exposes WebMCP late or temporarily rejects a tool.
 
 These changes are intentionally additive to the existing Shadecode Student product. Existing Cortex, Exam Hub, past-paper indexing, local-first storage, and learning flows remain the product foundation.
 
@@ -80,6 +83,7 @@ The demo is therefore **goal → context → plan → action → practice → co
 - WebMCP failure must never prevent the application from loading or studying.
 - Inputs are validated and bounded before persistence.
 - Each tool registers independently so one failure cannot disable the whole surface.
+- Adapter registration is retry-safe and exposes a small browser-global diagnostic count for debugging.
 - SSR never touches browser WebMCP APIs.
 - Local-first state remains authoritative.
 
@@ -104,11 +108,20 @@ Suggested structure:
 
 ## Technical notes
 
-WebMCP registration is feature-detected. The component exits without side effects when `document.modelContext` is unavailable. Registration is isolated from the rest of the application and errors are swallowed at the integration boundary by design.
+WebMCP registration is feature-detected. The component exits without side effects when `document.modelContext` is unavailable. Registration is isolated from the rest of the application and errors are contained at the integration boundary by design.
 
-The local-first capability layer bounds numeric inputs, rejects empty required values, filters empty plan steps, and persists a single structured state record. It intentionally does not make the browser dependent on a remote service.
+The local-first capability layer bounds numeric inputs, rejects empty required values, filters empty plan steps, records completion/mastery, and persists a single structured study state. Focused Vitest coverage exercises persistence, normalization, validation, completion, and storage-read failure handling.
 
 For judging, test with a WebMCP-enabled browser as required by the official challenge rules.
+
+## Timestamped extension commits
+
+- `67fe7deeea2385890a188c97dfcfc33f4508fcd1` — add study capability layer.
+- `0553cf31fa728155344698b8a70cdcb8a54252dd` — refactor WebMCP adapter onto capabilities.
+- `0b65c0aee6b8351618f39bbedd7008e980c15c84` — document WebMCP submission architecture.
+- `90efcd335ed94a14e94f163e7c984eaf6fa5ea75` — clean adapter imports/registration.
+- `5fc23b6d13102048d4e39bb9a2a2fb509dab906d` — add capability-layer tests.
+- `b17dc50210bd6464b9c84891e6e7e327a0e0f6b6` — make tool registration retry-safe and observable.
 
 ## Competition disclosure
 
@@ -117,13 +130,15 @@ Shadecode Student is a pre-existing product. The WebMCP integration is a meaning
 ## Submission checklist
 
 - [x] WebMCP adapter mounted in the production application.
-- [x] Shared local-first capability layer.
+- [x] Shared capability layer for WebMCP study actions.
 - [x] Six workflow-level agent tools.
 - [x] Unsupported-browser fallback.
 - [x] Per-tool registration failure isolation.
+- [x] Retry-safe WebMCP registration.
 - [x] Input validation and bounds.
+- [x] Focused capability-layer tests added.
 - [ ] Verify final production deployment after the latest commits.
-- [ ] Record exact WebMCP extension commit/date range.
+- [x] Record exact WebMCP extension commit/date range.
 - [ ] Confirm public repository and accepted open-source licensing requirement before submission. Licensing is intentionally not changed automatically because it is a legal/product decision.
 - [ ] Record final live URL and public repository URL.
 - [ ] Record <3 minute demo with audio and publish on YouTube.
