@@ -54,7 +54,6 @@ export default function ExamSimulationClient() {
     <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}>
       <AcademicExamContext />
       <ExamWorkspace
-        attemptId={examInstanceId}
         initialSubject={subject}
         initialTopic={topic}
         initialQuestionCount={safeCount}
