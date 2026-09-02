@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import {
+  buildStudyCapabilities,
+  createStudyPlan,
+  finishStudySession,
+  getStudyState,
+  setStudyGoal,
+  startStudySession,
+} from "@/lib/capabilities/study";
 
 type Tool = {
   name: string;
@@ -8,36 +16,21 @@ type Tool = {
   description: string;
   inputSchema: Record<string, unknown>;
   annotations?: { readOnlyHint?: boolean };
-  execute: (input: Record<string, unknown>) => Promise<unknown> | unknown;
+  execute: (input: Record<string, unknown>, context?: { signal?: AbortSignal }) => Promise<unknown> | unknown;
 };
 
 type ModelContext = {
-  registerTool: (tool: Tool, options?: { signal?: AbortSignal }) => Promise<void> | void;
+  registerTool: (tool: Tool) => Promise<void> | void;
 };
 
 type WebMCPDocument = Document & { modelContext?: ModelContext };
 
-const STORAGE_KEY = "shadecode:webmcp:study-state";
-
-function readState() {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
-function writeState(patch: Record<string, unknown>) {
-  const next = { ...readState(), ...patch, updatedAt: new Date().toISOString() };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  window.dispatchEvent(new CustomEvent("shadecode:webmcp-state", { detail: next }));
-  return next;
-}
+type WebMCPWindow = Window & { __shadecodeWebMCPRegistered?: boolean };
 
 /**
- * Progressive WebMCP enhancement for agent-native study workflows.
- * The app remains fully functional when WebMCP is unavailable.
+ * WebMCP is a progressive enhancement. The learning app never depends on it.
+ * Agents get workflow-level capabilities that share the same local-first action
+ * layer as the rest of the product instead of a second, MCP-only state store.
  */
 export default function StudentWebMCP() {
   useEffect(() => {
@@ -45,149 +38,150 @@ export default function StudentWebMCP() {
     const modelContext = doc.modelContext;
     if (!modelContext) return;
 
+    const win = window as WebMCPWindow;
+    if (win.__shadecodeWebMCPRegistered) return;
+
+    const capabilities = buildStudyCapabilities();
+    const safe = (action: () => unknown) => {
+      try {
+        return Promise.resolve(action());
+      } catch (error) {
+        return Promise.reject(error instanceof Error ? error : new Error("Study action failed"));
+      }
+    };
+
     const tools: Tool[] = [
       {
         name: "get_student_study_state",
         title: "Get student study state",
         description:
-          "Read the student's local study state, including the current goal, subject, plan, and active session. Use this before making recommendations so the agent works with the student's current context.",
+          "Read the student's current local-first study context before recommending an action. Returns goals, available time, plan, active session and latest completion.",
         inputSchema: { type: "object", properties: {} },
         annotations: { readOnlyHint: true },
         execute: async () => ({
-          source: "Shadecode Student local-first state",
+          source: "Shadecode Student local-first capability layer",
           online: navigator.onLine,
-          state: readState(),
+          state: capabilities.get_student_study_state(),
         }),
       },
       {
         name: "set_study_goal",
         title: "Set study goal",
-        description:
-          "Set or update the student's immediate study goal. This is a local action and does not require a cloud AI service.",
+        description: "Set the student's immediate study outcome, subject and available time. The change is persisted locally.",
         inputSchema: {
           type: "object",
           properties: {
-            goal: { type: "string", description: "The concrete study outcome the student wants." },
-            subject: { type: "string", description: "The subject involved, if known." },
-            minutes: { type: "number", description: "Available study time in minutes, if known." },
+            goal: { type: "string", description: "Concrete study outcome." },
+            subject: { type: "string", description: "Subject, if known." },
+            minutes: { type: "number", minimum: 1, maximum: 1440, description: "Available study minutes." },
           },
           required: ["goal"],
         },
-        annotations: { readOnlyHint: false },
-        execute: async (input) =>
-          writeState({
-            goal: String(input.goal),
-            subject: input.subject ? String(input.subject) : undefined,
-            availableMinutes: typeof input.minutes === "number" ? input.minutes : undefined,
-          }),
+        execute: async (input) => safe(() => setStudyGoal({
+          goal: String(input.goal ?? ""),
+          subject: input.subject ? String(input.subject) : undefined,
+          minutes: typeof input.minutes === "number" ? input.minutes : undefined,
+        })),
       },
       {
         name: "create_study_plan",
         title: "Create a study plan",
-        description:
-          "Save a concrete study plan for the current student. Provide short ordered steps that can be executed in the Shadecode learning experience.",
+        description: "Create and save an ordered, executable revision plan for a subject and topic.",
         inputSchema: {
           type: "object",
           properties: {
             subject: { type: "string" },
             topic: { type: "string" },
-            steps: { type: "array", items: { type: "string" } },
-            minutes: { type: "number" },
+            steps: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 20 },
+            minutes: { type: "number", minimum: 1, maximum: 1440 },
           },
           required: ["subject", "topic", "steps"],
         },
-        annotations: { readOnlyHint: false },
-        execute: async (input) => {
-          const steps = Array.isArray(input.steps) ? input.steps.map(String) : [];
-          return writeState({
-            plan: {
-              subject: String(input.subject),
-              topic: String(input.topic),
-              steps,
-              minutes: typeof input.minutes === "number" ? input.minutes : undefined,
-              createdAt: new Date().toISOString(),
-            },
-          });
-        },
+        execute: async (input) => safe(() => createStudyPlan({
+          subject: String(input.subject ?? ""),
+          topic: String(input.topic ?? ""),
+          steps: Array.isArray(input.steps) ? input.steps.map(String) : [],
+          minutes: typeof input.minutes === "number" ? input.minutes : undefined,
+        })),
       },
       {
         name: "start_study_session",
         title: "Start a study session",
-        description:
-          "Start a focused study session using the student's saved plan. This updates local state and opens the learning workspace.",
+        description: "Start a focused local study session. The tool records the session, then opens the matching Shadecode learning workspace.",
         inputSchema: {
           type: "object",
           properties: {
             subject: { type: "string" },
             topic: { type: "string" },
-            minutes: { type: "number" },
+            minutes: { type: "number", minimum: 1, maximum: 1440 },
           },
           required: ["subject", "topic"],
         },
-        annotations: { readOnlyHint: false },
-        execute: async (input) => {
-          const session = writeState({
-            activeSession: {
-              subject: String(input.subject),
-              topic: String(input.topic),
-              minutes: typeof input.minutes === "number" ? input.minutes : 25,
-              startedAt: new Date().toISOString(),
-            },
+        execute: async (input) => safe(() => {
+          const state = startStudySession({
+            subject: String(input.subject ?? ""),
+            topic: String(input.topic ?? ""),
+            minutes: typeof input.minutes === "number" ? input.minutes : undefined,
           });
           window.location.assign(`/learn?subject=${encodeURIComponent(String(input.subject))}&topic=${encodeURIComponent(String(input.topic))}`);
-          return session;
-        },
+          return state;
+        }),
       },
       {
         name: "open_exam_hub",
         title: "Open Exam Hub",
-        description:
-          "Open Shadecode Student's exam and question workspace for the student to practice, review questions, or use Cortex help.",
+        description: "Open the exam workspace with optional subject and topic context so the student can practise and review.",
         inputSchema: {
           type: "object",
           properties: { subject: { type: "string" }, topic: { type: "string" } },
         },
-        annotations: { readOnlyHint: false },
-        execute: async (input) => {
+        execute: async (input) => safe(() => {
           const params = new URLSearchParams();
           if (input.subject) params.set("subject", String(input.subject));
           if (input.topic) params.set("topic", String(input.topic));
           const url = `/exam-hub${params.toString() ? `?${params.toString()}` : ""}`;
           window.location.assign(url);
           return { opened: url };
-        },
+        }),
       },
       {
         name: "finish_study_session",
         title: "Finish study session",
-        description:
-          "Finish the active study session and record a local completion event for the student's progress history.",
+        description: "Finish the active session and persist the outcome and optional mastery score locally for future adaptation.",
         inputSchema: {
           type: "object",
           properties: {
-            outcome: { type: "string", description: "What the student accomplished." },
+            outcome: { type: "string" },
             mastery: { type: "number", minimum: 0, maximum: 100 },
           },
         },
-        annotations: { readOnlyHint: false },
-        execute: async (input) => {
-          const state = readState();
-          const completion = {
-            outcome: input.outcome ? String(input.outcome) : "Session completed",
-            mastery: typeof input.mastery === "number" ? input.mastery : undefined,
-            completedAt: new Date().toISOString(),
-            session: state.activeSession ?? null,
-          };
-          return writeState({ activeSession: null, lastCompletion: completion });
-        },
+        execute: async (input) => safe(() => finishStudySession({
+          outcome: input.outcome ? String(input.outcome) : undefined,
+          mastery: typeof input.mastery === "number" ? input.mastery : undefined,
+        })),
       },
     ];
 
-    const controller = new AbortController();
-    Promise.all(tools.map((tool) => Promise.resolve(modelContext.registerTool(tool, { signal: controller.signal })))).catch(() => undefined);
+    win.__shadecodeWebMCPRegistered = true;
 
-    return () => controller.abort();
+    // Register independently so one malformed/unsupported tool cannot prevent
+    // the remaining workflow from becoming available to an agent.
+    for (const tool of tools) {
+      try {
+        Promise.resolve(modelContext.registerTool(tool)).catch(() => undefined);
+      } catch {
+        // WebMCP is optional. Never allow an agent integration failure to break UI.
+      }
+    }
+
+    return () => {
+      // Current WebMCP registration is intentionally left alive for the page
+      // lifetime. There is no portable unregister contract in the imperative API.
+    };
   }, []);
 
   return null;
 }
+
+// Keep the imported capability names explicit for bundlers and future adapter tests.
+void getStudyState;
