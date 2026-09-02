@@ -39,10 +39,6 @@ export default function DashboardReimagined() {
       setCore(fresh); setCoreCachedAt(null);
       saveDashboardCache(id, "core", fresh);
     } catch (error) {
-      // Live fetch failed (offline, timeout, or a real server error) -- fall
-      // back to the last successful read rather than a hard error, so the
-      // most-visited page in the app doesn't go blank just because the
-      // network did. Only show coreError when there's truly nothing to show.
       const cached = loadDashboardCache<{ progress: StudentProgress; performance: StudentPerformance; activity: StudentActivity }>(id, "core");
       if (cached) {
         setCore(cached.data); setCoreCachedAt(cached.cachedAt);
@@ -67,7 +63,51 @@ export default function DashboardReimagined() {
       }
     } finally { setIntelLoading(false); }
   };
-  useEffect(() => { let alive = true; (async () => { const { data: auth } = await supabase.auth.getUser(); if (!auth.user) { router.push("/auth/login"); return; } if (!alive) return; setUserId(auth.user.id); setUserName(auth.user.user_metadata?.full_name?.split(" ")[0] || auth.user.email?.split("@")[0] || "Student"); void trackEvent("dashboard_opened"); void loadCore(auth.user.id); void loadIntel(auth.user.id); const { data: examData } = await supabase.from("exams").select("id,subject,exam_date").eq("user_id", auth.user.id).gte("exam_date", new Date().toISOString().split("T")[0]).order("exam_date", { ascending: true }).limit(5); if (alive) { setExams(examData || []); setLoading(false); } })(); return () => { alive = false; }; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      // Session discovery is local and fast. It must not wait for a network
+      // round-trip just to decide whether the dashboard may render.
+      const { data: auth } = await supabase.auth.getSession();
+      const user = auth.session?.user;
+      if (!user) { router.push("/auth/login"); return; }
+      if (!alive) return;
+
+      setUserId(user.id);
+      setUserName(user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "Student");
+      void trackEvent("dashboard_opened");
+
+      // Paint the device snapshot before any live request. These reads are
+      // synchronous IndexedDB/local-cache reads and never gate first paint.
+      const cachedCore = loadDashboardCache<{ progress: StudentProgress; performance: StudentPerformance; activity: StudentActivity }>(user.id, "core");
+      if (cachedCore) { setCore(cachedCore.data); setCoreCachedAt(cachedCore.cachedAt); }
+      const cachedIntel = loadDashboardCache<StudentIntelligenceData>(user.id, "intel");
+      if (cachedIntel) { setIntel(cachedIntel.data); setIntelCachedAt(cachedIntel.cachedAt); }
+
+      // The dashboard shell is now allowed to render. Core, Cortex and exams
+      // reconcile in the background and can never hold the page hostage.
+      setLoading(false);
+      void loadCore(user.id);
+      void loadIntel(user.id);
+      void (async () => {
+        try {
+          const { data: examData } = await supabase
+            .from("exams")
+            .select("id,subject,exam_date")
+            .eq("user_id", user.id)
+            .gte("exam_date", new Date().toISOString().split("T")[0])
+            .order("exam_date", { ascending: true })
+            .limit(5);
+          if (alive) setExams(examData || []);
+        } catch {
+          // Upcoming exams are secondary data. Cached dashboard state remains
+          // usable when this request is unavailable.
+        }
+      })();
+    })();
+    return () => { alive = false; };
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
   if (loading) return <DashboardLoading />;
   const next = intel?.recommendations?.[0]; const weak = intel?.weakAreas?.[0]; const insight = intel?.insights?.[0]; const progressPct = core?.progress?.overallCompletion; const score = core?.performance?.trends?.averageScore; const subjects = (core?.progress?.subjects || []).slice(0, 6); const recentLessons = (core?.progress?.lessons || []).filter((lesson: any) => lesson.lastAttempted).sort((a: any, b: any) => new Date(b.lastAttempted).getTime() - new Date(a.lastAttempted).getTime()).slice(0, 3); const activeMinutes = core?.activity?.patterns?.averageDailyStudyTime; const recommendationCount = intel?.recommendations?.length || 0; const nextAccent = accentFor(weak?.subject); const greeting = getWelcomeContext({ core, coreLoading });
   const openRecommendation = (item: any) => { const params = new URLSearchParams(); if (item?.subject) params.set("subject", item.subject); const topic = item?.topic || item?.title || ""; if (topic) params.set("topic", topic); void trackEvent("learning_action_started", { source: "dashboard", subject: item?.subject, topic }); router.push(`/learn?${params.toString()}`); };
