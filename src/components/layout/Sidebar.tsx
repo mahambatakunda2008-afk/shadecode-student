@@ -57,26 +57,52 @@ export function Sidebar() {
   };
 
   function navItemClass(active: boolean) {
-    return cn("group relative flex items-center justify-between min-h-[40px] px-3 py-[11px] rounded-[9px] overflow-hidden", "text-[13px] leading-none transition-all duration-200 outline-none", active ? "bg-[var(--primary-glow)] text-[var(--foreground)] font-semibold shadow-sm" : "font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]");
+    return cn(
+      "group relative flex items-center justify-between min-h-[44px] px-3 py-2.5 rounded-[10px] overflow-hidden",
+      "text-[14px] leading-snug transition-all duration-200 outline-none",
+      active
+        ? "bg-[var(--primary-glow)] text-[var(--foreground)] font-semibold shadow-sm"
+        : "font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]"
+    );
   }
 
   function iconClass(active: boolean) {
-    return cn("w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]");
+    return cn(
+      "w-[19px] h-[19px] flex-shrink-0 transition-colors duration-150",
+      active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
+    );
   }
 
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden border-r border-[var(--card-border)] bg-[var(--surface)]" data-study-level={experience.stage}>
-      <div className="flex items-center px-4 pt-4 pb-4 flex-shrink-0"><Link href="/dashboard" aria-label="Shadecode Student dashboard" className="min-w-0"><BrandLockup compact /></Link></div>
+      <div className="flex items-center px-4 pt-4 pb-4 flex-shrink-0">
+        <Link href="/dashboard" aria-label="Shadecode Student dashboard" className="min-w-0"><BrandLockup compact /></Link>
+      </div>
       <div className="mx-4 mb-3 flex-shrink-0 border-t border-[var(--card-border)]" />
 
       {profile && (
         <div className="mx-3 mb-3 flex-shrink-0 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-3 shadow-sm">
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-7 h-7 rounded-full bg-[var(--primary-glow)] border border-[var(--card-border)] flex items-center justify-center flex-shrink-0"><span className="text-[10px] font-bold text-[var(--primary)]">{initials}</span></div>
-            <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-[var(--foreground)] truncate leading-none">{firstName}</p><p className="text-[11px] text-[var(--muted-foreground)] mt-[3px] leading-none">{experience.shortLabel} · Level {profile.level}</p></div>
-            {profile.streak > 0 && <div className="flex items-center gap-1 flex-shrink-0"><Flame className="w-3 h-3 text-[var(--warning)]" /><span className="text-[11px] font-bold text-[var(--warning)] tabular-nums leading-none">{profile.streak}</span></div>}
+            <div className="w-8 h-8 rounded-full bg-[var(--primary-glow)] border border-[var(--card-border)] flex items-center justify-center flex-shrink-0">
+              <span className="text-[12px] font-bold text-[var(--primary)]">{initials}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-[var(--foreground)] truncate leading-tight">{firstName}</p>
+              <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5 leading-tight">{experience.shortLabel} · Level {profile.level}</p>
+            </div>
+            {profile.streak > 0 && (
+              <div className="flex items-center gap-1 flex-shrink-0" title={`${profile.streak} day streak`}>
+                <Flame className="w-4 h-4 text-[var(--warning)]" />
+                <span className="text-[12px] font-bold text-[var(--warning)] tabular-nums leading-none">{profile.streak}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2"><div className="flex-1 h-[3px] rounded-full bg-[var(--surface-3)] overflow-hidden"><div className="h-full rounded-full transition-all duration-700 bg-[var(--primary)]" style={{ width: `${xpPercent}%` }} /></div><span className="text-[10px] text-[var(--muted-foreground)] leading-none tabular-nums flex-shrink-0">{profile.xp}<span className="opacity-50">/{profile.xp_to_next_level}</span></span></div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1 rounded-full bg-[var(--surface-3)] overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700 bg-[var(--primary)]" style={{ width: `${xpPercent}%` }} />
+            </div>
+            <span className="text-[12px] text-[var(--muted-foreground)] leading-none tabular-nums flex-shrink-0">{profile.xp}<span className="opacity-50">/{profile.xp_to_next_level}</span></span>
+          </div>
         </div>
       )}
 
@@ -85,21 +111,31 @@ export function Sidebar() {
           const items = section.items.filter((item) => visibleHref(item.href, experience.navMode, experience.showExamHub, experience.showExamSim, experience.showLeaderboard));
           if (!items.length) return null;
           return <div key={section.group}>
-            <p className="ssc-nav-label text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--muted-foreground)] px-3 mb-2 select-none">{section.group}</p>
-            <div className="flex flex-col gap-[2px]">
+            <p className="ssc-nav-label text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--muted-foreground)] px-3 mb-2 select-none">{section.group}</p>
+            <div className="flex flex-col gap-1">
               {items.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
                 const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
                 const active = isRouteActive(pathname, href);
-                return <Link key={href} href={href} className={navItemClass(active)}>{active && <span className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]" aria-hidden="true" />}<div className="flex items-center gap-2.5"><Icon className={iconClass(active)} strokeWidth={active ? 2 : 1.8} /><span>{label}</span></div>{badge && <span className={cn("px-[6px] py-[3px] rounded-md text-[10px] font-bold leading-none tabular-nums", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]" : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]")}>{badge}</span>}</Link>;
+                return <Link key={href} href={href} className={navItemClass(active)}>
+                  {active && <span className="absolute left-0 inset-y-0 w-[3px] rounded-r-full bg-[var(--primary)]" aria-hidden="true" />}
+                  <div className="flex items-center gap-3"><Icon className={iconClass(active)} strokeWidth={active ? 2 : 1.8} /><span>{label}</span></div>
+                  {badge && <span className={cn("px-1.5 py-1 rounded-md text-[11px] font-bold leading-none tabular-nums", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--card-border)]" : "bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--card-border)]")}>{badge}</span>}
+                </Link>;
               })}
             </div>
           </div>;
         })}
       </nav>
 
-      <div className="flex-shrink-0 px-3 pb-4 pt-3 border-t border-[var(--card-border)] flex flex-col gap-[2px]">
-        <Link href={NAV_ITEMS.settings.href} className={navItemClass(isRouteActive(pathname, NAV_ITEMS.settings.href))}>{isRouteActive(pathname, NAV_ITEMS.settings.href) && <span className="absolute left-0 inset-y-0 w-[2px] bg-[var(--primary)]" aria-hidden="true" />}<div className="flex items-center gap-2.5"><NAV_ITEMS.settings.icon className={iconClass(isRouteActive(pathname, NAV_ITEMS.settings.href))} strokeWidth={1.8} /><span>Settings</span></div></Link>
-        <button onClick={handleSignOut} className={cn("group relative flex items-center gap-2.5 min-h-[40px] px-3 py-[11px] rounded-[9px] w-full text-left cursor-pointer", "text-[13px] font-medium leading-none transition-all duration-200 text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]")}><LogOut className="w-[18px] h-[18px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150" strokeWidth={1.8} /><span>Sign out</span></button>
+      <div className="flex-shrink-0 px-3 pb-4 pt-3 border-t border-[var(--card-border)] flex flex-col gap-1">
+        <Link href={NAV_ITEMS.settings.href} className={navItemClass(isRouteActive(pathname, NAV_ITEMS.settings.href))}>
+          {isRouteActive(pathname, NAV_ITEMS.settings.href) && <span className="absolute left-0 inset-y-0 w-[3px] rounded-r-full bg-[var(--primary)]" aria-hidden="true" />}
+          <div className="flex items-center gap-3"><NAV_ITEMS.settings.icon className={iconClass(isRouteActive(pathname, NAV_ITEMS.settings.href))} strokeWidth={1.8} /><span>Settings</span></div>
+        </Link>
+        <button onClick={handleSignOut} className={cn("group relative flex items-center gap-3 min-h-[44px] px-3 py-2.5 rounded-[10px] w-full text-left cursor-pointer", "text-[14px] font-medium leading-snug transition-all duration-200 text-[var(--muted-foreground)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]")}>
+          <LogOut className="w-[19px] h-[19px] flex-shrink-0 text-[var(--muted-foreground)] group-hover:text-[var(--danger)] transition-colors duration-150" strokeWidth={1.8} />
+          <span>Sign out</span>
+        </button>
       </div>
     </aside>
   );
