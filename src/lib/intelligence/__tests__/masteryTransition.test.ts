@@ -43,7 +43,7 @@ describe("shared mastery transition", () => {
     expect(first.exposure).toBe(1);
   });
 
-  it("uses the shared transition after the baseline observation", () => {
+  it("uses the shared rounded transition after the baseline observation", () => {
     const initial = createInitialLearningState("fractions");
     const first = reduceLearningObservation(initial, {
       topicId: "fractions",
@@ -56,6 +56,6 @@ describe("shared mastery transition", () => {
       evidenceScore: 0,
     });
 
-    expect(second.mastery).toBe(58.1);
+    expect(second.mastery).toBe(58);
   });
 });
