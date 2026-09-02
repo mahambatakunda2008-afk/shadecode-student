@@ -1,8 +1,8 @@
 # Shadecode Master Roadmap & Progress Matrix
 
-**Date:** 2026-09-01  
+**Date:** 2026-09-02  
 **Status:** Authoritative strategic/engineering tracker  
-**Scope:** All Shadecode capabilities discussed in the September 1 product-design work, reconciled against the verified repository state and known production foundations.
+**Scope:** All Shadecode capabilities discussed in the September 1-2 product-design work, reconciled against the verified repository state and known production foundations.
 
 > This is the master scope. The three education experiences are only one workstream. Shadecode is being built as a local-first learning operating system with shared intelligence, learning, assessment, creation, people, knowledge, safety and platform foundations.
 
@@ -12,7 +12,13 @@
 
 The system should improve the learner's next action from real evidence, remain useful when connectivity disappears, and preserve useful learning state over time.
 
-## 2. Status legend
+## 2. Build / Release principle
+
+**Build aggressively. Release progressively.**
+
+The engineering target is capability completeness, not exposing every capability immediately. A capability can be built, tested and kept behind contextual/progressive release while the default experience remains focused for the learner's education level. See `docs/CAPABILITY_REGISTRY.md` for the separate engineering-truth and product-release views.
+
+## 3. Status legend
 
 - 🟢 **SHIPPED** — verified working capability/foundation exists.
 - 🟡 **PARTIAL** — meaningful implementation exists but is incomplete or needs hardening.
@@ -26,7 +32,7 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 
 ---
 
-# 3. Master Progress Matrix
+# 4. Master Progress Matrix
 
 ## A. Cortex / Intelligence
 
@@ -35,8 +41,11 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Cortex intelligence layer | 🟡 | Existing production surface; unify evidence, state and recommendations. |
 | Canonical learning events | 🟢 | Canonical authenticated ingress and durable `cortex_events` exist; ingress is persistence-only. |
 | Event idempotency | 🟢 | Canonical identity is enforced by durable storage. |
-| Learning observation adapter | 🟢 | Canonical events translate into Cortex observations, including optional graded percentage evidence. |
+| Account-scoped offline event queue | 🟢 | Queue is owner-scoped and only flushes events for the active learner. |
+| Learning observation adapter | 🟢 | Canonical events translate into Cortex observations, including optional graded percentage evidence. Aggregate-only completions are excluded from mastery observations. |
 | Topic mastery | 🟡 | Established `topic_mastery` store is authoritative; shared score transition and pure richer reducer exist, but durable richer projection is not yet wired into all evidence consumers. |
+| Rich learning-state reducer | 🔵 | Deterministic pure reducer exists for mastery, retention, confidence, stability, exposure, error rate, response speed, improvement and uncertainty. |
+| Durable richer mastery projection | 🟣 | Next major engineering task: persist the reducer output through exactly one authoritative consumer without double-counting existing exam aggregates. |
 | Retention / confidence / stability / exposure | 🔵 | Durable fields exist; deterministic reducer exists; calibration remains. |
 | Error rate / response speed | 🔵 | Durable fields exist; richer evidence semantics remain. |
 | Prerequisite health | 🔵 | Durable field exists; graph-backed inference remains. |
@@ -171,7 +180,7 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Weekly leagues | ⚪ | Planned. |
 | Friend battles | ⚪ | Planned with safety controls. |
 | Controlled class challenges | ⚪ | Planned. |
-| Primary-safe rewards | 🟡 | First Discovery activity now has child-safe local star rewards; broader reward system remains. |
+| Primary-safe rewards | 🟡 | First Discovery activity has child-safe local star rewards; broader reward system remains. |
 
 ## G. Education Experiences
 
@@ -181,36 +190,36 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Shadecode Discovery | 🟣 | First Primary Number Explorer vertical slice is implemented at `/discovery`; browser/E2E verification remains. |
 | Shadecode Campus | 🔵 | University/Polytechnic/TVET architecture foundation; product surface remains planned. |
 
-## 4. Current execution order
+## 5. Current execution order
 
 1. **Evidence spine:** canonical event ingress, offline queue, durable persistence, deterministic observation.
-2. **Mastery reconciliation:** shared score transition and deterministic richer reducer are now defined; wire durable rich-state projection without double-counting exam aggregates.
-3. **Offline sync protocol:** authenticated revision/conflict path is live for `tasks`, `subjects`, and `learn_lessons`; ownership hardening is now represented in source migration.
+2. **Mastery reconciliation:** shared score transition and deterministic richer reducer are defined; wire durable rich-state projection through one authoritative consumer without double-counting existing exam aggregates.
+3. **Offline sync protocol:** authenticated revision/conflict path is live for `tasks`, `subjects`, and `learn_lessons`; ownership hardening is represented in source migration.
 4. **Verification:** authenticated, offline, reconnect, replay/idempotency, and browser/E2E coverage.
-5. **Primary vertical slice:** Number Explorer exists; verify the complete My Day → activity → attempt → feedback → learning event → mastery → next activity loop, then add the next Primary activity.
+5. **Primary vertical slice:** Number Explorer now uses a unique activity instance ID so repeated runs cannot collapse into one canonical event identity. Verify the complete My Day → activity → attempt → feedback → learning event → mastery → next activity loop, then add the next Primary activity.
 6. **Student hardening:** stabilize Exam Simulation and connect the mature evidence loop to existing Student surfaces.
 7. **Campus foundation:** extend shared platform contracts only where real Campus requirements demand it.
+8. **Capability expansion:** continue implementing the underlying capability registry while controlling which capabilities are exposed by default in each experience.
 
-## 5. Documentation synchronization contract
+## 6. Documentation synchronization contract
 
 Whenever engineering changes a capability, update the relevant architecture/status document in the same workstream. Do not describe a prototype as shipped. The repository, production database and deployment behavior are the sources of truth.
 
-## 6. September 1 engineering checkpoint
+## 7. September 2 engineering checkpoint
 
-- **Offline sync revision protocol:** 🟢 core protocol merged to `main` in commit `85474ab84073a2923102d650eb888d4f55aec5b7`.
-- **Conflict persistence:** 🟢 IndexedDB conflict store and local conflict recording are implemented.
-- **Authenticated OCC relay:** 🟢 `/api/sync` accepts authenticated `tasks`, `subjects`, and `learn_lessons` mutations with `baseVersion`, `clientVersion`, and `deviceId`.
-- **Ownership hardening:** 🟢 live `apply_sync_mutation` now rejects cross-account record collisions and cannot claim legacy NULL-owned subjects through sync; matching migration is committed to `main`.
-- **Canonical graded evidence:** 🟢 percentage/evidenceScore metadata now survives the canonical event → observation adapter.
-- **Education profile sync:** 🔵 intentionally deferred because the live `user_profiles` schema does not currently contain the education fields assumed by the older prototype.
-- **Dashboard device-first launch:** 🟢 the current dashboard route paints its shell immediately; `UserContext` restores cached profile before network auth/profile work and uses bounded auth/profile timeouts.
-- **Discovery Primary:** 🟣 first Number Explorer activity implemented with local resume state and canonical learning events; browser verification is still required.
+- **Capability registry:** 🟢 added `docs/CAPABILITY_REGISTRY.md` to separate engineering capability completeness from progressive product release.
+- **Discovery event identity:** 🟢 each Number Explorer run now has a unique persisted activity instance ID; question and completion event identities are scoped to that run.
+- **Aggregate evidence semantics:** 🟢 aggregate-only completion events are explicitly excluded from mastery observations to prevent future double-counting when question evidence is already present.
+- **Rich learning-state reducer:** 🔵 deterministic pure reducer exists; durable projection remains the active implementation target.
+- **Offline sync ownership:** 🟢 live ownership hardening and matching source migration remain in place.
+- **Discovery Primary:** 🟣 first Number Explorer activity remains implemented; browser/E2E verification is still required.
 - **Production deployment:** 🟡 do not call the latest engineering changes production-shipped until the corresponding Vercel deployment is observed and browser-verified.
 
-## 7. Immediate next engineering moves
+## 8. Immediate next engineering moves
 
 1. Add browser/E2E coverage for `/discovery`, offline resume, canonical event replay, and sync conflicts.
-2. Wire the richer state projection into one selected evidence consumer, with event-level idempotency, before enabling broad event-driven mastery updates.
+2. Wire the richer state projection into one selected evidence consumer, with event-level idempotency and explicit evidence-source semantics.
 3. Stabilize and browser-verify Exam Simulation.
 4. Audit Learn completion/question evidence call sites.
 5. Add the next Primary activity only after the first loop is verified.
+6. Continue filling the capability registry in dependency order, while keeping default UI release progressive.
