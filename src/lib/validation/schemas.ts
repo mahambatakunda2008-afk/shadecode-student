@@ -85,6 +85,9 @@ export const examMarkSchema = z.object({
   questions: z.array(z.any()).min(1, 'At least 1 question required'),
   answers: z.array(z.any()).min(1, 'At least 1 answer required'),
   timeTaken: z.number().int().min(0, 'Time taken must be positive').optional(),
+  // Stable client-generated attempt identity. When absent, the server uses a
+  // content fingerprint as a replay guard for legacy callers.
+  attemptId: z.string().min(1, 'Attempt ID cannot be empty').max(200, 'Attempt ID too long').optional(),
   userId: z.string().uuid('Invalid user ID').optional(),
 });
 
