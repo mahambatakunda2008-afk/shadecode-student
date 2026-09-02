@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  buildStudyCapabilities,
-  createStudyPlan,
-  finishStudySession,
-  setStudyGoal,
-  startStudySession,
-} from "@/lib/capabilities/study";
+import { buildCapabilityRegistry } from "@/lib/capabilities";
 
 type Tool = {
   name: string;
@@ -31,8 +25,8 @@ type WebMCPWindow = Window & {
 
 /**
  * WebMCP is a progressive enhancement. The learning app never depends on it.
- * Agents get workflow-level capabilities that share the same local-first action
- * layer as the rest of the product instead of a second, MCP-only state store.
+ * Agents get workflow-level capabilities from the same protocol-neutral
+ * capability registry used by future agent bridges and the product itself.
  */
 export default function StudentWebMCP() {
   useEffect(() => {
@@ -44,7 +38,7 @@ export default function StudentWebMCP() {
     if (win.__shadecodeWebMCPRegistered || win.__shadecodeWebMCPRegistering) return;
     win.__shadecodeWebMCPRegistering = true;
 
-    const capabilities = buildStudyCapabilities();
+    const { study } = buildCapabilityRegistry();
     const safe = (action: () => unknown) => {
       try {
         return Promise.resolve(action());
@@ -64,7 +58,7 @@ export default function StudentWebMCP() {
         execute: async () => safe(() => ({
           source: "Shadecode Student local-first capability layer",
           online: navigator.onLine,
-          state: capabilities.get_student_study_state(),
+          state: study.get_student_study_state(),
         })),
       },
       {
@@ -80,7 +74,7 @@ export default function StudentWebMCP() {
           },
           required: ["goal"],
         },
-        execute: async (input) => safe(() => setStudyGoal({
+        execute: async (input) => safe(() => study.set_study_goal({
           goal: String(input.goal ?? ""),
           subject: input.subject ? String(input.subject) : undefined,
           minutes: typeof input.minutes === "number" ? input.minutes : undefined,
@@ -100,7 +94,7 @@ export default function StudentWebMCP() {
           },
           required: ["subject", "topic", "steps"],
         },
-        execute: async (input) => safe(() => createStudyPlan({
+        execute: async (input) => safe(() => study.create_study_plan({
           subject: String(input.subject ?? ""),
           topic: String(input.topic ?? ""),
           steps: Array.isArray(input.steps) ? input.steps.map(String) : [],
@@ -123,7 +117,7 @@ export default function StudentWebMCP() {
         execute: async (input) => safe(() => {
           const subject = String(input.subject ?? "");
           const topic = String(input.topic ?? "");
-          const state = startStudySession({
+          const state = study.start_study_session({
             subject,
             topic,
             minutes: typeof input.minutes === "number" ? input.minutes : undefined,
@@ -160,7 +154,7 @@ export default function StudentWebMCP() {
             mastery: { type: "number", minimum: 0, maximum: 100 },
           },
         },
-        execute: async (input) => safe(() => finishStudySession({
+        execute: async (input) => safe(() => study.finish_study_session({
           outcome: input.outcome ? String(input.outcome) : undefined,
           mastery: typeof input.mastery === "number" ? input.mastery : undefined,
         })),
