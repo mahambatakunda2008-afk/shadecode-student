@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeLearningEvent, type SupportedSourceEvent } from "@/lib/intelligence/learningEvents";
+import { projectLearningEvent } from "@/lib/intelligence/projectLearningEvent";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ function safeMetadata(value: unknown): Record<string, string | number | boolean 
   return output;
 }
 
-/** Authenticated canonical learning-event ingress and durable idempotent persistence. */
+/** Authenticated canonical learning-event ingress, durable persistence, and rebuildable mastery projection. */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -58,7 +59,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to persist learning event" }, { status: 500 });
     }
 
-    return NextResponse.json({ accepted: true, persisted: true, duplicateSafe: true, event: normalized.event, recordId: persisted?.id ?? null });
+    let projection: { projected: boolean; reason?: string } = { projected: false, reason: "not-attempted" };
+    try {
+      projection = await projectLearningEvent(supabase, normalized.event);
+    } catch (projectionError) {
+      console.error("[learning-events] mastery projection failed:", projectionError);
+      return NextResponse.json({
+        accepted: true,
+        persisted: true,
+        duplicateSafe: true,
+        projectionPending: true,
+        event: normalized.event,
+        recordId: persisted?.id ?? null,
+      }, { status: 202 });
+    }
+
+    return NextResponse.json({
+      accepted: true,
+      persisted: true,
+      duplicateSafe: true,
+      projection,
+      event: normalized.event,
+      recordId: persisted?.id ?? null,
+    });
   } catch (error) {
     console.error("[learning-events] ingress failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
