@@ -5,7 +5,8 @@ import {
   reduceLearningObservation,
   type LearningObservation,
 } from "@/lib/cortex/learningState";
-import { observationFromLearningEvent } from "@/lib/intelligence/learningObservation";
+import { learningEventToObservation } from "@/lib/intelligence/learningObservation";
+import type { LearningEvent } from "@/lib/intelligence/learningEvents";
 
 function rowToLearningState(row: Record<string, unknown> | null) {
   if (!row) return null;
@@ -25,12 +26,9 @@ function rowToLearningState(row: Record<string, unknown> | null) {
   };
 }
 
-function subjectForEvent(event: Record<string, unknown>): string | null {
-  const subjectId = typeof event.subjectId === "string" ? event.subjectId.trim() : "";
-  const metadata = event.metadata && typeof event.metadata === "object"
-    ? event.metadata as Record<string, unknown>
-    : null;
-  const subject = typeof metadata?.subject === "string" ? metadata.subject.trim() : "";
+function subjectForEvent(event: LearningEvent): string | null {
+  const subjectId = event.subjectId?.trim() ?? "";
+  const subject = typeof event.metadata.subject === "string" ? event.metadata.subject.trim() : "";
   return subject || subjectId || null;
 }
 
@@ -44,15 +42,15 @@ function subjectForEvent(event: Record<string, unknown>): string | null {
  */
 export async function projectLearningEvent(
   supabase: SupabaseClient,
-  event: Record<string, unknown>,
+  event: LearningEvent,
 ): Promise<{ projected: boolean; reason?: string }> {
-  const observation = observationFromLearningEvent(event);
+  const observation = learningEventToObservation(event);
   if (!observation) return { projected: false, reason: "no-topic-observation" };
 
   const topicId = observation.topicId.trim();
   const subject = subjectForEvent(event);
-  const eventId = typeof event.eventId === "string" ? event.eventId.trim() : "";
-  const userId = typeof event.userId === "string" ? event.userId.trim() : "";
+  const eventId = event.eventId.trim();
+  const userId = event.userId.trim();
   if (!topicId || !subject || !eventId || !userId) {
     return { projected: false, reason: "missing-projection-identity" };
   }
