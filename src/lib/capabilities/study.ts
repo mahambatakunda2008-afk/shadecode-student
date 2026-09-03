@@ -79,13 +79,18 @@ function normalizeSteps(steps: string[], topic: string): string[] {
 }
 
 function allocateMinutes(total: number, count: number): number[] {
-  if (count === 1) return [total];
-  const weights = [0.1, 0.3, 0.25, 0.25, 0.1].slice(0, count);
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const raw = weights.map((weight) => Math.max(3, Math.round((total * weight) / sum)));
-  const delta = total - raw.reduce((a, b) => a + b, 0);
-  raw[raw.length - 1] = Math.max(1, raw[raw.length - 1] + delta);
-  return raw;
+  const base = Math.max(1, Math.floor(total / count));
+  const result = Array.from({ length: count }, () => base);
+  let remainder = total - base * count;
+  const weights = [1, 3, 2.5, 2.5, 1];
+  while (remainder > 0) {
+    const index = result
+      .map((minutes, i) => ({ i, score: minutes / (weights[i] ?? 2) }))
+      .sort((a, b) => a.score - b.score)[0].i;
+    result[index] += 1;
+    remainder -= 1;
+  }
+  return result;
 }
 
 function guidance(state: StudyState): StudyStateWithGuidance {
