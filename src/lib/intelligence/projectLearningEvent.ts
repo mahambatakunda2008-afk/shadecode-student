@@ -3,7 +3,6 @@ import {
   createInitialLearningState,
   projectTopicMastery,
   reduceLearningObservation,
-  type LearningObservation,
 } from "@/lib/cortex/learningState";
 import { learningEventToObservation } from "@/lib/intelligence/learningObservation";
 import type { LearningEvent } from "@/lib/intelligence/learningEvents";
@@ -30,6 +29,17 @@ function subjectForEvent(event: LearningEvent): string | null {
   const subjectId = event.subjectId?.trim() ?? "";
   const subject = typeof event.metadata.subject === "string" ? event.metadata.subject.trim() : "";
   return subject || subjectId || null;
+}
+
+async function releaseProjectionClaim(supabase: SupabaseClient, userId: string, markerId: string) {
+  const { error } = await supabase
+    .from("cortex_events")
+    .delete()
+    .eq("user_id", userId)
+    .eq("type", "learning.mastery.projected")
+    .eq("source", "intelligence-projection")
+    .contains("data", { eventId: markerId });
+  if (error) console.error("[learning-events] failed to release projection claim:", error);
 }
 
 /**
@@ -74,30 +84,35 @@ export async function projectLearningEvent(
     throw claimError;
   }
 
-  const { data: existing, error: readError } = await supabase
-    .from("topic_mastery")
-    .select("topic, mastery_score, last_score, attempts, retention, confidence, stability, exposure, error_rate, response_speed, prerequisite_health, recent_improvement, uncertainty, last_attempted")
-    .eq("user_id", userId)
-    .eq("subject", subject)
-    .eq("topic", topicId)
-    .maybeSingle();
-  if (readError) throw readError;
+  try {
+    const { data: existing, error: readError } = await supabase
+      .from("topic_mastery")
+      .select("topic, mastery_score, last_score, attempts, retention, confidence, stability, exposure, error_rate, response_speed, prerequisite_health, recent_improvement, uncertainty, last_attempted")
+      .eq("user_id", userId)
+      .eq("subject", subject)
+      .eq("topic", topicId)
+      .maybeSingle();
+    if (readError) throw readError;
 
-  const previous = rowToLearningState(existing as Record<string, unknown> | null);
-  const base = previous ?? createInitialLearningState(topicId);
-  const next = reduceLearningObservation(base, observation as LearningObservation);
-  const evidenceScore = observation.evidenceScore ?? (observation.correct ? 100 : 0);
-  const projection = projectTopicMastery(previous, next, evidenceScore, (Number(existing?.attempts) || 0) + 1);
-  const lastAttempted = observation.observedAt ?? new Date().toISOString();
+    const previous = rowToLearningState(existing as Record<string, unknown> | null);
+    const base = previous ?? createInitialLearningState(topicId);
+    const next = reduceLearningObservation(base, observation);
+    const evidenceScore = observation.evidenceScore ?? (observation.correct ? 100 : 0);
+    const projection = projectTopicMastery(previous, next, evidenceScore, (Number(existing?.attempts) || 0) + 1);
+    const lastAttempted = observation.observedAt ?? new Date().toISOString();
 
-  const { error: writeError } = await supabase.from("topic_mastery").upsert({
-    user_id: userId,
-    subject,
-    topic: topicId,
-    ...projection,
-    last_attempted: lastAttempted,
-  }, { onConflict: "user_id,subject,topic" });
-  if (writeError) throw writeError;
+    const { error: writeError } = await supabase.from("topic_mastery").upsert({
+      user_id: userId,
+      subject,
+      topic: topicId,
+      ...projection,
+      last_attempted: lastAttempted,
+    }, { onConflict: "user_id,subject,topic" });
+    if (writeError) throw writeError;
+  } catch (error) {
+    await releaseProjectionClaim(supabase, userId, markerId);
+    throw error;
+  }
 
   return { projected: true };
 }
