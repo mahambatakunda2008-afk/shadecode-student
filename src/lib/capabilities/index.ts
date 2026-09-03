@@ -1,4 +1,5 @@
 import { buildStudyCapabilities } from "./study";
+import { createCortexPlan, createCortexTask } from "@/lib/cortex/orchestrator";
 
 /**
  * Protocol-neutral capability registry. UI, WebMCP, and future agent bridges
@@ -8,6 +9,10 @@ import { buildStudyCapabilities } from "./study";
 export function buildCapabilityRegistry() {
   return {
     study: buildStudyCapabilities(),
+    cortex: {
+      createTask: createCortexTask,
+      createPlan: createCortexPlan,
+    },
   };
 }
 
