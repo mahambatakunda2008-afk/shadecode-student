@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
+import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -40,6 +42,14 @@ export default function QuizPage() {
   const router   = useRouter();
   const params   = useParams();
   const lessonId = params?.lessonId as string;
+  const quizAttemptIdRef = useRef<string>("");
+
+  const createQuizAttemptId = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  };
+
+  if (!quizAttemptIdRef.current) quizAttemptIdRef.current = createQuizAttemptId();
 
   const [phase,       setPhase]       = useState<Phase>("loading");
   const [questions,   setQuestions]   = useState<QuizQuestion[]>([]);
@@ -82,6 +92,19 @@ export default function QuizPage() {
   function confirm() {
     if (selected === null) return;
     setConfirmed(true);
+
+    const q = questions[current];
+    if (!q) return;
+    const result = {
+      questionId: q.id,
+      correct: selected === q.correctIndex,
+      score: selected === q.correctIndex ? 100 : 0,
+      maxScore: 100,
+      percentage: selected === q.correctIndex ? 100 : 0,
+      questionIndex: current,
+    };
+    const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result]);
+    if (event) void emitLearningEvent(event);
   }
 
   function next() {
@@ -93,11 +116,22 @@ export default function QuizPage() {
       setSelected(null);
       setConfirmed(false);
     } else {
+      const finalCorrectCount = newAnswers.filter((a, i) => a === questions[i]?.correctIndex).length;
+      const finalPercentage = questions.length > 0 ? Math.round((finalCorrectCount / questions.length) * 100) : 0;
+      const completion = buildQuizCompletionEvidence({
+        quizAttemptId: quizAttemptIdRef.current,
+        lessonId,
+        percentage: finalPercentage,
+        questionCount: questions.length,
+        correctCount: finalCorrectCount,
+      });
+      void emitLearningEvent(completion);
       setPhase("results");
     }
   }
 
   function restart() {
+    quizAttemptIdRef.current = createQuizAttemptId();
     setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
   }
 
