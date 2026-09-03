@@ -39,15 +39,74 @@ export type StudyStateWithGuidance = StudyState & {
   recommendedNextAction: string;
 };
 
+const SUBJECT_ALIASES: Record<string, string> = {
+  p: "Physics",
+  phys: "Physics",
+  physics: "Physics",
+  m: "Mathematics",
+  maths: "Mathematics",
+  math: "Mathematics",
+  cs: "Computer Science",
+  comp sci: "Computer Science",
+  computer science: "Computer Science",
+  chem: "Chemistry",
+  chemistry: "Chemistry",
+  bio: "Biology",
+  biology: "Biology",
+  econ: "Economics",
+  economics: "Economics",
+};
+
 function assertBrowser() {
   if (typeof window === "undefined") throw new Error("Study capabilities require a browser context");
+}
+
+function cleanText(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(/\s+/g, " ").trim();
+  return text || undefined;
+}
+
+function normalizeSubject(value: unknown): string | undefined {
+  const text = cleanText(value);
+  if (!text) return undefined;
+  return SUBJECT_ALIASES[text.toLowerCase()] ?? text;
+}
+
+function isGarbageTopic(value: unknown): boolean {
+  const text = cleanText(value);
+  if (!text) return true;
+  if (text.length < 2) return true;
+  if (/^(study session|general study|focused study)$/i.test(text)) return true;
+  return false;
+}
+
+function sanitizeState(state: StudyState): StudyState {
+  const subject = normalizeSubject(state.subject);
+  const plan = state.plan && !isGarbageTopic(state.plan.topic)
+    ? { ...state.plan, subject: normalizeSubject(state.plan.subject) ?? state.plan.subject, topic: cleanText(state.plan.topic) ?? state.plan.topic }
+    : undefined;
+  const activeSession = state.activeSession && !isGarbageTopic(state.activeSession.topic)
+    ? { ...state.activeSession, subject: normalizeSubject(state.activeSession.subject) ?? state.activeSession.subject, topic: cleanText(state.activeSession.topic) ?? state.activeSession.topic }
+    : null;
+  return {
+    ...state,
+    goal: cleanText(state.goal),
+    subject,
+    plan,
+    activeSession,
+  };
 }
 
 export function getStudyState(): StudyState {
   assertBrowser();
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as StudyState) : {};
+    const state = raw ? sanitizeState(JSON.parse(raw) as StudyState) : {};
+    if (raw && JSON.stringify(state) !== raw) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+    return state;
   } catch {
     return {};
   }
@@ -55,7 +114,7 @@ export function getStudyState(): StudyState {
 
 function saveStudyState(patch: Partial<StudyState>): StudyState {
   assertBrowser();
-  const next = { ...getStudyState(), ...patch, updatedAt: new Date().toISOString() };
+  const next = sanitizeState({ ...getStudyState(), ...patch, updatedAt: new Date().toISOString() });
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   window.dispatchEvent(new CustomEvent("shadecode:study-state", { detail: next }));
   return next;
@@ -67,7 +126,7 @@ function boundedMinutes(value: unknown, fallback: number): number {
 }
 
 function normalizeSteps(steps: string[], topic: string): string[] {
-  const clean = steps.map((step) => step.trim()).filter(Boolean).slice(0, 8);
+  const clean = steps.map((step) => step.trim()).filter((step) => step.length >= 3).slice(0, 8);
   if (clean.length > 0) return clean;
   return [
     `Quick diagnostic: recall what you already know about ${topic}`,
@@ -84,9 +143,7 @@ function allocateMinutes(total: number, count: number): number[] {
   let remainder = total - base * count;
   const weights = [1, 3, 2.5, 2.5, 1];
   while (remainder > 0) {
-    const index = result
-      .map((minutes, i) => ({ i, score: minutes / (weights[i] ?? 2) }))
-      .sort((a, b) => a.score - b.score)[0].i;
+    const index = result.map((minutes, i) => ({ i, score: minutes / (weights[i] ?? 2) })).sort((a, b) => a.score - b.score)[0].i;
     result[index] += 1;
     remainder -= 1;
   }
@@ -134,30 +191,24 @@ export function getStudyStateForAgent(): StudyStateWithGuidance {
 }
 
 export function setStudyGoal(input: { goal: string; subject?: string; minutes?: number }): StudyStateWithGuidance {
-  const goal = input.goal.trim();
-  if (!goal) throw new Error("goal is required");
+  const goal = cleanText(input.goal);
+  if (!goal || goal.length < 3) throw new Error("Tell Cortex what you actually want to achieve, not just a letter or fragment.");
   saveStudyState({
     goal,
-    subject: input.subject?.trim() || undefined,
+    subject: normalizeSubject(input.subject),
     availableMinutes: input.minutes === undefined ? undefined : boundedMinutes(input.minutes, 25),
   });
   return getStudyStateForAgent();
 }
 
-export function createStudyPlan(input: {
-  subject: string;
-  topic: string;
-  steps?: string[];
-  minutes?: number;
-  goal?: string;
-}): StudyStateWithGuidance {
-  const subject = input.subject.trim();
-  const topic = input.topic.trim();
-  if (!subject || !topic) throw new Error("subject and topic are required");
+export function createStudyPlan(input: { subject: string; topic: string; steps?: string[]; minutes?: number; goal?: string }): StudyStateWithGuidance {
+  const subject = normalizeSubject(input.subject);
+  const topic = cleanText(input.topic);
+  if (!subject || !topic || isGarbageTopic(topic)) throw new Error("I need a real subject and topic before I create a study plan.");
   const minutes = boundedMinutes(input.minutes, getStudyState().availableMinutes ?? 30);
   const steps = normalizeSteps(input.steps ?? [], topic);
   const stepMinutes = allocateMinutes(minutes, steps.length);
-  const goal = input.goal?.trim() || getStudyState().goal || `Make measurable progress on ${topic}`;
+  const goal = cleanText(input.goal) || getStudyState().goal || `Make measurable progress on ${topic}`;
   const plan = {
     subject,
     topic,
@@ -175,9 +226,10 @@ export function createStudyPlan(input: {
 
 export function startStudySession(input: { subject?: string; topic?: string; minutes?: number }): StudyStateWithGuidance {
   const current = getStudyState();
-  const subject = input.subject?.trim() || current.plan?.subject || current.subject;
-  const topic = input.topic?.trim() || current.plan?.topic;
-  if (!subject || !topic) throw new Error("subject and topic are required, or create a study plan first");
+  const subject = normalizeSubject(input.subject) || current.plan?.subject || current.subject;
+  const requestedTopic = cleanText(input.topic);
+  const topic = requestedTopic && !isGarbageTopic(requestedTopic) ? requestedTopic : current.plan?.topic;
+  if (!subject || !topic) throw new Error("I need a real subject and topic, or a saved study plan first.");
   const minutes = boundedMinutes(input.minutes, current.plan?.minutes ?? current.availableMinutes ?? 25);
   saveStudyState({
     subject,
@@ -200,7 +252,7 @@ export function finishStudySession(input: { outcome?: string; mastery?: number }
   saveStudyState({
     activeSession: null,
     lastCompletion: {
-      outcome: input.outcome?.trim() || "Session completed",
+      outcome: cleanText(input.outcome) || "Session completed",
       mastery,
       completedAt: new Date().toISOString(),
       session: state.activeSession ?? null,
