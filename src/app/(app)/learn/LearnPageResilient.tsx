@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { offlineStorage } from "@/lib/offline/storage";
 import { fetchWithTimeout, FetchTimeoutError } from "@/lib/fetchWithTimeout";
 import { lessonViewedEvent } from "@/lib/intelligence/emitLearningEvent";
-import { BookOpen, Sparkles, Loader2, AlertCircle, RefreshCw, CloudOff } from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, CloudOff, Loader2, RefreshCw, Sparkles, Target, Zap } from "lucide-react";
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 
 const AUTH_TIMEOUT = 3_000;
 const LOCAL_TIMEOUT = 2_500;
 const LOAD_TIMEOUT = 8_000;
 const GENERATE_TIMEOUT = 45_000;
+const LAST_REQUEST_KEY = "shadecode:learn:last-request";
 type ApiResponse = { subjects?: LearnSubject[]; lessons?: LearnLesson[]; summary?: LearnSummary; error?: string; id?: string };
+type Mode = "guided" | "standard" | "challenge";
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -28,16 +29,7 @@ async function readDeviceLessons(userId?: string): Promise<LearnLesson[]> {
     const rows = await withTimeout(offlineStorage.getAllLessons(), LOCAL_TIMEOUT);
     return await Promise.all(rows.map(async row => {
       const progress = userId ? await offlineStorage.getProgress(row.id, userId).catch(() => null) : null;
-      return {
-        id: row.id,
-        title: row.title,
-        subject: row.subject,
-        subjectId: "",
-        description: row.description ?? "",
-        difficulty: (row.difficulty === "hard" || row.difficulty === "medium" ? row.difficulty : "easy") as LearnLesson["difficulty"],
-        progress: progress?.progress ?? row.progress ?? 0,
-        completed: progress?.completed ?? row.completed ?? false,
-      };
+      return { id: row.id, title: row.title, subject: row.subject, subjectId: "", description: row.description ?? "", difficulty: (row.difficulty === "hard" || row.difficulty === "medium" ? row.difficulty : "easy") as LearnLesson["difficulty"], progress: progress?.progress ?? row.progress ?? 0, completed: progress?.completed ?? row.completed ?? false };
     }));
   } catch { return []; }
 }
@@ -54,69 +46,118 @@ export default function LearnPageResilient() {
   const [offline, setOffline] = useState(false);
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
+  const [mode, setMode] = useState<Mode>("guided");
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { setOffline(!navigator.onLine); const on = () => setOffline(false); const off = () => setOffline(true); window.addEventListener("online", on); window.addEventListener("offline", off); return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); }; }, []);
-  useEffect(() => { setSubject(params.get("subject")?.trim() ?? ""); setTopic(params.get("topic")?.trim() ?? ""); }, [params]);
+  const examples = useMemo(() => {
+    const name = subject.toLowerCase();
+    if (name.includes("physics")) return ["Deformation of solids", "Moments and equilibrium", "Simple harmonic motion"];
+    if (name.includes("math")) return ["Trigonometric identities", "Differentiation applications", "Binomial expansion"];
+    if (name.includes("computer") || name.includes("computing")) return ["Binary search", "Data structures", "Recursion"];
+    if (name.includes("chem")) return ["Bonding and structure", "Energetics", "Organic reactions"];
+    return ["A topic from my syllabus", "A concept I keep getting wrong", "An exam-style topic I need to master"];
+  }, [subject]);
+
+  useEffect(() => {
+    setOffline(!navigator.onLine);
+    const on = () => setOffline(false);
+    const off = () => setOffline(true);
+    window.addEventListener("online", on); window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
+
+  useEffect(() => {
+    const qSubject = params.get("subject")?.trim() ?? "";
+    const qTopic = params.get("topic")?.trim() ?? "";
+    if (qSubject || qTopic) { if (qSubject) setSubject(qSubject); if (qTopic) setTopic(qTopic); return; }
+    try {
+      const raw = localStorage.getItem(LAST_REQUEST_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { subject?: string; topic?: string; mode?: Mode };
+      if (saved.subject) setSubject(saved.subject);
+      if (saved.topic) setTopic(saved.topic);
+      if (saved.mode === "guided" || saved.mode === "standard" || saved.mode === "challenge") setMode(saved.mode);
+    } catch {}
+  }, [params]);
 
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
       let session: Session | null = null;
       try {
-        const sb = createClient();
+        const sb = (await import("@/lib/supabase/client")).createClient();
         const result = await Promise.race([sb.auth.getSession(), new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), AUTH_TIMEOUT))]);
         session = result.data.session;
         if (session && !cancelled) setToken(session.access_token);
-      } catch { /* Device lessons must remain bootable without auth/network. */ }
-
+      } catch {}
       const local = await readDeviceLessons(session?.user.id);
       if (cancelled) return;
       if (local.length) setLessons(local);
       setLoading(false);
-
       if (!navigator.onLine || !session) return;
-      try {
-        await load(session.access_token);
-      } catch (e) {
-        if (!cancelled && !local.length) setError(e instanceof Error && e.message === "Timed out" ? "Cloud sync took too long. Your device data remains available." : "Cloud sync unavailable. Your device data remains available.");
-      }
-      if (!cancelled) setLoading(false);
+      try { await load(session.access_token); } catch (e) { if (!cancelled && !local.length) setError(e instanceof Error ? e.message : "Cloud sync unavailable. Your device data remains available."); }
     };
-    void boot(); return () => { cancelled = true; };
+    void boot();
+    return () => { cancelled = true; };
   }, []);
 
   async function load(tok: string) {
     const r = await fetchWithTimeout("/api/learn", { headers: { Authorization: `Bearer ${tok}` }, cache: "no-store" }, LOAD_TIMEOUT);
     const data = await r.json().catch(() => ({} as ApiResponse));
     if (!r.ok) throw new Error(data.error || `Learn sync failed (${r.status})`);
-    setSubjects(data.subjects ?? []);
-    setLessons(data.lessons ?? []);
-    setSummary(data.summary ?? null);
+    setSubjects(data.subjects ?? []); setLessons(data.lessons ?? []); setSummary(data.summary ?? null);
     const syncedAt = new Date().toISOString();
     await Promise.all((data.lessons ?? []).map((lesson: LearnLesson) => offlineStorage.saveLesson({ id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed, downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length })));
   }
 
   async function generate() {
-    if (!token || !subject || !topic.trim() || generating || offline) return;
+    const request = topic.trim();
+    if (!token || !subject || !request || generating || offline) return;
     setGenerating(true); setError(null);
     try {
-      const r = await fetchWithTimeout("/api/learn", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject, topic: topic.trim(), learningMode: "guided" }) }, GENERATE_TIMEOUT);
+      localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, topic: request, mode }));
+      const modeInstruction = mode === "guided" ? "Teach from first principles, using small steps and checks for understanding." : mode === "challenge" ? "Teach at exam level, include common traps, higher-order reasoning and a demanding worked example." : "Teach at a clear standard level, balancing explanation, worked examples and exam application.";
+      const learnerPrompt = `${request}. Learning mode: ${modeInstruction}`;
+      const r = await fetchWithTimeout("/api/learn", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject, topic: learnerPrompt, difficulty: mode === "guided" ? "easy" : mode === "challenge" ? "hard" : "medium", goal: "understand and apply the concept" }) }, GENERATE_TIMEOUT);
       const data = await r.json().catch(() => ({} as ApiResponse));
       if (!r.ok || data.error) throw new Error(data.error || "Couldn't generate the lesson.");
-      if (data.id) router.push(`/learn/${data.id}`); else throw new Error("The lesson service returned no lesson ID.");
+      if (!data.id) throw new Error("The lesson service returned no lesson ID.");
+      router.push(`/learn/${data.id}`);
     } catch (e) { setError(e instanceof FetchTimeoutError ? "Generation timed out. Your device data is safe. Try again when connected." : e instanceof Error ? e.message : "Generation failed."); }
     finally { setGenerating(false); }
   }
 
   function openLesson(lesson: LearnLesson) { void lessonViewedEvent(lesson.id, lesson.subject, topic || undefined); router.push(`/learn/${lesson.id}`); }
 
-  if (loading && lessons.length === 0) return <div style={{ minHeight: "70vh", display: "grid", placeItems: "center", color: "var(--muted-foreground)" }}><Loader2 className="animate-spin" size={28} /></div>;
+  if (loading && lessons.length === 0) return <main className="grid min-h-[70vh] place-items-center bg-[var(--background)] text-[var(--muted-foreground)]"><Loader2 className="h-7 w-7 animate-spin" aria-label="Loading Learn" /></main>;
 
-  return <main style={{ maxWidth: 1120, margin: "0 auto", padding: "32px 24px", color: "var(--foreground)" }}>
-    <header style={{ marginBottom: 24 }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><Sparkles size={20} /><h1 style={{ margin: 0, fontSize: 28 }}>Learn</h1>{offline && <CloudOff size={17} aria-label="Offline" />}</div><p style={{ color: "var(--muted-foreground)" }}>{offline ? "Working from this device. Cloud sync will happen when you're back online." : "Learn a concept, build understanding, then put it to work."}</p></header>
-    {error && <div role="alert" style={{ display: "flex", gap: 10, alignItems: "center", padding: 14, marginBottom: 20, border: "1px solid var(--card-border)", borderRadius: 12 }}><AlertCircle size={18} /><span style={{ flex: 1 }}>{error}</span>{token && !offline && <button onClick={() => void load(token).catch(e => setError(e instanceof Error ? e.message : "Cloud sync failed."))} aria-label="Retry cloud sync" style={{ display: "inline-flex", gap: 6, alignItems: "center", padding: "8px 12px", borderRadius: 9, border: "1px solid var(--card-border)", background: "var(--surface)", color: "inherit", cursor: "pointer" }}><RefreshCw size={14} /> Retry</button>}</div>}
-    <section style={{ padding: 20, border: "1px solid var(--card-border)", borderRadius: 16, background: "var(--surface)", marginBottom: 24 }}><h2 style={{ marginTop: 0, fontSize: 18 }}>Start a lesson</h2><div style={{ display: "grid", gap: 12 }}><select value={subject} onChange={e => setSubject(e.target.value)} aria-label="Subject" style={{ padding: 12, borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--background)", color: "inherit" }}><option value="">Choose a subject</option>{subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select><input value={topic} onChange={e => setTopic(e.target.value)} placeholder="What do you want to learn?" aria-label="Topic" style={{ padding: 12, borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--background)", color: "inherit" }} /><button onClick={() => void generate()} disabled={!token || !subject || !topic.trim() || generating || offline} style={{ padding: 12, border: 0, borderRadius: 10, background: "var(--primary)", color: "white", cursor: "pointer", opacity: generating || offline ? .7 : 1 }}>{offline ? "Connect to generate" : generating ? "Generating lesson…" : "Start lesson"}</button></div></section>
-    <section><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><h2 style={{ fontSize: 18 }}>Your lessons</h2>{summary && <span style={{ color: "var(--muted-foreground)", fontSize: 13 }}>Level {summary.level} · {summary.currentXP} XP</span>}</div>{lessons.length === 0 ? <div style={{ padding: 24, border: "1px dashed var(--card-border)", borderRadius: 14, color: "var(--muted-foreground)" }}>No lessons cached yet. Connect once to sync your lessons.</div> : <div style={{ display: "grid", gap: 8 }}>{lessons.slice(0, 10).map(l => <button key={l.id} onClick={() => openLesson(l)} style={{ textAlign: "left", padding: 14, border: "1px solid var(--card-border)", borderRadius: 12, background: "var(--surface)", color: "inherit", cursor: "pointer" }}><BookOpen size={16} style={{ marginRight: 8, verticalAlign: "middle" }} /><strong>{l.title}</strong><div style={{ marginTop: 5, color: "var(--muted-foreground)", fontSize: 13 }}>{l.subject} · {l.progress ?? 0}% complete</div></button>)}</div>}</section>
-  </main>;
+  return (
+    <main className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-7">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div><div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary)]"><Sparkles className="h-4 w-4" /> Learn</div><h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Tell Cortex what you want to learn.</h1><p className="mt-2 max-w-2xl text-[15px] leading-6 text-[var(--muted-foreground)]">Choose your context, write the actual request, and Shadecode will turn it into a structured lesson instead of guessing what the single letter or partial prompt means.</p></div>
+          <div className="flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm"><span className={`h-2.5 w-2.5 rounded-full ${offline ? "bg-amber-400" : "bg-emerald-400"}`} /><span>{offline ? "Device-first mode" : "Ready to generate"}</span></div>
+        </header>
+
+        {error && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--primary)]" /><div className="min-w-0 flex-1"><p className="text-sm font-semibold">Something needs attention</p><p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{error}</p></div>{token && !offline && <button type="button" onClick={() => void load(token).catch(e => setError(e instanceof Error ? e.message : "Cloud sync failed."))} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm font-semibold"><RefreshCw className="h-4 w-4" /> Retry</button>}</div>}
+
+        <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-sm sm:p-7">
+          <div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Target className="h-5 w-5" /></div><div><h2 className="text-xl font-bold">Your learning request</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">This is the prompt Cortex receives. Be specific. You can write a question, a topic, or exactly what confused you.</p></div></div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-[280px_1fr]">
+            <div><label className="mb-2 block text-sm font-semibold">Subject</label><select value={subject} onChange={e => setSubject(e.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-[15px] outline-none focus:border-[var(--primary)]"><option value="">Choose a subject</option>{subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select><p className="mt-2 text-sm text-[var(--muted-foreground)]">{subjects.length ? `${subjects.length} subjects available` : "Subjects will appear after sync."}</p></div>
+            <div><label className="mb-2 block text-sm font-semibold">What do you want to learn?</label><textarea value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void generate(); }} rows={4} maxLength={500} placeholder="Example: Explain deformation of solids, then show me how to use stress, strain and Young modulus in an exam question." className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-[15px] leading-6 outline-none focus:border-[var(--primary)]" /><div className="mt-2 flex items-center justify-between text-sm text-[var(--muted-foreground)]"><span>Ctrl/⌘ + Enter to generate</span><span>{topic.length}/500</span></div></div>
+          </div>
+          <div className="mt-5"><p className="mb-2 text-sm font-semibold">Try a prompt</p><div className="flex flex-wrap gap-2">{examples.map(example => <button key={example} type="button" onClick={() => setTopic(example)} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-medium transition hover:border-[var(--primary)] hover:bg-[var(--primary-glow)]">{example}</button>)}</div></div>
+          <div className="mt-6"><p className="mb-2 text-sm font-semibold">How should Cortex teach it?</p><div className="grid gap-2 sm:grid-cols-3">{([['guided','Guided','First principles, small steps, checks'],['standard','Standard','Clear explanation + exam application'],['challenge','Challenge','Harder reasoning, traps + exam pressure']] as const).map(([value,label,description]) => <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)} className={`rounded-xl border p-3 text-left transition ${mode === value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}><span className="text-sm font-bold">{label}</span><span className="mt-1 block text-sm leading-5 text-[var(--muted-foreground)]">{description}</span></button>)}</div></div>
+          <button type="button" onClick={() => void generate()} disabled={!token || !subject || !topic.trim() || generating || offline} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-[15px] font-bold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">{generating ? <><Loader2 className="h-5 w-5 animate-spin" /> Building your lesson…</> : <><Zap className="h-5 w-5" /> Generate this lesson</>}</button>
+          {offline && <p className="mt-3 text-sm font-medium text-[var(--muted-foreground)]">You can keep reading cached lessons offline. Generation resumes when connected.</p>}
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-end justify-between gap-3"><div><h2 className="text-xl font-bold">Your lessons</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Recent work stays available on this device.</p></div>{summary && <div className="text-right text-sm text-[var(--muted-foreground)]"><div className="font-semibold text-[var(--foreground)]">Level {summary.level}</div><div>{summary.currentXP} XP · {summary.currentStreak} day streak</div></div>}</div>
+          {lessons.length === 0 ? <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-10 text-center"><BookOpen className="mx-auto h-9 w-9 text-[var(--muted-foreground)]" /><p className="mt-3 text-base font-semibold">No lessons on this device yet</p><p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">Connect once to sync lessons, then they remain readable here.</p></div> : <div className="grid gap-3 md:grid-cols-2">{lessons.slice(0, 10).map(l => <button key={l.id} type="button" onClick={() => openLesson(l)} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--primary)]"><div className="flex items-start gap-3"><BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-[var(--primary)]" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><h3 className="truncate text-[15px] font-bold">{l.title}</h3>{l.completed && <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--primary)]" />}</div><p className="mt-1 text-sm font-medium text-[var(--muted-foreground)]">{l.subject}</p><p className="mt-2 line-clamp-2 text-sm leading-5 text-[var(--muted-foreground)]">{l.description || "Continue this lesson."}</p><div className="mt-4 flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--muted)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${l.progress}%` }} /></div><span className="text-sm font-semibold">{l.progress}%</span></div></div></div></button>)}</div>}
+        </section>
+      </div>
+    </main>
+  );
 }
