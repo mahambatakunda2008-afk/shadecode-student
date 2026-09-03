@@ -47,8 +47,8 @@ const SUBJECT_ALIASES: Record<string, string> = {
   maths: "Mathematics",
   math: "Mathematics",
   cs: "Computer Science",
-  comp sci: "Computer Science",
-  computer science: "Computer Science",
+  "comp sci": "Computer Science",
+  "computer science": "Computer Science",
   chem: "Chemistry",
   chemistry: "Chemistry",
   bio: "Biology",
@@ -75,10 +75,8 @@ function normalizeSubject(value: unknown): string | undefined {
 
 function isGarbageTopic(value: unknown): boolean {
   const text = cleanText(value);
-  if (!text) return true;
-  if (text.length < 2) return true;
-  if (/^(study session|general study|focused study)$/i.test(text)) return true;
-  return false;
+  if (!text || text.length < 2) return true;
+  return /^(study session|general study|focused study)$/i.test(text);
 }
 
 function sanitizeState(state: StudyState): StudyState {
@@ -89,13 +87,7 @@ function sanitizeState(state: StudyState): StudyState {
   const activeSession = state.activeSession && !isGarbageTopic(state.activeSession.topic)
     ? { ...state.activeSession, subject: normalizeSubject(state.activeSession.subject) ?? state.activeSession.subject, topic: cleanText(state.activeSession.topic) ?? state.activeSession.topic }
     : null;
-  return {
-    ...state,
-    goal: cleanText(state.goal),
-    subject,
-    plan,
-    activeSession,
-  };
+  return { ...state, goal: cleanText(state.goal), subject, plan, activeSession };
 }
 
 export function getStudyState(): StudyState {
@@ -103,9 +95,7 @@ export function getStudyState(): StudyState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const state = raw ? sanitizeState(JSON.parse(raw) as StudyState) : {};
-    if (raw && JSON.stringify(state) !== raw) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
+    if (raw && JSON.stringify(state) !== raw) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     return state;
   } catch {
     return {};
@@ -155,35 +145,11 @@ function guidance(state: StudyState): StudyStateWithGuidance {
   if (active) {
     const elapsed = Math.max(0, Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 60000));
     const remaining = Math.max(0, active.minutes - elapsed);
-    return {
-      ...state,
-      status: "active",
-      elapsedMinutes: elapsed,
-      remainingMinutes: remaining,
-      recommendedNextAction: remaining > 0
-        ? `Continue ${active.topic}; work the current plan step, then check your understanding before moving on.`
-        : `Your planned ${active.minutes}-minute session is due to finish. Complete a quick retrieval check and record mastery.`,
-    };
+    return { ...state, status: "active", elapsedMinutes: elapsed, remainingMinutes: remaining, recommendedNextAction: remaining > 0 ? `Continue ${active.topic}; work the current plan step, then check your understanding before moving on.` : `Your planned ${active.minutes}-minute session is due to finish. Complete a quick retrieval check and record mastery.` };
   }
-  if (state.plan) {
-    return {
-      ...state,
-      status: state.lastCompletion ? "completed" : "planned",
-      recommendedNextAction: state.plan.nextAction || `Start ${state.plan.subject} on ${state.plan.topic} for ${state.plan.minutes ?? 25} minutes.`,
-    };
-  }
-  if (state.lastCompletion) {
-    return {
-      ...state,
-      status: "completed",
-      recommendedNextAction: state.lastCompletion.recommendation || "Set the next concrete study goal while the session is still fresh.",
-    };
-  }
-  return {
-    ...state,
-    status: "idle",
-    recommendedNextAction: "Set one concrete study outcome and the time you have available.",
-  };
+  if (state.plan) return { ...state, status: state.lastCompletion ? "completed" : "planned", recommendedNextAction: state.plan.nextAction || `Start ${state.plan.subject} on ${state.plan.topic} for ${state.plan.minutes ?? 25} minutes.` };
+  if (state.lastCompletion) return { ...state, status: "completed", recommendedNextAction: state.lastCompletion.recommendation || "Set the next concrete study goal while the session is still fresh." };
+  return { ...state, status: "idle", recommendedNextAction: "Set one concrete study outcome and the time you have available." };
 }
 
 export function getStudyStateForAgent(): StudyStateWithGuidance {
@@ -193,11 +159,7 @@ export function getStudyStateForAgent(): StudyStateWithGuidance {
 export function setStudyGoal(input: { goal: string; subject?: string; minutes?: number }): StudyStateWithGuidance {
   const goal = cleanText(input.goal);
   if (!goal || goal.length < 3) throw new Error("Tell Cortex what you actually want to achieve, not just a letter or fragment.");
-  saveStudyState({
-    goal,
-    subject: normalizeSubject(input.subject),
-    availableMinutes: input.minutes === undefined ? undefined : boundedMinutes(input.minutes, 25),
-  });
+  saveStudyState({ goal, subject: normalizeSubject(input.subject), availableMinutes: input.minutes === undefined ? undefined : boundedMinutes(input.minutes, 25) });
   return getStudyStateForAgent();
 }
 
@@ -209,17 +171,7 @@ export function createStudyPlan(input: { subject: string; topic: string; steps?:
   const steps = normalizeSteps(input.steps ?? [], topic);
   const stepMinutes = allocateMinutes(minutes, steps.length);
   const goal = cleanText(input.goal) || getStudyState().goal || `Make measurable progress on ${topic}`;
-  const plan = {
-    subject,
-    topic,
-    steps,
-    stepMinutes,
-    minutes,
-    phase: "diagnose → learn → practise → correct → retrieve",
-    successCriteria: `Explain the core idea, complete targeted questions, and identify what still needs work in ${topic}.`,
-    nextAction: `Start with step 1: ${steps[0]} (${stepMinutes[0]} min).`,
-    createdAt: new Date().toISOString(),
-  };
+  const plan = { subject, topic, steps, stepMinutes, minutes, phase: "diagnose → learn → practise → correct → retrieve", successCriteria: `Explain the core idea, complete targeted questions, and identify what still needs work in ${topic}.`, nextAction: `Start with step 1: ${steps[0]} (${stepMinutes[0]} min).`, createdAt: new Date().toISOString() };
   saveStudyState({ goal, subject, availableMinutes: minutes, plan });
   return getStudyStateForAgent();
 }
@@ -231,48 +183,18 @@ export function startStudySession(input: { subject?: string; topic?: string; min
   const topic = requestedTopic && !isGarbageTopic(requestedTopic) ? requestedTopic : current.plan?.topic;
   if (!subject || !topic) throw new Error("I need a real subject and topic, or a saved study plan first.");
   const minutes = boundedMinutes(input.minutes, current.plan?.minutes ?? current.availableMinutes ?? 25);
-  saveStudyState({
-    subject,
-    activeSession: { subject, topic, minutes, startedAt: new Date().toISOString(), stepIndex: 0 },
-    plan: current.plan ? { ...current.plan, nextAction: `Work step 1: ${current.plan.steps[0]}${current.plan.stepMinutes?.[0] ? ` (${current.plan.stepMinutes[0]} min)` : ""}.` } : current.plan,
-  });
+  saveStudyState({ subject, activeSession: { subject, topic, minutes, startedAt: new Date().toISOString(), stepIndex: 0 }, plan: current.plan ? { ...current.plan, nextAction: `Work step 1: ${current.plan.steps[0]}${current.plan.stepMinutes?.[0] ? ` (${current.plan.stepMinutes[0]} min)` : ""}.` } : current.plan });
   return getStudyStateForAgent();
 }
 
 export function finishStudySession(input: { outcome?: string; mastery?: number }): StudyStateWithGuidance {
   const state = getStudyState();
   const mastery = input.mastery === undefined ? undefined : Math.max(0, Math.min(100, Math.round(input.mastery)));
-  const recommendation = mastery === undefined
-    ? "Review the session outcome, then set a mastery score or continue with the next weak point."
-    : mastery < 60
-      ? "Re-teach the weakest concept and practise a smaller set of easier questions before another exam attempt."
-      : mastery < 80
-        ? "Target the mistakes from this session with another focused practice block, then retry exam-style questions."
-        : "Move to exam-style retrieval or a timed past-paper section to test whether the knowledge holds under pressure.";
-  saveStudyState({
-    activeSession: null,
-    lastCompletion: {
-      outcome: cleanText(input.outcome) || "Session completed",
-      mastery,
-      completedAt: new Date().toISOString(),
-      session: state.activeSession ?? null,
-      recommendation,
-    },
-    plan: state.plan ? { ...state.plan, nextAction: recommendation } : state.plan,
-  });
+  const recommendation = mastery === undefined ? "Review the session outcome, then set a mastery score or continue with the next weak point." : mastery < 60 ? "Re-teach the weakest concept and practise a smaller set of easier questions before another exam attempt." : mastery < 80 ? "Target the mistakes from this session with another focused practice block, then retry exam-style questions." : "Move to exam-style retrieval or a timed past-paper section to test whether the knowledge holds under pressure.";
+  saveStudyState({ activeSession: null, lastCompletion: { outcome: cleanText(input.outcome) || "Session completed", mastery, completedAt: new Date().toISOString(), session: state.activeSession ?? null, recommendation }, plan: state.plan ? { ...state.plan, nextAction: recommendation } : state.plan });
   return getStudyStateForAgent();
 }
 
 export function buildStudyCapabilities() {
-  return {
-    get_student_study_state: getStudyStateForAgent,
-    set_study_goal: setStudyGoal,
-    create_study_plan: createStudyPlan,
-    start_study_session: startStudySession,
-    finish_study_session: finishStudySession,
-    setStudyGoal,
-    createStudyPlan,
-    startStudySession,
-    finishStudySession,
-  };
+  return { get_student_study_state: getStudyStateForAgent, set_study_goal: setStudyGoal, create_study_plan: createStudyPlan, start_study_session: startStudySession, finish_study_session: finishStudySession, setStudyGoal, createStudyPlan, startStudySession, finishStudySession };
 }
