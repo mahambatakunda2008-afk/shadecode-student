@@ -1,5 +1,5 @@
 declare module "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1" {
-  const module: {
+  const transformers: {
     env: {
       allowRemoteModels: boolean;
       allowLocalModels: boolean;
@@ -8,5 +8,5 @@ declare module "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1" {
     pipeline: (task: string, model: string, options?: Record<string, unknown>) => Promise<any>;
     TextStreamer: new (tokenizer: any, options?: Record<string, unknown>) => any;
   };
-  export = module;
+  export = transformers;
 }
