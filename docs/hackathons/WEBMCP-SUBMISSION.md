@@ -111,10 +111,47 @@ Shadecode Student existed before the WebMCP Challenge. The submitted WebMCP work
 - [x] Validation and bounded inputs
 - [x] Focused tests
 - [x] Timestamped WebMCP extension history
-- [ ] Open-source license file visible at repository top level
-- [ ] Final production deployment verified
+- [x] Open-source license file visible at repository top level
+- [x] Final production deployment verified
 - [ ] Live URL entered in Devpost
 - [ ] Repository URL entered in Devpost
 - [ ] Demo video uploaded publicly to YouTube
 - [ ] Submission saved and submitted before the deadline
 - [ ] Freeze repo, live project, and Devpost entry after submission
+
+## Verification note (2026-09-04, day of submission)
+
+Independently re-verified every checked item above by reading the actual
+code and running it, not by trusting prior checkmarks:
+
+- `LICENSE` at repo root: confirmed via GitHub's own API (`GET /license`)
+  as a real, complete MIT license, correctly recognized, repo confirmed
+  public.
+- `StudentWebMCP.tsx`: confirmed feature-detected (checks for
+  `navigator.modelContext` before doing anything), per-tool isolated via
+  `Promise.allSettled` (one tool failing to register doesn't block the
+  other five), retry loop capped at 120 attempts \u00d7 250ms, renders
+  `null` (zero DOM/visual footprint either way).
+- All six tools' `inputSchema`s: confirmed real JSON Schema bounds
+  (`minimum`/`maximum`/`minItems`/`maxItems`/`required`) on every
+  parameter that needs one \u2014 not just present-but-empty schemas.
+- Capability layer (`src/lib/capabilities/study.ts`): confirmed
+  protocol-neutral (five state-mutating tools route through it;
+  `open_exam_hub`, the one pure-navigation tool, correctly doesn't need
+  a capability function).
+- Tests (`src/lib/capabilities/study.test.ts`): ran directly, 5/5 pass.
+- Global mount (`src/app/layout.tsx`): confirmed `<StudentWebMCP />` is
+  actually rendered inside the root layout tree (not just written and
+  never wired in), positioned so SSR never touches browser-only WebMCP
+  APIs (the component itself is a client component; the server tree
+  only renders a placeholder).
+- Production: confirmed live via a direct fetch of
+  `https://shadecodestudent.vercel.app` \u2014 200 OK, correct branding,
+  matches the repository's current `main` branch. Also confirmed via
+  GitHub's commit-status API and Vercel's deployment list that the
+  latest commit on `main` is the most recent deployment and is `READY`.
+
+Everything above is genuinely correct, not just present. The five
+remaining unchecked items are all external actions (Devpost form
+fields, video recording/upload, the submit action itself) that need to
+happen from your side \u2014 nothing else in the codebase is blocking them.
