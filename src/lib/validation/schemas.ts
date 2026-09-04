@@ -59,8 +59,11 @@ export const learnCoursePreviewSchema = z.object({
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
 });
 
+// The Learn route branches on request type before validating this payload, so
+// `type` is optional here. When supplied, it is still constrained to the only
+// valid lesson-generation operation.
 export const learnGenerateLessonSchema = z.object({
-  type: z.literal('generate_lesson'),
+  type: z.literal('generate_lesson').optional(),
   subject: z.string().trim().min(1, 'Subject is required').max(100, 'Subject too long'),
   topic: meaningfulTopic,
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
