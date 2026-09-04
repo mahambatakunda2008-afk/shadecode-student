@@ -15,6 +15,7 @@ const SUBJECT_ALIASES: Record<string, string> = {
   chemistry: "Chemistry",
   biology: "Biology",
   computer: "Computer Science",
+  computing: "Computer Science",
   cs: "Computer Science",
   computers: "Computer Science",
 };
@@ -31,12 +32,18 @@ function inferSubject(prompt: string) {
   return "";
 }
 
-/** Resolve a complete request without guessing from one-letter subject shortcuts. */
+/**
+ * Resolve a complete request while preserving the learner's exact prompt.
+ * Explicit context always wins. A short prompt must never be expanded into
+ * an invented lesson title or subject.
+ */
 export function resolveLessonRequest(input: LessonRequest) {
   const prompt = clean(input.prompt, 500);
   const explicitSubject = clean(input.subject, 100);
-  const subject = explicitSubject || inferSubject(prompt);
+  const inferredSubject = explicitSubject ? "" : inferSubject(prompt);
+  const subject = explicitSubject || inferredSubject;
   const topic = clean(input.topic, 500) || prompt;
+  const difficulty = input.difficulty === "easy" || input.difficulty === "hard" ? input.difficulty : "medium";
 
   return {
     prompt,
@@ -45,8 +52,9 @@ export function resolveLessonRequest(input: LessonRequest) {
     level: clean(input.level, 80),
     goal: clean(input.goal, 300),
     examBoard: clean(input.examBoard, 100),
-    difficulty: input.difficulty ?? "medium",
-    ambiguousSubject: !explicitSubject && !subject,
+    difficulty,
+    ambiguousSubject: !explicitSubject && !inferredSubject,
+    shortPrompt: prompt.length > 0 && prompt.length <= 3,
   };
 }
 
@@ -59,5 +67,9 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     `Difficulty: ${request.difficulty}`,
   ].filter(Boolean).join("\n");
 
-  return `${request.prompt}\n\n${context}\n\nTeach the learner's actual request. Do not reinterpret a short or ambiguous prompt as a specific subject or topic. If the subject is unresolved, ask for clarification rather than inventing one.`;
+  const ambiguityRule = request.ambiguousSubject
+    ? "The subject is unresolved. Do not guess it. Ask for the subject before generating substantive subject-specific teaching."
+    : "The subject is resolved by learner context. Do not replace it with an inferred subject from the prompt.";
+
+  return `${request.prompt}\n\n${context}\n\nTeaching contract:\n- Preserve the learner's request exactly as the starting point, including very short prompts such as one-letter or shorthand inputs.\n- ${ambiguityRule}\n- Use education level and exam/curriculum context when supplied; never invent missing curriculum details.\n- Teach the requested concept rather than generating a generic lesson about the subject.\n- Prefer concrete definitions, correct notation, worked reasoning, checks for understanding, misconceptions, exam application, and targeted practice over motivational filler.`;
 }
