@@ -13,6 +13,7 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import InAppSurvey from "@/components/traction/InAppSurvey";
 import TractionBootstrap from "@/components/traction/TractionBootstrap";
 import StudentWebMCP from "@/components/webmcp/StudentWebMCP";
+import CortexRuntimeBootstrap from "@/components/cortex/CortexRuntimeBootstrap";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <RouteNavigationGuard />
               {children}
               <StudentWebMCP />
+              <CortexRuntimeBootstrap />
               <ServiceWorkerRegistration />
               <OfflineShell />
               <PWAInstallPrompt />
