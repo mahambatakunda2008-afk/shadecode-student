@@ -1,4 +1,4 @@
-import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
+import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, hydrateGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { cortexRuntimeManager } from "@/lib/cortex/runtime/manager";
 import { isLocalCortexPrepared } from "@/lib/cortex/runtime/localWebRuntime";
 import { offlineStorage } from "@/lib/offline/storage";
@@ -95,6 +95,7 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
 
   let generatedText = "";
   let lastPublishedLength = 0;
+  let lastPersistedAt = 0;
   updateGenerationJob(job.id, { status: "generating", progress: 30, error: undefined });
   await runtime.stream({
     system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use these exact section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation. Do not answer a different topic from the learner's request.`,
@@ -104,9 +105,12 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   }, chunk => {
     if (chunk.done) return;
     generatedText += chunk.text;
+    const now = Date.now();
     if (generatedText.length - lastPublishedLength >= 160) {
       lastPublishedLength = generatedText.length;
-      updateGenerationJob(job.id, { status: "partial", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial: { text: generatedText, ...parseLocalLesson(generatedText, job.request) } });
+      const partial = { text: generatedText, ...parseLocalLesson(generatedText, job.request) };
+      updateGenerationJob(job.id, { status: "partial", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial });
+      if (now - lastPersistedAt >= 500) lastPersistedAt = now;
     }
   });
 
@@ -177,6 +181,7 @@ export function queueLessonGeneration(input: LessonGenerationInput) {
 
 export async function resumeLessonGeneration(token: string | null) {
   if (!isBrowser()) return null;
+  await hydrateGenerationJobs();
   markInterruptedJobsForRetry();
   const active = getActiveGenerationJobs()
     .filter(job => job.kind === "lesson")
