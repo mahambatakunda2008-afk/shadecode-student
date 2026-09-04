@@ -7,6 +7,8 @@ import type {
 import { getCortexDeviceProfile } from "./capabilities";
 
 const MODEL = "onnx-community/Qwen2.5-0.5B-Instruct";
+export const LOCAL_CORTEX_READY_KEY = "shadecode:cortex:local-model-ready:v1";
+export const LOCAL_CORTEX_RUNTIME_EVENT = "shadecode:cortex:local-runtime";
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 type WorkerResponse =
@@ -19,13 +21,26 @@ function makeId() {
   return `cortex-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function dispatchRuntimeEvent(detail: "ready" | "reset") {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(LOCAL_CORTEX_RUNTIME_EVENT, { detail }));
+}
+
+export function isLocalCortexPrepared(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(LOCAL_CORTEX_READY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Browser-local inference runtime.
  *
  * The worker keeps model execution off the React/UI thread. Transformers.js
- * is loaded from its official ESM CDN entrypoint so this adapter can land
- * without bloating the Next.js server bundle. Once the model has been warmed
- * and cached, Transformers.js can reuse its browser cache for later sessions.
+ * is loaded from its official ESM CDN entrypoint. The model is cached by
+ * Transformers.js after preparation so later sessions can generate offline.
  */
 export class LocalWebCortexRuntime implements CortexRuntime {
   readonly id = "cortex-local-web-qwen25-0.5b";
@@ -49,7 +64,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
     return {
       textGeneration: device.wasm || device.webgpu,
       streaming: true,
-      offline: true,
+      offline: isLocalCortexPrepared(),
       webgpu: device.webgpu,
       wasm: device.wasm,
     };
@@ -58,10 +73,14 @@ export class LocalWebCortexRuntime implements CortexRuntime {
   async isReady(): Promise<boolean> {
     if (typeof window === "undefined" || typeof Worker === "undefined") return false;
     const capabilities = getCortexDeviceProfile();
-    return capabilities.wasm || capabilities.webgpu;
+    return (capabilities.wasm || capabilities.webgpu) && isLocalCortexPrepared();
   }
 
-  async warm(): Promise<void> {
+  async warm(onProgress?: (progress: number) => void): Promise<void> {
+    if (isLocalCortexPrepared()) {
+      onProgress?.(100);
+      return;
+    }
     if (this.warmPromise) return this.warmPromise;
     this.warmPromise = new Promise<void>((resolve, reject) => {
       const worker = this.ensureWorker();
@@ -70,14 +89,25 @@ export class LocalWebCortexRuntime implements CortexRuntime {
       const dtype = "q4";
       const timer = window.setTimeout(() => {
         cleanup();
-        reject(new Error("Local Cortex model warm-up timed out."));
+        reject(new Error("Local Cortex model preparation timed out."));
       }, REQUEST_TIMEOUT_MS);
 
       const onMessage = (event: MessageEvent<WorkerResponse>) => {
         if (event.data.requestId !== requestId) return;
-        if (event.data.type === "status" && event.data.status === "ready") {
-          cleanup();
-          resolve();
+        if (event.data.type === "status") {
+          onProgress?.(Math.max(0, Math.min(100, event.data.progress)));
+          if (event.data.status === "ready") {
+            try {
+              localStorage.setItem(LOCAL_CORTEX_READY_KEY, "1");
+            } catch {
+              cleanup();
+              reject(new Error("Local Cortex is ready, but this browser blocked persistent model state."));
+              return;
+            }
+            cleanup();
+            dispatchRuntimeEvent("ready");
+            resolve();
+          }
         } else if (event.data.type === "error") {
           cleanup();
           reject(new Error(event.data.message));
@@ -89,6 +119,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
       };
 
       worker.addEventListener("message", onMessage);
+      onProgress?.(1);
       worker.postMessage({ type: "warm", requestId, model: MODEL, dtype, device });
     }).finally(() => {
       this.warmPromise = null;
@@ -109,6 +140,9 @@ export class LocalWebCortexRuntime implements CortexRuntime {
     input: CortexGenerationInput,
     onChunk: (chunk: CortexGenerationChunk) => void,
   ): Promise<void> {
+    if (!(await this.isReady())) {
+      await this.warm();
+    }
     const worker = this.ensureWorker();
     const requestId = makeId();
     const device = getCortexDeviceProfile().webgpu ? "webgpu" : "wasm";
@@ -163,6 +197,15 @@ export class LocalWebCortexRuntime implements CortexRuntime {
   async dispose(): Promise<void> {
     this.worker?.terminate();
     this.worker = null;
+  }
+
+  resetPreparedState(): void {
+    try {
+      localStorage.removeItem(LOCAL_CORTEX_READY_KEY);
+    } catch {
+      // Best effort only.
+    }
+    dispatchRuntimeEvent("reset");
   }
 }
 
