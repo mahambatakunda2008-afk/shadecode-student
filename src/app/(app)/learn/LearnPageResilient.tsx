@@ -117,8 +117,7 @@ export default function LearnPageResilient() {
     try {
       localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, topic: request, mode }));
       const modeInstruction = mode === "guided" ? "Teach from first principles, using small steps and checks for understanding." : mode === "challenge" ? "Teach at exam level, include common traps, higher-order reasoning and a demanding worked example." : "Teach at a clear standard level, balancing explanation, worked examples and exam application.";
-      const learnerPrompt = `${request}. Learning mode: ${modeInstruction}`;
-      const r = await fetchWithTimeout("/api/learn", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject, topic: learnerPrompt, difficulty: mode === "guided" ? "easy" : mode === "challenge" ? "hard" : "medium", goal: "understand and apply the concept" }) }, GENERATE_TIMEOUT);
+      const r = await fetchWithTimeout("/api/learn", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject, topic: request, difficulty: mode === "guided" ? "easy" : mode === "challenge" ? "hard" : "medium", goal: modeInstruction }) }, GENERATE_TIMEOUT);
       const data = await r.json().catch(() => ({} as ApiResponse));
       if (!r.ok || data.error) throw new Error(data.error || "Couldn't generate the lesson.");
       if (!data.id) throw new Error("The lesson service returned no lesson ID.");
@@ -127,7 +126,7 @@ export default function LearnPageResilient() {
     finally { setGenerating(false); }
   }
 
-  function openLesson(lesson: LearnLesson) { void lessonViewedEvent(lesson.id, lesson.subject, topic || undefined); router.push(`/learn/${lesson.id}`); }
+  function openLesson(lesson: LearnLesson) { void lessonViewedEvent(lesson.id, lesson.subject, lesson.topic); router.push(`/learn/${lesson.id}`); }
 
   if (loading && lessons.length === 0) return <main className="grid min-h-[70vh] place-items-center bg-[var(--background)] text-[var(--muted-foreground)]"><Loader2 className="h-7 w-7 animate-spin" aria-label="Loading Learn" /></main>;
 
