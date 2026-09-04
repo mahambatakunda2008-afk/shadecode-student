@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import {
   createClient as createSupabaseClient,
   type SupabaseClient,
@@ -20,7 +22,44 @@ interface LearnLessonRow { id: string; subject_id: string; topic: string | null;
 interface AuthContext { supabase: SupabaseClient; user: User; }
 function getSupabaseAdmin() { const url = process.env.NEXT_PUBLIC_SUPABASE_URL; const key = process.env.SUPABASE_SERVICE_ROLE_KEY; if (!url || !key) throw new Error("Missing Supabase server credentials."); return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } }); }
 function getBearerToken(req: Request): string | null { const h = req.headers.get("authorization"); return h?.startsWith("Bearer ") ? h.slice(7).trim() || null : null; }
-async function authenticateRequest(req: Request): Promise<AuthContext | null> { const token = getBearerToken(req); if (!token) return null; const supabase = getSupabaseAdmin(); const { data: { user }, error } = await supabase.auth.getUser(token); return error || !user ? null : { supabase, user }; }
+
+async function authenticateRequest(req: Request): Promise<AuthContext | null> {
+  const admin = getSupabaseAdmin();
+  const token = getBearerToken(req);
+
+  // Prefer the explicit bearer token used by the client. If it is missing or
+  // stale, fall back to the browser's Supabase cookie session so a refreshable
+  // session does not become a mysterious 401 in Learn.
+  if (token) {
+    const { data: { user }, error } = await admin.auth.getUser(token);
+    if (!error && user) return { supabase: admin, user };
+  }
+
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anonKey) return null;
+    const cookieStore = await cookies();
+    const sessionClient = createServerClient(url, anonKey, {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {
+            // Server Components/route contexts can make cookies immutable.
+            // Reading the session is still sufficient for authentication.
+          }
+        },
+      },
+    });
+    const { data: { user }, error } = await sessionClient.auth.getUser();
+    return error || !user ? null : { supabase: admin, user };
+  } catch {
+    return null;
+  }
+}
+
 function normalizeDifficulty(v: string | null): LessonDifficulty { return v === "medium" || v === "hard" ? v : "easy"; }
 function clampProgress(v: number | null): number { return typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : 0; }
 function toLearnLesson(row: LearnLessonRow, subjectById: Map<string, string>) { const progress = clampProgress(row.progress); return { id: row.id, subjectId: row.subject_id, topic: row.topic ?? undefined, subject: subjectById.get(row.subject_id) ?? "Unknown subject", title: row.title, description: row.description ?? "", difficulty: normalizeDifficulty(row.difficulty), progress, completed: progress >= 100, updated_at: row.updated_at ?? undefined, blocks: row.blocks ?? undefined }; }
