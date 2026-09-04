@@ -34,8 +34,8 @@ function inferSubject(prompt: string) {
 
 /**
  * Resolve a complete request while preserving the learner's exact prompt.
- * Explicit context always wins. A short prompt must never be expanded into
- * an invented lesson title or subject.
+ * Explicit context always wins. Ultra-short prompts are treated as
+ * clarification candidates instead of being expanded into invented lessons.
  */
 export function resolveLessonRequest(input: LessonRequest) {
   const prompt = clean(input.prompt, 500);
@@ -44,6 +44,7 @@ export function resolveLessonRequest(input: LessonRequest) {
   const subject = explicitSubject || inferredSubject;
   const topic = clean(input.topic, 500) || prompt;
   const difficulty = input.difficulty === "easy" || input.difficulty === "hard" ? input.difficulty : "medium";
+  const shortPrompt = prompt.length > 0 && prompt.length <= 3;
 
   return {
     prompt,
@@ -54,7 +55,8 @@ export function resolveLessonRequest(input: LessonRequest) {
     examBoard: clean(input.examBoard, 100),
     difficulty,
     ambiguousSubject: !explicitSubject && !inferredSubject,
-    shortPrompt: prompt.length > 0 && prompt.length <= 3,
+    shortPrompt,
+    needsClarification: !prompt || shortPrompt,
   };
 }
 
@@ -71,5 +73,9 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     ? "The subject is unresolved. Do not guess it. Ask for the subject before generating substantive subject-specific teaching."
     : "The subject is resolved by learner context. Do not replace it with an inferred subject from the prompt.";
 
-  return `${request.prompt}\n\n${context}\n\nTeaching contract:\n- Preserve the learner's request exactly as the starting point, including very short prompts such as one-letter or shorthand inputs.\n- ${ambiguityRule}\n- Use education level and exam/curriculum context when supplied; never invent missing curriculum details.\n- Teach the requested concept rather than generating a generic lesson about the subject.\n- Prefer concrete definitions, correct notation, worked reasoning, checks for understanding, misconceptions, exam application, and targeted practice over motivational filler.`;
+  const clarificationRule = request.shortPrompt
+    ? "The learner supplied an ultra-short request. Do not turn it into a generic lesson or invent what the shorthand means. Ask one concise clarification question, unless the supplied context makes the intended concept unambiguous."
+    : "The learner supplied a substantive request. Teach it directly and specifically.";
+
+  return `${request.prompt}\n\n${context}\n\nTeaching contract:\n- Preserve the learner's request exactly as the starting point.\n- ${ambiguityRule}\n- ${clarificationRule}\n- Use education level and exam/curriculum context when supplied; never invent missing curriculum details.\n- Teach the requested concept rather than generating a generic lesson about the subject.\n- Prefer concrete definitions, correct notation, worked reasoning, checks for understanding, misconceptions, exam application, and targeted practice over motivational filler.`;
 }
