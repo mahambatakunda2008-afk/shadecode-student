@@ -8,7 +8,7 @@ export interface LessonResponse { blocks: LessonBlock[]; xpReward: number; diffi
 export interface MathResult { problem: string; score: number; correct: boolean; cortexInsight: string; steps: { description: string; status: string; note?: string }[]; }
 export type LessonDifficulty = "easy" | "medium" | "hard";
 export interface LearnSubject { id: string; name: string; lessonCount: number; }
-export interface LearnLesson { id: string; subjectId: string; subject: string; title: string; description: string; difficulty: LessonDifficulty; progress: number; completed: boolean; updated_at?: string; blocks?: LessonBlock[]; }
+export interface LearnLesson { id: string; subjectId: string; subject: string; topic?: string; title: string; description: string; difficulty: LessonDifficulty; progress: number; completed: boolean; updated_at?: string; blocks?: LessonBlock[]; }
 export interface LearnSummary { currentXP: number; currentStreak: number; level: number; xpGoal: number; }
 export interface LearnListResponse { subjects: LearnSubject[]; lessons: LearnLesson[]; summary: LearnSummary; }
 export interface LearnDetailResponse { lesson: LearnLesson; }
