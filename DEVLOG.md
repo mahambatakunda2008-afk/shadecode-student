@@ -4,6 +4,23 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-04 — Learn lesson generation becomes a real teaching system
+
+The screenshot-level failure was clear: Learn was generating a tiny handful of generic blocks, so a lesson could look polished while teaching almost nothing. The generator has now been moved from a short-summary prompt to a structured teaching contract.
+
+**Implemented:**
++- [HIGH] Learn generation now requests 12-16 deliberate teaching blocks covering objectives, prerequisites, first-principles concepts, definitions, formulas, worked examples, checkpoints, misconceptions, exam application, common mistakes, summary, practice and topic-specific tactics.
++- [HIGH] The generator explicitly rejects summary-shaped output. Lessons need required teaching block types and substantive block content before they are saved.
++- [HIGH] Generation budget increased to give the model room to produce a real lesson rather than compressing the response into five tiny cards.
++- [HIGH] Repair generation now attempts to rebuild incomplete AI output into the same complete lesson contract before failing the request.
++- [HIGH] Learn now stores a clean, durable `topic` identity on each generated lesson. The user's actual request is stored as the topic instead of the UI's teaching-mode instructions being accidentally appended to it.
++- [HIGH] The lesson completion database bridge now carries the durable topic into `lesson.completed` canonical Cortex evidence and resolves the human-readable subject for downstream learner-state projection.
++- [MEDIUM] Existing lessons remain backwards compatible because `topic` is nullable for historical rows.
++
+**Quality target:** Learn should behave like a compact textbook chapter plus a tutorial, not a five-card AI summary. The lesson must teach, demonstrate, challenge, correct and prepare the learner to apply the concept.
+
+---
+
 ## 2026-09-02 — Learn completion enters the durable evidence spine
 
 The existing Learn completion path persists lesson progress directly through `/api/learn`. Rather than rewriting that large legacy route in one risky pass, the completion transition now has a database bridge into the canonical durable Cortex event stream.
@@ -15,7 +32,7 @@ The existing Learn completion path persists lesson progress directly through `/a
 +- [HIGH] The bridge is persistence/evidence-only. It does not mutate `topic_mastery`, preserving the canonical mastery boundary.
 +- [MEDIUM] Offline completion benefits automatically when its later sync changes the durable lesson progress to 100%, without requiring an online AI call.
 +- [MEDIUM] Added the matching repository migration so the live schema change is reproducible.
-+
+
 **Boundary:** this is an explicit compatibility bridge while the Learn client/API path is migrated toward direct canonical event emission. Lesson completion now cannot silently disappear from the durable evidence stream, but question-level Learn evidence and richer-state projection still need their own audited integration.
 
 ---
@@ -29,7 +46,7 @@ The first durable richer-state consumer now has an explicit idempotency boundary
 +- [HIGH] A duplicate projection claim is treated as a replay and skips the richer mastery mutation, preventing repeated retries from incrementing exposure/attempts twice.
 +- [HIGH] The exam completion learning event is explicitly `aggregateOnly`, because question-level evidence is emitted separately and should remain the granular learning signal.
 +- [MEDIUM] The exam workspace contract remains unchanged while the server maintains backwards compatibility for callers that do not yet send an explicit attempt ID.
-+
+
 **Boundary:** this closes replay safety for the current server-side exam projection path. A future richer event reducer still needs a first-class evidence ledger that can unify offline events, server replay and non-exam surfaces without double application.
 
 ---
