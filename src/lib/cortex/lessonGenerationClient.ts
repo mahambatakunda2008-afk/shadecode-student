@@ -1,5 +1,6 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { cortexRuntimeManager } from "@/lib/cortex/runtime/manager";
+import { isLocalCortexPrepared } from "@/lib/cortex/runtime/localWebRuntime";
 import { offlineStorage } from "@/lib/offline/storage";
 
 export interface LessonGenerationInput {
@@ -57,14 +58,25 @@ async function persistLesson(result: LessonGenerationResult, request: LessonGene
 }
 
 async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
-  updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
-  const selection = await cortexRuntimeManager.select(true);
-  if (!selection.runtime) throw new Error("Local Cortex is not available on this device.");
+  const runtime = cortexRuntimeManager.get("local-web") ?? cortexRuntimeManager.get("local-native");
+  if (!runtime) throw new Error("Local Cortex is not available on this device.");
+
+  if (!isLocalCortexPrepared()) {
+    if (!isBrowser() || !navigator.onLine) {
+      throw new Error("Local Cortex has not been prepared on this device. Connect once to prepare the local teaching model.");
+    }
+    updateGenerationJob(job.id, { status: "warming", progress: 2, error: "Preparing Cortex on this device. Your lesson stays on this device." });
+    await runtime.warm(progress => {
+      updateGenerationJob(job.id, { status: "warming", progress: Math.min(30, Math.max(2, Math.round(progress * 0.3))) });
+    });
+  }
+
+  if (!(await runtime.isReady())) throw new Error("Local Cortex finished preparation but is not ready yet.");
 
   let generatedText = "";
   let lastPublishedLength = 0;
-  updateGenerationJob(job.id, { status: "generating", progress: 15 });
-  await selection.runtime.stream({
+  updateGenerationJob(job.id, { status: "generating", progress: 30, error: undefined });
+  await runtime.stream({
     system: `You are Cortex, a rigorous personal teacher. Create a useful lesson for ${job.request.subject}. ${job.request.goal} Write original, accurate teaching content. Start with a # title, then use ## headings. Define important terms, explain from first principles, include formulas with symbols and units when relevant, a worked example, misconceptions, exam application, and practice questions. Do not mention being an AI. Do not pad the lesson with generic motivation.`,
     prompt: `${job.request.prompt}\n\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
     maxTokens: job.request.difficulty === "hard" ? 1200 : 900,
@@ -74,7 +86,7 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
     generatedText += chunk.text;
     if (generatedText.length - lastPublishedLength >= 160) {
       lastPublishedLength = generatedText.length;
-      const progress = Math.min(90, 18 + Math.floor(generatedText.length / 70));
+      const progress = Math.min(92, 30 + Math.floor(generatedText.length / 55));
       updateGenerationJob(job.id, { status: "partial", progress, partial: { text: generatedText } });
     }
   });
@@ -112,14 +124,10 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string |
   runningJobId = job.id;
   saveActiveId(job.id);
   try {
-    // Local Cortex is the primary path. Cloud is only a fallback when the
-    // device is online and an authenticated cloud runtime is available.
     try {
       return await runLocalJob(job);
     } catch (localError) {
-      if (!isBrowser() || !navigator.onLine || !token) {
-        throw localError;
-      }
+      if (!isBrowser() || !navigator.onLine || !token) throw localError;
       updateGenerationJob(job.id, { status: "warming", progress: Math.max(8, job.progress), error: `Local Cortex unavailable. Using cloud fallback: ${errorMessage(localError)}` });
       return await runCloudJob(job, token);
     }
@@ -152,7 +160,7 @@ export async function resumeLessonGeneration(token: string | null) {
   const preferredId = getActiveId();
   const job = (preferredId && active.find(item => item.id === preferredId)) || active[0];
   if (!job) return null;
-  if (!navigator.onLine) return job;
+  if (!navigator.onLine && !isLocalCortexPrepared()) return job;
   return runJob(job, token);
 }
 
