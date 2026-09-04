@@ -49,6 +49,17 @@ export function parseLocalLesson(text: string, request: LessonGenerationInput): 
   return { id: localId(), title, blocks };
 }
 
+function assessLocalLesson(result: LessonGenerationResult, request: LessonGenerationInput) {
+  const content = result.blocks.map(block => String(block.content ?? "")).join("\n");
+  const headings = result.blocks.map(block => String(block.title ?? "").toLowerCase()).join(" | ");
+  const requiredSignals = ["example", "check", "practice", "mistake", "trap", "summary", "exam"];
+  const signalCount = requiredSignals.filter(signal => content.toLowerCase().includes(signal) || headings.includes(signal)).length;
+  const topicWords = request.prompt.toLowerCase().split(/\s+/).filter(word => word.length >= 4).slice(0, 5);
+  const topicCoverage = topicWords.length === 0 || topicWords.filter(word => content.toLowerCase().includes(word.replace(/[^a-z0-9]/g, ""))).length >= Math.min(2, topicWords.length);
+  const substantive = content.length >= 650 && result.blocks.length >= 5;
+  return { substantive, signalCount, topicCoverage, passed: substantive && signalCount >= 3 && topicCoverage };
+}
+
 async function persistLesson(result: LessonGenerationResult, request: LessonGenerationInput) {
   const now = new Date().toISOString();
   await offlineStorage.saveLesson({
@@ -86,9 +97,9 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   let lastPublishedLength = 0;
   updateGenerationJob(job.id, { status: "generating", progress: 30, error: undefined });
   await runtime.stream({
-    system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use clear ## section headings. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation.`,
+    system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use these exact section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation. Do not answer a different topic from the learner's request.`,
     prompt: `${job.request.prompt}\n\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
-    maxTokens: job.request.difficulty === "hard" ? 1400 : 1100,
+    maxTokens: job.request.difficulty === "hard" ? 1600 : 1300,
     temperature: 0.2,
   }, chunk => {
     if (chunk.done) return;
@@ -102,6 +113,10 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   if (generatedText.trim().length < 40) throw new Error("Local Cortex returned too little content to make a lesson.");
   const result = parseLocalLesson(generatedText, job.request);
   if (result.blocks.length < 2) throw new Error("Local Cortex returned an incomplete lesson. Try again or use cloud enhancement when online.");
+  const quality = assessLocalLesson(result, job.request);
+  if (!quality.passed) {
+    throw new Error(`Local Cortex draft did not meet the lesson quality bar (${result.blocks.length} sections, ${quality.signalCount}/7 quality signals).`);
+  }
   await persistLesson(result, job.request);
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null);
@@ -137,7 +152,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string |
       return await runLocalJob(job);
     } catch (localError) {
       if (!isBrowser() || !navigator.onLine || !token) throw localError;
-      updateGenerationJob(job.id, { status: "warming", progress: Math.max(8, job.progress), error: `Local Cortex unavailable. Using cloud fallback: ${errorMessage(localError)}` });
+      updateGenerationJob(job.id, { status: "warming", progress: Math.max(8, job.progress), error: `Local Cortex draft unavailable. Using cloud fallback: ${errorMessage(localError)}` });
       return await runCloudJob(job, token);
     }
   } catch (error) {
