@@ -43,17 +43,26 @@ export const cortexCareersGetSchema = z.object({
 // Learn API Schemas
 // ============================================================================
 
+const meaningfulTopic = z
+  .string()
+  .trim()
+  .min(2, 'Topic is required')
+  .max(500, 'Topic too long')
+  .refine((value) => !/^(p|study session|general study|focused study)$/i.test(value), {
+    message: 'Please provide a specific study topic, not a subject shortcut.',
+  });
+
 export const learnCoursePreviewSchema = z.object({
   type: z.literal('course_preview'),
-  topic: z.string().min(1, 'Topic is required').max(500, 'Topic too long'),
-  goal: z.string().min(1, 'Goal is required').max(500, 'Goal too long'),
+  topic: meaningfulTopic,
+  goal: z.string().trim().min(1, 'Goal is required').max(500, 'Goal too long'),
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
 });
 
 export const learnGenerateLessonSchema = z.object({
   type: z.literal('generate_lesson'),
-  subject: z.string().min(1, 'Subject is required').max(100, 'Subject too long'),
-  topic: z.string().min(1, 'Topic is required').max(500, 'Topic too long'),
+  subject: z.string().trim().min(1, 'Subject is required').max(100, 'Subject too long'),
+  topic: meaningfulTopic,
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
 });
 
@@ -85,8 +94,6 @@ export const examMarkSchema = z.object({
   questions: z.array(z.any()).min(1, 'At least 1 question required'),
   answers: z.array(z.any()).min(1, 'At least 1 answer required'),
   timeTaken: z.number().int().min(0, 'Time taken must be positive').optional(),
-  // Stable client-generated attempt identity. When absent, the server uses a
-  // content fingerprint as a replay guard for legacy callers.
   attemptId: z.string().min(1, 'Attempt ID cannot be empty').max(200, 'Attempt ID too long').optional(),
   userId: z.string().uuid('Invalid user ID').optional(),
 });
@@ -113,7 +120,7 @@ export const generateRevisionSchema = z.object({
 // ============================================================================
 
 export const mathCheckerSchema = z.object({
-  image: z.any(), // File validation handled separately
+  image: z.any(),
   topic: z.string().max(200, 'Topic too long').optional(),
   subject: z.string().max(100, 'Subject too long').optional(),
   question: z.string().max(1000, 'Question too long').optional(),
@@ -124,12 +131,6 @@ export const mathCheckerSchema = z.object({
 // Validation Helper Functions
 // ============================================================================
 
-/**
- * Validate request body against a schema
- * @param body - The request body to validate
- * @param schema - The Zod schema to validate against
- * @returns Object with success status and data or error
- */
 export function validateRequestBody<T>(body: unknown, schema: z.ZodSchema<T>): {
   success: boolean;
   data?: T;
@@ -147,32 +148,18 @@ export function validateRequestBody<T>(body: unknown, schema: z.ZodSchema<T>): {
         details: error,
       };
     }
-    return {
-      success: false,
-      error: 'Unknown validation error',
-    };
+    return { success: false, error: 'Unknown validation error' };
   }
 }
 
-/**
- * Create a validation error response
- * @param error - The Zod error
- * @returns Response object with validation error details
- */
 export function createValidationErrorResponse(error: z.ZodError): Response {
   const errorMessages = error.issues.map((err: z.ZodIssue) => ({
     field: err.path.join('.'),
     message: err.message,
   }));
 
-  return new Response(
-    JSON.stringify({
-      error: 'Validation failed',
-      details: errorMessages,
-    }),
-    {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
+  return new Response(JSON.stringify({ error: 'Validation failed', details: errorMessages }), {
+    status: 400,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
