@@ -54,7 +54,9 @@ export class LocalWebCortexRuntime implements CortexRuntime {
       throw new Error("Local Cortex requires a browser worker runtime.");
     }
     if (!this.worker) {
-      this.worker = new Worker(new URL("./localWebRuntime.worker.ts", import.meta.url));
+      this.worker = new Worker(new URL("./localWebRuntime.worker.ts", import.meta.url), {
+        type: "module",
+      });
     }
     return this.worker;
   }
@@ -143,55 +145,72 @@ export class LocalWebCortexRuntime implements CortexRuntime {
     if (!(await this.isReady())) {
       await this.warm();
     }
-    const worker = this.ensureWorker();
-    const requestId = makeId();
-    const device = getCortexDeviceProfile().webgpu ? "webgpu" : "wasm";
-    const dtype = "q4";
 
-    await new Promise<void>((resolve, reject) => {
-      const timer = window.setTimeout(() => {
-        cleanup();
-        reject(new Error("Local Cortex generation timed out."));
-      }, REQUEST_TIMEOUT_MS);
+    const run = async () => {
+      const worker = this.ensureWorker();
+      const requestId = makeId();
+      const device = getCortexDeviceProfile().webgpu ? "webgpu" : "wasm";
+      const dtype = "q4";
 
-      const onMessage = (event: MessageEvent<WorkerResponse>) => {
-        const message = event.data;
-        if (message.requestId !== requestId) return;
-        if (message.type === "chunk") {
-          onChunk({ text: message.text, done: false });
-        } else if (message.type === "complete") {
+      await new Promise<void>((resolve, reject) => {
+        const timer = window.setTimeout(() => {
           cleanup();
-          onChunk({ text: "", done: true });
-          resolve();
-        } else if (message.type === "error") {
-          cleanup();
-          reject(new Error(message.message));
-        }
-      };
-      const onAbort = () => {
-        cleanup();
-        reject(new DOMException("Local Cortex generation was cancelled.", "AbortError"));
-      };
-      const cleanup = () => {
-        window.clearTimeout(timer);
-        worker.removeEventListener("message", onMessage);
-        input.signal?.removeEventListener("abort", onAbort);
-      };
+          reject(new Error("Local Cortex generation timed out."));
+        }, REQUEST_TIMEOUT_MS);
 
-      worker.addEventListener("message", onMessage);
-      input.signal?.addEventListener("abort", onAbort, { once: true });
-      worker.postMessage({
-        type: "generate",
-        requestId,
-        prompt: input.prompt,
-        system: input.system,
-        maxTokens: input.maxTokens,
-        temperature: input.temperature,
-        model: MODEL,
-        dtype,
-        device,
+        const onMessage = (event: MessageEvent<WorkerResponse>) => {
+          const message = event.data;
+          if (message.requestId !== requestId) return;
+          if (message.type === "chunk") {
+            onChunk({ text: message.text, done: false });
+          } else if (message.type === "complete") {
+            cleanup();
+            onChunk({ text: "", done: true });
+            resolve();
+          } else if (message.type === "error") {
+            cleanup();
+            reject(new Error(message.message));
+          }
+        };
+        const onAbort = () => {
+          cleanup();
+          reject(new DOMException("Local Cortex generation was cancelled.", "AbortError"));
+        };
+        const cleanup = () => {
+          window.clearTimeout(timer);
+          worker.removeEventListener("message", onMessage);
+          input.signal?.removeEventListener("abort", onAbort);
+        };
+
+        worker.addEventListener("message", onMessage);
+        input.signal?.addEventListener("abort", onAbort, { once: true });
+        worker.postMessage({
+          type: "generate",
+          requestId,
+          prompt: input.prompt,
+          system: input.system,
+          maxTokens: input.maxTokens,
+          temperature: input.temperature,
+          model: MODEL,
+          dtype,
+          device,
+        });
       });
-    });
+    };
+
+    try {
+      await run();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") throw error;
+
+      // A persisted ready flag can outlive the browser's model cache. Reset the
+      // flag, discard the worker, and rebuild once so a stale runtime never
+      // strands the learner behind a permanent local-generation failure.
+      this.resetPreparedState();
+      await this.dispose();
+      await this.warm();
+      await run();
+    }
   }
 
   async dispose(): Promise<void> {
