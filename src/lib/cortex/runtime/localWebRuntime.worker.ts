@@ -130,6 +130,7 @@ async function runGeneration(message: GenerateMessage) {
 
   const streamer = new transformers.TextStreamer(pipe.tokenizer, {
     skip_prompt: true,
+    skip_special_tokens: true,
     callback_function: (text: string) => {
       if (text) post("chunk", message.requestId, { text });
     },
