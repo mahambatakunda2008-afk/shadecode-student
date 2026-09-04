@@ -85,7 +85,7 @@ describe("study capability layer", () => {
 
   it("rejects empty required fields", () => {
     installStorage();
-    expect(() => setStudyGoal({ goal: "   " })).toThrow("goal is required");
+    expect(() => setStudyGoal({ goal: "   " })).toThrow("Tell Cortex what you actually want to achieve");
     expect(() => createStudyPlan({ subject: "", topic: "Vectors" })).toThrow();
     expect(() => startStudySession({ subject: "Physics", topic: "" })).toThrow();
   });
