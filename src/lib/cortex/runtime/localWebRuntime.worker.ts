@@ -33,9 +33,8 @@ let generator: any = null;
 async function loadTransformers(): Promise<TransformerModule> {
   if (!transformerPromise) {
     // Transformers.js is deliberately loaded at runtime so the heavy inference
-    // engine does not inflate the main application bundle. TypeScript cannot
-    // resolve a remote ESM specifier, but the browser can.
-    // @ts-expect-error Remote ESM URL is resolved by the browser at runtime.
+    // engine does not inflate the main application bundle. The browser resolves
+    // this remote ESM specifier at runtime; local type declarations keep CI strict.
     transformerPromise = import(
       /* webpackIgnore: true */
       "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1"
