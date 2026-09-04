@@ -146,6 +146,8 @@ export class LocalWebCortexRuntime implements CortexRuntime {
       await this.warm();
     }
 
+    let emittedChunks = false;
+
     const run = async () => {
       const worker = this.ensureWorker();
       const requestId = makeId();
@@ -162,6 +164,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
           const message = event.data;
           if (message.requestId !== requestId) return;
           if (message.type === "chunk") {
+            emittedChunks = true;
             onChunk({ text: message.text, done: false });
           } else if (message.type === "complete") {
             cleanup();
@@ -202,6 +205,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
       await run();
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") throw error;
+      if (emittedChunks) throw error;
 
       // A persisted ready flag can outlive the browser's model cache. Reset the
       // flag, discard the worker, and rebuild once so a stale runtime never
