@@ -58,7 +58,9 @@ export function queueLessonGeneration(input: LessonGenerationInput) {
 export async function resumeLessonGeneration(token: string | null) {
   if (!isBrowser() || !token || !navigator.onLine) return null;
   markInterruptedJobsForRetry();
-  const active = getActiveGenerationJobs().filter((job): job is GenerationJob<LessonGenerationInput> => job.kind === "lesson");
+  const active = getActiveGenerationJobs()
+    .filter(job => job.kind === "lesson")
+    .map(job => job as GenerationJob<LessonGenerationInput>);
   const preferredId = getActiveId();
   const job = (preferredId && active.find(item => item.id === preferredId)) || active[0];
   if (!job) return null;
