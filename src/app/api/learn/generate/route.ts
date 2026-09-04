@@ -110,7 +110,8 @@ export async function POST(req: Request) {
       goal: body.goal,
       examBoard: body.examBoard,
     });
-    if (!resolved.prompt || resolved.prompt.length < 2) return NextResponse.json({ error: "Tell Cortex what you want to learn." }, { status: 400 });
+    if (!resolved.prompt) return NextResponse.json({ error: "Tell Cortex what you want to learn." }, { status: 400 });
+    if (resolved.shortPrompt) return NextResponse.json({ error: `"${resolved.prompt}" is too short for a useful lesson. Add the concept you want Cortex to teach, for example “${resolved.subject || "this subject"}: explain ${resolved.prompt} in context”.` }, { status: 400 });
     if (!resolved.subject) return NextResponse.json({ error: "Choose a subject so Cortex does not have to guess from a short prompt." }, { status: 400 });
 
     const raw = await callAI(lessonPrompt(resolved), 7000, { userId: auth.user.id, feature: "lesson_assistant", subfeature: "generate_lesson" });
