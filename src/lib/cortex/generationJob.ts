@@ -1,6 +1,8 @@
 export type GenerationJobStatus =
   | "queued" | "warming" | "generating" | "partial" | "complete" | "failed" | "cancelled";
 
+export type GenerationEngine = "local" | "cloud";
+
 export interface GenerationJob<TRequest = Record<string, unknown>, TResult = unknown> {
   id: string;
   kind: "lesson" | "course" | "revision" | "exam";
@@ -13,6 +15,7 @@ export interface GenerationJob<TRequest = Record<string, unknown>, TResult = unk
   updatedAt: number;
   error?: string;
   retryCount: number;
+  engine?: GenerationEngine;
 }
 
 const STORAGE_KEY = "shadecode:cortex:generation-jobs:v2";
@@ -25,7 +28,7 @@ const ACTIVE_STATUSES = new Set<GenerationJobStatus>(["queued", "warming", "gene
 const INTERRUPTIBLE_STATUSES = new Set<GenerationJobStatus>(["warming", "generating", "partial"]);
 const DEFAULT_STALE_AFTER_MS = 90_000;
 const MAX_JOBS = 30;
-const COMPACT_JOB_KEYS: Array<keyof GenerationJob> = ["id", "kind", "status", "request", "progress", "createdAt", "updatedAt", "error", "retryCount"];
+const COMPACT_JOB_KEYS: Array<keyof GenerationJob> = ["id", "kind", "status", "request", "progress", "createdAt", "updatedAt", "error", "retryCount", "engine"];
 
 let memoryJobs: GenerationJob<unknown, unknown>[] | null = null;
 let hydrationPromise: Promise<void> | null = null;
