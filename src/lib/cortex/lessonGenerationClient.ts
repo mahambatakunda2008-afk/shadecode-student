@@ -95,7 +95,7 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
 
   let generatedText = "";
   let lastPublishedLength = 0;
-  let lastPersistedAt = 0;
+  let lastCheckpointAt = 0;
   updateGenerationJob(job.id, { status: "generating", progress: 30, error: undefined });
   await runtime.stream({
     system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use these exact section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation. Do not answer a different topic from the learner's request.`,
@@ -106,11 +106,12 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
     if (chunk.done) return;
     generatedText += chunk.text;
     const now = Date.now();
-    if (generatedText.length - lastPublishedLength >= 160) {
+    const enoughNewText = generatedText.length - lastPublishedLength >= 160;
+    const enoughTime = now - lastCheckpointAt >= 500;
+    if (enoughNewText && enoughTime) {
       lastPublishedLength = generatedText.length;
-      const partial = { text: generatedText, ...parseLocalLesson(generatedText, job.request) };
-      updateGenerationJob(job.id, { status: "partial", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial });
-      if (now - lastPersistedAt >= 500) lastPersistedAt = now;
+      lastCheckpointAt = now;
+      updateGenerationJob(job.id, { status: "partial", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial: { text: generatedText, ...parseLocalLesson(generatedText, job.request) } });
     }
   });
 
