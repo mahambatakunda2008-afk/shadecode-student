@@ -20,21 +20,30 @@ function getActiveId() { if (!isBrowser()) return null; try { return localStorag
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
 function localId() { return isBrowser() && typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 
-function parseLocalLesson(text: string, request: LessonGenerationInput): LessonGenerationResult {
-  const cleaned = text.trim();
-  const heading = cleaned.match(/^#\s+(.+)$/m)?.[1]?.trim();
+/** Turn the model's markdown into lesson blocks without inventing educational content. */
+export function parseLocalLesson(text: string, request: LessonGenerationInput): LessonGenerationResult {
+  const normalized = text
+    .replace(/```(?:markdown|md)?/gi, "")
+    .replace(/```/g, "")
+    .replace(/^\s*(?:assistant|cortex)\s*:\s*/i, "")
+    .trim();
+  const heading = normalized.match(/^#\s+(.+)$/m)?.[1]?.trim();
   const title = heading || `${request.subject}: ${request.prompt}`.slice(0, 140);
-  const sections = cleaned
-    .replace(/^#\s+.+$/m, "")
-    .split(/\n(?=##\s+)/g)
+  const body = normalized.replace(/^#\s+.+$/m, "").trim();
+  const sections = body
+    .split(/\n(?=##\s+|###\s+|\d+[.)]\s+|\*\*[^*]+\*\*\s*$)/g)
     .map(section => section.trim())
     .filter(Boolean);
-  const blocks = (sections.length ? sections : [cleaned]).map((section, index) => {
-    const match = section.match(/^##\s+(.+)\n?([\s\S]*)$/);
+  const blocks = (sections.length ? sections : [body]).map((section, index) => {
+    const match = section.match(/^(?:##|###)\s+(.+)\n?([\s\S]*)$/);
+    const numbered = section.match(/^\d+[.)]\s+([^\n]+)\n?([\s\S]*)$/);
+    const bold = section.match(/^\*\*([^*]+)\*\*\s*\n?([\s\S]*)$/);
+    const sectionTitle = match?.[1]?.trim() || numbered?.[1]?.trim() || bold?.[1]?.trim();
+    const content = (match?.[2] ?? numbered?.[2] ?? bold?.[2] ?? section).trim();
     return {
       type: index === 0 ? "explanation" : "section",
-      title: match?.[1]?.trim() || (index === 0 ? "Lesson" : `Part ${index + 1}`),
-      content: (match?.[2] ?? section).trim(),
+      title: sectionTitle || (index === 0 ? "Lesson" : `Part ${index + 1}`),
+      content,
     };
   }).filter(block => block.content.length > 0);
   return { id: localId(), title, blocks };
@@ -77,22 +86,22 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   let lastPublishedLength = 0;
   updateGenerationJob(job.id, { status: "generating", progress: 30, error: undefined });
   await runtime.stream({
-    system: `You are Cortex, a rigorous personal teacher. Create a useful lesson for ${job.request.subject}. ${job.request.goal} Write original, accurate teaching content. Start with a # title, then use ## headings. Define important terms, explain from first principles, include formulas with symbols and units when relevant, a worked example, misconceptions, exam application, and practice questions. Do not mention being an AI. Do not pad the lesson with generic motivation.`,
+    system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use clear ## section headings. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation.`,
     prompt: `${job.request.prompt}\n\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
-    maxTokens: job.request.difficulty === "hard" ? 1200 : 900,
-    temperature: 0.25,
+    maxTokens: job.request.difficulty === "hard" ? 1400 : 1100,
+    temperature: 0.2,
   }, chunk => {
     if (chunk.done) return;
     generatedText += chunk.text;
     if (generatedText.length - lastPublishedLength >= 160) {
       lastPublishedLength = generatedText.length;
-      const progress = Math.min(92, 30 + Math.floor(generatedText.length / 55));
-      updateGenerationJob(job.id, { status: "partial", progress, partial: { text: generatedText } });
+      updateGenerationJob(job.id, { status: "partial", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial: { text: generatedText, ...parseLocalLesson(generatedText, job.request) } });
     }
   });
 
   if (generatedText.trim().length < 40) throw new Error("Local Cortex returned too little content to make a lesson.");
   const result = parseLocalLesson(generatedText, job.request);
+  if (result.blocks.length < 2) throw new Error("Local Cortex returned an incomplete lesson. Try again or use cloud enhancement when online.");
   await persistLesson(result, job.request);
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null);
