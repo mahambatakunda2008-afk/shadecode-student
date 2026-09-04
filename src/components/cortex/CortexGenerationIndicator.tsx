@@ -12,7 +12,7 @@ function labelFor(kind: GenerationJob["kind"]) {
 }
 
 export default function CortexGenerationIndicator() {
-  const [jobs, setJobs] = useState<GenerationJob[]>([]);
+  const [jobs, setJobs] = useState<GenerationJob<unknown, unknown>[]>([]);
 
   useEffect(() => {
     const sync = () => setJobs(getActiveGenerationJobs());
