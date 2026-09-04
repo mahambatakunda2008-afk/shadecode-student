@@ -39,7 +39,7 @@ Every lesson request carries the learner's actual prompt plus context:
 - difficulty
 - learning goal
 
-A subject is context, not a substitute for the learner's prompt. A one-letter or ambiguous prompt must not silently become a fabricated topic.
+A subject is context, not a substitute for the learner's prompt. A one-letter or ambiguous prompt must not silently become a fabricated topic. Ultra-short requests are now explicitly classified as clarification candidates, and the cloud lesson endpoint rejects them before spending an AI request. This prevents inputs such as `P` from becoming nonsensical lessons such as “Physics lesson on P”.
 
 Local generation is quality-gated before being accepted as a completed lesson. The parser expects substantive multi-section teaching content and checks for signals such as examples, checks, practice, misconceptions/traps, exam application and summary content. A failed local quality gate can fall back to cloud generation while online.
 
@@ -68,6 +68,7 @@ Cloud generation must never be represented in the UI as local generation. The ge
 A local Cortex release is not considered verified merely because TypeScript, lint, tests and build pass. The acceptance bar is:
 
 - Learn composer accepts an explicit subject and real learner prompt.
+- Ultra-short prompts such as `P` are rejected or clarified instead of generating an invented lesson.
 - First-run preparation reports progress and completes.
 - Local generation streams without blocking the UI.
 - WebGPU failure falls back to WASM where supported.
