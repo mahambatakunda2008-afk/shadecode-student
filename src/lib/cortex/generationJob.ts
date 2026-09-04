@@ -18,6 +18,8 @@ export interface GenerationJob<TRequest = Record<string, unknown>, TResult = unk
 const STORAGE_KEY = "shadecode:cortex:generation-jobs:v2";
 const listeners = new Set<() => void>();
 const ACTIVE_STATUSES = new Set<GenerationJobStatus>(["queued", "warming", "generating", "partial"]);
+const INTERRUPTIBLE_STATUSES = new Set<GenerationJobStatus>(["warming", "generating", "partial"]);
+const DEFAULT_STALE_AFTER_MS = 90_000;
 const MAX_JOBS = 30;
 
 function isBrowser() { return typeof window !== "undefined"; }
@@ -83,14 +85,27 @@ export function subscribeGenerationJobs(listener: () => void) {
   };
 }
 
-export function markInterruptedJobsForRetry() {
+/**
+ * Recover only jobs that plausibly died with their previous browser runtime.
+ * Freshly queued jobs are intentionally left alone, so mounting Learn cannot
+ * manufacture retry counts or reset work that another tab may be starting.
+ */
+export function markInterruptedJobsForRetry(staleAfterMs = DEFAULT_STALE_AFTER_MS) {
   const jobs = read();
-  let changed = false;
   const now = Date.now();
+  let changed = false;
   const next = jobs.map(job => {
-    if (!ACTIVE_STATUSES.has(job.status)) return job;
+    const stale = now - job.updatedAt >= staleAfterMs;
+    if (!INTERRUPTIBLE_STATUSES.has(job.status) || !stale) return job;
     changed = true;
-    return { ...job, status: "queued" as const, progress: Math.min(job.progress, 90), retryCount: job.retryCount + 1, updatedAt: now };
+    return {
+      ...job,
+      status: "queued" as const,
+      progress: Math.min(job.progress, 90),
+      retryCount: job.retryCount + 1,
+      updatedAt: now,
+      error: "Previous generation run stopped. Cortex will resume this request.",
+    };
   });
   if (changed) { write(next); notifyStorageChange(); }
 }
