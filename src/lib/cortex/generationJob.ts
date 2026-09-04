@@ -36,7 +36,7 @@ function isBrowser() { return typeof window !== "undefined"; }
 function compactJob(job: GenerationJob<unknown, unknown>): GenerationJob<unknown, unknown> {
   const compact = {} as GenerationJob<unknown, unknown>;
   for (const key of COMPACT_JOB_KEYS) {
-    if (job[key] !== undefined) (compact as Record<string, unknown>)[key] = job[key];
+    if (job[key] !== undefined) (compact as unknown as Record<string, unknown>)[key] = job[key];
   }
   return compact;
 }
@@ -154,12 +154,6 @@ function persistMutation(job: GenerationJob<unknown, unknown>) {
   void putDurableJob(job);
 }
 
-/**
- * Hydrate the in-memory generation queue from IndexedDB before Learn attempts
- * recovery. Old localStorage jobs are migrated forward, while partial text and
- * completed results are deliberately removed from localStorage to avoid quota
- * pressure and expensive synchronous writes.
- */
 export async function hydrateGenerationJobs() {
   if (!isBrowser()) return;
   if (hydrationPromise) return hydrationPromise;
@@ -219,7 +213,6 @@ export function subscribeGenerationJobs(listener: () => void) {
   };
 }
 
-/** Recover only jobs that plausibly died with their previous browser runtime. */
 export function markInterruptedJobsForRetry(staleAfterMs = DEFAULT_STALE_AFTER_MS) {
   const jobs = getMemoryJobs();
   const now = Date.now();
