@@ -20,6 +20,17 @@ function getActiveId() { if (!isBrowser()) return null; try { return localStorag
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
 function localId() { return isBrowser() && typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 
+async function resolveAuthToken(fallback: string | null): Promise<string | null> {
+  if (fallback || !isBrowser()) return fallback;
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const { data } = await createClient().auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Turn the model's markdown into lesson blocks without inventing educational content. */
 export function parseLocalLesson(text: string, request: LessonGenerationInput): LessonGenerationResult {
   const normalized = text
@@ -55,9 +66,10 @@ function assessLocalLesson(result: LessonGenerationResult, request: LessonGenera
   const requiredSignals = ["example", "check", "practice", "mistake", "trap", "summary", "exam"];
   const signalCount = requiredSignals.filter(signal => content.toLowerCase().includes(signal) || headings.includes(signal)).length;
   const topicWords = request.prompt.toLowerCase().split(/\s+/).filter(word => word.length >= 4).slice(0, 5);
-  const topicCoverage = topicWords.length === 0 || topicWords.filter(word => content.toLowerCase().includes(word.replace(/[^a-z0-9]/g, ""))).length >= Math.min(2, topicWords.length);
-  const substantive = content.length >= 650 && result.blocks.length >= 5;
-  return { substantive, signalCount, topicCoverage, passed: substantive && signalCount >= 3 && topicCoverage };
+  const normalizedContent = content.toLowerCase();
+  const topicCoverage = topicWords.length === 0 || topicWords.filter(word => normalizedContent.includes(word.replace(/[^a-z0-9]/g, ""))).length >= Math.min(2, topicWords.length);
+  const substantive = content.length >= 500 && result.blocks.length >= 4;
+  return { substantive, signalCount, topicCoverage, passed: substantive && signalCount >= 2 && topicCoverage };
 }
 
 async function persistLesson(result: LessonGenerationResult, request: LessonGenerationInput) {
@@ -98,10 +110,10 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   let lastCheckpointAt = 0;
   updateGenerationJob(job.id, { status: "generating", engine: "local", progress: 30, error: undefined });
   await runtime.stream({
-    system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use these exact section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation. Do not answer a different topic from the learner's request.`,
-    prompt: `${job.request.prompt}\n\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
-    maxTokens: job.request.difficulty === "hard" ? 1600 : 1300,
-    temperature: 0.2,
+    system: `You are Cortex, the offline teaching engine inside Shadecode Student. The learner's request is authoritative. Teach exactly the requested topic in the requested subject. Subject: ${job.request.subject}. ${job.request.goal} Education level: ${job.request.level || "not specified"}. Exam/curriculum: ${job.request.examBoard || "not specified"}. If the request is ambiguous, do not invent a different topic; briefly state what is unclear and explain only what can be established from the request. Write original, accurate teaching content. Start with a # title. Use these section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Include concrete reasoning, definitions, formulas with symbols and units when relevant, a worked example with intermediate steps, a misconception or trap, a self-check with answer, exam application when relevant, progressively harder practice, and a concise summary. Do not mention being an AI. Do not pad with generic motivation. Do not invent syllabus requirements.`,
+    prompt: `Learner request: ${job.request.prompt}\nSubject: ${job.request.subject}\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
+    maxTokens: job.request.difficulty === "hard" ? 1536 : 1400,
+    temperature: 0.15,
   }, chunk => {
     if (chunk.done) return;
     generatedText += chunk.text;
@@ -148,15 +160,17 @@ async function runCloudJob(job: GenerationJob<LessonGenerationInput>, token: str
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
 }
 
-async function runJob(job: GenerationJob<LessonGenerationInput>, token: string | null) {
+async function runJob(job: GenerationJob<LessonGenerationInput>, initialToken: string | null) {
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id;
   saveActiveId(job.id);
+  const token = await resolveAuthToken(initialToken);
   try {
     try {
       return await runLocalJob(job);
     } catch (localError) {
-      if (!isBrowser() || !navigator.onLine || !token) throw localError;
+      if (!isBrowser() || !navigator.onLine) throw localError;
+      if (!token) throw new Error(`Local Cortex could not finish and cloud fallback is unavailable because your session is not ready. ${errorMessage(localError)}`);
       updateGenerationJob(job.id, { status: "warming", engine: "cloud", progress: Math.max(8, job.progress), error: `Local Cortex draft unavailable. Using cloud fallback: ${errorMessage(localError)}` });
       return await runCloudJob(job, token);
     }
