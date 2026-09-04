@@ -4,7 +4,7 @@ import type {
   CortexGenerationInput,
   CortexRuntime,
 } from "./types";
-import { getCortexDeviceCapabilities } from "./capabilities";
+import { getCortexDeviceProfile } from "./capabilities";
 
 const MODEL = "onnx-community/Qwen2.5-0.5B-Instruct";
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
@@ -45,7 +45,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
   }
 
   async capabilities(): Promise<CortexCapabilities> {
-    const device = getCortexDeviceCapabilities();
+    const device = getCortexDeviceProfile();
     return {
       textGeneration: device.wasm || device.webgpu,
       streaming: true,
@@ -57,7 +57,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
 
   async isReady(): Promise<boolean> {
     if (typeof window === "undefined" || typeof Worker === "undefined") return false;
-    const capabilities = getCortexDeviceCapabilities();
+    const capabilities = getCortexDeviceProfile();
     return capabilities.wasm || capabilities.webgpu;
   }
 
@@ -66,8 +66,8 @@ export class LocalWebCortexRuntime implements CortexRuntime {
     this.warmPromise = new Promise<void>((resolve, reject) => {
       const worker = this.ensureWorker();
       const requestId = makeId();
-      const device = getCortexDeviceCapabilities().webgpu ? "webgpu" : "wasm";
-      const dtype = device === "webgpu" ? "q4" : "q4";
+      const device = getCortexDeviceProfile().webgpu ? "webgpu" : "wasm";
+      const dtype = "q4";
       const timer = window.setTimeout(() => {
         cleanup();
         reject(new Error("Local Cortex model warm-up timed out."));
@@ -111,7 +111,7 @@ export class LocalWebCortexRuntime implements CortexRuntime {
   ): Promise<void> {
     const worker = this.ensureWorker();
     const requestId = makeId();
-    const device = getCortexDeviceCapabilities().webgpu ? "webgpu" : "wasm";
+    const device = getCortexDeviceProfile().webgpu ? "webgpu" : "wasm";
     const dtype = "q4";
 
     await new Promise<void>((resolve, reject) => {
