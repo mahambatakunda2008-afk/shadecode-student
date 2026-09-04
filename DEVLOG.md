@@ -79,3 +79,13 @@ The richer Cortex state is no longer only a pure local reducer. The first durabl
 **Boundary:** this is the first authoritative durable richer-state projection consumer, not the end of the migration. Other evidence-bearing surfaces still need explicit semantics and idempotent integration before they can write the richer state.
 
 ---
+
+## 2026-09-04 — Cortex Auto-Cycle
+
+Completed the security audit task by implementing critical regression coverage for authorization boundaries. I've added a new test file, `src/api/__tests__/authorization.test.ts`, that rigorously validates Row-Level Security on the `tasks` table. This test suite ensures that users can only access and modify their own tasks, directly addressing potential unauthorized data access vulnerabilities identified during the audit.
+
+**Task:** Add Authorization Boundary Regression Tests for Tasks
+
+**Change:** Created a new test file `src/api/__tests__/authorization.test.ts` to provide regression coverage for authorization boundaries on the `tasks` table. The tests simulate two distinct users: one user creates a task, and the other user then attempts to read, update, and delete that task. The assertions ensure that the second user is denied access, which validates the correct implementation of Row-Level Security (RLS) on the `tasks` table. This improves the security posture by ensuring that RLS is robust and prevents unauthorized data access.
+
+---
