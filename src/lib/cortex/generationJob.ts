@@ -53,7 +53,7 @@ export function createGenerationJob<TRequest>(kind: GenerationJob["kind"], reque
   return job;
 }
 
-export function updateGenerationJob<T = unknown, TRequest = unknown>(id: string, patch: Partial<GenerationJob<TRequest, T>>) {
+export function updateGenerationJob<TRequest = unknown, TResult = unknown>(id: string, patch: Partial<GenerationJob<TRequest, TResult>>) {
   const jobs = read();
   const index = jobs.findIndex(job => job.id === id);
   if (index < 0) return null;
@@ -62,10 +62,10 @@ export function updateGenerationJob<T = unknown, TRequest = unknown>(id: string,
     ...current, ...patch,
     progress: typeof patch.progress === "number" ? Math.max(0, Math.min(100, Math.round(patch.progress))) : current.progress,
     updatedAt: Date.now(),
-  };
+  } as GenerationJob<unknown, unknown>;
   write(jobs);
   notifyStorageChange();
-  return jobs[index] as GenerationJob<TRequest, T>;
+  return jobs[index] as GenerationJob<TRequest, TResult>;
 }
 
 export function getGenerationJob(id: string) { return read().find(job => job.id === id) ?? null; }
