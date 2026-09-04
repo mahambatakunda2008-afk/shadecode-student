@@ -85,9 +85,9 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
     if (!isBrowser() || !navigator.onLine) {
       throw new Error("Local Cortex has not been prepared on this device. Connect once to prepare the local teaching model.");
     }
-    updateGenerationJob(job.id, { status: "warming", progress: 2, error: "Preparing Cortex on this device. Your lesson stays on this device." });
+    updateGenerationJob(job.id, { status: "warming", engine: "local", progress: 2, error: "Preparing Cortex on this device. Your lesson stays on this device." });
     await runtime.warm(progress => {
-      updateGenerationJob(job.id, { status: "warming", progress: Math.min(30, Math.max(2, Math.round(progress * 0.3))) });
+      updateGenerationJob(job.id, { status: "warming", engine: "local", progress: Math.min(30, Math.max(2, Math.round(progress * 0.3))) });
     });
   }
 
@@ -96,7 +96,7 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   let generatedText = "";
   let lastPublishedLength = 0;
   let lastCheckpointAt = 0;
-  updateGenerationJob(job.id, { status: "generating", progress: 30, error: undefined });
+  updateGenerationJob(job.id, { status: "generating", engine: "local", progress: 30, error: undefined });
   await runtime.stream({
     system: `You are Cortex, a careful offline tutor. Teach only the requested subject and topic. ${job.request.goal} Write original, accurate teaching content for the learner's level. Start with a # title and use these exact section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Cover the core concept, important definitions, formulas with symbols and units when relevant, one worked example with reasoning, a misconception or common trap, a check-yourself question with its answer, exam application when relevant, and progressively harder practice. Be concise but substantive. Never invent syllabus requirements. Do not mention being an AI. Do not pad the lesson with generic motivation. Do not answer a different topic from the learner's request.`,
     prompt: `${job.request.prompt}\n\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
@@ -106,12 +106,12 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
     if (chunk.done) return;
     generatedText += chunk.text;
     const now = Date.now();
-    const enoughNewText = generatedText.length - lastPublishedLength >= 160;
-    const enoughTime = now - lastCheckpointAt >= 500;
+    const enoughNewText = generatedText.length - lastPublishedLength >= 240;
+    const enoughTime = now - lastCheckpointAt >= 650;
     if (enoughNewText && enoughTime) {
       lastPublishedLength = generatedText.length;
       lastCheckpointAt = now;
-      updateGenerationJob(job.id, { status: "partial", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial: { text: generatedText, ...parseLocalLesson(generatedText, job.request) } });
+      updateGenerationJob(job.id, { status: "partial", engine: "local", progress: Math.min(92, 30 + Math.floor(generatedText.length / 55)), partial: { text: generatedText, ...parseLocalLesson(generatedText, job.request) } });
     }
   });
 
@@ -123,13 +123,13 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
     throw new Error(`Local Cortex draft did not meet the lesson quality bar (${result.blocks.length} sections, ${quality.signalCount}/7 quality signals).`);
   }
   await persistLesson(result, job.request);
-  updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
+  updateGenerationJob(job.id, { status: "complete", engine: "local", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
 }
 
 async function runCloudJob(job: GenerationJob<LessonGenerationInput>, token: string) {
-  updateGenerationJob(job.id, { status: "generating", progress: Math.max(12, job.progress), error: undefined });
+  updateGenerationJob(job.id, { status: "generating", engine: "cloud", progress: Math.max(12, job.progress), error: undefined });
   const response = await fetch("/api/learn/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -140,10 +140,10 @@ async function runCloudJob(job: GenerationJob<LessonGenerationInput>, token: str
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
   if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
-  updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: data.title, blocks: data.blocks } });
+  updateGenerationJob(job.id, { status: "partial", engine: "cloud", progress: 92, partial: { title: data.title, blocks: data.blocks } });
   const result: LessonGenerationResult = { id: data.id, title: data.title || job.request.prompt, blocks: data.blocks };
   await persistLesson(result, job.request);
-  updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined });
+  updateGenerationJob(job.id, { status: "complete", engine: "cloud", progress: 100, result, partial: undefined });
   if (getActiveId() === job.id) saveActiveId(null);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
 }
@@ -157,7 +157,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string |
       return await runLocalJob(job);
     } catch (localError) {
       if (!isBrowser() || !navigator.onLine || !token) throw localError;
-      updateGenerationJob(job.id, { status: "warming", progress: Math.max(8, job.progress), error: `Local Cortex draft unavailable. Using cloud fallback: ${errorMessage(localError)}` });
+      updateGenerationJob(job.id, { status: "warming", engine: "cloud", progress: Math.max(8, job.progress), error: `Local Cortex draft unavailable. Using cloud fallback: ${errorMessage(localError)}` });
       return await runCloudJob(job, token);
     }
   } catch (error) {
