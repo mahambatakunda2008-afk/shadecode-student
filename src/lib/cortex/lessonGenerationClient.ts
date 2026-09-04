@@ -1,4 +1,5 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
+import { cortexRuntimeManager } from "@/lib/cortex/runtime/manager";
 import { offlineStorage } from "@/lib/offline/storage";
 
 export interface LessonGenerationInput {
@@ -16,37 +17,124 @@ function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
+function localId() { return isBrowser() && typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 
-async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
+function parseLocalLesson(text: string, request: LessonGenerationInput): LessonGenerationResult {
+  const cleaned = text.trim();
+  const heading = cleaned.match(/^#\s+(.+)$/m)?.[1]?.trim();
+  const title = heading || `${request.subject}: ${request.prompt}`.slice(0, 140);
+  const sections = cleaned
+    .replace(/^#\s+.+$/m, "")
+    .split(/\n(?=##\s+)/g)
+    .map(section => section.trim())
+    .filter(Boolean);
+  const blocks = (sections.length ? sections : [cleaned]).map((section, index) => {
+    const match = section.match(/^##\s+(.+)\n?([\s\S]*)$/);
+    return {
+      type: index === 0 ? "explanation" : "section",
+      title: match?.[1]?.trim() || (index === 0 ? "Lesson" : `Part ${index + 1}`),
+      content: (match?.[2] ?? section).trim(),
+    };
+  }).filter(block => block.content.length > 0);
+  return { id: localId(), title, blocks };
+}
+
+async function persistLesson(result: LessonGenerationResult, request: LessonGenerationInput) {
+  const now = new Date().toISOString();
+  await offlineStorage.saveLesson({
+    id: result.id,
+    title: result.title,
+    subject: request.subject,
+    description: `A complete ${request.difficulty} lesson on ${request.prompt}`,
+    blocks: result.blocks,
+    difficulty: request.difficulty,
+    progress: 0,
+    completed: false,
+    downloadedAt: now,
+    lastSyncedAt: now,
+    size: JSON.stringify(result).length,
+  });
+}
+
+async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
+  updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
+  const selection = await cortexRuntimeManager.select(true);
+  if (!selection.runtime) throw new Error("Local Cortex is not available on this device.");
+
+  let generatedText = "";
+  let lastPublishedLength = 0;
+  updateGenerationJob(job.id, { status: "generating", progress: 15 });
+  await selection.runtime.stream({
+    system: `You are Cortex, a rigorous personal teacher. Create a useful lesson for ${job.request.subject}. ${job.request.goal} Write original, accurate teaching content. Start with a # title, then use ## headings. Define important terms, explain from first principles, include formulas with symbols and units when relevant, a worked example, misconceptions, exam application, and practice questions. Do not mention being an AI. Do not pad the lesson with generic motivation.`,
+    prompt: `${job.request.prompt}\n\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
+    maxTokens: job.request.difficulty === "hard" ? 1200 : 900,
+    temperature: 0.25,
+  }, chunk => {
+    if (chunk.done) return;
+    generatedText += chunk.text;
+    if (generatedText.length - lastPublishedLength >= 160) {
+      lastPublishedLength = generatedText.length;
+      const progress = Math.min(90, 18 + Math.floor(generatedText.length / 70));
+      updateGenerationJob(job.id, { status: "partial", progress, partial: { text: generatedText } });
+    }
+  });
+
+  if (generatedText.trim().length < 40) throw new Error("Local Cortex returned too little content to make a lesson.");
+  const result = parseLocalLesson(generatedText, job.request);
+  await persistLesson(result, job.request);
+  updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
+  if (getActiveId() === job.id) saveActiveId(null);
+  return getGenerationJobs().find(item => item.id === job.id) ?? job;
+}
+
+async function runCloudJob(job: GenerationJob<LessonGenerationInput>, token: string) {
+  updateGenerationJob(job.id, { status: "generating", progress: Math.max(12, job.progress), error: undefined });
+  const response = await fetch("/api/learn/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }),
+    cache: "no-store",
+    keepalive: true,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
+  if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
+  updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: data.title, blocks: data.blocks } });
+  const result: LessonGenerationResult = { id: data.id, title: data.title || job.request.prompt, blocks: data.blocks };
+  await persistLesson(result, job.request);
+  updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined });
+  if (getActiveId() === job.id) saveActiveId(null);
+  return getGenerationJobs().find(item => item.id === job.id) ?? job;
+}
+
+async function runJob(job: GenerationJob<LessonGenerationInput>, token: string | null) {
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id;
   saveActiveId(job.id);
-  updateGenerationJob(job.id, { status: "warming", progress: Math.max(5, job.progress), error: undefined });
   try {
-    updateGenerationJob(job.id, { status: "generating", progress: Math.max(12, job.progress) });
-    const response = await fetch("/api/learn/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }),
-      cache: "no-store",
-      keepalive: true,
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
-    if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
-    updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: data.title, blocks: data.blocks } });
-    const result: LessonGenerationResult = { id: data.id, title: data.title || job.request.prompt, blocks: data.blocks };
-    const now = new Date().toISOString();
-    await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `A complete ${job.request.difficulty} lesson on ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
-    updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined });
-    if (getActiveId() === job.id) saveActiveId(null);
-    return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    // Local Cortex is the primary path. Cloud is only a fallback when the
+    // device is online and an authenticated cloud runtime is available.
+    try {
+      return await runLocalJob(job);
+    } catch (localError) {
+      if (!isBrowser() || !navigator.onLine || !token) {
+        throw localError;
+      }
+      updateGenerationJob(job.id, { status: "warming", progress: Math.max(8, job.progress), error: `Local Cortex unavailable. Using cloud fallback: ${errorMessage(localError)}` });
+      return await runCloudJob(job, token);
+    }
   } catch (error) {
     const offlineNow = isBrowser() && !navigator.onLine;
-    updateGenerationJob(job.id, { status: offlineNow ? "queued" : "failed", progress: offlineNow ? Math.min(job.progress, 20) : job.progress, error: offlineNow ? "Waiting for a connection. Your request is safely queued on this device." : errorMessage(error) });
+    updateGenerationJob(job.id, {
+      status: offlineNow ? "queued" : "failed",
+      progress: offlineNow ? Math.min(job.progress, 20) : job.progress,
+      error: offlineNow ? "Local Cortex is not ready yet. Your request is safely queued on this device." : errorMessage(error),
+    });
     if (offlineNow) saveActiveId(job.id); else if (getActiveId() === job.id) saveActiveId(null);
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
-  } finally { if (runningJobId === job.id) runningJobId = null; }
+  } finally {
+    if (runningJobId === job.id) runningJobId = null;
+  }
 }
 
 export function queueLessonGeneration(input: LessonGenerationInput) {
@@ -56,7 +144,7 @@ export function queueLessonGeneration(input: LessonGenerationInput) {
 }
 
 export async function resumeLessonGeneration(token: string | null) {
-  if (!isBrowser() || !token || !navigator.onLine) return null;
+  if (!isBrowser()) return null;
   markInterruptedJobsForRetry();
   const active = getActiveGenerationJobs()
     .filter(job => job.kind === "lesson")
@@ -64,12 +152,13 @@ export async function resumeLessonGeneration(token: string | null) {
   const preferredId = getActiveId();
   const job = (preferredId && active.find(item => item.id === preferredId)) || active[0];
   if (!job) return null;
+  if (!navigator.onLine) return job;
   return runJob(job, token);
 }
 
 export async function startLessonGeneration(input: LessonGenerationInput, token: string | null) {
   const job = queueLessonGeneration(input);
-  if (token && isBrowser() && navigator.onLine) {
+  if (isBrowser()) {
     void runJob(job, token);
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   }
