@@ -45,7 +45,11 @@ function duplicateRatio(blocks: LessonQualityBlock[]) {
 }
 function hasType(blocks: LessonQualityBlock[], type: string) { return blocks.some((block) => normalise(block.type ?? "") === type); }
 function blockText(blocks: LessonQualityBlock[], type: string) { return blocks.filter((block) => normalise(block.type ?? "") === type).map((block) => `${block.title ?? ""} ${block.content ?? ""}`).join(" "); }
-function questionCount(text: string) { return Math.max((text.match(/\?/g) ?? []).length, (text.match(/(?:^|\n)\s*(?:question\s*)?\d+[.)]/gi) ?? []).length); }
+function questionCount(text: string) {
+  const questionMarks = (text.match(/\?/g) ?? []).length;
+  const numberedQuestions = (text.match(/(?:^|[\s])(?:question\s*)?\d+[.)](?=\s)/gi) ?? []).length;
+  return Math.max(questionMarks, numberedQuestions);
+}
 
 export function assessLessonQuality(blocks: LessonQualityBlock[]): LessonQualityResult {
   const content = blocks.map((block) => `${block.title ?? ""}\n${block.content ?? ""}`).join("\n").trim();
