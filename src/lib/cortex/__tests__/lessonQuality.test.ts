@@ -40,14 +40,26 @@ describe("lesson quality", () => {
     expect(result.issues).toEqual(expect.arrayContaining(["missing-worked-example", "missing-practice", "missing-misconception"]));
   });
 
-  it("penalises repeated blocks instead of counting repetition as depth", () => {
+  it("rejects a padded lesson that has enough blocks but repeats the same explanation", () => {
     const repeated = Array.from({ length: 12 }, (_, index) => ({
       type: index === 0 ? "objective" : "concept",
       title: "Hooke's law",
-      content: "Hooke's law states that force is proportional to extension while the spring remains within the proportional region.",
+      content: "Hooke's law states that force is proportional to extension while the spring remains within the proportional region. This means force increases with extension because the relationship is linear.",
     }));
     const result = assessLessonQuality(repeated);
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("repetition");
+  });
+
+  it("rejects a structurally complete lesson with a weak example, checkpoint and practice section", () => {
+    const weak = strongLesson.map((block) => {
+      if (block.type === "example") return { ...block, content: "Here is an example. Use the formula to get the answer." };
+      if (block.type === "checkpoint") return { ...block, content: "Check yourself." };
+      if (block.type === "practice") return { ...block, content: "Try this question." };
+      return block;
+    });
+    const result = assessLessonQuality(weak);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toEqual(expect.arrayContaining(["weak-worked-example", "weak-checkpoint", "weak-practice"]));
   });
 });
