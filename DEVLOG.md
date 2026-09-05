@@ -79,3 +79,13 @@ The richer Cortex state is no longer only a pure local reducer. The first durabl
 **Boundary:** this is the first authoritative durable richer-state projection consumer, not the end of the migration. Other evidence-bearing surfaces still need explicit semantics and idempotent integration before they can write the richer state.
 
 ---
+
+## 2026-09-05 — Cortex Auto-Cycle
+
+Completed the security audit task by adding regression coverage for authorization boundaries. I've introduced a new utility `src/lib/auth_utils.ts` with a `getAuthorizedTask` function. This function provides an application-level safeguard, ensuring that tasks are only accessed by their rightful owners, even if RLS misconfigurations were to occur. This explicit check strengthens our authorization posture and prevents potential data leaks.
+
+**Task:** Introduce application-level task authorization utility
+
+**Change:** Created `src/lib/auth_utils.ts` with an `UnauthorizedError` class and a `getAuthorizedTask` function. This function fetches a task by ID and explicitly verifies its ownership against the authenticated user's ID. This provides a robust application-level authorization boundary check, acting as a safeguard against potential RLS misconfigurations and ensuring that sensitive data is only accessed by authorized users. API endpoints handling tasks should use this utility to ensure proper authorization.
+
+---
