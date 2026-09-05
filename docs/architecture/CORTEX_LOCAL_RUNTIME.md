@@ -29,15 +29,32 @@ The React/UI thread never performs model inference directly. Generation is isola
 
 The ready flag is only a convenience signal. Actual runtime capability and successful model initialization remain authoritative.
 
+## Intelligent learning brief
+
+The Learn composer is the source of truth for learner intent. A request is built from:
+
+- subject
+- education level when known
+- exam board/curriculum when known
+- learning goal
+- teaching mode
+- the learner's exact natural-language request
+
+Context changes the teaching strategy, not the learner's request. The interface should make the complete brief visible before generation rather than hiding important assumptions in component state.
+
+The learning intent resolver then classifies the request locally into modes such as direct learning, remediation, exam preparation, practice, guided solving, deep dive, review, or from-scratch. Explicit wording in the learner's prompt has precedence over a selected goal. Generic words are deliberately avoided where they would cause false classifications, so a phrase containing `wrong` alone does not become remediation and `test me` remains practice even when an exam goal is selected.
+
 ## Lesson generation contract
 
-Every lesson request carries the learner's actual prompt plus context:
+Every lesson request carries the learner's actual prompt plus context and the resolved teaching strategy:
 
 - subject
 - education level when known
 - exam board/curriculum when known
 - difficulty
 - learning goal
+- learning intent and confidence
+- intent-specific teaching strategy
 
 A subject is context, not a substitute for the learner's prompt. A one-letter or ambiguous prompt must not silently become a fabricated topic. Ultra-short requests are now explicitly classified as clarification candidates, and the cloud lesson endpoint rejects them before spending an AI request. This prevents inputs such as `P` from becoming nonsensical lessons such as “Physics lesson on P”.
 
@@ -68,7 +85,9 @@ Cloud generation must never be represented in the UI as local generation. The ge
 A local Cortex release is not considered verified merely because TypeScript, lint, tests and build pass. The acceptance bar is:
 
 - Learn composer accepts an explicit subject and real learner prompt.
+- Learning context is visible and editable rather than silently assumed.
 - Ultra-short prompts such as `P` are rejected or clarified instead of generating an invented lesson.
+- Prompt intent takes precedence over a generic learning goal when they conflict.
 - First-run preparation reports progress and completes.
 - Local generation streams without blocking the UI.
 - WebGPU failure falls back to WASM where supported.
