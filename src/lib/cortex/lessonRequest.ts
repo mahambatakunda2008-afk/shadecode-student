@@ -1,3 +1,5 @@
+import { buildIntentInstruction, resolveLearningIntent, type LearningIntentResult } from "@/lib/cortex/learningIntent";
+
 export interface LessonRequest {
   prompt: string;
   subject?: string;
@@ -32,11 +34,6 @@ function inferSubject(prompt: string) {
   return "";
 }
 
-/**
- * Resolve a complete request while preserving the learner's exact prompt.
- * Explicit context always wins. Ultra-short prompts are treated as
- * clarification candidates instead of being expanded into invented lessons.
- */
 export function resolveLessonRequest(input: LessonRequest) {
   const prompt = clean(input.prompt, 500);
   const explicitSubject = clean(input.subject, 100);
@@ -45,6 +42,7 @@ export function resolveLessonRequest(input: LessonRequest) {
   const topic = clean(input.topic, 500) || prompt;
   const difficulty = input.difficulty === "easy" || input.difficulty === "hard" ? input.difficulty : "medium";
   const shortPrompt = prompt.length > 0 && prompt.length <= 3;
+  const intent = resolveLearningIntent(prompt, clean(input.goal, 300));
 
   return {
     prompt,
@@ -54,6 +52,7 @@ export function resolveLessonRequest(input: LessonRequest) {
     goal: clean(input.goal, 300),
     examBoard: clean(input.examBoard, 100),
     difficulty,
+    intent,
     ambiguousSubject: !explicitSubject && !inferredSubject,
     shortPrompt,
     needsClarification: !prompt || shortPrompt,
@@ -67,6 +66,8 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     request.examBoard && `Exam/curriculum: ${request.examBoard}`,
     request.goal && `Learning goal: ${request.goal}`,
     `Difficulty: ${request.difficulty}`,
+    `Learning intent: ${request.intent.intent} (${request.intent.confidence} confidence)`,
+    `Teaching strategy: ${buildIntentInstruction(request.intent)}`,
   ].filter(Boolean).join("\n");
 
   const ambiguityRule = request.ambiguousSubject
@@ -77,5 +78,7 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     ? "The learner supplied an ultra-short request. Do not turn it into a generic lesson or invent what the shorthand means. Ask one concise clarification question, unless the supplied context makes the intended concept unambiguous."
     : "The learner supplied a substantive request. Teach it directly and specifically.";
 
-  return `${request.prompt}\n\n${context}\n\nTeaching contract:\n- Preserve the learner's request exactly as the starting point.\n- ${ambiguityRule}\n- ${clarificationRule}\n- Use education level and exam/curriculum context when supplied; never invent missing curriculum details.\n- Teach the requested concept rather than generating a generic lesson about the subject.\n- Prefer concrete definitions, correct notation, worked reasoning, checks for understanding, misconceptions, exam application, and targeted practice over motivational filler.`;
+  return `${request.prompt}\n\n${context}\n\nTeaching contract:\n- Preserve the learner's request exactly as the starting point.\n- ${ambiguityRule}\n- ${clarificationRule}\n- Use education level and exam/curriculum context when supplied; never invent missing curriculum details.\n- Follow the resolved learning intent and teaching strategy.\n- Teach the requested concept rather than generating a generic lesson about the subject.\n- Prefer concrete definitions, correct notation, worked reasoning, checks for understanding, misconceptions, exam application, and targeted practice over motivational filler.`;
 }
+
+export type { LearningIntentResult };
