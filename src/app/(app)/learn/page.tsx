@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import LearnContextPanel from "@/components/cortex/LearnContextPanel";
 import LearnPageResilient from "./LearnPageResilient";
 
 function LearnFallback() {
@@ -15,5 +16,10 @@ function LearnFallback() {
 }
 
 export default function LearnPage() {
-  return <Suspense fallback={<LearnFallback />}><LearnPageResilient /></Suspense>;
+  return (
+    <Suspense fallback={<LearnFallback />}>
+      <LearnContextPanel />
+      <LearnPageResilient />
+    </Suspense>
+  );
 }
