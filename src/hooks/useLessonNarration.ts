@@ -57,6 +57,59 @@ export type NarrationStatus = "idle" | "speaking" | "listening" | "unsupported";
 
 const COMMAND_LISTEN_WINDOW_MS = 4000;
 
+function scoreVoice(voice: SpeechSynthesisVoice): number {
+  const name = voice.name.toLowerCase();
+  let score = 0;
+  if (voice.lang.toLowerCase().startsWith("en")) score += 10;
+  if (voice.lang.toLowerCase() === "en-us") score += 2;
+  // Heuristic: most platforms label their higher-quality (often
+  // server-rendered or neural) voices with one of these words, versus
+  // the cheap, robotic compact voices bundled as an offline fallback.
+  if (/google|natural|neural|enhanced|premium|siri/.test(name)) score += 5;
+  if (/compact/.test(name)) score -= 5;
+  if (voice.localService) score -= 1;
+  return score;
+}
+
+let cachedVoice: SpeechSynthesisVoice | null | undefined;
+
+function pickBestVoice(): Promise<SpeechSynthesisVoice | null> {
+  if (cachedVoice !== undefined) return Promise.resolve(cachedVoice);
+
+  const choose = (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
+    if (voices.length === 0) return null;
+    return [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0];
+  };
+
+  const existing = window.speechSynthesis.getVoices();
+  if (existing.length > 0) {
+    cachedVoice = choose(existing);
+    return Promise.resolve(cachedVoice);
+  }
+
+  // Most browsers load voices asynchronously and return an empty list
+  // on the very first call, populating it only once `voiceschanged`
+  // fires -- without waiting for this, the first utterance of a
+  // session would silently use whatever placeholder voice is active
+  // before real voices finish loading, regardless of any selection
+  // logic above.
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => {
+      cachedVoice = null;
+      resolve(null);
+    }, 1000);
+    window.speechSynthesis.addEventListener(
+      "voiceschanged",
+      () => {
+        clearTimeout(timeoutId);
+        cachedVoice = choose(window.speechSynthesis.getVoices());
+        resolve(cachedVoice);
+      },
+      { once: true }
+    );
+  });
+}
+
 export function useLessonNarration(blocks: LessonBlock[]) {
   const [status, setStatus] = useState<NarrationStatus>("idle");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -100,11 +153,23 @@ export function useLessonNarration(blocks: LessonBlock[]) {
     recognition.lang = "en-US";
     recognitionRef.current = recognition;
 
+    // Tracks whether onresult/onerror already advanced the lesson, so
+    // onend's "nothing was heard" fallback doesn't double-fire. A plain
+    // local variable, not React state -- state updates are async and
+    // this needs to be readable synchronously the instant onend fires,
+    // which a previous version got wrong by checking the `status` state
+    // variable instead (captured stale via a useCallback closure that
+    // doesn't list status as a dependency, so it was never "listening"
+    // by the time onend actually ran -- silence during a lesson would
+    // stop the narration dead instead of continuing).
+    let handled = false;
+
     const timeoutId = setTimeout(() => {
       recognition.abort();
     }, COMMAND_LISTEN_WINDOW_MS);
 
     recognition.onresult = (event) => {
+      handled = true;
       clearTimeout(timeoutId);
       const transcript = event.results[0]?.[0]?.transcript ?? "";
       const command = matchVoiceCommand(transcript);
@@ -128,15 +193,17 @@ export function useLessonNarration(blocks: LessonBlock[]) {
     };
 
     recognition.onerror = () => {
+      handled = true;
       clearTimeout(timeoutId);
       if (activeRef.current) speakIndex(currentIndex + 1);
     };
 
     recognition.onend = () => {
       clearTimeout(timeoutId);
-      // onresult already advanced if a command was heard; this handles
-      // the "nothing heard, recognition just ended" case.
-      if (activeRef.current && status === "listening") speakIndex(currentIndex + 1);
+      // Nothing was heard (no command recognized, no error) before
+      // recognition naturally ended or the listen window timed out --
+      // continue the lesson rather than leaving it stuck waiting.
+      if (!handled && activeRef.current) speakIndex(currentIndex + 1);
     };
 
     recognition.start();
@@ -144,7 +211,7 @@ export function useLessonNarration(blocks: LessonBlock[]) {
   }, [currentIndex, stop]);
 
   const speakIndex = useCallback(
-    (index: number) => {
+    async (index: number) => {
       if (!speechSupported || index >= scriptRef.current.length) {
         stop();
         return;
@@ -156,7 +223,11 @@ export function useLessonNarration(blocks: LessonBlock[]) {
 
       const segment = scriptRef.current[index];
       const utterance = new SpeechSynthesisUtterance(segment.text);
-      utterance.rate = 1;
+      const voice = await pickBestVoice();
+      if (!activeRef.current) return; // stopped while the voice lookup was in flight
+      if (voice) utterance.voice = voice;
+      utterance.rate = 1.02;
+      utterance.pitch = 1;
       utterance.onend = () => {
         if (activeRef.current) listenForCommand();
       };
