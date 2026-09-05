@@ -58,7 +58,22 @@ Every lesson request carries the learner's actual prompt plus context and the re
 
 A subject is context, not a substitute for the learner's prompt. A one-letter or ambiguous prompt must not silently become a fabricated topic. Ultra-short requests are now explicitly classified as clarification candidates, and the cloud lesson endpoint rejects them before spending an AI request. This prevents inputs such as `P` from becoming nonsensical lessons such as “Physics lesson on P”.
 
-Local generation is quality-gated before being accepted as a completed lesson. The parser expects substantive multi-section teaching content and checks for signals such as examples, checks, practice, misconceptions/traps, exam application and summary content. A failed local quality gate can fall back to cloud generation while online.
+## Lesson quality gate
+
+Generated lessons are assessed independently of the provider that produced them. The deterministic assessor checks more than the presence of headings:
+
+- minimum substantive length and section count
+- the eight core teaching ingredients: objective, concept, worked example, checkpoint, exam application, misconception, summary and practice
+- explicit step-by-step reasoning or sufficiently detailed worked reasoning
+- topic-specific teaching signals such as equations, units, symbols, conditions, calculations, substitutions, causes and conclusions
+- a worked example that contains actual reasoning rather than a label and a final answer
+- a checkpoint that contains an answer or explanatory resolution
+- at least two discernible practice questions/problems
+- repeated or padded sections, using content similarity rather than only identical strings
+
+A structurally complete but shallow lesson therefore fails the same gate as an incomplete one. The score and issue codes are deterministic and testable, so provider prompts are not the only line of defence against low-value output.
+
+Local generation is quality-gated before being accepted as a completed lesson. If the local draft fails while online, the client can fall back to cloud generation. If the learner is offline, the durable generation job remains the source of truth rather than pretending a rejected draft is complete.
 
 ## Offline behavior
 
@@ -68,7 +83,7 @@ Useful learning state is persisted locally before relying on cloud synchronizati
 
 ## Cloud fallback
 
-When local inference cannot complete and the browser is online, the lesson client may use `/api/learn/generate`. The server authenticates the learner, resolves the lesson request, calls the configured provider chain, validates the generated lesson structure, persists the lesson and awards the appropriate XP.
+When local inference cannot complete and the browser is online, the lesson client may use `/api/learn/generate`. The server authenticates the learner, resolves the lesson request, calls the configured provider chain, validates the generated lesson structure, applies the deterministic lesson quality gate, attempts one quality-repair pass when needed, persists only accepted lessons and awards the appropriate XP.
 
 Cloud generation must never be represented in the UI as local generation. The generation job records the active engine so the interface can truthfully distinguish local inference from cloud enhancement.
 
@@ -96,4 +111,4 @@ A local Cortex release is not considered verified merely because TypeScript, lin
 - Offline generation works after preparation.
 - Unprepared offline requests remain queued rather than being lost.
 - Cloud fallback is visibly and truthfully identified when used.
-- No provider failure is allowed to masquerade as successful local generation.
+- Provider failures and shallow drafts are not allowed to masquerade as successful local generation.
