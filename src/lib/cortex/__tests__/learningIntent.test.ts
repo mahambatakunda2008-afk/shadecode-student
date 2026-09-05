@@ -14,8 +14,26 @@ describe("learning intent resolver", () => {
     expect(resolveLearningIntent("Give me questions on differentiation").intent).toBe("practice");
   });
 
+  it("treats test me as practice rather than exam preparation", () => {
+    expect(resolveLearningIntent("Test me on calculus").intent).toBe("practice");
+  });
+
   it("detects guided solving", () => {
     expect(resolveLearningIntent("Help me solve this mechanics question").intent).toBe("guided-solve");
+  });
+
+  it("gives explicit prompt intent precedence over a generic goal", () => {
+    expect(resolveLearningIntent("Test me on differentiation", "Prepare for an exam").intent).toBe("practice");
+  });
+
+  it("uses the selected goal when the prompt is generic", () => {
+    expect(resolveLearningIntent("Teach me differentiation", "Fix a weak area").intent).toBe("remediate");
+    expect(resolveLearningIntent("Teach me differentiation", "Practice questions").intent).toBe("practice");
+    expect(resolveLearningIntent("Teach me differentiation", "Review quickly").intent).toBe("review");
+  });
+
+  it("does not classify an ordinary word like wrong as remediation by itself", () => {
+    expect(resolveLearningIntent("What is the wrong sign convention here?").intent).toBe("learn");
   });
 
   it("defaults to direct learning", () => {
