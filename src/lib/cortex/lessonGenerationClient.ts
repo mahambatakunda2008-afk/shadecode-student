@@ -68,8 +68,17 @@ function assessLocalLesson(result: LessonGenerationResult, request: LessonGenera
   const topicWords = request.prompt.toLowerCase().split(/\s+/).filter(word => word.length >= 4).slice(0, 5);
   const normalizedContent = content.toLowerCase();
   const topicCoverage = topicWords.length === 0 || topicWords.filter(word => normalizedContent.includes(word.replace(/[^a-z0-9]/g, ""))).length >= Math.min(2, topicWords.length);
-  const substantive = content.length >= 500 && result.blocks.length >= 4;
-  return { substantive, signalCount, topicCoverage, passed: substantive && signalCount >= 2 && topicCoverage };
+  const substantive = content.length >= 650 && result.blocks.length >= 5;
+  return { substantive, signalCount, topicCoverage, passed: substantive && signalCount >= 3 && topicCoverage };
+}
+
+function validateLessonInput(request: LessonGenerationInput) {
+  const prompt = request.prompt.trim();
+  const subject = request.subject.trim();
+  if (!subject) throw new Error("Choose a subject so Cortex can teach the right thing.");
+  if (!prompt) throw new Error("Tell Cortex what you want to learn.");
+  if (prompt.length <= 3) throw new Error("That request is too short for a reliable lesson. Add the concept or question you want Cortex to teach.");
+  return { prompt, subject };
 }
 
 async function persistLesson(result: LessonGenerationResult, request: LessonGenerationInput) {
@@ -90,6 +99,7 @@ async function persistLesson(result: LessonGenerationResult, request: LessonGene
 }
 
 async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
+  validateLessonInput(job.request);
   const runtime = cortexRuntimeManager.get("local-web") ?? cortexRuntimeManager.get("local-native");
   if (!runtime) throw new Error("Local Cortex is not available on this device.");
 
@@ -110,8 +120,8 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
   let lastCheckpointAt = 0;
   updateGenerationJob(job.id, { status: "generating", engine: "local", progress: 30, error: undefined });
   await runtime.stream({
-    system: `You are Cortex, the offline teaching engine inside Shadecode Student. The learner's request is authoritative. Teach exactly the requested topic in the requested subject. Subject: ${job.request.subject}. ${job.request.goal} Education level: ${job.request.level || "not specified"}. Exam/curriculum: ${job.request.examBoard || "not specified"}. If the request is ambiguous, do not invent a different topic; briefly state what is unclear and explain only what can be established from the request. Write original, accurate teaching content. Start with a # title. Use these section headings when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Include concrete reasoning, definitions, formulas with symbols and units when relevant, a worked example with intermediate steps, a misconception or trap, a self-check with answer, exam application when relevant, progressively harder practice, and a concise summary. Do not mention being an AI. Do not pad with generic motivation. Do not invent syllabus requirements.`,
-    prompt: `Learner request: ${job.request.prompt}\nSubject: ${job.request.subject}\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}`,
+    system: `You are Cortex, the offline teaching engine inside Shadecode Student. The learner's request is authoritative. Teach exactly the requested topic in the requested subject. Subject: ${job.request.subject}. ${job.request.goal} Education level: ${job.request.level || "not specified"}. Exam/curriculum: ${job.request.examBoard || "not specified"}. If the request is ambiguous, do not invent a different topic; briefly state what is unclear and explain only what can be established from the request. Write original, accurate teaching content. Start with a # title. Build a compact but complete lesson with these sections when relevant: ## Core idea, ## Key definitions, ## Worked example, ## Common trap, ## Check yourself, ## Exam application, ## Practice, ## Summary. Include concrete reasoning, definitions, formulas with symbols and units when relevant, a worked example with intermediate steps, a misconception or trap, a self-check with answer, exam application when relevant, progressively harder practice, and a concise summary. Do not mention being an AI. Do not pad with generic motivation. Do not invent syllabus requirements.`,
+    prompt: `Learner request: ${job.request.prompt}\nSubject: ${job.request.subject}\nEducation level: ${job.request.level || "not specified"}\nExam/curriculum: ${job.request.examBoard || "not specified"}\nLearning goal: ${job.request.goal}\nDifficulty: ${job.request.difficulty}`,
     maxTokens: job.request.difficulty === "hard" ? 1536 : 1400,
     temperature: 0.15,
   }, chunk => {
@@ -141,6 +151,7 @@ async function runLocalJob(job: GenerationJob<LessonGenerationInput>) {
 }
 
 async function runCloudJob(job: GenerationJob<LessonGenerationInput>, token: string) {
+  validateLessonInput(job.request);
   updateGenerationJob(job.id, { status: "generating", engine: "cloud", progress: Math.max(12, job.progress), error: undefined });
   const response = await fetch("/api/learn/generate", {
     method: "POST",
