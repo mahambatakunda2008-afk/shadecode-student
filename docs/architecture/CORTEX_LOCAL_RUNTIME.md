@@ -1,0 +1,114 @@
+# Cortex Local Runtime
+
+## Purpose
+
+Cortex is designed as a local-first learning engine. The browser runtime provides on-device text generation without requiring a cloud AI request for every lesson. Cloud providers remain an optional enhancement and fallback when the learner is online.
+
+## Browser runtime
+
+The current web runtime uses a dedicated Web Worker and Transformers.js. The worker loads the ESM runtime from the Transformers.js CDN and runs:
+
+- Model: `onnx-community/Qwen2.5-0.5B-Instruct`
+- Quantized dtype: `q4`
+- Preferred backend: WebGPU when available
+- Fallback backend: WASM
+- Streaming: `TextStreamer`
+- Browser model cache: enabled
+
+The React/UI thread never performs model inference directly. Generation is isolated in the worker so long inference does not block the learning interface.
+
+## Preparation lifecycle
+
+1. The learner opens Learn.
+2. Cortex checks whether the browser has a usable WASM/WebGPU backend.
+3. The first local generation prepares the model and caches it in the browser.
+4. Preparation progress is exposed to the generation job.
+5. A durable local-ready flag records successful preparation.
+6. If the ready flag survives but the browser cache does not, generation clears the stale flag, recreates the worker, prepares again and retries once.
+7. If local generation fails after emitting output, the partial output is not silently duplicated by the recovery path.
+
+The ready flag is only a convenience signal. Actual runtime capability and successful model initialization remain authoritative.
+
+## Intelligent learning brief
+
+The Learn composer is the source of truth for learner intent. A request is built from:
+
+- subject
+- education level when known
+- exam board/curriculum when known
+- learning goal
+- teaching mode
+- the learner's exact natural-language request
+
+Context changes the teaching strategy, not the learner's request. The interface should make the complete brief visible before generation rather than hiding important assumptions in component state.
+
+The learning intent resolver then classifies the request locally into modes such as direct learning, remediation, exam preparation, practice, guided solving, deep dive, review, or from-scratch. Explicit wording in the learner's prompt has precedence over a selected goal. Generic words are deliberately avoided where they would cause false classifications, so a phrase containing `wrong` alone does not become remediation and `test me` remains practice even when an exam goal is selected.
+
+## Lesson generation contract
+
+Every lesson request carries the learner's actual prompt plus context and the resolved teaching strategy:
+
+- subject
+- education level when known
+- exam board/curriculum when known
+- difficulty
+- learning goal
+- learning intent and confidence
+- intent-specific teaching strategy
+
+A subject is context, not a substitute for the learner's prompt. A one-letter or ambiguous prompt must not silently become a fabricated topic. Ultra-short requests are now explicitly classified as clarification candidates, and the cloud lesson endpoint rejects them before spending an AI request. This prevents inputs such as `P` from becoming nonsensical lessons such as “Physics lesson on P”.
+
+## Lesson quality gate
+
+Generated lessons are assessed independently of the provider that produced them. The deterministic assessor checks more than the presence of headings:
+
+- minimum substantive length and section count
+- the eight core teaching ingredients: objective, concept, worked example, checkpoint, exam application, misconception, summary and practice
+- explicit step-by-step reasoning or sufficiently detailed worked reasoning
+- topic-specific teaching signals such as equations, units, symbols, conditions, calculations, substitutions, causes and conclusions
+- a worked example that contains actual reasoning rather than a label and a final answer
+- a checkpoint that contains an answer or explanatory resolution
+- at least two discernible practice questions/problems
+- repeated or padded sections, using content similarity rather than only identical strings
+
+A structurally complete but shallow lesson therefore fails the same gate as an incomplete one. The score and issue codes are deterministic and testable, so provider prompts are not the only line of defence against low-value output.
+
+Local generation is quality-gated before being accepted as a completed lesson. If the local draft fails while online, the client can fall back to cloud generation. If the learner is offline, the durable generation job remains the source of truth rather than pretending a rejected draft is complete.
+
+## Offline behavior
+
+If the learner has already prepared the local model, lesson generation can continue without an internet connection. Requests that require local preparation while offline are retained as durable generation jobs and can resume when the device reconnects.
+
+Useful learning state is persisted locally before relying on cloud synchronization. Cloud synchronization is therefore an enhancement, not the foundation of the Learn experience.
+
+## Cloud fallback
+
+When local inference cannot complete and the browser is online, the lesson client may use `/api/learn/generate`. The server authenticates the learner, resolves the lesson request, calls the configured provider chain, validates the generated lesson structure, applies the deterministic lesson quality gate, attempts one quality-repair pass when needed, persists only accepted lessons and awards the appropriate XP.
+
+Cloud generation must never be represented in the UI as local generation. The generation job records the active engine so the interface can truthfully distinguish local inference from cloud enhancement.
+
+## Known constraints
+
+- The first preparation can be large and device-dependent because the browser must obtain and initialize the model.
+- WebGPU support varies by browser and hardware; WASM is the fallback.
+- A 0.5B local model is intentionally lightweight, so the local quality gate must remain strict rather than pretending every generated draft is production-quality.
+- Browser storage can be cleared independently of application state, which is why stale-ready recovery exists.
+- The current browser runtime depends on the Transformers.js CDN for the runtime package and model artifacts during initial preparation. A future fully offline distribution should package the required runtime/model assets into an installable learning pack rather than relying on first-run network access.
+
+## Verification standard
+
+A local Cortex release is not considered verified merely because TypeScript, lint, tests and build pass. The acceptance bar is:
+
+- Learn composer accepts an explicit subject and real learner prompt.
+- Learning context is visible and editable rather than silently assumed.
+- Ultra-short prompts such as `P` are rejected or clarified instead of generating an invented lesson.
+- Prompt intent takes precedence over a generic learning goal when they conflict.
+- First-run preparation reports progress and completes.
+- Local generation streams without blocking the UI.
+- WebGPU failure falls back to WASM where supported.
+- Generated output is not duplicated during recovery.
+- A completed lesson is persisted locally.
+- Offline generation works after preparation.
+- Unprepared offline requests remain queued rather than being lost.
+- Cloud fallback is visibly and truthfully identified when used.
+- Provider failures and shallow drafts are not allowed to masquerade as successful local generation.
