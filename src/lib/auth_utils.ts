@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../database.types'; // Assuming this path is correct for Supabase generated types
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Define a specific error type for authorization failures
 export class UnauthorizedError extends Error {
@@ -21,7 +20,7 @@ export class UnauthorizedError extends Error {
  * @throws Error for other unexpected database issues.
  */
 export async function getAuthorizedTask(
-  supabase: ReturnType<typeof createClient<Database>>,
+  supabase: SupabaseClient,
   taskId: number
 ) {
   // 1. Get the authenticated user
