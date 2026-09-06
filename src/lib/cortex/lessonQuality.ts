@@ -47,7 +47,7 @@ function hasType(blocks: LessonQualityBlock[], type: string) { return blocks.som
 function blockText(blocks: LessonQualityBlock[], type: string) { return blocks.filter((block) => normalise(block.type ?? "") === type).map((block) => `${block.title ?? ""} ${block.content ?? ""}`).join(" "); }
 function questionCount(text: string) {
   const questionMarks = (text.match(/\?/g) ?? []).length;
-  const numberedQuestions = (text.match(/(?:^|[\s])(?:question\s*)?\d+[.)](?=\s)/gi) ?? []).length;
+  const numberedQuestions = (text.match(/(?:^|\s)(?:question\s*)?\d+\s*[.)](?=\s|$)/gi) ?? []).length;
   return Math.max(questionMarks, numberedQuestions);
 }
 
