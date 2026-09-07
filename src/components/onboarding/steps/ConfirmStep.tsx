@@ -5,7 +5,9 @@ import { StepActions } from './StepActions';
 import type { StepProps, OnboardingFormData } from '@/types';
 
 const LEVEL_MAP: Record<string, string> = {
-  'high-school': 'High School',
+  primary: 'Primary',
+  'lower-secondary': 'Lower Secondary',
+  'upper-secondary': 'Upper Secondary',
   'a-level': 'A-Level',
   university: 'University',
   tvet: 'Polytechnic / TVET',
