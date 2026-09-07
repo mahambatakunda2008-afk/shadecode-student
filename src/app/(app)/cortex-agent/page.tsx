@@ -23,6 +23,7 @@ interface FeedbackSnapshot {
   mastery?: number | string;
   retention?: number | string;
   errorRate?: number | string;
+  attempts?: number | string;
   startedAt: string;
 }
 
@@ -52,6 +53,7 @@ function snapshotDecision(decision: Decision): FeedbackSnapshot {
     mastery: value("mastery"),
     retention: value("retention"),
     errorRate: value("error rate"),
+    attempts: value("attempts"),
     startedAt: new Date().toISOString(),
   };
 }
@@ -59,6 +61,7 @@ function snapshotDecision(decision: Decision): FeedbackSnapshot {
 function changedEvidence(before: FeedbackSnapshot, after: Decision): string[] {
   const current = snapshotDecision(after);
   const changes: string[] = [];
+  if (before.attempts !== current.attempts) changes.push(`New observation recorded: attempts ${before.attempts ?? "?"} → ${current.attempts ?? "?"}`);
   if (before.mastery !== current.mastery) changes.push(`Mastery ${before.mastery ?? "?"} → ${current.mastery ?? "?"}`);
   if (before.retention !== current.retention) changes.push(`Retention ${before.retention ?? "?"} → ${current.retention ?? "?"}`);
   if (before.errorRate !== current.errorRate) changes.push(`Error rate ${before.errorRate ?? "?"} → ${current.errorRate ?? "?"}`);
@@ -132,9 +135,10 @@ export default function CortexAgentPage() {
 
   function startIntervention(href: string) {
     if (!decision) return;
-    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(snapshotDecision(decision)));
+    const snapshot = snapshotDecision(decision);
+    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(snapshot));
     setFeedback(null);
-    setAwaitingEvidence(snapshotDecision(decision));
+    setAwaitingEvidence(snapshot);
     router.push(href);
   }
 
