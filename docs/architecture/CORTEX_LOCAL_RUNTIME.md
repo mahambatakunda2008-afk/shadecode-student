@@ -44,6 +44,17 @@ Context changes the teaching strategy, not the learner's request. The interface 
 
 The learning intent resolver then classifies the request locally into modes such as direct learning, remediation, exam preparation, practice, guided solving, deep dive, review, or from-scratch. Explicit wording in the learner's prompt has precedence over a selected goal. Generic words are deliberately avoided where they would cause false classifications, so a phrase containing `wrong` alone does not become remediation and `test me` remains practice even when an exam goal is selected.
 
+## Pedagogical planning layer
+
+Before generation, Cortex creates a deterministic teaching plan from the resolved intent, education level and curriculum context. This is a planning layer, not generated prose. It gives the provider a concrete instructional route while preserving the learner's exact request.
+
+The plan contains two dimensions:
+
+- **Level style:** Primary uses concrete/tangible explanations and tiny steps; Secondary builds intuition before formalisation; IGCSE emphasises syllabus terminology and command words; AS/A Level emphasises rigorous definitions, notation, assumptions, units and conditions; University increases formal precision and deeper connections; Polytechnic prioritises applied procedures, practical cases and troubleshooting.
+- **Intent sequence:** Learn, remediation, exam preparation, practice, deep dive, guided solving, review and from-scratch each have an explicit section order. For example, remediation puts misconception diagnosis and prerequisite repair before forward teaching, while guided solving puts decision points and hints around the worked problem.
+
+This plan is implemented in `src/lib/cortex/lessonPlan.ts` and formatted into the local and cloud generation contracts. The intent is to make Cortex behave like a teaching system rather than a generic text generator.
+
 ## Lesson generation contract
 
 Every lesson request carries the learner's actual prompt plus context and the resolved teaching strategy:
@@ -55,6 +66,7 @@ Every lesson request carries the learner's actual prompt plus context and the re
 - learning goal
 - learning intent and confidence
 - intent-specific teaching strategy
+- deterministic pedagogical sequence and level style
 
 A subject is context, not a substitute for the learner's prompt. A one-letter or ambiguous prompt must not silently become a fabricated topic. Ultra-short requests are now explicitly classified as clarification candidates, and the cloud lesson endpoint rejects them before spending an AI request. This prevents inputs such as `P` from becoming nonsensical lessons such as “Physics lesson on P”.
 
@@ -103,6 +115,7 @@ A local Cortex release is not considered verified merely because TypeScript, lin
 - Learning context is visible and editable rather than silently assumed.
 - Ultra-short prompts such as `P` are rejected or clarified instead of generating an invented lesson.
 - Prompt intent takes precedence over a generic learning goal when they conflict.
+- The pedagogical planner selects level-appropriate teaching style and intent-specific sequence.
 - First-run preparation reports progress and completes.
 - Local generation streams without blocking the UI.
 - WebGPU failure falls back to WASM where supported.
@@ -112,3 +125,4 @@ A local Cortex release is not considered verified merely because TypeScript, lin
 - Unprepared offline requests remain queued rather than being lost.
 - Cloud fallback is visibly and truthfully identified when used.
 - Provider failures and shallow drafts are not allowed to masquerade as successful local generation.
+- CI typecheck, lint, tests and production build are green for the verified commit.
