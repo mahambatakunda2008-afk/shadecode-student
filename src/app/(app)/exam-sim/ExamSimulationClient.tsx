@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ExamWorkspace from "@/components/exam/ExamWorkspace";
 import ExamAttemptLocalBridge from "@/components/exam/ExamAttemptLocalBridge";
 import AcademicExamContext from "@/components/exam/AcademicExamContext";
+import { useUser } from "@/contexts/UserContext";
+import { normalizeStudyLevel } from "@/lib/academic/experience";
 import { examCompletedEvent, questionAttemptedEvent } from "@/lib/intelligence/emitLearningEvent";
 import type { ExamResults } from "@/lib/exam/types";
 
@@ -13,14 +15,33 @@ function decode(value: string | null) {
   try { return decodeURIComponent(value); } catch { return value; }
 }
 
+function examDifficultyLevel(studyLevel?: string | null): number {
+  switch (normalizeStudyLevel(studyLevel)) {
+    case "primary":
+      return 0;
+    case "lower-secondary":
+    case "upper-secondary":
+    case "tvet":
+      return 1;
+    case "a-level":
+    case "university":
+    case "professional":
+      return 2;
+    default:
+      return 1;
+  }
+}
+
 export default function ExamSimulationClient() {
   const router = useRouter();
   const params = useSearchParams();
+  const { profile } = useUser();
   const examInstanceId = useRef(`exam-sim:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`).current;
   const subject = decode(params.get("subject") || params.get("sub"));
   const topic = decode(params.get("topic"));
   const count = Number(params.get("count") || params.get("cnt") || 10);
   const safeCount = [5, 10, 15, 20].includes(count) ? count : 10;
+  const difficultyLevel = examDifficultyLevel(profile?.study_level);
 
   const handleFinished = (result: ExamResults) => {
     for (const question of result.results) {
@@ -51,7 +72,7 @@ export default function ExamSimulationClient() {
   };
 
   return (
-    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}>
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={difficultyLevel}>
       <AcademicExamContext />
       <ExamWorkspace
         initialSubject={subject}
