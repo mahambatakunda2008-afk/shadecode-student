@@ -47,17 +47,17 @@ export default function LearnPageResilient() {
   const [error, setError] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
   const [subject, setSubject] = useState("");
-  const [topic, setTopic] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<Mode>("guided");
   const [generationJob, setGenerationJob] = useState<LessonJob | null>(null);
 
   const examples = useMemo(() => {
     const name = subject.toLowerCase();
-    if (name.includes("physics")) return ["Deformation of solids", "Moments and equilibrium", "Simple harmonic motion"];
-    if (name.includes("math")) return ["Trigonometric identities", "Differentiation applications", "Binomial expansion"];
-    if (name.includes("computer") || name.includes("computing")) return ["Binary search", "Data structures", "Recursion"];
-    if (name.includes("chem")) return ["Bonding and structure", "Energetics", "Organic reactions"];
-    return ["A topic from my syllabus", "A concept I keep getting wrong", "An exam-style topic I need to master"];
+    if (name.includes("physics")) return ["Explain deformation of solids from first principles, then show me how to use stress, strain and Young modulus in an exam question.", "Teach me moments and equilibrium, then test whether I can choose and apply the correct principle.", "Help me understand simple harmonic motion and distinguish the key equations I need in an exam."];
+    if (name.includes("math")) return ["Teach me trigonometric identities step by step, then give me exam questions that expose the mistakes I usually make.", "Explain differentiation applications and walk me through how to recognise which method an exam question needs.", "Teach me binomial expansion from first principles and finish with an exam-style challenge."];
+    if (name.includes("computer") || name.includes("computing")) return ["Teach me binary search, explain why it works, and make me prove I can apply it to an exam-style problem.", "Help me understand data structures by comparing when and why each one should be used.", "Teach me recursion from first principles and then test my reasoning with a tracing problem."];
+    if (name.includes("chem")) return ["Teach me bonding and structure from first principles, then check whether I can explain the differences in an exam answer.", "Explain energetics and walk me through how to apply the equations to exam questions.", "Teach me organic reactions as a connected reaction map, then test my recall and application."];
+    return ["Teach me a topic from my syllabus from first principles, then check whether I can apply it.", "Help me fix a concept I keep getting wrong and explain how to avoid the same mistake.", "Prepare me for an exam-style topic with explanation, worked reasoning, and a final check."];
   }, [subject]);
 
   useEffect(() => {
@@ -70,14 +70,21 @@ export default function LearnPageResilient() {
 
   useEffect(() => {
     const qSubject = params.get("subject")?.trim() ?? "";
+    const qPrompt = params.get("prompt")?.trim() ?? "";
     const qTopic = params.get("topic")?.trim() ?? "";
-    if (qSubject || qTopic) { if (qSubject) setSubject(qSubject); if (qTopic) setTopic(qTopic); return; }
+    if (qSubject || qPrompt || qTopic) {
+      if (qSubject) setSubject(qSubject);
+      if (qPrompt) setPrompt(qPrompt);
+      else if (qTopic) setPrompt(qTopic);
+      return;
+    }
     try {
       const raw = localStorage.getItem(LAST_REQUEST_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { subject?: string; topic?: string; mode?: Mode };
+      const saved = JSON.parse(raw) as { subject?: string; prompt?: string; topic?: string; mode?: Mode };
       if (saved.subject) setSubject(saved.subject);
-      if (saved.topic) setTopic(saved.topic);
+      if (saved.prompt) setPrompt(saved.prompt);
+      else if (saved.topic) setPrompt(saved.topic);
       if (saved.mode === "guided" || saved.mode === "standard" || saved.mode === "challenge") setMode(saved.mode);
     } catch {}
   }, [params]);
@@ -140,10 +147,10 @@ export default function LearnPageResilient() {
   }
 
   async function generate() {
-    const request = topic.trim();
+    const request = prompt.trim();
     if (!subject || !request || generationJob?.status === "generating" || generationJob?.status === "warming") return;
     setError(null);
-    localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, topic: request, mode }));
+    localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, prompt: request, topic: request, mode }));
     const modeInstruction = mode === "guided" ? "Teach from first principles, using small steps and checks for understanding." : mode === "challenge" ? "Teach at exam level, include common traps, higher-order reasoning and a demanding worked example." : "Teach at a clear standard level, balancing explanation, worked examples and exam application.";
     const job = await startLessonGeneration({ prompt: request, subject, difficulty: mode === "guided" ? "easy" : mode === "challenge" ? "hard" : "medium", goal: modeInstruction }, token);
     setGenerationJob(job as LessonJob);
@@ -171,14 +178,14 @@ export default function LearnPageResilient() {
         {generationJob?.status === "failed" && <div role="alert" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><p className="text-sm font-bold">Cortex could not finish this lesson.</p><p className="mt-1 text-sm text-[var(--muted-foreground)]">{generationJob.error || "Try again. Your previous lessons are safe."}</p><button type="button" onClick={() => void generate()} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm font-semibold"><RefreshCw className="h-4 w-4" /> Try again</button></div>}
 
         <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-sm sm:p-7">
-          <div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Target className="h-5 w-5" /></div><div><h2 className="text-xl font-bold">Your learning request</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Write the actual thing you want taught. Subject is context, not a replacement for your prompt.</p></div></div>
+          <div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Target className="h-5 w-5" /></div><div><h2 className="text-xl font-bold">Your learning request</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Write the actual request. Subject is context, not a replacement for what you want Cortex to do.</p></div></div>
           <div className="mt-6 grid gap-4 lg:grid-cols-[280px_1fr]">
             <div><label className="mb-2 block text-sm font-semibold">Subject</label><select value={subject} onChange={e => setSubject(e.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-[15px] outline-none focus:border-[var(--primary)]"><option value="">Choose a subject</option>{subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select><p className="mt-2 text-sm text-[var(--muted-foreground)]">{subjects.length ? `${subjects.length} subjects available` : "Subjects will appear after sync."}</p></div>
-            <div><label className="mb-2 block text-sm font-semibold">What do you want to learn?</label><textarea value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void generate(); }} rows={4} maxLength={500} placeholder="Example: Explain deformation of solids, then show me how to use stress, strain and Young modulus in an exam question." className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-[15px] leading-6 outline-none focus:border-[var(--primary)]" /><div className="mt-2 flex items-center justify-between text-sm text-[var(--muted-foreground)]"><span>Ctrl/⌘ + Enter to generate</span><span>{topic.length}/500</span></div></div>
+            <div><label className="mb-2 block text-sm font-semibold">What do you want Cortex to do?</label><textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void generate(); }} rows={4} maxLength={500} placeholder="Example: Explain deformation of solids, then show me how to use stress, strain and Young modulus in an exam question." className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-[15px] leading-6 outline-none focus:border-[var(--primary)]" /><div className="mt-2 flex items-center justify-between text-sm text-[var(--muted-foreground)]"><span>Ctrl/⌘ + Enter to generate</span><span>{prompt.length}/500</span></div></div>
           </div>
-          <div className="mt-5"><p className="mb-2 text-sm font-semibold">Try a prompt</p><div className="flex flex-wrap gap-2">{examples.map(example => <button key={example} type="button" onClick={() => setTopic(example)} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-medium transition hover:border-[var(--primary)] hover:bg-[var(--primary-glow)]">{example}</button>)}</div></div>
+          <div className="mt-5"><p className="mb-2 text-sm font-semibold">Try a prompt</p><div className="flex flex-wrap gap-2">{examples.map(example => <button key={example} type="button" onClick={() => setPrompt(example)} className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-medium transition hover:border-[var(--primary)] hover:bg-[var(--primary-glow)]">{example}</button>)}</div></div>
           <div className="mt-6"><p className="mb-2 text-sm font-semibold">How should Cortex teach it?</p><div className="grid gap-2 sm:grid-cols-3">{([['guided','Guided','First principles, small steps, checks'],['standard','Standard','Clear explanation + exam application'],['challenge','Challenge','Harder reasoning, traps + exam pressure']] as const).map(([value,label,description]) => <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)} className={`rounded-xl border p-3 text-left transition ${mode === value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}><span className="text-sm font-bold">{label}</span><span className="mt-1 block text-sm leading-5 text-[var(--muted-foreground)]">{description}</span></button>)}</div></div>
-          <button type="button" onClick={() => void generate()} disabled={!subject || !topic.trim() || generating} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-[15px] font-bold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">{generating ? <><Loader2 className="h-5 w-5 animate-spin" /> {queuedOffline ? "Queued on this device" : "Building your lesson…"}</> : <><Zap className="h-5 w-5" /> Generate this lesson</>}</button>
+          <button type="button" onClick={() => void generate()} disabled={!subject || !prompt.trim() || generating} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-[15px] font-bold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">{generating ? <><Loader2 className="h-5 w-5 animate-spin" /> {queuedOffline ? "Queued on this device" : "Building your lesson…"}</> : <><Zap className="h-5 w-5" /> Generate this lesson</>}</button>
           {offline && <p className="mt-3 text-sm font-medium text-[var(--muted-foreground)]">Generation requests are saved locally while offline. A true local generative model is not silently faked: the queued request runs when a connection is available.</p>}
         </section>
 
