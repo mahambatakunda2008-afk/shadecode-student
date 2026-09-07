@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Decision {
   kind: string;
@@ -15,6 +16,7 @@ interface Decision {
 }
 
 export default function CortexAgentPage() {
+  const router = useRouter();
   const [decision, setDecision] = useState<Decision | null>(null);
   const [observedTopics, setObservedTopics] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,18 @@ export default function CortexAgentPage() {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  const learnHref = useMemo(() => {
+    if (!decision) return "/learn";
+    const params = new URLSearchParams({ subject: decision.subject, topic: decision.topic });
+    return `/learn?${params.toString()}`;
+  }, [decision]);
+
+  const examHref = useMemo(() => {
+    if (!decision) return "/exam-sim";
+    const params = new URLSearchParams({ subject: decision.subject, topic: decision.topic, count: "5" });
+    return `/exam-sim?${params.toString()}`;
+  }, [decision]);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -85,11 +99,20 @@ export default function CortexAgentPage() {
             <div className="mt-7 rounded-2xl bg-muted/50 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Intervention</p>
               <p className="mt-2 font-medium">{decision.intervention}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={() => router.push(learnHref)} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+                  Start Cortex lesson
+                </button>
+                <button type="button" onClick={() => router.push(examHref)} className="rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-muted">
+                  Test it with 5 questions
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 rounded-2xl border p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Success check</p>
               <p className="mt-2 text-sm">{decision.successCheck}</p>
+              <p className="mt-3 text-xs text-muted-foreground">After the intervention, return here and re-evaluate. The next decision is computed from the new durable observation.</p>
             </div>
           </section>
 
