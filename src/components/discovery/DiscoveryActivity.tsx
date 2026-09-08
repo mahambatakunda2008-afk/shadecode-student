@@ -4,12 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, CloudOff, Compass, RotateCcw, Sparkles, Star, X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { createClient } from "@/lib/supabase/client";
-import { emitLearningEvent, primaryActivityCompletedEvent } from "@/lib/intelligence/emitLearningEvent";
+import { emitLearningEvent, flushDiscoveryProgress, primaryActivityCompletedEvent } from "@/lib/intelligence/emitLearningEvent";
 
 type Question = { id: string; prompt: string; choices: string[]; answer: string; hint?: string };
 type Activity = { id: string; subject: string; topic: string; skill: string; title: string; content: { instructions?: string; questions?: Question[] }; offline_ready: boolean };
 type Progress = { progress: number; completed: boolean; attempt_count: number; last_completed_at: string | null };
-
 type ActivityCache = { activity: Activity; index: number; correct: number; finished: boolean; attemptId?: string };
 
 const cachePrefix = "shadecode:discovery:activity:v4:";
@@ -37,29 +36,34 @@ export default function DiscoveryActivity({ activityId }: { activityId: string }
   const load = useCallback(async () => {
     if (!learnerId) return;
     const cached = readCache(learnerId, activityId);
+    const resolvedAttemptId = cached?.attemptId ?? newAttemptId();
     if (cached?.activity?.id) {
       setActivity(cached.activity);
       setIndex(cached.index ?? 0);
       setCorrect(cached.correct ?? 0);
       setFinished(Boolean(cached.finished));
-      setAttemptId(cached.attemptId ?? newAttemptId());
-    } else {
-      setAttemptId(newAttemptId());
     }
+    setAttemptId(resolvedAttemptId);
     if (!navigator.onLine) { setOffline(true); setLoading(false); return; }
     const { data } = await supabase.from("primary_activities").select("id,subject,topic,skill,title,content,offline_ready,primary_curriculum_packs!inner(active)").eq("id", activityId).eq("primary_curriculum_packs.active", true).maybeSingle();
     if (data) {
       const next = { ...data, content: (data.content ?? {}) as Activity["content"] } as Activity;
       setActivity(next);
-      writeCache(learnerId, activityId, { activity: next, index: cached?.index ?? 0, correct: cached?.correct ?? 0, finished: Boolean(cached?.finished), attemptId: cached?.attemptId ?? newAttemptId() });
-      if (!cached?.attemptId) setAttemptId((current) => current || newAttemptId());
+      writeCache(learnerId, activityId, { activity: next, index: cached?.index ?? 0, correct: cached?.correct ?? 0, finished: Boolean(cached?.finished), attemptId: resolvedAttemptId });
       const { data: saved } = await supabase.from("primary_activity_progress").select("progress,completed,attempt_count,last_completed_at").eq("user_id", learnerId).eq("activity_id", activityId).maybeSingle();
       setProgress((saved as Progress | null) ?? null);
     }
     setOffline(false); setLoading(false);
   }, [activityId, learnerId, supabase]);
 
-  useEffect(() => { void load(); const online = () => { setOffline(false); void load(); }; const offlineHandler = () => setOffline(true); window.addEventListener("online", online); window.addEventListener("offline", offlineHandler); return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offlineHandler); }; }, [load]);
+  useEffect(() => {
+    void load();
+    const online = () => { setOffline(false); void flushDiscoveryProgress(); void load(); };
+    const offlineHandler = () => setOffline(true);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offlineHandler);
+    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offlineHandler); };
+  }, [load]);
 
   const questions = activity?.content.questions ?? [];
   const question = questions[Math.min(index, Math.max(questions.length - 1, 0))];
