@@ -10,12 +10,15 @@ type Question = { id: string; prompt: string; choices: string[]; answer: string;
 type Activity = { id: string; subject: string; topic: string; skill: string; title: string; content: { instructions?: string; questions?: Question[] }; offline_ready: boolean };
 type Progress = { progress: number; completed: boolean; attempt_count: number; last_completed_at: string | null };
 
+type ActivityCache = { activity: Activity; index: number; correct: number; finished: boolean; attemptId?: string };
+
 const cachePrefix = "shadecode:discovery:activity:v4:";
 const queueKey = "shadecode:discovery:progress-queue:v2";
 
-function readCache(userId: string, activityId: string) { try { return JSON.parse(localStorage.getItem(`${cachePrefix}${userId}:${activityId}`) || "null"); } catch { return null; } }
-function writeCache(userId: string, activityId: string, value: unknown) { try { localStorage.setItem(`${cachePrefix}${userId}:${activityId}`, JSON.stringify(value)); } catch {} }
+function readCache(userId: string, activityId: string): ActivityCache | null { try { return JSON.parse(localStorage.getItem(`${cachePrefix}${userId}:${activityId}`) || "null"); } catch { return null; } }
+function writeCache(userId: string, activityId: string, value: ActivityCache) { try { localStorage.setItem(`${cachePrefix}${userId}:${activityId}`, JSON.stringify(value)); } catch {} }
 function queueProgress(userId: string, activityId: string, attemptCount: number) { try { const current = JSON.parse(localStorage.getItem(queueKey) || "[]"); const queue = Array.isArray(current) ? current.filter((x) => !(x?.userId === userId && x?.activityId === activityId)) : []; queue.push({ userId, activityId, progress: 100, completed: true, attempt_count: attemptCount, last_completed_at: new Date().toISOString() }); localStorage.setItem(queueKey, JSON.stringify(queue.slice(-100))); } catch {} }
+function newAttemptId() { return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 
 export default function DiscoveryActivity({ activityId }: { activityId: string }) {
   const { profile } = useUser();
@@ -27,18 +30,29 @@ export default function DiscoveryActivity({ activityId }: { activityId: string }
   const [correct, setCorrect] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
+  const [attemptId, setAttemptId] = useState("");
   const [offline, setOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!learnerId) return;
     const cached = readCache(learnerId, activityId);
-    if (cached?.activity?.id) { setActivity(cached.activity); setIndex(cached.index ?? 0); setCorrect(cached.correct ?? 0); setFinished(Boolean(cached.finished)); }
+    if (cached?.activity?.id) {
+      setActivity(cached.activity);
+      setIndex(cached.index ?? 0);
+      setCorrect(cached.correct ?? 0);
+      setFinished(Boolean(cached.finished));
+      setAttemptId(cached.attemptId ?? newAttemptId());
+    } else {
+      setAttemptId(newAttemptId());
+    }
     if (!navigator.onLine) { setOffline(true); setLoading(false); return; }
     const { data } = await supabase.from("primary_activities").select("id,subject,topic,skill,title,content,offline_ready,primary_curriculum_packs!inner(active)").eq("id", activityId).eq("primary_curriculum_packs.active", true).maybeSingle();
     if (data) {
       const next = { ...data, content: (data.content ?? {}) as Activity["content"] } as Activity;
       setActivity(next);
+      writeCache(learnerId, activityId, { activity: next, index: cached?.index ?? 0, correct: cached?.correct ?? 0, finished: Boolean(cached?.finished), attemptId: cached?.attemptId ?? newAttemptId() });
+      if (!cached?.attemptId) setAttemptId((current) => current || newAttemptId());
       const { data: saved } = await supabase.from("primary_activity_progress").select("progress,completed,attempt_count,last_completed_at").eq("user_id", learnerId).eq("activity_id", activityId).maybeSingle();
       setProgress((saved as Progress | null) ?? null);
     }
@@ -50,10 +64,10 @@ export default function DiscoveryActivity({ activityId }: { activityId: string }
   const questions = activity?.content.questions ?? [];
   const question = questions[Math.min(index, Math.max(questions.length - 1, 0))];
 
-  function save(nextIndex: number, nextCorrect: number, nextFinished: boolean) { if (learnerId && activity) writeCache(learnerId, activity.id, { activity, index: nextIndex, correct: nextCorrect, finished: nextFinished }); }
-  function choose(choice: string) { if (!question || selected || finished || !activity) return; const isCorrect = choice === question.answer; setSelected(choice); setCorrect((value) => value + (isCorrect ? 1 : 0)); void emitLearningEvent({ source: "discovery", sourceEventId: `primary:${activity.id}:question:${question.id}:${index}`, type: "question.attempted", subjectId: activity.subject, topicId: activity.topic, entityId: question.id, metadata: { correct: isCorrect, evidenceScore: isCorrect ? 100 : 0, offline } }); }
+  function save(nextIndex: number, nextCorrect: number, nextFinished: boolean, nextAttemptId = attemptId) { if (learnerId && activity) writeCache(learnerId, activity.id, { activity, index: nextIndex, correct: nextCorrect, finished: nextFinished, attemptId: nextAttemptId }); }
+  function choose(choice: string) { if (!question || selected || finished || !activity || !attemptId) return; const isCorrect = choice === question.answer; setSelected(choice); setCorrect((value) => value + (isCorrect ? 1 : 0)); void emitLearningEvent({ source: "discovery", sourceEventId: `primary:${activity.id}:attempt:${attemptId}:question:${question.id}`, type: "question.attempted", subjectId: activity.subject, topicId: activity.topic, entityId: question.id, attemptId, metadata: { correct: isCorrect, evidenceScore: isCorrect ? 100 : 0, offline } }); }
   async function next() {
-    if (!question || !selected || !activity || !learnerId) return;
+    if (!question || !selected || !activity || !learnerId || !attemptId) return;
     const nextCorrect = correct;
     const nextIndex = index + 1;
     if (nextIndex < questions.length) { setIndex(nextIndex); setSelected(null); save(nextIndex, nextCorrect, false); return; }
@@ -61,11 +75,11 @@ export default function DiscoveryActivity({ activityId }: { activityId: string }
     const score = Math.round((nextCorrect / questions.length) * 100);
     const finishedAt = new Date().toISOString();
     setFinished(true); setIndex(questions.length); save(questions.length, nextCorrect, true);
-    void primaryActivityCompletedEvent(activity.id, activity.subject, activity.topic, activity.skill, { evidenceScore: score, percentage: score, offline });
+    void primaryActivityCompletedEvent(activity.id, activity.subject, activity.topic, activity.skill, { evidenceScore: score, percentage: score, offline, attemptId });
     if (navigator.onLine) { const { error } = await supabase.from("primary_activity_progress").upsert({ user_id: learnerId, activity_id: activity.id, progress: 100, completed: true, attempt_count: attemptCount, last_completed_at: finishedAt, updated_at: finishedAt }, { onConflict: "user_id,activity_id" }); if (!error) { setProgress({ progress: 100, completed: true, attempt_count: attemptCount, last_completed_at: finishedAt }); return; } }
     queueProgress(learnerId, activity.id, attemptCount);
   }
-  function restart() { if (!activity || !learnerId) return; setIndex(0); setCorrect(0); setSelected(null); setFinished(false); save(0, 0, false); }
+  function restart() { if (!activity || !learnerId) return; const nextAttemptId = newAttemptId(); setAttemptId(nextAttemptId); setIndex(0); setCorrect(0); setSelected(null); setFinished(false); save(0, 0, false, nextAttemptId); }
 
   if (loading) return <main className="mx-auto max-w-3xl px-4 py-8"><div className="h-72 animate-pulse rounded-[28px] bg-[var(--surface-2)]" /></main>;
   if (!activity || !questions.length) return <main className="mx-auto max-w-3xl px-4 py-8"><section className="rounded-[28px] border border-[var(--card-border)] bg-[var(--surface)] p-8 text-center"><Compass className="mx-auto mb-4 h-10 w-10 text-[var(--primary)]" /><h1 className="text-2xl font-bold">This adventure is not ready yet.</h1><p className="mt-2 text-sm text-[var(--muted-foreground)]">The curriculum pack has not supplied activity questions yet.</p></section></main>;
