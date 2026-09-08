@@ -16,11 +16,22 @@ export type LearningEventInput = {
 };
 
 type QueuedLearningEvent = { ownerId: string; input: LearningEventInput };
+type QueuedDiscoveryProgress = {
+  userId: string;
+  activityId: string;
+  progress: number;
+  completed: boolean;
+  attempt_count: number;
+  last_completed_at: string;
+};
 
 const QUEUE_KEY = "shadecode:cortex:event-queue:v2";
+const DISCOVERY_QUEUE_KEY = "shadecode:discovery:progress-queue:v2";
 const MAX_QUEUE = 200;
+const MAX_DISCOVERY_QUEUE = 100;
 const POST_TIMEOUT_MS = 7_000;
 let flushing = false;
+let flushingDiscovery = false;
 
 function readQueue(): QueuedLearningEvent[] {
   if (typeof window === "undefined") return [];
@@ -43,6 +54,20 @@ function enqueue(input: LearningEventInput, ownerId: string) {
   writeQueue(queue);
 }
 
+function readDiscoveryQueue(): QueuedDiscoveryProgress[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DISCOVERY_QUEUE_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is QueuedDiscoveryProgress => Boolean(item?.userId && item?.activityId));
+  } catch { return []; }
+}
+
+function writeDiscoveryQueue(queue: QueuedDiscoveryProgress[]) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(DISCOVERY_QUEUE_KEY, JSON.stringify(queue.slice(-MAX_DISCOVERY_QUEUE))); } catch {}
+}
+
 async function post(input: LearningEventInput): Promise<boolean> {
   try {
     const response = await fetchWithTimeout("/api/intelligence/events", {
@@ -54,6 +79,28 @@ async function post(input: LearningEventInput): Promise<boolean> {
     }, POST_TIMEOUT_MS);
     return response.ok;
   } catch { return false; }
+}
+
+export async function flushDiscoveryProgress(): Promise<void> {
+  if (typeof window === "undefined" || flushingDiscovery || !navigator.onLine) return;
+  const activeUserId = getRememberedUserId();
+  if (!activeUserId) return;
+  flushingDiscovery = true;
+  try {
+    const queue = readDiscoveryQueue();
+    const remaining: QueuedDiscoveryProgress[] = [];
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    for (const queued of queue) {
+      if (queued.userId !== activeUserId) {
+        remaining.push(queued);
+        continue;
+      }
+      const { error } = await supabase.from("primary_activity_progress").upsert(queued, { onConflict: "user_id,activity_id" });
+      if (error) remaining.push(queued);
+    }
+    writeDiscoveryQueue(remaining);
+  } finally { flushingDiscovery = false; }
 }
 
 export async function flushLearningEvents(): Promise<void> {
@@ -90,9 +137,13 @@ export async function emitLearningEvent(input: LearningEventInput): Promise<bool
 
 export function installLearningEventSync(): () => void {
   if (typeof window === "undefined") return () => undefined;
-  const flush = () => { void flushLearningEvents(); };
+  const flush = () => {
+    void flushLearningEvents();
+    void flushDiscoveryProgress();
+  };
   window.addEventListener("online", flush);
   void flushLearningEvents();
+  void flushDiscoveryProgress();
   return () => window.removeEventListener("online", flush);
 }
 
