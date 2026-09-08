@@ -24,6 +24,7 @@ export default function FocusTimer() {
   const [userId, setUserId] = useState("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const handleSessionCompleteRef = useRef<() => void>(() => {});
+  const sessionStartedRef = useRef(false);
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
@@ -50,6 +51,7 @@ export default function FocusTimer() {
     setTimeLeft(selectedPreset === 4 ? customMinutes * 60 : preset.minutes * 60);
     setIsRunning(false);
     setIsFinished(false);
+    sessionStartedRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, [selectedPreset, customMinutes]);
 
@@ -107,17 +109,18 @@ export default function FocusTimer() {
   useEffect(() => { handleSessionCompleteRef.current = handleSessionComplete; });
 
   const toggleTimer = () => {
-    if (isFinished) { setTimeLeft(totalSeconds); setIsFinished(false); }
+    if (isFinished) { setTimeLeft(totalSeconds); setIsFinished(false); sessionStartedRef.current = false; }
     const nextRunning = !isRunning;
     setIsRunning(nextRunning);
-    if (nextRunning) {
+    if (nextRunning && !sessionStartedRef.current) {
+      sessionStartedRef.current = true;
       void trackEvent("learning_session_started", {
         mode: preset.label,
         durationMinutes: selectedPreset === 4 ? customMinutes : preset.minutes,
       });
     }
   };
-  const resetTimer = () => { setIsRunning(false); setIsFinished(false); setTimeLeft(totalSeconds); };
+  const resetTimer = () => { setIsRunning(false); setIsFinished(false); setTimeLeft(totalSeconds); sessionStartedRef.current = false; };
   const requestNotificationPermission = () => { if ("Notification" in window) Notification.requestPermission(); };
   const circumference = 2 * Math.PI * 110;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
