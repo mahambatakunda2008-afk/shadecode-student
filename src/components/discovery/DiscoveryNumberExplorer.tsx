@@ -99,9 +99,9 @@ export default function DiscoveryNumberExplorer() {
   const question = QUESTIONS[Math.min(questionIndex, QUESTIONS.length - 1)];
   const stars = finished ? correctCount : Math.floor(correctCount / 2);
 
-  function persist() {
-    if (!learnerId || !activity) return;
-    writeSaved(learnerId, { activity, questionIndex, correct: correctCount, answered, offline });
+  function persistState(state: SavedState) {
+    if (!learnerId) return;
+    writeSaved(learnerId, state);
   }
 
   function choose(choice: string) {
@@ -123,22 +123,28 @@ export default function DiscoveryNumberExplorer() {
 
   async function next() {
     if (!selected || !activity || !learnerId) return;
+    const isCorrect = selected === question.answer;
+    const finalCorrectCount = correctCount + (isCorrect ? 1 : 0);
+    const finalAnswered = answered.includes(question.id) ? answered : [...answered, question.id];
     const nextIndex = questionIndex + 1;
+
     if (nextIndex < QUESTIONS.length) {
       setQuestionIndex(nextIndex);
       setSelected(null);
-      setTimeout(persist, 0);
+      persistState({ activity, questionIndex: nextIndex, correct: finalCorrectCount, answered: finalAnswered, offline });
       return;
     }
 
     const attemptCount = (progress?.attempt_count ?? 0) + 1;
     const finishedAt = new Date().toISOString();
+    setCorrectCount(finalCorrectCount);
+    setAnswered(finalAnswered);
     setFinished(true);
     setQuestionIndex(QUESTIONS.length);
-    writeSaved(learnerId, { activity, questionIndex: QUESTIONS.length, correct: correctCount, answered, offline });
+    persistState({ activity, questionIndex: QUESTIONS.length, correct: finalCorrectCount, answered: finalAnswered, offline });
     primaryActivityCompletedEvent(activity.id, activity.subject, activity.topic, activity.skill, {
-      evidenceScore: Math.round((correctCount / QUESTIONS.length) * 100),
-      percentage: Math.round((correctCount / QUESTIONS.length) * 100),
+      evidenceScore: Math.round((finalCorrectCount / QUESTIONS.length) * 100),
+      percentage: Math.round((finalCorrectCount / QUESTIONS.length) * 100),
       offline,
     });
 
@@ -158,12 +164,13 @@ export default function DiscoveryNumberExplorer() {
   }
 
   function restart() {
+    const initialState: SavedState = { activity: activity!, questionIndex: 0, correct: 0, answered: [], offline };
     setQuestionIndex(0);
     setCorrectCount(0);
     setAnswered([]);
     setSelected(null);
     setFinished(false);
-    persist();
+    persistState(initialState);
   }
 
   if (loading) return <main className="mx-auto max-w-3xl px-4 py-8"><div className="h-72 animate-pulse rounded-[28px] bg-[var(--surface-2)]" /></main>;
