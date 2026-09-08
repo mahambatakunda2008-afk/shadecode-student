@@ -156,13 +156,15 @@ export function lessonCompletedEvent(lessonId: string, subject?: string, topic?:
 }
 
 export function primaryActivityCompletedEvent(activityId: string, subject: string, topic: string, skill: string, metadata?: LearningMetadata) {
+  const attemptId = typeof metadata?.attemptId === "string" ? metadata.attemptId : undefined;
   return emitLearningEvent({
     source: "discovery",
-    sourceEventId: `activity-complete:${activityId}`,
+    sourceEventId: attemptId ? `activity-complete:${activityId}:attempt:${attemptId}` : `activity-complete:${activityId}`,
     type: "activity.completed",
     subjectId: subject,
     topicId: topic,
     entityId: activityId,
+    attemptId,
     metadata: { skill, ...(metadata ?? {}) },
   });
 }
@@ -172,7 +174,7 @@ export function examStartedEvent(examId: string, subject?: string, topic?: strin
 }
 
 export function questionAttemptedEvent(examId: string, questionId: string | number, subject?: string, topic?: string, metadata?: LearningMetadata) {
-  return emitLearningEvent({ source: "exam-sim", sourceEventId: `question-attempt:${examId}:${questionId}`, type: "question.attempted", subjectId: subject, topicId: topic, entityId: String(questionId), attemptId: examId, metadata });
+  return emitLearningEvent({ source: "exam-sim", sourceEventId: `question-attempt:${examId}:${questionId}`, subjectId: subject, topicId: topic, entityId: String(questionId), attemptId: examId, type: "question.attempted", metadata });
 }
 
 export function examCompletedEvent(examId: string, subject?: string, topic?: string, metadata?: LearningMetadata) {
