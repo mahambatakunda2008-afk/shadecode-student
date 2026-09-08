@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
       subjects: Array.isArray(body.subject_interests) ? body.subject_interests : [],
       daily_goal_minutes: Number.isFinite(body.daily_goal_minutes) ? Math.max(10, Math.min(240, Number(body.daily_goal_minutes))) : 30,
       study_style: body.study_style === "structured" ? "structured" : "flexible",
+      curriculum_board: typeof body.curriculum_board === "string" ? body.curriculum_board.trim() || null : null,
+      syllabus_code: typeof body.syllabus_code === "string" ? body.syllabus_code.trim() || null : null,
+      language: typeof body.language === "string" ? body.language.trim() || null : null,
       onboarding_completed: true,
       onboarding_complete: true,
       last_seen: new Date().toISOString(),
@@ -68,8 +71,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save canonical student profile" }, { status: 500 });
     }
 
-    // Keep the legacy profile for older curriculum/recommendation code paths while
-    // the canonical profiles row carries the granular experience selector.
     const { error: profileError } = await supabase.from("user_profiles").upsert({
       user_id: user.id, education_level: educationLevel, learning_goal: learningGoal,
       subject_interests: subjectInterests, onboarding_completed: true,
