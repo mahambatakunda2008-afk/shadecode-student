@@ -36,6 +36,7 @@ export function learningEventToObservation(
       };
 
     case "lesson_completed":
+    case "activity_completed":
     case "quiz_completed":
     case "exam_completed":
     case "project_stage_completed":
