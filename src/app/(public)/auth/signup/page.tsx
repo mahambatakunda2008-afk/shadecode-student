@@ -97,7 +97,7 @@ export default function SignUp() {
             <input aria-label="Confirm password" placeholder="Enter it again" type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 48 }} />
             <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 6, cursor: "pointer", color: "var(--muted-foreground)" }}>{showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
-          {error && <p role="alert" style={{ color: "#ef4444", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
+          {error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
           <button type="button" onClick={handleSignUp} disabled={loading} style={{ background: "var(--primary)", color: "white", padding: "14px 16px", borderRadius: 11, fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginTop: 7, opacity: loading ? 0.7 : 1 }}>{loading ? "Creating account…" : "Create account"}</button>
         </div>
 
