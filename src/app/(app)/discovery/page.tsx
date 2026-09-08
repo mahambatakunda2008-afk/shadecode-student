@@ -1,5 +1,5 @@
-import DiscoveryNumberExplorer from "@/components/discovery/DiscoveryNumberExplorer";
+import DiscoveryHome from "./DiscoveryHome";
 
 export default function DiscoveryPage() {
-  return <DiscoveryNumberExplorer />;
+  return <DiscoveryHome />;
 }
