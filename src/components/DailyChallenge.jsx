@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackEvent } from "@/lib/traction/client";
 
 export default function DailyChallenge({ onComplete } = {}) {
   const [challenge, setChallenge] = useState(null);
@@ -54,9 +55,15 @@ export default function DailyChallenge({ onComplete } = {}) {
       }
 
       const data = await res.json();
+      const awarded = data.xp_awarded || challenge.xp_reward || 0;
       setCompleted(true);
-      setXpAwarded(data.xp_awarded || challenge.xp_reward || 0);
+      setXpAwarded(awarded);
       setJustCompleted(true);
+      void trackEvent("daily_challenge_completed", {
+        challengeId: challenge.id,
+        xpAwarded: awarded,
+        difficulty: challenge.difficulty ?? null,
+      });
 
       // Notify parent (dashboard) so it can refresh XP etc.
       if (onComplete) {
