@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -14,16 +14,33 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verificationNeeded, setVerificationNeeded] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "verification_failed") {
+      setError("That verification link is invalid or has expired. Sign in if you can, or request a new reset/verification email.");
+    }
+  }, []);
 
   const handleLogin = async () => {
     setLoading(true);
     setError("");
+    setVerificationNeeded(false);
     if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
     if (!password) { setError("Password is required"); setLoading(false); return; }
-    const { error: loginError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (loginError) { setError(loginError.message); setLoading(false); return; }
+    const normalizedEmail = email.trim();
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+    if (loginError) {
+      const message = loginError.message || "Unable to sign in.";
+      const needsVerification = /email not confirmed|email.*confirm/i.test(message);
+      setVerificationNeeded(needsVerification);
+      setError(needsVerification ? "Your email hasn't been verified yet." : message);
+      setLoading(false);
+      return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (user) void trackEvent("user_logged_in", { authMethod: "password" });
     const { data: profile } = await supabase.from("user_profiles").select("onboarding_completed").eq("user_id", user?.id).maybeSingle();
@@ -54,6 +71,7 @@ export default function Login() {
             <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 6, cursor: "pointer", color: "var(--muted-foreground)" }}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
           {error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
+          {verificationNeeded && email.trim() && <Link href={`/auth/verify?email=${encodeURIComponent(email.trim())}`} style={{ color: "var(--primary)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>Resend verification email</Link>}
           <button type="submit" disabled={loading} style={{ background: "var(--primary)", color: "white", padding: "14px 16px", borderRadius: 11, fontWeight: 700, fontSize: 15, border: "none", cursor: loading ? "wait" : "pointer", marginTop: 7, opacity: loading ? 0.7 : 1 }}>{loading ? "Signing in…" : "Sign in"}</button>
         </form>
         <p style={{ color: "var(--muted-foreground)", textAlign: "center", fontSize: 14, marginTop: 22 }}>New to Shadecode? <Link href="/auth/signup" style={{ color: "var(--primary)", fontWeight: 700, textDecoration: "none" }}>Create an account</Link></p>
