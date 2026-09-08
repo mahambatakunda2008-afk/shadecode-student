@@ -92,7 +92,7 @@ function decisionFor(row: TopicEvidence): NextActionDecision {
       reason: `Mastery is reasonable, but retention (${row.retention}/100) or uncertainty (${row.uncertainty}/100) suggests the knowledge is not yet stable.`,
       evidence,
       intervention: `Run a short closed-book retrieval check on ${row.topic} before introducing new material.`,
-      successCheck: `Record the retrieval result and update mastery from the observed evidence.`,
+      successCheck: `Record the retrieval result as a learning observation and update mastery from the observed evidence.`,
     };
   }
 
