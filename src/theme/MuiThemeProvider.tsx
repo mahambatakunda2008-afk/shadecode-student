@@ -12,16 +12,20 @@ export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
   const theme = createTheme({
     palette: {
       mode: isDark ? "dark" : "light",
-      primary: { main: isDark ? "#22D3EE" : "#0891B2" },
-      secondary: { main: isDark ? "#67E8F9" : "#0E7490" },
+      // The onboarding experience uses violet as the primary interaction
+      // color with cyan as the supporting brand accent. Keep that hierarchy
+      // instead of making every interactive surface cyan.
+      primary: { main: isDark ? "#7C3AED" : "#5B21B6" },
+      secondary: { main: isDark ? "#3FC8FF" : "#0891B2" },
       background: {
-        default: isDark ? "#06111C" : "#F7FAFC",
-        paper: isDark ? "#0B1724" : "#FFFFFF",
+        default: isDark ? "#080A10" : "#F7F8FA",
+        paper: isDark ? "#11141C" : "#FFFFFF",
       },
       text: {
-        primary: isDark ? "#F4FBFD" : "#0B1724",
-        secondary: isDark ? "#9FB2BC" : "#5F6F7A",
+        primary: isDark ? "#F7F8FC" : "#101828",
+        secondary: isDark ? "#A7AAB5" : "#667085",
       },
+      divider: isDark ? "rgba(255,255,255,0.09)" : "rgba(16,24,40,0.10)",
     },
     typography: {
       fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
@@ -32,6 +36,35 @@ export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
     },
     shape: {
       borderRadius: 12,
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 10,
+            boxShadow: "none",
+          },
+          containedPrimary: {
+            boxShadow: "0 10px 28px rgba(124,58,237,0.16)",
+            "&:hover": { boxShadow: "0 12px 32px rgba(124,58,237,0.20)" },
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+            border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(16,24,40,0.10)",
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+          },
+        },
+      },
     },
   });
 
