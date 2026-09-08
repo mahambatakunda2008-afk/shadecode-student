@@ -94,7 +94,7 @@ export default function Settings() {
   if (loadError) {
     return (
       <div className="ssc-page">
-        <p style={{ color: "#ef4444", fontSize: "14px", padding: "24px 0" }}>{loadError}</p>
+        <p style={{ color: "var(--danger)", fontSize: "14px", padding: "24px 0" }}>{loadError}</p>
       </div>
     );
   }
