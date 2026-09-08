@@ -64,6 +64,9 @@ export interface OnboardingFormData {
   yearLevel?: string;
   semester?: string;
   courses?: string[];
+  curriculumBoard?: string;
+  syllabusCode?: string;
+  language?: string;
 }
 export interface StepProps { data: Partial<OnboardingFormData>; onUpdate: (patch: Partial<OnboardingFormData>) => void; onNext: () => void; onBack?: () => void; }
 export type TourPosition = 'top' | 'bottom' | 'left' | 'right' | 'center';
