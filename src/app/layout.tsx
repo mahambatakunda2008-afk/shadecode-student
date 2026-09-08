@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Michroma, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import "./onboarding-inspired-theme.css";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
@@ -38,12 +37,29 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: "#06111C", width: "device-width", initialScale: 1, colorScheme: "light dark" };
+export const viewport: Viewport = { themeColor: "#06111C", width: "device-width", initialScale: 1, colorScheme: "dark light" };
+
+const themeBootstrap = `
+(function () {
+  try {
+    var saved = localStorage.getItem('theme');
+    var legacy = localStorage.getItem('darkMode');
+    var dark = saved ? saved === 'dark' : legacy ? legacy === 'true' : true;
+    document.documentElement.classList.toggle('dark', dark);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  } catch (_) {
+    document.documentElement.classList.add('dark');
+    document.documentElement.dataset.theme = 'dark';
+    document.documentElement.style.colorScheme = 'dark';
+  }
+})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icons/favicon.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
