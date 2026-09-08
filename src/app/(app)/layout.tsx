@@ -17,6 +17,7 @@ import CortexCommandBar from "@/components/cortex/CortexCommandBar";
 import CortexGenerationIndicator from "@/components/cortex/CortexGenerationIndicator";
 import LessonEvidenceRecorder from "@/components/studyspace/LessonEvidenceRecorder";
 import { installLearningEventSync } from "@/lib/intelligence/emitLearningEvent";
+import { installTractionSync, trackEvent, trackPageView } from "@/lib/traction/client";
 
 const ADMIN_CACHE_PREFIX = "shadecode:admin:";
 const BOOT_AUTH_TIMEOUT_MS = 1_500;
@@ -24,10 +25,7 @@ const ROLE_REFRESH_TIMEOUT_MS = 4_000;
 
 function readBooleanCache(prefix: string, userId: string): boolean | null {
   if (typeof window === "undefined") return null;
-  try {
-    const value = window.localStorage.getItem(`${prefix}${userId}`);
-    return value === null ? null : value === "true";
-  } catch { return null; }
+  try { const value = window.localStorage.getItem(`${prefix}${userId}`); return value === null ? null : value === "true"; } catch { return null; }
 }
 function writeBooleanCache(prefix: string, userId: string, value: boolean): void {
   if (typeof window === "undefined") return;
@@ -46,6 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
 
   useEffect(() => installLearningEventSync(), []);
+  useEffect(() => installTractionSync(), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         const user = session?.user;
         if (!user) { router.replace("/auth/login"); return; }
+        void trackPageView();
         const cachedAdmin = readBooleanCache(ADMIN_CACHE_PREFIX, user.id);
         if (cachedAdmin !== null) setIsAdmin(cachedAdmin);
         if (typeof navigator !== "undefined" && !navigator.onLine) return;
@@ -70,6 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
     void bootstrap();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") void trackEvent("user_logged_in", { authMethod: "session" });
       if (event === "SIGNED_OUT") { setIsAdmin(false); router.replace("/auth/login"); }
     });
     return () => { cancelled = true; subscription.unsubscribe(); };
