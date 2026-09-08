@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/traction/client";
 
 const PRESETS = [
   { label: "Focus", minutes: 25, icon: "🧠", color: "#6366f1" },
@@ -79,6 +80,12 @@ export default function FocusTimer() {
     setSessionsToday(newStats.sessions);
     setTotalFocusToday(newStats.minutes);
 
+    void trackEvent("learning_session_completed", {
+      mode: preset.label,
+      durationMinutes: focusMinutes,
+      completed: true,
+    });
+
     if (userId) {
       try {
         const xpEarned = selectedPreset !== 1 && selectedPreset !== 2 ? Math.round(focusMinutes * 0.5) : 0;
@@ -101,7 +108,14 @@ export default function FocusTimer() {
 
   const toggleTimer = () => {
     if (isFinished) { setTimeLeft(totalSeconds); setIsFinished(false); }
-    setIsRunning((prev) => !prev);
+    const nextRunning = !isRunning;
+    setIsRunning(nextRunning);
+    if (nextRunning) {
+      void trackEvent("learning_session_started", {
+        mode: preset.label,
+        durationMinutes: selectedPreset === 4 ? customMinutes : preset.minutes,
+      });
+    }
   };
   const resetTimer = () => { setIsRunning(false); setIsFinished(false); setTimeLeft(totalSeconds); };
   const requestNotificationPermission = () => { if ("Notification" in window) Notification.requestPermission(); };
