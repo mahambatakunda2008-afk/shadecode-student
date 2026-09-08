@@ -1,6 +1,7 @@
 export type LearningEventKind =
   | "lesson_viewed"
   | "lesson_completed"
+  | "activity_completed"
   | "question_attempted"
   | "quiz_completed"
   | "exam_started"
@@ -44,6 +45,7 @@ export type SupportedSourceEvent = {
 const TYPE_MAP: Record<string, LearningEventKind> = {
   "lesson.viewed": "lesson_viewed",
   "lesson.completed": "lesson_completed",
+  "activity.completed": "activity_completed",
   "question.attempted": "question_attempted",
   "quiz.completed": "quiz_completed",
   "exam.started": "exam_started",
@@ -54,11 +56,6 @@ const TYPE_MAP: Record<string, LearningEventKind> = {
   "task.completed": "task_completed",
 };
 
-/**
- * Stable 128-bit FNV-1a-style identity represented as two independent 64-bit lanes.
- * This is an identifier, not a security primitive. Database uniqueness remains the
- * final collision guard because canonical event IDs are also stored server-side.
- */
 function hashLane(input: string, seed: bigint): bigint {
   let hash = seed;
   const prime = 1099511628211n;
@@ -113,7 +110,6 @@ export function normalizeLearningEvent(input: SupportedSourceEvent): EventNormal
   };
 }
 
-/** In-memory idempotency guard for deterministic processing and tests. Persist the key server-side for production replay protection. */
 export class LearningEventInbox {
   private readonly accepted = new Set<string>();
 
