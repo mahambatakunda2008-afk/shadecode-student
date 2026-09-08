@@ -1,0 +1,94 @@
+/*
+ * Shadecode Student visual language
+ *
+ * The onboarding flow is the reference: dark neutral surfaces, restrained
+ * cyan, violet as the interaction accent, soft borders, and almost no glow.
+ * This layer intentionally overrides only presentation tokens/classes so
+ * existing product logic and page-specific semantic colors remain intact.
+ */
+
+.dark {
+  --background: #080A10;
+  --foreground: #F7F8FC;
+  --surface: #11141C;
+  --surface-2: #181C25;
+  --surface-3: #222733;
+  --card: rgba(17, 20, 28, 0.96);
+  --card-border: rgba(255, 255, 255, 0.085);
+  --muted: #181C25;
+  --muted-foreground: #A7AAB5;
+  --primary: #7C3AED;
+  --primary-hover: #6D28D9;
+  --primary-foreground: #FFFFFF;
+  --primary-glow: rgba(124, 58, 237, 0.13);
+  --accent: #3FC8FF;
+  --accent-soft: rgba(63, 200, 255, 0.09);
+  --ring: rgba(124, 58, 237, 0.30);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 14px 36px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 28px 80px rgba(0, 0, 0, 0.38);
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(124, 58, 237, 0.055), transparent 25rem),
+    radial-gradient(circle at 90% 8%, rgba(63, 200, 255, 0.035), transparent 22rem),
+    var(--background);
+}
+
+/* Primary interaction language: violet. Cyan is supporting information. */
+.dark .ssc-button {
+  background: var(--primary);
+  box-shadow: 0 10px 28px var(--primary-glow);
+}
+
+.dark .ssc-button:hover {
+  background: var(--primary-hover);
+}
+
+.dark .ssc-button-secondary {
+  background: var(--surface);
+  border-color: var(--card-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.dark .ssc-card,
+.dark .ssc-card-interactive {
+  background: var(--card);
+  border-color: var(--card-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.dark .ssc-card-interactive:hover {
+  border-color: rgba(124, 58, 237, 0.30);
+  box-shadow: var(--shadow-md);
+}
+
+.dark .ssc-input {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.dark .ssc-input:focus {
+  border-color: rgba(124, 58, 237, 0.60);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.dark .ssc-brand-accent {
+  color: #3FC8FF;
+}
+
+.dark .ssc-brand-glow {
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.08), 0 0 28px rgba(124, 58, 237, 0.07);
+}
+
+/* Replace the old cyan utility treatment with the new interaction hierarchy. */
+.dark [class*="bg-[#22D3EE]"] { background: var(--primary) !important; }
+.dark [class*="bg-[#22D3EE]/"] { background: color-mix(in srgb, var(--primary) 10%, transparent) !important; }
+.dark [class*="text-[#22D3EE]"] { color: var(--accent) !important; }
+.dark [class*="text-[#67E8F9]"] { color: #9ADFFF !important; }
+
+/* Keep the onboarding-style compact labels readable without becoming tiny UI chrome. */
+.dark .ssc-kicker,
+.dark .ssc-label,
+.dark .ssc-nav-label { color: #A7AAB5; }
