@@ -28,9 +28,6 @@ type Mastery = {
   uncertainty: number;
 };
 
-const cacheKey = "shadecode:discovery:home:v2";
-const progressQueueKey = "shadecode:discovery:progress-queue:v2";
-
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
@@ -52,18 +49,18 @@ function recommendationScore(activity: Activity, mastery: Mastery | undefined) {
   ) * 100 + activity.sort_order / 10000;
 }
 
-function readHomeCache() {
+function readHomeCache(userId: string) {
   try {
-    const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+    const cached = JSON.parse(localStorage.getItem(`shadecode:discovery:home:v3:${userId}`) || "null");
     return cached?.activities ? cached : null;
   } catch {
     return null;
   }
 }
 
-function writeHomeCache(value: { activities: Activity[]; progress: Progress[]; mastery: Mastery[] }) {
+function writeHomeCache(userId: string, value: { activities: Activity[]; progress: Progress[]; mastery: Mastery[] }) {
   try {
-    localStorage.setItem(cacheKey, JSON.stringify(value));
+    localStorage.setItem(`shadecode:discovery:home:v3:${userId}`, JSON.stringify(value));
   } catch {}
 }
 
@@ -82,7 +79,7 @@ export default function DiscoveryHome() {
     async function syncQueuedProgress() {
       if (!learnerId || !navigator.onLine) return;
       try {
-        const current = JSON.parse(localStorage.getItem(progressQueueKey) || "[]");
+        const current = JSON.parse(localStorage.getItem("shadecode:discovery:progress-queue:v2") || "[]");
         if (!Array.isArray(current) || !current.length) return;
         const ownQueue = current.filter((item) => item?.userId === learnerId);
         if (!ownQueue.length) return;
@@ -100,12 +97,13 @@ export default function DiscoveryHome() {
           }, { onConflict: "user_id,activity_id" });
           if (error) failed.push(item);
         }
-        localStorage.setItem(progressQueueKey, JSON.stringify([...remaining, ...failed].slice(-100)));
+        localStorage.setItem("shadecode:discovery:progress-queue:v2", JSON.stringify([...remaining, ...failed].slice(-100)));
       } catch {}
     }
 
     async function load() {
-      const cached = readHomeCache();
+      if (!learnerId) return;
+      const cached = readHomeCache(learnerId);
       if (cached) {
         setActivities(cached.activities);
         setProgress(cached.progress ?? []);
@@ -138,10 +136,10 @@ export default function DiscoveryHome() {
           const nextMastery = (masteryRows ?? []) as Mastery[];
           setProgress(nextProgress);
           setMastery(nextMastery);
-          writeHomeCache({ activities: usable, progress: nextProgress, mastery: nextMastery });
+          writeHomeCache(learnerId, { activities: usable, progress: nextProgress, mastery: nextMastery });
         }
       } else {
-        writeHomeCache({ activities: usable, progress: [], mastery: [] });
+        writeHomeCache(learnerId, { activities: usable, progress: [], mastery: [] });
       }
       setOffline(false);
       setLoading(false);
