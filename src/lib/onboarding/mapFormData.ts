@@ -1,7 +1,6 @@
 import type { OnboardingFormData, StudyLevel } from "@/types";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 
-/** Maps granular onboarding vocabulary to both the canonical experience and legacy storage bucket. */
 const STUDY_LEVEL_TO_EDUCATION: Record<StudyLevel, EducationLevel> = {
   primary: "basic",
   "lower-secondary": "secondary",
@@ -24,10 +23,12 @@ const GOAL_LABEL_TO_LEARNING_GOAL: Record<string, LearningGoal> = {
 };
 
 const SUBJECT_ID_TO_INTEREST: Record<string, SubjectInterest> = {
-  maths: "mathematics", physics: "physics", chemistry: "chemistry", biology: "biology",
-  english: "english", history: "history", geography: "geography",
-  "computer-science": "computer_science", economics: "economics", business: "business",
-  accounting: "accounting", art: "art", music: "music",
+  maths: "mathematics", mathematics: "mathematics", numeracy: "mathematics",
+  physics: "physics", chemistry: "chemistry", biology: "biology",
+  english: "english", reading: "english", language: "english",
+  history: "history", geography: "geography", "computer-science": "computer_science",
+  economics: "economics", business: "business", accounting: "accounting",
+  art: "art", music: "music", coding: "coding",
 };
 
 export interface OnboardingApiPayload {
@@ -44,18 +45,17 @@ export interface OnboardingApiPayload {
   year_level?: string;
   semester?: string;
   courses?: string[];
+  curriculum_board?: string;
+  syllabus_code?: string;
+  language?: string;
 }
 
 export function mapOnboardingFormData(form: Partial<OnboardingFormData>): OnboardingApiPayload {
   const study_level = (form.studyLevel ?? "upper-secondary") as StudyLevel;
   const education_level = STUDY_LEVEL_TO_EDUCATION[study_level] ?? "secondary";
   const goals = form.goals ?? [];
-  const learning_goal = goals
-    .map((goal) => GOAL_LABEL_TO_LEARNING_GOAL[goal])
-    .find((goal): goal is LearningGoal => Boolean(goal)) ?? "exam_preparation";
-  const subject_interests = (form.subjects ?? [])
-    .map((subject) => SUBJECT_ID_TO_INTEREST[subject])
-    .filter((subject): subject is SubjectInterest => Boolean(subject));
+  const learning_goal = goals.map((goal) => GOAL_LABEL_TO_LEARNING_GOAL[goal]).find((goal): goal is LearningGoal => Boolean(goal)) ?? "exam_preparation";
+  const subject_interests = (form.subjects ?? []).map((subject) => SUBJECT_ID_TO_INTEREST[subject]).filter((subject): subject is SubjectInterest => Boolean(subject));
 
   return {
     education_level,
@@ -71,5 +71,8 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
     year_level: form.yearLevel?.trim() || undefined,
     semester: form.semester?.trim() || undefined,
     courses: form.courses?.map((course) => course.trim()).filter(Boolean),
+    curriculum_board: form.curriculumBoard?.trim() || undefined,
+    syllabus_code: form.syllabusCode?.trim() || undefined,
+    language: form.language?.trim() || undefined,
   };
 }
