@@ -39,6 +39,17 @@ export default function Login() {
     setLoading(false);
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) { setError("Enter your email first, then choose forgot password."); return; }
+    setLoading(true);
+    setError("");
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setError(resetError ? resetError.message : "Password reset email sent. Check your inbox.");
+    setLoading(false);
+  };
+
   const inputStyle = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "13px 14px", color: "var(--foreground)", fontSize: 15, outline: "none", caretColor: "var(--primary)" };
 
   return (
@@ -57,8 +68,9 @@ export default function Login() {
             <input aria-label="Password" placeholder="Your password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 48 }} />
             <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 6, cursor: "pointer", color: "var(--muted-foreground)" }}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
-          {error && <p role="alert" style={{ color: "#ef4444", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
-          <button type="button" onClick={handleLogin} disabled={loading} style={{ background: "var(--primary)", color: "white", padding: "14px 16px", borderRadius: 11, fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginTop: 7, opacity: loading ? 0.7 : 1 }}>{loading ? "Signing in…" : "Sign in"}</button>
+          <button type="button" onClick={handleForgotPassword} disabled={loading} style={{ alignSelf: "flex-end", background: "none", border: "none", padding: "2px 0", color: "var(--primary)", fontSize: 12, fontWeight: 700, cursor: loading ? "wait" : "pointer" }}>Forgot password?</button>
+          {error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
+          <button type="button" onClick={handleLogin} disabled={loading} style={{ background: "var(--primary)", color: "white", padding: "14px 16px", borderRadius: 11, fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginTop: 7, opacity: loading ? 0.7 : 1 }}>{loading ? "Working…" : "Sign in"}</button>
         </div>
         <p style={{ color: "var(--muted-foreground)", textAlign: "center", fontSize: 14, marginTop: 22 }}>New to Shadecode? <Link href="/auth/signup" style={{ color: "var(--primary)", fontWeight: 700, textDecoration: "none" }}>Create an account</Link></p>
       </section>
