@@ -18,6 +18,38 @@ type Activity = {
 };
 
 type Progress = { activity_id: string; progress: number; completed: boolean; attempt_count: number };
+type Mastery = {
+  subject: string;
+  topic: string;
+  mastery_score: number | null;
+  confidence: number;
+  error_rate: number;
+  recent_improvement: number;
+  uncertainty: number;
+};
+
+function clamp(value: number, min = 0, max = 1) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function recommendationScore(activity: Activity, mastery: Mastery | undefined) {
+  if (!mastery) return 0;
+  const masteryScore = clamp(Number(mastery.mastery_score ?? 0) / 100);
+  const confidence = clamp(Number(mastery.confidence));
+  const errorRate = clamp(Number(mastery.error_rate));
+  const uncertainty = clamp(Number(mastery.uncertainty));
+  const improvement = clamp((Number(mastery.recent_improvement) + 1) / 2);
+
+  // Prioritise topics that need help, while still valuing uncertainty and errors.
+  // sort_order remains the deterministic tie-breaker when signals are equal.
+  return (
+    (1 - masteryScore) * 0.5 +
+    errorRate * 0.2 +
+    uncertainty * 0.2 +
+    (1 - confidence) * 0.1 +
+    (1 - improvement) * 0.05
+  ) * 100 + activity.sort_order / 10000;
+}
 
 export default function DiscoveryHome() {
   const { profile } = useUser();
@@ -25,6 +57,7 @@ export default function DiscoveryHome() {
   const learnerId = profile?.id;
   const [activities, setActivities] = useState<Activity[]>([]);
   const [progress, setProgress] = useState<Progress[]>([]);
+  const [mastery, setMastery] = useState<Mastery[]>([]);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
   const [loading, setLoading] = useState(true);
 
@@ -41,8 +74,15 @@ export default function DiscoveryHome() {
       const usable = ((data ?? []) as unknown as Activity[]).filter((item) => Array.isArray(item.content?.questions) && item.content!.questions!.length > 0);
       setActivities(usable);
       if (learnerId && usable.length) {
-        const { data: rows } = await supabase.from("primary_activity_progress").select("activity_id,progress,completed,attempt_count").eq("user_id", learnerId).in("activity_id", usable.map((item) => item.id));
-        if (!cancelled) setProgress((rows ?? []) as Progress[]);
+        const topics = Array.from(new Set(usable.map((item) => item.topic)));
+        const [{ data: rows }, { data: masteryRows }] = await Promise.all([
+          supabase.from("primary_activity_progress").select("activity_id,progress,completed,attempt_count").eq("user_id", learnerId).in("activity_id", usable.map((item) => item.id)),
+          supabase.from("topic_mastery").select("subject,topic,mastery_score,confidence,error_rate,recent_improvement,uncertainty").eq("user_id", learnerId).in("topic", topics),
+        ]);
+        if (!cancelled) {
+          setProgress((rows ?? []) as Progress[]);
+          setMastery((masteryRows ?? []) as Mastery[]);
+        }
       }
       setOffline(false);
       setLoading(false);
@@ -56,10 +96,26 @@ export default function DiscoveryHome() {
   }, [learnerId, supabase]);
 
   const progressMap = useMemo(() => new Map(progress.map((item) => [item.activity_id, item])), [progress]);
+  const masteryMap = useMemo(() => new Map(mastery.map((item) => [`${item.subject.toLowerCase()}::${item.topic.toLowerCase()}`, item])), [mastery]);
   const completed = activities.filter((item) => progressMap.get(item.id)?.completed).length;
-  const next = activities.find((item) => !progressMap.get(item.id)?.completed) ?? activities[0];
+  const next = useMemo(() => {
+    const unfinished = activities.filter((item) => !progressMap.get(item.id)?.completed);
+    if (!unfinished.length) return activities[0];
+    const hasMastery = unfinished.some((item) => masteryMap.has(`${item.subject.toLowerCase()}::${item.topic.toLowerCase()}`));
+    if (!hasMastery) return unfinished[0];
+    return unfinished.reduce((best, item) => {
+      const bestMastery = masteryMap.get(`${best.subject.toLowerCase()}::${best.topic.toLowerCase()}`);
+      const itemMastery = masteryMap.get(`${item.subject.toLowerCase()}::${item.topic.toLowerCase()}`);
+      return recommendationScore(item, itemMastery) > recommendationScore(best, bestMastery) ? item : best;
+    });
+  }, [activities, masteryMap, progressMap]);
 
   if (loading) return <main className="mx-auto max-w-5xl px-4 py-8"><div className="h-72 animate-pulse rounded-[30px] bg-[var(--surface-2)]" /></main>;
+
+  const nextMastery = next ? masteryMap.get(`${next.subject.toLowerCase()}::${next.topic.toLowerCase()}`) : undefined;
+  const recommendationLabel = nextMastery
+    ? Number(nextMastery.mastery_score ?? 0) < 60 ? "A skill to strengthen" : Number(nextMastery.uncertainty) > 0.5 ? "A skill worth exploring" : "Your next step"
+    : "Your next step";
 
   return <main className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-10">
     <header className="relative overflow-hidden rounded-[30px] border border-[var(--card-border)] bg-[var(--surface)] p-7 shadow-sm md:p-10">
@@ -68,7 +124,7 @@ export default function DiscoveryHome() {
         <div className="max-w-2xl">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--primary)]"><Compass className="h-4 w-4" /> Shadecode Discovery</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-[var(--foreground)] md:text-4xl">My Day starts here. 🌱</h1>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">Short adventures, real progress, and a next step chosen from your learning path.</p>
+          <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">Short adventures, real progress, and a next step chosen from your learning evidence.</p>
         </div>
         <div className="flex items-center gap-3 text-xs font-semibold text-[var(--muted-foreground)]"><span>{completed}/{activities.length} complete</span>{offline && <span className="inline-flex items-center gap-1.5"><CloudOff className="h-4 w-4" /> Offline</span>}</div>
       </div>
@@ -76,7 +132,7 @@ export default function DiscoveryHome() {
 
     {next && <section className="mt-6 rounded-[26px] border border-[var(--card-border)] bg-[var(--surface)] p-6 shadow-sm md:p-7">
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-        <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--primary)]">Next discovery</p><h2 className="mt-1 text-2xl font-bold text-[var(--foreground)]">{next.title}</h2><p className="mt-2 text-sm text-[var(--muted-foreground)]">{next.subject} · {next.skill}</p></div>
+        <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--primary)]">{recommendationLabel}</p><h2 className="mt-1 text-2xl font-bold text-[var(--foreground)]">{next.title}</h2><p className="mt-2 text-sm text-[var(--muted-foreground)]">{next.subject} · {next.skill}</p></div>
         <Link href={`/discovery/activity/${next.id}`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-3 text-sm font-bold text-white">Start adventure <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </section>}
