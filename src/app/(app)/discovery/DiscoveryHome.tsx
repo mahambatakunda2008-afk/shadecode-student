@@ -28,6 +28,9 @@ type Mastery = {
   uncertainty: number;
 };
 
+const cacheKey = "shadecode:discovery:home:v2";
+const progressQueueKey = "shadecode:discovery:progress-queue:v2";
+
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
@@ -40,8 +43,6 @@ function recommendationScore(activity: Activity, mastery: Mastery | undefined) {
   const uncertainty = clamp(Number(mastery.uncertainty));
   const improvement = clamp((Number(mastery.recent_improvement) + 1) / 2);
 
-  // Prioritise topics that need help, while still valuing uncertainty and errors.
-  // sort_order remains the deterministic tie-breaker when signals are equal.
   return (
     (1 - masteryScore) * 0.5 +
     errorRate * 0.2 +
@@ -49,6 +50,21 @@ function recommendationScore(activity: Activity, mastery: Mastery | undefined) {
     (1 - confidence) * 0.1 +
     (1 - improvement) * 0.05
   ) * 100 + activity.sort_order / 10000;
+}
+
+function readHomeCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+    return cached?.activities ? cached : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeHomeCache(value: { activities: Activity[]; progress: Progress[]; mastery: Mastery[] }) {
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(value));
+  } catch {}
 }
 
 export default function DiscoveryHome() {
@@ -63,8 +79,41 @@ export default function DiscoveryHome() {
 
   useEffect(() => {
     let cancelled = false;
+    async function syncQueuedProgress() {
+      if (!learnerId || !navigator.onLine) return;
+      try {
+        const current = JSON.parse(localStorage.getItem(progressQueueKey) || "[]");
+        if (!Array.isArray(current) || !current.length) return;
+        const ownQueue = current.filter((item) => item?.userId === learnerId);
+        if (!ownQueue.length) return;
+        const remaining = current.filter((item) => item?.userId !== learnerId);
+        const failed: unknown[] = [];
+        for (const item of ownQueue) {
+          const { error } = await supabase.from("primary_activity_progress").upsert({
+            user_id: learnerId,
+            activity_id: item.activityId,
+            progress: item.progress,
+            completed: item.completed,
+            attempt_count: item.attempt_count,
+            last_completed_at: item.last_completed_at,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id,activity_id" });
+          if (error) failed.push(item);
+        }
+        localStorage.setItem(progressQueueKey, JSON.stringify([...remaining, ...failed].slice(-100)));
+      } catch {}
+    }
+
     async function load() {
+      const cached = readHomeCache();
+      if (cached) {
+        setActivities(cached.activities);
+        setProgress(cached.progress ?? []);
+        setMastery(cached.mastery ?? []);
+      }
       if (!navigator.onLine) { setOffline(true); setLoading(false); return; }
+
+      await syncQueuedProgress();
       const { data } = await supabase
         .from("primary_activities")
         .select("id,subject,topic,skill,title,content,offline_ready,sort_order,primary_curriculum_packs!inner(active)")
@@ -72,6 +121,11 @@ export default function DiscoveryHome() {
         .order("sort_order");
       if (cancelled) return;
       const usable = ((data ?? []) as unknown as Activity[]).filter((item) => Array.isArray(item.content?.questions) && item.content!.questions!.length > 0);
+      if (!usable.length && cached?.activities?.length) {
+        setOffline(true);
+        setLoading(false);
+        return;
+      }
       setActivities(usable);
       if (learnerId && usable.length) {
         const topics = Array.from(new Set(usable.map((item) => item.topic)));
@@ -80,9 +134,14 @@ export default function DiscoveryHome() {
           supabase.from("topic_mastery").select("subject,topic,mastery_score,confidence,error_rate,recent_improvement,uncertainty").eq("user_id", learnerId).in("topic", topics),
         ]);
         if (!cancelled) {
-          setProgress((rows ?? []) as Progress[]);
-          setMastery((masteryRows ?? []) as Mastery[]);
+          const nextProgress = (rows ?? []) as Progress[];
+          const nextMastery = (masteryRows ?? []) as Mastery[];
+          setProgress(nextProgress);
+          setMastery(nextMastery);
+          writeHomeCache({ activities: usable, progress: nextProgress, mastery: nextMastery });
         }
+      } else {
+        writeHomeCache({ activities: usable, progress: [], mastery: [] });
       }
       setOffline(false);
       setLoading(false);
