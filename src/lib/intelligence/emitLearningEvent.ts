@@ -2,6 +2,7 @@ import type { LearningEventKind } from "./learningEvents";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { getRememberedUserId } from "@/lib/local-first/identity";
 
+type LearningMetadata = Record<string, string | number | boolean | null>;
 export type LearningEventInput = {
   source: string;
   sourceEventId: string;
@@ -11,7 +12,7 @@ export type LearningEventInput = {
   topicId?: string;
   entityId?: string;
   attemptId?: string;
-  metadata?: Record<string, string | number | boolean | null>;
+  metadata?: LearningMetadata;
 };
 
 type QueuedLearningEvent = { ownerId: string; input: LearningEventInput };
@@ -103,27 +104,32 @@ export function lessonCompletedEvent(lessonId: string, subject?: string, topic?:
   return emitLearningEvent({ source: "learn", sourceEventId: `lesson-complete:${lessonId}`, type: "lesson.completed", subjectId: subject, topicId: topic, entityId: lessonId });
 }
 
+export function primaryActivityCompletedEvent(activityId: string, subject: string, topic: string, skill: string, metadata?: LearningMetadata) {
+  return emitLearningEvent({
+    source: "discovery",
+    sourceEventId: `activity-complete:${activityId}`,
+    type: "activity.completed",
+    subjectId: subject,
+    topicId: topic,
+    entityId: activityId,
+    metadata: { skill, ...(metadata ?? {}) },
+  });
+}
+
 export function examStartedEvent(examId: string, subject?: string, topic?: string) {
   return emitLearningEvent({ source: "exam-sim", sourceEventId: `exam-start:${examId}`, type: "exam.started", subjectId: subject, topicId: topic, entityId: examId, attemptId: examId });
 }
 
-export function questionAttemptedEvent(examId: string, questionId: string | number, subject?: string, topic?: string, metadata?: Record<string, string | number | boolean | null>) {
+export function questionAttemptedEvent(examId: string, questionId: string | number, subject?: string, topic?: string, metadata?: LearningMetadata) {
   return emitLearningEvent({ source: "exam-sim", sourceEventId: `question-attempt:${examId}:${questionId}`, type: "question.attempted", subjectId: subject, topicId: topic, entityId: String(questionId), attemptId: examId, metadata });
 }
 
-export function examCompletedEvent(examId: string, subject?: string, topic?: string, metadata?: Record<string, string | number | boolean | null>) {
+export function examCompletedEvent(examId: string, subject?: string, topic?: string, metadata?: LearningMetadata) {
   return emitLearningEvent({ source: "exam-sim", sourceEventId: `exam-complete:${examId}`, type: "exam.completed", subjectId: subject, topicId: topic, entityId: examId, attemptId: examId, metadata });
 }
 
-export function taskCompletedEvent(taskId: string, subject?: string, metadata?: Record<string, string | number | boolean | null>) {
-  return emitLearningEvent({
-    source: "tasks",
-    sourceEventId: `task-complete:${taskId}`,
-    type: "task.completed",
-    subjectId: subject,
-    entityId: taskId,
-    metadata,
-  });
+export function taskCompletedEvent(taskId: string, subject?: string, metadata?: LearningMetadata) {
+  return emitLearningEvent({ source: "tasks", sourceEventId: `task-complete:${taskId}`, type: "task.completed", subjectId: subject, entityId: taskId, metadata });
 }
 
 export type { LearningEventKind };
