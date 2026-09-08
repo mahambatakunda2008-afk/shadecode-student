@@ -52,6 +52,7 @@ function decisionFor(row: TopicEvidence): NextActionDecision {
     { signal: "mastery", value: row.mastery, interpretation: row.mastery < 50 ? "weak" : row.mastery < 70 ? "developing" : "secure" },
     { signal: "error rate", value: row.errorRate, interpretation: row.errorRate >= 35 ? "frequent errors" : "manageable" },
     { signal: "retention", value: row.retention, interpretation: row.retention < 65 ? "needs retrieval" : "holding" },
+    { signal: "attempts", value: row.attempts, interpretation: row.attempts > 0 ? "observations recorded" : "no observations yet" },
   ];
 
   if (row.prerequisiteHealth < 45) {
