@@ -10,6 +10,7 @@ import { localTasks } from "@/lib/local-first/tasks";
 import { localSubjects } from "@/lib/local-first/subjects";
 import { awardXp, getXp, recordStudyDay } from "@/lib/local-first/gamification";
 import { offlineSync } from "@/lib/offline/sync";
+import { trackEvent } from "@/lib/traction/client";
 
 type Subject = { id: string; name: string };
 type Task = { id: string; subject_id: string; title: string; completed: boolean };
@@ -122,6 +123,7 @@ export default function TasksLocalFirstV2() {
       setTasks(prev => prev.map(item => item.id === task.id ? { ...item, completed: true } : item));
       const [xpState] = await Promise.all([awardXp(userId, 10), recordStudyDay(userId)]);
       setXp(xpState.payload.totalXp); setLevel(xpState.payload.level);
+      void trackEvent("task_completed", { taskId: task.id, subjectId: task.subject_id, titleLength: task.title.length, xpEarned: 10, offline: !navigator.onLine });
       notify(navigator.onLine ? "+10 XP • saved locally" : "+10 XP • saved offline");
       if (navigator.onLine) void offlineSync.syncAll();
     } catch (error) { console.error("[TasksLocalFirst] completion failed", error); notify("Couldn't complete that task."); }
