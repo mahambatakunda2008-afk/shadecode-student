@@ -12,9 +12,6 @@ export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
   const theme = createTheme({
     palette: {
       mode: isDark ? "dark" : "light",
-      // The onboarding experience uses violet as the primary interaction
-      // color with cyan as the supporting brand accent. Keep that hierarchy
-      // instead of making every interactive surface cyan.
       primary: { main: isDark ? "#7C3AED" : "#5B21B6" },
       secondary: { main: isDark ? "#3FC8FF" : "#0891B2" },
       background: {
@@ -44,7 +41,7 @@ export const MuiThemeProvider = ({ children }: { children: ReactNode }) => {
             borderRadius: 10,
             boxShadow: "none",
           },
-          containedPrimary: {
+          contained: {
             boxShadow: "0 10px 28px rgba(124,58,237,0.16)",
             "&:hover": { boxShadow: "0 12px 32px rgba(124,58,237,0.20)" },
           },
