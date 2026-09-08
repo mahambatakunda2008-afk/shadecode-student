@@ -115,4 +115,15 @@ export function examCompletedEvent(examId: string, subject?: string, topic?: str
   return emitLearningEvent({ source: "exam-sim", sourceEventId: `exam-complete:${examId}`, type: "exam.completed", subjectId: subject, topicId: topic, entityId: examId, attemptId: examId, metadata });
 }
 
+export function taskCompletedEvent(taskId: string, subject?: string, metadata?: Record<string, string | number | boolean | null>) {
+  return emitLearningEvent({
+    source: "tasks",
+    sourceEventId: `task-complete:${taskId}`,
+    type: "task.completed",
+    subjectId: subject,
+    entityId: taskId,
+    metadata,
+  });
+}
+
 export type { LearningEventKind };
