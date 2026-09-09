@@ -117,7 +117,19 @@ export default function CortexAgentPage() {
     }
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const handleFocus = () => void refresh();
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refresh]);
 
   const learnPrompt = useMemo(() => decision ? buildLearnPrompt(decision) : "", [decision]);
   const learnHref = useMemo(() => {
@@ -152,7 +164,7 @@ export default function CortexAgentPage() {
       </div>
 
       {feedback && <section className="mb-5 rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">New evidence observed</p><h2 className="mt-1 text-xl font-bold">The intervention changed the learning state.</h2></div><span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700">Closed loop</span></div><div className="mt-4 flex flex-wrap gap-2">{feedback.changes.map(change => <span key={change} className="rounded-full border bg-background px-3 py-1.5 text-sm">{change}</span>)}</div><p className="mt-4 text-sm text-muted-foreground">Cortex did not assume improvement. It re-read the durable observation and computed the current decision from the new evidence.</p></section>}
-      {awaitingEvidence && !feedback && <section className="mb-5 rounded-3xl border border-cyan-500/30 bg-cyan-500/5 p-6"><p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">Intervention in progress</p><h2 className="mt-1 text-xl font-bold">Cortex is waiting for new evidence.</h2><p className="mt-2 text-sm text-muted-foreground">Complete the lesson or 5-question test, then come back and press Re-evaluate. No progress is shown until a real learning observation changes the state.</p></section>}
+      {awaitingEvidence && !feedback && <section className="mb-5 rounded-3xl border border-cyan-500/30 bg-cyan-500/5 p-6"><p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">Intervention in progress</p><h2 className="mt-1 text-xl font-bold">Cortex is waiting for new evidence.</h2><p className="mt-2 text-sm text-muted-foreground">Complete the lesson or 5-question test, then return here. Cortex will automatically re-check the learning state when this page becomes active.</p></section>}
 
       {error ? <section className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6"><h2 className="font-semibold">Cortex could not read your learning state</h2><p className="mt-2 text-sm text-muted-foreground">{error}</p></section> : !loading && !decision ? <section className="rounded-2xl border p-8 text-center"><h2 className="text-xl font-semibold">No topic evidence yet</h2><p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Complete a lesson question or exam attempt with a curriculum topic attached. Cortex will use that observation to choose the next intervention.</p></section> : decision ? <div className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr]"><section className="rounded-3xl border bg-card p-6 shadow-sm sm:p-8"><div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><span className="rounded-full bg-cyan-500/10 px-3 py-1 text-cyan-600">{decision.kind.replaceAll("-", " ")}</span><span>{decision.subject}</span><span>·</span><span>{decision.topic}</span></div><h2 className="mt-5 text-2xl font-bold">{decision.title}</h2><p className="mt-3 text-muted-foreground">{decision.reason}</p><div className="mt-7 rounded-2xl bg-muted/50 p-5"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Intervention</p><p className="mt-2 font-medium">{decision.intervention}</p><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => startIntervention(learnHref)} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Start Cortex lesson</button><button type="button" onClick={() => startIntervention(examHref)} className="rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-muted">Test it with 5 questions</button></div></div><div className="mt-5 rounded-2xl border p-5"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Success check</p><p className="mt-2 text-sm">{decision.successCheck}</p><p className="mt-3 text-xs text-muted-foreground">After the intervention, return here and re-evaluate. The next decision is computed from the new durable observation.</p></div></section><aside className="rounded-3xl border p-6 sm:p-7"><div className="flex items-center justify-between"><h2 className="font-semibold">Evidence used</h2><span className="text-xs text-muted-foreground">{observedTopics} topics</span></div><div className="mt-5 space-y-4">{decision.evidence.map(item => <div key={item.signal}><div className="flex items-center justify-between gap-3 text-sm"><span className="capitalize text-muted-foreground">{item.signal}</span><span className="font-semibold">{item.value}</span></div><p className="mt-1 text-xs text-muted-foreground">{item.interpretation}</p></div>)}</div><div className="mt-7 border-t pt-5"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Decision priority</p><p className="mt-1 text-2xl font-bold">{decision.priority}</p><p className="mt-1 text-xs text-muted-foreground">Higher means more urgent learning need.</p></div></aside></div> : <div className="h-64 animate-pulse rounded-3xl border bg-muted/30" />}
     </main>
