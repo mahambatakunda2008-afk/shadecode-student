@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildResolvedLessonPrompt, resolveLessonRequest } from "./lessonRequest";
+import { buildResolvedLessonPrompt, resolveLessonRequest } from "../lessonRequest";
 
 describe("resolveLessonRequest", () => {
   it("keeps explicit subject and exact prompt", () => {
