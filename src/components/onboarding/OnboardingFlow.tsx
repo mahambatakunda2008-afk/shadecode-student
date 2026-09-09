@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { OnboardingFormData } from '@/types';
 
 interface OnboardingRecommendations { recommendedSubjects?: string[]; suggestedCourse?: { title?: string; summary?: string }; firstLesson?: { title?: string; description?: string } | null; }
-const STEP_LABELS = ['Path', 'Setup', 'Subjects', 'Goals', 'Ready'] as const;
+const STEP_LABELS = ['Path', 'Setup', 'Learning', 'Direction', 'Ready'] as const;
 const TOTAL = STEP_LABELS.length;
 const DEFAULTS: Partial<OnboardingFormData> = { subjects: [], goals: [], dailyGoalMinutes: 30, studyStyle: 'flexible' };
 
@@ -39,6 +39,7 @@ export function OnboardingFlow() {
   const update = (patch: Partial<OnboardingFormData>) => setFormData(prev => ({ ...prev, ...patch }));
   const next = () => setStep(s => Math.min(s + 1, TOTAL));
   const back = () => setStep(s => Math.max(s - 1, 1));
+  const homeRoute = formData.studyLevel === 'primary' || formData.studyLevel === 'early-childhood' ? '/discovery' : '/dashboard';
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -50,8 +51,8 @@ export function OnboardingFlow() {
       setOnboardingComplete();
       if (json?.recommendations) {
         setRecommendations(json.recommendations);
-        setTimeout(() => router.push(formData.studyLevel === 'primary' ? '/discovery' : '/dashboard'), 1600);
-      } else router.push(formData.studyLevel === 'primary' ? '/discovery' : '/dashboard');
+        setTimeout(() => router.push(homeRoute), 1600);
+      } else router.push(homeRoute);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setIsSubmitting(false);
