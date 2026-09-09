@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { ClipboardCheck, Hammer, ListChecks, Sparkles } from "lucide-react";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
-import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/contexts/UserContext";
 import TasksLocalFirstV2 from "@/components/tasks/TasksLocalFirstV2";
 
 export default function ExperienceTasks() {
