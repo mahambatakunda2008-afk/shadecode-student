@@ -58,13 +58,15 @@ describe("objective-first Code Lab gating", () => {
   });
 
   it("requires a syllabus version, preventing silent current-version assumptions", () => {
-    const withoutVersion: Omit<typeof zimsecOLevelComputerScience, "syllabusVersion"> = {
+    // Intentionally malformed runtime fixture: the production type requires a
+    // syllabus version, while this test verifies the runtime gate rejects it.
+    const withoutVersion = {
       boardId: zimsecOLevelComputerScience.boardId,
       qualificationId: zimsecOLevelComputerScience.qualificationId,
       level: zimsecOLevelComputerScience.level,
       syllabusId: zimsecOLevelComputerScience.syllabusId,
       subjectId: zimsecOLevelComputerScience.subjectId,
-    };
+    } as CodeLabActivityMetadata["curriculum"];
     const activity: CodeLabActivityMetadata = {
       activityId: "version-sensitive-content",
       curriculum: withoutVersion,
