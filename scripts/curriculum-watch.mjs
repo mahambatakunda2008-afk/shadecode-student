@@ -4,6 +4,7 @@ import { PDFParse } from "pdf-parse";
 import { CURRICULUM_SOURCE_WATCHES } from "../src/lib/curriculum/source-watch.ts";
 
 const outputDir = ".curriculum-watch";
+const snapshotDir = `${outputDir}/documents`;
 const runAt = new Date().toISOString();
 
 function sha256(value) {
@@ -57,11 +58,11 @@ async function extractPdf(url) {
   }
 }
 
-await mkdir(outputDir, { recursive: true });
+await mkdir(snapshotDir, { recursive: true });
 
 const report = {
   runAt,
-  watcherVersion: 1,
+  watcherVersion: 2,
   sources: [],
 };
 
@@ -90,11 +91,19 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
     for (const documentUrl of candidates) {
       try {
         const text = source.extractText ? await extractPdf(documentUrl) : "";
+        const contentHash = sha256(text);
+        const snapshotFile = `${snapshotDir}/${contentHash}.txt`;
+
+        if (text) {
+          await writeFile(snapshotFile, text, "utf8");
+        }
+
         sourceResult.documents.push({
           url: documentUrl,
-          contentHash: sha256(text),
+          contentHash,
           characters: text.length,
           extracted: Boolean(text),
+          textPath: text ? snapshotFile : null,
           status: "discovered",
         });
       } catch (error) {
@@ -123,6 +132,10 @@ console.log(JSON.stringify({
   runAt,
   sourcesChecked: report.sources.length,
   documentsDiscovered: report.sources.reduce((sum, source) => sum + source.documents.length, 0),
+  extractedSnapshots: report.sources.reduce(
+    (sum, source) => sum + source.documents.filter((document) => document.extracted).length,
+    0,
+  ),
   failures: report.sources.filter((source) => source.status !== "ok").length,
   report: `${outputDir}/latest-report.json`,
 }, null, 2));
