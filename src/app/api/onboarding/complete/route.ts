@@ -11,6 +11,13 @@ const ONBOARDING_COOKIE = "onboarding_complete";
 const ONBOARDING_COOKIE_OPTIONS = { path: "/", httpOnly: true, sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 365, secure: process.env.NODE_ENV === "production" };
 const STUDY_LEVELS: StudyLevel[] = ["early-childhood", "primary", "lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional"];
 
+function normalizeSubstage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  return normalized.slice(0, 80);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -23,6 +30,7 @@ export async function POST(request: NextRequest) {
     const learningGoal = body.learning_goal as LearningGoal;
     let subjectInterests = (body.subject_interests ?? []) as SubjectInterest[];
     const goals = (body.goals ?? []) as string[] | undefined;
+    const substage = normalizeSubstage(body.year_level);
 
     if (!educationLevel || !learningGoal || !studyLevel || !STUDY_LEVELS.includes(studyLevel)) {
       return NextResponse.json({ error: "education_level, study_level and learning_goal are required" }, { status: 400 });
@@ -41,7 +49,7 @@ export async function POST(request: NextRequest) {
       pathway,
       institution: typeof body.institution === "string" ? body.institution.trim() || null : null,
       programme: typeof body.programme === "string" ? body.programme.trim() : "",
-      year_level: typeof body.year_level === "string" ? body.year_level.trim() || null : null,
+      year_level: substage,
       semester: typeof body.semester === "string" ? body.semester.trim() || null : null,
       courses: Array.isArray(body.courses) ? body.courses.filter((v: unknown): v is string => typeof v === "string").map((v: string) => v.trim()).filter(Boolean) : [],
     };
@@ -57,8 +65,10 @@ export async function POST(request: NextRequest) {
       subjects: Array.isArray(body.subject_interests) ? body.subject_interests : [],
       daily_goal_minutes: Number.isFinite(body.daily_goal_minutes) ? Math.max(10, Math.min(240, Number(body.daily_goal_minutes))) : 30,
       study_style: body.study_style === "structured" ? "structured" : "flexible",
+      education_stage: substage,
       curriculum_board: typeof body.curriculum_board === "string" ? body.curriculum_board.trim() || null : null,
       syllabus_code: typeof body.syllabus_code === "string" ? body.syllabus_code.trim() || null : null,
+      syllabus_year: typeof body.syllabus_year === "string" ? body.syllabus_year.trim() || null : null,
       language: typeof body.language === "string" ? body.language.trim() || null : null,
       onboarding_completed: true,
       onboarding_complete: true,
