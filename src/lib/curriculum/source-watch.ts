@@ -16,21 +16,17 @@ export interface CurriculumSourceWatch {
   frequency: WatchFrequency;
   discoverLinkedDocuments: boolean;
   extractText: boolean;
-  /** Optional source-specific objective codes. Objectives are one layer of the syllabus. */
   objectiveCodePattern?: string;
   autoPromote: false;
 }
 
 /**
- * Source registry for autonomous whole-syllabus curriculum monitoring.
+ * Autonomous source registry for whole-syllabus monitoring.
  *
- * Sources are identified as precisely as the registry can know them, but a
- * missing syllabus version is allowed at discovery time. Such records remain
- * draft-only until a verified version is established. The ingestion pipeline
- * extracts syllabus layers such as topics, scope, competencies, outcomes,
- * practical work, projects, assessment, paper structure, terminology,
- * prerequisites, progression, guidance and notes, with objectives as one layer.
- * Nothing is automatically promoted to verified curriculum truth.
+ * A source can identify one syllabus precisely or act as a board-level
+ * discovery point. The ingestion pipeline never assumes that every board
+ * structures its syllabus the same way. Objectives are one knowledge layer,
+ * not the definition of curriculum.
  */
 export const CURRICULUM_SOURCE_WATCHES: CurriculumSourceWatch[] = [
   {
