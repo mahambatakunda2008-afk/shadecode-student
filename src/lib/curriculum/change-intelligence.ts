@@ -51,20 +51,45 @@ export function extractNumberedObjectives(
   provenance: CurriculumObjective["provenance"],
 ): Array<Pick<CurriculumObjective, "code" | "statement" | "status" | "curriculum" | "provenance">> {
   const results: Array<Pick<CurriculumObjective, "code" | "statement" | "status" | "curriculum" | "provenance">> = [];
-  const pattern = /^\s*(\d+(?:\.\d+)+)\s+(.+)$/gm;
+  const lines = text.replace(/\r/g, "").split("\n");
+  const objectivePattern = /^\s*(\d+(?:\.\d+)+)\s+(.+)$/;
+  let current: { code: string; statement: string } | null = null;
 
-  for (const match of text.matchAll(pattern)) {
-    const statement = match[2].trim();
-    if (!statement) continue;
-    results.push({
-      code: match[1],
-      statement,
-      status: "draft",
-      curriculum,
-      provenance,
-    });
+  const flush = () => {
+    if (!current) return;
+    const statement = current.statement.replace(/\s+/g, " ").trim();
+    if (statement) {
+      results.push({
+        code: current.code,
+        statement,
+        status: "draft",
+        curriculum,
+        provenance,
+      });
+    }
+    current = null;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const match = objectivePattern.exec(line);
+    if (match) {
+      flush();
+      current = { code: match[1], statement: match[2].trim() };
+      continue;
+    }
+
+    // PDF extraction often wraps one objective across several lines. Continue
+    // only while already inside an objective, so unrelated syllabus prose is
+    // not promoted into objective records.
+    if (current && !/^\d+(?:\.\d+)+\b/.test(line)) {
+      current.statement += ` ${line}`;
+    }
   }
 
+  flush();
   return results;
 }
 
