@@ -54,6 +54,17 @@ function enqueue(input: LearningEventInput, ownerId: string) {
   writeQueue(queue);
 }
 
+async function resolveOwnerId(): Promise<string | null> {
+  const remembered = getRememberedUserId();
+  if (remembered) return remembered;
+  if (typeof window === "undefined") return null;
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const { data } = await createClient().auth.getUser();
+    return data.user?.id ?? null;
+  } catch { return null; }
+}
+
 function readDiscoveryQueue(): QueuedDiscoveryProgress[] {
   if (typeof window === "undefined") return [];
   try {
@@ -83,7 +94,7 @@ async function post(input: LearningEventInput): Promise<boolean> {
 
 export async function flushDiscoveryProgress(): Promise<void> {
   if (typeof window === "undefined" || flushingDiscovery || !navigator.onLine) return;
-  const activeUserId = getRememberedUserId();
+  const activeUserId = await resolveOwnerId();
   if (!activeUserId) return;
   flushingDiscovery = true;
   try {
@@ -105,7 +116,7 @@ export async function flushDiscoveryProgress(): Promise<void> {
 
 export async function flushLearningEvents(): Promise<void> {
   if (typeof window === "undefined" || flushing || !navigator.onLine) return;
-  const activeUserId = getRememberedUserId();
+  const activeUserId = await resolveOwnerId();
   if (!activeUserId) return;
   flushing = true;
   try {
@@ -124,7 +135,7 @@ export async function flushLearningEvents(): Promise<void> {
 
 export async function emitLearningEvent(input: LearningEventInput): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  const ownerId = getRememberedUserId();
+  const ownerId = await resolveOwnerId();
   if (!navigator.onLine) {
     if (ownerId) enqueue(input, ownerId);
     return false;
