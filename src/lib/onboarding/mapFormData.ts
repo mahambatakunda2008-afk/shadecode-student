@@ -56,28 +56,34 @@ export interface OnboardingApiPayload {
 
 function slug(value: string): string { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
 function subjectLabel(subjectId: string): string { return subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+function boardIdFor(value: string): string {
+  const id = slug(value);
+  return id === "cambridge-international" ? "cambridge" : id;
+}
 
 function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): OnboardingCurriculumSubject[] {
-  const boardId = slug(form.curriculumBoard ?? "");
+  const boardId = boardIdFor(form.curriculumBoard ?? "");
   const qualificationId = slug(form.curriculumQualification ?? "");
   const level = slug(form.curriculumLevel ?? "");
-  const syllabusId = slug(form.syllabusCode ?? "");
   const syllabusVersion = form.syllabusVersion?.trim() ?? "";
+  const subjects = form.subjects ?? [];
+  const codes = form.curriculumSubjectCodes ?? {};
 
-  // Exact curriculum identity is never inferred from the generic study level.
-  if (!boardId || boardId === "unknown" || boardId === "other-not-listed" || boardId === "i-don-t-know-yet" || !qualificationId || !level || !syllabusId || !syllabusVersion) return [];
+  // Exact identity is only created from information the learner explicitly supplied.
+  if (!boardId || boardId === "unknown" || boardId === "other-not-listed" || boardId === "i-don-t-know-yet" || !qualificationId || !level || !syllabusVersion || !subjects.length) return [];
 
-  return (form.subjects ?? []).map((subjectId) => ({
-    boardId: boardId === "cambridge-international" ? "cambridge" : boardId,
-    qualificationId,
-    level,
-    syllabusId,
-    syllabusVersion,
-    subjectId: slug(subjectId),
-    subjectName: subjectLabel(subjectId),
-    paperOrComponentId: form.curriculumPaperComponents?.[subjectId]?.trim() || undefined,
-    examSession: form.curriculumExamSession?.trim() || undefined,
-  }));
+  return subjects.flatMap((subjectId) => {
+    const perSubjectCode = codes[subjectId]?.trim();
+    const commonCode = subjects.length === 1 ? form.syllabusCode?.trim() : "";
+    const syllabusId = slug(perSubjectCode || commonCode || "");
+    if (!syllabusId) return [];
+    return [{
+      boardId, qualificationId, level, syllabusId, syllabusVersion,
+      subjectId: slug(subjectId), subjectName: subjectLabel(subjectId),
+      paperOrComponentId: form.curriculumPaperComponents?.[subjectId]?.trim() || undefined,
+      examSession: form.curriculumExamSession?.trim() || undefined,
+    }];
+  });
 }
 
 export function mapOnboardingFormData(form: Partial<OnboardingFormData>): OnboardingApiPayload {
