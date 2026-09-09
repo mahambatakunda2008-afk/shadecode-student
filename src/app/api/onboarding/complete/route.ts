@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const ONBOARDING_COOKIE = "onboarding_complete";
 const ONBOARDING_COOKIE_OPTIONS = { path: "/", httpOnly: true, sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 365, secure: process.env.NODE_ENV === "production" };
-const STUDY_LEVELS: StudyLevel[] = ["primary", "lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional"];
+const STUDY_LEVELS: StudyLevel[] = ["early-childhood", "primary", "lower-secondary", "upper-secondary", "a-level", "university", "tvet", "professional"];
 
 export async function POST(request: NextRequest) {
   try {
