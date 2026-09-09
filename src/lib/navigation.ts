@@ -9,11 +9,11 @@ export const NAV_ITEMS = {
 };
 export const ADMIN_NAV_GROUPS:NavGroup[]=[{group:"Admin",items:[NAV_ITEMS.adminDashboard,NAV_ITEMS.adminAnalytics,NAV_ITEMS.examHub,NAV_ITEMS.adminUpload,NAV_ITEMS.adminManage,NAV_ITEMS.adminModeration,NAV_ITEMS.adminQuestions,NAV_ITEMS.adminBoards,NAV_ITEMS.adminFeedback,NAV_ITEMS.settings]}];
 
-/* Three learner experiences. Academic stages configure the experience; they do not create unrelated navigation systems. */
+/* The product has three learner experiences. Stages configure each experience; they do not flatten into one generic menu. */
 export function getExperienceNavGroups(experience: AcademicExperience): NavGroup[] {
   const foundation: NavGroup[] = [
-    { group:"Start", items:[NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn] },
-    { group:"Keep Going", items:[NAV_ITEMS.tasks, NAV_ITEMS.timetable, NAV_ITEMS.achievements] },
+    { group:"Start here", items:[NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn] },
+    { group:"Keep exploring", items:[NAV_ITEMS.tasks, NAV_ITEMS.timetable, NAV_ITEMS.achievements] },
   ];
   const school: NavGroup[] = [
     { group:"Study", items:[NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.studyPlan] },
@@ -25,9 +25,10 @@ export function getExperienceNavGroups(experience: AcademicExperience): NavGroup
     { group:"Work", items:[NAV_ITEMS.workmate, NAV_ITEMS.projects, NAV_ITEMS.tasks, NAV_ITEMS.focus] },
     { group:"Growth", items:[NAV_ITEMS.analytics, NAV_ITEMS.achievements] },
   ];
-  const family = experience.navMode === "foundation" ? "foundation" : ["school","advanced-school"].includes(experience.navMode) ? "school" : "beyond";
-  const groups = family === "foundation" ? foundation : family === "school" ? school : beyond;
-  return groups.map(group => ({ ...group, items: group.items.filter(item => experience.allowedRoutes.includes(item.href)) })).filter(group => group.items.length > 0);
+  const groups = experience.family === "foundation" ? foundation : experience.family === "school" ? school : beyond;
+  return groups
+    .map(group => ({ ...group, items: group.items.filter(item => experience.allowedRoutes.includes(item.href)) }))
+    .filter(group => group.items.length > 0);
 }
 
 export const SIDEBAR_GROUPS:NavGroup[]=[{group:"Core",items:[NAV_ITEMS.dashboard,NAV_ITEMS.discovery,NAV_ITEMS.focus,NAV_ITEMS.study,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan]},{group:"Practice",items:[NAV_ITEMS.examHub,NAV_ITEMS.tasks,NAV_ITEMS.exams,NAV_ITEMS.examSim]},{group:"Tools",items:[NAV_ITEMS.learn,NAV_ITEMS.curriculum,NAV_ITEMS.projects,NAV_ITEMS.workmate]},{group:"Progress",items:[NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements,NAV_ITEMS.cortex,NAV_ITEMS.share]}];
