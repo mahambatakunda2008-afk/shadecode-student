@@ -1,4 +1,4 @@
-import { LayoutDashboard, Timer, CheckSquare, BookOpen, Brain, BarChart3, Trophy, BrainCircuit, Calendar, Gamepad2, Settings, Award, GraduationCap, Route, FileText, UploadCloud, ClipboardCheck, Tags, Globe, MessageSquare, Settings2, Share2, BriefcaseBusiness, FolderKanban, Compass, Library, Target } from "lucide-react";
+import { LayoutDashboard, Timer, CheckSquare, BookOpen, Brain, BarChart3, Trophy, BrainCircuit, Calendar, Gamepad2, Settings, Award, GraduationCap, Route, FileText, UploadCloud, ClipboardCheck, Tags, Globe, MessageSquare, Settings2, Share2, BriefcaseBusiness, FolderKanban, Compass, Library } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
 
 export interface NavItem { href:string; label:string; icon:any; badge?:string; urgent?:boolean; }
