@@ -1,4 +1,5 @@
 import { CortexCore } from "@/lib/cortex/core";
+import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
 import fs from 'fs';
 import path from 'path';
 import { log } from "@/lib/observability";
@@ -22,6 +23,12 @@ function getSupabaseAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Missing Supabase server credentials.');
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
+function requestedCurriculumSubjectId(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return undefined;
+  const value = (payload as Record<string, unknown>).subjectId ?? (payload as Record<string, unknown>).curriculumSubjectId;
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 export async function GET(req: Request) {
@@ -128,8 +135,12 @@ export async function POST(req: Request) {
       if (requestedUserId && requestedUserId !== authenticatedUserId) return Response.json({ error: 'Forbidden' }, { status: 403 });
       try {
         const { cortexAI } = await import("@/lib/cortex/runtime/ai-gateway");
-        const result = await cortexAI(body.requestType, { ...body.payload, userId: authenticatedUserId });
-        return Response.json({ insight: result.data?.insight ?? null, provider: result.provider, cached: result.cached });
+        const curriculum = await resolveUserSystemCurriculum(authenticatedUserId, requestedCurriculumSubjectId(body.payload));
+        const payload = curriculum.context
+          ? { ...body.payload, userId: authenticatedUserId, curriculumContext: curriculum.context }
+          : { ...body.payload, userId: authenticatedUserId };
+        const result = await cortexAI(body.requestType, payload);
+        return Response.json({ insight: result.data?.insight ?? null, provider: result.provider, cached: result.cached, curriculum: { resolved: !curriculum.blocked, reason: curriculum.reason } });
       } catch (e) {
         log.cortexFailure({ stage: "behavior.insight", error: e instanceof Error ? e.message : "cortex_ai_failed", userId: authenticatedUserId });
         return Response.json({ insight: null, error: e instanceof Error ? e.message : "cortex_ai_failed" });
@@ -156,7 +167,16 @@ export async function POST(req: Request) {
         return Response.json({ success: true, ...res });
       } catch (e: any) { return Response.json({ error: e.message || 'failed' }, { status: 500 }); }
     }
-    return Response.json(await CortexCore({ userId: validatedUserId, type: validatedType as any, payload: validatedPayload }));
+    const curriculum = await resolveUserSystemCurriculum(
+      validatedUserId,
+      requestedCurriculumSubjectId(validatedPayload),
+    );
+    return Response.json(await CortexCore({
+      userId: validatedUserId,
+      type: validatedType as any,
+      payload: validatedPayload,
+      curriculum: curriculum.context ?? null,
+    }));
   } catch (err: any) {
     log.cortexFailure({ stage: "CortexCore", error: err.message || "Cortex failure", userId: body?.userId });
     return Response.json({ error: err.message || "Cortex failure" }, { status: 500 });
