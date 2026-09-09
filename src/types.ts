@@ -53,6 +53,17 @@ export type StudyLevel =
   | 'professional';
 
 export type StudyStyle = 'structured' | 'flexible';
+export interface OnboardingCurriculumIdentity {
+  boardId?: string;
+  qualificationId?: string;
+  level?: string;
+  syllabusId?: string;
+  syllabusVersion?: string;
+  subjectId?: string;
+  subjectName?: string;
+  paperOrComponentId?: string;
+  examSession?: string;
+}
 export interface OnboardingFormData {
   displayName: string;
   studyLevel: StudyLevel;
@@ -66,7 +77,12 @@ export interface OnboardingFormData {
   semester?: string;
   courses?: string[];
   curriculumBoard?: string;
+  curriculumQualification?: string;
   syllabusCode?: string;
+  syllabusVersion?: string;
+  curriculumSubjectCodes?: Record<string, string>;
+  curriculumPaperComponents?: Record<string, string>;
+  curriculumExamSession?: string;
   language?: string;
 }
 export interface StepProps { data: Partial<OnboardingFormData>; onUpdate: (patch: Partial<OnboardingFormData>) => void; onNext: () => void; onBack?: () => void; }
