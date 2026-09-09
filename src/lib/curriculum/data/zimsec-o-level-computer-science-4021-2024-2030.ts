@@ -9,9 +9,9 @@ import type {
  *
  * These records were extracted from a 2024-2030 Forms 1-4 syllabus
  * transcription and cross-checked against its competency-matrix structure.
- * They remain `reviewed`, not `verified`, until the official ZIMSEC-hosted
- * syllabus PDF is independently retrieved. The Code Lab guard therefore
- * cannot surface them as exam-required content yet.
+ * They remain `draft` until the official ZIMSEC-hosted syllabus PDF is
+ * independently retrieved. The Code Lab guard therefore cannot surface them
+ * as exam-required content yet.
  */
 export const ZIMSEC_O_LEVEL_CS_4021_2024_2030: CurriculumIdentity = {
   boardId: "zimsec",
@@ -48,13 +48,11 @@ export const ZIMSEC_O_LEVEL_CS_4021_OBJECTIVES: CurriculumObjective[] = [
   curriculum: ZIMSEC_O_LEVEL_CS_4021_2024_2030,
   code,
   statement,
-  status: "verified",
+  status: "draft",
   provenance: ZIMSEC_O_LEVEL_CS_4021_PROVENANCE,
 }));
 
-/**
- * Topic inventory. Topics are curriculum areas, not objective mappings.
- */
+/** Topic inventory. Topics are curriculum areas, not objective mappings. */
 export const ZIMSEC_O_LEVEL_CS_4021_TOPICS = [
   "hardware-and-software",
   "application-of-computer-science",
@@ -69,11 +67,7 @@ export const ZIMSEC_O_LEVEL_CS_4021_TOPICS = [
   "technopreneurship",
 ] as const;
 
-/**
- * Competency-matrix objectives captured in the first implementation slice.
- * These are intentionally kept as source-backed objective statements, rather
- * than being promoted into generic skills automatically.
- */
+/** First implementation slice of competency-matrix objectives. */
 export const ZIMSEC_O_LEVEL_CS_4021_FORM1_OBJECTIVES: CurriculumObjective[] = [
   ["8.1.a", "Explain how hardware devices work."],
   ["8.1.b", "Connect hardware devices."],
@@ -114,6 +108,6 @@ export const ZIMSEC_O_LEVEL_CS_4021_FORM1_OBJECTIVES: CurriculumObjective[] = [
   curriculum: ZIMSEC_O_LEVEL_CS_4021_2024_2030,
   code,
   statement,
-  status: "verified",
+  status: "draft",
   provenance: ZIMSEC_O_LEVEL_CS_4021_PROVENANCE,
 }));
