@@ -16,6 +16,8 @@ export interface CurriculumSourceWatch {
   frequency: WatchFrequency;
   discoverLinkedDocuments: boolean;
   extractText: boolean;
+  /** Anchors extraction to known objective-code families for this source. */
+  objectiveCodePattern?: string;
   autoPromote: false;
 }
 
@@ -42,6 +44,7 @@ export const CURRICULUM_SOURCE_WATCHES: CurriculumSourceWatch[] = [
     frequency: "weekly",
     discoverLinkedDocuments: true,
     extractText: true,
+    objectiveCodePattern: "^(?:4\\.(?:[1-9]|10)|8\\.(?:1[2-9]|2[0-9]|3[0-9]|4[0-4]))$",
     autoPromote: false,
   },
   {
