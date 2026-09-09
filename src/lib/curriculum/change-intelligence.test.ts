@@ -43,6 +43,18 @@ describe("extractNumberedObjectives", () => {
     expect(result[0]).toMatchObject({ code: "4.1", status: "draft" });
     expect(result[1]).toMatchObject({ code: "4.2", status: "draft" });
   });
+
+  it("joins objective statements wrapped across PDF extraction lines", () => {
+    const result = extractNumberedObjectives(
+      "4.1 Describe a range of information processing\nsystems and their uses.\n4.2 Explain the effects\nof introducing information processing systems.",
+      curriculum,
+      provenance,
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0].statement).toBe("Describe a range of information processing systems and their uses.");
+    expect(result[1].statement).toBe("Explain the effects of introducing information processing systems.");
+  });
 });
 
 describe("diffObjectives", () => {
