@@ -38,6 +38,9 @@ export interface CurriculumKnowledgeProvenance {
   retrievedAt: string;
   sectionOrPage?: string;
   mappingStatus: "pending" | "reviewed" | "verified";
+  versionEvidence?: string[];
+  versionSource?: "registry" | "document" | "unresolved";
+  versionConflict?: boolean;
 }
 
 export interface CurriculumKnowledgeItem {
@@ -61,38 +64,16 @@ export interface CurriculumKnowledgeBundle {
   verifiedOnly: boolean;
 }
 
-export function hasCompleteKnowledgeIdentity(
-  identity: Partial<CurriculumKnowledgeIdentity>,
-): identity is CurriculumKnowledgeIdentity {
-  return Boolean(
-    identity.boardId &&
-      identity.qualificationId &&
-      identity.level &&
-      identity.syllabusId &&
-      identity.syllabusVersion &&
-      identity.subjectId,
-  );
+export function hasCompleteKnowledgeIdentity(identity: Partial<CurriculumKnowledgeIdentity>): identity is CurriculumKnowledgeIdentity {
+  return Boolean(identity.boardId && identity.qualificationId && identity.level && identity.syllabusId && identity.syllabusVersion && identity.subjectId);
 }
 
-export function isUsableCurriculumKnowledge(
-  item: CurriculumKnowledgeItem,
-  options: { verifiedOnly?: boolean } = {},
-): boolean {
-  if (!hasCompleteKnowledgeIdentity(item.identity)) return false;
-  if (item.status === "archived") return false;
-  if (options.verifiedOnly && item.status !== "verified") return false;
-  if (item.provenance.mappingStatus !== "verified" && options.verifiedOnly) return false;
+export function isUsableCurriculumKnowledge(item: CurriculumKnowledgeItem, options: { verifiedOnly?: boolean } = {}): boolean {
+  if (!hasCompleteKnowledgeIdentity(item.identity) || item.status === "archived") return false;
+  if (options.verifiedOnly && (item.status !== "verified" || item.provenance.mappingStatus !== "verified")) return false;
   return true;
 }
 
-export function buildCurriculumKnowledgeBundle(
-  identity: CurriculumKnowledgeIdentity,
-  items: CurriculumKnowledgeItem[],
-  verifiedOnly = true,
-): CurriculumKnowledgeBundle {
-  return {
-    identity,
-    items: items.filter((item) => isUsableCurriculumKnowledge(item, { verifiedOnly })),
-    verifiedOnly,
-  };
+export function buildCurriculumKnowledgeBundle(identity: CurriculumKnowledgeIdentity, items: CurriculumKnowledgeItem[], verifiedOnly = true): CurriculumKnowledgeBundle {
+  return { identity, items: items.filter((item) => isUsableCurriculumKnowledge(item, { verifiedOnly })), verifiedOnly };
 }
