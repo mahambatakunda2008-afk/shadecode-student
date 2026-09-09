@@ -58,8 +58,13 @@ describe("objective-first Code Lab gating", () => {
   });
 
   it("requires a syllabus version, preventing silent current-version assumptions", () => {
-    const { syllabusVersion: _ignored, ...withoutVersion } =
-      zimsecOLevelComputerScience;
+    const withoutVersion: Omit<typeof zimsecOLevelComputerScience, "syllabusVersion"> = {
+      boardId: zimsecOLevelComputerScience.boardId,
+      qualificationId: zimsecOLevelComputerScience.qualificationId,
+      level: zimsecOLevelComputerScience.level,
+      syllabusId: zimsecOLevelComputerScience.syllabusId,
+      subjectId: zimsecOLevelComputerScience.subjectId,
+    };
     const activity: CodeLabActivityMetadata = {
       activityId: "version-sensitive-content",
       curriculum: withoutVersion,
