@@ -166,7 +166,12 @@ for (const source of report.sources ?? []) {
       }
 
       const provenance = provenanceFor(source, document);
-      const extracted = extractNumberedObjectives(extractedText, curriculum, provenance).map((objective) => ({
+      const extracted = extractNumberedObjectives(
+        extractedText,
+        curriculum,
+        provenance,
+        source.objectiveCodePattern ?? undefined,
+      ).map((objective) => ({
         id: crypto.randomUUID(),
         code: objective.code,
         statement: objective.statement,
@@ -232,7 +237,7 @@ for (const source of report.sources ?? []) {
         title: objective.statement,
         description: objective.statement,
         education_level: curriculum.level,
-        paper_component: curriculum.paperOrComponentId ?? null,
+        paper_component: null,
         status: "draft",
         provenance: objective.provenance,
       }));
