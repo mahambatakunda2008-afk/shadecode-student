@@ -2,6 +2,7 @@ import { getMemory, updateMemory } from "./memory";
 import { scoreAnswer, type ScoreAnswerInput } from "./tools/scoring";
 import { generateTutoringResponse } from "./tools/tutor";
 import { getCurriculumState } from "@/lib/curriculum";
+import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
 import {
   trackStudySession,
   trackExamResult,
@@ -13,6 +14,8 @@ export type CortexInput = {
   userId: string;
   type: "learn" | "practice" | "exam" | "feedback";
   payload: unknown;
+  /** Exact verified curriculum context resolved by the API gateway. */
+  curriculum?: SystemCurriculumContext | null;
 };
 
 export type CortexOutput = {
@@ -124,6 +127,7 @@ export async function CortexCore(input: CortexInput): Promise<CortexOutput> {
     weakSubjects: memory.weakSubjects,
     strongSubjects: memory.strongSubjects,
     snapshot,
+    curriculum: input.curriculum ?? null,
   };
 
   switch (input.type) {
