@@ -7,17 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import EarlyChildhoodHome from "./EarlyChildhoodHome";
 
-type Activity = {
-  id: string;
-  subject: string;
-  topic: string;
-  skill: string;
-  title: string;
-  content: { instructions?: string; questions?: unknown[] } | null;
-  offline_ready: boolean;
-  sort_order: number;
-};
-
+type Activity = { id: string; subject: string; topic: string; skill: string; title: string; content: { instructions?: string; questions?: unknown[] } | null; offline_ready: boolean; sort_order: number };
 type Progress = { activity_id: string; progress: number; completed: boolean; attempt_count: number };
 type Mastery = { subject: string; topic: string; mastery_score: number | null; confidence: number; error_rate: number; recent_improvement: number; uncertainty: number };
 
@@ -34,10 +24,8 @@ function recommendationScore(activity: Activity, mastery: Mastery | undefined) {
 function readHomeCache(userId: string) { try { const cached = JSON.parse(localStorage.getItem(`shadecode:discovery:home:v3:${userId}`) || "null"); return cached?.activities ? cached : null; } catch { return null; } }
 function writeHomeCache(userId: string, value: { activities: Activity[]; progress: Progress[]; mastery: Mastery[] }) { try { localStorage.setItem(`shadecode:discovery:home:v3:${userId}`, JSON.stringify(value)); } catch {} }
 
-export default function DiscoveryHome() {
+function DiscoveryPrimaryHome() {
   const { profile } = useUser();
-  if (profile?.study_level === "early-childhood") return <EarlyChildhoodHome />;
-
   const supabase = useMemo(() => createClient(), []);
   const learnerId = profile?.id;
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -107,4 +95,9 @@ export default function DiscoveryHome() {
     <section className="mt-6 grid gap-4 md:grid-cols-2">{activities.map((item, index) => { const itemProgress = progressMap.get(item.id); const done = Boolean(itemProgress?.completed); return <article key={item.id} className="rounded-[24px] border border-[var(--card-border)] bg-[var(--surface)] p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]">{done ? <CheckCircle2 className="h-5 w-5" /> : index === 0 ? <Sparkles className="h-5 w-5" /> : <BookOpen className="h-5 w-5" />}</div><span className="text-[11px] font-semibold text-[var(--muted-foreground)]">{item.offline_ready ? "Works offline" : "Online"}</span></div><h3 className="mt-5 text-lg font-bold text-[var(--foreground)]">{item.title}</h3><p className="mt-1 text-sm text-[var(--muted-foreground)]">{item.subject} · {item.topic}</p><p className="mt-3 text-xs leading-5 text-[var(--muted-foreground)]">{item.content?.instructions ?? "A short learning adventure."}</p><Link href={`/discovery/activity/${item.id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--primary)]">{done ? "Explore again" : "Start"} <ArrowRight className="h-4 w-4" /></Link></article>; })}</section>
     {!activities.length && <section className="mt-6 rounded-[26px] border border-[var(--card-border)] bg-[var(--surface)] p-8 text-center"><Compass className="mx-auto mb-3 h-9 w-9 text-[var(--primary)]" /><h2 className="text-xl font-bold text-[var(--foreground)]">Your first adventures are loading.</h2><p className="mt-2 text-sm text-[var(--muted-foreground)]">No curriculum activity with ready content is available yet.</p></section>}
   </main>;
+}
+
+export default function DiscoveryHome() {
+  const { profile } = useUser();
+  return profile?.study_level === "early-childhood" ? <EarlyChildhoodHome /> : <DiscoveryPrimaryHome />;
 }
