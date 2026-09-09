@@ -1,5 +1,12 @@
 import type { StudyLevel } from "@/types";
 
+export type AcademicModule = {
+  id: string;
+  label: string;
+  href: string;
+  description: string;
+};
+
 export interface AcademicExperience {
   stage: StudyLevel;
   label: string;
@@ -13,29 +20,98 @@ export interface AcademicExperience {
   showExamSim: boolean;
   showLeaderboard: boolean;
   showCareer: boolean;
+  modules: AcademicModule[];
+  allowedRoutes: string[];
 }
 
+const FOUNDATION_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/achievements", "/settings"];
+const PRIMARY_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/tasks", "/focus", "/timetable", "/study-plan", "/achievements", "/settings"];
+const SCHOOL_ROUTES = ["/dashboard", "/discovery", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/exams", "/exam-sim", "/analytics", "/leaderboard", "/achievements", "/settings"];
+const SENIOR_ROUTES = [...SCHOOL_ROUTES, "/exam-hub", "/curriculum"];
+const TERTIARY_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/curriculum", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/achievements", "/settings"];
+const TVET_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/curriculum", "/studyspace", "/projects", "/workmate", "/exams", "/exam-sim", "/analytics", "/careers", "/achievements", "/settings"];
+const PROFESSIONAL_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/settings"];
+
 const EXPERIENCES: Record<StudyLevel, AcademicExperience> = {
+  "early-childhood": {
+    stage: "early-childhood", label: "Early Childhood", shortLabel: "ECD", homeTitle: "Let's discover", homeSubtitle: "Playful, visual activities for early language, number sense, discovery and everyday skills.", primaryAction: "Start discovering", secondaryAction: "Today's activity", navMode: "foundation", showExamHub: false, showExamSim: false, showLeaderboard: false, showCareer: false,
+    modules: [
+      { id: "discovery", label: "Discovery", href: "/discovery", description: "Play, explore and notice." },
+      { id: "stories", label: "Stories & Language", href: "/learn", description: "Listen, speak, recognise and tell." },
+      { id: "numbers", label: "Numbers & Shapes", href: "/discovery", description: "Count, compare, sort and build." },
+      { id: "world", label: "My World", href: "/discovery", description: "Explore people, nature and everyday life." },
+    ],
+    allowedRoutes: FOUNDATION_ROUTES,
+  },
   primary: {
     stage: "primary", label: "Primary", shortLabel: "Primary", homeTitle: "Let's learn something new", homeSubtitle: "Short lessons, practice games and simple challenges built for your stage.", primaryAction: "Start learning", secondaryAction: "Try a challenge", navMode: "foundation", showExamHub: false, showExamSim: false, showLeaderboard: true, showCareer: false,
+    modules: [
+      { id: "discovery", label: "Discovery", href: "/discovery", description: "Learn by doing, trying and correcting." },
+      { id: "learn", label: "Learn", href: "/learn", description: "Build understanding in short lessons." },
+      { id: "practice", label: "Practice", href: "/tasks", description: "Keep schoolwork moving." },
+      { id: "challenge", label: "Daily Challenge", href: "/daily-challenge", description: "A quick skill-building activity." },
+    ],
+    allowedRoutes: PRIMARY_ROUTES,
   },
   "lower-secondary": {
     stage: "lower-secondary", label: "Lower Secondary", shortLabel: "Lower Secondary", homeTitle: "Build your foundations", homeSubtitle: "Learn concepts, practise step by step and build confidence across your subjects.", primaryAction: "Continue learning", secondaryAction: "Practice now", navMode: "school", showExamHub: false, showExamSim: true, showLeaderboard: true, showCareer: false,
+    modules: [
+      { id: "learn", label: "Learn", href: "/learn", description: "Build concepts step by step." },
+      { id: "practice", label: "Practice", href: "/exam-sim", description: "Apply what you know." },
+      { id: "plan", label: "Study Plan", href: "/study-plan", description: "Turn goals into a routine." },
+      { id: "progress", label: "Progress", href: "/analytics", description: "See where you are improving." },
+    ],
+    allowedRoutes: SCHOOL_ROUTES,
   },
   "upper-secondary": {
     stage: "upper-secondary", label: "Upper Secondary", shortLabel: "Upper Secondary", homeTitle: "Turn practice into progress", homeSubtitle: "Focused lessons, exam practice and targeted revision for senior secondary study.", primaryAction: "Continue studying", secondaryAction: "Practice questions", navMode: "school", showExamHub: true, showExamSim: true, showLeaderboard: true, showCareer: false,
+    modules: [
+      { id: "learn", label: "Learn", href: "/learn", description: "Master difficult topics." },
+      { id: "papers", label: "Exam Hub", href: "/exam-hub", description: "Work from real exam material." },
+      { id: "simulation", label: "Exam Sim", href: "/exam-sim", description: "Practise under pressure." },
+      { id: "analytics", label: "Analytics", href: "/analytics", description: "Target weak areas." },
+    ],
+    allowedRoutes: SENIOR_ROUTES,
   },
   "a-level": {
     stage: "a-level", label: "A-Level / Sixth Form", shortLabel: "A-Level", homeTitle: "Study at A-Level depth", homeSubtitle: "Master your syllabus, attack weak topics and prepare with serious exam practice.", primaryAction: "Continue revision", secondaryAction: "Start an exam", navMode: "advanced-school", showExamHub: true, showExamSim: true, showLeaderboard: true, showCareer: true,
+    modules: [
+      { id: "syllabus", label: "Syllabus", href: "/curriculum", description: "Track the exact course." },
+      { id: "learn", label: "Deep Learn", href: "/learn", description: "Attack weak topics at syllabus depth." },
+      { id: "papers", label: "Past Papers", href: "/exam-hub", description: "Practise from real papers." },
+      { id: "simulation", label: "Exam Sim", href: "/exam-sim", description: "Test timing and technique." },
+    ],
+    allowedRoutes: SENIOR_ROUTES,
   },
   university: {
     stage: "university", label: "University", shortLabel: "University", homeTitle: "Own your programme", homeSubtitle: "Organise courses, assignments and deep study around your degree.", primaryAction: "Open my courses", secondaryAction: "Study a module", navMode: "tertiary", showExamHub: false, showExamSim: false, showLeaderboard: false, showCareer: true,
+    modules: [
+      { id: "programme", label: "My Programme", href: "/curriculum", description: "Organise modules around your degree." },
+      { id: "studyspace", label: "StudySpace", href: "/studyspace", description: "Think, write and work in one place." },
+      { id: "workmate", label: "Workmate", href: "/workmate", description: "Organise assignments and projects." },
+      { id: "careers", label: "Career", href: "/careers", description: "Connect study to what comes next." },
+    ],
+    allowedRoutes: TERTIARY_ROUTES,
   },
   tvet: {
     stage: "tvet", label: "Polytechnic / TVET", shortLabel: "TVET", homeTitle: "Build practical mastery", homeSubtitle: "Learn the theory, practise the skill and keep your practical work organised.", primaryAction: "Continue training", secondaryAction: "Open practical work", navMode: "tertiary", showExamHub: false, showExamSim: true, showLeaderboard: false, showCareer: true,
+    modules: [
+      { id: "training", label: "Training", href: "/learn", description: "Learn the theory behind the skill." },
+      { id: "practical", label: "Practical Work", href: "/workmate", description: "Projects, evidence and tasks." },
+      { id: "assessment", label: "Assessments", href: "/exams", description: "Prepare for practical and written assessment." },
+      { id: "career", label: "Career", href: "/careers", description: "Build job-ready direction." },
+    ],
+    allowedRoutes: TVET_ROUTES,
   },
   professional: {
     stage: "professional", label: "Professional", shortLabel: "Professional", homeTitle: "Keep growing", homeSubtitle: "Build job-ready knowledge, practise skills and stay on track with your qualification.", primaryAction: "Continue development", secondaryAction: "Work on a skill", navMode: "professional", showExamHub: false, showExamSim: false, showLeaderboard: false, showCareer: true,
+    modules: [
+      { id: "develop", label: "Develop", href: "/learn", description: "Build knowledge around your goals." },
+      { id: "work", label: "Workmate", href: "/workmate", description: "Turn real work into organised practice." },
+      { id: "projects", label: "Projects", href: "/projects", description: "Build evidence and a portfolio." },
+      { id: "career", label: "Career", href: "/careers", description: "Keep learning connected to work." },
+    ],
+    allowedRoutes: PROFESSIONAL_ROUTES,
   },
 };
 
