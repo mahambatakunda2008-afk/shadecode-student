@@ -51,15 +51,13 @@ export interface OnboardingApiPayload {
   syllabus_code?: string;
   syllabus_year?: string;
   language?: string;
+  curriculum_profile?: Record<string, unknown>;
   curriculum_subjects?: OnboardingCurriculumSubject[];
 }
 
 function slug(value: string): string { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
 function subjectLabel(subjectId: string): string { return subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-function boardIdFor(value: string): string {
-  const id = slug(value);
-  return id === "cambridge-international" ? "cambridge" : id;
-}
+function boardIdFor(value: string): string { const id = slug(value); return id === "cambridge-international" ? "cambridge" : id; }
 
 function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): OnboardingCurriculumSubject[] {
   const boardId = boardIdFor(form.curriculumBoard ?? "");
@@ -69,7 +67,6 @@ function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): Onboar
   const subjects = form.subjects ?? [];
   const codes = form.curriculumSubjectCodes ?? {};
 
-  // Exact identity is only created from information the learner explicitly supplied.
   if (!boardId || boardId === "unknown" || boardId === "other-not-listed" || boardId === "i-don-t-know-yet" || !qualificationId || !level || !syllabusVersion || !subjects.length) return [];
 
   return subjects.flatMap((subjectId) => {
@@ -84,6 +81,19 @@ function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): Onboar
       examSession: form.curriculumExamSession?.trim() || undefined,
     }];
   });
+}
+
+function buildCurriculumAnswers(form: Partial<OnboardingFormData>): Record<string, unknown> | undefined {
+  const answers: Record<string, unknown> = {
+    board: form.curriculumBoard?.trim() || null,
+    qualification: form.curriculumQualification?.trim() || null,
+    level: form.curriculumLevel?.trim() || null,
+    syllabusVersion: form.syllabusVersion?.trim() || null,
+    subjectCodes: form.curriculumSubjectCodes ?? {},
+    examSession: form.curriculumExamSession?.trim() || null,
+  };
+  const hasAnswer = Object.values(answers).some((value) => value && (typeof value !== "object" || Object.keys(value).length > 0));
+  return hasAnswer ? answers : undefined;
 }
 
 export function mapOnboardingFormData(form: Partial<OnboardingFormData>): OnboardingApiPayload {
@@ -109,6 +119,7 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
     syllabus_code: form.syllabusCode?.trim() || undefined,
     syllabus_year: form.syllabusVersion?.trim() || undefined,
     language: form.language?.trim() || undefined,
+    curriculum_profile: buildCurriculumAnswers(form),
     curriculum_subjects: buildExactCurriculumSubjects(form),
   };
 }
