@@ -26,7 +26,15 @@ jobs:
         run: npm ci
 
       - name: Check official curriculum sources
-        run: npx tsx scripts/curriculum-watch.mjs
+        run: npm run watch:curriculum
+
+      - name: Persist detected source/document changes
+        if: ${{ env.CURRICULUM_INGEST_ENABLED == 'true' }}
+        env:
+          CURRICULUM_INGEST_ENABLED: ${{ secrets.CURRICULUM_INGEST_ENABLED }}
+          SUPABASE_URL: ${{ secrets.CURRICULUM_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CURRICULUM_SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run ingest:curriculum
 
       - name: Publish watcher report
         uses: actions/upload-artifact@v4
