@@ -2,6 +2,8 @@
    CORE EVENT SYSTEM
 ───────────────────────────────────────────── */
 
+import type { SystemCurriculumContext } from "@/lib/curriculum/system-curriculum-context";
+
 export type CortexEventType =
   | "dashboard.loaded"
   | "streak.updated"
@@ -74,47 +76,34 @@ export interface CortexSnapshot {
   streak: number;
   level: number;
   xp: number;
-
   totalTasks: number;
   completedTasks: number;
   pendingTasks: number;
-
   subjects: string[];
-
   recentTaskTitles: string[];
-
   weakestSubjects?: string[];
   strongestSubjects?: string[];
-
-  // Curriculum integration (optional, backwards compatible)
   curriculumCompletionPercent?: number;
   currentLesson?: { id: string; title: string } | null;
   recommendedNextLesson?: { id: string; title: string } | null;
   completedLessonCount?: number;
   lockedLessonCount?: number;
-
   lastExamScore?: number;
   lastExamSubject?: string;
-
-  // Weekly study goal (optional, backwards compatible) -- see src/lib/goals.ts
   weeklyGoalMinutes?: number;
   minutesThisWeek?: number;
   goalPercentComplete?: number;
 }
 
 /* ─────────────────────────────────────────────
-   AI RUNTIME CONTEXT (NEW FIX)
-   ← this replaces broken router imports
+   AI RUNTIME CONTEXT
 ───────────────────────────────────────────── */
 
 export interface CortexContext {
   userId?: string;
-
   history?: unknown[];
   snapshot?: CortexSnapshot;
   events?: CortexEvent[];
-
-  // flexible extension point (future-proofing)
   [key: string]: unknown;
 }
 
@@ -145,12 +134,14 @@ export interface CortexBehaviorInsightPayload {
   snapshot: CortexSnapshot;
   events?: CortexEvent[];
   fingerprint?: string;
+  curriculumContext?: SystemCurriculumContext | null;
 }
 
 export interface CortexBehaviorSummaryPayload {
   userId: string;
   behaviorSummary: string;
   fingerprint?: string;
+  curriculumContext?: SystemCurriculumContext | null;
 }
 
 export interface CortexLearningFocusPayload {
@@ -158,6 +149,7 @@ export interface CortexLearningFocusPayload {
   snapshot: CortexSnapshot;
   recentExamScore?: number;
   weakestSubjects?: string[];
+  curriculumContext?: SystemCurriculumContext | null;
 }
 
 export interface CortexLearningRecommendationPayload {
@@ -165,6 +157,7 @@ export interface CortexLearningRecommendationPayload {
   snapshot: CortexSnapshot;
   topic: string;
   subject: string;
+  curriculumContext?: SystemCurriculumContext | null;
 }
 
 /* ─────────────────────────────────────────────
@@ -189,7 +182,6 @@ export interface CortexAIResponseDataMap {
    RESPONSE WRAPPER
 ───────────────────────────────────────────── */
 
-/** `ai` represents the unified provider chain; `local` is deterministic Cortex logic. */
 export type CortexAIProvider = "local" | "gemini" | "ai";
 
 export interface CortexAIResponse<
