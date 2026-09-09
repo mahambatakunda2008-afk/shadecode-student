@@ -17,6 +17,7 @@ import CortexCommandBar from "@/components/cortex/CortexCommandBar";
 import CortexGenerationIndicator from "@/components/cortex/CortexGenerationIndicator";
 import LessonEvidenceRecorder from "@/components/studyspace/LessonEvidenceRecorder";
 import ExperienceRouteGuard from "@/components/academic/ExperienceRouteGuard";
+import CurriculumProfilePrompt from "@/components/curriculum/CurriculumProfilePrompt";
 import { installLearningEventSync } from "@/lib/intelligence/emitLearningEvent";
 import { installTractionSync, trackEvent, trackPageView } from "@/lib/traction/client";
 
@@ -78,5 +79,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router, supabase]);
 
   if (isAdmin) return <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><AdminSidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><AdminBottomNav /></div></div>;
-  return <UserProvider><AchievementsProvider><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><ExperienceRouteGuard /><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><CortexCommandBar /><CortexGenerationIndicator /><AchievementToast /><FeedbackWidget /></div></AchievementsProvider></UserProvider>;
+  return <UserProvider><AchievementsProvider><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><ExperienceRouteGuard /><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><CurriculumProfilePrompt /><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><CortexCommandBar /><CortexGenerationIndicator /><AchievementToast /><FeedbackWidget /></div></AchievementsProvider></UserProvider>;
 }
