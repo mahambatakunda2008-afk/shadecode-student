@@ -62,14 +62,21 @@ await mkdir(snapshotDir, { recursive: true });
 
 const report = {
   runAt,
-  watcherVersion: 2,
+  watcherVersion: 3,
   sources: [],
 };
 
 for (const source of CURRICULUM_SOURCE_WATCHES) {
   const sourceResult = {
     id: source.id,
+    boardId: source.boardId,
+    qualificationId: source.qualificationId ?? null,
+    subjectId: source.subjectId ?? null,
+    level: source.level ?? null,
+    syllabusId: source.syllabusId ?? null,
+    syllabusVersion: source.syllabusVersion ?? null,
     authority: source.authority,
+    kind: source.kind,
     sourceUrl: source.url,
     checkedAt: runAt,
     status: "ok",
