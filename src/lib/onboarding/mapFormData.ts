@@ -12,6 +12,17 @@ const STUDY_LEVEL_TO_EDUCATION: Record<StudyLevel, EducationLevel> = {
   professional: "tvet",
 };
 
+const CURRICULUM_LEVEL: Record<StudyLevel, string> = {
+  "early-childhood": "primary",
+  primary: "primary",
+  "lower-secondary": "lower_secondary",
+  "upper-secondary": "o_level",
+  "a-level": "a_level",
+  university: "university",
+  tvet: "tvet",
+  professional: "tvet",
+};
+
 const GOAL_LABEL_TO_LEARNING_GOAL: Record<string, LearningGoal> = {
   "Pass school exams": "exam_preparation",
   "Improve grades": "exam_preparation",
@@ -33,6 +44,18 @@ const SUBJECT_ID_TO_INTEREST: Record<string, SubjectInterest> = {
   shona: "shona", ndebele: "ndebele",
 };
 
+export interface OnboardingCurriculumSubject {
+  boardId: string;
+  qualificationId: string;
+  level: string;
+  syllabusId: string;
+  syllabusVersion: string;
+  subjectId: string;
+  subjectName: string;
+  paperOrComponentId?: string;
+  examSession?: string;
+}
+
 export interface OnboardingApiPayload {
   education_level: EducationLevel;
   study_level: StudyLevel;
@@ -48,8 +71,39 @@ export interface OnboardingApiPayload {
   semester?: string;
   courses?: string[];
   curriculum_board?: string;
+  curriculum_qualification?: string;
   syllabus_code?: string;
+  syllabus_year?: string;
   language?: string;
+  curriculum_subjects?: OnboardingCurriculumSubject[];
+}
+
+function slug(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function subjectLabel(subjectId: string): string {
+  return subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): OnboardingCurriculumSubject[] {
+  const boardId = slug(form.curriculumBoard ?? "");
+  const qualificationId = slug(form.curriculumQualification ?? "");
+  const syllabusId = slug(form.syllabusCode ?? "");
+  const syllabusVersion = form.syllabusVersion?.trim() ?? "";
+  if (!boardId || boardId === "unknown" || boardId === "other" || !qualificationId || !syllabusId || !syllabusVersion) return [];
+
+  return (form.subjects ?? []).map((subjectId) => ({
+    boardId,
+    qualificationId,
+    level: CURRICULUM_LEVEL[form.studyLevel ?? "upper-secondary"] ?? "secondary",
+    syllabusId,
+    syllabusVersion,
+    subjectId: slug(subjectId),
+    subjectName: subjectLabel(subjectId),
+    paperOrComponentId: form.curriculumPaperComponents?.[subjectId]?.trim() || undefined,
+    examSession: form.curriculumExamSession?.trim() || undefined,
+  }));
 }
 
 export function mapOnboardingFormData(form: Partial<OnboardingFormData>): OnboardingApiPayload {
@@ -74,7 +128,10 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
     semester: form.semester?.trim() || undefined,
     courses: form.courses?.map((course) => course.trim()).filter(Boolean),
     curriculum_board: form.curriculumBoard?.trim() || undefined,
+    curriculum_qualification: form.curriculumQualification?.trim() || undefined,
     syllabus_code: form.syllabusCode?.trim() || undefined,
+    syllabus_year: form.syllabusVersion?.trim() || undefined,
     language: form.language?.trim() || undefined,
+    curriculum_subjects: buildExactCurriculumSubjects(form),
   };
 }
