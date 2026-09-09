@@ -1,8 +1,9 @@
 import { buildBehaviorSummary, buildCortexFingerprint, resolveCortexExtension } from "@/lib/cortex/runtime/engine";
 import { createCortexCacheKey, getCachedCortexValue, setCachedCortexValue } from "@/lib/cortex/runtime/cache";
-import { CortexAIRequestPayloadMap, CortexAIRequestType, CortexAIResponse, CortexAIResponseDataMap, CortexAIProvider, CortexBehaviorInsightPayload, CortexBehaviorSummaryPayload, CortexStructuredValue } from "@/lib/cortex/types";
+import { CortexAIRequestPayloadMap, CortexAIRequestType, CortexAIResponse, CortexAIProvider, CortexBehaviorInsightPayload, CortexBehaviorSummaryPayload, CortexStructuredValue } from "@/lib/cortex/types";
 import { callAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
+import { curriculumSystemPromptContext } from "@/lib/curriculum/system-curriculum-context";
 
 const inflightRequests = new Map<string, Promise<CortexAIResponse>>();
 
@@ -17,20 +18,31 @@ function assertStructuredPayload(payload: unknown): asserts payload is CortexStr
 }
 function hashText(input: string) { let hash = 0; for (let i = 0; i < input.length; i++) { hash = (hash << 5) - hash + input.charCodeAt(i); hash |= 0; } return Math.abs(hash).toString(36); }
 function normalizeUserId(userId: string) { return userId.trim() || "anonymous"; }
-function getInsightFingerprint(payload: CortexBehaviorInsightPayload) { return payload.fingerprint?.trim() || buildCortexFingerprint(payload.snapshot, payload.events ?? []); }
-function getSummaryFingerprint(payload: CortexBehaviorSummaryPayload) { return payload.fingerprint?.trim() || hashText(payload.behaviorSummary.trim()); }
+function curriculumFingerprint(payload: { curriculumContext?: CortexBehaviorInsightPayload["curriculumContext"] }) {
+  const identity = payload.curriculumContext?.identity;
+  return identity
+    ? hashText(`${identity.boardId}|${identity.qualificationId}|${identity.syllabusId}|${identity.syllabusVersion}|${identity.subjectId}|${identity.paperComponentId ?? ""}`)
+    : "no-curriculum";
+}
+function getInsightFingerprint(payload: CortexBehaviorInsightPayload) {
+  return `${payload.fingerprint?.trim() || buildCortexFingerprint(payload.snapshot, payload.events ?? [])}:${curriculumFingerprint(payload)}`;
+}
+function getSummaryFingerprint(payload: CortexBehaviorSummaryPayload) {
+  return `${payload.fingerprint?.trim() || hashText(payload.behaviorSummary.trim())}:${curriculumFingerprint(payload)}`;
+}
 function buildCacheKey<T extends CortexAIRequestType>(requestType: T, payload: CortexAIRequestPayloadMap[T], fingerprint: string) { return createCortexCacheKey(`${requestType}:${normalizeUserId(payload.userId)}`, fingerprint); }
 
 function isInsightResponse(value: unknown): value is { insight: string } {
   return !!value && typeof value === "object" && typeof (value as { insight?: unknown }).insight === "string" && Boolean((value as { insight: string }).insight.trim());
 }
 
-function buildBehaviorPrompt(summary: string) {
-  return `You are Cortex, a behavioral interpretation layer inside Shadecode Student.\nReturn ONLY valid JSON with exactly this shape: {"insight":"..."}.\nThe insight must be one complete sentence, 8-20 words, neutral and analytical.\nRules: no markdown, no advice, no questions, no invented subjects/numbers/streaks; ground the sentence in the provided data and name an actual subject or specific task count when available. If data is sparse, say so plainly.\nStudent behavioral data:\n${summary}`;
+function buildBehaviorPrompt(summary: string, curriculumContext?: CortexBehaviorInsightPayload["curriculumContext"]): string {
+  const curriculum = curriculumContext ? `\n\nVerified curriculum context:\n${curriculumSystemPromptContext(curriculumContext)}` : "";
+  return `You are Cortex, a behavioral interpretation layer inside Shadecode Student.\nReturn ONLY valid JSON with exactly this shape: {"insight":"..."}.\nThe insight must be one complete sentence, 8-20 words, neutral and analytical.\nRules: no markdown, no advice, no questions, no invented subjects/numbers/streaks; ground the sentence in the provided data and name an actual subject or specific task count when available. If data is sparse, say so plainly. Curriculum context is authoritative only when explicitly marked verified; never invent syllabus requirements.\nStudent behavioral data:\n${summary}${curriculum}`;
 }
 
-async function requestBehaviorInsight(summary: string, userId?: string): Promise<string> {
-  const prompt = buildBehaviorPrompt(summary);
+async function requestBehaviorInsight(summary: string, userId?: string, curriculumContext?: CortexBehaviorInsightPayload["curriculumContext"]): Promise<string> {
+  const prompt = buildBehaviorPrompt(summary, curriculumContext);
   const text = await callAI(prompt, 180, { userId, feature: "cortex", subfeature: "behavior_insight" });
   if (text) {
     const parsed = repairAndParseJSON(text, isInsightResponse);
@@ -43,7 +55,7 @@ async function requestBehaviorInsight(summary: string, userId?: string): Promise
 
 async function executeBehaviorInsight(payload: CortexBehaviorInsightPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.insight">> {
   const localInsight = resolveCortexExtension({ events: payload.events ?? [], snapshot: payload.snapshot });
-  const insight = localInsight || await requestBehaviorInsight(buildBehaviorSummary(payload.snapshot, payload.events ?? []), payload.userId);
+  const insight = localInsight || await requestBehaviorInsight(buildBehaviorSummary(payload.snapshot, payload.events ?? []), payload.userId, payload.curriculumContext);
   const provider: CortexAIProvider = localInsight ? "local" : "ai";
   const result: CortexAIResponse<"behavior.insight"> = { requestType: "behavior.insight", provider, cached: false, fingerprint, cacheKey, data: { insight } };
   setCachedCortexValue(cacheKey, result);
@@ -51,7 +63,7 @@ async function executeBehaviorInsight(payload: CortexBehaviorInsightPayload, fin
 }
 
 async function executeBehaviorSummary(payload: CortexBehaviorSummaryPayload, fingerprint: string, cacheKey: string): Promise<CortexAIResponse<"behavior.summary">> {
-  const insight = await requestBehaviorInsight(payload.behaviorSummary.trim(), payload.userId);
+  const insight = await requestBehaviorInsight(payload.behaviorSummary.trim(), payload.userId, payload.curriculumContext);
   const result: CortexAIResponse<"behavior.summary"> = { requestType: "behavior.summary", provider: "ai", cached: false, fingerprint, cacheKey, data: { insight } };
   setCachedCortexValue(cacheKey, result);
   return result;
