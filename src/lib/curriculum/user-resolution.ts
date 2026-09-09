@@ -15,18 +15,6 @@ export interface UserSystemCurriculumResolution extends SystemCurriculumResoluti
   identity?: StoredCurriculumIdentity;
 }
 
-function asIdentity(row: Record<string, unknown>): StoredCurriculumIdentity {
-  return {
-    boardId: String(row.board_id ?? ""),
-    qualificationId: String(row.qualification_id ?? ""),
-    level: String(row.level ?? "") as StoredCurriculumIdentity["level"],
-    syllabusId: String(row.syllabus_id ?? ""),
-    syllabusVersion: String(row.syllabus_version ?? ""),
-    subjectId: String(row.subject_id ?? ""),
-    paperOrComponentId: typeof row.paper_component_id === "string" ? row.paper_component_id : undefined,
-  };
-}
-
 function asVersion(row: Record<string, unknown>): CurriculumVersionRecord {
   return {
     id: String(row.id),
@@ -113,15 +101,8 @@ export async function resolveUserSystemCurriculum(
     .maybeSingle();
 
   if (profileError) {
-    return {
-      blocked: true,
-      reason: "Unable to load the learner's curriculum profile.",
-      resolved: {
-        status: "unverified",
-        reason: "Unable to load the learner's curriculum profile.",
-        objectives: [], mappings: [], knowledge: [], knowledgeByKind: {},
-      },
-    };
+    const reason = "Unable to load the learner's curriculum profile.";
+    return { blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
   }
 
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
@@ -135,44 +116,29 @@ export async function resolveUserSystemCurriculum(
       : identities.length > 1
         ? "Multiple curriculum subjects are configured; the active subject must be explicit."
         : "No exact curriculum profile is configured for this learner.";
-    return {
-      blocked: true,
-      reason,
-      resolved: {
-        status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {},
-      },
-    };
+    return { blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
   }
 
   const identity = matches[0];
   const learner = toLearnerCurriculumContext(identity);
-  const identityFilter = (query: any) => {
-    let next = query
-      .eq("board_id", identity.boardId)
-      .eq("qualification_id", identity.qualificationId)
-      .eq("level", identity.level)
-      .eq("syllabus_id", identity.syllabusId)
-      .eq("syllabus_version", identity.syllabusVersion)
-      .eq("subject_id", identity.subjectId);
-    if (identity.paperOrComponentId) next = next.eq("paper_component_id", identity.paperOrComponentId);
-    return next;
-  };
+  const baseFilter = (query: any) => query
+    .eq("board_id", identity.boardId)
+    .eq("qualification_id", identity.qualificationId)
+    .eq("level", identity.level)
+    .eq("syllabus_id", identity.syllabusId)
+    .eq("syllabus_version", identity.syllabusVersion)
+    .eq("subject_id", identity.subjectId);
 
   const [versionsResult, objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
-    identityFilter(supabase.from("curriculum_versions").select("*")),
-    identityFilter(supabase.from("curriculum_objectives").select("*")),
+    baseFilter(supabase.from("curriculum_versions").select("*")),
+    baseFilter(supabase.from("curriculum_objectives").select("*")),
     supabase.from("objective_skill_mappings").select("*"),
-    identityFilter(supabase.from("curriculum_knowledge").select("*")),
+    baseFilter(supabase.from("curriculum_knowledge").select("*")),
   ]);
 
   if (versionsResult.error || objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
     const reason = "Unable to load the verified curriculum knowledge required for this learner.";
-    return {
-      identity,
-      blocked: true,
-      reason,
-      resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} },
-    };
+    return { identity, blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
   }
 
   const objectives = (objectivesResult.data ?? []).map((row) => asObjective(row as Record<string, unknown>, identity));
@@ -180,8 +146,5 @@ export async function resolveUserSystemCurriculum(
   const knowledge = (knowledgeResult.data ?? []).map((row) => asKnowledge(row as Record<string, unknown>));
   const versions = (versionsResult.data ?? []).map((row) => asVersion(row as Record<string, unknown>));
 
-  return {
-    identity,
-    ...resolveSystemCurriculum({ learner, versions, objectives, mappings, knowledge }),
-  };
+  return { identity, ...resolveSystemCurriculum({ learner, versions, objectives, mappings, knowledge }) };
 }
