@@ -1,14 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AnalyticsContent from "@/components/academic/AnalyticsContent";
 import { createClient } from "@/lib/supabase/client";
 import { getAcademicExperience, normalizeStudyLevel, type AcademicExperience } from "@/lib/academic/experience";
-
-const Analytics = dynamic(() => import("@/app/(app)/analytics/page"), {
-  loading: () => <div style={{ minHeight: 320, display: "grid", placeItems: "center", color: "var(--muted-foreground)", fontSize: 13 }}>Loading your progress…</div>,
-});
 
 function ProgressIntro({ experience }: { experience: AcademicExperience }) {
   const copy = experience.family === "school"
@@ -74,7 +70,7 @@ export default function ExperienceProgress() {
   return (
     <div>
       <ProgressIntro experience={experience} />
-      <Analytics />
+      <AnalyticsContent />
     </div>
   );
 }
