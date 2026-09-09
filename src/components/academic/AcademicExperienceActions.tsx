@@ -8,10 +8,15 @@ import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/exper
 type Action = { href: string; title: string; description: string; icon: typeof BookOpen };
 
 const ACTIONS: Record<string, Action[]> = {
+  "early-childhood": [
+    { href: "/discovery", title: "Discovery", description: "Play, explore and notice new things.", icon: Sparkles },
+    { href: "/learn", title: "Stories & Language", description: "Listen, speak, recognise and tell.", icon: BookOpen },
+    { href: "/discovery", title: "Numbers & Shapes", description: "Count, compare, sort and build.", icon: Gamepad2 },
+  ],
   primary: [
+    { href: "/discovery", title: "Discovery", description: "Learn by doing, trying and correcting.", icon: Sparkles },
     { href: "/learn", title: "Learn", description: "Short lessons made for your stage.", icon: BookOpen },
     { href: "/daily-challenge", title: "Challenge", description: "A quick activity to build confidence.", icon: Gamepad2 },
-    { href: "/tasks", title: "My tasks", description: "Keep today's schoolwork moving.", icon: ClipboardCheck },
   ],
   "lower-secondary": [
     { href: "/learn", title: "Learn", description: "Build concepts step by step.", icon: BookOpen },
@@ -62,7 +67,7 @@ export default function AcademicExperienceActions() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {actions.map(({ href, title, description, icon: Icon }) => (
-          <Link key={href} href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/40 hover:shadow-md">
+          <Link key={`${href}-${title}`} href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/40 hover:shadow-md">
             <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Icon className="h-4.5 w-4.5" /></div>
             <div className="flex items-start justify-between gap-3">
               <div><h3 className="text-sm font-semibold text-[var(--foreground)]">{title}</h3><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p></div>
