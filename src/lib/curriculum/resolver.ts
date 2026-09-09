@@ -4,6 +4,7 @@ import type {
   ObjectiveSkillMapping,
 } from "./objective-first";
 import { hasCompleteCurriculumIdentity } from "./objective-first";
+import type { CurriculumKnowledgeItem } from "./knowledge";
 
 export interface LearnerCurriculumContext {
   boardId: string;
@@ -31,6 +32,9 @@ export interface ResolvedCurriculumContext {
   versionId?: string;
   objectives: CurriculumObjective[];
   mappings: ObjectiveSkillMapping[];
+  /** Verified whole-syllabus knowledge, including topics, scope, assessment, practicals and related layers. */
+  knowledge: CurriculumKnowledgeItem[];
+  knowledgeByKind: Partial<Record<CurriculumKnowledgeItem["kind"], CurriculumKnowledgeItem[]>>;
 }
 
 function identityMatches(
@@ -58,18 +62,27 @@ function isEffective(
   return true;
 }
 
+function groupKnowledge(items: CurriculumKnowledgeItem[]) {
+  return items.reduce((groups, item) => {
+    (groups[item.kind] ??= []).push(item);
+    return groups;
+  }, {} as Partial<Record<CurriculumKnowledgeItem["kind"], CurriculumKnowledgeItem[]>>);
+}
+
 /**
  * Resolve the exact curriculum context Cortex is allowed to use.
  *
  * This is intentionally fail-closed: a complete learner identity is required,
- * only verified versions are eligible, and only verified objectives/mappings
- * are returned. No subject-only or level-only inference is performed here.
+ * only verified versions are eligible, and only verified objectives, mappings
+ * and whole-syllabus knowledge are returned. No subject-only or level-only
+ * inference is performed here.
  */
 export function resolveCurriculumContext(input: {
   learner: LearnerCurriculumContext;
   versions: CurriculumVersionRecord[];
   objectives: CurriculumObjective[];
   mappings: ObjectiveSkillMapping[];
+  knowledge?: CurriculumKnowledgeItem[];
   asOf?: string;
 }): ResolvedCurriculumContext {
   const { learner, versions, objectives, mappings } = input;
@@ -86,12 +99,18 @@ export function resolveCurriculumContext(input: {
     examSession: learner.examSession,
   };
 
+  const empty = {
+    objectives: [] as CurriculumObjective[],
+    mappings: [] as ObjectiveSkillMapping[],
+    knowledge: [] as CurriculumKnowledgeItem[],
+    knowledgeByKind: {} as Partial<Record<CurriculumKnowledgeItem["kind"], CurriculumKnowledgeItem[]>>,
+  };
+
   if (!hasCompleteCurriculumIdentity(identity)) {
     return {
       status: "unverified",
       reason: "Learner curriculum identity is incomplete; exam-specific claims are blocked.",
-      objectives: [],
-      mappings: [],
+      ...empty,
     };
   }
 
@@ -106,8 +125,7 @@ export function resolveCurriculumContext(input: {
     return {
       status: "unverified",
       reason: "No verified curriculum version matches the learner's exact curriculum identity.",
-      objectives: [],
-      mappings: [],
+      ...empty,
     };
   }
 
@@ -130,12 +148,29 @@ export function resolveCurriculumContext(input: {
     (mapping) => mapping.status === "verified" && objectiveIds.has(mapping.objectiveId),
   );
 
+  const resolvedKnowledge = (input.knowledge ?? []).filter(
+    (item) =>
+      item.status === "verified" &&
+      item.provenance.mappingStatus === "verified" &&
+      item.identity.boardId === identity.boardId &&
+      item.identity.qualificationId === identity.qualificationId &&
+      item.identity.level === identity.level &&
+      item.identity.syllabusId === identity.syllabusId &&
+      item.identity.syllabusVersion === identity.syllabusVersion &&
+      item.identity.subjectId === identity.subjectId &&
+      (!identity.paperOrComponentId || item.identity.paperComponentId === identity.paperOrComponentId),
+  );
+
   return {
     status: "resolved",
-    reason: "Exact verified curriculum context resolved successfully.",
+    reason: resolvedKnowledge.length
+      ? "Exact verified curriculum context and whole-syllabus knowledge resolved successfully."
+      : "Exact verified curriculum version resolved, but no verified whole-syllabus knowledge is available yet.",
     curriculum: identity,
     versionId: version.id,
     objectives: resolvedObjectives,
     mappings: resolvedMappings,
+    knowledge: resolvedKnowledge,
+    knowledgeByKind: groupKnowledge(resolvedKnowledge),
   };
 }
