@@ -43,7 +43,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
-  const { title, description, due_date } = body;
+  const { title, completed, subject_id } = body;
 
   // Ownership-scoped update: the .eq('user_id', ...) filter means a task
   // belonging to another user matches zero rows rather than requiring a
@@ -51,7 +51,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   // is one more place an ownership check could be missed on a future edit).
   const { data: updatedTask, error: updateError } = await supabase
     .from('tasks')
-    .update({ title, description, due_date, updated_at: new Date().toISOString() })
+    .update({ title, completed, subject_id })
     .eq('id', id)
     .eq('user_id', user.id)
     .select()
