@@ -1,0 +1,43 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, GraduationCap, Layers3, PenLine, Sparkles, Wrench } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
+
+const ICONS = { discovery: Compass, stories: BookOpen, numbers: Layers3, world: Sparkles, learn: BookOpen, practice: CheckCircle2, challenge: Sparkles, plan: Compass, progress: CheckCircle2, papers: GraduationCap, simulation: CheckCircle2, syllabus: GraduationCap, programme: GraduationCap, studyspace: PenLine, workmate: BriefcaseBusiness, careers: GraduationCap, training: BookOpen, practical: Wrench, assessment: CheckCircle2, career: GraduationCap, develop: Sparkles, work: BriefcaseBusiness, projects: BriefcaseBusiness } as const;
+
+function ModuleCard({ id, href, label, description }: { id: string; href: string; label: string; description: string }) {
+  const Icon = ICONS[id as keyof typeof ICONS] ?? BookOpen;
+  return <Link href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)]/45 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Icon className="h-5 w-5" /></span><ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition group-hover:translate-x-1 group-hover:text-[var(--primary)]" /></div><h3 className="mt-4 text-sm font-bold text-[var(--foreground)]">{label}</h3><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p></Link>;
+}
+
+function FoundationDashboard() {
+  const { profile } = useUser();
+  const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+  const ecd = experience.stage === "early-childhood";
+  return <main className="dashboard-shell min-h-full px-4 pb-14 pt-5 sm:px-6 lg:px-8" data-experience="foundation" data-study-level={experience.stage}><div className="mx-auto max-w-5xl"><header className="relative overflow-hidden rounded-[30px] border border-[var(--card-border)] bg-[var(--surface)] p-7 shadow-sm md:p-9"><div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[var(--primary-glow)] blur-3xl" /><div className="relative"><p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--primary)]"><Sparkles className="h-4 w-4" /> {ecd ? "Discovery" : "Learning day"}</p><h1 className="mt-4 max-w-2xl text-3xl font-black tracking-tight text-[var(--foreground)] md:text-4xl">{experience.homeTitle}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">{experience.homeSubtitle}</p><div className="mt-6 flex flex-wrap gap-2"><Link href={experience.modules[0]?.href ?? "/discovery"} className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-bold text-white">{experience.primaryAction}<ArrowRight className="h-4 w-4" /></Link><Link href={experience.modules[1]?.href ?? "/learn"} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-4 py-2.5 text-xs font-bold text-[var(--foreground)]">{experience.secondaryAction}<ArrowRight className="h-4 w-4" /></Link></div></div></header><section className="mt-5"><div className="mb-3"><p className="text-[11px] font-bold uppercase tracking-[0.13em] text-[var(--primary)]">{ecd ? "Choose an adventure" : "Your learning"}</p><h2 className="mt-1 text-xl font-bold text-[var(--foreground)]">{ecd ? "What shall we explore?" : "What do you want to work on?"}</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{experience.modules.map((module) => <ModuleCard key={module.id} {...module} />)}</div></section><section className="mt-5 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-5"><p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">Today</p><h2 className="mt-1 text-base font-bold text-[var(--foreground)]">{ecd ? "A little discovery goes a long way." : "Keep your learning moving."}</h2><p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">{ecd ? "Short, playful activities are waiting in Discovery." : "Pick a subject, try a lesson or take on a challenge."}</p></div><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-5"><p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">Your points</p><p className="mt-1 text-2xl font-black text-[var(--foreground)]">{profile?.xp ?? 0}</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Keep exploring to build your learning trail.</p></div></section></div></main>;
+}
+
+function BeyondSchoolDashboard() {
+  const { profile } = useUser();
+  const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+  return <main className="dashboard-shell min-h-full px-4 pb-14 pt-5 sm:px-6 lg:px-8" data-experience="beyond-school" data-study-level={experience.stage}><div className="mx-auto max-w-6xl"><header className="rounded-[22px] border border-[var(--card-border)] bg-[var(--surface)] p-6 shadow-sm md:p-8"><div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-2xl"><p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--primary)]"><BriefcaseBusiness className="h-4 w-4" /> Workspace</p><h1 className="mt-3 text-3xl font-black tracking-tight text-[var(--foreground)] md:text-4xl">{experience.homeTitle}</h1><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{experience.homeSubtitle}</p></div><div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] px-5 py-4"><p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">Learning points</p><p className="mt-1 text-2xl font-black text-[var(--foreground)]">{profile?.xp ?? 0}</p></div></div></header><section className="mt-5"><div className="mb-3"><p className="text-[11px] font-bold uppercase tracking-[0.13em] text-[var(--primary)]">Your workspace</p><h2 className="mt-1 text-xl font-bold text-[var(--foreground)]">Where do you want to go?</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{experience.modules.map((module) => <ModuleCard key={module.id} {...module} />)}</div></section><section className="mt-5 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">Keep the loop connected</p><h2 className="mt-1 text-base font-bold text-[var(--foreground)]">Learn something. Make something. Move forward.</h2><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">Use courses, work, projects and career tools as one learning system.</p></div><Link href={experience.modules[0]?.href ?? "/learn"} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-bold text-white">{experience.primaryAction}<ArrowRight className="h-4 w-4" /></Link></div></section></div></main>;
+}
+
+export default function ExperienceDashboard() {
+  const { profile } = useUser();
+  const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+  if (experience.family === "foundation") return <FoundationDashboard />;
+  if (experience.family === "beyond-school") return <BeyondSchoolDashboard />;
+  return <div className="dashboard-shell"><DashboardReimaginedFallback /></div>;
+}
+
+function DashboardReimaginedFallback() {
+  return <div className="min-h-full"><div className="sr-only">School dashboard</div><SchoolDashboard /></div>;
+}
+
+function SchoolDashboard() {
+  const LazySchool = require("@/components/dashboard/DashboardReimagined").default as React.ComponentType;
+  return <LazySchool />;
+}
