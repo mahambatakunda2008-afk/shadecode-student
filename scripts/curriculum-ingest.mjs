@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
-import { diffObjectives, extractNumberedObjectives } from "../src/lib/curriculum/change-intelligence.ts";
+import { diffObjectives } from "../src/lib/curriculum/change-intelligence.ts";
+import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extraction.ts";
+import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
 
 const reportPath = process.env.CURRICULUM_WATCH_REPORT ?? ".curriculum-watch/latest-report.json";
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -17,15 +19,20 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 
 let documentsSeen = 0;
 let documentsChanged = 0;
+let documentsExtracted = 0;
 let changesCreated = 0;
 let versionsCreated = 0;
+let knowledgeItemsCreated = 0;
+let knowledgeAdded = 0;
+let knowledgeChanged = 0;
+let knowledgeRemoved = 0;
 let objectivesAdded = 0;
 let objectivesChanged = 0;
 let objectivesRemoved = 0;
 let extractionSkipped = 0;
 
 function curriculumFromSource(source) {
-  if (!source.qualificationId || !source.level || !source.syllabusId || !source.syllabusVersion || !source.subjectId) {
+  if (!source.qualificationId || !source.level || !source.syllabusId || !source.subjectId) {
     return null;
   }
 
@@ -34,19 +41,36 @@ function curriculumFromSource(source) {
     qualificationId: source.qualificationId,
     level: source.level,
     syllabusId: source.syllabusId,
-    syllabusVersion: source.syllabusVersion,
+    // A source may not publish its version in the landing-page registry.
+    // "unversioned" remains draft-only and therefore cannot pass the resolver's
+    // verified curriculum gate. A later verified document can replace it with
+    // the actual syllabus version without rewriting this historical snapshot.
+    syllabusVersion: source.syllabusVersion ?? "unversioned",
     subjectId: source.subjectId,
   };
 }
 
-function provenanceFor(source, document) {
+function provenanceFor(source, document, sectionOrPage) {
   return {
     authority: source.authority,
     sourceDocument: document.url,
     sourceUrl: document.url,
     retrievedAt: report.runAt,
+    ...(sectionOrPage ? { sectionOrPage } : {}),
     mappingStatus: "pending",
   };
+}
+
+function stableKnowledgeKey(item) {
+  return [
+    item.kind,
+    item.code ?? "",
+    item.title.trim().toLowerCase().replace(/\s+/g, " "),
+  ].join("|");
+}
+
+function normalizedContent(value) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function dbObjectiveToDomain(row, curriculum, provenance) {
@@ -90,6 +114,7 @@ for (const source of report.sources ?? []) {
       metadata: {
         watcherVersion: report.watcherVersion,
         runAt: report.runAt,
+        extractionMode: "whole-syllabus",
         curriculumIdentity: {
           boardId: source.boardId,
           qualificationId: source.qualificationId ?? null,
@@ -158,8 +183,8 @@ for (const source of report.sources ?? []) {
         .single();
 
       if (upsert.error) throw new Error(`Document ${document.url}: ${upsert.error.message}`);
-
       if (!changed) continue;
+      documentsExtracted += 1;
 
       const documentChange = await supabase.from("curriculum_ingestion_changes").insert({
         run_id: runId,
@@ -178,20 +203,9 @@ for (const source of report.sources ?? []) {
         continue;
       }
 
+      const profile = getCurriculumExtractionProfile(source.id);
       const provenance = provenanceFor(source, document);
-      const extracted = extractNumberedObjectives(
-        extractedText,
-        curriculum,
-        provenance,
-        source.objectiveCodePattern ?? undefined,
-      ).map((objective) => ({
-        id: crypto.randomUUID(),
-        code: objective.code,
-        statement: objective.statement,
-        status: "draft",
-        curriculum: objective.curriculum,
-        provenance: objective.provenance,
-      }));
+      const extracted = extractCurriculumKnowledge(extractedText, curriculum, provenance, profile);
 
       if (!extracted.length) {
         extractionSkipped += 1;
@@ -210,17 +224,22 @@ for (const source of report.sources ?? []) {
         .limit(1)
         .maybeSingle();
 
-      let previousObjectives = [];
+      let previousKnowledge = [];
       if (priorVersion) {
         const { data: priorRows, error: priorError } = await supabase
-          .from("curriculum_objectives")
-          .select("id, objective_key, title, description, status, provenance")
+          .from("curriculum_knowledge")
+          .select("id, kind, knowledge_key, title, content, status, provenance, objective_keys, topic_key")
           .eq("curriculum_version_id", priorVersion.id);
-        if (priorError) throw new Error(`Prior objectives ${priorVersion.id}: ${priorError.message}`);
-        previousObjectives = (priorRows ?? []).map((row) => dbObjectiveToDomain(row, curriculum, provenance));
+        if (priorError) throw new Error(`Prior knowledge ${priorVersion.id}: ${priorError.message}`);
+        previousKnowledge = priorRows ?? [];
       }
 
-      const changes = diffObjectives(previousObjectives, extracted);
+      const previousByKey = new Map(previousKnowledge.map((row) => [
+        row.knowledge_key ?? `${row.kind}|${row.title}`,
+        row,
+      ]));
+      const currentKeys = new Set(extracted.map(stableKnowledgeKey));
+
       const versionInsert = await supabase
         .from("curriculum_versions")
         .insert({
@@ -241,51 +260,149 @@ for (const source of report.sources ?? []) {
       const versionId = versionInsert.data.id;
       versionsCreated += 1;
 
-      const objectiveRows = extracted.map((objective) => ({
-        id: objective.id,
+      const knowledgeRows = extracted.map((item) => ({
+        id: item.id,
         curriculum_version_id: versionId,
-        objective_key: objective.code,
-        parent_key: objective.code.includes(".") ? objective.code.split(".").slice(0, -1).join(".") : null,
-        topic: null,
-        title: objective.statement,
-        description: objective.statement,
-        education_level: curriculum.level,
-        paper_component: null,
+        source_document_id: upsert.data.id,
+        board_id: curriculum.boardId,
+        qualification_id: curriculum.qualificationId,
+        level: curriculum.level,
+        syllabus_id: curriculum.syllabusId,
+        syllabus_version: curriculum.syllabusVersion,
+        subject_id: curriculum.subjectId,
+        paper_component_id: item.identity.paperComponentId ?? null,
+        kind: item.kind,
+        knowledge_key: stableKnowledgeKey(item),
+        title: item.title,
+        content: item.content,
+        parent_id: null,
+        topic_key: item.topicCode ?? null,
+        objective_keys: item.objectiveIds ?? [],
         status: "draft",
-        provenance: objective.provenance,
+        provenance: item.provenance,
+        metadata: item.metadata ?? {},
       }));
 
-      const objectiveInsert = await supabase.from("curriculum_objectives").insert(objectiveRows);
-      if (objectiveInsert.error) throw new Error(`Objectives ${document.url}: ${objectiveInsert.error.message}`);
+      const knowledgeInsert = await supabase.from("curriculum_knowledge").insert(knowledgeRows);
+      if (knowledgeInsert.error) throw new Error(`Knowledge ${document.url}: ${knowledgeInsert.error.message}`);
+      knowledgeItemsCreated += knowledgeRows.length;
 
-      for (const change of changes) {
-        if (change.type === "unchanged") continue;
-        const dbType = change.type === "added" ? "objective_added"
-          : change.type === "removed" ? "objective_removed"
-          : "objective_changed";
-        const key = change.current?.code ?? change.previous?.code ?? null;
-        const changeInsert = await supabase.from("curriculum_ingestion_changes").insert({
-          run_id: runId,
-          document_id: upsert.data.id,
-          objective_key: key,
-          change_type: dbType,
-          before_value: change.previous ? { code: change.previous.code, statement: change.previous.statement } : null,
-          after_value: change.current ? { code: change.current.code, statement: change.current.statement, confidence: change.confidence, reason: change.reason } : null,
-          severity: change.type === "removed" ? "critical" : "warning",
-          requires_verification: change.requiresVerification,
+      for (const item of extracted) {
+        const key = stableKnowledgeKey(item);
+        const previousItem = previousByKey.get(key);
+        if (!previousItem) {
+          knowledgeAdded += 1;
+          await recordKnowledgeChange({
+            runId,
+            documentId: upsert.data.id,
+            item,
+            changeType: "knowledge_added",
+            beforeValue: null,
+            afterValue: { kind: item.kind, key, title: item.title, content: item.content },
+            severity: "warning",
+          });
+          continue;
+        }
+
+        if (normalizedContent(previousItem.content) !== normalizedContent(item.content)) {
+          knowledgeChanged += 1;
+          await recordKnowledgeChange({
+            runId,
+            documentId: upsert.data.id,
+            item,
+            changeType: "knowledge_changed",
+            beforeValue: { kind: previousItem.kind, key, title: previousItem.title, content: previousItem.content },
+            afterValue: { kind: item.kind, key, title: item.title, content: item.content },
+            severity: item.kind.includes("assessment") || item.kind === "examination_format" ? "critical" : "warning",
+          });
+        }
+      }
+
+      for (const previousItem of previousKnowledge) {
+        const key = previousItem.knowledge_key ?? `${previousItem.kind}|${previousItem.title}`;
+        if (currentKeys.has(key)) continue;
+        knowledgeRemoved += 1;
+        await recordKnowledgeChange({
+          runId,
+          documentId: upsert.data.id,
+          item: null,
+          changeType: "knowledge_removed",
+          beforeValue: { kind: previousItem.kind, key, title: previousItem.title, content: previousItem.content },
+          afterValue: null,
+          severity: previousItem.kind.includes("assessment") || previousItem.kind === "examination_format" ? "critical" : "warning",
         });
-        if (changeInsert.error) throw new Error(`Objective change ${key}: ${changeInsert.error.message}`);
-        changesCreated += 1;
+      }
 
-        if (change.type === "added") {
-          objectivesAdded += 1;
-          sourceObjectivesAdded += 1;
-        } else if (change.type === "removed") {
-          objectivesRemoved += 1;
-          sourceObjectivesRemoved += 1;
-        } else {
-          objectivesChanged += 1;
-          sourceObjectivesChanged += 1;
+      const extractedObjectives = extracted
+        .filter((item) => item.kind === "objective")
+        .map((item) => ({
+          id: item.id,
+          code: item.code,
+          statement: item.content,
+          status: "draft",
+          curriculum,
+          provenance: item.provenance,
+        }));
+
+      if (extractedObjectives.length) {
+        const priorObjectives = previousKnowledge
+          .filter((row) => row.kind === "objective")
+          .map((row) => dbObjectiveToDomain({
+            id: row.id,
+            objective_key: row.knowledge_key?.split("|")[1] || row.title,
+            title: row.title,
+            description: row.content,
+            status: row.status,
+            provenance: row.provenance,
+          }, curriculum, provenance));
+        const objectiveChanges = diffObjectives(priorObjectives, extractedObjectives);
+
+        const objectiveRows = extractedObjectives.map((objective) => ({
+          id: objective.id,
+          curriculum_version_id: versionId,
+          objective_key: objective.code,
+          parent_key: objective.code?.includes(".") ? objective.code.split(".").slice(0, -1).join(".") : null,
+          topic: null,
+          title: objective.statement,
+          description: objective.statement,
+          education_level: curriculum.level,
+          paper_component: null,
+          status: "draft",
+          provenance: objective.provenance,
+        }));
+
+        const objectiveInsert = await supabase.from("curriculum_objectives").insert(objectiveRows);
+        if (objectiveInsert.error) throw new Error(`Objectives ${document.url}: ${objectiveInsert.error.message}`);
+
+        for (const change of objectiveChanges) {
+          if (change.type === "unchanged") continue;
+          const dbType = change.type === "added" ? "objective_added"
+            : change.type === "removed" ? "objective_removed"
+            : "objective_changed";
+          const key = change.current?.code ?? change.previous?.code ?? null;
+          const changeInsert = await supabase.from("curriculum_ingestion_changes").insert({
+            run_id: runId,
+            document_id: upsert.data.id,
+            objective_key: key,
+            change_type: dbType,
+            before_value: change.previous ? { code: change.previous.code, statement: change.previous.statement } : null,
+            after_value: change.current ? { code: change.current.code, statement: change.current.statement, confidence: change.confidence, reason: change.reason } : null,
+            severity: change.type === "removed" ? "critical" : "warning",
+            requires_verification: change.requiresVerification,
+          });
+          if (changeInsert.error) throw new Error(`Objective change ${key}: ${changeInsert.error.message}`);
+          changesCreated += 1;
+
+          if (change.type === "added") {
+            objectivesAdded += 1;
+            sourceObjectivesAdded += 1;
+          } else if (change.type === "removed") {
+            objectivesRemoved += 1;
+            sourceObjectivesRemoved += 1;
+          } else {
+            objectivesChanged += 1;
+            sourceObjectivesChanged += 1;
+          }
         }
       }
     }
@@ -300,6 +417,13 @@ for (const source of report.sources ?? []) {
         objectives_added: sourceObjectivesAdded,
         objectives_changed: sourceObjectivesChanged,
         objectives_removed: sourceObjectivesRemoved,
+        metadata: {
+          extractionMode: "whole-syllabus",
+          knowledgeItemsCreated,
+          knowledgeAdded,
+          knowledgeChanged,
+          knowledgeRemoved,
+        },
       })
       .eq("id", runId);
     if (finishError) throw new Error(`Finish ${source.id}: ${finishError.message}`);
@@ -313,11 +437,31 @@ for (const source of report.sources ?? []) {
   }
 }
 
+async function recordKnowledgeChange({ runId, documentId, item, changeType, beforeValue, afterValue, severity }) {
+  const result = await supabase.from("curriculum_ingestion_changes").insert({
+    run_id: runId,
+    document_id: documentId,
+    objective_key: item?.code ?? null,
+    change_type: changeType,
+    before_value: beforeValue,
+    after_value: afterValue,
+    severity,
+    requires_verification: true,
+  });
+  if (result.error) throw new Error(`Knowledge change: ${result.error.message}`);
+  changesCreated += 1;
+}
+
 console.log(JSON.stringify({
   report: reportPath,
   documentsSeen,
   documentsChanged,
+  documentsExtracted,
   versionsCreated,
+  knowledgeItemsCreated,
+  knowledgeAdded,
+  knowledgeChanged,
+  knowledgeRemoved,
   objectivesAdded,
   objectivesChanged,
   objectivesRemoved,
