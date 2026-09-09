@@ -18,8 +18,10 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUser } from "@/contexts/UserContext";
 import { ResetOnboarding } from "@/components/settings/ResetOnboarding";
 import { ShadeNetSettingsCard } from "@/components/settings/ShadeNetSettingsCard";
+import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 
 export default function Settings() {
   const [username, setUsername] = useState("");
@@ -32,6 +34,10 @@ export default function Settings() {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   const { theme, setTheme } = useTheme();
+  const { profile } = useUser();
+  const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+  const isFoundation = experience.family === "foundation";
+  const isBeyond = experience.family === "beyond-school";
 
   useEffect(() => {
     const init = async () => {
@@ -99,8 +105,16 @@ export default function Settings() {
     );
   }
 
+  const pageTitle = isFoundation ? "Your space" : isBeyond ? "Your workspace" : "Your study space";
+  const pageSubtitle = isFoundation
+    ? "Manage your profile, appearance, and how your learning space behaves."
+    : isBeyond
+      ? "Manage your profile, appearance, workspace tools, and account preferences."
+      : "Manage your profile, appearance, study tools, and account preferences.";
+  const profileCopy = isFoundation ? "Your learning space" : isBeyond ? "Your workspace identity" : "Your student profile";
+
   return (
-    <div className="ssc-page">
+    <div className="ssc-page" data-experience={experience.family} data-study-level={experience.stage}>
       {toast && (
         <div className="fixed left-1/2 top-6 z-[10000] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] shadow-[var(--shadow-lg)]">
           <Check size={16} className="text-[var(--accent)]" />
@@ -110,9 +124,9 @@ export default function Settings() {
 
       <section className="ssc-page-header">
         <div>
-          <p className="ssc-kicker">Control center</p>
-          <h1>Settings</h1>
-          <p className="ssc-subtitle">Tune your account, appearance, networking, onboarding, and feedback preferences.</p>
+          <p className="ssc-kicker">{experience.label}</p>
+          <h1>{pageTitle}</h1>
+          <p className="ssc-subtitle">{pageSubtitle}</p>
         </div>
         <button onClick={saveUsername} disabled={saving} className="ssc-button">
           <Save size={18} />
@@ -127,8 +141,8 @@ export default function Settings() {
               <UserRound size={22} />
             </div>
             <div>
-              <h2 className="text-xl">Profile</h2>
-              <p className="text-sm text-[var(--muted-foreground)]">This is how Shadecode identifies your workspace.</p>
+              <h2 className="text-xl">{profileCopy}</h2>
+              <p className="text-sm text-[var(--muted-foreground)]">This is how Shadecode identifies your space.</p>
             </div>
           </div>
           <div className="grid gap-4">
@@ -149,8 +163,8 @@ export default function Settings() {
               <Sparkles size={22} />
             </div>
             <div>
-              <h2 className="text-xl">Appearance</h2>
-              <p className="text-sm text-[var(--muted-foreground)]">Theme applies globally across pages, modals, and overlays.</p>
+              <h2>Appearance</h2>
+              <p className="text-sm text-[var(--muted-foreground)]">Your theme applies across this {isBeyond ? "workspace" : isFoundation ? "learning space" : "study space"}.</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -170,7 +184,7 @@ export default function Settings() {
 
       <section className="grid gap-4 lg:grid-cols-3">
         <ActionCard icon={<MessageSquare size={21} />} title="Send feedback" description="Report bugs or suggest improvements." onClick={() => router.push("/feedback")} />
-        <InfoCard icon={<Shield size={21} />} title="Workspace" rows={[["App", "Shadecode Student"], ["Version", "1.0.0"], ["Studio", "Shadecode"]]} />
+        <InfoCard icon={<Shield size={21} />} title={isBeyond ? "Workspace" : isFoundation ? "Learning space" : "Study space"} rows={[["App", "Shadecode Student"], ["Experience", experience.label], ["Studio", "Shadecode"]]} />
         <div className="ssc-card p-5"><ResetOnboarding /></div>
       </section>
 
