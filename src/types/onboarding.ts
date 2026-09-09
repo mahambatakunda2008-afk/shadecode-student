@@ -16,6 +16,7 @@ export type SubjectInterest =
   | "physics"
   | "chemistry"
   | "biology"
+  | "science"
   | "computer_science"
   | "coding"
   | "business"
@@ -25,7 +26,9 @@ export type SubjectInterest =
   | "geography"
   | "accounting"
   | "art"
-  | "music";
+  | "music"
+  | "shona"
+  | "ndebele";
 
 export interface OnboardingData {
   education_level: EducationLevel | null;
