@@ -69,6 +69,8 @@ for (const source of report.sources ?? []) {
       qualification_id: source.qualificationId ?? null,
       subject_id: source.subjectId ?? null,
       level: source.level ?? null,
+      syllabus_id: source.syllabusId ?? null,
+      syllabus_version: source.syllabusVersion ?? null,
       authority: source.authority,
       kind: source.kind,
       url: source.sourceUrl,
@@ -85,7 +87,18 @@ for (const source of report.sources ?? []) {
     .insert({
       source_id: sourceRow.id,
       status: "running",
-      metadata: { watcherVersion: report.watcherVersion, runAt: report.runAt },
+      metadata: {
+        watcherVersion: report.watcherVersion,
+        runAt: report.runAt,
+        curriculumIdentity: {
+          boardId: source.boardId,
+          qualificationId: source.qualificationId ?? null,
+          level: source.level ?? null,
+          syllabusId: source.syllabusId ?? null,
+          syllabusVersion: source.syllabusVersion ?? null,
+          subjectId: source.subjectId ?? null,
+        },
+      },
     })
     .select("id")
     .single();
