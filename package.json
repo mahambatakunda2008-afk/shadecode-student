@@ -14,7 +14,7 @@
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts",
     "watch:curriculum": "tsx scripts/curriculum-watch.mjs",
-    "ingest:curriculum": "tsx scripts/curriculum-ingest.mjs",
+    "ingest:curriculum": "tsx scripts/curriculum-ingest-v2.mjs",
     "extract:questions": "tsx bin/exam-hub-ingest/extract-questions.ts",
     "discover:paper-sources": "tsx bin/exam-hub-ingest/discover-paper-sources.ts"
   },
