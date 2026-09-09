@@ -2,6 +2,7 @@ import type { OnboardingFormData, StudyLevel } from "@/types";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 
 const STUDY_LEVEL_TO_EDUCATION: Record<StudyLevel, EducationLevel> = {
+  "early-childhood": "basic",
   primary: "basic",
   "lower-secondary": "secondary",
   "upper-secondary": "secondary",
@@ -23,12 +24,13 @@ const GOAL_LABEL_TO_LEARNING_GOAL: Record<string, LearningGoal> = {
 };
 
 const SUBJECT_ID_TO_INTEREST: Record<string, SubjectInterest> = {
-  maths: "mathematics", mathematics: "mathematics", numeracy: "mathematics",
+  maths: "mathematics", mathematics: "mathematics", numeracy: "mathematics", "early-numeracy": "mathematics",
   physics: "physics", chemistry: "chemistry", biology: "biology",
-  english: "english", reading: "english", language: "english",
+  english: "english", reading: "english", language: "english", "early-literacy": "english",
   history: "history", geography: "geography", "computer-science": "computer_science",
   economics: "economics", business: "business", accounting: "accounting",
-  art: "art", music: "music", coding: "coding",
+  art: "art", music: "music", coding: "coding", creative: "art", discovery: "science", science: "science",
+  shona: "shona", ndebele: "ndebele",
 };
 
 export interface OnboardingApiPayload {
