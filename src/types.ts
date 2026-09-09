@@ -78,6 +78,7 @@ export interface OnboardingFormData {
   courses?: string[];
   curriculumBoard?: string;
   curriculumQualification?: string;
+  curriculumLevel?: string;
   syllabusCode?: string;
   syllabusVersion?: string;
   curriculumSubjectCodes?: Record<string, string>;
