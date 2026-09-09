@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, GraduationCap, Layers3, PenLine, Sparkles, Wrench } from "lucide-react";
+import DashboardReimagined from "@/components/dashboard/DashboardReimagined";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 
@@ -30,14 +31,5 @@ export default function ExperienceDashboard() {
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
   if (experience.family === "foundation") return <FoundationDashboard />;
   if (experience.family === "beyond-school") return <BeyondSchoolDashboard />;
-  return <div className="dashboard-shell"><DashboardReimaginedFallback /></div>;
-}
-
-function DashboardReimaginedFallback() {
-  return <div className="min-h-full"><div className="sr-only">School dashboard</div><SchoolDashboard /></div>;
-}
-
-function SchoolDashboard() {
-  const LazySchool = require("@/components/dashboard/DashboardReimagined").default as React.ComponentType;
-  return <LazySchool />;
+  return <DashboardReimagined />;
 }
