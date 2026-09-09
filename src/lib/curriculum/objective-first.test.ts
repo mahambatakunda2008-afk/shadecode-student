@@ -58,21 +58,21 @@ describe("objective-first Code Lab gating", () => {
   });
 
   it("requires a syllabus version, preventing silent current-version assumptions", () => {
-    // Intentionally malformed runtime fixture: the production type requires a
-    // syllabus version, while this test verifies the runtime gate rejects it.
+    // Intentionally malformed runtime fixture: production metadata requires a
+    // syllabus version, but the runtime gate must still reject its absence.
     const withoutVersion = {
       boardId: zimsecOLevelComputerScience.boardId,
       qualificationId: zimsecOLevelComputerScience.qualificationId,
       level: zimsecOLevelComputerScience.level,
       syllabusId: zimsecOLevelComputerScience.syllabusId,
       subjectId: zimsecOLevelComputerScience.subjectId,
-    } as CodeLabActivityMetadata["curriculum"];
-    const activity: CodeLabActivityMetadata = {
+    };
+    const activity = {
       activityId: "version-sensitive-content",
       curriculum: withoutVersion,
       objectiveIds: ["objective.verified"],
       mappingVerified: true,
-    };
+    } as unknown as CodeLabActivityMetadata;
 
     expect(canTreatAsExaminable(activity)).toBe(false);
   });
