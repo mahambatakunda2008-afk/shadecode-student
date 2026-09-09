@@ -49,16 +49,18 @@ export function extractNumberedObjectives(
   text: string,
   curriculum: CurriculumObjective["curriculum"],
   provenance: CurriculumObjective["provenance"],
+  objectiveCodePattern?: string,
 ): Array<Pick<CurriculumObjective, "code" | "statement" | "status" | "curriculum" | "provenance">> {
   const results: Array<Pick<CurriculumObjective, "code" | "statement" | "status" | "curriculum" | "provenance">> = [];
   const lines = text.replace(/\r/g, "").split("\n");
   const objectivePattern = /^\s*(\d+(?:\.\d+)+)\s+(.+)$/;
+  const allowedCodes = objectiveCodePattern ? new RegExp(objectiveCodePattern) : null;
   let current: { code: string; statement: string } | null = null;
 
   const flush = () => {
     if (!current) return;
     const statement = current.statement.replace(/\s+/g, " ").trim();
-    if (statement) {
+    if (statement && (!allowedCodes || allowedCodes.test(current.code))) {
       results.push({
         code: current.code,
         statement,
@@ -81,9 +83,6 @@ export function extractNumberedObjectives(
       continue;
     }
 
-    // PDF extraction often wraps one objective across several lines. Continue
-    // only while already inside an objective, so unrelated syllabus prose is
-    // not promoted into objective records.
     if (current && !/^\d+(?:\.\d+)+\b/.test(line)) {
       current.statement += ` ${line}`;
     }
