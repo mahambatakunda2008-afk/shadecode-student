@@ -71,6 +71,9 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
     paperPatterns: COMMON_PAPER_PATTERNS,
   },
 
+  // Cambridge syllabus documents are intentionally conservative here. Their
+  // numbered content sections are not automatically objectives. A future
+  // board-specific profile can add verified objective/learning-outcome codes.
   "cambridge-igcse-computer-science-0478": {
     topicHeadings: COMMON_HEADINGS,
     sectionKinds: {
@@ -81,7 +84,6 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
       "paper structure": "paper_component",
       "learning objectives": "learning_outcome",
     },
-    objectiveCodePattern: "^(?:[1-9]|1[0-9])(?:\\.[1-9][0-9]?)?$",
     assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
     paperPatterns: COMMON_PAPER_PATTERNS,
   },
@@ -96,7 +98,6 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
       "paper structure": "paper_component",
       "learning objectives": "learning_outcome",
     },
-    objectiveCodePattern: "^(?:[1-9]|1[0-9])(?:\\.[1-9][0-9]?)?$",
     assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
     paperPatterns: COMMON_PAPER_PATTERNS,
   },
@@ -111,7 +112,6 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
       "paper structure": "paper_component",
       "learning objectives": "learning_outcome",
     },
-    objectiveCodePattern: "^(?:[1-9]|1[0-9]|2[0-9])(?:\\.[1-9][0-9]?)?$",
     assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
     paperPatterns: COMMON_PAPER_PATTERNS,
   },
