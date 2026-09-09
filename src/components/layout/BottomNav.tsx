@@ -5,30 +5,32 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { X, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BOTTOM_PRIMARY, BOTTOM_MORE, isRouteActive } from "@/lib/navigation";
+import { getExperienceNavGroups, NAV_ITEMS, isRouteActive } from "@/lib/navigation";
 import { useNavBadges } from "@/hooks/useNavBadges";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
-
-function filterItems<T extends { href: string }>(items: T[], experience: ReturnType<typeof getAcademicExperience>) {
-  return items.filter((item) => experience.allowedRoutes.includes(item.href));
-}
 
 export function BottomNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { profile } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
+  const groups = getExperienceNavGroups(experience);
   const { tasksBadge, tasksUrgent, examsBadge, examsUrgent } = useNavBadges();
-  const primaryItems = filterItems(BOTTOM_PRIMARY, experience);
-  const moreItems = filterItems(BOTTOM_MORE, experience);
-
+  const allItems = groups.flatMap(group => group.items);
+  const family = experience.navMode === "foundation" ? "foundation" : ["school","advanced-school"].includes(experience.navMode) ? "school" : "beyond";
+  const primaryCandidates = family === "foundation"
+    ? [NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn, NAV_ITEMS.achievements]
+    : family === "school"
+      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.studyPlan, NAV_ITEMS.examSim]
+      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.workmate, NAV_ITEMS.projects];
+  const primaryItems = primaryCandidates.filter(item => allItems.some(available => available.href === item.href));
+  const moreItems = allItems.filter(item => !primaryItems.some(primary => primary.href === item.href));
   const resolveBadge = (href: string, staticBadge?: string, staticUrgent?: boolean) => {
     if (href === "/tasks") return { badge: tasksBadge, urgent: tasksUrgent };
     if (href === "/exams") return { badge: examsBadge, urgent: examsUrgent };
     return { badge: staticBadge, urgent: staticUrgent };
   };
-
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     if (!open) return;
@@ -42,40 +44,19 @@ export function BottomNav() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
-
   const anyMoreActive = moreItems.some(({ href }) => isRouteActive(pathname, href));
-
   return (
     <>
       <nav aria-label={`${experience.label} primary navigation`} className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {primaryItems.slice(0, 4).map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
           const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
           const active = isRouteActive(pathname, href);
-          return <Link key={href} href={href} aria-current={active ? "page" : undefined} className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset">
-            <div className={cn("relative flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200", active ? "bg-[var(--primary-glow)]" : "bg-transparent")}>
-              <Icon className={cn("h-5 w-5 transition-all duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} />
-              {badge && <span aria-label={`${badge} notification`} className={cn("absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none", urgent ? "bg-[var(--danger)] text-white" : "bg-[var(--primary)] text-white")}>{badge}</span>}
-            </div>
-            <span className={cn("truncate text-[12px] font-medium leading-tight transition-colors duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{label}</span>
-          </Link>;
+          return <Link key={href} href={href} aria-current={active ? "page" : undefined} className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"><div className={cn("relative flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200", active ? "bg-[var(--primary-glow)]" : "bg-transparent")}><Icon className={cn("h-5 w-5 transition-all duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} />{badge && <span aria-label={`${badge} notification`} className={cn("absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none", urgent ? "bg-[var(--danger)] text-white" : "bg-[var(--primary)] text-white")}>{badge}</span>}</div><span className={cn("truncate text-[12px] font-medium leading-tight transition-colors duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{label}</span></Link>;
         })}
-        <button type="button" aria-label="Open more navigation" aria-expanded={open} onClick={() => setOpen(true)} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset">
-          <div className={cn("flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200", anyMoreActive || open ? "bg-[var(--primary-glow)]" : "bg-transparent")}><MoreHorizontal className={cn("h-5 w-5 transition-colors duration-200", anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={1.8} /></div>
-          <span className={cn("text-[12px] font-medium leading-tight", anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>More</span>
-        </button>
+        {moreItems.length > 0 && <button type="button" aria-label="Open more navigation" aria-expanded={open} onClick={() => setOpen(true)} className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"><div className={cn("flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200", anyMoreActive || open ? "bg-[var(--primary-glow)]" : "bg-transparent")}><MoreHorizontal className={cn("h-5 w-5 transition-colors duration-200", anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={1.8} /></div><span className={cn("text-[12px] font-medium leading-tight", anyMoreActive || open ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>More</span></button>}
       </nav>
       {open && <div className="fixed inset-0 z-[9998] bg-black/60" role="presentation" onClick={() => setOpen(false)} />}
-      {open && <div role="dialog" aria-modal="true" aria-label={`${experience.label} navigation`} className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[22px] border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)", animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}>
-        <div className="mx-auto mb-5 mt-3.5 h-1 w-8 rounded-full bg-[var(--surface-3)]" />
-        <div className="mb-5 flex items-center justify-between px-5"><div><span className="block text-[15px] font-semibold text-[var(--foreground)]">{experience.shortLabel}</span><span className="text-[12px] text-[var(--muted-foreground)]">Your study space</span></div><button type="button" aria-label="Close more navigation" onClick={() => setOpen(false)} className="ssc-icon-button h-8 w-8 rounded-full"><X className="h-4 w-4" /></button></div>
-        <div className="grid grid-cols-3 gap-2.5 px-4 pb-2">
-          {moreItems.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => {
-            const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent);
-            const active = isRouteActive(pathname, href);
-            return <Link key={href} href={href} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)} className={cn("relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border px-2 py-4 outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--primary)]", active ? "border-[var(--primary)]/30 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface-2)] active:bg-[var(--surface-3)]")}>{badge && <span aria-label={`${badge} notification`} className={cn("absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)]" : "bg-[var(--primary-glow)] text-[var(--primary)]")}>{badge}</span>}<Icon className={cn("h-[21px] w-[21px] transition-colors duration-150", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} /><span className={cn("text-center text-[12px] font-medium leading-tight", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{label}</span></Link>;
-          })}
-        </div>
-      </div>}
+      {open && <div role="dialog" aria-modal="true" aria-label={`${experience.label} navigation`} className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[22px] border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)", animation: "ssc-slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}><div className="mx-auto mb-5 mt-3.5 h-1 w-8 rounded-full bg-[var(--surface-3)]" /><div className="mb-5 flex items-center justify-between px-5"><div><span className="block text-[15px] font-semibold text-[var(--foreground)]">{experience.shortLabel}</span><span className="text-[12px] text-[var(--muted-foreground)]">Your study space</span></div><button type="button" aria-label="Close more navigation" onClick={() => setOpen(false)} className="ssc-icon-button h-8 w-8 rounded-full"><X className="h-4 w-4" /></button></div><div className="grid grid-cols-3 gap-2.5 px-4 pb-2">{moreItems.map(({ href, label, icon: Icon, badge: staticBadge, urgent: staticUrgent }) => { const { badge, urgent } = resolveBadge(href, staticBadge, staticUrgent); const active = isRouteActive(pathname, href); return <Link key={href} href={href} aria-current={active ? "page" : undefined} onClick={() => setOpen(false)} className={cn("relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border px-2 py-4 outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--primary)]", active ? "border-[var(--primary)]/30 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface-2)] active:bg-[var(--surface-3)]")}>{badge && <span aria-label={`${badge} notification`} className={cn("absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none", urgent ? "bg-[var(--danger-soft)] text-[var(--danger)]" : "bg-[var(--primary-glow)] text-[var(--primary)]")}>{badge}</span>}<Icon className={cn("h-[21px] w-[21px] transition-colors duration-150", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} /><span className={cn("text-center text-[12px] font-medium leading-tight", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{label}</span></Link>; })}</div></div>}
       <style>{`@keyframes ssc-slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
     </>
   );
