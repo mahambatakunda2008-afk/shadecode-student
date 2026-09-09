@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initializeLearningPath } from "@/lib/learning-path";
+import { normalizeStoredCurriculumIdentities } from "@/lib/curriculum/user-profile";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 import type { StudyLevel } from "@/types";
 
@@ -18,13 +19,19 @@ function normalizeSubstage(value: unknown): string | null {
   return normalized.slice(0, 80);
 }
 
+function normalizeCurriculumAnswers(body: Record<string, unknown>) {
+  const value = body.curriculum_profile;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const educationLevel = body.education_level as EducationLevel;
     const studyLevel = body.study_level as StudyLevel;
     const learningGoal = body.learning_goal as LearningGoal;
@@ -58,7 +65,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "programme is required for tertiary and professional learners" }, { status: 400 });
     }
 
-    const profilePayload = {
+    const exactCurriculumSubjects = normalizeStoredCurriculumIdentities(body.curriculum_subjects);
+    const curriculumAnswers = normalizeCurriculumAnswers(body);
+    const profilePayload: Record<string, unknown> = {
       id: user.id,
       display_name: typeof body.display_name === "string" ? body.display_name.trim() || null : null,
       study_level: studyLevel,
@@ -74,6 +83,11 @@ export async function POST(request: NextRequest) {
       onboarding_complete: true,
       last_seen: new Date().toISOString(),
     };
+
+    // Keep both the raw learner answers and any complete identities. Raw answers are
+    // deliberately not treated as verified curriculum knowledge by the resolver.
+    if (curriculumAnswers) profilePayload.curriculum_profile = curriculumAnswers;
+    if (exactCurriculumSubjects.length) profilePayload.curriculum_subjects = exactCurriculumSubjects;
 
     const { error: canonicalProfileError } = await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
     if (canonicalProfileError) {
@@ -105,10 +119,10 @@ export async function POST(request: NextRequest) {
     try {
       const { generateOnboardingRecommendations } = await import("@/lib/onboardingRecommendations");
       const rec = await generateOnboardingRecommendations(user.id, goals, educationLevel, subjectInterests);
-      return NextResponse.json({ success: true, study_level: studyLevel, recommendations: rec });
+      return NextResponse.json({ success: true, study_level: studyLevel, curriculumResolved: exactCurriculumSubjects.length > 0, recommendations: rec });
     } catch (e) {
       console.error("[onboarding] recommendation error:", e);
-      return NextResponse.json({ success: true, study_level: studyLevel });
+      return NextResponse.json({ success: true, study_level: studyLevel, curriculumResolved: exactCurriculumSubjects.length > 0 });
     }
   } catch (err) {
     console.error("[onboarding] unexpected error:", err);
