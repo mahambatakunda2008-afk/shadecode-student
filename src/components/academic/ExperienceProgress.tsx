@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Analytics from "@/app/(app)/analytics/page";
 import { createClient } from "@/lib/supabase/client";
 import { getAcademicExperience, normalizeStudyLevel, type AcademicExperience } from "@/lib/academic/experience";
+
+const Analytics = dynamic(() => import("@/app/(app)/analytics/page"), {
+  loading: () => <div style={{ minHeight: 320, display: "grid", placeItems: "center", color: "var(--muted-foreground)", fontSize: 13 }}>Loading your progress…</div>,
+});
 
 function ProgressIntro({ experience }: { experience: AcademicExperience }) {
   const copy = experience.family === "school"
@@ -21,9 +25,7 @@ function ProgressIntro({ experience }: { experience: AcademicExperience }) {
 
   return (
     <div style={{ marginBottom: 8, padding: "4px 24px 0" }}>
-      <p style={{ fontSize: 11, color: "var(--primary)", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", margin: 0 }}>
-        {copy.eyebrow}
-      </p>
+      <p style={{ fontSize: 11, color: "var(--primary)", fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", margin: 0 }}>{copy.eyebrow}</p>
       <h1 style={{ fontSize: 25, lineHeight: 1.15, fontWeight: 800, margin: "5px 0 4px" }}>{copy.title}</h1>
       <p style={{ color: "var(--muted-foreground)", fontSize: 13, lineHeight: 1.5, maxWidth: 620, margin: 0 }}>{copy.body}</p>
     </div>
