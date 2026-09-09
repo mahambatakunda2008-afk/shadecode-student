@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { PDFParse } from "pdf-parse";
 import { CURRICULUM_SOURCE_WATCHES } from "../src/lib/curriculum/source-watch.ts";
+import { discoverSyllabusVersion } from "../src/lib/curriculum/version-discovery.ts";
 
 const outputDir = ".curriculum-watch";
 const snapshotDir = `${outputDir}/documents`;
@@ -12,20 +13,14 @@ function sha256(value) {
 }
 
 function absoluteUrl(base, href) {
-  try {
-    return new URL(href, base).toString();
-  } catch {
-    return null;
-  }
+  try { return new URL(href, base).toString(); } catch { return null; }
 }
 
 function isAllowed(url, allowedDomains) {
   try {
     const hostname = new URL(url).hostname;
     return allowedDomains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 function extractPdfLinks(html, pageUrl, allowedDomains) {
@@ -62,7 +57,7 @@ await mkdir(snapshotDir, { recursive: true });
 
 const report = {
   runAt,
-  watcherVersion: 4,
+  watcherVersion: 5,
   sources: [],
 };
 
@@ -75,6 +70,7 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
     level: source.level ?? null,
     syllabusId: source.syllabusId ?? null,
     syllabusVersion: source.syllabusVersion ?? null,
+    versionDiscovery: null,
     objectiveCodePattern: source.objectiveCodePattern ?? null,
     authority: source.authority,
     kind: source.kind,
@@ -92,22 +88,33 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
 
     const candidates = source.discoverLinkedDocuments
       ? extractPdfLinks(page.text, page.url, source.allowedDomains)
-      : source.kind === "pdf"
-        ? [page.url]
-        : [];
+      : source.kind === "pdf" ? [page.url] : [];
 
     for (const documentUrl of candidates) {
       try {
         const text = source.extractText ? await extractPdf(documentUrl) : "";
         const contentHash = sha256(text);
         const snapshotFile = `${snapshotDir}/${contentHash}.txt`;
+        const discovery = discoverSyllabusVersion(text, documentUrl);
 
-        if (text) {
-          await writeFile(snapshotFile, text, "utf8");
+        if (text) await writeFile(snapshotFile, text, "utf8");
+
+        const effectiveVersion = source.syllabusVersion ?? discovery.version ?? null;
+        if (!sourceResult.versionDiscovery && discovery.version) {
+          sourceResult.versionDiscovery = {
+            version: discovery.version,
+            confidence: discovery.confidence,
+            evidence: discovery.evidence,
+          };
         }
 
         sourceResult.documents.push({
           url: documentUrl,
+          title: documentUrl.split("/").pop() ?? documentUrl,
+          syllabusVersion: effectiveVersion,
+          syllabusVersionSource: source.syllabusVersion ? "registry" : discovery.version ? "document" : "unresolved",
+          syllabusVersionConfidence: source.syllabusVersion ? "high" : discovery.confidence,
+          syllabusVersionEvidence: source.syllabusVersion ? ["Source registry explicitly configured this syllabus version."] : discovery.evidence,
           contentHash,
           characters: text.length,
           extracted: Boolean(text),
@@ -130,20 +137,14 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
   report.sources.push(sourceResult);
 }
 
-await writeFile(
-  `${outputDir}/latest-report.json`,
-  `${JSON.stringify(report, null, 2)}\n`,
-  "utf8",
-);
+await writeFile(`${outputDir}/latest-report.json`, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 
 console.log(JSON.stringify({
   runAt,
   sourcesChecked: report.sources.length,
   documentsDiscovered: report.sources.reduce((sum, source) => sum + source.documents.length, 0),
-  extractedSnapshots: report.sources.reduce(
-    (sum, source) => sum + source.documents.filter((document) => document.extracted).length,
-    0,
-  ),
+  extractedSnapshots: report.sources.reduce((sum, source) => sum + source.documents.filter((document) => document.extracted).length, 0),
+  unresolvedVersions: report.sources.reduce((sum, source) => sum + source.documents.filter((document) => !document.syllabusVersion).length, 0),
   failures: report.sources.filter((source) => source.status !== "ok").length,
   report: `${outputDir}/latest-report.json`,
 }, null, 2));
