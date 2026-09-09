@@ -43,6 +43,7 @@ export interface CortexCacheEntry<T = unknown> { createdAt: string; value: T; }
 
 /** User-facing academic stages. Storage mapping remains backward-compatible. */
 export type StudyLevel =
+  | 'early-childhood'
   | 'primary'
   | 'lower-secondary'
   | 'upper-secondary'
