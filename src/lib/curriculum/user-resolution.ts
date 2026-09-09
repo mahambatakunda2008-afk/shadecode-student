@@ -22,9 +22,7 @@
     return { identity, blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
   }
 
-  const objectives = (versionsResult.data ?? []).length >= 0
-    ? (objectivesResult.data ?? []).map((row: Record<string, unknown>) => asObjective(row, identity))
-    : [];
+  const objectives = (objectivesResult.data ?? []).map((row: Record<string, unknown>) => asObjective(row, identity));
   const mappings = (mappingsResult.data ?? []).map((row: Record<string, unknown>) => asMapping(row));
   const knowledge = (knowledgeResult.data ?? []).map((row: Record<string, unknown>) => asKnowledge(row));
   const versions = (versionsResult.data ?? []).map((row: Record<string, unknown>) => asVersion(row));
