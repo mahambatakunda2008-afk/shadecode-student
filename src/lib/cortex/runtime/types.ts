@@ -26,7 +26,7 @@ export interface CortexRuntime {
   readonly kind: CortexRuntimeKind;
   capabilities(): Promise<CortexCapabilities>;
   isReady(): Promise<boolean>;
-  warm(): Promise<void>;
+  warm(onProgress?: (progress: number) => void): Promise<void>;
   generate(input: CortexGenerationInput): Promise<string>;
   stream(
     input: CortexGenerationInput,

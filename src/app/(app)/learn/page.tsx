@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import LearnPrefillGuard from "./LearnPrefillGuard";
+import LearnPageIntelligent from "./LearnPageIntelligent";
+import LearnPromptBridge from "./LearnPromptBridge";
 
 function LearnFallback() {
   return (
@@ -15,5 +16,10 @@ function LearnFallback() {
 }
 
 export default function LearnPage() {
-  return <Suspense fallback={<LearnFallback />}><LearnPrefillGuard /></Suspense>;
+  return (
+    <Suspense fallback={<LearnFallback />}>
+      <LearnPromptBridge />
+      <LearnPageIntelligent />
+    </Suspense>
+  );
 }
