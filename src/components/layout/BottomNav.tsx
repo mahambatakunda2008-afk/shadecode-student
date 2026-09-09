@@ -11,15 +11,7 @@ import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 
 function filterItems<T extends { href: string }>(items: T[], experience: ReturnType<typeof getAcademicExperience>) {
-  return items.filter((item) => {
-    if (item.href === "/exam-hub") return experience.showExamHub;
-    if (item.href === "/exam-sim") return experience.showExamSim;
-    if (item.href === "/leaderboard") return experience.showLeaderboard;
-    if (experience.navMode === "foundation" && ["/analytics", "/cortex", "/share"].includes(item.href)) return false;
-    if (experience.navMode === "tertiary" && ["/leaderboard", "/achievements"].includes(item.href)) return false;
-    if (experience.navMode === "professional" && ["/exam-hub", "/exam-sim", "/leaderboard"].includes(item.href)) return false;
-    return true;
-  });
+  return items.filter((item) => experience.allowedRoutes.includes(item.href));
 }
 
 export function BottomNav() {
