@@ -1,7 +1,7 @@
 "use client";
 
-import TasksLocalFirstV2 from "@/components/tasks/TasksLocalFirstV2";
+import ExperienceTasks from "@/components/academic/ExperienceTasks";
 
 export default function Tasks() {
-  return <TasksLocalFirstV2 />;
+  return <ExperienceTasks />;
 }
