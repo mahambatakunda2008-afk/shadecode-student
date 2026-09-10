@@ -2,7 +2,14 @@ import type { CurriculumIdentity, CurriculumObjective } from "@/lib/curriculum/o
 import type { LearningContentItem, LearningScope, LearningScopeIdentity } from "./learning-scope";
 
 export type CodeLabAlignmentMode = "curriculum" | "academic" | "general";
-export interface CodeLabAdapterInput { identity: LearningScopeIdentity; content: LearningContentItem[]; }
+export interface CodeLabAdapterInput {
+  identity: LearningScopeIdentity;
+  content: LearningContentItem[];
+  /** True only when the complete authoritative content set has been ingested. */
+  complete?: boolean;
+  /** True only after the complete authoritative content set has been verified. */
+  verified?: boolean;
+}
 export interface CodeLabScopeAdapter { id: string; mode: CodeLabAlignmentMode; supports(identity: LearningScopeIdentity): boolean; toScope(input: CodeLabAdapterInput): LearningScope; }
 
 export function curriculumIdentityToScope(identity: CurriculumIdentity): LearningScopeIdentity {
@@ -17,14 +24,28 @@ export function createGeneralCodeLabScope(identity: LearningScopeIdentity, conte
   return { identity: { ...identity, kind: "general" }, content, complete: false, verified: false };
 }
 
-export function createAcademicCodeLabScope(identity: LearningScopeIdentity, content: LearningContentItem[]): LearningScope {
-  const verified = content.length > 0 && content.every((item) => item.status === "verified" && item.provenance?.mappingStatus === "verified");
-  return { identity: { ...identity, kind: identity.kind === "general" ? "course" : identity.kind }, content, complete: content.length > 0, verified };
+export function createAcademicCodeLabScope(identity: LearningScopeIdentity, content: LearningContentItem[], complete = false, verified = false): LearningScope {
+  return {
+    identity: { ...identity, kind: identity.kind === "general" ? "course" : identity.kind },
+    content,
+    complete,
+    verified,
+  };
 }
 
 export const CODE_LAB_SCOPE_ADAPTERS: CodeLabScopeAdapter[] = [
-  { id: "school-curriculum", mode: "curriculum", supports: (identity) => identity.kind === "curriculum" && Boolean(identity.boardId && identity.syllabusId), toScope: ({ identity, content }) => ({ identity, content, complete: content.length > 0, verified: content.length > 0 && content.every((item) => item.status === "verified" && item.provenance?.mappingStatus === "verified") }) },
-  { id: "academic-course-module", mode: "academic", supports: (identity) => ["course", "module", "competency", "qualification"].includes(identity.kind), toScope: ({ identity, content }) => createAcademicCodeLabScope(identity, content) },
+  {
+    id: "school-curriculum",
+    mode: "curriculum",
+    supports: (identity) => identity.kind === "curriculum" && Boolean(identity.boardId && identity.syllabusId),
+    toScope: ({ identity, content, complete = false, verified = false }) => ({ identity, content, complete, verified }),
+  },
+  {
+    id: "academic-course-module",
+    mode: "academic",
+    supports: (identity) => ["course", "module", "competency", "qualification"].includes(identity.kind),
+    toScope: ({ identity, content, complete = false, verified = false }) => createAcademicCodeLabScope(identity, content, complete, verified),
+  },
 ];
 
 export function resolveCodeLabScopeAdapter(identity: LearningScopeIdentity): CodeLabScopeAdapter | undefined {
