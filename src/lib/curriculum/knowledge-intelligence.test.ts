@@ -36,7 +36,7 @@ describe("curriculum intelligence", () => {
   it("discovers an explicit syllabus version conservatively", () => {
     const result = discoverSyllabusVersion("Computer Science Syllabus 2026-2030");
     expect(result.version).toBe("2026-2030");
-    expect(result.confidence).toBe("medium");
+    expect(result.confidence).toBe("high");
     expect(result.evidence.length).toBeGreaterThan(0);
   });
 

@@ -32,6 +32,15 @@ function knowledge(kind: CurriculumKnowledgeItem["kind"], title: string): Curric
   };
 }
 
+const verifiedObjective = {
+  id: crypto.randomUUID(),
+  curriculum: identity,
+  code: "1.1",
+  statement: "Explain core algorithm concepts.",
+  status: "verified" as const,
+  provenance,
+};
+
 describe("resolveSystemCurriculum", () => {
   it("blocks when the exact curriculum version is not verified", () => {
     const result = resolveSystemCurriculum({
@@ -50,7 +59,7 @@ describe("resolveSystemCurriculum", () => {
     const result = resolveSystemCurriculum({
       learner: identity,
       versions: [{ id: "v1", identity, status: "verified" }],
-      objectives: [],
+      objectives: [verifiedObjective],
       mappings: [],
       knowledge: [],
     });
@@ -63,7 +72,7 @@ describe("resolveSystemCurriculum", () => {
     const result = resolveSystemCurriculum({
       learner: identity,
       versions: [{ id: "v1", identity, status: "verified" }],
-      objectives: [],
+      objectives: [verifiedObjective],
       mappings: [],
       knowledge: [
         knowledge("topic", "Programming"),
