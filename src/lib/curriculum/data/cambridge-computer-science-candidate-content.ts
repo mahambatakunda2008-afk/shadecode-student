@@ -2,102 +2,22 @@ import type { CurriculumIdentity, CurriculumProvenance } from "../objective-firs
 import type { LearningContentItem, LearningScope } from "../../code-lab/learning-scope";
 import { curriculumIdentityToLearningScopeIdentity } from "../content-scope";
 
-/**
- * Candidate Cambridge Computer Science content inventory.
- *
- * This deliberately mirrors the ZIMSEC candidate-pack architecture: the
- * identity, scope hierarchy and assessment structure are explicit, but the
- * pack remains fail-closed until the complete syllabus has been reconciled.
- * Short labels are stored rather than reproducing the syllabus text.
- */
-
+/** Candidate Cambridge Computer Science inventory. Kept fail-closed until fully reconciled. */
 const retrievedAt = "2026-09-10";
 
 function provenance(sourceDocument: string, sourceUrl: string): CurriculumProvenance {
-  return {
-    authority: "Cambridge International",
-    sourceDocument,
-    sourceUrl,
-    retrievedAt,
-    mappingStatus: "pending",
-  };
+  return { authority: "Cambridge International", sourceDocument, sourceUrl, retrievedAt, mappingStatus: "pending" };
 }
 
-const igcseProvenance = provenance(
-  "Cambridge IGCSE Computer Science 0478 syllabus for 2026, 2027 and 2028, version 5",
-  "https://www.cambridgeinternational.org/Images/697167-2026-2028-syllabus.pdf",
-);
+const igcseProvenance = provenance("Cambridge IGCSE Computer Science 0478 syllabus for 2026, 2027 and 2028, version 5", "https://www.cambridgeinternational.org/Images/697167-2026-2028-syllabus.pdf");
+const oLevelProvenance = provenance("Cambridge O Level Computer Science 2210 syllabus for 2026, 2027 and 2028, version 6", "https://www.cambridgeinternational.org/Images/697287-2026-2028-syllabus.pdf");
+const aLevelProvenance = provenance("Cambridge International AS & A Level Computer Science 9618 syllabus for 2027, 2028 and 2029", "https://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf");
+const igcse0984Provenance = provenance("Cambridge IGCSE (9-1) Computer Science 0984 syllabus for 2026, 2027 and 2028", "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-9-1-computer-science-0984/");
 
-const oLevelProvenance = provenance(
-  "Cambridge O Level Computer Science 2210 syllabus for 2026, 2027 and 2028",
-  "https://www.cambridgeinternational.org/programmes-and-qualifications/view/cambridge-o-level-computer-science-2210/",
-);
-
-const aLevelProvenance = provenance(
-  "Cambridge International AS & A Level Computer Science 9618 syllabus for 2027, 2028 and 2029",
-  "https://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf",
-);
-
-function item(
-  identity: CurriculumIdentity,
-  id: string,
-  code: string,
-  title: string,
-  kind: LearningContentItem["kind"],
-  parentId?: string,
-  source: CurriculumProvenance = igcseProvenance,
-): LearningContentItem {
-  return {
-    id,
-    kind,
-    code,
-    title,
-    content: title,
-    parentId,
-    status: "draft",
-    identity: curriculumIdentityToScope(identity),
-    provenance: source,
-  };
-}
-
-function curriculumIdentity(identity: CurriculumIdentity): CurriculumIdentity {
-  return identity;
-}
-
-function curriculumToScope(identity: CurriculumIdentity) {
-  return curriculumIdentityToLearningScopeIdentity(curriculumIdentity(identity));
-}
-
-const igcse: CurriculumIdentity = {
-  boardId: "cambridge",
-  qualificationId: "cambridge-igcse",
-  level: "igcse",
-  syllabusId: "cambridge-0478",
-  syllabusVersion: "2026-2028",
-  subjectId: "computer-science",
-};
-
-const oLevel: CurriculumIdentity = {
-  boardId: "cambridge",
-  qualificationId: "cambridge-o-level",
-  level: "o_level",
-  syllabusId: "cambridge-2210",
-  syllabusVersion: "2026-2028",
-  subjectId: "computer-science",
-};
-
-const aLevel: CurriculumIdentity = {
-  boardId: "cambridge",
-  qualificationId: "cambridge-as-a-level",
-  level: "a_level",
-  syllabusId: "cambridge-9618",
-  syllabusVersion: "2027-2029",
-  subjectId: "computer-science",
-};
-
-function curriculumIdentityToScope(identity: CurriculumIdentity) {
-  return curriculumToScope(identity);
-}
+const igcse: CurriculumIdentity = { boardId: "cambridge", qualificationId: "cambridge-igcse", level: "igcse", syllabusId: "cambridge-0478", syllabusVersion: "2026-2028", subjectId: "computer-science" };
+const igcse0984: CurriculumIdentity = { boardId: "cambridge", qualificationId: "cambridge-igcse-9-1", level: "igcse", syllabusId: "cambridge-0984", syllabusVersion: "2026-2028", subjectId: "computer-science" };
+const oLevel: CurriculumIdentity = { boardId: "cambridge", qualificationId: "cambridge-o-level", level: "o_level", syllabusId: "cambridge-2210", syllabusVersion: "2026-2028", subjectId: "computer-science" };
+const aLevel: CurriculumIdentity = { boardId: "cambridge", qualificationId: "cambridge-as-a-level", level: "a_level", syllabusId: "cambridge-9618", syllabusVersion: "2027-2029", subjectId: "computer-science" };
 
 const IGCSE_TOPICS: Array<[string, string, string[]]> = [
   ["1", "Data representation", ["1.1 Number systems", "1.2 Text, sound and images", "1.3 Data storage and compression"]],
@@ -135,46 +55,33 @@ const A_LEVEL_SECTIONS: Array<[string, string, string[]]> = [
   ["20", "Further programming", ["20.1 Programming paradigms", "20.2 File processing and exception handling"]],
 ];
 
-function buildHierarchy(identity: CurriculumIdentity, source: CurriculumProvenance, sections: Array<[string, string, string[]]>) {
+function buildHierarchy(identity: CurriculumIdentity, source: CurriculumProvenance, sections: Array<[string, string, string[]]>): LearningContentItem[] {
   const result: LearningContentItem[] = [];
   for (const [number, title, children] of sections) {
     const parentId = `${identity.syllabusId}:${number}`;
-    result.push(item(identity, parentId, number, title, "topic", undefined, source));
+    result.push({ id: parentId, kind: "topic", code: number, title, content: title, status: "draft", identity: curriculumIdentityToLearningScopeIdentity(identity), provenance: source });
     children.forEach((child, index) => {
-      const id = `${identity.syllabusId}:${number}.${index + 1}`;
-      result.push(item(identity, id, child.split(" ")[0], child, "subtopic", parentId, source));
+      result.push({ id: `${identity.syllabusId}:${number}.${index + 1}`, kind: "subtopic", code: child.split(" ")[0], title: child, content: child, parentId, status: "draft", identity: curriculumIdentityToLearningScopeIdentity(identity), provenance: source });
     });
   }
   return result;
 }
 
 export const CAMBRIDGE_IGCSE_0478_CANDIDATE_CONTENT = buildHierarchy(igcse, igcseProvenance, IGCSE_TOPICS);
+export const CAMBRIDGE_IGCSE_0984_CANDIDATE_CONTENT = buildHierarchy(igcse0984, igcse0984Provenance, IGCSE_TOPICS);
 export const CAMBRIDGE_O_LEVEL_2210_CANDIDATE_CONTENT = buildHierarchy(oLevel, oLevelProvenance, IGCSE_TOPICS);
 export const CAMBRIDGE_9618_CANDIDATE_CONTENT = buildHierarchy(aLevel, aLevelProvenance, A_LEVEL_SECTIONS);
 
-export interface CambridgeAssessmentComponent {
-  id: string;
-  paper: string;
-  title: string;
-  durationMinutes: number;
-  marks: number;
-  weighting: string;
-  scope: string;
-  mode: "written" | "practical";
-  calculatorAllowed: boolean;
-  notes: string;
-}
+export interface CambridgeAssessmentComponent { id: string; paper: string; title: string; durationMinutes: number; marks: number; weighting: string; scope: string; mode: "written" | "practical"; calculatorAllowed: boolean; notes: string; }
 
 export const CAMBRIDGE_0478_ASSESSMENT: CambridgeAssessmentComponent[] = [
   { id: "0478-paper-1", paper: "Paper 1", title: "Computer Systems", durationMinutes: 105, marks: 75, weighting: "50%", scope: "Topics 1-6", mode: "written", calculatorAllowed: false, notes: "Short-answer and structured questions; compulsory; externally assessed." },
   { id: "0478-paper-2", paper: "Paper 2", title: "Algorithms, Programming and Logic", durationMinutes: 105, marks: 75, weighting: "50%", scope: "Topics 7-10", mode: "written", calculatorAllowed: false, notes: "Short-answer, structured and scenario-based questions; compulsory; externally assessed." },
 ];
-
 export const CAMBRIDGE_2210_ASSESSMENT: CambridgeAssessmentComponent[] = [
   { id: "2210-paper-1", paper: "Paper 1", title: "Computer Systems", durationMinutes: 105, marks: 75, weighting: "50%", scope: "Topics 1-6", mode: "written", calculatorAllowed: false, notes: "Short-answer and structured questions; grades A*-E; compulsory; externally assessed." },
   { id: "2210-paper-2", paper: "Paper 2", title: "Algorithms, Programming and Logic", durationMinutes: 105, marks: 75, weighting: "50%", scope: "Topics 7-10", mode: "written", calculatorAllowed: false, notes: "Short-answer, structured and scenario-based questions; compulsory; externally assessed." },
 ];
-
 export const CAMBRIDGE_9618_ASSESSMENT: CambridgeAssessmentComponent[] = [
   { id: "9618-paper-1", paper: "Paper 1", title: "Theory Fundamentals", durationMinutes: 90, marks: 75, weighting: "50% AS / 25% A Level", scope: "Sections 1-8", mode: "written", calculatorAllowed: false, notes: "All questions answered." },
   { id: "9618-paper-2", paper: "Paper 2", title: "Fundamental Problem-solving and Programming Skills", durationMinutes: 120, marks: 75, weighting: "50% AS / 25% A Level", scope: "Sections 9-12", mode: "written", calculatorAllowed: false, notes: "Answers written in pseudocode." },
@@ -184,12 +91,9 @@ export const CAMBRIDGE_9618_ASSESSMENT: CambridgeAssessmentComponent[] = [
 
 export const CAMBRIDGE_CANDIDATE_SCOPES: LearningScope[] = [
   { identity: curriculumIdentityToLearningScopeIdentity(igcse), content: CAMBRIDGE_IGCSE_0478_CANDIDATE_CONTENT, complete: false, verified: false },
+  { identity: curriculumIdentityToLearningScopeIdentity(igcse0984), content: CAMBRIDGE_IGCSE_0984_CANDIDATE_CONTENT, complete: false, verified: false },
   { identity: curriculumIdentityToLearningScopeIdentity(oLevel), content: CAMBRIDGE_O_LEVEL_2210_CANDIDATE_CONTENT, complete: false, verified: false },
   { identity: curriculumIdentityToLearningScopeIdentity(aLevel), content: CAMBRIDGE_9618_CANDIDATE_CONTENT, complete: false, verified: false },
 ];
 
-export const CAMBRIDGE_CANDIDATE_ASSESSMENT = {
-  "0478": CAMBRIDGE_0478_ASSESSMENT,
-  "2210": CAMBRIDGE_2210_ASSESSMENT,
-  "9618": CAMBRIDGE_9618_ASSESSMENT,
-} as const;
+export const CAMBRIDGE_CANDIDATE_ASSESSMENT = { "0478": CAMBRIDGE_0478_ASSESSMENT, "0984": CAMBRIDGE_0478_ASSESSMENT, "2210": CAMBRIDGE_2210_ASSESSMENT, "9618": CAMBRIDGE_9618_ASSESSMENT } as const;
