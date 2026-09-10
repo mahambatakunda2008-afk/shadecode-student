@@ -1,6 +1,7 @@
 // Unified AI caller: one bounded provider fallback chain for every AI feature.
 // Paid providers are opt-in. The default chain stays within the project's zero-cost strategy.
 import { logAIUsage } from "@/lib/ai/tracker";
+import { getVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
 const DEFAULT_MAX_CHAIN_MS = 30000;
@@ -26,7 +27,21 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const { userId, feature = "ai_assistant", subfeature = "generate" } = options;
   const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, DEFAULT_MAX_CHAIN_MS));
   const perProviderMaxMs = Math.max(1000, Math.min(options.perProviderMaxMs ?? DEFAULT_PER_PROVIDER_MAX_MS, maxChainMs));
-  const promptTokens = Math.ceil(prompt.length / 4);
+
+  // Curriculum grounding is centralized here so every server-side AI feature
+  // that already supplies userId receives the same verified curriculum context.
+  // Failures are non-fatal for generic AI, but verified curriculum claims are
+  // never fabricated by this layer.
+  let groundedPrompt = prompt;
+  if (userId) {
+    try {
+      groundedPrompt = `${prompt}${await getVerifiedCurriculumPromptContext(userId, prompt)}`;
+    } catch (error) {
+      console.error("[AI] curriculum grounding failed:", error);
+    }
+  }
+
+  const promptTokens = Math.ceil(groundedPrompt.length / 4);
   const startedAt = Date.now();
 
   function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) {
@@ -36,7 +51,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       latencyMs: Date.now() - params.startTime, success: params.success,
       errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined,
       errorCode: params.err instanceof Error ? params.err.constructor.name : undefined,
-      requestMetadata: { promptLength: prompt.length, maxTokens, maxChainMs, perProviderMaxMs },
+      requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs },
     });
     void Promise.race([telemetry.catch(() => undefined), new Promise<void>(resolve => setTimeout(resolve, TELEMETRY_BUDGET_MS))]);
   }
@@ -67,7 +82,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
+        body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
       }, timeout);
       if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
       const data = await res.json() as any;
@@ -76,8 +91,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Gemini generateContent remains supported, but use the stable v1 endpoint.
-  // Gemini 2.5 Flash is a current supported model and is suitable for the fast path.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
   for (const key of geminiKeys) {
     if (!canTry()) break;
@@ -85,7 +98,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${key}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" } }),
+        body: JSON.stringify({ contents: [{ parts: [{ text: groundedPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" } }),
       }, timeout);
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
       const data = await res.json() as any;
@@ -94,7 +107,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // OpenRouter's free router is deliberately used instead of a paid fixed model.
   if (process.env.OPENROUTER_API_KEY && canTry()) {
     const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
       const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
@@ -105,7 +117,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           "HTTP-Referer": "https://shadecodestudent.vercel.app",
           "X-Title": "Shadecode Student",
         },
-        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens }),
+        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
       }, timeout);
       if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
       const data = await res.json() as any;
@@ -114,14 +126,12 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // OpenAI is intentionally not part of the default chain. It can only be used
-  // when an operator explicitly opts in with ALLOW_PAID_AI=true.
   if (ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
     const text = await tryProvider("openai", "gpt-4o-mini", async timeout => {
       const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens, response_format: { type: "json_object" } }),
+        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens, response_format: { type: "json_object" } }),
       }, timeout);
       if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
       const data = await res.json() as any;
