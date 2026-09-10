@@ -19,6 +19,7 @@ describe("Shadecode Learning State", () => {
     const observation: LearningObservation = {
       topicId: "algebra",
       correct: true,
+      kind: "assessment",
       confidence: 80,
       responseSeconds: 30,
       difficulty: 70,
@@ -38,6 +39,7 @@ describe("Shadecode Learning State", () => {
     const next = updateLearningState(state, {
       topicId: "algebra",
       correct: false,
+      kind: "assessment",
       confidence: 30,
       difficulty: 60,
     });
@@ -46,6 +48,32 @@ describe("Shadecode Learning State", () => {
     expect(next.errorRate).toBeGreaterThan(state.errorRate);
     expect(next.mastery).toBeGreaterThanOrEqual(0);
     expect(next.mastery).toBeLessThanOrEqual(100);
+  });
+
+  it("treats lesson completion as exposure, not mastery evidence", () => {
+    const state = {
+      ...createInitialLearningState("algebra"),
+      mastery: 82,
+      retention: 74,
+      confidence: 77,
+      uncertainty: 55,
+      exposure: 4,
+    };
+
+    const next = updateLearningState(state, {
+      topicId: "algebra",
+      correct: false,
+      kind: "exposure",
+      observedAt: "2026-09-10T17:00:00Z",
+    });
+
+    expect(next.mastery).toBe(state.mastery);
+    expect(next.errorRate).toBe(state.errorRate);
+    expect(next.confidence).toBe(state.confidence);
+    expect(next.retention).toBe(state.retention);
+    expect(next.exposure).toBe(5);
+    expect(next.uncertainty).toBeLessThan(state.uncertainty);
+    expect(next.lastObservedAt).toBe("2026-09-10T17:00:00Z");
   });
 
   it("rejects observations for another topic", () => {
@@ -59,6 +87,7 @@ describe("Shadecode Learning State", () => {
       state = updateLearningState(state, {
         topicId: "algebra",
         correct: i % 2 === 0,
+        kind: "assessment",
         responseSeconds: 1,
         difficulty: 100,
       });
