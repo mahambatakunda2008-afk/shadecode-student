@@ -177,13 +177,16 @@ export async function POST(req: Request) {
     if (!resolved.prompt || resolved.prompt.length < 2) return NextResponse.json({ error: "Tell Cortex what you want to learn." }, { status: 400 });
     if (!resolved.subject) return NextResponse.json({ error: "Choose a subject so Cortex does not have to guess from a short prompt." }, { status: 400 });
 
-    const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, resolved.prompt);
+    // Resolve curriculum from the complete normalized request, not only the
+    // short topic prompt. This is critical for learners with multiple subjects:
+    // the curriculum resolver can now see the selected subject, level and board.
+    const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, buildResolvedLessonPrompt(resolved));
     if (curriculum.status === "blocked") {
       return NextResponse.json({ error: curriculum.reason, code: "CURRICULUM_OBJECTIVES_REQUIRED" }, { status: 409 });
     }
 
     const parsed = await generateAndValidate(resolved, curriculum.promptContext, auth.user.id);
-    if (!parsed) return NextResponse.json({ error: "Cortex could not produce a curriculum-aligned, complete lesson this time. Try rephrasing the request." }, { status: 422 });
+    if (!parsed) return NextResponse.json({ error: "Cortex could not produce a complete lesson this time. Try again or rephrase the request." }, { status: 422 });
 
     const { data: existing } = await auth.supabase.from("subjects").select("id").eq("user_id", auth.user.id).eq("name", resolved.subject).maybeSingle();
     let subjectId = existing?.id ?? null;
