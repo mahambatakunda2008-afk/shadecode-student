@@ -7,6 +7,7 @@ import ExamAttemptLocalBridge from "@/components/exam/ExamAttemptLocalBridge";
 import AcademicExamContext from "@/components/exam/AcademicExamContext";
 import { useUser } from "@/contexts/UserContext";
 import { normalizeStudyLevel } from "@/lib/academic/experience";
+import { buildExamAdaptation } from "@/lib/exam/adaptation";
 import { examCompletedEvent, questionAttemptedEvent } from "@/lib/intelligence/emitLearningEvent";
 import type { ExamResults } from "@/lib/exam/types";
 
@@ -44,6 +45,14 @@ export default function ExamSimulationClient() {
   const difficultyLevel = examDifficultyLevel(profile?.study_level);
 
   const handleFinished = (result: ExamResults) => {
+    const adaptation = buildExamAdaptation({
+      percentage: result.percentage,
+      weakAreas: result.weakAreas,
+      strongAreas: result.strongAreas,
+      subject,
+      topic,
+    });
+
     for (const question of result.results) {
       void questionAttemptedEvent(
         examInstanceId,
@@ -67,6 +76,12 @@ export default function ExamSimulationClient() {
       maxScore: result.maxScore,
       timeTaken: result.timeTaken,
       questionCount: result.results.length,
+      weakAreas: result.weakAreas,
+      strongAreas: result.strongAreas,
+      nextAction: adaptation.action,
+      nextTarget: adaptation.target,
+      nextPriority: adaptation.priority,
+      nextReason: adaptation.reason,
       aggregateOnly: true,
     });
   };
