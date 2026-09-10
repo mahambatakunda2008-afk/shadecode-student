@@ -45,8 +45,8 @@ function toKnowledgeIdentity(identity: CurriculumIdentity): CurriculumKnowledgeI
  *
  * Every curriculum-aware module should resolve through this function rather
  * than implementing its own board/syllabus/version filtering. It deliberately
- * fails closed when the learner identity or verified curriculum version is
- * unavailable.
+ * fails closed when the learner identity, verified curriculum version, or
+ * authoritative objective set is unavailable.
  */
 export function resolveSystemCurriculum(
   input: SystemCurriculumResolutionInput,
@@ -61,15 +61,23 @@ export function resolveSystemCurriculum(
     };
   }
 
+  if (resolved.objectives.length === 0) {
+    return {
+      resolved,
+      blocked: true,
+      reason: "Curriculum version is verified, but no verified syllabus objectives are available. Curriculum-aware teaching is blocked until the objective set is verified.",
+    };
+  }
+
   const identity = toKnowledgeIdentity(resolved.curriculum);
-  const context = buildSystemCurriculumContext(identity, resolved.knowledge, true);
+  const context = buildSystemCurriculumContext(identity, resolved.knowledge, true, resolved.objectives);
 
   if (context.knowledge.items.length === 0) {
     return {
       resolved,
       context,
       blocked: true,
-      reason: "Curriculum version is verified, but no verified whole-syllabus knowledge is available.",
+      reason: "Curriculum objectives are verified, but no verified whole-syllabus knowledge is available.",
     };
   }
 
@@ -77,7 +85,7 @@ export function resolveSystemCurriculum(
     resolved,
     context,
     blocked: false,
-    reason: "Verified system-wide curriculum context resolved.",
+    reason: "Verified objective-first curriculum context resolved.",
   };
 }
 
