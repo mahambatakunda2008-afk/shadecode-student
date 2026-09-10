@@ -9,10 +9,10 @@ function getSupabaseAdmin() {
   return createSupabaseClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
-export let aiCaller = async function callAI(prompt: string, maxTokens = 2500): Promise<string | null> {
-  return sharedCallAI(prompt, maxTokens, { feature: "course_generation", subfeature: "generate_course" });
+export let aiCaller = async function callAI(prompt: string, maxTokens = 2500, userId?: string): Promise<string | null> {
+  return sharedCallAI(prompt, maxTokens, { userId, feature: "course_generation", subfeature: "generate_course" });
 };
-export function setAiCaller(fn: (prompt: string, maxTokens?: number) => Promise<string | null>) { aiCaller = fn; }
+export function setAiCaller(fn: (prompt: string, maxTokens?: number, userId?: string) => Promise<string | null>) { aiCaller = fn; }
 
 function moderateDraft(draft: any) {
   const issues: string[] = [];
@@ -63,8 +63,8 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
   } catch (e) { if (e instanceof Error && e.message.startsWith("Cooldown")) throw e; }
 
   const prompt = `You are an expert curriculum designer. Produce a compact JSON course for topic: "${topic}", goal: "${goal}", level: "${level}". Return an object with title, description, lessons (array with title, summary, difficulty, estimatedMinutes, blocks, prerequisites), projects, checkpoints, assessments. Return valid JSON only.`;
-  const raw = await aiCaller(prompt, 4000);
-  if (!raw) throw new Error("AI unavailable");
+  const raw = await aiCaller(prompt, 4000, user.id);
+  if (!raw) throw new Error("AI unavailable or curriculum grounding unavailable");
   const parsed = repairAndParseJSON(raw, isCoursePayload);
   if (!parsed || parsed.lessons.length === 0) throw new Error("Invalid course structure returned by AI");
 
