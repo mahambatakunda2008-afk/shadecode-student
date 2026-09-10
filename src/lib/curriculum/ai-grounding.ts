@@ -62,23 +62,58 @@ export async function resolveVerifiedCurriculumPromptContext(
   }
 
   const learner = toLearnerCurriculumContext(identity);
-  const base = (table: string) => supabase.from(table).select("*")
-    .eq("board_id", identity.boardId).eq("qualification_id", identity.qualificationId)
-    .eq("level", identity.level).eq("syllabus_id", identity.syllabusId)
-    .eq("syllabus_version", identity.syllabusVersion).eq("subject_id", identity.subjectId);
-  const [versionsResult, objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
-    base("curriculum_versions"), base("curriculum_objectives"),
-    supabase.from("objective_skill_mappings").select("*"), base("curriculum_knowledge"),
+
+  // curriculum_objectives is normalized around curriculum_version_id. Do not
+  // query it as though board/level/syllabus columns existed on the objective
+  // row. Resolve the exact verified version first, then fetch its objectives.
+  const versionsResult = await supabase
+    .from("curriculum_versions")
+    .select("*")
+    .eq("board_id", identity.boardId)
+    .eq("qualification_id", identity.qualificationId)
+    .eq("level", identity.level)
+    .eq("syllabus_id", identity.syllabusId)
+    .eq("syllabus_version", identity.syllabusVersion)
+    .eq("subject_id", identity.subjectId);
+
+  if (versionsResult.error) {
+    return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
+  }
+
+  const versions = (versionsResult.data ?? []) as CurriculumVersionRecord[];
+  const matchingVersion = versions.find((version) => version.status === "verified");
+  if (!matchingVersion) {
+    return { status: "blocked", promptContext: "", reason: "No verified curriculum version matches this learner's exact board, qualification, level, syllabus and subject." };
+  }
+
+  const [objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
+    supabase
+      .from("curriculum_objectives")
+      .select("*")
+      .eq("curriculum_version_id", matchingVersion.id),
+    supabase
+      .from("objective_skill_mappings")
+      .select("*"),
+    supabase
+      .from("curriculum_knowledge")
+      .select("*")
+      .eq("curriculum_version_id", matchingVersion.id),
   ]);
-  if (versionsResult.error || objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
+
+  if (objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
     return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
   }
 
   const result = resolveSystemCurriculum({
     learner,
-    versions: (versionsResult.data ?? []) as CurriculumVersionRecord[],
+    versions,
     objectives: (objectivesResult.data ?? []) as CurriculumObjective[],
-    mappings: (mappingsResult.data ?? []) as ObjectiveSkillMapping[],
+    mappings: (mappingsResult.data ?? []).map((mapping) => ({
+      objectiveId: mapping.objective_id,
+      skillId: mapping.skill_id,
+      status: mapping.mapping_status === "verified" ? "verified" : "draft",
+      provenance: mapping.provenance ?? {},
+    })) as ObjectiveSkillMapping[],
     knowledge: (knowledgeResult.data ?? []) as CurriculumKnowledgeItem[],
   });
   if (result.blocked || !result.context) {
@@ -86,8 +121,8 @@ export async function resolveVerifiedCurriculumPromptContext(
   }
 
   const requestedTopic = extractRequestedTopic(prompt);
-  const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge.items);
-  const usefulKnowledge = topicGrounding.items.length ? topicGrounding.items : result.context.knowledge.items.slice(0, 80);
+  const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge);
+  const usefulKnowledge = topicGrounding.items.length ? topicGrounding.items : result.context.knowledge.slice(0, 80);
   const knowledgeLines = usefulKnowledge.map((item) => {
     const code = item.code ? `[${item.code}] ` : "";
     return `- ${item.kind}: ${code}${item.title}${item.content ? ` | ${item.content.slice(0, 500)}` : ""}`;
