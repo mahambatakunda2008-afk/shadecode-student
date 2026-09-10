@@ -15,9 +15,12 @@ export interface TopicLearningState {
   lastObservedAt?: string;
 }
 
+export type LearningObservationKind = "assessment" | "exposure";
+
 export interface LearningObservation {
   topicId: string;
   correct: boolean;
+  kind?: LearningObservationKind;
   evidenceScore?: number;
   confidence?: number;
   responseSeconds?: number;
@@ -69,9 +72,10 @@ export function createInitialLearningState(topicId: string): TopicLearningState 
 
 /**
  * Authoritative pure richer-state transition for one observable learning event.
- * The initial 50 mastery is a placeholder, not observed evidence. The first
- * real observation therefore establishes the baseline; later observations use
- * the shared 70/30 history/evidence transition.
+ * Exposure events such as lesson completion prove engagement with a topic, not
+ * mastery. They update exposure/uncertainty without inventing a score or
+ * moving mastery up or down. Assessments are the events allowed to change
+ * mastery, error rate and performance-derived signals.
  */
 export function reduceLearningObservation(
   previous: TopicLearningState,
@@ -79,6 +83,15 @@ export function reduceLearningObservation(
 ): TopicLearningState {
   if (previous.topicId !== observation.topicId) {
     throw new Error("Learning observation topic does not match state topic");
+  }
+
+  if (observation.kind === "exposure") {
+    return {
+      ...previous,
+      exposure: Math.max(0, Math.floor(previous.exposure) + 1),
+      uncertainty: Number(clamp(previous.uncertainty * 0.94).toFixed(2)),
+      lastObservedAt: observation.observedAt ?? previous.lastObservedAt,
+    };
   }
 
   const priorMastery = previous.mastery;
