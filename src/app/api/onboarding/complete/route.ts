@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
       study_style: body.study_style === "structured" ? "structured" : "flexible",
       education_stage: substage,
       curriculum_board: typeof body.curriculum_board === "string" ? body.curriculum_board.trim() || null : null,
+      qualification: typeof body.curriculum_qualification === "string" ? body.curriculum_qualification.trim() || null : null,
       syllabus_code: typeof body.syllabus_code === "string" ? body.syllabus_code.trim() || null : null,
       syllabus_year: typeof body.syllabus_year === "string" ? body.syllabus_year.trim() || null : null,
       language: typeof body.language === "string" ? body.language.trim() || null : null,
@@ -84,8 +85,6 @@ export async function POST(request: NextRequest) {
       last_seen: new Date().toISOString(),
     };
 
-    // Keep both the raw learner answers and any complete identities. Raw answers are
-    // deliberately not treated as verified curriculum knowledge by the resolver.
     if (curriculumAnswers) profilePayload.curriculum_profile = curriculumAnswers;
     if (exactCurriculumSubjects.length) profilePayload.curriculum_subjects = exactCurriculumSubjects;
 
