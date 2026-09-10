@@ -22,8 +22,8 @@ export function BottomNav() {
   const primaryCandidates = family === "foundation"
     ? [NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn, NAV_ITEMS.achievements]
     : family === "school"
-      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.studyPlan, NAV_ITEMS.examSim]
-      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.workmate, NAV_ITEMS.projects];
+      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.codeLab, NAV_ITEMS.examSim]
+      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.codeLab, NAV_ITEMS.workmate];
   const primaryItems = primaryCandidates.filter(item => allItems.some(available => available.href === item.href));
   const moreItems = allItems.filter(item => !primaryItems.some(primary => primary.href === item.href));
   const primaryLabel = (href: string, fallback: string) => {
