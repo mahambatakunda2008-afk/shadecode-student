@@ -48,6 +48,15 @@ function runInWorker(source: string): Promise<{ output: string[]; error?: string
   });
 }
 
+function OutputPanel({ output, error, runState }: { output: string[]; error: string | null; runState: RunState }) {
+  return <div className="border-t border-white/10 bg-black/20 p-3 sm:p-4">
+    <div className="mb-2 flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-semibold text-white/70"><Terminal className="h-3.5 w-3.5" /> Output</span>{runState === "success" && <span className="flex items-center gap-1 text-[11px] text-emerald-300"><CheckCircle2 className="h-3.5 w-3.5" /> Finished</span>}{runState === "error" && <span className="flex items-center gap-1 text-[11px] text-red-300"><XCircle className="h-3.5 w-3.5" /> Needs a fix</span>}</div>
+    <div className="min-h-[72px] rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-xs leading-5 text-white/70">
+      {error ? <span className="text-red-300">{error}</span> : output.length ? output.map((line, i) => <div key={`${line}-${i}`}>{line}</div>) : <span className="text-white/25">Run your code to see output here.</span>}
+    </div>
+  </div>;
+}
+
 export function CodeLabWorkspace() {
   const { profile } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
@@ -168,13 +177,9 @@ export function CodeLabWorkspace() {
               <button onClick={() => setActivePanel("output")} type="button" className={cn("px-3 py-2.5 text-xs font-medium", activePanel === "output" ? "text-white" : "text-white/40")}>Output</button>
             </div>
           </div>
+          <div className="hidden lg:block"><OutputPanel output={output} error={error} runState={runState} /></div>
           {activePanel === "task" && <div className="border-t border-white/10 bg-black/20 p-4 lg:hidden"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/35">Objective-first</p><p className="mt-2 text-sm leading-6 text-white/70">Write a small program, run it, inspect the output, and iterate. Verified syllabus objectives will appear here when an authoritative scope is available.</p></div>}
-          {(activePanel === "output" || typeof window === "undefined") && <div className="border-t border-white/10 bg-black/20 p-3 sm:p-4">
-            <div className="mb-2 flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-semibold text-white/70"><Terminal className="h-3.5 w-3.5" /> Output</span>{runState === "success" && <span className="flex items-center gap-1 text-[11px] text-emerald-300"><CheckCircle2 className="h-3.5 w-3.5" /> Finished</span>}{runState === "error" && <span className="flex items-center gap-1 text-[11px] text-red-300"><XCircle className="h-3.5 w-3.5" /> Needs a fix</span>}</div>
-            <div className="min-h-[72px] rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-xs leading-5 text-white/70">
-              {error ? <span className="text-red-300">{error}</span> : output.length ? output.map((line, i) => <div key={`${line}-${i}`}>{line}</div>) : <span className="text-white/25">Run your code to see output here.</span>}
-            </div>
-          </div>}
+          {activePanel === "output" && <div className="lg:hidden"><OutputPanel output={output} error={error} runState={runState} /></div>}
         </section>
       </div>
 
