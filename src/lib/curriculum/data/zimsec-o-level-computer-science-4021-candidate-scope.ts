@@ -8,6 +8,7 @@ import {
   ZIMSEC_O_LEVEL_CS_4021_PROVENANCE,
 } from "./zimsec-o-level-computer-science-4021-2024-2030";
 import { ZIMSEC_O_LEVEL_CS_4021_CANDIDATE_CONTENT_INVENTORY } from "./zimsec-o-level-computer-science-4021-content-inventory";
+import { ZIMSEC_O_LEVEL_CS_4021_CANDIDATE_ASSESSMENT } from "./zimsec-o-level-computer-science-4021-candidate-assessment";
 
 /**
  * Candidate expanded scope. This is deliberately separate from the
@@ -21,6 +22,7 @@ export const ZIMSEC_O_LEVEL_CS_4021_CANDIDATE_SCOPE = createAuthoritativeContent
   content: [
     ...ZIMSEC_O_LEVEL_CS_4021_ALL_COMPETENCY_OBJECTIVES.map(objectiveToLearningContent),
     ...ZIMSEC_O_LEVEL_CS_4021_CANDIDATE_CONTENT_INVENTORY,
+    ...ZIMSEC_O_LEVEL_CS_4021_CANDIDATE_ASSESSMENT,
   ],
   complete: false,
   verified: false,
