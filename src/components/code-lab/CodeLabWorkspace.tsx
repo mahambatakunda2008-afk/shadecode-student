@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Code2, Copy, Play, RotateCcw, Save, Sparkles, Terminal, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Code2, Copy, Play, RotateCcw, Save, Sparkles, Terminal, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 
 const STARTER = `// Write JavaScript here and press Run.\n// Code Lab runs browser-safe JavaScript locally.\n\nconst name = "Shadecode";\nconsole.log(\`Hello, \${name}!\`);`;
-
 const STORAGE_KEY = "shadecode.student.code-lab.workspace.v1";
-
 type RunState = "idle" | "running" | "success" | "error";
 
 function runInWorker(source: string): Promise<{ output: string[]; error?: string }> {
@@ -60,7 +58,6 @@ export function CodeLabWorkspace() {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activePanel, setActivePanel] = useState<"task" | "output">("task");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     try {
@@ -83,6 +80,17 @@ export function CodeLabWorkspace() {
     }
   };
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        save();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [code]);
+
   const run = async () => {
     setRunState("running");
     setError(null);
@@ -99,6 +107,7 @@ export function CodeLabWorkspace() {
     setOutput([]);
     setError(null);
     setRunState("idle");
+    setActivePanel("task");
     try { window.localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
@@ -151,20 +160,21 @@ export function CodeLabWorkspace() {
           </div>
           <div className="flex min-h-[360px] flex-1 overflow-auto">
             <div className="select-none border-r border-white/5 px-3 py-4 text-right font-mono text-xs leading-6 text-white/20">{lineNumbers.map((n) => <div key={n}>{n}</div>)}</div>
-            <textarea ref={textareaRef} value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} aria-label="Code editor" className="min-h-[360px] min-w-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-[13px] leading-6 text-white outline-none placeholder:text-white/20" />
+            <textarea value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} aria-label="Code editor" className="min-h-[360px] min-w-0 flex-1 resize-none bg-transparent px-4 py-4 font-mono text-[13px] leading-6 text-white outline-none placeholder:text-white/20" />
           </div>
           <div className="border-t border-white/10 lg:hidden">
             <div className="grid grid-cols-2">
-              <button onClick={() => setActivePanel("task")} className={cn("border-r border-white/10 px-3 py-2.5 text-xs font-medium", activePanel === "task" ? "text-white" : "text-white/40")}>Task</button>
-              <button onClick={() => setActivePanel("output")} className={cn("px-3 py-2.5 text-xs font-medium", activePanel === "output" ? "text-white" : "text-white/40")}>Output</button>
+              <button onClick={() => setActivePanel("task")} type="button" className={cn("border-r border-white/10 px-3 py-2.5 text-xs font-medium", activePanel === "task" ? "text-white" : "text-white/40")}>Task</button>
+              <button onClick={() => setActivePanel("output")} type="button" className={cn("px-3 py-2.5 text-xs font-medium", activePanel === "output" ? "text-white" : "text-white/40")}>Output</button>
             </div>
           </div>
-          <div className={cn("border-t border-white/10 bg-black/20 p-3 sm:p-4", activePanel === "task" ? "block lg:block" : "block lg:block")}>
+          {activePanel === "task" && <div className="border-t border-white/10 bg-black/20 p-4 lg:hidden"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/35">Objective-first</p><p className="mt-2 text-sm leading-6 text-white/70">Write a small program, run it, inspect the output, and iterate. Verified syllabus objectives will appear here when an authoritative scope is available.</p></div>}
+          {(activePanel === "output" || typeof window === "undefined") && <div className="border-t border-white/10 bg-black/20 p-3 sm:p-4">
             <div className="mb-2 flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-semibold text-white/70"><Terminal className="h-3.5 w-3.5" /> Output</span>{runState === "success" && <span className="flex items-center gap-1 text-[11px] text-emerald-300"><CheckCircle2 className="h-3.5 w-3.5" /> Finished</span>}{runState === "error" && <span className="flex items-center gap-1 text-[11px] text-red-300"><XCircle className="h-3.5 w-3.5" /> Needs a fix</span>}</div>
             <div className="min-h-[72px] rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-xs leading-5 text-white/70">
               {error ? <span className="text-red-300">{error}</span> : output.length ? output.map((line, i) => <div key={`${line}-${i}`}>{line}</div>) : <span className="text-white/25">Run your code to see output here.</span>}
             </div>
-          </div>
+          </div>}
         </section>
       </div>
 
