@@ -47,8 +47,10 @@ async function releaseProjectionClaim(supabase: SupabaseClient, userId: string, 
  * projection. Events without an explicit topic are intentionally ignored: a
  * lesson/entity id is not a substitute for a curriculum concept.
  *
- * The canonical event remains the source of truth. This projection is a
- * rebuildable read model and is guarded by an idempotent projection marker.
+ * Exposure observations such as lesson completion are persisted as learning
+ * evidence, but they do not fabricate an assessment score or move mastery.
+ * The canonical event remains the source of truth and this projection is a
+ * rebuildable read model guarded by an idempotent projection marker.
  */
 export async function projectLearningEvent(
   supabase: SupabaseClient,
@@ -97,8 +99,13 @@ export async function projectLearningEvent(
     const previous = rowToLearningState(existing as Record<string, unknown> | null);
     const base = previous ?? createInitialLearningState(topicId);
     const next = reduceLearningObservation(base, observation);
-    const evidenceScore = observation.evidenceScore ?? (observation.correct ? 100 : 0);
-    const projection = projectTopicMastery(previous, next, evidenceScore, (Number(existing?.attempts) || 0) + 1);
+    const isExposure = observation.kind === "exposure";
+    const evidenceScore = isExposure
+      ? Number(existing?.last_score ?? previous?.mastery ?? 50)
+      : (observation.evidenceScore ?? (observation.correct ? 100 : 0));
+    const previousAttempts = Number(existing?.attempts) || 0;
+    const attempts = previousAttempts + (isExposure ? 0 : 1);
+    const projection = projectTopicMastery(previous, next, evidenceScore, attempts);
     const lastAttempted = observation.observedAt ?? new Date().toISOString();
 
     const { error: writeError } = await supabase.from("topic_mastery").upsert({
