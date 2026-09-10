@@ -80,7 +80,22 @@ export async function resolveVerifiedCurriculumPromptContext(
     return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
   }
 
-  const versions = (versionsResult.data ?? []) as CurriculumVersionRecord[];
+  const versions: CurriculumVersionRecord[] = (versionsResult.data ?? []).map((version) => ({
+    id: version.id,
+    identity: {
+      boardId: version.board_id,
+      qualificationId: version.qualification_id,
+      level: version.level,
+      syllabusId: version.syllabus_id,
+      syllabusVersion: version.syllabus_version,
+      subjectId: version.subject_id,
+      paperOrComponentId: version.paper_component_id ?? undefined,
+      examSession: version.exam_session ?? undefined,
+    },
+    status: version.status,
+    effectiveFrom: version.effective_from,
+    effectiveTo: version.effective_to,
+  }));
   const matchingVersion = versions.find((version) => version.status === "verified");
   if (!matchingVersion) {
     return { status: "blocked", promptContext: "", reason: "No verified curriculum version matches this learner's exact board, qualification, level, syllabus and subject." };
@@ -116,7 +131,7 @@ export async function resolveVerifiedCurriculumPromptContext(
         syllabusId: identity.syllabusId,
         syllabusVersion: identity.syllabusVersion,
         subjectId: identity.subjectId,
-        paperOrComponentId: objective.paper_component,
+        paperOrComponentId: objective.paper_component ?? undefined,
       },
       code: objective.objective_key,
       statement: objective.description ?? objective.title,
