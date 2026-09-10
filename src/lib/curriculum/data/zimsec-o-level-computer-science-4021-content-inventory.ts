@@ -1,8 +1,5 @@
 import type { LearningContentItem } from "../../code-lab/learning-scope";
-import {
-  ZIMSEC_O_LEVEL_CS_4021_2024_2030,
-  ZIMSEC_O_LEVEL_CS_4021_PROVENANCE,
-} from "./zimsec-o-level-computer-science-4021-2024-2030";
+import { ZIMSEC_O_LEVEL_CS_4021_2024_2030 } from "./zimsec-o-level-computer-science-4021-2024-2030";
 
 /**
  * Candidate 2024-2030 content inventory for ZIMSEC Computer Science 4021.
@@ -24,9 +21,11 @@ const identity = {
 };
 
 const candidateSource = {
-  ...ZIMSEC_O_LEVEL_CS_4021_PROVENANCE,
+  authority: "Ministry of Primary and Secondary Education / secondary syllabus copy",
+  sourceDocument: "Computer Science Syllabus Forms 1-4, 2024-2030 (secondary copy)",
   sourceUrl: "https://studylib.net/doc/28527371/computer-science-o-level-syllabus",
   sectionOrPage: "2024-2030 syllabus copy; scope and sequence, competency matrix, assessment",
+  retrievedAt: "2026-09-10",
   mappingStatus: "reviewed" as const,
 };
 
