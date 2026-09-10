@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Code2, Copy, Play, RotateCcw, Save, Sparkles, Terminal, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -79,7 +79,7 @@ export function CodeLabWorkspace() {
 
   const lineNumbers = useMemo(() => Array.from({ length: Math.max(1, code.split("\n").length) }, (_, i) => i + 1), [code]);
 
-  const save = () => {
+  const save = useCallback(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, code);
       setSaved(true);
@@ -87,7 +87,7 @@ export function CodeLabWorkspace() {
     } catch {
       setSaved(false);
     }
-  };
+  }, [code]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -98,7 +98,7 @@ export function CodeLabWorkspace() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [code]);
+  }, [save]);
 
   const run = async () => {
     setRunState("running");
