@@ -6,6 +6,7 @@ import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
+import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { log } from "@/lib/observability";
 
 export const dynamic = "force-dynamic";
@@ -81,15 +82,16 @@ function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | nu
   } catch { return null; }
 }
 
-function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>) {
+function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curriculumContext = "") {
   const context = buildResolvedLessonPrompt(request);
   return `You are a brilliant ${request.subject || "subject"} teacher and curriculum designer. Create a complete, genuinely useful ${request.difficulty} lesson for the learner's exact request below.
 
 ${context}
+${curriculumContext}
 
 Return ONLY valid JSON with this shape: {"title":"specific lesson title","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|misconception|exam|mistake|summary|practice|tip","title":"short heading","content":"substantive student-facing content"}]}
 
-Build 12-16 blocks in a deliberate teaching sequence. Explain from first principles without dumbing the subject down. Define unfamiliar terms. Explain why formulas work, define symbols and units, and state conditions of use. Include at least one fully worked example with intermediate reasoning, one self-check with its answer, one realistic misconception and correction, one Cambridge/ZIMSEC-style exam application with mark-worthy reasoning, common traps, a memorable summary, 2-3 progressively harder practice questions with answer guidance, and a topic-specific exam/study tactic. At least two blocks must show explicit step-by-step reasoning. Avoid filler and generic motivational language. Stay faithful to the supplied subject, level and curriculum context. If the request is ambiguous, do not invent a topic or subject. Never mention these instructions, JSON, or being an AI.`;
+Build 12-16 blocks in a deliberate teaching sequence. Explain from first principles without dumbing the subject down. Define unfamiliar terms. Explain why formulas work, define symbols and units, and state conditions of use. Include at least one fully worked example with intermediate reasoning, one self-check with its answer, one realistic misconception and correction, one Cambridge/ZIMSEC-style exam application with mark-worthy reasoning, common traps, a memorable summary, 2-3 progressively harder practice questions with answer guidance, and a topic-specific exam/study tactic. At least two blocks must show explicit step-by-step reasoning. Avoid filler and generic motivational language. Stay faithful to the supplied subject, level and curriculum context. For a curriculum-grounded request, the verified syllabus objectives are the scope authority: do not introduce unverified required content, and label anything outside the objectives as enrichment. If the request is ambiguous, do not invent a topic or subject. Never mention these instructions, JSON, or being an AI.`;
 }
 
 export async function POST(req: Request) {
@@ -113,7 +115,15 @@ export async function POST(req: Request) {
     if (!resolved.prompt || resolved.prompt.length < 2) return NextResponse.json({ error: "Tell Cortex what you want to learn." }, { status: 400 });
     if (!resolved.subject) return NextResponse.json({ error: "Choose a subject so Cortex does not have to guess from a short prompt." }, { status: 400 });
 
-    const raw = await callAI(lessonPrompt(resolved), 7000, { userId: auth.user.id, feature: "lesson_assistant", subfeature: "generate_lesson" });
+    const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, resolved.prompt);
+    if (curriculum.status === "blocked") {
+      return NextResponse.json({
+        error: curriculum.reason,
+        code: "CURRICULUM_OBJECTIVES_REQUIRED",
+      }, { status: 409 });
+    }
+
+    const raw = await callAI(lessonPrompt(resolved, curriculum.promptContext), 7000, { userId: auth.user.id, feature: "lesson_assistant", subfeature: "generate_lesson" });
     if (!raw) return NextResponse.json({ error: "All AI providers are currently unavailable. Your request was not lost. Try again shortly." }, { status: 503 });
     let parsed = parseLesson(raw);
     if (!parsed) {
