@@ -38,11 +38,11 @@ export interface AcademicExperience {
 
 const FOUNDATION_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/achievements", "/settings"];
 const PRIMARY_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/tasks", "/focus", "/timetable", "/study-plan", "/achievements", "/settings"];
-const SCHOOL_ROUTES = ["/dashboard", "/discovery", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/exams", "/exam-sim", "/analytics", "/leaderboard", "/achievements", "/settings"];
+const SCHOOL_ROUTES = ["/dashboard", "/discovery", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/exams", "/exam-sim", "/analytics", "/leaderboard", "/achievements", "/settings", "/code-lab"];
 const SENIOR_ROUTES = [...SCHOOL_ROUTES, "/exam-hub", "/curriculum"];
-const TERTIARY_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/curriculum", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/achievements", "/settings"];
-const TVET_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/curriculum", "/studyspace", "/projects", "/workmate", "/exams", "/exam-sim", "/analytics", "/careers", "/achievements", "/settings"];
-const PROFESSIONAL_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/settings"];
+const TERTIARY_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/curriculum", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/achievements", "/settings", "/code-lab"];
+const TVET_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/curriculum", "/studyspace", "/projects", "/workmate", "/exams", "/exam-sim", "/analytics", "/careers", "/achievements", "/settings", "/code-lab"];
+const PROFESSIONAL_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/settings", "/code-lab"];
 
 const foundationTerms = { progress: "Growth", primaryNav: "Discover", secondaryNav: "Keep exploring", profileStat: "Points", streakLabel: "days exploring" };
 const schoolTerms = { progress: "Progress", primaryNav: "Study", secondaryNav: "Practice", profileStat: "XP", streakLabel: "day study streak" };
