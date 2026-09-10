@@ -19,21 +19,47 @@ function extractRequestedTopic(prompt: string): string {
   return match?.[1]?.trim() || prompt.slice(0, 500);
 }
 
-/** Resolves the learner's exact curriculum and narrows verified syllabus knowledge to the request. */
-export async function getVerifiedCurriculumPromptContext(userId: string, prompt: string): Promise<string> {
+export type VerifiedCurriculumPromptResult =
+  | { status: "none"; promptContext: ""; reason: string }
+  | { status: "resolved"; promptContext: string; reason: string }
+  | { status: "blocked"; promptContext: ""; reason: string };
+
+/**
+ * Resolve the learner's exact curriculum before any AI lesson is allowed to
+ * claim syllabus alignment. The database identity is authoritative: the
+ * lesson request never gets to choose or guess the learner's board/version.
+ */
+export async function resolveVerifiedCurriculumPromptContext(
+  userId: string,
+  prompt: string,
+): Promise<VerifiedCurriculumPromptResult> {
   const supabase = adminClient();
-  if (!supabase || !userId) return "";
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("curriculum_subjects").eq("id", userId).maybeSingle();
-  if (profileError) return "";
+  if (!supabase || !userId) return { status: "none", promptContext: "", reason: "No curriculum service is configured." };
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("curriculum_subjects")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) return { status: "none", promptContext: "", reason: "Curriculum profile could not be read." };
 
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
-  if (!identities.length) return "";
+  if (!identities.length) {
+    return { status: "none", promptContext: "", reason: "No verified curriculum identity is configured for this learner." };
+  }
+
   const normalizedPrompt = prompt.toLowerCase();
   const identity = identities.find((item) => {
     const subject = (item.subjectName ?? item.subjectId).toLowerCase();
     return subject.length >= 4 && normalizedPrompt.includes(subject);
   }) ?? (identities.length === 1 ? identities[0] : null);
-  if (!identity) return "";
+  if (!identity) {
+    return {
+      status: "blocked",
+      promptContext: "",
+      reason: "Select the subject attached to your curriculum before Cortex can apply syllabus-specific teaching.",
+    };
+  }
 
   const learner = toLearnerCurriculumContext(identity);
   const base = (table: string) => supabase.from(table).select("*")
@@ -44,7 +70,9 @@ export async function getVerifiedCurriculumPromptContext(userId: string, prompt:
     base("curriculum_versions"), base("curriculum_objectives"),
     supabase.from("objective_skill_mappings").select("*"), base("curriculum_knowledge"),
   ]);
-  if (versionsResult.error || objectivesResult.error || mappingsResult.error || knowledgeResult.error) return "";
+  if (versionsResult.error || objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
+    return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
+  }
 
   const result = resolveSystemCurriculum({
     learner,
@@ -53,7 +81,9 @@ export async function getVerifiedCurriculumPromptContext(userId: string, prompt:
     mappings: (mappingsResult.data ?? []) as ObjectiveSkillMapping[],
     knowledge: (knowledgeResult.data ?? []) as CurriculumKnowledgeItem[],
   });
-  if (result.blocked || !result.context) return "";
+  if (result.blocked || !result.context) {
+    return { status: "blocked", promptContext: "", reason: result.reason };
+  }
 
   const requestedTopic = extractRequestedTopic(prompt);
   const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge.items);
@@ -62,14 +92,28 @@ export async function getVerifiedCurriculumPromptContext(userId: string, prompt:
     const code = item.code ? `[${item.code}] ` : "";
     return `- ${item.kind}: ${code}${item.title}${item.content ? ` | ${item.content.slice(0, 500)}` : ""}`;
   });
-  return [
-    "\n\n=== VERIFIED LEARNER CURRICULUM CONTEXT ===",
-    curriculumSystemPromptContext(result.context),
-    "Topic-level grounding:",
-    learnCurriculumPromptSection(topicGrounding),
-    "Verified syllabus knowledge available to the lesson generator:",
-    ...knowledgeLines,
-    "Curriculum rule: use verified knowledge to constrain teaching, examples, terminology, assessment style and scope. Never claim missing or unverified material is required by this syllabus. If the requested topic is outside the verified curriculum, clearly label it as enrichment rather than required syllabus content.",
-    "=== END VERIFIED LEARNER CURRICULUM CONTEXT ===",
-  ].join("\n");
+  const objectiveLines = result.context.objectives.map((objective) => `- ${objective.code}: ${objective.statement}`);
+
+  return {
+    status: "resolved",
+    reason: "Verified objective-first curriculum context resolved.",
+    promptContext: [
+      "\n\n=== VERIFIED LEARNER CURRICULUM CONTEXT ===",
+      curriculumSystemPromptContext(result.context),
+      "Authoritative syllabus objectives. The lesson must first map the requested topic to these objectives:",
+      ...objectiveLines,
+      "Topic-level grounding:",
+      learnCurriculumPromptSection(topicGrounding),
+      "Verified syllabus knowledge available to the lesson generator:",
+      ...knowledgeLines,
+      "Curriculum rule: objectives are the scope gate. Teach the requested topic only insofar as it supports the verified objectives. Use verified knowledge for explanations, examples, terminology, assessment style and scope. Never claim missing or unverified material is required by this syllabus. If the requested topic is outside the verified objectives, clearly label it as enrichment rather than required syllabus content.",
+      "=== END VERIFIED LEARNER CURRICULUM CONTEXT ===",
+    ].join("\n"),
+  };
+}
+
+/** Backwards-compatible string helper for curriculum-aware callers. */
+export async function getVerifiedCurriculumPromptContext(userId: string, prompt: string): Promise<string> {
+  const result = await resolveVerifiedCurriculumPromptContext(userId, prompt);
+  return result.status === "resolved" ? result.promptContext : "";
 }
