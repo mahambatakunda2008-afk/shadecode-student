@@ -4,6 +4,24 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-10 — Production outage: ~14 consecutive deploys failing, root-caused and fixed
+
+**Severity:** every production deployment since commit `31fd6a3`/`be11da8` (the last `READY` build) through `7113ec4` — the entire same-day "objective-first Code Lab" commit chain, ~14 commits — failed to build on Vercel. `main`'s CI `Typecheck` step was also red. Production had been serving stale code for that whole window.
+
+**Root causes found (three independent bugs, not one):**
+
+1. **`src/lib/curriculum/user-resolution.ts` truncated.** Commit `9df5dbd` ("Fix curriculum resolver typecheck errors") deleted the top 124 lines of the file — all imports, type defs, and the `asVersion`/`asObjective`/`asMapping`/`asKnowledge` helpers — leaving a dangling closing brace. This alone failed `tsc --noEmit` for the whole repo. Reconstructed the file from the last intact version (`9dbae2d`), preserving the later typed-map-call cleanup (`6061960`).
+2. **`AnalyticsContent` component never created.** Commit `1283fa2` deleted the real 311-line analytics dashboard (grades, subject trends, weak areas, mastery, 7-day activity chart) from `analytics/page.tsx` in favor of routing through `ExperienceProgress`. The follow-up commit `33ea3d0` then pointed `ExperienceProgress` at `@/components/academic/AnalyticsContent` to fix the resulting circular import — but that component was never actually written, another `tsc` failure. Restored the original dashboard logic as `src/components/academic/AnalyticsContent.tsx`, the intended shared component.
+3. **Curriculum-integrity bug in `learn-grounding.ts`.** Independent of the build failures: `scoreItem()`'s priority-kind bonus (`+4` for `kind` in `topic`/`objective`/etc.) was applied unconditionally, so *any* verified knowledge item of a priority kind scored above zero and was treated as a matched syllabus item — even for a completely unrelated topic query with zero real text overlap. This directly violated the just-documented objective-first contract (`docs/curriculum/objective-first.md`): an unmapped topic must be labelled enrichment, never silently promoted to verified syllabus content. Found because it had a pre-existing, correctly-written regression test that was failing (`learn-grounding.test.ts` > "does not pretend an unmapped topic is syllabus content") — the test was right, the implementation was wrong. Gated the bonus on `score > 0`.
+
+**Also fixed two stale test assertions** that predated today's objective-first contract and were never updated for it (`system-resolver.test.ts`, two cases that omitted objectives and expected to pass the objectives gate anyway), plus one test with a wrong hardcoded expectation from its original authoring commit (`knowledge-intelligence.test.ts`, expected `"medium"` confidence for a match that the implementation has always — correctly — scored `"high"`).
+
+**Verified before push:** `tsc --noEmit` clean, `next lint` 0 errors (39 pre-existing warnings, unrelated), full vitest suite 471/471 passing. Confirmed CI green and Vercel production `READY` on the resulting commit (`0027268`) after push.
+
+**Process note:** four same-session commits (`9df5dbd`, `1283fa2`/`33ea3d0`, and the tests) landed directly on `main` without `tsc --noEmit` or a build check catching them first, despite that being a standing rule reinforced after the 2026-08-24 outage and the 2026-09-09 Verification Gate hardening. Recommend re-emphasizing to whichever agent/session authored the objective-first chain: run `tsc --noEmit` before every commit, not just before a batch push.
+
+---
+
 ## 2026-09-04 — Learn lesson generation becomes a real teaching system
 
 The screenshot-level failure was clear: Learn was generating a tiny handful of generic blocks, so a lesson could look polished while teaching almost nothing. The generator has now been moved from a short-summary prompt to a structured teaching contract.

@@ -116,6 +116,11 @@ This section is the strategic layer above the feature backlog. It prevents Corte
 
 The strategic roadmap above does not replace the verified implementation backlog below. Near-term execution should prioritize completing dormant real infrastructure before inventing new parallel systems.
 
+- [x] 🔴 **Production outage response (2026-09-10)**
+  - ~14 consecutive production deploys failing (the entire same-day "objective-first Code Lab" commit chain); CI `Typecheck` red on `main`. Three independent bugs: a truncated `user-resolution.ts` (accidental 124-line deletion), a referenced-but-never-created `AnalyticsContent` component (the real 311-line analytics dashboard had been deleted in the same refactor), and a real curriculum-integrity scoring bug in `learn-grounding.ts` that let unmapped topics score as verified syllabus matches. Also corrected two stale test assertions that predated the objective-first contract. Fixed directly on `main` (4 commits), verified `tsc`/lint/full test suite locally before push, confirmed CI green and Vercel production `READY` after. Full detail in `DEVLOG.md`.
+  - **Open follow-up, not yet done:** 6 PRs from Cortex Engine are still open against `main` (#279, #273, #272, #269, #268, #259) — not reviewed this cycle, prioritized the live outage instead.
+  - **Open follow-up, not yet done:** GitHub reports 20 Dependabot vulnerabilities on `main` (2 critical, 8 high, 9 moderate, 1 low) — not triaged this cycle.
+
 - [x] 🔴 **Tertiary Academic Model — discovery/specification first**
   - Define the minimum generic model for institution → qualification/program → course/module → semester/term → assessment.
   - Audit current `profiles`, `subjects`, `exams`, `study_topics` and onboarding data before adding anything.
