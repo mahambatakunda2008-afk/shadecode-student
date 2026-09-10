@@ -30,7 +30,11 @@ function scoreItem(item: CurriculumKnowledgeItem, topic: string): number {
   if (q.includes(title) && title.length >= 5) score += 55;
   if (content.includes(q)) score += 30;
   score += terms.reduce((total, term) => total + (title.includes(term) ? 8 : content.includes(term) ? 2 : 0), 0);
-  if (PRIORITY_KINDS.has(item.kind)) score += 4;
+  // Priority-kind items only get a ranking boost once genuine text overlap
+  // establishes a match. Applying it unconditionally let any "topic"/"objective"
+  // kind item score above zero for a completely unrelated query, silently
+  // presenting unmapped content as verified syllabus knowledge.
+  if (score > 0 && PRIORITY_KINDS.has(item.kind)) score += 4;
   return score;
 }
 
