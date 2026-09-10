@@ -4,6 +4,7 @@ import {
   CAMBRIDGE_9618_ASSESSMENT,
   CAMBRIDGE_9618_CANDIDATE_CONTENT,
   CAMBRIDGE_IGCSE_0478_CANDIDATE_CONTENT,
+  CAMBRIDGE_IGCSE_0984_CANDIDATE_CONTENT,
   CAMBRIDGE_O_LEVEL_2210_CANDIDATE_CONTENT,
   CAMBRIDGE_CANDIDATE_SCOPES,
 } from "./cambridge-computer-science-candidate-content";
@@ -15,6 +16,7 @@ const topicIds = (items: typeof CAMBRIDGE_IGCSE_0478_CANDIDATE_CONTENT) =>
 describe("Cambridge Computer Science candidate scopes", () => {
   it("covers all ten Cambridge IGCSE/O Level CS topic families", () => {
     expect(topicIds(CAMBRIDGE_IGCSE_0478_CANDIDATE_CONTENT)).toHaveLength(10);
+    expect(topicIds(CAMBRIDGE_IGCSE_0984_CANDIDATE_CONTENT)).toHaveLength(10);
     expect(topicIds(CAMBRIDGE_O_LEVEL_2210_CANDIDATE_CONTENT)).toHaveLength(10);
   });
 
@@ -36,11 +38,9 @@ describe("Cambridge Computer Science candidate scopes", () => {
     expect(CAMBRIDGE_9618_ASSESSMENT.find((paper) => paper.paper === "Paper 4")?.mode).toBe("practical");
   });
 
-  it("keeps 0478 and 2210 as separate learner identities", () => {
-    expect(CAMBRIDGE_CANDIDATE_SCOPES[0].identity.syllabusId).toBe("cambridge-0478");
-    expect(CAMBRIDGE_CANDIDATE_SCOPES[1].identity.syllabusId).toBe("cambridge-2210");
-    expect(CAMBRIDGE_CANDIDATE_SCOPES[0].identity.qualificationId).not.toBe(
-      CAMBRIDGE_CANDIDATE_SCOPES[1].identity.qualificationId,
-    );
+  it("keeps Cambridge CS qualifications as separate learner identities", () => {
+    const syllabusIds = CAMBRIDGE_CANDIDATE_SCOPES.map((scope) => scope.identity.syllabusId);
+    expect(syllabusIds).toEqual(["cambridge-0478", "cambridge-0984", "cambridge-2210", "cambridge-9618"]);
+    expect(new Set(syllabusIds).size).toBe(4);
   });
 });
