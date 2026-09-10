@@ -1,8 +1,8 @@
-# Cambridge Computer Science curriculum coverage
+# Cambridge Computer Science curriculum contract
 
-Shadecode Student now has a Cambridge Computer Science candidate scope alongside the ZIMSEC Computer Science work.
+Shadecode Student treats Cambridge Computer Science as versioned curriculum data, not a generic list of CS topics.
 
-## Current syllabus identities
+## Supported identities
 
 | Qualification | Syllabus | Exam years | Candidate status |
 |---|---|---:|---|
@@ -11,30 +11,42 @@ Shadecode Student now has a Cambridge Computer Science candidate scope alongside
 | Cambridge O Level Computer Science | 2210 | 2026-2028 | Candidate, fail-closed |
 | Cambridge International AS & A Level Computer Science | 9618 | 2027-2029 | Candidate, fail-closed |
 
-## What is captured
+## Alignment order
 
-The candidate inventory records the exact learner identity, syllabus version, topic hierarchy, subtopics, provenance and assessment components. It is broader than a list of learning objectives so Code Lab and Learn can eventually reason about the full academic scope.
+Learner identity → qualification → exact syllabus → syllabus version → complete content scope → learning requirements → assessment requirements → learning activity.
 
-For 0478, 0984 and 2210 the candidate hierarchy covers the ten Computer Systems / Algorithms, Programming and Logic topic families and their syllabus subtopics. Cambridge states that 2210 shares its content with 0478, while 0984 is otherwise the same syllabus as 0478 with a 9-1 grading scale.
+A learner must never receive a claim such as “required for your exam” from a broad generic CS knowledge base when an exact Cambridge syllabus is selected.
 
-For 9618 the candidate hierarchy covers all twenty sections, including the AS and A Level sections and their sub-sections.
+## Content versus requirements
 
-## Assessment captured
+The candidate inventory contains topic and subtopic structure. The requirements layer captures capabilities a learner is expected to demonstrate. The two layers are intentionally separate so a topic cannot be mistaken for a complete learning requirement.
 
-- 0478: Paper 1 Computer Systems and Paper 2 Algorithms, Programming and Logic, each 75 marks and 50%.
-- 2210: the same two-paper structure, each 75 marks and 50%, with the Cambridge O Level grading model.
-- 9618: Papers 1 and 2 for AS, plus Papers 3 and 4 for the complete A Level. Paper 4 is practical programming.
+The wider content model also supports concepts, knowledge, skills, practical work, projects, prerequisites, progression and assessment requirements. Objectives alone are not the whole syllabus.
 
-## Trust rule
+## Trust gates
 
-These are **candidate packs**, not yet production-verified packs. Every candidate content item is draft and every scope has `complete: false` and `verified: false`.
+Cambridge candidate data is currently `draft`, `complete: false`, and `verified: false` until it is reconciled against the exact official syllabus version. Code Lab and Cortex must fail closed for curriculum-aligned claims until those gates pass.
 
-That is intentional. A syllabus-aware learning system must not silently turn a partial extraction into exam-required content. The next ingestion step is to reconcile every content item and every objective against the exact official syllabus version, including the detailed "candidates should be able to" requirements, assessment objectives, command words, mathematical/pseudocode requirements, and assessment details.
+## Assessment
 
-Only after reconciliation may the scope become usable for curriculum-aligned Code Lab activities.
+Assessment components are stored separately from teaching content. This lets Exam Sim reproduce the relevant paper structure without pretending that a paper's existence proves the whole syllabus has been ingested.
 
-## Authority sources
+## 0478 / 0984 / 2210
 
-The authority registry pins the official Cambridge syllabus PDFs and qualification pages. The 0478 syllabus is the 2026-2028 version 5 document; the 2210 syllabus is the official 2026-2028 version 6 document; and the 9618 syllabus is the official 2027-2029 version 1 document.
+0478 and 0984 use the same Computer Science teaching content, with 0984 using the 9-1 grading scale. 2210 remains a separate learner identity even where content overlaps, because qualification and syllabus identity must remain explicit.
 
-Do not use third-party notes as authority. They can help discover missing structure during ingestion, but the official syllabus remains the source of truth.
+Cambridge's official 0478 page says the 2026–2028 syllabus updates the learning objectives and topic structure, removes pre-release material, moves logic gates to Paper 2, and adds a scenario-based Paper 2 question. urlOfficial Cambridge 0478 syllabushttps://www.cambridgeinternational.org/Images/697167-2026-2028-syllabus.pdf
+
+## 9618
+
+9618 is not treated as an extension of IGCSE. Its AS and A Level sections, assessment components and practical programming requirements are represented under its own syllabus identity and version. The official 2027–2029 syllabus specifies Paper 1 for sections 1–8, Paper 2 for sections 9–12, Paper 3 for sections 13–20 and Paper 4 as the practical component covering sections 19–20 with stated exclusions. urlOfficial Cambridge 9618 syllabushttps://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf
+
+## Progression
+
+Progression edges are intentionally conservative. They represent useful prerequisite/build-on relationships, not a claim that Cambridge mandates one classroom teaching sequence. The progression engine returns no edges unless the exact scope is complete and verified.
+
+## Source policy
+
+Official Cambridge International syllabus documents and syllabus-update documents are the authority. Third-party copies may assist discovery but cannot independently promote a candidate record to verified status.
+
+Stored requirement text is paraphrased. Shadecode Student should not copy an entire syllabus into application data.
