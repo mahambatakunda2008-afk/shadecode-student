@@ -27,6 +27,7 @@ export function learningEventToObservation(
     case "question_attempted":
       return {
         topicId: event.topicId,
+        kind: "assessment",
         correct: correct ?? false,
         evidenceScore,
         confidence,
@@ -36,12 +37,20 @@ export function learningEventToObservation(
       };
 
     case "lesson_completed":
+      return {
+        topicId: event.topicId,
+        kind: "exposure",
+        correct: false,
+        observedAt: event.occurredAt,
+      };
+
     case "activity_completed":
     case "quiz_completed":
     case "exam_completed":
     case "project_stage_completed":
       return {
         topicId: event.topicId,
+        kind: "assessment",
         correct: correct ?? true,
         evidenceScore,
         confidence,
@@ -53,6 +62,7 @@ export function learningEventToObservation(
     case "mistake_reviewed":
       return {
         topicId: event.topicId,
+        kind: "assessment",
         correct: true,
         evidenceScore,
         confidence,
