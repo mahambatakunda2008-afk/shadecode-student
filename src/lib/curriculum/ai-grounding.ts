@@ -107,22 +107,58 @@ export async function resolveVerifiedCurriculumPromptContext(
   const result = resolveSystemCurriculum({
     learner,
     versions,
-    objectives: (objectivesResult.data ?? []) as CurriculumObjective[],
+    objectives: (objectivesResult.data ?? []).map((objective) => ({
+      id: objective.id,
+      curriculum: {
+        boardId: identity.boardId,
+        qualificationId: identity.qualificationId,
+        level: identity.level,
+        syllabusId: identity.syllabusId,
+        syllabusVersion: identity.syllabusVersion,
+        subjectId: identity.subjectId,
+        paperOrComponentId: objective.paper_component,
+      },
+      code: objective.objective_key,
+      statement: objective.description ?? objective.title,
+      status: objective.status,
+      provenance: objective.provenance ?? {},
+    })) as CurriculumObjective[],
     mappings: (mappingsResult.data ?? []).map((mapping) => ({
       objectiveId: mapping.objective_id,
       skillId: mapping.skill_id,
       status: mapping.mapping_status === "verified" ? "verified" : "draft",
       provenance: mapping.provenance ?? {},
     })) as ObjectiveSkillMapping[],
-    knowledge: (knowledgeResult.data ?? []) as CurriculumKnowledgeItem[],
+    knowledge: (knowledgeResult.data ?? []).map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      code: item.knowledge_key ?? undefined,
+      title: item.title,
+      content: item.content,
+      status: item.status,
+      identity: {
+        boardId: item.board_id,
+        qualificationId: item.qualification_id,
+        level: item.level,
+        syllabusId: item.syllabus_id,
+        syllabusVersion: item.syllabus_version,
+        subjectId: item.subject_id,
+        paperComponentId: item.paper_component_id ?? undefined,
+      },
+      provenance: item.provenance ?? {},
+      parentId: item.parent_id ?? undefined,
+      topicCode: item.topic_key ?? undefined,
+      objectiveIds: item.objective_keys ?? [],
+      metadata: item.metadata ?? {},
+    })) as CurriculumKnowledgeItem[],
   });
   if (result.blocked || !result.context) {
     return { status: "blocked", promptContext: "", reason: result.reason };
   }
 
   const requestedTopic = extractRequestedTopic(prompt);
-  const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge);
-  const usefulKnowledge = topicGrounding.items.length ? topicGrounding.items : result.context.knowledge.slice(0, 80);
+  const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge.items);
+  const usefulKnowledge = topicGrounding.items.length ? topicGrounding.items : result.context.knowledge.items.slice(0, 80);
   const knowledgeLines = usefulKnowledge.map((item) => {
     const code = item.code ? `[${item.code}] ` : "";
     return `- ${item.kind}: ${code}${item.title}${item.content ? ` | ${item.content.slice(0, 500)}` : ""}`;
