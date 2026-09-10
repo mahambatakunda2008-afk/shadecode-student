@@ -1,6 +1,7 @@
 import type { ActivityLabel, CodeLabActivityMetadata, CurriculumIdentity, CurriculumObjective, CurriculumProvenance } from "@/lib/curriculum/objective-first";
 import { classifyActivity } from "@/lib/curriculum/objective-first";
-import { isContentAligned, sameLearningScope, type LearningScope, type LearningScopeIdentity } from "./learning-scope";
+import type { LearningScope } from "./learning-scope";
+import { selectUniversalCodeLabActivities, type UniversalCodeLabContext, type UniversalCodeLabSelection } from "./universal-selection";
 
 export type CodeLabActivityType = "trace" | "write" | "debug" | "predict" | "refactor" | "exam-task";
 export interface CodeLabActivity extends CodeLabActivityMetadata {
@@ -18,9 +19,9 @@ export interface CodeLabContext {
   skills: { id: string; name: string; description?: string }[];
   mappings: { objectiveId: string; skillId: string; status: "draft" | "verified"; provenance: CurriculumProvenance }[];
 }
-export interface UniversalCodeLabContext { learnerScope: LearningScopeIdentity; authoritativeScopes: LearningScope[]; }
+export { selectUniversalCodeLabActivities };
+export type { UniversalCodeLabContext, UniversalCodeLabSelection };
 export interface CodeLabSelection { activities: CodeLabActivity[]; blockedActivities: CodeLabActivity[]; reason: string; }
-export interface UniversalCodeLabSelection { aligned: CodeLabActivity[]; general: CodeLabActivity[]; blocked: CodeLabActivity[]; reason: string; }
 
 function sameIdentity(a?: CurriculumIdentity, b?: CurriculumIdentity): boolean {
   if (!a || !b) return false;
@@ -36,19 +37,6 @@ export function selectCodeLabActivities(context: CodeLabContext, activities: Cod
     else blocked.push(activity);
   }
   return { activities: eligible, blockedActivities: blocked, reason: eligible.length ? "Code Lab activities are restricted to the exact verified curriculum objectives." : "No verified Code Lab activities are available for this learner's exact curriculum context." };
-}
-
-/** Universal selector: complete verified content scope is the alignment gate. */
-export function selectUniversalCodeLabActivities(context: UniversalCodeLabContext, activities: CodeLabActivity[]): UniversalCodeLabSelection {
-  const matchingScopes = context.authoritativeScopes.filter((scope) => sameLearningScope(scope.identity, context.learnerScope));
-  const aligned: CodeLabActivity[] = [], general: CodeLabActivity[] = [], blocked: CodeLabActivity[] = [];
-  for (const activity of activities) {
-    const scope = matchingScopes.find((candidate) => !activity.scopeId || candidate.identity.courseId === activity.scopeId || candidate.identity.moduleId === activity.scopeId);
-    if (scope && isContentAligned(activity.contentIds ?? [], scope)) aligned.push(activity);
-    else if (!activity.curriculum && !activity.contentIds?.length && activity.enrichment === true) general.push(activity);
-    else blocked.push(activity);
-  }
-  return { aligned, general, blocked, reason: aligned.length ? "Activities are grounded in the learner's verified content scope." : "No verified content-aligned activities are available for this academic context." };
 }
 
 export function activityLabel(activity: CodeLabActivity): ActivityLabel { return classifyActivity(activity); }
