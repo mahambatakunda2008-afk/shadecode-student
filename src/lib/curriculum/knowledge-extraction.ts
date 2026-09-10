@@ -17,7 +17,7 @@ export interface CurriculumExtractionProfile {
 const DEFAULT_SECTION_KINDS: Record<string, CurriculumKnowledgeKind> = {
   topics: "topic",
   "content overview": "content_scope",
-  "content": "content_scope",
+  content: "content_scope",
   competencies: "competency",
   "learning outcomes": "learning_outcome",
   "learning objectives": "objective",
@@ -111,19 +111,22 @@ function extractSectionBlocks(
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
     const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
     chunks.forEach((chunk, index) => {
-      const item = makeItem(kind, currentHeading!.normalized, chunk.trim(), identity, {
+      const headingTitle = currentHeading!.raw;
+      const item = makeItem(kind, headingTitle, chunk.trim(), identity, {
         ...provenance,
-        sectionOrPage: provenance.sectionOrPage ?? `${currentHeading!.raw} (lines ${currentHeadingLine}-${endLine})`,
+        sectionOrPage: provenance.sectionOrPage ?? `${headingTitle} (lines ${currentHeadingLine}-${endLine})`,
       }, index, {
         parentId: parent?.id,
         metadata: {
           extraction: "section",
           section: currentHeading!.normalized,
-          heading: currentHeading!.raw,
+          heading: headingTitle,
           headingLevel: currentHeading!.level,
           lineStart: currentHeadingLine,
           lineEnd: endLine,
+          chunkIndex: index,
           parentKnowledgeKey: parent?.key ?? null,
+          stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, kind, headingTitle, chunk.trim()].join("|"),
         },
       });
       items.push(item);
@@ -177,6 +180,7 @@ function extractNumberedObjectives(
       ...(current.metadata ?? {}),
       lineStart: startLine,
       lineEnd: endLine,
+      stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "objective", current.code ?? current.title].join("|"),
     };
     items.push(current);
   };
@@ -187,7 +191,7 @@ function extractNumberedObjectives(
     if (match && regex.test(match[1])) {
       flush(index);
       startLine = index + 1;
-      current = makeItem("objective", match[1], match[2], identity, provenance, items.length, {
+      current = makeItem("objective", match[2], match[2], identity, provenance, items.length, {
         code: match[1],
         metadata: { extraction: "numbered-objective", lineStart: startLine },
       });
@@ -211,7 +215,11 @@ function extractPatternLines(
     const value = line.trim();
     if (!value || !patterns.some((pattern) => pattern.test(value))) return [];
     return [makeItem(kind, value.slice(0, 120), value, identity, provenance, index, {
-      metadata: { extraction: "pattern", line: index + 1 },
+      metadata: {
+        extraction: "pattern",
+        line: index + 1,
+        stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, kind, value].join("|"),
+      },
     })];
   });
 }
