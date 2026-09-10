@@ -24,11 +24,7 @@ export type VerifiedCurriculumPromptResult =
   | { status: "resolved"; promptContext: string; reason: string }
   | { status: "blocked"; promptContext: ""; reason: string };
 
-/**
- * Resolve the learner's exact curriculum before any AI lesson is allowed to
- * claim syllabus alignment. The database identity is authoritative: the
- * lesson request never gets to choose or guess the learner's board/version.
- */
+/** Resolve the learner's exact curriculum before AI can claim syllabus alignment. */
 export async function resolveVerifiedCurriculumPromptContext(
   userId: string,
   prompt: string,
@@ -54,24 +50,19 @@ export async function resolveVerifiedCurriculumPromptContext(
     return subject.length >= 4 && normalizedPrompt.includes(subject);
   }) ?? (identities.length === 1 ? identities[0] : null);
   if (!identity) {
-    return {
-      status: "blocked",
-      promptContext: "",
-      reason: "Select the subject attached to your curriculum before Cortex can apply syllabus-specific teaching.",
-    };
+    return { status: "blocked", promptContext: "", reason: "Select the subject attached to your curriculum before Cortex can apply syllabus-specific teaching." };
   }
 
   const learner = toLearnerCurriculumContext(identity);
 
-  // curriculum_objectives is normalized around curriculum_version_id. Do not
-  // query it as though board/level/syllabus columns existed on the objective
-  // row. Resolve the exact verified version first, then fetch its objectives.
+  // curriculum_versions is keyed by board/qualification/syllabus/version/subject.
+  // Level is carried by the learner identity because production does not store
+  // a level column on this table.
   const versionsResult = await supabase
     .from("curriculum_versions")
     .select("*")
     .eq("board_id", identity.boardId)
     .eq("qualification_id", identity.qualificationId)
-    .eq("level", identity.level)
     .eq("syllabus_id", identity.syllabusId)
     .eq("syllabus_version", identity.syllabusVersion)
     .eq("subject_id", identity.subjectId);
@@ -85,12 +76,12 @@ export async function resolveVerifiedCurriculumPromptContext(
     identity: {
       boardId: version.board_id,
       qualificationId: version.qualification_id,
-      level: version.level,
+      level: identity.level,
       syllabusId: version.syllabus_id,
       syllabusVersion: version.syllabus_version,
       subjectId: version.subject_id,
-      paperOrComponentId: version.paper_component_id ?? undefined,
-      examSession: version.exam_session ?? undefined,
+      paperOrComponentId: undefined,
+      examSession: undefined,
     },
     status: version.status,
     effectiveFrom: version.effective_from,
@@ -102,17 +93,9 @@ export async function resolveVerifiedCurriculumPromptContext(
   }
 
   const [objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
-    supabase
-      .from("curriculum_objectives")
-      .select("*")
-      .eq("curriculum_version_id", matchingVersion.id),
-    supabase
-      .from("objective_skill_mappings")
-      .select("*"),
-    supabase
-      .from("curriculum_knowledge")
-      .select("*")
-      .eq("curriculum_version_id", matchingVersion.id),
+    supabase.from("curriculum_objectives").select("*").eq("curriculum_version_id", matchingVersion.id),
+    supabase.from("objective_skill_mappings").select("*"),
+    supabase.from("curriculum_knowledge").select("*").eq("curriculum_version_id", matchingVersion.id),
   ]);
 
   if (objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
@@ -167,9 +150,7 @@ export async function resolveVerifiedCurriculumPromptContext(
       metadata: item.metadata ?? {},
     })) as CurriculumKnowledgeItem[],
   });
-  if (result.blocked || !result.context) {
-    return { status: "blocked", promptContext: "", reason: result.reason };
-  }
+  if (result.blocked || !result.context) return { status: "blocked", promptContext: "", reason: result.reason };
 
   const requestedTopic = extractRequestedTopic(prompt);
   const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge.items);
@@ -198,7 +179,6 @@ export async function resolveVerifiedCurriculumPromptContext(
   };
 }
 
-/** Backwards-compatible string helper for curriculum-aware callers. */
 export async function getVerifiedCurriculumPromptContext(userId: string, prompt: string): Promise<string> {
   const result = await resolveVerifiedCurriculumPromptContext(userId, prompt);
   return result.status === "resolved" ? result.promptContext : "";
