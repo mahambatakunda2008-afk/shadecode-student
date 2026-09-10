@@ -1,16 +1,7 @@
 import type { CurriculumKnowledgeIdentity, CurriculumKnowledgeItem } from "./knowledge";
 import { buildSystemCurriculumContext, type SystemCurriculumContext } from "./system-curriculum-context";
-import type {
-  CurriculumObjective,
-  CurriculumIdentity,
-  ObjectiveSkillMapping,
-} from "./objective-first";
-import {
-  resolveCurriculumContext,
-  type CurriculumVersionRecord,
-  type LearnerCurriculumContext,
-  type ResolvedCurriculumContext,
-} from "./resolver";
+import type { CurriculumObjective, CurriculumIdentity, ObjectiveSkillMapping } from "./objective-first";
+import { resolveCurriculumContext, type CurriculumVersionRecord, type LearnerCurriculumContext, type ResolvedCurriculumContext } from "./resolver";
 
 export interface SystemCurriculumResolutionInput {
   learner: LearnerCurriculumContext;
@@ -43,22 +34,16 @@ function toKnowledgeIdentity(identity: CurriculumIdentity): CurriculumKnowledgeI
 /**
  * Single system-wide curriculum gateway.
  *
- * Every curriculum-aware module should resolve through this function rather
- * than implementing its own board/syllabus/version filtering. It deliberately
- * fails closed when the learner identity, verified curriculum version, or
- * authoritative objective set is unavailable.
+ * A verified curriculum version plus verified objectives is enough to establish
+ * the authoritative scope for objective-first teaching. Whole-syllabus
+ * knowledge is richer grounding, but it must not be a prerequisite for Learn
+ * when the objective set itself is already verified.
  */
-export function resolveSystemCurriculum(
-  input: SystemCurriculumResolutionInput,
-): SystemCurriculumResolution {
+export function resolveSystemCurriculum(input: SystemCurriculumResolutionInput): SystemCurriculumResolution {
   const resolved = resolveCurriculumContext(input);
 
   if (resolved.status !== "resolved" || !resolved.curriculum) {
-    return {
-      resolved,
-      blocked: true,
-      reason: resolved.reason,
-    };
+    return { resolved, blocked: true, reason: resolved.reason };
   }
 
   if (resolved.objectives.length === 0) {
@@ -72,29 +57,22 @@ export function resolveSystemCurriculum(
   const identity = toKnowledgeIdentity(resolved.curriculum);
   const context = buildSystemCurriculumContext(identity, resolved.knowledge, true, resolved.objectives);
 
-  if (context.knowledge.items.length === 0) {
-    return {
-      resolved,
-      context,
-      blocked: true,
-      reason: "Curriculum objectives are verified, but no verified whole-syllabus knowledge is available.",
-    };
-  }
-
+  // Objective-first teaching can proceed with zero knowledge rows. The
+  // generator must then use the verified objective statements as its minimum
+  // scope and clearly distinguish any enrichment. Rich knowledge remains an
+  // optional accelerator rather than a hard dependency.
   return {
     resolved,
     context,
     blocked: false,
-    reason: "Verified objective-first curriculum context resolved.",
+    reason: context.knowledge.items.length
+      ? "Verified objective-first curriculum context resolved with syllabus knowledge."
+      : "Verified objective-first curriculum context resolved from the authoritative objective set; no supplemental knowledge pack is available yet.",
   };
 }
 
-export function requireSystemCurriculum(
-  input: SystemCurriculumResolutionInput,
-): SystemCurriculumContext {
+export function requireSystemCurriculum(input: SystemCurriculumResolutionInput): SystemCurriculumContext {
   const result = resolveSystemCurriculum(input);
-  if (result.blocked || !result.context) {
-    throw new Error(result.reason);
-  }
+  if (result.blocked || !result.context) throw new Error(result.reason);
   return result.context;
 }
