@@ -28,7 +28,8 @@ export function isVerifiedLearningContent(item: LearningContentItem): boolean {
 }
 
 export function isScopeUsable(scope: LearningScope): boolean {
-  return scope.complete && scope.verified && scope.content.some(isVerifiedLearningContent);
+  const activeContent = scope.content.filter((item) => item.status !== "archived");
+  return scope.complete && scope.verified && activeContent.length > 0 && activeContent.every(isVerifiedLearningContent);
 }
 
 export function isContentAligned(activityContentIds: string[], scope: LearningScope): boolean {
