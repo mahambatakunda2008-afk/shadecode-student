@@ -1,3 +1,4 @@
+import type { CurriculumObjective } from "./objective-first";
 import type { CurriculumKnowledgeBundle, CurriculumKnowledgeIdentity, CurriculumKnowledgeItem } from "./knowledge";
 
 /**
@@ -7,6 +8,7 @@ import type { CurriculumKnowledgeBundle, CurriculumKnowledgeIdentity, Curriculum
  */
 export interface SystemCurriculumContext {
   identity: CurriculumKnowledgeIdentity;
+  objectives: CurriculumObjective[];
   knowledge: CurriculumKnowledgeBundle;
   required: CurriculumKnowledgeItem[];
   supporting: CurriculumKnowledgeItem[];
@@ -20,6 +22,7 @@ export function buildSystemCurriculumContext(
   identity: CurriculumKnowledgeIdentity,
   items: CurriculumKnowledgeItem[],
   verifiedOnly = true,
+  objectives: CurriculumObjective[] = [],
 ): SystemCurriculumContext {
   const usable = items.filter((item) => {
     if (item.status === "archived") return false;
@@ -33,6 +36,7 @@ export function buildSystemCurriculumContext(
 
   return {
     identity,
+    objectives,
     knowledge: { identity, items: usable, verifiedOnly },
     required: usable.filter((item) => ["objective", "content_scope", "competency", "learning_outcome", "skill"].includes(item.kind)),
     supporting: usable.filter((item) => ["topic", "prerequisite", "progression", "resource", "guidance", "note", "constraint"].includes(item.kind)),
@@ -45,6 +49,10 @@ export function buildSystemCurriculumContext(
 
 export function curriculumSystemPromptContext(context: SystemCurriculumContext): string {
   const { identity } = context;
+  const objectiveLines = context.objectives.length
+    ? context.objectives.map((objective) => `- ${objective.code}: ${objective.statement}`).join("\n")
+    : "- No verified objectives are available.";
+
   return [
     `Board: ${identity.boardId}`,
     `Qualification: ${identity.qualificationId}`,
@@ -53,7 +61,11 @@ export function curriculumSystemPromptContext(context: SystemCurriculumContext):
     `Version: ${identity.syllabusVersion}`,
     `Subject: ${identity.subjectId}`,
     `Paper/component: ${identity.paperComponentId ?? "not specified"}`,
+    `Verified curriculum objectives: ${context.objectives.length}`,
+    "Verified syllabus objectives (authoritative scope):",
+    objectiveLines,
     `Verified curriculum knowledge items: ${context.knowledge.items.length}`,
+    "Rule: objectives are the first scope gate. Use knowledge only to teach, explain or assess against the verified objectives. Do not turn supporting knowledge into a new syllabus requirement.",
     "Rule: do not present unverified or unmapped curriculum claims as required content.",
   ].join("\n");
 }
