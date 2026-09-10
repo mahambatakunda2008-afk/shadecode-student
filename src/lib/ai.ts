@@ -30,15 +30,24 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
 
   // Curriculum grounding is centralized here so every server-side AI feature
   // that already supplies userId receives the same verified curriculum context.
-  // Failures are non-fatal for generic AI, but verified curriculum claims are
-  // never fabricated by this layer.
+  // Generic AI remains available when grounding is unavailable, but curriculum
+  // lesson generation is deliberately fail-closed rather than teaching from
+  // an unverified syllabus.
   let groundedPrompt = prompt;
+  let curriculumGroundingAvailable = false;
   if (userId) {
     try {
-      groundedPrompt = `${prompt}${await getVerifiedCurriculumPromptContext(userId, prompt)}`;
+      const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt);
+      curriculumGroundingAvailable = curriculumContext.trim().length > 0;
+      groundedPrompt = `${prompt}${curriculumContext}`;
     } catch (error) {
       console.error("[AI] curriculum grounding failed:", error);
     }
+  }
+
+  if (feature === "lesson_assistant" && userId && !curriculumGroundingAvailable) {
+    console.warn("[AI] Lesson generation blocked: verified curriculum context is unavailable.");
+    return null;
   }
 
   const promptTokens = Math.ceil(groundedPrompt.length / 4);
