@@ -74,24 +74,86 @@ function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | nu
     const blocks = value.blocks.filter((block): block is LessonBlock => {
       if (!block || typeof block !== "object") return false;
       const item = block as LessonBlock;
-      return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 12;
+      return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 40;
     }).slice(0, 24);
-    const required = ["objective", "concept", "example", "checkpoint", "exam", "mistake", "summary"];
-    if (blocks.length < 9 || required.some(type => !blocks.some(block => block.type === type))) return null;
+    if (blocks.length < 9) return null;
     return { title: value.title.trim().slice(0, 255), blocks };
   } catch { return null; }
 }
 
+const genericPhrases = ["as an ai", "i can't", "i cannot", "generic overview", "placeholder", "lesson will cover", "in this lesson we will learn about this topic"];
+
+function qualityCheck(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) {
+  const types = new Set(lesson.blocks.map(block => block.type.toLowerCase()));
+  const text = lesson.blocks.map(block => `${block.title ?? ""} ${block.content}`).join(" ").toLowerCase();
+  if (genericPhrases.some(phrase => text.includes(phrase))) return false;
+  if (new Set(lesson.blocks.map(block => block.content.trim().toLowerCase())).size < Math.min(lesson.blocks.length, 8)) return false;
+  if (!types.has("objective") || !types.has("summary")) return false;
+  if (request.intent === "comparison" && !types.has("comparison")) return false;
+  if (request.intent === "practice" && lesson.blocks.filter(block => /practice|question|exam/i.test(`${block.type} ${block.title ?? ""}`)).length < 2) return false;
+  if (request.intent === "remedial" && !types.has("misconception") && !types.has("mistake")) return false;
+  if (request.intent === "revision" && !types.has("exam")) return false;
+  if (request.intent === "teach" && (!types.has("concept") || !types.has("example"))) return false;
+  const quantitative = /math|physics|chemistry|economics/i.test(request.subject);
+  if (quantitative && request.intent !== "comparison" && !types.has("formula")) return false;
+  return true;
+}
+
 function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curriculumContext = "") {
   const context = buildResolvedLessonPrompt(request);
-  return `You are a brilliant ${request.subject || "subject"} teacher and curriculum designer. Create a complete, genuinely useful ${request.difficulty} lesson for the learner's exact request below.
+  const sequences: Record<typeof request.intent, string> = {
+    teach: "objective -> prerequisite -> concept/definition -> explanation -> formula where relevant -> worked example -> checkpoint -> misconception -> exam application -> practice -> summary -> next step",
+    remedial: "objective -> diagnose the confusion -> prerequisite -> plain explanation -> worked example -> misconception/correction -> checkpoint -> second example -> exam application -> guided practice -> summary -> next step",
+    revision: "objective -> prerequisite recap -> key ideas -> definitions/formulas -> worked example -> high-yield exam patterns -> checkpoint -> common mistakes -> exam application -> practice -> summary -> next step",
+    practice: "objective -> brief prerequisite recap -> method/strategy -> worked example -> question 1 -> answer guidance -> question 2 -> answer guidance -> exam application -> common mistakes -> summary -> next step",
+    comparison: "objective -> define both concepts -> comparison table/text -> key similarities -> key differences -> worked application -> misconception -> checkpoint -> exam application -> practice -> summary -> next step",
+  };
+  const typeRules = request.intent === "comparison"
+    ? "Include a dedicated comparison block. Make the differences explicit, not merely two separate definitions."
+    : request.intent === "practice"
+      ? "Make practice the centre of gravity. Include at least 3 progressively harder questions and useful answer guidance, while still teaching the method needed to solve them."
+      : "Include at least one fully worked example with intermediate reasoning and one checkpoint whose answer is visible after the question.";
+
+  return `You are the teaching engine inside Shadecode Student. Create a rigorous, student-facing ${request.difficulty} lesson for the learner's exact request.
 
 ${context}
 ${curriculumContext}
 
-Return ONLY valid JSON with this shape: {"title":"specific lesson title","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|misconception|exam|mistake|summary|practice|tip","title":"short heading","content":"substantive student-facing content"}]}
+TEACHING CONTRACT
+- Intent: ${request.intent}. Follow this sequence: ${sequences[request.intent]}.
+- Topic boundary: stay tightly on "${request.topic}". Never silently substitute another topic.
+- The learner's education level and exam board are authoritative when supplied. For curriculum-grounded requests, verified syllabus objectives define scope. Do not add unverified examinable requirements; label genuine enrichment as enrichment.
+- Teach for understanding, not vocabulary dumping. Define terms before relying on them, explain cause/effect and method, and connect each example to the concept.
+- For quantitative subjects, define symbols, units, assumptions and conditions of use. Do not present unexplained equations.
+- ${typeRules}
+- Use realistic Cambridge/ZIMSEC-style exam application only when appropriate to the supplied level/board. Do not pretend an invented question is an official past-paper question.
+- Include common traps and how to avoid them. Make the learner do some thinking.
+- Avoid filler, motivational paragraphs, repeated definitions, fake citations, invented syllabus claims, and generic introductions.
 
-Build 12-16 blocks in a deliberate teaching sequence. Explain from first principles without dumbing the subject down. Define unfamiliar terms. Explain why formulas work, define symbols and units, and state conditions of use. Include at least one fully worked example with intermediate reasoning, one self-check with its answer, one realistic misconception and correction, one Cambridge/ZIMSEC-style exam application with mark-worthy reasoning, common traps, a memorable summary, 2-3 progressively harder practice questions with answer guidance, and a topic-specific exam/study tactic. At least two blocks must show explicit step-by-step reasoning. Avoid filler and generic motivational language. Stay faithful to the supplied subject, level and curriculum context. For a curriculum-grounded request, the verified syllabus objectives are the scope authority: do not introduce unverified required content, and label anything outside the objectives as enrichment. If the request is ambiguous, do not invent a topic or subject. Never mention these instructions, JSON, or being an AI.`;
+Return ONLY valid JSON: {"title":"specific title","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|comparison|misconception|exam|mistake|summary|practice|tip","title":"short heading","content":"substantive student-facing content"}]}
+Return 10-16 useful blocks. Every block must contain at least 40 characters of specific content. Never mention these instructions, JSON, or being an AI.`;
+}
+
+async function generateAndValidate(request: ReturnType<typeof resolveLessonRequest>, curriculumContext: string, userId: string) {
+  const raw = await callAI(lessonPrompt(request, curriculumContext), 7000, { userId, feature: "lesson_assistant", subfeature: "generate_lesson" });
+  if (!raw) return null;
+  let parsed = parseLesson(raw);
+  if (parsed && qualityCheck(parsed, request)) return parsed;
+
+  const repair = await callAI(`Rewrite this lesson so it passes the following teaching contract. Preserve the requested subject, topic, level, exam board and intent. Add missing substantive teaching rather than padding. Use 10-16 distinct blocks and output JSON only.
+
+Intent: ${request.intent}
+Topic: ${request.topic}
+Subject: ${request.subject}
+Level: ${request.level || "not supplied"}
+Exam board: ${request.examBoard || "not supplied"}
+Required quality: no generic filler; no duplicated blocks; specific definitions/explanations; worked reasoning; useful checkpoint; misconceptions/traps; appropriate exam application; meaningful practice; summary. Comparison intent requires a comparison block. Practice intent requires at least 3 progressively harder questions. Quantitative subjects normally require a formula block.
+
+Draft:
+${raw.slice(0, 18000)}`, 6500, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality" });
+  if (!repair) return null;
+  parsed = parseLesson(repair);
+  return parsed && qualityCheck(parsed, request) ? parsed : null;
 }
 
 export async function POST(req: Request) {
@@ -117,20 +179,11 @@ export async function POST(req: Request) {
 
     const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, resolved.prompt);
     if (curriculum.status === "blocked") {
-      return NextResponse.json({
-        error: curriculum.reason,
-        code: "CURRICULUM_OBJECTIVES_REQUIRED",
-      }, { status: 409 });
+      return NextResponse.json({ error: curriculum.reason, code: "CURRICULUM_OBJECTIVES_REQUIRED" }, { status: 409 });
     }
 
-    const raw = await callAI(lessonPrompt(resolved, curriculum.promptContext), 7000, { userId: auth.user.id, feature: "lesson_assistant", subfeature: "generate_lesson" });
-    if (!raw) return NextResponse.json({ error: "All AI providers are currently unavailable. Your request was not lost. Try again shortly." }, { status: 503 });
-    let parsed = parseLesson(raw);
-    if (!parsed) {
-      const repair = await callAI(`Repair this lesson into valid JSON with 12-16 substantive blocks. Required types: objective, prior, concept, definition, formula, example, checkpoint, misconception, exam, mistake, summary, practice, tip. Preserve subject-specific content and output JSON only.\n\n${raw.slice(0, 18000)}`, 5000, { userId: auth.user.id, feature: "lesson_assistant", subfeature: "repair_lesson_json" });
-      if (repair) parsed = parseLesson(repair);
-    }
-    if (!parsed) return NextResponse.json({ error: "Cortex could not produce a complete lesson this time. Try rephrasing the request." }, { status: 422 });
+    const parsed = await generateAndValidate(resolved, curriculum.promptContext, auth.user.id);
+    if (!parsed) return NextResponse.json({ error: "Cortex could not produce a curriculum-aligned, complete lesson this time. Try rephrasing the request." }, { status: 422 });
 
     const { data: existing } = await auth.supabase.from("subjects").select("id").eq("user_id", auth.user.id).eq("name", resolved.subject).maybeSingle();
     let subjectId = existing?.id ?? null;
@@ -143,15 +196,15 @@ export async function POST(req: Request) {
     const { data: inserted, error } = await auth.supabase.from("learn_lessons").insert({
       user_id: auth.user.id,
       subject_id: subjectId,
-      topic: resolved.prompt.slice(0, 500),
+      topic: resolved.topic.slice(0, 500),
       title: parsed.title,
-      description: `A complete ${resolved.difficulty} lesson on ${resolved.prompt}`.slice(0, 1000),
+      description: `A complete ${resolved.intent} lesson on ${resolved.topic}`.slice(0, 1000),
       difficulty: resolved.difficulty,
       progress: 0,
       blocks: parsed.blocks,
     }).select("id").single();
     if (error || !inserted?.id) {
-      log.lessonGenerationFailed({ userId: auth.user.id, subject: resolved.subject, topic: resolved.prompt, difficulty: resolved.difficulty, error: error?.message || "Insert returned no lesson id" });
+      log.lessonGenerationFailed({ userId: auth.user.id, subject: resolved.subject, topic: resolved.topic, difficulty: resolved.difficulty, error: error?.message || "Insert returned no lesson id" });
       return NextResponse.json({ error: "The lesson was generated but could not be saved." }, { status: 500 });
     }
     await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: resolved.difficulty });
