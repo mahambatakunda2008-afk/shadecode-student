@@ -14,6 +14,11 @@ function adminClient() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+function extractRequestedTopic(prompt: string): string {
+  const match = prompt.match(/master this request:\s*"([^"]+)"/i);
+  return match?.[1]?.trim() || prompt.slice(0, 500);
+}
+
 /** Resolves the learner's exact curriculum and narrows verified syllabus knowledge to the request. */
 export async function getVerifiedCurriculumPromptContext(userId: string, prompt: string): Promise<string> {
   const supabase = adminClient();
@@ -50,7 +55,8 @@ export async function getVerifiedCurriculumPromptContext(userId: string, prompt:
   });
   if (result.blocked || !result.context) return "";
 
-  const topicGrounding = buildLearnCurriculumGrounding(prompt, result.context.knowledge.items);
+  const requestedTopic = extractRequestedTopic(prompt);
+  const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge.items);
   const usefulKnowledge = topicGrounding.items.length ? topicGrounding.items : result.context.knowledge.items.slice(0, 80);
   const knowledgeLines = usefulKnowledge.map((item) => {
     const code = item.code ? `[${item.code}] ` : "";
