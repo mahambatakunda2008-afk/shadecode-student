@@ -4,8 +4,8 @@ import { logAIUsage } from "@/lib/ai/tracker";
 import { getVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
-const DEFAULT_MAX_CHAIN_MS = 30000;
-const DEFAULT_PER_PROVIDER_MAX_MS = 8000;
+const DEFAULT_MAX_CHAIN_MS = 45000;
+const DEFAULT_PER_PROVIDER_MAX_MS = 12000;
 const TELEMETRY_BUDGET_MS = 1000;
 const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
 
@@ -25,29 +25,31 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
 
 export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOptions = {}): Promise<string | null> {
   const { userId, feature = "ai_assistant", subfeature = "generate" } = options;
-  const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, DEFAULT_MAX_CHAIN_MS));
+  const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, 60000));
   const perProviderMaxMs = Math.max(1000, Math.min(options.perProviderMaxMs ?? DEFAULT_PER_PROVIDER_MAX_MS, maxChainMs));
 
-  // Curriculum grounding is centralized here so every server-side AI feature
-  // that already supplies userId receives the same verified curriculum context.
-  // Generic AI remains available when grounding is unavailable, but curriculum
-  // lesson generation is deliberately fail-closed rather than teaching from
-  // an unverified syllabus.
+  // Curriculum grounding is additive. A missing curriculum record must not be
+  // misreported to the learner as an AI-provider outage. Verified curriculum
+  // data is still used whenever available, while generic AI remains available
+  // for learners whose academic profile has not yet been configured.
   let groundedPrompt = prompt;
   let curriculumGroundingAvailable = false;
+  let curriculumGroundingReason = "not requested";
   if (userId) {
     try {
       const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt);
       curriculumGroundingAvailable = curriculumContext.trim().length > 0;
-      groundedPrompt = `${prompt}${curriculumContext}`;
+      curriculumGroundingReason = curriculumGroundingAvailable ? "resolved" : "unavailable";
+      if (curriculumGroundingAvailable) {
+        groundedPrompt = `${prompt}${curriculumContext}`;
+      } else {
+        groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available for this request. Do not claim that any topic, objective, terminology, assessment style, or scope is required by a specific examination board. Teach the requested topic as general educational material and clearly avoid unsupported syllabus claims.\n=== END CURRICULUM SAFETY NOTE ===`;
+      }
     } catch (error) {
+      curriculumGroundingReason = "lookup_error";
       console.error("[AI] curriculum grounding failed:", error);
+      groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded. Do not claim board-specific syllabus alignment or invent syllabus objectives. Teach only the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
     }
-  }
-
-  if (feature === "lesson_assistant" && userId && !curriculumGroundingAvailable) {
-    console.warn("[AI] Lesson generation blocked: verified curriculum context is unavailable.");
-    return null;
   }
 
   const promptTokens = Math.ceil(groundedPrompt.length / 4);
@@ -60,7 +62,14 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       latencyMs: Date.now() - params.startTime, success: params.success,
       errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined,
       errorCode: params.err instanceof Error ? params.err.constructor.name : undefined,
-      requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs },
+      requestMetadata: {
+        promptLength: groundedPrompt.length,
+        maxTokens,
+        maxChainMs,
+        perProviderMaxMs,
+        curriculumGrounding: curriculumGroundingAvailable,
+        curriculumGroundingReason,
+      },
     });
     void Promise.race([telemetry.catch(() => undefined), new Promise<void>(resolve => setTimeout(resolve, TELEMETRY_BUDGET_MS))]);
   }
