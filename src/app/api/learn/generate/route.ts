@@ -19,17 +19,48 @@ async function authenticate(req: Request): Promise<AuthContext | null> { const a
 function extractObject(raw: string): string | null { const text = raw.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim(); const start = text.indexOf("{"); if (start < 0) return null; let depth = 0, string = false, escaped = false; for (let i = start; i < text.length; i++) { const ch = text[i]; if (string) { if (escaped) escaped = false; else if (ch === "\\") escaped = true; else if (ch === '"') string = false; continue; } if (ch === '"') string = true; else if (ch === "{") depth++; else if (ch === "}" && --depth === 0) return text.slice(start, i + 1); } return null; }
 function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | null { const candidate = extractObject(raw); if (!candidate) return null; try { const value = JSON.parse(candidate) as { title?: unknown; blocks?: unknown }; if (typeof value.title !== "string" || !value.title.trim() || !Array.isArray(value.blocks)) return null; const blocks = value.blocks.filter((block): block is LessonBlock => { if (!block || typeof block !== "object") return false; const item = block as LessonBlock; return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 30; }).slice(0, 18); if (blocks.length < 10) return null; return { title: value.title.trim().slice(0, 255), blocks }; } catch { return null; } }
 const genericPhrases = ["as an ai", "i can't", "i cannot", "generic overview", "placeholder", "lesson will cover", "in this lesson we will learn about this topic", "let's dive into"];
-const typeAliases: Record<string, string> = { "worked_example": "example", "worked-example": "example", "worked example": "example", "example_solution": "example", "application_task": "application", "application-task": "application", "real_world_application": "application", "real-world-application": "application", "exam_transfer": "exam", "exam-transfer": "exam", "exam_application": "exam", "key_takeaways": "summary", "key-takeaways": "summary", "takeaways": "summary", "check": "checkpoint", "think": "checkpoint", "thinking_checkpoint": "checkpoint", "common_mistake": "mistake", "common-mistakes": "mistake", "trap": "misconception", "prior_knowledge": "prior", "prerequisite": "prior", "method": "formula", "steps": "formula", "questions": "practice", "practice_questions": "practice", "practice-questions": "practice" };
+const typeAliases: Record<string, string> = { "worked_example": "example", "worked-example": "example", "worked example": "example", "example_solution": "example", "application_task": "application", "application-task": "application", "real_world_application": "application", "real-world-application": "application", "exam_transfer": "exam", "exam-transfer": "exam", "exam_application": "exam", "key_takeaways": "summary", "key-takeaways": "summary", "takeaways": "summary", "check": "checkpoint", "think": "checkpoint", "thinking_checkpoint": "checkpoint", "common_mistake": "mistake", "common-mistakes": "mistake", "trap": "misconception", "prior_knowledge": "prior", "prerequisite": "prior", "method": "formula", "steps": "formula", "questions": "practice", "practice_questions": "practice", "practice-questions": "practice", "worked solution": "example", "real world": "application", "exam application": "exam", "key takeaway": "summary" };
 function normalizedType(value: string) { const key = value.trim().toLowerCase().replace(/\s+/g, " "); return typeAliases[key] ?? key; }
-function qualityCheck(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) { const types = new Set(lesson.blocks.map(block => normalizedType(block.type))); const contents = lesson.blocks.map(block => block.content.trim().toLowerCase()); const text = contents.join(" "); const failures: string[] = []; if (genericPhrases.some(p => text.includes(p))) failures.push("generic-language"); if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition"); if (!types.has("objective")) failures.push("objective"); if (!types.has("summary")) failures.push("summary"); if (!types.has("concept") && !types.has("definition")) failures.push("concept"); if (!types.has("checkpoint")) failures.push("checkpoint"); if (!types.has("example")) failures.push("example"); if (!types.has("application")) failures.push("application"); if (request.intent === "comparison" && !types.has("comparison")) failures.push("comparison"); if (request.intent === "practice" && lesson.blocks.filter(block => /practice|question/i.test(`${normalizedType(block.type)} ${block.title ?? ""} ${block.content}`)).length < 2) failures.push("practice-depth"); if (request.intent === "remedial" && !types.has("misconception") && !types.has("mistake")) failures.push("remedial-correction"); if (request.intent === "revision" && !types.has("exam") && !types.has("practice")) failures.push("revision-transfer"); if (request.intent === "teach" && !types.has("concept") && !types.has("definition")) failures.push("teaching-explanation"); if (/math|physics|chemistry|economics/i.test(request.subject) && request.intent !== "comparison" && !types.has("formula")) failures.push("formula"); if (failures.length) { console.warn("[LEARN] quality gate rejected lesson", { subject: request.subject, topic: request.topic, intent: request.intent, failures, types: [...types], blockCount: lesson.blocks.length }); return false; } return true; }
+function qualityFailures(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) {
+  const types = new Set(lesson.blocks.map(block => normalizedType(block.type)));
+  const contents = lesson.blocks.map(block => block.content.trim().toLowerCase());
+  const text = contents.join(" ");
+  const failures: string[] = [];
+  if (genericPhrases.some(p => text.includes(p))) failures.push("generic-language");
+  if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
+  if (!types.has("objective")) failures.push("objective");
+  if (!types.has("summary")) failures.push("summary");
+  if (!types.has("concept") && !types.has("definition")) failures.push("concept");
+  if (!types.has("checkpoint")) failures.push("checkpoint");
+  if (!types.has("example")) failures.push("example");
+  if (!types.has("application")) failures.push("application");
+  if (request.intent === "comparison" && !types.has("comparison")) failures.push("comparison");
+  if (request.intent === "practice" && lesson.blocks.filter(block => /practice|question/i.test(`${normalizedType(block.type)} ${block.title ?? ""} ${block.content}`)).length < 2) failures.push("practice-depth");
+  if (request.intent === "remedial" && !types.has("misconception") && !types.has("mistake")) failures.push("remedial-correction");
+  if (request.intent === "revision" && !types.has("exam") && !types.has("practice")) failures.push("revision-transfer");
+  if (request.intent === "teach" && !types.has("concept") && !types.has("definition")) failures.push("teaching-explanation");
+  const quantitative = /math|mathematics|physics|chemistry|economics/i.test(request.subject);
+  if (quantitative && request.intent !== "comparison" && !types.has("formula")) failures.push("formula");
+  return { failures, types: [...types] };
+}
+function qualityCheck(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) {
+  const result = qualityFailures(lesson, request);
+  if (result.failures.length) {
+    console.warn("[LEARN] quality gate rejected lesson", { subject: request.subject, topic: request.topic, intent: request.intent, failures: result.failures, types: result.types, blockCount: lesson.blocks.length });
+    return false;
+  }
+  return true;
+}
 
 function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curriculumContext = "") {
   const context = buildResolvedLessonPrompt(request);
   const sequences: Record<typeof request.intent, string> = { teach: "objective → prerequisite → core concept → explanation → formula/method → worked example → checkpoint → misconception → real-world application → exam transfer → progressive practice → summary → next step", remedial: "objective → diagnose confusion → prerequisite → plain explanation → worked example → misconception/correction → checkpoint → second example → real-world application → exam transfer → guided practice → summary → next step", revision: "objective → prerequisite recap → key ideas → definitions/formulas → worked example → high-yield patterns → checkpoint → common mistakes → application → exam transfer → practice → summary → next step", practice: "objective → method → worked example → question 1 → question 2 → question 3 → application task → feedback guidance → exam transfer → traps → summary → next step", comparison: "objective → define both → explicit comparison → similarities → differences → worked application → misconception → checkpoint → real-world application → exam transfer → practice → summary → next step" };
+  const mathGuidance = /math|mathematics/i.test(request.subject) ? `\nMATH-SPECIFIC GUIDANCE\n- For trigonometric topics, teach the identities as transformations, not a memorisation list. For "Trigonometric identities", cover the Pythagorean identities (sin²θ + cos²θ = 1, 1 + tan²θ = sec²θ, 1 + cot²θ = csc²θ) and show how reciprocal/quotient relationships support simplification.\n- Include at least one identity-proof worked example by transforming one side only, explaining each algebraic step.\n- Include at least one simplification example where the student must choose which identity to use.\n- Keep the lesson centered on trigonometric identities rather than drifting into solving trigonometric equations.` : "";
   return `You are the senior teaching engine inside Shadecode Student. Produce a premium, rigorous learning session that teaches a student a usable capability. This is not an AI-generated article and not a wall of notes. The learner should finish able to DO something they could not reliably do before: solve a problem, write/trace a program, interpret data, explain a process, design a solution, make a calculation, evaluate a claim, or apply a concept to a realistic situation.
 
 ${context}
 ${curriculumContext}
+${mathGuidance}
 
 NON-NEGOTIABLE TEACHING STANDARD
 - Exact intent: ${request.intent}. Follow this sequence: ${sequences[request.intent]}.
@@ -69,13 +100,19 @@ CONTENT FORMAT
 }
 
 async function generateAndValidate(request: ReturnType<typeof resolveLessonRequest>, curriculumContext: string, userId: string) {
-  const raw = await callAI(lessonPrompt(request, curriculumContext), 5200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 12000, perProviderMaxMs: 5000 });
+  const raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 18000, perProviderMaxMs: 4500 });
   if (!raw) return null;
   let parsed = parseLesson(raw);
   if (parsed && qualityCheck(parsed, request)) return parsed;
+  const initialFailures = parsed ? qualityFailures(parsed, request).failures : ["invalid-json-or-lesson-shape"];
+  console.warn("[LEARN] starting lesson repair", { subject: request.subject, topic: request.topic, failures: initialFailures });
   const repair = await callAI(`You are repairing a failed premium lesson draft. Return ONLY valid JSON. Preserve the exact topic, subject, level, board and intent. Do not merely paraphrase the draft. Rebuild weak sections with concrete teaching and an observable student outcome.
 
+FAILED CHECKS: ${initialFailures.join(", ")}
+
 REQUIRED: 10-16 distinct blocks; objective with an observable skill; concept; definition where useful; formula/method when relevant; worked example with reasoning; checkpoint WITHOUT its answer; misconception/trap; concrete application task with success criteria; exam transfer; progressive practice; summary. Practice intent requires at least 3 progressively harder questions. Comparison requires a real comparison block. Quantitative subjects normally require a formula block. Remove repetition, generic filler, fake claims, and motivational fluff.
+
+For mathematics, if the topic is Trigonometric identities, explicitly teach the Pythagorean identities, reciprocal/quotient relationships, identity selection, and at least one proof-by-transformation example. Do not turn the lesson into solving trigonometric equations.
 
 The application task must require the student to actually use the concept, not just restate it. The lesson must be useful even if the student never sees another AI response.
 
@@ -88,10 +125,16 @@ Exam board: ${request.examBoard || "not supplied"}
 Intent: ${request.intent}
 
 DRAFT:
-${raw.slice(0, 14000)}`, 5000, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 11000, perProviderMaxMs: 5000 });
+${raw.slice(0, 14000)}`, 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 12000, perProviderMaxMs: 4500 });
   if (!repair) return null;
   parsed = parseLesson(repair);
-  return parsed && qualityCheck(parsed, request) ? parsed : null;
+  if (!parsed) return null;
+  const repaired = qualityFailures(parsed, request);
+  if (repaired.failures.length) {
+    console.warn("[LEARN] repaired lesson still failed quality gate", { subject: request.subject, topic: request.topic, failures: repaired.failures, types: repaired.types, blockCount: parsed.blocks.length });
+    return null;
+  }
+  return parsed;
 }
 
 export async function POST(req: Request) {
@@ -106,7 +149,7 @@ export async function POST(req: Request) {
     const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, buildResolvedLessonPrompt(resolved));
     if (curriculum.status === "blocked") return NextResponse.json({ error: curriculum.reason, code: "CURRICULUM_OBJECTIVES_REQUIRED" }, { status: 409 });
     const parsed = await generateAndValidate(resolved, curriculum.promptContext, auth.user.id);
-    if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. Try again or narrow the topic slightly." }, { status: 422 });
+    if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. The topic itself is valid, so try again while Cortex retries the lesson construction." }, { status: 422 });
     const { data: existing } = await auth.supabase.from("subjects").select("id").eq("user_id", auth.user.id).eq("name", resolved.subject).maybeSingle();
     let subjectId = existing?.id ?? null;
     if (!subjectId) { const { data: created } = await auth.supabase.from("subjects").insert({ user_id: auth.user.id, name: resolved.subject }).select("id").single(); subjectId = created?.id ?? null; }
