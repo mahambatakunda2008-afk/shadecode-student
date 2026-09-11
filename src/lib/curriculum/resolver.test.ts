@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveCurriculumContext, type CurriculumVersionRecord } from "./resolver";
+import { resolveCurriculumContext, type CurriculumVersionRecord, type CurriculumCoverageRecord } from "./resolver";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
+import type { CurriculumKnowledgeItem, CurriculumKnowledgeKind } from "./knowledge";
+import { CURRICULUM_COMPLETENESS_DIMENSIONS } from "./completeness";
 
 const identity = {
   boardId: "zimsec",
@@ -42,6 +44,40 @@ const mapping: ObjectiveSkillMapping = {
 
 const learner = { ...identity };
 
+// resolveCurriculumContext requires full whole-syllabus completeness (every
+// coverage dimension verified, every required knowledge kind present) before
+// it will report "resolved" -- objectives alone were never meant to be
+// sufficient here (that's the more lenient objective-first gate one layer up
+// in system-resolver.ts). These fixtures give a minimal complete syllabus so
+// tests that are actually about identity/status matching aren't blocked by
+// the completeness gate they're not testing.
+const REQUIRED_KNOWLEDGE_KINDS: CurriculumKnowledgeKind[] = [
+  "topic", "content_scope", "competency", "skill", "progression", "assessment_requirement",
+  "paper_component", "assessment_weighting", "examination_format", "practical_activity",
+  "project_requirement", "terminology", "constraint", "guidance", "resource",
+];
+const knowledgeProvenance = { ...objective.provenance, sourceUrl: "https://www5.zimsec.co.zw/syllabi/" };
+const completeKnowledge: CurriculumKnowledgeItem[] = REQUIRED_KNOWLEDGE_KINDS.map((kind, i) => ({
+  id: `knowledge-${i}`,
+  kind,
+  title: kind,
+  content: `${kind} content`,
+  status: "verified",
+  identity: {
+    boardId: identity.boardId,
+    qualificationId: identity.qualificationId,
+    level: identity.level,
+    syllabusId: identity.syllabusId,
+    syllabusVersion: identity.syllabusVersion,
+    subjectId: identity.subjectId,
+  },
+  provenance: knowledgeProvenance,
+}));
+const completeCoverage: CurriculumCoverageRecord[] = CURRICULUM_COMPLETENESS_DIMENSIONS.map((dimension) => ({
+  dimension,
+  status: "verified",
+}));
+
 describe("resolveCurriculumContext", () => {
   it("resolves only an exact verified identity", () => {
     const result = resolveCurriculumContext({
@@ -49,6 +85,8 @@ describe("resolveCurriculumContext", () => {
       versions: [version],
       objectives: [objective],
       mappings: [mapping],
+      knowledge: completeKnowledge,
+      coverageChecks: completeCoverage,
       asOf: "2026-09-09",
     });
 
@@ -76,6 +114,8 @@ describe("resolveCurriculumContext", () => {
       versions: [version],
       objectives: [{ ...objective, status: "draft" }],
       mappings: [{ ...mapping, status: "draft" }],
+      knowledge: completeKnowledge,
+      coverageChecks: completeCoverage,
       asOf: "2026-09-09",
     });
 
