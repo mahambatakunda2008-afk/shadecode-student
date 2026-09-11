@@ -5,7 +5,10 @@ import { generateLocalLesson } from "@/lib/cortex/localLessonGenerator";
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 35_000;
+// The API can perform a curriculum lookup, an initial generation, and a quality-repair pass.
+// Keep the client timeout below the server's 90s maxDuration, but long enough for the full
+// quality-gated path to finish instead of falsely reporting a 35s failure.
+const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
@@ -31,7 +34,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   try {
     updateGenerationJob(job.id, { status: "generating", progress: 12 });
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
-    const ticker = setInterval(() => { const current = getGenerationJob(job.id)?.progress ?? 12; updateGenerationJob(job.id, { progress: Math.min(88, current + (current < 60 ? 4 : 2)) }); }, 1800);
+    const ticker = setInterval(() => { const current = getGenerationJob(job.id)?.progress ?? 12; updateGenerationJob(job.id, { progress: Math.min(88, current + (current < 60 ? 3 : 1)) }); }, 1800);
     let response: Response;
     try { response = await fetch("/api/learn/generate", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }), cache: "no-store", signal: controller.signal }); } finally { clearTimeout(timeout); clearInterval(ticker); }
     const data = await response.json().catch(() => ({}));
