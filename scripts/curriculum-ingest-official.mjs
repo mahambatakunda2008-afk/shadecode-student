@@ -1,0 +1,29 @@
+import "dotenv/config";
+import { createClient } from "@supabase/supabase-js";
+import { fetchAndExtractCurriculumDocument } from "../src/lib/curriculum/document-fetcher.ts";
+import { ingestExtractedCurriculum } from "../src/lib/curriculum/ingestion.ts";
+
+const sourceId = process.argv[2];
+if (!sourceId) throw new Error("Usage: npm run ingest:official -- <curriculum-source-id>");
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key = process.env.CURRICULUM_INGESTION_KEY;
+if (!url || !key) throw new Error("NEXT_PUBLIC_SUPABASE_URL and CURRICULUM_INGESTION_KEY are required.");
+const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+const { data: source, error: sourceError } = await db.from("curriculum_sources").select("*").eq("id", sourceId).single();
+if (sourceError || !source) throw new Error(`Curriculum source not found: ${sourceError?.message ?? sourceId}`);
+if (!source.active || source.kind !== "pdf" || !source.extract_text) throw new Error("Source is not an active extractable PDF source.");
+const { data: version, error: versionError } = await db.from("curriculum_versions").select("id, board_id, qualification_id, syllabus_id, syllabus_version, subject_id, status").eq("board_id", source.board_id).eq("syllabus_id", source.syllabus_id).eq("syllabus_version", source.syllabus_version).eq("subject_id", source.subject_id).maybeSingle();
+if (versionError || !version) throw new Error(`Curriculum version not found: ${versionError?.message ?? source.syllabus_id}`);
+const domains = Array.isArray(source.allowed_domains) && source.allowed_domains.length ? source.allowed_domains : [new URL(source.url).hostname];
+const fetched = await fetchAndExtractCurriculumDocument(source.url, domains);
+const { count } = await db.from("curriculum_objectives").select("id", { count: "exact", head: true }).eq("curriculum_version_id", version.id).eq("status", "verified");
+const result = ingestExtractedCurriculum({ authority: source.authority, sourceUrl: source.url, sourceDocument: source.id }, fetched.text, { pageCount: fetched.pageCount, verifiedObjectiveCount: count ?? 0 });
+const now = new Date().toISOString();
+const { data: document, error: documentError } = await db.from("curriculum_documents").upsert({ source_id: source.id, url: source.url, title: `${source.authority} ${source.syllabus_id} ${source.syllabus_version}`, content_hash: fetched.contentHash, content_characters: fetched.text.length, extracted_text: fetched.text, status: "active", first_seen_at: now, last_seen_at: now, updated_at: now, page_count: fetched.pageCount ?? null, structure: { sections: result.extraction.sections }, extraction_engine: fetched.extractionEngine, extraction_version: fetched.extractionVersion, extraction_status: "extracted" }, { onConflict: "source_id" }).select("id").single();
+if (documentError || !document) throw new Error(`Document persistence failed: ${documentError?.message}`);
+const knowledge = result.knowledge.map((item) => ({ curriculum_version_id: version.id, source_document_id: document.id, board_id: version.board_id, qualification_id: version.qualification_id, level: source.level ?? "unknown", syllabus_id: version.syllabus_id, syllabus_version: version.syllabus_version, subject_id: version.subject_id, kind: item.kind, knowledge_key: item.knowledgeKey, title: item.title, content: item.content, objective_keys: item.objectiveKeys, status: "draft", provenance: { ...item.provenance, documentHash: result.extraction.documentHash }, metadata: item.metadata }));
+if (knowledge.length) { const { error } = await db.from("curriculum_knowledge").insert(knowledge); if (error) throw new Error(`Knowledge persistence failed: ${error.message}`); }
+const coverage = result.coverage.map((check) => ({ curriculum_version_id: version.id, dimension: check.dimension, status: check.status, evidence: check.evidence ?? {}, notes: check.notes ?? null, checked_at: now }));
+const { error: coverageError } = await db.from("curriculum_coverage_checks").upsert(coverage, { onConflict: "curriculum_version_id,dimension" });
+if (coverageError) throw new Error(`Coverage persistence failed: ${coverageError.message}`);
+console.log(JSON.stringify({ sourceId, versionId: version.id, documentId: document.id, hash: fetched.contentHash, bytes: fetched.bytes, pageCount: fetched.pageCount, characters: fetched.text.length, sections: result.extraction.sections.length, knowledge: knowledge.length, verifiedObjectives: count ?? 0, coverage: result.coverage.reduce((a, x) => ({ ...a, [x.status]: (a[x.status] ?? 0) + 1 }), {}), productionVerified: false }, null, 2));
