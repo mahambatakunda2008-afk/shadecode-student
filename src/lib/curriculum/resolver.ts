@@ -76,6 +76,11 @@ function groupKnowledge(items: CurriculumKnowledgeItem[]) {
  * only verified versions are eligible, and only verified objectives, mappings
  * and whole-syllabus knowledge are returned. No subject-only or level-only
  * inference is performed here.
+ *
+ * A version is not considered usable merely because its objectives have been
+ * mapped. Whole-syllabus knowledge must also exist. That knowledge is the
+ * source for scope, content, competencies, assessment, practical/project
+ * requirements, constraints, guidance and other syllabus layers.
  */
 export function resolveCurriculumContext(input: {
   learner: LearnerCurriculumContext;
@@ -161,11 +166,17 @@ export function resolveCurriculumContext(input: {
       (!identity.paperOrComponentId || item.identity.paperComponentId === identity.paperOrComponentId),
   );
 
+  if (!resolvedKnowledge.length) {
+    return {
+      status: "unverified",
+      reason: "The exact curriculum version has verified objectives, but no verified whole-syllabus knowledge is available. Teaching and assessment claims are blocked until the syllabus content layers are reconciled.",
+      ...empty,
+    };
+  }
+
   return {
     status: "resolved",
-    reason: resolvedKnowledge.length
-      ? "Exact verified curriculum context and whole-syllabus knowledge resolved successfully."
-      : "Exact verified curriculum version resolved, but no verified whole-syllabus knowledge is available yet.",
+    reason: "Exact verified curriculum context and whole-syllabus knowledge resolved successfully.",
     curriculum: identity,
     versionId: version.id,
     objectives: resolvedObjectives,
