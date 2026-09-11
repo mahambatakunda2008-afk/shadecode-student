@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -46,28 +46,112 @@ const DIFF: Record<string, { label: string; bg: string; border: string; text: st
   hard:   { label: "Challenge", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd" },
 };
 
-interface LessonBlock { type: string; content: string; }
+interface LessonBlock { type: string; title?: string; content: string; }
 interface Lesson {
   id: string; title: string; subject: string; description: string;
   difficulty: string; progress: number; completed: boolean;
   blocks?: LessonBlock[]; updated_at?: string;
 }
 
+type BlockStyle = { label: string; glyph: string; bg: string; border: string; accent: string; textColor: string; gradientKicker?: boolean };
+
+// Covers every block type the Cortex lesson prompt can emit (objective, prior,
+// concept, definition, formula, example, checkpoint, misconception, exam,
+// mistake, summary, practice, tip). Every type gets its own heading, accent
+// and icon so a generated lesson reads as a designed document instead of a
+// stack of undifferentiated paragraphs.
+const BLOCK_STYLES: Record<string, BlockStyle> = {
+  objective:     { label: "Objectives",       glyph: "🎯", bg: "rgba(124,58,237,0.07)",  border: "rgba(124,58,237,0.22)",  accent: "var(--brand-gradient)", textColor: "#c4b5fd", gradientKicker: true },
+  prior:         { label: "What You Know",    glyph: "🧩", bg: "rgba(100,116,139,0.07)", border: "rgba(100,116,139,0.2)",  accent: "#64748b", textColor: "#cbd5e1" },
+  concept:       { label: "Core Concept",     glyph: "🧠", bg: "rgba(139,92,246,0.06)",  border: "rgba(139,92,246,0.2)",   accent: "#8b5cf6", textColor: "#c4b5fd" },
+  definition:    { label: "Key Terms",        glyph: "📖", bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",   accent: "#3b82f6", textColor: "#93c5fd" },
+  formula:       { label: "Formula",          glyph: "∑",  bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",   accent: "#3b82f6", textColor: "#93c5fd" },
+  example:       { label: "Worked Example",   glyph: "📝", bg: "rgba(16,185,129,0.06)",  border: "rgba(16,185,129,0.2)",   accent: "#10b981", textColor: "#6ee7b7" },
+  checkpoint:    { label: "Quick Check",      glyph: "✅", bg: "rgba(20,184,166,0.06)",  border: "rgba(20,184,166,0.2)",   accent: "#14b8a6", textColor: "#5eead4" },
+  misconception: { label: "Common Mistake Idea", glyph: "⚠️", bg: "rgba(244,63,94,0.06)", border: "rgba(244,63,94,0.2)",  accent: "#f43f5e", textColor: "#fda4af" },
+  exam:          { label: "Exam Application", glyph: "🎓", bg: "rgba(99,102,241,0.06)",  border: "rgba(99,102,241,0.2)",   accent: "#6366f1", textColor: "#a5b4fc" },
+  mistake:       { label: "Watch Out For",    glyph: "🚧", bg: "rgba(249,115,22,0.06)",  border: "rgba(249,115,22,0.2)",   accent: "#f97316", textColor: "#fdba74" },
+  summary:       { label: "Summary",          glyph: "📌", bg: "rgba(16,185,129,0.06)",  border: "rgba(16,185,129,0.2)",   accent: "#10b981", textColor: "#6ee7b7" },
+  practice:      { label: "Practice",         glyph: "✏️", bg: "rgba(6,182,212,0.06)",   border: "rgba(6,182,212,0.2)",    accent: "#06b6d4", textColor: "#67e8f9" },
+  tip:           { label: "Study Tip",        glyph: "💡", bg: "rgba(245,158,11,0.06)",  border: "rgba(245,158,11,0.2)",   accent: "#f59e0b", textColor: "#fcd34d" },
+  math:          { label: "Formula",          glyph: "∑",  bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",   accent: "#3b82f6", textColor: "#93c5fd" },
+};
+const FALLBACK_STYLE: BlockStyle = { label: "Notes", glyph: "•", bg: "rgba(100,116,139,0.05)", border: "rgba(100,116,139,0.16)", accent: "#64748b", textColor: "#cbd5e1" };
+
+/** Renders `**term**` spans as bold within a line, without pulling in a markdown parser. */
+function inlineEmphasis(text: string, keyPrefix: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? <strong key={`${keyPrefix}-b-${i}`} style={{ color: "var(--foreground)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>
+      : <span key={`${keyPrefix}-t-${i}`}>{part}</span>
+  );
+}
+
+/**
+ * Groups a block's raw content into bullet lists, numbered lists and
+ * paragraphs instead of one flat wall of text. The lesson prompt asks the
+ * model to mark list-like content (objectives, common mistakes, practice
+ * questions) with "- " or "1." line prefixes; this parses that back out.
+ * Any content without those markers still renders, just as a paragraph.
+ */
+function renderBlockContent(content: string): ReactNode[] {
+  const lines = content.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const bullet = (l: string) => /^[-•]\s+/.test(l);
+  const numbered = (l: string) => /^\d+[.)]\s+/.test(l);
+
+  type Run = { kind: "bullet" | "numbered" | "para"; lines: string[] };
+  const runs: Run[] = [];
+  for (const line of lines) {
+    const kind: Run["kind"] = bullet(line) ? "bullet" : numbered(line) ? "numbered" : "para";
+    const stripped = kind === "bullet" ? line.replace(/^[-•]\s+/, "") : kind === "numbered" ? line.replace(/^\d+[.)]\s+/, "") : line;
+    const last = runs[runs.length - 1];
+    if (last?.kind === kind) last.lines.push(stripped);
+    else runs.push({ kind, lines: [stripped] });
+  }
+  if (!runs.length) return [];
+
+  return runs.map((run, i) => {
+    const isLast = i === runs.length - 1;
+    if (run.kind === "bullet") return (
+      <ul key={i} style={{ margin: isLast ? 0 : "0 0 10px", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
+        {run.lines.map((l, j) => <li key={j} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--muted-foreground)" }}>{inlineEmphasis(l, `${i}-${j}`)}</li>)}
+      </ul>
+    );
+    if (run.kind === "numbered") return (
+      <ol key={i} style={{ margin: isLast ? 0 : "0 0 10px", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+        {run.lines.map((l, j) => <li key={j} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--muted-foreground)" }}>{inlineEmphasis(l, `${i}-${j}`)}</li>)}
+      </ol>
+    );
+    return (
+      <p key={i} style={{ fontSize: 14, lineHeight: 1.8, color: "var(--muted-foreground)", margin: isLast ? 0 : "0 0 10px" }}>
+        {run.lines.map((l, j) => <span key={j}>{inlineEmphasis(l, `${i}-${j}`)}{j < run.lines.length - 1 ? " " : ""}</span>)}
+      </p>
+    );
+  });
+}
+
 function BlockCard({ block }: { block: LessonBlock }) {
-  const cfg: Record<string, { label: string; emoji: string; bg: string; border: string; accent: string; textColor: string }> = {
-    tip:     { label: "Tip",     emoji: "💡", bg: "rgba(245,158,11,0.06)",  border: "rgba(245,158,11,0.2)",  accent: "#f59e0b", textColor: "#fcd34d" },
-    example: { label: "Example", emoji: "📝", bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.2)",  accent: "#10b981", textColor: "#6ee7b7" },
-    math:    { label: "Formula", emoji: "∑",  bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",  accent: "#3b82f6", textColor: "#93c5fd" },
-  };
-  const c = cfg[block.type];
-  if (c) return (
+  const c = BLOCK_STYLES[block.type] ?? FALLBACK_STYLE;
+  const heading = block.title?.trim() || c.label;
+  return (
     <div style={{ position: "relative", background: c.bg, border: `1px solid ${c.border}`, borderRadius: 16, padding: "18px 20px 18px 24px", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: c.accent, borderRadius: "16px 0 0 16px" }} />
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.textColor, margin: "0 0 8px" }}>{c.emoji} {c.label}</p>
-      <p style={{ fontSize: 14, lineHeight: 1.75, color: "var(--muted-foreground)", margin: 0, fontFamily: block.type === "math" ? "monospace" : undefined }}>{block.content}</p>
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.textColor, margin: "0 0 4px" }}>{c.glyph} {c.label}</p>
+      <h3
+        style={{
+          fontSize: 15, fontWeight: 700, margin: "0 0 10px", lineHeight: 1.4,
+          ...(c.gradientKicker
+            ? { background: c.accent, backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+            : { color: "var(--foreground)" }),
+        }}
+      >
+        {heading}
+      </h3>
+      <div style={{ fontFamily: block.type === "math" || block.type === "formula" ? "monospace" : undefined }}>
+        {renderBlockContent(block.content)}
+      </div>
     </div>
   );
-  return <p style={{ fontSize: 14, lineHeight: 1.85, color: "var(--muted-foreground)", margin: 0 }}>{block.content}</p>;
 }
 
 function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 : 20; }
