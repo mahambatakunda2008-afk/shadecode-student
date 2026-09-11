@@ -43,4 +43,19 @@ describe("buildNarrationScript", () => {
     const script = buildNarrationScript([{ type: "unknown-future-type", content: "Something new." }]);
     expect(script[0].text).toBe("Something new.");
   });
+
+  it("strips bullet markers and reads list content as flowing speech", () => {
+    const script = buildNarrationScript([{ type: "objective", content: "- Explain photosynthesis\n- Identify inputs and outputs" }]);
+    expect(script[0].text).toBe("Explain photosynthesis. Identify inputs and outputs");
+  });
+
+  it("strips numbered list markers", () => {
+    const script = buildNarrationScript([{ type: "practice", content: "1. Solve for x\n2. Check the units" }]);
+    expect(script[0].text).toBe("Solve for x. Check the units");
+  });
+
+  it("strips bold emphasis markers but keeps the emphasized words", () => {
+    const script = buildNarrationScript([{ type: "concept", content: "The **nucleus** controls the cell." }]);
+    expect(script[0].text).toBe("The nucleus controls the cell.");
+  });
 });

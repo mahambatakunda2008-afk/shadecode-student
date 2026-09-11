@@ -30,6 +30,22 @@ const SPOKEN_PREFIX: Record<string, string> = {
   example: "For example. ",
 };
 
+/**
+ * Strips the visual-only markup the lesson renderer understands ("- "/"1. "
+ * list markers, "**bold**" emphasis) before content is spoken. Without this,
+ * TTS reads the literal characters aloud ("dash", "asterisk asterisk"),
+ * which is unintelligible. Content with no markup passes through unchanged.
+ */
+function speakable(content: string): string {
+  const lines = content
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => line.replace(/^[-•]\s+/, "").replace(/^\d+[.)]\s+/, ""))
+    .map(line => line.replace(/\*\*([^*]+)\*\*/g, "$1"));
+  return lines.join(". ");
+}
+
 export function buildNarrationScript(blocks: LessonBlock[]): NarrationSegment[] {
   return blocks.map((block, index) => {
     if (block.type === "math") {
@@ -41,6 +57,6 @@ export function buildNarrationScript(blocks: LessonBlock[]): NarrationSegment[] 
     }
 
     const prefix = SPOKEN_PREFIX[block.type] ?? "";
-    return { index, type: block.type, text: `${prefix}${block.content}` };
+    return { index, type: block.type, text: `${prefix}${speakable(block.content)}` };
   });
 }
