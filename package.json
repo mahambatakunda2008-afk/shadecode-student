@@ -15,6 +15,7 @@
     "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts",
     "watch:curriculum": "tsx scripts/curriculum-watch.mjs",
     "ingest:curriculum": "tsx scripts/curriculum-ingest-v2.mjs",
+    "ingest:official": "tsx scripts/curriculum-ingest-official.mjs",
     "extract:questions": "tsx bin/exam-hub-ingest/extract-questions.ts",
     "discover:paper-sources": "tsx bin/exam-hub-ingest/discover-paper-sources.ts"
   },
@@ -29,7 +30,7 @@
     "@sentry/nextjs": "^10.57.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
-    "@vercel/analytics": "^2.0.1",
+    "@vercel/analytics": "^2.0.0",
     "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -57,7 +58,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
     "tsx": "^4.23.1",
     "vitest": "^4.1.10"
   },
