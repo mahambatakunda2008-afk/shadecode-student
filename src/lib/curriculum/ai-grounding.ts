@@ -3,7 +3,7 @@ import { normalizeStoredCurriculumIdentities, toLearnerCurriculumContext } from 
 import { resolveSystemCurriculum } from "./system-resolver";
 import type { CurriculumKnowledgeItem } from "./knowledge";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
-import type { CurriculumVersionRecord } from "./resolver";
+import type { CurriculumCoverageRecord, CurriculumVersionRecord } from "./resolver";
 import { curriculumSystemPromptContext } from "./system-curriculum-context";
 import { buildLearnCurriculumGrounding, learnCurriculumPromptSection } from "./learn-grounding";
 
@@ -24,7 +24,7 @@ export type VerifiedCurriculumPromptResult =
   | { status: "resolved"; promptContext: string; reason: string }
   | { status: "blocked"; promptContext: ""; reason: string };
 
-/** Resolve the learner's exact curriculum before AI can claim syllabus alignment. */
+/** Resolve the learner's exact curriculum and complete whole-syllabus evidence before AI can claim syllabus alignment. */
 export async function resolveVerifiedCurriculumPromptContext(
   userId: string,
   prompt: string,
@@ -40,24 +40,16 @@ export async function resolveVerifiedCurriculumPromptContext(
   if (profileError) return { status: "none", promptContext: "", reason: "Curriculum profile could not be read." };
 
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
-  if (!identities.length) {
-    return { status: "none", promptContext: "", reason: "No verified curriculum identity is configured for this learner." };
-  }
+  if (!identities.length) return { status: "none", promptContext: "", reason: "No verified curriculum identity is configured for this learner." };
 
   const normalizedPrompt = prompt.toLowerCase();
   const identity = identities.find((item) => {
     const subject = (item.subjectName ?? item.subjectId).toLowerCase();
     return subject.length >= 4 && normalizedPrompt.includes(subject);
   }) ?? (identities.length === 1 ? identities[0] : null);
-  if (!identity) {
-    return { status: "blocked", promptContext: "", reason: "Select the subject attached to your curriculum before Cortex can apply syllabus-specific teaching." };
-  }
+  if (!identity) return { status: "blocked", promptContext: "", reason: "Select the subject attached to your curriculum before Cortex can apply syllabus-specific teaching." };
 
   const learner = toLearnerCurriculumContext(identity);
-
-  // curriculum_versions is keyed by board/qualification/syllabus/version/subject.
-  // Level is carried by the learner identity because production does not store
-  // a level column on this table.
   const versionsResult = await supabase
     .from("curriculum_versions")
     .select("*")
@@ -67,9 +59,7 @@ export async function resolveVerifiedCurriculumPromptContext(
     .eq("syllabus_version", identity.syllabusVersion)
     .eq("subject_id", identity.subjectId);
 
-  if (versionsResult.error) {
-    return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
-  }
+  if (versionsResult.error) return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
 
   const versions: CurriculumVersionRecord[] = (versionsResult.data ?? []).map((version) => ({
     id: version.id,
@@ -88,23 +78,28 @@ export async function resolveVerifiedCurriculumPromptContext(
     effectiveTo: version.effective_to,
   }));
   const matchingVersion = versions.find((version) => version.status === "verified");
-  if (!matchingVersion) {
-    return { status: "blocked", promptContext: "", reason: "No verified curriculum version matches this learner's exact board, qualification, level, syllabus and subject." };
-  }
+  if (!matchingVersion) return { status: "blocked", promptContext: "", reason: "No verified curriculum version matches this learner's exact board, qualification, level, syllabus and subject." };
 
-  const [objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
+  const [objectivesResult, mappingsResult, knowledgeResult, coverageResult] = await Promise.all([
     supabase.from("curriculum_objectives").select("*").eq("curriculum_version_id", matchingVersion.id),
     supabase.from("objective_skill_mappings").select("*"),
     supabase.from("curriculum_knowledge").select("*").eq("curriculum_version_id", matchingVersion.id),
+    supabase.from("curriculum_coverage_checks").select("dimension,status,evidence,notes").eq("curriculum_version_id", matchingVersion.id),
   ]);
 
-  if (objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
+  if (objectivesResult.error || mappingsResult.error || knowledgeResult.error || coverageResult.error) {
     return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
   }
 
   const result = resolveSystemCurriculum({
     learner,
     versions,
+    coverageChecks: (coverageResult.data ?? []).map((check) => ({
+      dimension: check.dimension,
+      status: check.status,
+      evidence: check.evidence,
+      notes: check.notes,
+    })) as CurriculumCoverageRecord[],
     objectives: (objectivesResult.data ?? []).map((objective) => ({
       id: objective.id,
       curriculum: {
@@ -163,7 +158,7 @@ export async function resolveVerifiedCurriculumPromptContext(
 
   return {
     status: "resolved",
-    reason: "Verified objective-first curriculum context resolved.",
+    reason: "Verified objective-first curriculum context resolved with complete coverage evidence.",
     promptContext: [
       "\n\n=== VERIFIED LEARNER CURRICULUM CONTEXT ===",
       curriculumSystemPromptContext(result.context),
