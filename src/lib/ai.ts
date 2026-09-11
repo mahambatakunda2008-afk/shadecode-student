@@ -86,7 +86,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  const geminiModels = ["gemini-2.5-flash"];
+  const geminiModels = ["gemini-3.8-flash", "gemini-3-flash-preview"];
   for (const key of geminiKeys) {
     for (const model of geminiModels) {
       if (!canTry()) break;
