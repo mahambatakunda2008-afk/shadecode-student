@@ -27,3 +27,7 @@ export function isComputerScienceCurriculumSubject(subject: unknown): boolean {
 export function hasComputerScienceCurriculum(subjects: unknown): boolean {
   return Array.isArray(subjects) && subjects.some(isComputerScienceCurriculumSubject);
 }
+
+export function selectComputerScienceCurriculum<T>(subjects: T[]): T | null {
+  return subjects.find(isComputerScienceCurriculumSubject) ?? null;
+}
