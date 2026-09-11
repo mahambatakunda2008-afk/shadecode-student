@@ -8,7 +8,7 @@ import { getRememberedUserId, rememberActiveUser, clearRememberedUser } from "@/
 import { offlineStorage } from "@/lib/offline/storage";
 import type { StudyLevel } from "@/types";
 
-export interface UserProfile { id: string; full_name: string | null; first_name: string | null; email: string | null; avatar_url: string | null; level: number; xp: number; xp_to_next_level: number; streak: number; weekly_xp: number; focus_minutes_today: number; avg_score: number | null; streak_message: string | null; created_at: string; updated_at: string; study_level: StudyLevel | null; subjects: string[] | null; daily_goal_minutes: number | null; study_style: "structured" | "flexible" | null; }
+export interface UserProfile { id: string; full_name: string | null; first_name: string | null; email: string | null; avatar_url: string | null; level: number; xp: number; xp_to_next_level: number; streak: number; weekly_xp: number; focus_minutes_today: number; avg_score: number | null; streak_message: string | null; created_at: string; updated_at: string; study_level: StudyLevel | null; subjects: string[] | null; curriculum_subjects: unknown[] | null; daily_goal_minutes: number | null; study_style: "structured" | "flexible" | null; }
 export interface UserContextValue { user: User | null; profile: UserProfile | null; loading: boolean; refreshProfile: () => Promise<void>; }
 
 const PROFILE_CACHE_PREFIX = "shadecode:profile:";
@@ -29,14 +29,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     const cached = readCachedProfile(userId); if (cached) setProfile(cached);
     if (!navigator.onLine) return;
-    try { const result = await withTimeout(supabase.from("profiles").select(`id, full_name, first_name, email, avatar_url, level, xp, xp_to_next_level, streak, weekly_xp, focus_minutes_today, avg_score, streak_message, created_at, updated_at, study_level, subjects, daily_goal_minutes, study_style`).eq("id", userId).single(), PROFILE_FETCH_TIMEOUT_MS); if (!result.error && result.data) { const next = result.data as UserProfile; cacheProfile(next); setProfile(next); } } catch { /* device state remains authoritative */ }
+    try { const result = await withTimeout(supabase.from("profiles").select(`id, full_name, first_name, email, avatar_url, level, xp, xp_to_next_level, streak, weekly_xp, focus_minutes_today, avg_score, streak_message, created_at, updated_at, study_level, subjects, curriculum_subjects, daily_goal_minutes, study_style`).eq("id", userId).single(), PROFILE_FETCH_TIMEOUT_MS); if (!result.error && result.data) { const next = result.data as UserProfile; cacheProfile(next); setProfile(next); } } catch { /* device state remains authoritative */ }
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => { if (user) await fetchProfile(user.id); }, [user, fetchProfile]);
 
   useEffect(() => {
     let mounted = true;
-    // DEVICE-FIRST: restore identity/profile cache before touching Supabase.
     const remembered = getRememberedUserId();
     if (remembered) { const cached = readCachedProfile(remembered); if (cached) setProfile(cached); }
     setLoading(false);
