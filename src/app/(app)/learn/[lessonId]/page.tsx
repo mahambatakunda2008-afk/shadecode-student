@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
-  ArrowLeft, Sparkles, BookOpen, Zap, Dna, Globe,
+  ArrowLeft, BookOpen, Zap, Dna, Globe,
   FlaskConical, Calculator, Brain, Code2, TrendingUp,
   Languages, Music, Palette, CheckCircle2, Clock,
   HelpCircle, ArrowRight, MessageSquare, Download,
@@ -53,30 +53,38 @@ interface Lesson {
   blocks?: LessonBlock[]; updated_at?: string;
 }
 
-type BlockStyle = { label: string; glyph: string; bg: string; border: string; accent: string; textColor: string; gradientKicker?: boolean };
-
-// Covers every block type the Cortex lesson prompt can emit (objective, prior,
-// concept, definition, formula, example, checkpoint, misconception, exam,
-// mistake, summary, practice, tip). Every type gets its own heading, accent
-// and icon so a generated lesson reads as a designed document instead of a
-// stack of undifferentiated paragraphs.
-const BLOCK_STYLES: Record<string, BlockStyle> = {
-  objective:     { label: "Objectives",       glyph: "🎯", bg: "rgba(124,58,237,0.07)",  border: "rgba(124,58,237,0.22)",  accent: "var(--brand-gradient)", textColor: "#c4b5fd", gradientKicker: true },
-  prior:         { label: "What You Know",    glyph: "🧩", bg: "rgba(100,116,139,0.07)", border: "rgba(100,116,139,0.2)",  accent: "#64748b", textColor: "#cbd5e1" },
-  concept:       { label: "Core Concept",     glyph: "🧠", bg: "rgba(139,92,246,0.06)",  border: "rgba(139,92,246,0.2)",   accent: "#8b5cf6", textColor: "#c4b5fd" },
-  definition:    { label: "Key Terms",        glyph: "📖", bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",   accent: "#3b82f6", textColor: "#93c5fd" },
-  formula:       { label: "Formula",          glyph: "∑",  bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",   accent: "#3b82f6", textColor: "#93c5fd" },
-  example:       { label: "Worked Example",   glyph: "📝", bg: "rgba(16,185,129,0.06)",  border: "rgba(16,185,129,0.2)",   accent: "#10b981", textColor: "#6ee7b7" },
-  checkpoint:    { label: "Quick Check",      glyph: "✅", bg: "rgba(20,184,166,0.06)",  border: "rgba(20,184,166,0.2)",   accent: "#14b8a6", textColor: "#5eead4" },
-  misconception: { label: "Common Mistake Idea", glyph: "⚠️", bg: "rgba(244,63,94,0.06)", border: "rgba(244,63,94,0.2)",  accent: "#f43f5e", textColor: "#fda4af" },
-  exam:          { label: "Exam Application", glyph: "🎓", bg: "rgba(99,102,241,0.06)",  border: "rgba(99,102,241,0.2)",   accent: "#6366f1", textColor: "#a5b4fc" },
-  mistake:       { label: "Watch Out For",    glyph: "🚧", bg: "rgba(249,115,22,0.06)",  border: "rgba(249,115,22,0.2)",   accent: "#f97316", textColor: "#fdba74" },
-  summary:       { label: "Summary",          glyph: "📌", bg: "rgba(16,185,129,0.06)",  border: "rgba(16,185,129,0.2)",   accent: "#10b981", textColor: "#6ee7b7" },
-  practice:      { label: "Practice",         glyph: "✏️", bg: "rgba(6,182,212,0.06)",   border: "rgba(6,182,212,0.2)",    accent: "#06b6d4", textColor: "#67e8f9" },
-  tip:           { label: "Study Tip",        glyph: "💡", bg: "rgba(245,158,11,0.06)",  border: "rgba(245,158,11,0.2)",   accent: "#f59e0b", textColor: "#fcd34d" },
-  math:          { label: "Formula",          glyph: "∑",  bg: "rgba(59,130,246,0.06)",  border: "rgba(59,130,246,0.2)",   accent: "#3b82f6", textColor: "#93c5fd" },
+// A generated lesson reads as an authored document, not a stack of
+// identical cards. Blocks split into two structural roles:
+// - FLOW blocks are the lesson's actual teaching narrative -- read straight
+//   down the page like a real page, numbered because a lesson genuinely is
+//   a sequence (first principles, then the worked case, then the exam
+//   application). No box, no fill -- just typography and a rule between
+//   sections.
+// - ASIDE blocks interrupt that flow with something supplementary (a check,
+//   a warning, a tip) and read as a margin note attached to the section
+//   above them, not more of the same page.
+const FLOW_TYPES = new Set(["objective", "prior", "concept", "definition", "formula", "example", "exam", "summary", "math"]);
+const FLOW_LABELS: Record<string, string> = {
+  objective: "What you'll be able to do",
+  prior: "Where you're starting from",
+  concept: "The idea",
+  definition: "Terms worth knowing",
+  formula: "The formula",
+  math: "The formula",
+  example: "Worked example",
+  exam: "In the exam",
+  summary: "Bringing it together",
 };
-const FALLBACK_STYLE: BlockStyle = { label: "Notes", glyph: "•", bg: "rgba(100,116,139,0.05)", border: "rgba(100,116,139,0.16)", accent: "#64748b", textColor: "#cbd5e1" };
+
+type AsideStyle = { label: string; icon: string; accent: string };
+const ASIDE_STYLES: Record<string, AsideStyle> = {
+  checkpoint:    { label: "Quick check",       icon: "✅", accent: "#14b8a6" },
+  misconception: { label: "Easy to get wrong", icon: "⚠️", accent: "#f43f5e" },
+  mistake:       { label: "Watch out for",     icon: "🚧", accent: "#f97316" },
+  practice:      { label: "Try it yourself",   icon: "✏️", accent: "#06b6d4" },
+  tip:           { label: "Study tip",         icon: "💡", accent: "#f59e0b" },
+};
+const ASIDE_FALLBACK: AsideStyle = { label: "Note", icon: "•", accent: "#64748b" };
 
 /** Renders `**term**` spans as bold within a line, without pulling in a markdown parser. */
 function inlineEmphasis(text: string, keyPrefix: string): ReactNode[] {
@@ -130,26 +138,39 @@ function renderBlockContent(content: string): ReactNode[] {
   });
 }
 
-function BlockCard({ block }: { block: LessonBlock }) {
-  const c = BLOCK_STYLES[block.type] ?? FALLBACK_STYLE;
-  const heading = block.title?.trim() || c.label;
+function FlowBlock({ block, index, isOpening, noDivider }: { block: LessonBlock; index: number; isOpening: boolean; noDivider: boolean }) {
+  const heading = block.title?.trim() || FLOW_LABELS[block.type] || "Section";
   return (
-    <div style={{ position: "relative", background: c.bg, border: `1px solid ${c.border}`, borderRadius: 16, padding: "18px 20px 18px 24px", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: c.accent, borderRadius: "16px 0 0 16px" }} />
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: c.textColor, margin: "0 0 4px" }}>{c.glyph} {c.label}</p>
-      <h3
-        style={{
-          fontSize: 15, fontWeight: 700, margin: "0 0 10px", lineHeight: 1.4,
-          ...(c.gradientKicker
-            ? { background: c.accent, backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
-            : { color: "var(--foreground)" }),
-        }}
-      >
-        {heading}
-      </h3>
-      <div style={{ fontFamily: block.type === "math" || block.type === "formula" ? "monospace" : undefined }}>
+    <div style={noDivider ? { paddingBottom: 4 } : { paddingBottom: 28, marginBottom: 28, borderBottom: "1px solid var(--card-border)" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+        {!isOpening && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }}>{String(index).padStart(2, "0")}</span>}
+        <h3
+          style={{
+            fontSize: isOpening ? 22 : 17, fontWeight: 800, margin: 0, lineHeight: 1.3,
+            ...(isOpening
+              ? { background: "var(--brand-gradient)", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+              : { color: "var(--foreground)" }),
+          }}
+        >
+          {heading}
+        </h3>
+      </div>
+      <div style={{ fontFamily: block.type === "math" || block.type === "formula" ? "monospace" : undefined, paddingLeft: isOpening ? 0 : 30 }}>
         {renderBlockContent(block.content)}
       </div>
+    </div>
+  );
+}
+
+function AsideBlock({ block }: { block: LessonBlock }) {
+  const s = ASIDE_STYLES[block.type] ?? ASIDE_FALLBACK;
+  const heading = block.title?.trim() || s.label;
+  return (
+    <div style={{ margin: "0 0 24px 30px", paddingLeft: 16, borderLeft: `2px solid ${s.accent}66` }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: s.accent, margin: "0 0 6px" }}>
+        <span aria-hidden style={{ marginRight: 6 }}>{s.icon}</span>{heading}
+      </p>
+      {renderBlockContent(block.content)}
     </div>
   );
 }
@@ -530,14 +551,20 @@ export default function LessonDetailPage() {
 
         {/* ── Lesson content ── */}
         {hasBlocks ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ marginBottom: 4 }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", padding: "4px 12px", borderRadius: 999 }}>
-                <Sparkles size={11} /> AI Generated Lesson
-              </span>
-            </div>
-
-            {lesson.blocks!.map((block, i) => <BlockCard key={i} block={block} />)}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {(() => {
+              const blocks = lesson.blocks!;
+              let flowSeen = 0;
+              return blocks.map((block, i) => {
+                const isFlow = FLOW_TYPES.has(block.type);
+                const isLast = i === blocks.length - 1;
+                if (isFlow) {
+                  flowSeen += 1;
+                  return <FlowBlock key={i} block={block} index={flowSeen - 1} isOpening={flowSeen === 1} noDivider={isLast} />;
+                }
+                return <AsideBlock key={i} block={block} />;
+              });
+            })()}
 
             {/* ── Action bar ── */}
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
