@@ -12,7 +12,7 @@ export interface LessonGenerationInput {
 }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 18_000;
+const CLOUD_GENERATION_TIMEOUT_MS = 85_000; // stays under the route's maxDuration=90s (src/app/api/learn/generate/route.ts) so the client never self-aborts a request the server is still legitimately working on -- the repair-prompt quality-gate retry alone can take up to two full AI provider-chain budgets.
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
@@ -43,10 +43,22 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     updateGenerationJob(job.id, { status: "generating", progress: Math.max(12, job.progress) });
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
+    // The server can legitimately take up to CLOUD_GENERATION_TIMEOUT_MS (the
+    // quality-gate repair pass alone can run a full second AI attempt), so the
+    // progress bar must keep visibly creeping forward during that wait --
+    // otherwise a slow-but-successful request looks identical to a stuck one.
+    // Ticks up to 88%, leaving room for the real 92% ("partial") and 100%
+    // ("complete") signals from actual server responses.
+    const tickStartedAt = Date.now();
+    const ticker = setInterval(() => {
+      const elapsed = Date.now() - tickStartedAt;
+      const eased = 12 + 76 * (1 - Math.exp(-elapsed / 20000)); // approaches 88 asymptotically
+      updateGenerationJob(job.id, { progress: Math.min(88, Math.round(eased)) });
+    }, 1500);
     let response: Response;
     try {
       response = await fetch("/api/learn/generate", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }), cache: "no-store", signal: controller.signal });
-    } finally { clearTimeout(timeout); }
+    } finally { clearTimeout(timeout); clearInterval(ticker); }
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
     if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
