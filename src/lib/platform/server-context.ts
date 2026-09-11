@@ -13,9 +13,7 @@ import {
   createPlatformContext,
   type PlatformRequestContext,
 } from "@/lib/platform/context";
-import {
-  resolvePlatformRelationships,
-} from "@/lib/platform/relationships";
+import { resolvePlatformRelationships } from "@/lib/platform/relationships";
 import type { ClientChannel, ClientRole } from "@/lib/channels/types";
 import type { EducationContext } from "@/lib/academic/educationContext";
 
@@ -39,7 +37,7 @@ export interface BuildPlatformRequestContextInput {
 export async function buildPlatformRequestContext(
   input: BuildPlatformRequestContextInput,
 ): Promise<PlatformRequestContext> {
-  if (!input.userId) throw new Error("A userId is required.");
+  if (!input.userId?.trim()) throw new Error("A userId is required.");
 
   const relationships = await resolvePlatformRelationships(input.userId);
 
