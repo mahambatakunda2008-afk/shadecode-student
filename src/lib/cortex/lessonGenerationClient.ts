@@ -1,6 +1,6 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
-import { generateLocalLesson } from "@/lib/cortex/localLessonGenerator";
+import { generateLocalLesson, hasHighQualityLocalLesson } from "@/lib/cortex/localLessonGenerator";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; }
@@ -49,6 +49,13 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } catch (error) {
     const message = error instanceof DOMException && error.name === "AbortError" ? `Generation exceeded ${Math.round(CLOUD_GENERATION_TIMEOUT_MS / 1000)} seconds.` : errorMessage(error);
+    // If the cloud lesson path is unavailable but we have a deterministic, high-quality
+    // lesson for this exact topic, keep the learner moving instead of surfacing a dead end.
+    // Generic local fallback remains offline-only because it intentionally avoids inventing facts.
+    if (isBrowser() && navigator.onLine && hasHighQualityLocalLesson(job.request.subject, job.request.prompt)) {
+      console.warn("[LEARN] cloud generation unavailable; opening high-quality local lesson", { subject: job.request.subject, topic: job.request.prompt, error: message });
+      return saveLocalResult(job);
+    }
     if (isBrowser() && !navigator.onLine) { updateGenerationJob(job.id, { status: "queued", progress: Math.min(job.progress, 20), error: "Waiting for a connection. Your request is safely queued on this device." }); saveActiveId(job.id); }
     else { updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: message }); if (getActiveId() === job.id) saveActiveId(null); }
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
