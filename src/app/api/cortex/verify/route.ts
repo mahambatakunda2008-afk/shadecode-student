@@ -9,7 +9,7 @@ export const maxDuration = 60;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const PROVIDER_TIMEOUT_MS = 20_000;
 const GEMINI_KEYS = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const GEMINI_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview"];
 
 const CHECK_SCHEMA = `Return ONLY valid JSON with this shape:
 {

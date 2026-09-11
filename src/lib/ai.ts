@@ -110,19 +110,22 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
+  const geminiModels = ["gemini-3.8-flash", "gemini-3-flash-preview"];
   for (const key of geminiKeys) {
-    if (!canTry()) break;
-    const text = await tryProvider("gemini", "gemini-2.5-flash", async timeout => {
-      const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${key}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: groundedPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" } }),
-      }, timeout);
-      if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
-      const data = await res.json() as any;
-      return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
-    });
-    if (text) return text;
+    for (const model of geminiModels) {
+      if (!canTry()) break;
+      const text = await tryProvider("gemini", model, async timeout => {
+        const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: groundedPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" } }),
+        }, timeout);
+        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+        const data = await res.json() as any;
+        return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
+      });
+      if (text) return text;
+    }
   }
 
   if (process.env.OPENROUTER_API_KEY && canTry()) {

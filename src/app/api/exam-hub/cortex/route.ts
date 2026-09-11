@@ -10,7 +10,7 @@ const PROVIDER_TIMEOUT_MS = 20_000;
 const MAX_QUESTION_CHARS = 12_000;
 const MAX_PAPER_QUESTIONS = 80;
 const GEMINI_KEYS = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const GEMINI_MODELS = ["gemini-3.8-flash", "gemini-3-flash-preview"];
 
 async function withTimeout<T>(promise: Promise<T>, ms = PROVIDER_TIMEOUT_MS): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
