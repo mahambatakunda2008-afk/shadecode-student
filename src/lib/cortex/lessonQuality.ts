@@ -57,17 +57,16 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[] }, 
   if (["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p))) failures.push("generic-language");
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
-  // Universal backbone. A lesson should always teach, demonstrate, test thinking, and close the loop.
+  // Universal backbone. Every session must teach, demonstrate, test thinking, and close the loop.
   if (!has("objective")) failures.push("objective");
   if (!has("concept", "definition")) failures.push("concept");
   if (!has("example")) failures.push("example");
   if (!has("checkpoint")) failures.push("checkpoint");
   if (!has("summary")) failures.push("summary");
 
-  // Intent-specific gates. Do not force application/exam material onto every tiny request.
+  // Intent-specific gates. A short teaching request should not fail because it lacks an exam section.
   if (request.intent === "teach") {
-    if (!has("application")) failures.push("application");
-    if (!has("exam")) failures.push("exam-transfer");
+    if (!has("application") && request.requestedParts.includes("application")) failures.push("application");
   } else if (request.intent === "remedial") {
     if (!has("misconception", "mistake")) failures.push("remedial-correction");
   } else if (request.intent === "revision") {
