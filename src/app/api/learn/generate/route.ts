@@ -6,6 +6,7 @@ import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
+import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { log } from "@/lib/observability";
 
@@ -21,28 +22,7 @@ function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | nu
 const genericPhrases = ["as an ai", "i can't", "i cannot", "generic overview", "placeholder", "lesson will cover", "in this lesson we will learn about this topic", "let's dive into"];
 const typeAliases: Record<string, string> = { "worked_example": "example", "worked-example": "example", "worked example": "example", "example_solution": "example", "application_task": "application", "application-task": "application", "real_world_application": "application", "real-world-application": "application", "exam_transfer": "exam", "exam-transfer": "exam", "exam_application": "exam", "key_takeaways": "summary", "key-takeaways": "summary", "takeaways": "summary", "check": "checkpoint", "think": "checkpoint", "thinking_checkpoint": "checkpoint", "common_mistake": "mistake", "common-mistakes": "mistake", "trap": "misconception", "prior_knowledge": "prior", "prerequisite": "prior", "method": "formula", "steps": "formula", "questions": "practice", "practice_questions": "practice", "practice-questions": "practice", "worked solution": "example", "real world": "application", "exam application": "exam", "key takeaway": "summary" };
 function normalizedType(value: string) { const key = value.trim().toLowerCase().replace(/\s+/g, " "); return typeAliases[key] ?? key; }
-function qualityFailures(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) {
-  const types = new Set(lesson.blocks.map(block => normalizedType(block.type)));
-  const contents = lesson.blocks.map(block => block.content.trim().toLowerCase());
-  const text = contents.join(" ");
-  const failures: string[] = [];
-  if (genericPhrases.some(p => text.includes(p))) failures.push("generic-language");
-  if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
-  if (!types.has("objective")) failures.push("objective");
-  if (!types.has("summary")) failures.push("summary");
-  if (!types.has("concept") && !types.has("definition")) failures.push("concept");
-  if (!types.has("checkpoint")) failures.push("checkpoint");
-  if (!types.has("example")) failures.push("example");
-  if (!types.has("application")) failures.push("application");
-  if (request.intent === "comparison" && !types.has("comparison")) failures.push("comparison");
-  if (request.intent === "practice" && lesson.blocks.filter(block => /practice|question/i.test(`${normalizedType(block.type)} ${block.title ?? ""} ${block.content}`)).length < 2) failures.push("practice-depth");
-  if (request.intent === "remedial" && !types.has("misconception") && !types.has("mistake")) failures.push("remedial-correction");
-  if (request.intent === "revision" && !types.has("exam") && !types.has("practice")) failures.push("revision-transfer");
-  if (request.intent === "teach" && !types.has("concept") && !types.has("definition")) failures.push("teaching-explanation");
-  const quantitative = /math|mathematics|physics|chemistry|economics/i.test(request.subject);
-  if (quantitative && request.intent !== "comparison" && !types.has("formula")) failures.push("formula");
-  return { failures, types: [...types] };
-}
+function qualityFailures(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) { return lessonQualityFailures(lesson, request); }
 function qualityCheck(lesson: { title: string; blocks: LessonBlock[] }, request: ReturnType<typeof resolveLessonRequest>) {
   const result = qualityFailures(lesson, request);
   if (result.failures.length) {
