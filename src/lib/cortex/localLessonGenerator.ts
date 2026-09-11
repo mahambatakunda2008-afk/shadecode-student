@@ -26,7 +26,7 @@ export function generateLocalLesson(subject: string, prompt: string): LocalLesso
   const safePrompt = clean(prompt);
   const title = `${safePrompt.slice(0, 70)}${safePrompt.length > 70 ? "…" : ""}`;
   const blocks: LocalLessonBlock[] = [
-    { type: "objective", title: "Target", content: `By the end of this session, explain “${safePrompt}”, identify what you know, and apply it to a fresh example.` },
+    { type: "objective", title: "Target", content: `- Explain "${safePrompt}" in your own words\n- Identify what you already know about it\n- Apply it to one fresh example` },
     { type: "prior", title: "Start from what you know", content: `Write 2–3 things you already know about “${safePrompt}”, then one part that feels uncertain. Keep the uncertainty. It tells the next activity where to focus.` },
     { type: "concept", title: "Build the concept", content: `Describe “${safePrompt}” as a ${safeSubject} idea: what it is, what it is used for, and what kind of question needs it. Use a downloaded textbook, syllabus or past paper as the factual reference when available offline.` },
     { type: "definition", title: "Key terms", content: `Create a short glossary for “${safePrompt}”: term → precise meaning → one example. Keep each definition short enough to reproduce under exam pressure.` },
