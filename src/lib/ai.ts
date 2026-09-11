@@ -4,31 +4,132 @@ import { logAIUsage } from "@/lib/ai/tracker";
 import { getVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
-const DEFAULT_MAX_CHAIN_MS = 20000;
+const DEFAULT_MAX_CHAIN_MS = 24000;
 const DEFAULT_PER_PROVIDER_MAX_MS = 6500;
 const TELEMETRY_BUDGET_MS = 500;
 const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
 export interface CallAIOptions { userId?: string; feature?: string; subfeature?: string; maxChainMs?: number; perProviderMaxMs?: number; }
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> { const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), Math.max(1000, timeout)); return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer)); }
+
 export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOptions = {}): Promise<string | null> {
   const { userId, feature = "ai_assistant", subfeature = "generate" } = options;
   const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, 60000));
   const perProviderMaxMs = Math.max(1000, Math.min(options.perProviderMaxMs ?? DEFAULT_PER_PROVIDER_MAX_MS, maxChainMs));
-  let groundedPrompt = prompt; let curriculumGroundingAvailable = false; let curriculumGroundingReason = "not requested";
-  if (userId) { try { const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt); curriculumGroundingAvailable = curriculumContext.trim().length > 0; curriculumGroundingReason = curriculumGroundingAvailable ? "resolved" : "unavailable"; groundedPrompt = curriculumGroundingAvailable ? `${prompt}${curriculumContext}` : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`; } catch (error) { curriculumGroundingReason = "lookup_error"; console.error("[AI] curriculum grounding failed:", error); groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded. Do not claim board-specific syllabus alignment or invent syllabus objectives.\n=== END CURRICULUM SAFETY NOTE ===`; } }
-  const promptTokens = Math.ceil(groundedPrompt.length / 4); const startedAt = Date.now();
-  function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) { const telemetry = logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs, curriculumGrounding: curriculumGroundingAvailable, curriculumGroundingReason } }); void Promise.race([telemetry.catch(() => undefined), new Promise<void>(resolve => setTimeout(resolve, TELEMETRY_BUDGET_MS))]); }
-  const remaining = () => Math.max(0, maxChainMs - (Date.now() - startedAt)); const providerTimeout = () => Math.min(perProviderMaxMs, remaining()); const canTry = () => remaining() >= 1000;
-  async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> { if (!canTry()) return null; const startTime = Date.now(); try { const text = await request(providerTimeout()); if (text && text.trim().length > 20) { logResult({ provider, model, startTime, success: true, text }); return text; } logResult({ provider, model, startTime, success: false, err: "Empty or unusable AI response" }); } catch (err) { logResult({ provider, model, startTime, success: false, err }); console.error(`[AI] ${provider} failed:`, err); } return null; }
+  let groundedPrompt = prompt;
+  let curriculumGroundingAvailable = false;
+  let curriculumGroundingReason = "not requested";
 
-  // Gemini is the quality-first path for structured educational generation.
-  // Gemini JSON response mode requires v1beta. Keep the model on the current API-supported generation family.
+  if (userId) {
+    try {
+      const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt);
+      curriculumGroundingAvailable = curriculumContext.trim().length > 0;
+      curriculumGroundingReason = curriculumGroundingAvailable ? "resolved" : "unavailable";
+      groundedPrompt = curriculumGroundingAvailable
+        ? `${prompt}${curriculumContext}`
+        : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+    } catch (error) {
+      curriculumGroundingReason = "lookup_error";
+      console.error("[AI] curriculum grounding failed:", error);
+      groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded. Do not claim board-specific syllabus alignment or invent syllabus objectives.\n=== END CURRICULUM SAFETY NOTE ===`;
+    }
+  }
+
+  const promptTokens = Math.ceil(groundedPrompt.length / 4);
+  const startedAt = Date.now();
+  function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) {
+    const telemetry = logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs, curriculumGrounding: curriculumGroundingAvailable, curriculumGroundingReason } });
+    void Promise.race([telemetry.catch(() => undefined), new Promise<void>(resolve => setTimeout(resolve, TELEMETRY_BUDGET_MS))]);
+  }
+
+  const remaining = () => Math.max(0, maxChainMs - (Date.now() - startedAt));
+  const providerTimeout = () => Math.min(perProviderMaxMs, remaining());
+  const canTry = () => remaining() >= 1000;
+  async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
+    if (!canTry()) return null;
+    const startTime = Date.now();
+    try {
+      const text = await request(providerTimeout());
+      if (text && text.trim().length > 20) {
+        logResult({ provider, model, startTime, success: true, text });
+        return text;
+      }
+      logResult({ provider, model, startTime, success: false, err: "Empty or unusable AI response" });
+    } catch (err) {
+      logResult({ provider, model, startTime, success: false, err });
+      console.error(`[AI] ${provider} failed:`, err);
+    }
+    return null;
+  }
+
+  // Gemini remains the quality-first path, but each key gets a short attempt so a temporary
+  // 429/503/timeout cannot consume the entire chain. This is especially important for lessons.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
   const geminiModels = ["gemini-3.6-flash"];
-  for (const key of geminiKeys) for (const model of geminiModels) { if (!canTry()) break; const text = await tryProvider("gemini", model, async timeout => { const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: groundedPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json" } }) }, timeout); if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`); const data = await res.json() as any; return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null; }); if (text) return text; }
+  for (const key of geminiKeys) {
+    for (const model of geminiModels) {
+      if (!canTry()) break;
+      const text = await tryProvider("gemini", model, async timeout => {
+        const geminiTimeout = Math.min(timeout, 3500);
+        const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: groundedPrompt }] }],
+            generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
+          }),
+        }, geminiTimeout);
+        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+        const data = await res.json() as any;
+        return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
+      });
+      if (text) return text;
+    }
+  }
 
-  if (process.env.CLOUDFLARE_API_TOKEN && canTry()) { const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => { const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, { method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }) }, timeout); if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`); const data = await res.json() as any; return typeof data?.result?.response === "string" ? data.result.response : null; }); if (text) return text; }
-  if (process.env.OPENROUTER_API_KEY && canTry()) { const text = await tryProvider("openrouter", "openrouter/free", async timeout => { const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app", "X-Title": "Shadecode Student" }, body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }) }, timeout); if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`); const data = await res.json() as any; return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null; }); if (text) return text; }
-  if (ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) { const text = await tryProvider("openai", "gpt-4o-mini", async timeout => { const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens, response_format: { type: "json_object" } }) }, timeout); if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`); const data = await res.json() as any; return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null; }); if (text) return text; }
-  console.error(`[AI] Provider chain exhausted within ${maxChainMs}ms.`); return null;
+  // Give non-Gemini providers the remaining chain budget instead of allowing a series of
+  // Gemini failures to starve the fallback path.
+  if (process.env.CLOUDFLARE_API_TOKEN && canTry()) {
+    const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
+      const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+      }, timeout);
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.result?.response === "string" ? data.result.response : null;
+    });
+    if (text) return text;
+  }
+
+  if (process.env.OPENROUTER_API_KEY && canTry()) {
+    const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
+      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app", "X-Title": "Shadecode Student" },
+        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+      }, timeout);
+      if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
+    });
+    if (text) return text;
+  }
+
+  if (ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
+    const text = await tryProvider("openai", "gpt-4o-mini", async timeout => {
+      const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens, response_format: { type: "json_object" } }),
+      }, timeout);
+      if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
+    });
+    if (text) return text;
+  }
+
+  console.error(`[AI] Provider chain exhausted within ${maxChainMs}ms.`);
+  return null;
 }
