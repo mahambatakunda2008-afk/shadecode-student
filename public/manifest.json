@@ -8,12 +8,18 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#06111C",
-  "theme_color": "#22D3EE",
+  "theme_color": "#06111C",
   "orientation": "any",
   "dir": "ltr",
   "lang": "en",
   "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "/brand/shadecode-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icons/shadecode-student-192.png",
       "sizes": "192x192",
@@ -55,19 +61,19 @@
       "name": "Learn",
       "short_name": "Learn",
       "url": "/learn",
-      "icons": [{ "src": "/icons/shadecode-student-dark-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/brand/shadecode-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
       "name": "Exam Hub",
       "short_name": "Exam Hub",
       "url": "/exam-hub",
-      "icons": [{ "src": "/icons/shadecode-student-dark-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/brand/shadecode-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
       "name": "Math Checker",
       "short_name": "Math Checker",
       "url": "/math-checker",
-      "icons": [{ "src": "/icons/shadecode-student-dark-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/brand/shadecode-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ],
   "privacy_policy_url": "https://shadecodestudent.vercel.app/privacy.html",
