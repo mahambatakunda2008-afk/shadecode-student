@@ -12,6 +12,7 @@ export interface LessonGenerationInput {
 }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
+const CLOUD_GENERATION_TIMEOUT_MS = 18_000;
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
@@ -22,26 +23,8 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, reason
   const local = generateLocalLesson(job.request.subject, job.request.prompt);
   const result: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: true };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({
-    id: result.id,
-    title: result.title,
-    subject: job.request.subject,
-    description: `Offline study session for ${job.request.prompt}`,
-    blocks: result.blocks,
-    difficulty: job.request.difficulty,
-    progress: 0,
-    completed: false,
-    downloadedAt: now,
-    lastSyncedAt: now,
-    size: JSON.stringify(result).length,
-  });
-  updateGenerationJob(job.id, {
-    status: "complete",
-    progress: 100,
-    result,
-    partial: undefined,
-    error: reason ? `Cloud generation was unavailable, so Shadecode opened an honest offline study session instead. ${reason}` : undefined,
-  });
+  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `Offline study session for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
+  updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: reason ? `Cloud generation was unavailable, so Shadecode opened an honest offline study session instead. ${reason}` : undefined });
   if (getActiveId() === job.id) saveActiveId(null);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
 }
@@ -53,12 +36,18 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   updateGenerationJob(job.id, { status: "warming", progress: Math.max(5, job.progress), error: undefined });
   try {
     updateGenerationJob(job.id, { status: "generating", progress: Math.max(12, job.progress) });
-    const response = await fetch("/api/learn/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }),
-      cache: "no-store",
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch("/api/learn/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } finally { clearTimeout(timeout); }
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
     if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
@@ -70,14 +59,12 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (getActiveId() === job.id) saveActiveId(null);
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } catch (error) {
-    const message = errorMessage(error);
+    const message = error instanceof DOMException && error.name === "AbortError" ? `Generation exceeded ${Math.round(CLOUD_GENERATION_TIMEOUT_MS / 1000)} seconds.` : errorMessage(error);
     const offlineNow = isBrowser() && !navigator.onLine;
     if (offlineNow) {
       updateGenerationJob(job.id, { status: "queued", progress: Math.min(job.progress, 20), error: "Waiting for a connection. Your request is safely queued on this device." });
       saveActiveId(job.id);
     } else {
-      // Never leave Learn stranded at 12%. If the cloud generation path fails,
-      // provide a truthful structured offline study session immediately.
       try {
         return await saveLocalResult(job, message);
       } catch (fallbackError) {
@@ -97,9 +84,7 @@ export function queueLessonGeneration(input: LessonGenerationInput) {
 
 export async function resumeLessonGeneration(token: string | null) {
   if (!isBrowser() || !token) return null;
-  const active = getActiveGenerationJobs()
-    .filter(job => job.kind === "lesson")
-    .map(job => job as GenerationJob<LessonGenerationInput>);
+  const active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>);
   const preferredId = getActiveId();
   const job = (preferredId && active.find(item => item.id === preferredId)) || active[0];
   if (!job) return null;
