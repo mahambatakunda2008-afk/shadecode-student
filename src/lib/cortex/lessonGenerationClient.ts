@@ -10,7 +10,7 @@ export interface LessonGenerationInput {
   level?: string;
   examBoard?: string;
 }
-interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; }
+interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
@@ -18,9 +18,9 @@ function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? 
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
 
-async function saveLocalResult(job: GenerationJob<LessonGenerationInput>) {
+async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, reason?: string) {
   const local = generateLocalLesson(job.request.subject, job.request.prompt);
-  const result: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks };
+  const result: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: true };
   const now = new Date().toISOString();
   await offlineStorage.saveLesson({
     id: result.id,
@@ -35,7 +35,13 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>) {
     lastSyncedAt: now,
     size: JSON.stringify(result).length,
   });
-  updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
+  updateGenerationJob(job.id, {
+    status: "complete",
+    progress: 100,
+    result,
+    partial: undefined,
+    error: reason ? `Cloud generation was unavailable, so Shadecode opened an honest offline study session instead. ${reason}` : undefined,
+  });
   if (getActiveId() === job.id) saveActiveId(null);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
 }
@@ -52,7 +58,6 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }),
       cache: "no-store",
-      keepalive: true,
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
@@ -61,13 +66,25 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     const result: LessonGenerationResult = { id: data.id, title: data.title || job.request.prompt, blocks: data.blocks };
     const now = new Date().toISOString();
     await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `A complete ${job.request.difficulty} lesson on ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
-    updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined });
+    updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
     if (getActiveId() === job.id) saveActiveId(null);
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } catch (error) {
+    const message = errorMessage(error);
     const offlineNow = isBrowser() && !navigator.onLine;
-    updateGenerationJob(job.id, { status: offlineNow ? "queued" : "failed", progress: offlineNow ? Math.min(job.progress, 20) : job.progress, error: offlineNow ? "Waiting for a connection. Your request is safely queued on this device." : errorMessage(error) });
-    if (offlineNow) saveActiveId(job.id); else if (getActiveId() === job.id) saveActiveId(null);
+    if (offlineNow) {
+      updateGenerationJob(job.id, { status: "queued", progress: Math.min(job.progress, 20), error: "Waiting for a connection. Your request is safely queued on this device." });
+      saveActiveId(job.id);
+    } else {
+      // Never leave Learn stranded at 12%. If the cloud generation path fails,
+      // provide a truthful structured offline study session immediately.
+      try {
+        return await saveLocalResult(job, message);
+      } catch (fallbackError) {
+        updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: `${message}. Offline fallback also failed: ${errorMessage(fallbackError)}` });
+        if (getActiveId() === job.id) saveActiveId(null);
+      }
+    }
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } finally { if (runningJobId === job.id) runningJobId = null; }
 }
