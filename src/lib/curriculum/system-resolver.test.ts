@@ -55,7 +55,13 @@ describe("resolveSystemCurriculum", () => {
     expect(result.context).toBeUndefined();
   });
 
-  it("blocks when the version is verified but whole-syllabus knowledge is absent", () => {
+  it("does not block on verified objectives alone, even with no supplemental knowledge", () => {
+    // system-resolver.ts's objective-first gateway deliberately treats
+    // verified objectives as sufficient scope authority; whole-syllabus
+    // knowledge is an optional accelerator, not a hard prerequisite (see the
+    // resolveSystemCurriculum docstring). Previously this configuration was
+    // blocked, but that contradicted the documented intent once the
+    // objectives gate was introduced.
     const result = resolveSystemCurriculum({
       learner: identity,
       versions: [{ id: "v1", identity, status: "verified" }],
@@ -64,8 +70,22 @@ describe("resolveSystemCurriculum", () => {
       knowledge: [],
     });
 
+    expect(result.blocked).toBe(false);
+    expect(result.context?.knowledge.items).toHaveLength(0);
+    expect(result.reason).toContain("no supplemental knowledge pack");
+  });
+
+  it("blocks when the version is verified but no objectives are verified yet, even with knowledge present", () => {
+    const result = resolveSystemCurriculum({
+      learner: identity,
+      versions: [{ id: "v1", identity, status: "verified" }],
+      objectives: [],
+      mappings: [],
+      knowledge: [knowledge("topic", "Algorithms")],
+    });
+
     expect(result.blocked).toBe(true);
-    expect(result.reason).toContain("no verified whole-syllabus knowledge");
+    expect(result.reason).toContain("no verified syllabus objectives");
   });
 
   it("returns one shared context containing multiple syllabus layers", () => {

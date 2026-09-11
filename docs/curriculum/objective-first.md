@@ -33,7 +33,7 @@ For curriculum-bound learners, the following order is mandatory:
 4. **Syllabus and version**: the exact syllabus identifier and version must match a verified, effective curriculum version.
 5. **Subject**: the exact subject identity must match.
 6. **Objectives**: at least one verified syllabus objective must exist before curriculum-aware teaching is permitted.
-7. **Knowledge**: verified syllabus knowledge is used to explain and teach the objectives. It is not allowed to expand the required scope by itself.
+7. **Knowledge**: verified syllabus knowledge, when available, is used to explain and teach the objectives. It is not allowed to expand the required scope by itself, and it is not a hard prerequisite: verified objectives alone are sufficient scope authority, since requiring a full knowledge pack in addition would block objective-first teaching for every subject where knowledge extraction hasn't caught up yet.
 8. **Assessment**: examples and assessment guidance must remain consistent with the resolved curriculum context.
 
 ## Fail-closed behavior
@@ -41,9 +41,10 @@ For curriculum-bound learners, the following order is mandatory:
 A curriculum-aware request is blocked when:
 
 - the learner curriculum identity is incomplete;
-- no verified effective curriculum version matches the identity;
-- no verified syllabus objectives exist for that exact identity; or
-- no verified whole-syllabus knowledge is available.
+- no verified effective curriculum version matches the identity; or
+- no verified syllabus objectives exist for that exact identity.
+
+Whole-syllabus knowledge being absent does not block resolution on its own -- it only reduces how much supplemental grounding the generator has beyond the verified objective statements themselves.
 
 The AI must not silently fall back to a generic lesson and label it board-aligned.
 
