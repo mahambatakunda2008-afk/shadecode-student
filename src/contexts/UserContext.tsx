@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { offlineSync } from "@/lib/offline/sync";
 import { getRememberedUserId, rememberActiveUser, clearRememberedUser } from "@/lib/local-first/identity";
 import { offlineStorage } from "@/lib/offline/storage";
+import { isComputerScienceCurriculumSubject } from "@/lib/academic/code-lab";
 import type { StudyLevel } from "@/types";
 
 export interface UserProfile { id: string; full_name: string | null; first_name: string | null; email: string | null; avatar_url: string | null; level: number; xp: number; xp_to_next_level: number; streak: number; weekly_xp: number; focus_minutes_today: number; avg_score: number | null; streak_message: string | null; created_at: string; updated_at: string; study_level: StudyLevel | null; subjects: string[] | null; curriculum_subjects: unknown[] | null; daily_goal_minutes: number | null; study_style: "structured" | "flexible" | null; }
@@ -18,6 +19,12 @@ const UserContext = createContext<UserContextValue>({ user: null, profile: null,
 
 function readCachedProfile(userId: string): UserProfile | null { if (typeof window === "undefined") return null; try { const raw = localStorage.getItem(`${PROFILE_CACHE_PREFIX}${userId}`); return raw ? JSON.parse(raw) as UserProfile : null; } catch { return null; } }
 function cacheProfile(profile: UserProfile): void { try { localStorage.setItem(`${PROFILE_CACHE_PREFIX}${profile.id}`, JSON.stringify(profile)); } catch {} }
+function prioritizeComputerScience(profile: UserProfile): UserProfile {
+  if (!Array.isArray(profile.curriculum_subjects)) return profile;
+  const subjects = [...profile.curriculum_subjects];
+  subjects.sort((a, b) => Number(isComputerScienceCurriculumSubject(b)) - Number(isComputerScienceCurriculumSubject(a)));
+  return { ...profile, curriculum_subjects: subjects };
+}
 async function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> { let timer: ReturnType<typeof setTimeout> | undefined; try { return await Promise.race([promise, new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error("Timed out")), ms); })]); } finally { if (timer) clearTimeout(timer); } }
 
 export function UserProvider({ children }: { children: ReactNode }) {
@@ -27,9 +34,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const cached = readCachedProfile(userId); if (cached) setProfile(cached);
+    const cached = readCachedProfile(userId); if (cached) setProfile(prioritizeComputerScience(cached));
     if (!navigator.onLine) return;
-    try { const result = await withTimeout(supabase.from("profiles").select(`id, full_name, first_name, email, avatar_url, level, xp, xp_to_next_level, streak, weekly_xp, focus_minutes_today, avg_score, streak_message, created_at, updated_at, study_level, subjects, curriculum_subjects, daily_goal_minutes, study_style`).eq("id", userId).single(), PROFILE_FETCH_TIMEOUT_MS); if (!result.error && result.data) { const next = result.data as UserProfile; cacheProfile(next); setProfile(next); } } catch { /* device state remains authoritative */ }
+    try { const result = await withTimeout(supabase.from("profiles").select(`id, full_name, first_name, email, avatar_url, level, xp, xp_to_next_level, streak, weekly_xp, focus_minutes_today, avg_score, streak_message, created_at, updated_at, study_level, subjects, curriculum_subjects, daily_goal_minutes, study_style`).eq("id", userId).single(), PROFILE_FETCH_TIMEOUT_MS); if (!result.error && result.data) { const next = prioritizeComputerScience(result.data as UserProfile); cacheProfile(next); setProfile(next); } } catch { /* device state remains authoritative */ }
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => { if (user) await fetchProfile(user.id); }, [user, fetchProfile]);
@@ -37,7 +44,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     const remembered = getRememberedUserId();
-    if (remembered) { const cached = readCachedProfile(remembered); if (cached) setProfile(cached); }
+    if (remembered) { const cached = readCachedProfile(remembered); if (cached) setProfile(prioritizeComputerScience(cached)); }
     setLoading(false);
 
     if (!navigator.onLine) return () => { mounted = false; };
@@ -47,7 +54,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        if (currentUser) { rememberActiveUser(currentUser.id); const cached = readCachedProfile(currentUser.id); if (cached) setProfile(cached); void fetchProfile(currentUser.id); }
+        if (currentUser) { rememberActiveUser(currentUser.id); const cached = readCachedProfile(currentUser.id); if (cached) setProfile(prioritizeComputerScience(cached)); void fetchProfile(currentUser.id); }
       } catch { /* local session/profile stays usable */ }
     };
     void initAuth();
