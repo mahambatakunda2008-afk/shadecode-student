@@ -21,7 +21,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
 import { ResetOnboarding } from "@/components/settings/ResetOnboarding";
 import { ShadeNetSettingsCard } from "@/components/settings/ShadeNetSettingsCard";
-import { CurriculumProfileCard } from "@/components/settings/CurriculumProfileCard";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 
 export default function Settings() {
@@ -177,10 +176,6 @@ export default function Settings() {
             <p className="text-sm text-[var(--muted-foreground)]">Current mode: <span className="font-semibold text-[var(--foreground)]">{theme === "dark" ? "Dark" : "Light"}</span></p>
           </div>
         </div>
-      </section>
-
-      <section className="mt-4">
-        <CurriculumProfileCard />
       </section>
 
       <section className="mt-4">
