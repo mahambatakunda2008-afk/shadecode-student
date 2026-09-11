@@ -4,7 +4,7 @@ import type {
   ObjectiveSkillMapping,
 } from "./objective-first";
 import { hasCompleteCurriculumIdentity } from "./objective-first";
-import type { CurriculumKnowledgeItem } from "./knowledge";
+import type { CurriculumKnowledgeItem, CurriculumKnowledgeKind } from "./knowledge";
 
 export interface LearnerCurriculumContext {
   boardId: string;
@@ -32,15 +32,30 @@ export interface ResolvedCurriculumContext {
   versionId?: string;
   objectives: CurriculumObjective[];
   mappings: ObjectiveSkillMapping[];
-  /** Verified whole-syllabus knowledge, including topics, scope, assessment, practicals and related layers. */
   knowledge: CurriculumKnowledgeItem[];
-  knowledgeByKind: Partial<Record<CurriculumKnowledgeItem["kind"], CurriculumKnowledgeItem[]>>;
+  knowledgeByKind: Partial<Record<CurriculumKnowledgeKind, CurriculumKnowledgeItem[]>>;
 }
 
-function identityMatches(
-  learner: LearnerCurriculumContext,
-  version: CurriculumIdentity,
-): boolean {
+const REQUIRED_KNOWLEDGE_KINDS: CurriculumKnowledgeKind[] = [
+  "topic",
+  "content_scope",
+  "competency",
+  "skill",
+  "progression",
+  "assessment_requirement",
+  "paper_component",
+  "assessment_weighting",
+  "examination_format",
+  "practical_activity",
+  "project_requirement",
+  "coursework_requirement",
+  "terminology",
+  "constraint",
+  "guidance",
+  "resource",
+];
+
+function identityMatches(learner: LearnerCurriculumContext, version: CurriculumIdentity): boolean {
   return (
     learner.boardId === version.boardId &&
     learner.qualificationId === version.qualificationId &&
@@ -53,10 +68,7 @@ function identityMatches(
   );
 }
 
-function isEffective(
-  version: CurriculumVersionRecord,
-  asOf: string,
-): boolean {
+function isEffective(version: CurriculumVersionRecord, asOf: string): boolean {
   if (version.effectiveFrom && asOf < version.effectiveFrom) return false;
   if (version.effectiveTo && asOf > version.effectiveTo) return false;
   return true;
@@ -66,21 +78,22 @@ function groupKnowledge(items: CurriculumKnowledgeItem[]) {
   return items.reduce((groups, item) => {
     (groups[item.kind] ??= []).push(item);
     return groups;
-  }, {} as Partial<Record<CurriculumKnowledgeItem["kind"], CurriculumKnowledgeItem[]>>);
+  }, {} as Partial<Record<CurriculumKnowledgeKind, CurriculumKnowledgeItem[]>>);
+}
+
+function missingKnowledgeKinds(items: CurriculumKnowledgeItem[]): CurriculumKnowledgeKind[] {
+  const kinds = new Set(items.map((item) => item.kind));
+  return REQUIRED_KNOWLEDGE_KINDS.filter((kind) => !kinds.has(kind));
 }
 
 /**
  * Resolve the exact curriculum context Cortex is allowed to use.
  *
- * This is intentionally fail-closed: a complete learner identity is required,
- * only verified versions are eligible, and only verified objectives, mappings
- * and whole-syllabus knowledge are returned. No subject-only or level-only
- * inference is performed here.
- *
- * A version is not considered usable merely because its objectives have been
- * mapped. Whole-syllabus knowledge must also exist. That knowledge is the
- * source for scope, content, competencies, assessment, practical/project
- * requirements, constraints, guidance and other syllabus layers.
+ * Fail closed. A verified objective list is not enough. Production curriculum
+ * resolution requires verified knowledge across the teaching, progression,
+ * assessment, practical/project, terminology, constraint, guidance and
+ * resource layers. This prevents a thin objective seed from masquerading as a
+ * complete syllabus.
  */
 export function resolveCurriculumContext(input: {
   learner: LearnerCurriculumContext;
@@ -108,30 +121,19 @@ export function resolveCurriculumContext(input: {
     objectives: [] as CurriculumObjective[],
     mappings: [] as ObjectiveSkillMapping[],
     knowledge: [] as CurriculumKnowledgeItem[],
-    knowledgeByKind: {} as Partial<Record<CurriculumKnowledgeItem["kind"], CurriculumKnowledgeItem[]>>,
+    knowledgeByKind: {} as Partial<Record<CurriculumKnowledgeKind, CurriculumKnowledgeItem[]>>,
   };
 
   if (!hasCompleteCurriculumIdentity(identity)) {
-    return {
-      status: "unverified",
-      reason: "Learner curriculum identity is incomplete; exam-specific claims are blocked.",
-      ...empty,
-    };
+    return { status: "unverified", reason: "Learner curriculum identity is incomplete; exam-specific claims are blocked.", ...empty };
   }
 
   const version = versions.find(
-    (candidate) =>
-      candidate.status === "verified" &&
-      identityMatches(learner, candidate.identity) &&
-      isEffective(candidate, asOf),
+    (candidate) => candidate.status === "verified" && identityMatches(learner, candidate.identity) && isEffective(candidate, asOf),
   );
 
   if (!version) {
-    return {
-      status: "unverified",
-      reason: "No verified curriculum version matches the learner's exact curriculum identity.",
-      ...empty,
-    };
+    return { status: "unverified", reason: "No verified curriculum version matches the learner's exact curriculum identity.", ...empty };
   }
 
   const resolvedObjectives = objectives.filter(
@@ -149,9 +151,7 @@ export function resolveCurriculumContext(input: {
   );
 
   const objectiveIds = new Set(resolvedObjectives.map((objective) => objective.id));
-  const resolvedMappings = mappings.filter(
-    (mapping) => mapping.status === "verified" && objectiveIds.has(mapping.objectiveId),
-  );
+  const resolvedMappings = mappings.filter((mapping) => mapping.status === "verified" && objectiveIds.has(mapping.objectiveId));
 
   const resolvedKnowledge = (input.knowledge ?? []).filter(
     (item) =>
@@ -167,16 +167,21 @@ export function resolveCurriculumContext(input: {
   );
 
   if (!resolvedKnowledge.length) {
+    return { status: "unverified", reason: "No verified whole-syllabus knowledge is available for the exact curriculum version.", ...empty };
+  }
+
+  const missingKinds = missingKnowledgeKinds(resolvedKnowledge);
+  if (missingKinds.length) {
     return {
       status: "unverified",
-      reason: "The exact curriculum version has verified objectives, but no verified whole-syllabus knowledge is available. Teaching and assessment claims are blocked until the syllabus content layers are reconciled.",
+      reason: `Whole-syllabus knowledge is incomplete. Missing verified layers: ${missingKinds.join(", ")}. Teaching and assessment claims remain blocked until those layers are reconciled.`,
       ...empty,
     };
   }
 
   return {
     status: "resolved",
-    reason: "Exact verified curriculum context and whole-syllabus knowledge resolved successfully.",
+    reason: "Exact verified curriculum context and all required whole-syllabus knowledge layers resolved successfully.",
     curriculum: identity,
     versionId: version.id,
     objectives: resolvedObjectives,
