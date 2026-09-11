@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     if (lessonError || !lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
     const objectiveKeys = Array.isArray(lesson.curriculum_objective_keys)
-      ? lesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim())
+      ? lesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0)
       : [];
 
     if (!lesson.curriculum_version_id || objectiveKeys.length === 0) {
