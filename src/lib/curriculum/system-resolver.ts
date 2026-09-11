@@ -34,10 +34,9 @@ function toKnowledgeIdentity(identity: CurriculumIdentity): CurriculumKnowledgeI
 /**
  * Single system-wide curriculum gateway.
  *
- * A verified curriculum version plus verified objectives is enough to establish
- * the authoritative scope for objective-first teaching. Whole-syllabus
- * knowledge is richer grounding, but it must not be a prerequisite for Learn
- * when the objective set itself is already verified.
+ * Verification is broader than an objective list. A usable production
+ * curriculum must have verified whole-syllabus knowledge covering the layers
+ * required to teach, assess and describe the syllabus accurately.
  */
 export function resolveSystemCurriculum(input: SystemCurriculumResolutionInput): SystemCurriculumResolution {
   const resolved = resolveCurriculumContext(input);
@@ -54,20 +53,22 @@ export function resolveSystemCurriculum(input: SystemCurriculumResolutionInput):
     };
   }
 
+  if (resolved.knowledge.length === 0) {
+    return {
+      resolved,
+      blocked: true,
+      reason: "Curriculum version has no verified whole-syllabus knowledge. Teaching, assessment and syllabus-specific claims are blocked until the full curriculum layers are reconciled.",
+    };
+  }
+
   const identity = toKnowledgeIdentity(resolved.curriculum);
   const context = buildSystemCurriculumContext(identity, resolved.knowledge, true, resolved.objectives);
 
-  // Objective-first teaching can proceed with zero knowledge rows. The
-  // generator must then use the verified objective statements as its minimum
-  // scope and clearly distinguish any enrichment. Rich knowledge remains an
-  // optional accelerator rather than a hard dependency.
   return {
     resolved,
     context,
     blocked: false,
-    reason: context.knowledge.items.length
-      ? "Verified objective-first curriculum context resolved with syllabus knowledge."
-      : "Verified objective-first curriculum context resolved from the authoritative objective set; no supplemental knowledge pack is available yet.",
+    reason: "Verified objective-first curriculum context resolved with verified whole-syllabus knowledge.",
   };
 }
 
