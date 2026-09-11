@@ -1,1 +1,1 @@
-export const CHANNEL_IDENTITY_FOUNDATION = true;
+// Temporary branch verification marker. Remove before merging the feature branch.
