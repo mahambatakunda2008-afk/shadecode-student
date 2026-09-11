@@ -22,8 +22,8 @@ export function BottomNav() {
   const primaryCandidates = family === "foundation"
     ? [NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn, NAV_ITEMS.achievements]
     : family === "school"
-      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.studyPlan, NAV_ITEMS.examSim]
-      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.workmate, NAV_ITEMS.projects];
+      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.codeLab, NAV_ITEMS.examSim]
+      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.codeLab, NAV_ITEMS.projects];
   const primaryItems = primaryCandidates.filter(item => allItems.some(available => available.href === item.href));
   const moreItems = allItems.filter(item => !primaryItems.some(primary => primary.href === item.href));
   const primaryLabel = (href: string, fallback: string) => {
@@ -31,9 +31,10 @@ export function BottomNav() {
     if (family === "foundation" && href === "/discovery") return "Discover";
     if (family === "foundation" && href === "/achievements") return "Milestones";
     if (family === "school" && href === "/dashboard") return "Home";
-    if (family === "school" && href === "/study-plan") return "Plan";
+    if (family === "school" && href === "/code-lab") return "Code";
     if (family === "beyond-school" && href === "/dashboard") return "Home";
     if (family === "beyond-school" && href === "/curriculum") return "Courses";
+    if (family === "beyond-school" && href === "/code-lab") return "Code";
     return fallback;
   };
   const moreTitle = family === "foundation" ? "Keep exploring" : family === "school" ? "More study tools" : "More workspace tools";
