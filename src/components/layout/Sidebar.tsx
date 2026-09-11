@@ -18,7 +18,7 @@ export function Sidebar() {
   const { profile } = useUser();
   const { tasksBadge, tasksUrgent, examsBadge, examsUrgent } = useNavBadges();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
-  const navGroups = getExperienceNavGroups(experience);
+  const navGroups = getExperienceNavGroups(experience, profile?.curriculum_subjects);
   const resolveBadge = (href: string, staticBadge?: string, staticUrgent?: boolean) => {
     if (href === "/tasks") return { badge: tasksBadge, urgent: tasksUrgent };
     if (href === "/exams") return { badge: examsBadge, urgent: examsUrgent };
