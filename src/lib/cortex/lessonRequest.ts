@@ -120,5 +120,17 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     request.requestedParts.length > 0 && `Requested components: ${request.requestedParts.join(", ")}`,
   ].filter(Boolean).join("\n");
 
-  return `${context}\n\nLearner's exact request: ${request.prompt}\n\nInterpretation rules: preserve the learner's requested scope and components. A short topic name is a valid request, not an instruction to ask for more detail. For a broad or multi-part request, decompose it into a coherent learning path and cover the requested parts in dependency order. Do not silently drop a requested component. If the subject is unresolved, teach only subject-neutral material or ask for clarification when subject knowledge is genuinely required; never invent a board, subject, qualification, or syllabus.`;
+  const intentContract = {
+    teach: "Teach one usable capability. Include a worked example, a thinking checkpoint, and an application. Include exam transfer when the learner is studying for an exam or the curriculum context makes it useful.",
+    remedial: "Diagnose the likely misconception, rebuild the mental model from the needed prerequisite, then use a worked example and correction. Keep the lesson focused on fixing the learner's actual gap.",
+    revision: "Prioritise high-yield recall plus discrimination between similar ideas, then transfer the knowledge into exam-style practice. Avoid reteaching an entire textbook chapter.",
+    practice: "Teach the method briefly, demonstrate one worked example, then give at least three progressively harder questions. Questions must test transfer rather than repeat the same numbers.",
+    comparison: "Define both sides precisely, compare them explicitly, expose the most important similarities and differences, then test the distinction with an application or checkpoint.",
+  }[request.intent];
+
+  const requestedContract = request.requestedParts.length > 0
+    ? `Explicit learner requirements are mandatory and must not be silently dropped: ${request.requestedParts.join(", ")}.`
+    : "No extra learner components were explicitly requested. Do not add elaborate sections merely to make the lesson look longer.";
+
+  return `${context}\n\nLearner's exact request: ${request.prompt}\n\nTeaching contract: ${intentContract}\n${requestedContract}\n\nInterpretation rules: preserve the learner's requested scope and components. A short topic name is a valid request, not an instruction to ask for more detail. For a broad or multi-part request, decompose it into a coherent learning path and cover the requested parts in dependency order. Do not silently drop a requested component. Use application, exam-transfer, formula and prerequisite sections when they are relevant to the intent, topic, curriculum or learner request, rather than forcing the same template onto every lesson. If the subject is unresolved, teach only subject-neutral material or ask for clarification when subject knowledge is genuinely required; never invent a board, subject, qualification, or syllabus.`;
 }
