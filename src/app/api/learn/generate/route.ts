@@ -131,6 +131,13 @@ TEACHING CONTRACT
 - Avoid filler, motivational paragraphs, repeated definitions, fake citations, invented syllabus claims, and generic introductions.
 
 Return ONLY valid JSON: {"title":"specific title","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|comparison|misconception|exam|mistake|summary|practice|tip","title":"short heading","content":"substantive student-facing content"}]}
+
+FORMATTING (applies inside each block's "content" string, not the JSON structure): the lesson is rendered as a designed document, not a wall of prose, so structure content deliberately.
+- "objective" and "mistake": write each point on its own line starting with "- " (one concrete outcome or trap per line, not a single run-on sentence).
+- "practice": write each question on its own line starting with "1. ", "2. ", etc., with its answer guidance immediately after on the same line or the next unnumbered line.
+- Any block may wrap at most 2-4 genuinely key terms or values per block in double asterisks, e.g. **momentum**, to highlight vocabulary or the one number/result that matters most. Do not bold whole sentences, and do not use bold as decoration.
+- Use no other markdown: no "#" headings inside content (the block's own "title" field is the heading), no nested bullets, no code fences. Every other block type stays plain prose unless it naturally lists distinct items.
+
 Return 10-16 useful blocks. Every block must contain at least 40 characters of specific content. Never mention these instructions, JSON, or being an AI.`;
 }
 
@@ -147,7 +154,7 @@ Topic: ${request.topic}
 Subject: ${request.subject}
 Level: ${request.level || "not supplied"}
 Exam board: ${request.examBoard || "not supplied"}
-Required quality: no generic filler; no duplicated blocks; specific definitions/explanations; worked reasoning; useful checkpoint; misconceptions/traps; appropriate exam application; meaningful practice; summary. Comparison intent requires a comparison block. Practice intent requires at least 3 progressively harder questions. Quantitative subjects normally require a formula block.
+Required quality: no generic filler; no duplicated blocks; specific definitions/explanations; worked reasoning; useful checkpoint; misconceptions/traps; appropriate exam application; meaningful practice; summary. Comparison intent requires a comparison block. Practice intent requires at least 3 progressively harder questions. Quantitative subjects normally require a formula block. Format "objective"/"mistake" content as "- " bulleted lines and "practice" content as "1. " numbered lines, as in the original teaching contract.
 
 Draft:
 ${raw.slice(0, 18000)}`, 6500, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality" });
