@@ -1,5 +1,6 @@
 import { LayoutDashboard, Timer, CheckSquare, BookOpen, Brain, BarChart3, Trophy, BrainCircuit, Calendar, Gamepad2, Settings, Award, GraduationCap, Route, FileText, UploadCloud, ClipboardCheck, Tags, Globe, MessageSquare, Settings2, Share2, BriefcaseBusiness, FolderKanban, Compass, Library, Code2 } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
+import { hasComputerScienceCurriculum } from "@/lib/academic/code-lab";
 
 export interface NavItem { href:string; label:string; icon:any; badge?:string; urgent?:boolean; }
 export interface NavGroup { group:string; items:NavItem[]; }
@@ -9,7 +10,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
 };
 export const ADMIN_NAV_GROUPS:NavGroup[]=[{group:"Admin",items:[NAV_ITEMS.adminDashboard,NAV_ITEMS.adminAnalytics,NAV_ITEMS.examHub,NAV_ITEMS.adminUpload,NAV_ITEMS.adminManage,NAV_ITEMS.adminModeration,NAV_ITEMS.adminQuestions,NAV_ITEMS.adminBoards,NAV_ITEMS.adminFeedback,NAV_ITEMS.settings]}];
 
-export function getExperienceNavGroups(experience: AcademicExperience): NavGroup[] {
+export function getExperienceNavGroups(experience: AcademicExperience, curriculumSubjects?: unknown): NavGroup[] {
   const foundation: NavGroup[] = [
     { group:"Start here", items:[NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn] },
     { group:"Keep exploring", items:[NAV_ITEMS.tasks, NAV_ITEMS.timetable, NAV_ITEMS.achievements] },
@@ -25,7 +26,11 @@ export function getExperienceNavGroups(experience: AcademicExperience): NavGroup
     { group:"Growth", items:[NAV_ITEMS.analytics, NAV_ITEMS.achievements] },
   ];
   const groups = experience.family === "foundation" ? foundation : experience.family === "school" ? school : beyond;
-  return groups.map(group => ({ ...group, items: group.items.filter(item => experience.allowedRoutes.includes(item.href)) })).filter(group => group.items.length > 0);
+  const canUseCodeLab = hasComputerScienceCurriculum(curriculumSubjects);
+  return groups.map(group => ({
+    ...group,
+    items: group.items.filter(item => experience.allowedRoutes.includes(item.href) && (item.href !== "/code-lab" || canUseCodeLab)),
+  })).filter(group => group.items.length > 0);
 }
 
 export const SIDEBAR_GROUPS:NavGroup[]=[{group:"Core",items:[NAV_ITEMS.dashboard,NAV_ITEMS.discovery,NAV_ITEMS.focus,NAV_ITEMS.study,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan]},{group:"Practice",items:[NAV_ITEMS.codeLab,NAV_ITEMS.examHub,NAV_ITEMS.tasks,NAV_ITEMS.exams,NAV_ITEMS.examSim]},{group:"Tools",items:[NAV_ITEMS.learn,NAV_ITEMS.curriculum,NAV_ITEMS.projects,NAV_ITEMS.workmate]},{group:"Progress",items:[NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements,NAV_ITEMS.cortex,NAV_ITEMS.share]}];
