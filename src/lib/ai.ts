@@ -69,7 +69,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     for (const model of geminiModels) {
       if (!canTry()) break;
       const text = await tryProvider("gemini", model, async timeout => {
-        const geminiTimeout = Math.min(timeout, 3500);
+        const geminiTimeout = Math.min(timeout, 12000);
         const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

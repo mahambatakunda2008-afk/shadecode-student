@@ -108,7 +108,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 18000, perProviderMaxMs: 4500 });
+    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 45000, perProviderMaxMs: 13000 });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -127,7 +127,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   if (parsed && initialFailures.length === 0) return parsed;
 
   try {
-    const repair = await callAI(`Repair this failed lesson. Return ONLY valid JSON with 10-16 substantive blocks. Preserve the exact topic, subject, level, board and intent. Fix these checks: ${initialFailures.join(", ")}. Include objective, concept, worked example, checkpoint without its answer, misconception, application, exam transfer, progressive practice and summary. For mathematics Trigonometric identities, include the Pythagorean, reciprocal and quotient identities plus a proof by transforming one side.\n\nTopic: ${request.topic}\nSubject: ${request.subject}\nIntent: ${request.intent}\n\nDRAFT:\n${raw.slice(0, 14000)}`, 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 12000, perProviderMaxMs: 4500 });
+    const repair = await callAI(`Repair this failed lesson. Return ONLY valid JSON with 10-16 substantive blocks. Preserve the exact topic, subject, level, board and intent. Fix these checks: ${initialFailures.join(", ")}. Include objective, concept, worked example, checkpoint without its answer, misconception, application, exam transfer, progressive practice and summary. For mathematics Trigonometric identities, include the Pythagorean, reciprocal and quotient identities plus a proof by transforming one side.\n\nTopic: ${request.topic}\nSubject: ${request.subject}\nIntent: ${request.intent}\n\nDRAFT:\n${raw.slice(0, 14000)}`, 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 28000, perProviderMaxMs: 10000 });
     if (repair) {
       parsed = parseLesson(repair);
       if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
