@@ -4,6 +4,28 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-12 — Cambridge 0478 verification: real progress, not a finish
+
+Full status and evidence in `docs/curriculum/0478-verification-status.md`. Summary:
+confirmed the 10 top-level objectives already in the DB for Cambridge 0478 (2026-2028)
+match the official syllabus exactly — fetched directly from Cambridge International's
+own site, which (unlike ZIMSEC's) doesn't block automated access. Found the cached
+`curriculum_documents` snapshot is one version behind the live PDF (cached version 5,
+live document is version 6, published September 2026). Mapped the full remaining
+coverage-dimension gap precisely: 23 of 27 unverified dimensions are answerable from the
+syllabus PDF already fetched, 2 should be `not_applicable` (no coursework/project
+component), and 4 (past paper / mark scheme / examiner report / grade threshold
+coverage) need separate documents — some public URLs for specimen material and grade
+thresholds were located but not fetched or verified. Nothing was written to
+`curriculum_versions` or `curriculum_coverage_checks` this session: this is a live,
+multi-part reconciliation pipeline with its own conventions (hashing, extraction status)
+under active construction on `curriculum/0478-verification-main`, and partial competing
+writes from two different sessions to the same tables would recreate the exact kind of
+drift this whole system exists to prevent. Whoever picks up that branch next has a
+precise, evidenced starting point instead of "still generic, unclear why."
+
+---
+
 ## 2026-09-10 — Production outage: ~14 consecutive deploys failing, root-caused and fixed
 
 **Severity:** every production deployment since commit `31fd6a3`/`be11da8` (the last `READY` build) through `7113ec4` — the entire same-day "objective-first Code Lab" commit chain, ~14 commits — failed to build on Vercel. `main`'s CI `Typecheck` step was also red. Production had been serving stale code for that whole window.
