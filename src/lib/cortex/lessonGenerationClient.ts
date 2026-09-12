@@ -1,7 +1,7 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
-import { getLocalCurriculumGrounding } from "@/lib/cortex/localCurriculumGrounding";
+import { getLocalCurriculumGrounding, readLocalCurriculumGrounding } from "@/lib/cortex/localCurriculumGrounding";
 import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
 
@@ -20,9 +20,10 @@ function errorMessage(value: unknown) { return value instanceof Error ? value.me
 function openCompletedLesson(result: LessonGenerationResult) { if (!isBrowser() || window.location.pathname !== "/learn") return; window.location.assign(`/learn/${encodeURIComponent(result.id)}`); }
 function localContext(job: GenerationJob<LessonGenerationInput>) {
   const pack = readOfflineCurriculumPack(job.request.subject, job.request.examBoard, job.request.level);
+  const cachedGrounding = readLocalCurriculumGrounding(job.request.subject, job.request.prompt);
   const curriculum = buildOfflineCurriculumScope(pack, job.request.prompt);
   const memory = buildLocalLearnerContext(readLocalLearnerMemory());
-  return `${curriculum ? `\n\n${curriculum}` : ""}\n\n${memory}`;
+  return `${cachedGrounding ? `\n\n${cachedGrounding}` : ""}${curriculum ? `\n\n${curriculum}` : ""}\n\n${memory}`;
 }
 async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, generated?: LessonGenerationResult) {
   const context = localContext(job);
