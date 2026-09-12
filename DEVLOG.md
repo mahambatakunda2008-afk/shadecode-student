@@ -107,3 +107,13 @@ Completed the security audit task by adding regression coverage for authorizatio
 **Change:** Created `src/lib/auth_utils.ts` with an `UnauthorizedError` class and a `getAuthorizedTask` function. This function fetches a task by ID and explicitly verifies its ownership against the authenticated user's ID. This provides a robust application-level authorization boundary check, acting as a safeguard against potential RLS misconfigurations and ensuring that sensitive data is only accessed by authorized users. API endpoints handling tasks should use this utility to ensure proper authorization.
 
 ---
+
+## 2026-09-12 — Cortex Auto-Cycle
+
+Completed a crucial part of the security audit by focusing on AI-generated insights. I've introduced a new service file, `src/services/cortexInsightsService.ts`, with functions `getCortexInsightsForUser` and `createCortexInsightForUser`. These functions explicitly enforce that `cortex_insights` are always tied to the requesting user, strengthening our authorization boundaries and mitigating potential data leakage across users. This directly addresses the AI-boundary review and will facilitate adding robust regression coverage for these authorization checks moving forward.
+
+**Task:** Enforce User-Specific Authorization for Cortex Insights
+
+**Change:** Introduced `src/services/cortexInsightsService.ts` containing `getCortexInsightsForUser` and `createCortexInsightForUser` functions. These functions are designed to explicitly filter and associate `cortex_insights` with the authenticated user's ID when interacting with the Supabase `cortex_insights` table. This change prevents unauthorized access to other users' AI-generated content, strengthens the application's authorization boundaries, and provides clear integration points for ensuring future regression coverage on these security aspects.
+
+---
