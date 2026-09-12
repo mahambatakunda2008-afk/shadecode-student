@@ -17,5 +17,5 @@ export function generateLocalLesson(subject: string, prompt: string, curriculumC
 }
 
 export function hasLocalLessonFallback(_subject: string, _prompt: string, curriculumContext = "") {
-  return curriculumContext.trim().length > 0;
+  return /=== VERIFIED LEARNER CURRICULUM CONTEXT ===/i.test(curriculumContext) && /Verified syllabus knowledge available/i.test(curriculumContext);
 }
