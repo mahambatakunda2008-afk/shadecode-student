@@ -1,14 +1,14 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
-import { generateLocalLesson, hasHighQualityLocalLesson } from "@/lib/cortex/localLessonGenerator";
+import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
-interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; }
+interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-// The API can perform a curriculum lookup, an initial generation, and a quality-repair pass.
-// Keep the client timeout below the server's 90s maxDuration, but long enough for the full
-// quality-gated path to finish instead of falsely reporting a 35s failure.
 const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
+const LOCAL_MODEL_TIMEOUT_MS = 8_000;
+const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL) || "http://127.0.0.1:11434";
+const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
@@ -16,15 +16,53 @@ function getActiveId() { if (!isBrowser()) return null; try { return localStorag
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
 function openCompletedLesson(result: LessonGenerationResult) { if (!isBrowser() || window.location.pathname !== "/learn") return; window.location.assign(`/learn/${encodeURIComponent(result.id)}`); }
 
-async function saveLocalResult(job: GenerationJob<LessonGenerationInput>) {
-  const local = generateLocalLesson(job.request.subject, job.request.prompt);
-  const result: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: true };
+async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, generated?: LessonGenerationResult) {
+  const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt);
+  const result: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `Offline study session for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
+  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `Local study session for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null);
   openCompletedLesson(result);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
+}
+
+function parseLocalModelLesson(raw: string, job: GenerationJob<LessonGenerationInput>): LessonGenerationResult | null {
+  try {
+    const stripped = raw.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    const value = JSON.parse(stripped.slice(start, end + 1)) as { title?: unknown; blocks?: unknown };
+    if (typeof value.title !== "string" || !Array.isArray(value.blocks)) return null;
+    const blocks = value.blocks.filter((block): block is Record<string, unknown> => {
+      if (!block || typeof block !== "object") return false;
+      const item = block as Record<string, unknown>;
+      return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 30;
+    }).slice(0, 18);
+    if (blocks.length < 10) return null;
+    return { id: `local-model-${Date.now().toString(36)}`, title: value.title.trim().slice(0, 255), blocks, localModel: true };
+  } catch { return null; }
+}
+
+async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise<LessonGenerationResult | null> {
+  if (!isBrowser() || !navigator.onLine) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LOCAL_MODEL_TIMEOUT_MS);
+  try {
+    const prompt = `You are the local Cortex teaching model for Shadecode Student. Return ONLY JSON.\nSubject: ${job.request.subject}\nLevel: ${job.request.level || "not specified"}\nExam board: ${job.request.examBoard || "not specified"}\nDifficulty: ${job.request.difficulty}\nGoal: ${job.request.goal}\nTopic/request: ${job.request.prompt}\n\nCreate 10-16 structured learning blocks. Use types objective, prior, concept, definition, formula, example, checkpoint, misconception, exam, application, mistake, practice, summary, tip. No wall-of-text. Use short newline-separated learning units. Worked examples must have Given:, Method:, Step 1:, Step 2:, Answer:. Checkpoints must have Question: and Think:. Exam transfer must have Question:, Approach:, Examiner looks for:. Do not invent official syllabus claims. If board-specific facts are uncertain, teach the topic generally. JSON shape: {"title":"...","blocks":[{"type":"...","title":"...","content":"..."}]}`;
+    const response = await fetch(`${LOCAL_MODEL_BASE_URL.replace(/\/$/, "")}/api/chat`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: LOCAL_MODEL_NAME, messages: [{ role: "user", content: prompt }], stream: false, format: "json", options: { temperature: 0.25, num_predict: 4200 } }),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Local model HTTP ${response.status}`);
+    const data = await response.json() as any;
+    return typeof data?.message?.content === "string" ? parseLocalModelLesson(data.message.content, job) : null;
+  } catch (error) {
+    console.info("[LEARN] local model unavailable; continuing with cloud generation", error instanceof Error ? error.message : String(error));
+    return null;
+  } finally { clearTimeout(timer); }
 }
 
 async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
@@ -33,6 +71,15 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   try {
     updateGenerationJob(job.id, { status: "generating", progress: 12 });
+
+    // Local-first: when Ollama is installed and a model is already available, Cortex can
+    // generate without consuming cloud AI at all. A missing local server costs only one short timeout.
+    const localModel = await tryLocalModel(job);
+    if (localModel) {
+      console.info("[LEARN] lesson generated by local Ollama model", { model: LOCAL_MODEL_NAME, subject: job.request.subject, topic: job.request.prompt });
+      return saveLocalResult(job, localModel);
+    }
+
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
     const ticker = setInterval(() => { const current = getGenerationJob(job.id)?.progress ?? 12; updateGenerationJob(job.id, { progress: Math.min(88, current + (current < 60 ? 3 : 1)) }); }, 1800);
     let response: Response;
@@ -49,11 +96,8 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } catch (error) {
     const message = error instanceof DOMException && error.name === "AbortError" ? `Generation exceeded ${Math.round(CLOUD_GENERATION_TIMEOUT_MS / 1000)} seconds.` : errorMessage(error);
-    // If the cloud lesson path is unavailable but we have a deterministic, high-quality
-    // lesson for this exact topic, keep the learner moving instead of surfacing a dead end.
-    // Generic local fallback remains offline-only because it intentionally avoids inventing facts.
-    if (isBrowser() && navigator.onLine && hasHighQualityLocalLesson(job.request.subject, job.request.prompt)) {
-      console.warn("[LEARN] cloud generation unavailable; opening high-quality local lesson", { subject: job.request.subject, topic: job.request.prompt, error: message });
+    if (isBrowser() && navigator.onLine && hasLocalLessonFallback(job.request.subject, job.request.prompt)) {
+      console.warn("[LEARN] cloud generation unavailable; opening offline-safe local study session", { subject: job.request.subject, topic: job.request.prompt, error: message });
       return saveLocalResult(job);
     }
     if (isBrowser() && !navigator.onLine) { updateGenerationJob(job.id, { status: "queued", progress: Math.min(job.progress, 20), error: "Waiting for a connection. Your request is safely queued on this device." }); saveActiveId(job.id); }
