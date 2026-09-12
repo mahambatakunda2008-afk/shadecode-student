@@ -49,7 +49,27 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[] }, 
   if (["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p))) failures.push("generic-language");
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
-  if (!has("objective") && !/learning objective|by the end|you will be able to|student will/i.test(searchableText)) failures.push("objective");
+  // Presentation is part of lesson quality. A technically correct lesson is
+  // still a poor learning experience if it arrives as dense prose. The UI is
+  // intentionally optimized for short, scannable learning units.
+  const wallOfText = normalized.some(block => {
+    const content = block.content.trim();
+    const lineCount = content.split(/\n+/).map(line => line.trim()).filter(Boolean).length;
+    const sentenceCount = (content.match(/[.!?](?:\s|$)/g) ?? []).length;
+    const avgSentenceLength = sentenceCount ? content.length / sentenceCount : content.length;
+    return content.length > 700 && lineCount < 3 || content.length > 1100 && lineCount < 5 || avgSentenceLength > 260;
+  });
+  if (wallOfText) failures.push("wall-of-text");
+
+  const structuredTypes = new Set(["objective", "prior", "definition", "formula", "example", "checkpoint", "exam", "mistake", "misconception", "practice", "summary"]);
+  const structuredBlocks = normalized.filter(block => structuredTypes.has(block.normalizedType));
+  const lineStructuredCount = structuredBlocks.filter(block => {
+    const lines = block.content.split(/\n+/).map(line => line.trim()).filter(Boolean);
+    return lines.length >= 2 || /(^|\n)([-•]|\d+[.)]|Given:|Method:|Step\s+\d+:|Question:|Answer:|Approach:|Examiner looks for:)/i.test(block.content);
+  }).length;
+  if (structuredBlocks.length >= 4 && lineStructuredCount < Math.min(3, structuredBlocks.length)) failures.push("weak-structure");
+
+  if (!has("objective") && !/learning objective|by the end|you will be able to|student will be able to/i.test(searchableText)) failures.push("objective");
   if (!has("concept", "definition") && !/explains?|means|refers to|concept|understand|why it works/i.test(searchableText)) failures.push("concept");
   if (!has("example") && !/worked example|for example|consider this|let's work through|step 1/i.test(searchableText)) failures.push("example");
   if (!has("checkpoint") && !/pause and think|stop and think|check yourself|your turn|before reading on/i.test(searchableText)) failures.push("checkpoint");
