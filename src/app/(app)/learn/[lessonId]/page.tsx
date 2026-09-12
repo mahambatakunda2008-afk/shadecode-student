@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
-  ArrowLeft, BookOpen, Zap, Dna, Globe,
-  FlaskConical, Calculator, Brain, Code2, TrendingUp,
-  Languages, Music, Palette, CheckCircle2, Clock,
-  HelpCircle, ArrowRight, MessageSquare, Download,
-  Headphones, Pause, Mic,
+  ArrowLeft, ArrowRight, BookOpen, Calculator, CheckCircle2, Clock,
+  Code2, Download, FlaskConical, Globe, Headphones, HelpCircle,
+  MessageSquare, Mic, Pause, Zap, Dna, Brain, TrendingUp, Languages,
+  Music, Palette,
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
 import { downloadManager } from "@/lib/offline/downloadManager";
@@ -17,672 +16,296 @@ import { offlineStorage } from "@/lib/offline/storage";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
 
-type SubjectTheme = {
-  hex: string; bg: string; border: string; text: string;
-  icon: React.ComponentType<{ size?: number; color?: string }>;
-};
-
-const THEMES: Record<string, SubjectTheme> = {
-  Mathematics:        { hex: "#8b5cf6", bg: "rgba(139,92,246,0.18)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd", icon: Calculator   },
-  Physics:            { hex: "#3b82f6", bg: "rgba(59,130,246,0.18)",  border: "rgba(59,130,246,0.3)",  text: "#93c5fd", icon: Zap          },
-  Biology:            { hex: "#10b981", bg: "rgba(16,185,129,0.18)",  border: "rgba(16,185,129,0.3)",  text: "#6ee7b7", icon: Dna          },
-  History:            { hex: "#f59e0b", bg: "rgba(245,158,11,0.18)",  border: "rgba(245,158,11,0.3)",  text: "#fcd34d", icon: Globe        },
-  Chemistry:          { hex: "#06b6d4", bg: "rgba(6,182,212,0.18)",   border: "rgba(6,182,212,0.3)",   text: "#67e8f9", icon: FlaskConical },
-  Geography:          { hex: "#14b8a6", bg: "rgba(20,184,166,0.18)",  border: "rgba(20,184,166,0.3)",  text: "#5eead4", icon: Globe        },
-  "Computer Science": { hex: "#6366f1", bg: "rgba(99,102,241,0.18)",  border: "rgba(99,102,241,0.3)",  text: "#a5b4fc", icon: Code2        },
-  Psychology:         { hex: "#ec4899", bg: "rgba(236,72,153,0.18)",  border: "rgba(236,72,153,0.3)",  text: "#f9a8d4", icon: Brain        },
-  Economics:          { hex: "#22c55e", bg: "rgba(34,197,94,0.18)",   border: "rgba(34,197,94,0.3)",   text: "#86efac", icon: TrendingUp   },
-  Languages:          { hex: "#f43f5e", bg: "rgba(244,63,94,0.18)",   border: "rgba(244,63,94,0.3)",   text: "#fda4af", icon: Languages    },
-  Music:              { hex: "#a855f7", bg: "rgba(168,85,247,0.18)",  border: "rgba(168,85,247,0.3)",  text: "#d8b4fe", icon: Music        },
-  Art:                { hex: "#f97316", bg: "rgba(249,115,22,0.18)",  border: "rgba(249,115,22,0.3)",  text: "#fdba74", icon: Palette      },
-  default:            { hex: "var(--muted-foreground)", bg: "rgba(100,116,139,0.18)", border: "rgba(100,116,139,0.3)", text: "var(--muted-foreground)", icon: BookOpen     },
-};
-
-function theme(name: string): SubjectTheme { return THEMES[name] ?? THEMES.default; }
-
-const DIFF: Record<string, { label: string; bg: string; border: string; text: string }> = {
-  easy:   { label: "Guided",    bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#6ee7b7" },
-  medium: { label: "Standard",  bg: "rgba(59,130,246,0.12)",  border: "rgba(59,130,246,0.3)",  text: "#93c5fd" },
-  hard:   { label: "Challenge", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.3)",  text: "#c4b5fd" },
-};
-
-interface LessonBlock { type: string; title?: string; content: string; }
-interface Lesson {
+type LessonBlock = { type: string; title?: string; content: string };
+type Lesson = {
   id: string; title: string; subject: string; description: string;
   difficulty: string; progress: number; completed: boolean;
   blocks?: LessonBlock[]; updated_at?: string;
-}
+};
+type Theme = { hex: string; bg: string; border: string; text: string; icon: React.ComponentType<{ size?: number; color?: string }> };
 
-// A generated lesson reads as an authored document, not a stack of
-// identical cards. Blocks split into two structural roles:
-// - FLOW blocks are the lesson's actual teaching narrative -- read straight
-//   down the page like a real page, numbered because a lesson genuinely is
-//   a sequence (first principles, then the worked case, then the exam
-//   application). No box, no fill -- just typography and a rule between
-//   sections.
-// - ASIDE blocks interrupt that flow with something supplementary (a check,
-//   a warning, a tip) and read as a margin note attached to the section
-//   above them, not more of the same page.
-const FLOW_TYPES = new Set(["objective", "prior", "concept", "definition", "formula", "example", "exam", "summary", "math"]);
-const FLOW_LABELS: Record<string, string> = {
-  objective: "What you'll be able to do",
-  prior: "Where you're starting from",
-  concept: "The idea",
-  definition: "Terms worth knowing",
-  formula: "The formula",
-  math: "The formula",
-  example: "Worked example",
-  exam: "In the exam",
-  summary: "Bringing it together",
+const THEMES: Record<string, Theme> = {
+  Mathematics: { hex: "#8b5cf6", bg: "rgba(139,92,246,.14)", border: "rgba(139,92,246,.28)", text: "#c4b5fd", icon: Calculator },
+  Physics: { hex: "#3b82f6", bg: "rgba(59,130,246,.14)", border: "rgba(59,130,246,.28)", text: "#93c5fd", icon: Zap },
+  Biology: { hex: "#10b981", bg: "rgba(16,185,129,.14)", border: "rgba(16,185,129,.28)", text: "#6ee7b7", icon: Dna },
+  History: { hex: "#f59e0b", bg: "rgba(245,158,11,.14)", border: "rgba(245,158,11,.28)", text: "#fcd34d", icon: Globe },
+  Chemistry: { hex: "#06b6d4", bg: "rgba(6,182,212,.14)", border: "rgba(6,182,212,.28)", text: "#67e8f9", icon: FlaskConical },
+  Geography: { hex: "#14b8a6", bg: "rgba(20,184,166,.14)", border: "rgba(20,184,166,.28)", text: "#5eead4", icon: Globe },
+  "Computer Science": { hex: "#6366f1", bg: "rgba(99,102,241,.14)", border: "rgba(99,102,241,.28)", text: "#a5b4fc", icon: Code2 },
+  Psychology: { hex: "#ec4899", bg: "rgba(236,72,153,.14)", border: "rgba(236,72,153,.28)", text: "#f9a8d4", icon: Brain },
+  Economics: { hex: "#22c55e", bg: "rgba(34,197,94,.14)", border: "rgba(34,197,94,.28)", text: "#86efac", icon: TrendingUp },
+  Languages: { hex: "#f43f5e", bg: "rgba(244,63,94,.14)", border: "rgba(244,63,94,.28)", text: "#fda4af", icon: Languages },
+  Music: { hex: "#a855f7", bg: "rgba(168,85,247,.14)", border: "rgba(168,85,247,.28)", text: "#d8b4fe", icon: Music },
+  Art: { hex: "#f97316", bg: "rgba(249,115,22,.14)", border: "rgba(249,115,22,.28)", text: "#fdba74", icon: Palette },
+  default: { hex: "#64748b", bg: "rgba(100,116,139,.14)", border: "rgba(100,116,139,.28)", text: "#94a3b8", icon: BookOpen },
+};
+const DIFF: Record<string, { label: string; text: string }> = {
+  easy: { label: "Guided", text: "#6ee7b7" }, medium: { label: "Standard", text: "#93c5fd" }, hard: { label: "Challenge", text: "#c4b5fd" },
+};
+const FLOW = new Set(["objective", "prior", "concept", "definition", "formula", "math", "example", "exam", "summary", "application", "comparison", "practice"]);
+const LABELS: Record<string, string> = {
+  objective: "Learning objectives", prior: "Before you begin", concept: "Core idea", definition: "Key definitions",
+  formula: "Formula / method", math: "Formula / method", example: "Worked example", application: "Apply it",
+  comparison: "Compare", exam: "Exam transfer", practice: "Practice", summary: "Key takeaways",
+};
+const ASIDES: Record<string, { label: string; icon: string; accent: string }> = {
+  checkpoint: { label: "Quick check", icon: "✓", accent: "#14b8a6" },
+  misconception: { label: "Easy to get wrong", icon: "!", accent: "#f43f5e" },
+  mistake: { label: "Watch out", icon: "!", accent: "#f97316" },
+  tip: { label: "Study tip", icon: "i", accent: "#f59e0b" },
 };
 
-type AsideStyle = { label: string; icon: string; accent: string };
-const ASIDE_STYLES: Record<string, AsideStyle> = {
-  checkpoint:    { label: "Quick check",       icon: "✅", accent: "#14b8a6" },
-  misconception: { label: "Easy to get wrong", icon: "⚠️", accent: "#f43f5e" },
-  mistake:       { label: "Watch out for",     icon: "🚧", accent: "#f97316" },
-  practice:      { label: "Try it yourself",   icon: "✏️", accent: "#06b6d4" },
-  tip:           { label: "Study tip",         icon: "💡", accent: "#f59e0b" },
-};
-const ASIDE_FALLBACK: AsideStyle = { label: "Note", icon: "•", accent: "#64748b" };
-
-/** Renders `**term**` spans as bold within a line, without pulling in a markdown parser. */
-function inlineEmphasis(text: string, keyPrefix: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**")
-      ? <strong key={`${keyPrefix}-b-${i}`} style={{ color: "var(--foreground)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>
-      : <span key={`${keyPrefix}-t-${i}`}>{part}</span>
-  );
-}
-
-/**
- * Groups a block's raw content into bullet lists, numbered lists and
- * paragraphs instead of one flat wall of text. The lesson prompt asks the
- * model to mark list-like content (objectives, common mistakes, practice
- * questions) with "- " or "1." line prefixes; this parses that back out.
- * Any content without those markers still renders, just as a paragraph.
- */
-function renderBlockContent(content: string): ReactNode[] {
-  const lines = content.split(/\n+/).map(l => l.trim()).filter(Boolean);
-  const bullet = (l: string) => /^[-•]\s+/.test(l);
-  const numbered = (l: string) => /^\d+[.)]\s+/.test(l);
-
-  type Run = { kind: "bullet" | "numbered" | "para"; lines: string[] };
-  const runs: Run[] = [];
-  for (const line of lines) {
-    const kind: Run["kind"] = bullet(line) ? "bullet" : numbered(line) ? "numbered" : "para";
-    const stripped = kind === "bullet" ? line.replace(/^[-•]\s+/, "") : kind === "numbered" ? line.replace(/^\d+[.)]\s+/, "") : line;
-    const last = runs[runs.length - 1];
-    if (last?.kind === kind) last.lines.push(stripped);
-    else runs.push({ kind, lines: [stripped] });
-  }
-  if (!runs.length) return [];
-
-  return runs.map((run, i) => {
-    const isLast = i === runs.length - 1;
-    if (run.kind === "bullet") return (
-      <ul key={i} style={{ margin: isLast ? 0 : "0 0 10px", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
-        {run.lines.map((l, j) => <li key={j} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--muted-foreground)" }}>{inlineEmphasis(l, `${i}-${j}`)}</li>)}
-      </ul>
-    );
-    if (run.kind === "numbered") return (
-      <ol key={i} style={{ margin: isLast ? 0 : "0 0 10px", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-        {run.lines.map((l, j) => <li key={j} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--muted-foreground)" }}>{inlineEmphasis(l, `${i}-${j}`)}</li>)}
-      </ol>
-    );
-    return (
-      <p key={i} style={{ fontSize: 14, lineHeight: 1.8, color: "var(--muted-foreground)", margin: isLast ? 0 : "0 0 10px" }}>
-        {run.lines.map((l, j) => <span key={j}>{inlineEmphasis(l, `${i}-${j}`)}{j < run.lines.length - 1 ? " " : ""}</span>)}
-      </p>
-    );
-  });
-}
-
-function FlowBlock({ block, index, isOpening, noDivider }: { block: LessonBlock; index: number; isOpening: boolean; noDivider: boolean }) {
-  const heading = block.title?.trim() || FLOW_LABELS[block.type] || "Section";
-  return (
-    <div style={noDivider ? { paddingBottom: 4 } : { paddingBottom: 28, marginBottom: 28, borderBottom: "1px solid var(--card-border)" }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-        {!isOpening && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }}>{String(index).padStart(2, "0")}</span>}
-        <h3
-          style={{
-            fontSize: isOpening ? 22 : 17, fontWeight: 800, margin: 0, lineHeight: 1.3,
-            ...(isOpening
-              ? { background: "var(--brand-gradient)", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
-              : { color: "var(--foreground)" }),
-          }}
-        >
-          {heading}
-        </h3>
-      </div>
-      <div style={{ fontFamily: block.type === "math" || block.type === "formula" ? "monospace" : undefined, paddingLeft: isOpening ? 0 : 30 }}>
-        {renderBlockContent(block.content)}
-      </div>
-    </div>
-  );
-}
-
-function AsideBlock({ block }: { block: LessonBlock }) {
-  const s = ASIDE_STYLES[block.type] ?? ASIDE_FALLBACK;
-  const heading = block.title?.trim() || s.label;
-  return (
-    <div style={{ margin: "0 0 24px 30px", paddingLeft: 16, borderLeft: `2px solid ${s.accent}66` }}>
-      <p style={{ fontSize: 13, fontWeight: 700, color: s.accent, margin: "0 0 6px" }}>
-        <span aria-hidden style={{ marginRight: 6 }}>{s.icon}</span>{heading}
-      </p>
-      {renderBlockContent(block.content)}
-    </div>
-  );
-}
-
+function theme(subject: string) { return THEMES[subject] ?? THEMES.default; }
 function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 : 20; }
 
+function inline(text: string, key: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
+    part.startsWith("**") ? <strong key={`${key}-${i}`} style={{ color: "var(--foreground)", fontWeight: 750 }}>{part.slice(2, -2)}</strong> : <span key={`${key}-${i}`}>{part}</span>
+  );
+}
+
+function sentenceChunks(text: string): string[] {
+  const normalized = text.replace(/\r/g, "").trim();
+  if (!normalized) return [];
+  const lines = normalized.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const out: string[] = [];
+  for (const line of lines) {
+    if (/^[-•]\s+/.test(line) || /^\d+[.)]\s+/.test(line)) { out.push(line); continue; }
+    const parts = line.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) ?? [line];
+    for (const part of parts) if (part.trim()) out.push(part.trim());
+  }
+  return out;
+}
+
+function renderStructured(content: string, type: string): ReactNode {
+  const lines = sentenceChunks(content);
+  if (!lines.length) return null;
+
+  const isFormula = type === "formula" || type === "math";
+  const isExample = type === "example";
+  const isPractice = type === "practice";
+  const bullets = lines.filter(l => /^[-•]\s+/.test(l)).map(l => l.replace(/^[-•]\s+/, ""));
+  const numbered = lines.filter(l => /^\d+[.)]\s+/.test(l)).map(l => l.replace(/^\d+[.)]\s+/, ""));
+  const plain = lines.filter(l => !/^[-•]\s+/.test(l) && !/^\d+[.)]\s+/.test(l));
+
+  if (isFormula) return (
+    <div style={{ display: "grid", gap: 9 }}>
+      {lines.map((line, i) => <div key={i} className="lesson-line formula-line">{inline(line.replace(/^[-•]\s+/, ""), `f-${i}`)}</div>)}
+    </div>
+  );
+
+  if (isExample) {
+    const labels = ["Given:", "Method:", "Step 1:", "Step 2:", "Step 3:", "Answer:", "Therefore:"];
+    return <div style={{ display: "grid", gap: 9 }}>
+      {lines.map((line, i) => {
+        const label = labels.find(x => line.toLowerCase().startsWith(x.toLowerCase()));
+        const value = label ? line.slice(label.length).trim() : line;
+        return <div key={i} className={label ? "lesson-step" : "lesson-line"}>
+          {label && <span className="lesson-label">{label}</span>} {inline(value, `e-${i}`)}
+        </div>;
+      })}
+    </div>;
+  }
+
+  if (numbered.length >= 2 || isPractice) return (
+    <ol className="lesson-steps">
+      {(numbered.length ? numbered : plain).map((line, i) => <li key={i}>{inline(line, `n-${i}`)}</li>)}
+      {numbered.length === 0 && bullets.map((line, i) => <li key={`b-${i}`}>{inline(line, `b-${i}`)}</li>)}
+    </ol>
+  );
+
+  if (bullets.length >= 1) return (
+    <ul className="lesson-points">{bullets.map((line, i) => <li key={i}>{inline(line, `b-${i}`)}</li>)}</ul>
+  );
+
+  return <div className="lesson-points plain-points">{plain.map((line, i) => <div key={i}>{inline(line, `p-${i}`)}</div>)}</div>;
+}
+
+function LessonUnit({ block, number }: { block: LessonBlock; number: number }) {
+  const heading = block.title?.trim() || LABELS[block.type] || "Lesson section";
+  return (
+    <section className="lesson-unit">
+      <div className="unit-kicker"><span>{String(number).padStart(2, "0")}</span><span>{heading}</span></div>
+      <div className="unit-body">{renderStructured(block.content, block.type)}</div>
+    </section>
+  );
+}
+
+function AsideUnit({ block }: { block: LessonBlock }) {
+  const s = ASIDES[block.type] ?? { label: "Note", icon: "•", accent: "#64748b" };
+  return (
+    <aside className="lesson-aside" style={{ borderColor: `${s.accent}66` }}>
+      <div className="aside-title" style={{ color: s.accent }}><span>{s.icon}</span>{block.title?.trim() || s.label}</div>
+      <div className="aside-body">{renderStructured(block.content, block.type)}</div>
+    </aside>
+  );
+}
+
 export default function LessonDetailPage() {
-  const router   = useRouter();
-  const params   = useParams();
+  const router = useRouter();
+  const params = useParams();
   const lessonId = params?.lessonId as string;
   const { checkNewAchievements } = useAchievementsContext();
-
-  const [lesson,       setLesson]       = useState<Lesson | null>(null);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState<string | null>(null);
-  const [completing,   setCompleting]   = useState(false);
-  const [showToast,    setShowToast]    = useState(false);
-  const [accessToken,  setAccessToken]  = useState<string | null>(null);
-  const [showTutor,    setShowTutor]    = useState(false);
-  const [currentUser,  setCurrentUser]  = useState<string>("");
-  const [downloading,  setDownloading]  = useState(false);
+  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState("");
+  const [completing, setCompleting] = useState(false);
+  const [showTutor, setShowTutor] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
-  const [autoSaving,   setAutoSaving]   = useState(false);
-  const [lastSavedProgress, setLastSavedProgress] = useState<number>(0);
-
-  // Must be called unconditionally (before any early return below) per
-  // Rules of Hooks -- lesson is still null on first render, so pass a
-  // safe empty default; the hook's own internal effect rebuilds the
-  // narration script once real blocks arrive.
+  const [showToast, setShowToast] = useState(false);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to close tutor modal
-      if (e.key === 'Escape' && showTutor) {
-        setShowTutor(false);
-      }
-      // Ctrl/Cmd + Enter to mark complete
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && lesson && !lesson.completed && !completing) {
-        e.preventDefault();
-        markComplete();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showTutor, lesson, completing]);
+  const loadLesson = async (token: string) => {
+    setLoading(true); setError(null);
+    try {
+      const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) { let msg = "Couldn't load this lesson."; try { const b = await r.json(); msg = b?.error || msg; } catch {} throw new Error(msg); }
+      const d = await r.json();
+      if (!d.lesson) throw new Error("Lesson content not found.");
+      setLesson(d.lesson); setAccessToken(token);
+      void offlineStorage.saveLesson({ ...d.lesson, downloadedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(), size: JSON.stringify(d.lesson).length }).catch(() => undefined);
+    } catch (err) {
+      try {
+        const cached = await offlineStorage.getLesson(lessonId);
+        if (cached) { setLesson({ ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }); return; }
+      } catch {}
+      setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
+    } finally { setLoading(false); }
+  };
 
   useEffect(() => {
     (async () => {
       const sb = createClient();
-      let session = null;
       try {
         const { data } = await sb.auth.getSession();
-        session = data?.session;
+        if (data?.session) { setCurrentUser(data.session.user.id); await loadLesson(data.session.access_token); return; }
       } catch {}
-
-      if (session) {
-        setAccessToken(session.access_token);
-        setCurrentUser(session.user.id);
-        await loadLesson(session.access_token);
-      } else {
-        // Device offline or unauthenticated fallback - check local cache
-        try {
-          const cached = await offlineStorage.getLesson(lessonId);
-          if (cached) {
-            setLesson({
-              id: cached.id,
-              title: cached.title,
-              subject: cached.subject,
-              description: cached.description ?? "",
-              difficulty: cached.difficulty ?? "medium",
-              progress: cached.progress ?? 0,
-              completed: cached.completed ?? false,
-              blocks: (cached.blocks as unknown as LessonBlock[]) ?? [],
-              updated_at: cached.lastSyncedAt,
-            });
-            setLastSavedProgress(cached.progress ?? 0);
-            setLoading(false);
-            return;
-          }
-        } catch {}
-
-        if (navigator.onLine) {
-          router.push("/login");
-        } else {
-          setError("You are currently offline and this lesson has not been cached on this device yet.");
-          setLoading(false);
-        }
-      }
+      try {
+        const cached = await offlineStorage.getLesson(lessonId);
+        if (cached) { setLesson({ ...cached, description: cached.description ?? "", difficulty: cached.difficulty ?? "medium", progress: cached.progress ?? 0, completed: cached.completed ?? false, blocks: (cached.blocks as unknown as LessonBlock[]) ?? [], updated_at: cached.lastSyncedAt }); setLoading(false); return; }
+      } catch {}
+      if (navigator.onLine) router.push("/login"); else { setError("You are offline and this lesson has not been cached on this device yet."); setLoading(false); }
     })();
   }, [lessonId]);
 
-  const loadLesson = async (token: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await fetch(`/api/learn?lessonId=${lessonId}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) {
-        let message = "Couldn't load this lesson.";
-        try {
-          const body = await r.json();
-          if (body?.error) message = body.error;
-        } catch { /* response wasn't JSON, keep default message */ }
-        throw new Error(message);
-      }
-      const d = await r.json();
-      if (d.lesson) {
-        setLesson(d.lesson);
-        setLastSavedProgress(d.lesson?.progress ?? 0);
-
-        // Cache locally for offline viewing
-        void offlineStorage.saveLesson({
-          id: d.lesson.id,
-          title: d.lesson.title,
-          subject: d.lesson.subject,
-          description: d.lesson.description,
-          blocks: d.lesson.blocks,
-          difficulty: d.lesson.difficulty,
-          progress: d.lesson.progress,
-          completed: d.lesson.completed,
-          downloadedAt: new Date().toISOString(),
-          lastSyncedAt: new Date().toISOString(),
-          size: JSON.stringify(d.lesson).length,
-        }).catch(() => undefined);
-
-        // Restore scroll position for incomplete lessons
-        if (!d.lesson.completed && d.lesson.progress > 0 && d.lesson.progress < 100) {
-          const savedScroll = localStorage.getItem(`lesson_scroll_${lessonId}`);
-          if (savedScroll) {
-            setTimeout(() => {
-              window.scrollTo({ top: parseInt(savedScroll), behavior: 'smooth' });
-            }, 100);
-          }
-        }
-      } else {
-        throw new Error("Lesson content not found.");
-      }
-    } catch (err) {
-      // Fallback to offline cached lesson if fetch failed
-      try {
-        const cached = await offlineStorage.getLesson(lessonId);
-        if (cached) {
-          setLesson({
-            id: cached.id,
-            title: cached.title,
-            subject: cached.subject,
-            description: cached.description ?? "",
-            difficulty: cached.difficulty ?? "medium",
-            progress: cached.progress ?? 0,
-            completed: cached.completed ?? false,
-            blocks: (cached.blocks as unknown as LessonBlock[]) ?? [],
-            updated_at: cached.lastSyncedAt,
-          });
-          setLastSavedProgress(cached.progress ?? 0);
-          return;
-        }
-      } catch {}
-
-      console.error("[lesson] Failed to load lesson:", lessonId, err);
-      setError(err instanceof Error ? err.message : "Couldn't load this lesson.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sync offline progress when online
   useEffect(() => {
-    const handleOnline = async () => {
-      if (currentUser) {
-        try {
-          await downloadManager.syncProgress(currentUser);
-        } catch (error) {
-          console.error("Failed to sync progress:", error);
-        }
-      }
-    };
-
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    const online = () => { if (currentUser) void downloadManager.syncProgress(currentUser).catch(() => undefined); };
+    window.addEventListener("online", online); return () => window.removeEventListener("online", online);
   }, [currentUser]);
 
-  // Auto-save progress based on scroll position
   useEffect(() => {
-    if (!lesson || lesson.completed || lesson.progress >= 100) return;
-
-    let saveTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = Math.min(100, Math.round((scrollTop / docHeight) * 100));
-      
-      // Save scroll position to localStorage for resume capability
-      localStorage.setItem(`lesson_scroll_${lessonId}`, String(scrollTop));
-      
-      // Only save if progress increased by at least 5%
-      if (scrollPercent > lastSavedProgress + 5) {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(async () => {
-          if (!accessToken || autoSaving) return;
-          setAutoSaving(true);
-          try {
-            const newProgress = Math.min(100, scrollPercent);
-            await fetch("/api/learn", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-              body: JSON.stringify({ lessonId: lesson.id, progress: newProgress }),
-            });
-            setLesson(prev => prev ? { ...prev, progress: newProgress } : prev);
-            setLastSavedProgress(newProgress);
-          } catch (error) {
-            console.error("Auto-save failed:", error);
-          } finally {
-            setAutoSaving(false);
-          }
-        }, 1000); // Debounce saves
+    if (!lesson || lesson.completed) return;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const onScroll = () => {
+      localStorage.setItem(`lesson_scroll_${lessonId}`, String(window.scrollY));
+      const height = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = height > 0 ? Math.min(100, Math.round((window.scrollY / height) * 100)) : 0;
+      if (progress >= 100 && accessToken) {
+        clearTimeout(timeout); timeout = setTimeout(() => { void markComplete(); }, 800);
       }
     };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      clearTimeout(saveTimeout);
-    };
-  }, [lesson, accessToken, lastSavedProgress, autoSaving, lessonId]);
-
-  async function handleDownload() {
-    if (!lesson || downloading) return;
-
-    setDownloading(true);
-    setDownloadProgress(0);
-
-    try {
-      await downloadManager.downloadAll(
-        lesson.id,
-        lesson,
-        undefined, // notes - can be added later
-        undefined, // quiz - can be added later
-        (progress) => setDownloadProgress(progress)
-      );
-
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } catch (error) {
-      console.error("Download failed:", error);
-    } finally {
-      setDownloading(false);
-      setDownloadProgress(0);
-    }
-  }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { window.removeEventListener("scroll", onScroll); if (timeout) clearTimeout(timeout); };
+  }, [lesson, accessToken, lessonId]);
 
   async function markComplete() {
-    if (!lesson || !accessToken || completing) return;
+    if (!lesson || !accessToken || completing || lesson.completed) return;
     setCompleting(true);
     try {
-      const r = await fetch("/api/learn", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ lessonId: lesson.id, progress: 100 }),
-      });
+      const r = await fetch("/api/learn", { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ lessonId: lesson.id, progress: 100 }) });
       if (!r.ok) throw new Error();
-      setLesson(prev => prev ? { ...prev, progress: 100, completed: true } : prev);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
-      checkNewAchievements();
+      setLesson(x => x ? { ...x, progress: 100, completed: true } : x); setShowToast(true); checkNewAchievements();
+      setTimeout(() => setShowToast(false), 3500);
     } catch {} finally { setCompleting(false); }
   }
 
-  if (loading) return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ position: "relative", width: 36, height: 36 }}>
-        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(139,92,246,0.2)" }} />
-        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.8s linear infinite" }} />
-      </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+  async function handleDownload() {
+    if (!lesson || downloading) return;
+    setDownloading(true); setDownloadProgress(0);
+    try { await downloadManager.downloadAll(lesson.id, lesson, undefined, undefined, p => setDownloadProgress(p)); setShowToast(true); setTimeout(() => setShowToast(false), 2500); }
+    catch (e) { console.error("Download failed:", e); }
+    finally { setDownloading(false); setDownloadProgress(0); }
+  }
 
-  if (error || !lesson) return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <p style={{ color: "var(--danger)", fontSize: 14 }}>{error ?? "Lesson not found."}</p>
-      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-        {error && accessToken && (
-          <button onClick={() => loadLesson(accessToken)} style={{ background: "transparent", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 8, padding: "6px 14px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-            Retry
-          </button>
-        )}
-        <Link href="/learn" style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none" }}>← Back to Learn</Link>
-      </div>
-    </div>
-  );
+  if (loading) return <div className="lesson-loading"><div className="spinner" /></div>;
+  if (error || !lesson) return <div className="lesson-error"><p>{error ?? "Lesson not found."}</p><div><Link href="/learn">← Back to Learn</Link>{error && accessToken && <button onClick={() => void loadLesson(accessToken)}>Retry</button>}</div></div>;
 
-  const t         = theme(lesson.subject);
-  const Icon      = t.icon;
-  const d         = DIFF[lesson.difficulty] ?? DIFF.medium;
-  const hasBlocks = Array.isArray(lesson.blocks) && lesson.blocks.length > 0;
-  const earnedXP  = xpForDiff(lesson.difficulty);
+  const t = theme(lesson.subject); const Icon = t.icon; const d = DIFF[lesson.difficulty] ?? DIFF.medium;
+  const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
+  let unitNumber = 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
+    <div className="lesson-page" style={{ "--lesson-accent": t.hex, "--lesson-soft": t.bg, "--lesson-border": t.border } as React.CSSProperties}>
       <style>{`
-        @keyframes spin       { to { transform: rotate(360deg) } }
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes pop        { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-        .complete-btn:not(:disabled):hover { filter: brightness(1.08); }
-        .quiz-btn:hover { filter: brightness(1.1); }
+        .lesson-page{min-height:100vh;background:var(--background);color:var(--foreground)}
+        .lesson-shell{width:min(820px,100%);margin:auto;padding:28px 18px 72px}
+        .lesson-back{display:inline-flex;align-items:center;gap:7px;color:var(--muted-foreground);font-size:13px;text-decoration:none;margin-bottom:22px}
+        .lesson-hero{border:1px solid var(--card-border);border-radius:22px;background:linear-gradient(135deg,var(--card),var(--lesson-soft));overflow:hidden;margin-bottom:30px}
+        .lesson-hero-bar{height:3px;background:linear-gradient(90deg,var(--lesson-accent),transparent)}
+        .lesson-hero-inner{padding:24px 26px}
+        .lesson-meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:14px;font-size:13px}
+        .lesson-subject{display:inline-flex;align-items:center;gap:7px;color:var(--lesson-accent);font-weight:700}
+        .lesson-badge{border:1px solid var(--lesson-border);background:var(--lesson-soft);color:${d.text};padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}
+        .lesson-title{font-size:clamp(25px,4vw,34px);line-height:1.13;letter-spacing:-.025em;margin:0 0 10px;font-weight:850}
+        .lesson-desc{font-size:14px;line-height:1.65;color:var(--muted-foreground);margin:0 0 18px;max-width:680px}
+        .progress-label{display:flex;justify-content:space-between;color:var(--muted-foreground);font-size:11px;margin-bottom:6px}.progress-track{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:var(--lesson-accent);border-radius:99px}
+        .lesson-content{display:flex;flex-direction:column}
+        .lesson-unit{padding:0 0 30px;margin:0 0 30px;border-bottom:1px solid var(--card-border)}
+        .unit-kicker{display:flex;align-items:center;gap:11px;color:var(--muted-foreground);font-size:12px;font-weight:800;letter-spacing:.035em;text-transform:uppercase;margin-bottom:13px}.unit-kicker span:first-child{color:var(--lesson-accent);font-variant-numeric:tabular-nums}.unit-kicker span:last-child{color:var(--foreground)}
+        .unit-body{font-size:15px;line-height:1.65;max-width:740px}
+        .lesson-points{display:flex;flex-direction:column;gap:9px;margin:0;padding-left:20px;color:var(--muted-foreground)}.lesson-points li{padding-left:4px}.plain-points{padding-left:0;gap:11px}.plain-points>div{position:relative;padding-left:16px}.plain-points>div:before{content:"";position:absolute;left:0;top:.68em;width:5px;height:5px;border-radius:50%;background:var(--lesson-accent)}
+        .lesson-steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;counter-reset:step}.lesson-steps li{counter-increment:step;position:relative;padding:11px 14px 11px 46px;background:var(--surface-2);border:1px solid var(--card-border);border-radius:12px;color:var(--muted-foreground)}.lesson-steps li:before{content:counter(step);position:absolute;left:13px;top:11px;width:23px;height:23px;border-radius:7px;background:var(--lesson-soft);color:var(--lesson-accent);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+        .lesson-line{color:var(--muted-foreground);margin-bottom:7px}.lesson-step{color:var(--muted-foreground);padding:9px 12px;border-left:2px solid var(--lesson-border);margin-bottom:7px}.lesson-label{font-weight:800;color:var(--foreground);margin-right:4px}.formula-line{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--foreground);background:var(--surface-2);border:1px solid var(--card-border);border-radius:10px;padding:10px 13px;font-size:14px;overflow:auto}
+        .lesson-aside{margin:0 0 25px 14px;padding:13px 0 13px 16px;border-left:2px solid}.aside-title{font-size:12px;font-weight:850;display:flex;gap:8px;align-items:center;margin-bottom:7px}.aside-body{color:var(--muted-foreground);font-size:14px;line-height:1.65}
+        .lesson-actions{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:4px}.lesson-action{min-height:48px;border-radius:13px;border:1px solid var(--card-border);background:var(--surface-2);color:var(--foreground);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;padding:8px}.lesson-action.primary{background:linear-gradient(135deg,rgba(16,185,129,.22),rgba(52,211,153,.10));border-color:rgba(52,211,153,.3);color:#34d399}.lesson-action.quiz{background:linear-gradient(135deg,#7c3aed,#2563eb);border-color:transparent;color:#fff}.lesson-action:disabled{opacity:.55;cursor:not-allowed}
+        .lesson-note{text-align:center;color:var(--muted-foreground);font-size:11px;margin-top:8px}.lesson-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;background:var(--card);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:12px 16px;color:#34d399;font-size:13px;font-weight:750;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+        .lesson-loading,.lesson-error{min-height:100vh;background:var(--background);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted-foreground);padding:24px}.lesson-error a,.lesson-error button{margin:0 6px;color:#a78bfa;background:none;border:0;cursor:pointer;text-decoration:none;font-size:13px}.spinner{width:34px;height:34px;border-radius:50%;border:2px solid var(--card-border);border-top-color:#8b5cf6;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:1/-1}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
       `}</style>
 
-      {/* Ambient glow */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden" }} aria-hidden>
-        <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: `radial-gradient(ellipse, ${t.hex}22 0%, transparent 65%)`, borderRadius: "50%" }} />
-      </div>
+      {showToast && <div className="lesson-toast"><CheckCircle2 size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
+      <main className="lesson-shell">
+        <Link href="/learn" className="lesson-back"><ArrowLeft size={15} />Back to Learn</Link>
 
-      {/* ── Completion toast ── */}
-      {showToast && (
-        <div style={{ position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 50, animation: "fadeSlideUp 0.35s ease" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "linear-gradient(135deg, #052e16, #14532d)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 16, padding: "14px 20px", boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 24px rgba(52,211,153,0.15)" }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(52,211,153,0.15)", display: "flex", alignItems: "center", justifyContent: "center", animation: "pop 0.5s ease 0.2s" }}>
-              <CheckCircle2 size={18} color="#34d399" />
+        <header className="lesson-hero">
+          <div className="lesson-hero-bar" />
+          <div className="lesson-hero-inner">
+            <div className="lesson-meta">
+              <span className="lesson-subject"><Icon size={15} color={t.text} />{lesson.subject}</span>
+              <span>·</span><span className="lesson-badge">{d.label}</span>
+              {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={11} style={{ verticalAlign: "-1px" }} /> Completed</span>}
             </div>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#f0fdf4", margin: 0 }}>Lesson Complete! 🎉</p>
-              <p style={{ fontSize: 12, color: "#86efac", margin: "2px 0 0" }}>+{earnedXP} XP earned · Now take the quiz!</p>
-            </div>
+            <h1 className="lesson-title">{lesson.title}</h1>
+            {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
+            <div className="progress-label"><span>Progress</span><strong style={{ color: t.text }}>{lesson.progress}%</strong></div>
+            <div className="progress-track"><div className="progress-fill" style={{ width: `${lesson.progress}%` }} /></div>
           </div>
+        </header>
+
+        {blocks.length ? <div className="lesson-content">
+          {blocks.map((block, i) => FLOW.has(block.type) ? <LessonUnit key={i} block={block} number={++unitNumber} /> : <AsideUnit key={i} block={block} />)}
+
+          <div className="lesson-actions">
+            {lesson.completed ? <div className="lesson-action primary"><CheckCircle2 size={16} />Completed · +{xpForDiff(lesson.difficulty)} XP</div> : <button className="lesson-action primary" onClick={() => void markComplete()} disabled={completing}>{completing ? "Saving…" : <><CheckCircle2 size={16} />Mark Complete</>}</button>}
+            <Link className="lesson-action quiz" href={`/learn/${lessonId}/quiz`}><HelpCircle size={16} />Test Yourself<ArrowRight size={13} /></Link>
+            <button className="lesson-action" onClick={() => setShowTutor(true)}><MessageSquare size={16} />Ask Tutor</button>
+            <button className="lesson-action" onClick={() => void handleDownload()} disabled={downloading}><Download size={16} />{downloading ? `${downloadProgress}%` : "Download"}</button>
+            {narration.speechSupported && <button className="lesson-action" onClick={narration.status === "idle" ? narration.start : narration.stop}>{narration.status === "speaking" ? <><Pause size={16} />Reading {narration.currentIndex + 1}/{narration.totalSegments}</> : narration.status === "listening" ? <><Mic size={16} />Listening…</> : <><Headphones size={16} />Listen</>}</button>}
+          </div>
+          {narration.status !== "idle" && narration.voiceCommandsSupported && <p className="lesson-note">Say “next”, “repeat”, or “pause” between sections.</p>}
+        </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "#a78bfa" }}>Generate a new lesson</Link></div>}
+
+        {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={11} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
+      </main>
+
+      {showTutor && <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+        <div style={{ width: "100%", maxWidth: 700, height: "82vh", background: "#0f0f24", border: "1px solid var(--card-border)", borderRadius: 16, overflow: "hidden" }}>
+          <SocraticTutor userId={currentUser} subject={lesson.subject} topic={lesson.title} lessonContext={{ lessonId: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, blocks: lesson.blocks, difficulty: lesson.difficulty, completed: lesson.completed, progress: lesson.progress }} onClose={() => setShowTutor(false)} />
         </div>
-      )}
-
-      <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", padding: "32px 16px 60px" }}>
-
-        <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none", marginBottom: 28 }}
-          onMouseEnter={e => (e.currentTarget.style.color = "var(--muted-foreground)")}
-          onMouseLeave={e => (e.currentTarget.style.color = "var(--muted-foreground)")}>
-          <ArrowLeft size={15} /> Back to Learn
-        </Link>
-
-        {/* ── Header card ── */}
-        <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid var(--card-border)", background: `radial-gradient(ellipse at 90% 10%, ${t.hex}28 0%, transparent 55%), var(--card)`, marginBottom: 28, boxShadow: "inset 0 1px 0 var(--card-border)" }}>
-          <div style={{ height: 3, background: `linear-gradient(90deg, ${t.hex}, ${t.hex}44)` }} />
-          <div style={{ padding: "24px 28px" }}>
-            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: t.bg, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon size={15} color={t.text} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{lesson.subject}</span>
-              <span style={{ color: "var(--muted-foreground)" }}>·</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: d.text, background: d.bg, border: `1px solid ${d.border}`, borderRadius: 999, padding: "3px 10px" }}>{d.label}</span>
-              {lesson.completed && (
-                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#34d399", background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: 999, padding: "3px 10px" }}>
-                  <CheckCircle2 size={11} /> Completed
-                </span>
-              )}
-            </div>
-
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--foreground)", margin: "0 0 8px", lineHeight: 1.3 }}>{lesson.title}</h1>
-            {lesson.description && <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 18px", lineHeight: 1.6 }}>{lesson.description}</p>}
-
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-                <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Progress</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {autoSaving && (
-                    <span style={{ fontSize: 10, color: "var(--muted-foreground)", display: "flex", alignItems: "center", gap: 4 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", border: "1px solid rgba(100,116,139,0.3)", borderTopColor: "var(--muted-foreground)", animation: "spin 0.8s linear infinite" }} />
-                      Saving...
-                    </span>
-                  )}
-                  <span style={{ fontSize: 12, fontWeight: 600, color: lesson.completed ? "#34d399" : t.text }}>{lesson.progress}%</span>
-                </div>
-              </div>
-              <div style={{ height: 6, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${lesson.progress}%`, background: lesson.completed ? "linear-gradient(90deg, #10b981, #34d399)" : `linear-gradient(90deg, ${t.hex}, ${t.hex}88)`, borderRadius: 999, transition: "width .8s ease" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Lesson content ── */}
-        {hasBlocks ? (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {(() => {
-              const blocks = lesson.blocks!;
-              let flowSeen = 0;
-              return blocks.map((block, i) => {
-                const isFlow = FLOW_TYPES.has(block.type);
-                const isLast = i === blocks.length - 1;
-                if (isFlow) {
-                  flowSeen += 1;
-                  return <FlowBlock key={i} block={block} index={flowSeen - 1} isOpening={flowSeen === 1} noDivider={isLast} />;
-                }
-                return <AsideBlock key={i} block={block} />;
-              });
-            })()}
-
-            {/* ── Action bar ── */}
-            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              {/* Mark complete */}
-              {lesson.completed ? (
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 16, fontSize: 14, fontWeight: 600, color: "#34d399" }} role="status" aria-label="Lesson completed">
-                  <CheckCircle2 size={17} /> Completed · +{earnedXP} XP
-                </div>
-              ) : (
-                <button onClick={markComplete} disabled={completing} className="complete-btn"
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: completing ? "rgba(52,211,153,0.06)" : "linear-gradient(135deg, rgba(16,185,129,0.25), rgba(52,211,153,0.15))", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 16, cursor: completing ? "not-allowed" : "pointer", color: "#34d399", fontSize: 14, fontWeight: 700, transition: "all .2s" }}
-                  aria-label={`Mark lesson as complete and earn ${earnedXP} XP`}
-                  aria-disabled={completing}>
-                  {completing ? (
-                    <><div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(52,211,153,0.3)", borderTopColor: "#34d399", animation: "spin 0.8s linear infinite" }} />Saving…</>
-                  ) : (
-                    <><CheckCircle2 size={17} /> Mark Complete · +{earnedXP} XP</>
-                  )}
-                </button>
-              )}
-
-              {/* Take quiz */}
-              <Link href={`/learn/${lessonId}/quiz`} className="quiz-btn"
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #2563eb)", border: "none", borderRadius: 16, color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "filter .15s", boxShadow: "0 0 20px rgba(109,40,217,0.3)" }}
-                aria-label="Take quiz to test your knowledge">
-                <HelpCircle size={17} /> Test Yourself <ArrowRight size={14} />
-              </Link>
-
-              {/* Socratic Tutor */}
-              <button onClick={() => setShowTutor(true)}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}
-                aria-label="Open Socratic Tutor to ask questions about this lesson"
-                aria-expanded={showTutor}
-                aria-controls="tutor-modal">
-                <MessageSquare size={17} /> Ask Tutor
-              </button>
-
-              {/* Download */}
-              <button onClick={handleDownload} disabled={downloading}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: downloading ? "rgba(245,158,11,0.1)" : "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,146,60,0.15))", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 16, cursor: downloading ? "not-allowed" : "pointer", color: "#f59e0b", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}
-                aria-label={downloading ? `Downloading lesson content ${downloadProgress}% complete` : "Download lesson for offline access"}
-                aria-disabled={downloading}>
-                {downloading ? (
-                  <><div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(245,158,11,0.3)", borderTopColor: "#f59e0b", animation: "spin 0.8s linear infinite" }} />{downloadProgress}%</>
-                ) : (
-                  <><Download size={17} /> Download</>
-                )}
-              </button>
-
-              {/* Listen -- narrates lesson blocks aloud; free, on-device,
-                  no data cost. See docs/AUDIO_LESSONS_SPEC.md */}
-              {narration.speechSupported && (
-                <button
-                  onClick={narration.status === "idle" ? narration.start : narration.stop}
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: narration.status !== "idle" ? "rgba(99,102,241,0.18)" : "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, cursor: "pointer", color: "#a5b4fc", fontSize: 14, fontWeight: 700, transition: "filter .15s" }}
-                  aria-label={narration.status === "idle" ? "Listen to this lesson" : "Stop listening"}
-                >
-                  {narration.status === "listening" ? (
-                    <><Mic size={17} /> Listening&hellip;</>
-                  ) : narration.status === "speaking" ? (
-                    <><Pause size={17} /> Reading {narration.currentIndex + 1}/{narration.totalSegments}</>
-                  ) : (
-                    <><Headphones size={17} /> Listen</>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {narration.status !== "idle" && narration.voiceCommandsSupported && (
-              <p style={{ fontSize: 12, color: "var(--muted-foreground)", textAlign: "center", margin: "2px 0 0" }}>
-                Say &ldquo;next&rdquo;, &ldquo;repeat&rdquo;, or &ldquo;pause&rdquo; between sections &mdash; works best with the screen on and headphones in.
-              </p>
-            )}
-          </div>
-        ) : (
-          <div style={{ textAlign: "center", padding: "52px 24px", background: "var(--surface-2)", border: "1px solid var(--card-border)", borderRadius: 20 }}>
-            <div style={{ width: 50, height: 50, borderRadius: 15, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-              <BookOpen size={21} color="var(--muted-foreground)" />
-            </div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--muted-foreground)", margin: "0 0 6px" }}>No content yet</p>
-            <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 20px" }}>This lesson was saved before content generation was added.</p>
-            <Link href="/learn" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 600, color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "9px 16px", textDecoration: "none" }}>
-              Generate a new lesson
-            </Link>
-          </div>
-        )}
-
-        {lesson.updated_at && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 12 }}>
-            <Clock size={11} />
-            Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
-          </div>
-        )}
-      </div>
-
-      {/* Socratic Tutor Modal */}
-      {showTutor && lesson && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 }}>
-          <div style={{ width: "100%", maxWidth: 700, height: "80vh", background: "#0f0f24", border: "1px solid var(--card-border)", borderRadius: 16, overflow: "hidden" }}>
-            <SocraticTutor
-              userId={currentUser || ""}
-              subject={lesson.subject}
-              topic={lesson.title}
-              lessonContext={{
-                lessonId: lesson.id,
-                title: lesson.title,
-                subject: lesson.subject,
-                description: lesson.description,
-                blocks: lesson.blocks,
-                difficulty: lesson.difficulty,
-                completed: lesson.completed,
-                progress: lesson.progress,
-              }}
-              onClose={() => setShowTutor(false)}
-            />
-          </div>
-        </div>
-      )}
+      </div>}
     </div>
   );
 }
