@@ -1,7 +1,9 @@
 import type { CurriculumIdentity } from "./objective-first";
 import type { LearnerCurriculumContext } from "./resolver";
 
-export interface StoredCurriculumIdentity extends CurriculumIdentity {
+export interface StoredCurriculumIdentity extends Omit<CurriculumIdentity, "syllabusId" | "syllabusVersion"> {
+  syllabusId?: string;
+  syllabusVersion?: string;
   subjectName?: string;
 }
 
@@ -15,26 +17,22 @@ export function normalizeStoredCurriculumIdentity(value: unknown): StoredCurricu
   const boardId = text(record.boardId);
   const qualificationId = text(record.qualificationId);
   const level = text(record.level) as CurriculumIdentity["level"] | undefined;
-  const syllabusId = text(record.syllabusId);
-  const syllabusVersion = text(record.syllabusVersion);
   const subjectId = text(record.subjectId);
-
-  if (!boardId || !qualificationId || !level || !syllabusId || !syllabusVersion || !subjectId) return null;
-
+  if (!boardId || !qualificationId || !level || !subjectId) return null;
   return {
     boardId,
     qualificationId,
     level,
-    syllabusId,
-    syllabusVersion,
     subjectId,
+    syllabusId: text(record.syllabusId),
+    syllabusVersion: text(record.syllabusVersion),
     paperOrComponentId: text(record.paperOrComponentId),
     examSession: text(record.examSession),
     subjectName: text(record.subjectName),
   };
 }
 
-export function toLearnerCurriculumContext(identity: StoredCurriculumIdentity): LearnerCurriculumContext {
+export function toLearnerCurriculumContext(identity: StoredCurriculumIdentity & { syllabusId: string; syllabusVersion: string }): LearnerCurriculumContext {
   return {
     boardId: identity.boardId,
     qualificationId: identity.qualificationId,
@@ -49,7 +47,5 @@ export function toLearnerCurriculumContext(identity: StoredCurriculumIdentity): 
 
 export function normalizeStoredCurriculumIdentities(value: unknown): StoredCurriculumIdentity[] {
   if (!Array.isArray(value)) return [];
-  return value
-    .map(normalizeStoredCurriculumIdentity)
-    .filter((item): item is StoredCurriculumIdentity => item !== null);
+  return value.map(normalizeStoredCurriculumIdentity).filter((item): item is StoredCurriculumIdentity => item !== null);
 }
