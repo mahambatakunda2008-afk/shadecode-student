@@ -4,12 +4,13 @@ import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localL
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding } from "@/lib/cortex/localCurriculumGrounding";
 import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
+import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
 const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
-const LOCAL_MODEL_TIMEOUT_MS = 20_000;
+const LOCAL_MODEL_TIMEOUT_MS = 30_000;
 const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL) || "http://127.0.0.1:11434";
 const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
 let runningJobId: string | null = null;
@@ -41,8 +42,8 @@ function parseLocalModelLesson(raw: string): LessonGenerationResult | null {
     const start = stripped.indexOf("{"); const end = stripped.lastIndexOf("}"); if (start < 0 || end <= start) return null;
     const value = JSON.parse(stripped.slice(start, end + 1)) as { title?: unknown; blocks?: unknown };
     if (typeof value.title !== "string" || !Array.isArray(value.blocks)) return null;
-    const blocks = value.blocks.filter((item): item is Record<string, unknown> => !!item && typeof item === "object" && typeof (item as Record<string, unknown>).type === "string" && typeof (item as Record<string, unknown>).content === "string" && String((item as Record<string, unknown>).content).trim().length >= 30).slice(0, 18);
-    if (blocks.length < 10) return null;
+    const blocks = value.blocks.filter((item): item is Record<string, unknown> => !!item && typeof item === "object" && typeof (item as Record<string, unknown>).type === "string" && typeof (item as Record<string, unknown>).content === "string" && String((item as Record<string, unknown>).content).trim().length >= 30).slice(0, 16);
+    if (blocks.length < 8) return null;
     const types = new Set(blocks.map(item => String(item.type).toLowerCase()));
     if (!(types.has("objective") && (types.has("concept") || types.has("definition")) && types.has("example") && types.has("checkpoint") && types.has("summary"))) return null;
     return { id: `local-model-${Date.now().toString(36)}`, title: value.title.trim().slice(0, 255), blocks, localModel: true };
@@ -52,10 +53,12 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise
   if (!isBrowser()) return null;
   const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), LOCAL_MODEL_TIMEOUT_MS);
   try {
-    const grounding = await getLocalCurriculumGrounding(job.request.subject, job.request.prompt);
+    const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, topic: job.request.prompt, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
+    const grounding = await getLocalCurriculumGrounding(job.request.subject, request.topic);
     const cachedContext = localContext(job);
-    const scope = grounding ? `\n\nVERIFIED CURRICULUM CONTEXT:\n${grounding}\nUse this context as the syllabus scope. Objectives are the scope gate. Never invent syllabus claims.` : "\n\nNo verified curriculum cache is available. Do not claim board-specific alignment.";
-    const prompt = `You are Shadecode Student local Cortex. Return ONLY JSON. Build a real teaching lesson from the supplied curriculum data. Subject: ${job.request.subject}. Level: ${job.request.level || "not specified"}. Exam board: ${job.request.examBoard || "not specified"}. Difficulty: ${job.request.difficulty}. Goal: ${job.request.goal}. Topic: ${job.request.prompt}.${scope}${cachedContext}\nUse short organized learning units. Teach the supplied concepts, definitions and formulas, then worked reasoning, checkpoints, exam transfer and progressive practice. Never write a wall of text. Never invent curriculum claims. Return 10-16 blocks using objective, prior, concept, definition, formula, example, checkpoint, misconception, exam, application, mistake, practice, summary, tip. Worked examples use Given:, Method:, Step 1:, Step 2:, Answer:. Checkpoints use Question: and Think: or Answer:. Exam transfer uses Question:, Approach:, Examiner looks for:. JSON: {"title":"...","blocks":[{"type":"...","title":"...","content":"..."}]}`;
+    const resolved = buildResolvedLessonPrompt(request);
+    const curriculum = grounding || cachedContext;
+    const prompt = `You are the local Cortex teaching engine for Shadecode Student. Return ONLY JSON.\n\n${resolved}\n\nLOCAL CURRICULUM DATA\n${curriculum || "No verified curriculum data is cached. Do not claim board-specific alignment or invent syllabus content."}\n\nLOCAL GENERATION RULES\n- Follow the interpreted intent exactly. Do not substitute your own lesson goal.\n- Teach the requested topic, not the entire surrounding subject.\n- Use only the supplied curriculum/knowledge data for curriculum-specific claims.\n- Learner memory may change sequencing or practice emphasis, but it is not curriculum authority.\n- Do not add arbitrary application, exam, proof, misconception or formula sections when they are not useful for this request.\n- Never invent an unexplained numerical result or a fake past-paper question.\n- If the supplied data does not support a factual claim, omit the claim rather than guessing.\n- Make the lesson feel like a coherent tutor session, not a data dump.\n\nFORMAT\nCreate 8-14 purposeful blocks. Use objective, prior, concept, definition, formula, example, checkpoint, comparison, misconception, exam, application, mistake, practice, summary or tip as appropriate. A teach request normally needs an objective, explanation, one or more worked examples, a checkpoint and a concise summary. A practice request needs questions. A comparison needs an explicit comparison. A remedial request needs diagnosis and correction. Do not force unused block types.\n\nPRESENTATION\nNo wall-of-text paragraphs. Use short lines. One distinct idea per line. Use '- ' for lists and numbered lines for reasoning. Worked examples use Given:, Method:, Step 1:, Step 2:, Answer: on separate lines. Checkpoints use Question: and Think: on separate lines and do not reveal the answer in the checkpoint. Formulas get their own lines. Avoid internal-template headings.\n\nJSON SCHEMA\n{"title":"specific topic-and-outcome title","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|comparison|misconception|exam|application|mistake|practice|summary|tip","title":"short content-specific heading","content":"student-facing content"}]}`;
     const response = await fetch(`${LOCAL_MODEL_BASE_URL.replace(/\/$/, "")}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: LOCAL_MODEL_NAME, messages: [{ role: "user", content: prompt }], stream: false, format: "json", options: { temperature: 0.2, num_predict: 4200 } }), signal: controller.signal });
     if (!response.ok) throw new Error(`Local model HTTP ${response.status}`);
     const data = await response.json() as { message?: { content?: unknown } };
