@@ -19,7 +19,7 @@ type MonacoNamespace = {
   editor: {
     create: (element: HTMLElement, options: Record<string, unknown>) => MonacoEditor;
     defineTheme: (name: string, theme: Record<string, unknown>) => void;
-    setModelMarkers: (model: ReturnType<MonacoEditor["getModel"]>, owner: string, markers: MonacoMarker[]) => void;
+    setModelMarkers: (model: NonNullable<ReturnType<MonacoEditor["getModel"]>>, owner: string, markers: MonacoMarker[]) => void;
     MarkerSeverity: { Error: number; Warning: number; Info: number };
   };
   languages: {
@@ -85,10 +85,10 @@ function loadMonaco() {
   return loaderPromise;
 }
 
-function toMarker(monaco: MonacoNamespace, diagnostic: RuntimeDiagnostic, model: ReturnType<MonacoEditor["getModel"]>): MonacoMarker {
-  const line = Math.max(1, Math.min(diagnostic.line ?? 1, model?.getLineCount() ?? 1));
+function toMarker(monaco: MonacoNamespace, diagnostic: RuntimeDiagnostic, model: NonNullable<ReturnType<MonacoEditor["getModel"]>>): MonacoMarker {
+  const line = Math.max(1, Math.min(diagnostic.line ?? 1, model.getLineCount()));
   const column = Math.max(1, diagnostic.column ?? 1);
-  const maxColumn = model?.getLineMaxColumn(line) ?? column + 1;
+  const maxColumn = model.getLineMaxColumn(line);
   return {
     severity: diagnostic.severity === "error" ? monaco.editor.MarkerSeverity.Error : diagnostic.severity === "warning" ? monaco.editor.MarkerSeverity.Warning : monaco.editor.MarkerSeverity.Info,
     message: diagnostic.message,
@@ -239,23 +239,19 @@ export function CodeLabEditor({
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ diagnostics?: RuntimeDiagnostic[] }>).detail;
+      const detail = (event as CustomEvent<{ entryFile?: string; diagnostics?: RuntimeDiagnostic[] }>).detail;
       const editor = editorRef.current;
       const model = editor?.getModel();
       if (!editor || !model) return;
       const diagnostics = Array.isArray(detail?.diagnostics) ? detail.diagnostics : [];
-      monacoForMarkers(diagnostics, model);
+      const relevant = diagnostics.filter((diagnostic) => !diagnostic.file || !detail?.entryFile || diagnostic.file === detail.entryFile);
+      const monaco = window.monaco;
+      if (!monaco) return;
+      monaco.editor.setModelMarkers(model, "shadecode-runtime", relevant.map((diagnostic) => toMarker(monaco, diagnostic, model)));
     };
     window.addEventListener("shadecode:comp-lab:runtime", handler);
     return () => window.removeEventListener("shadecode:comp-lab:runtime", handler);
   }, []);
-
-  function monacoForMarkers(diagnostics: RuntimeDiagnostic[], model: ReturnType<MonacoEditor["getModel"]>) {
-    const monaco = window.monaco;
-    if (!monaco || !model) return;
-    const relevant = diagnostics.filter((diagnostic) => !diagnostic.file);
-    monaco.editor.setModelMarkers(model, "shadecode-runtime", relevant.map((diagnostic) => toMarker(monaco, diagnostic, model)));
-  }
 
   return (
     <div className="relative h-full min-h-[430px] overflow-hidden bg-[#0b0f17]">
