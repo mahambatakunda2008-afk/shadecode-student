@@ -1,7 +1,7 @@
 export interface OfflineLessonBlock { [key: string]: unknown; type: string; title?: string; content: string; }
 export interface OfflineLesson { id: string; title: string; blocks: OfflineLessonBlock[]; }
 
-type Knowledge = { kind: string; title: string; content?: string };
+type Knowledge = { kind: string; title: string; content?: string; code?: string; topicCode?: string; objectiveIds?: string[] };
 
 function clean(value: string) { return value.trim().replace(/\s+/g, " "); }
 function idFor(subject: string, prompt: string) {
@@ -32,25 +32,18 @@ function knowledge(context: string) {
   return result;
 }
 
-function topicTerms(prompt: string) {
-  return unique(prompt.toLowerCase().split(/[^a-z0-9]+/).filter(x => x.length > 2), 24);
-}
-
+function topicTerms(prompt: string) { return unique(prompt.toLowerCase().split(/[^a-z0-9]+/).filter(x => x.length > 2), 24); }
 function relevant(items: Knowledge[], prompt: string) {
   const terms = topicTerms(prompt);
   const scored = items.map(item => {
-    const text = `${item.kind} ${item.title} ${item.content || ""}`.toLowerCase();
+    const text = `${item.kind} ${item.title} ${item.content || ""} ${item.topicCode || ""}`.toLowerCase();
     return { item, score: terms.reduce((n, term) => n + (text.includes(term) ? 1 : 0), 0) };
   }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
-  return (scored.length ? scored.map(x => x.item) : items).slice(0, 18);
+  return scored.map(x => x.item).slice(0, 24);
 }
-
 function byKind(items: Knowledge[], pattern: RegExp) { return items.filter(x => pattern.test(x.kind)); }
 
-/**
- * Build only from verified curriculum context. This is deliberately not a subject/topic
- * knowledge base: if the verified pack does not contain usable content, offline generation stops.
- */
+/** Build only from verified curriculum data. Never synthesize missing subject knowledge or assessment questions. */
 export function buildOfflineLesson(subject: string, prompt: string, verifiedContext: string): OfflineLesson | null {
   if (!/VERIFIED SYLLABUS KNOWLEDGE/i.test(verifiedContext)) return null;
   const objectiveList = objectives(verifiedContext);
@@ -58,6 +51,8 @@ export function buildOfflineLesson(subject: string, prompt: string, verifiedCont
   if (!objectiveList.length || !knowledgeList.length) return null;
 
   const selected = relevant(knowledgeList, prompt);
+  if (!selected.length) return null;
+
   const definitions = byKind(selected, /terminology|definition|concept|content_scope|learning_outcome/i);
   const formulas = byKind(selected, /formula|equation|rule|relationship/i);
   const examples = byKind(selected, /example|worked|demonstration/i);
@@ -76,19 +71,21 @@ export function buildOfflineLesson(subject: string, prompt: string, verifiedCont
   if (warnings.length) blocks.push(block("misconception", "Watch for", warnings.slice(0, 5).map(x => `- ${x.title}${x.content ? `: ${x.content}` : ""}`).join("\n")));
   if (applications.length) blocks.push(block("application", "Applications", applications.slice(0, 4).map(x => `- ${x.title}${x.content ? `: ${x.content}` : ""}`).join("\n")));
 
-  // Never manufacture questions from a knowledge statement. Offline assessment exists only
-  // when the verified pack actually contains assessment/practice records.
+  // Assessment content is emitted only when the verified dataset contains it.
   if (practice.length) {
     blocks.push(block("practice", "Practice", practice.slice(0, 6).map((x, i) => `${i + 1}. ${x.title}${x.content ? `\n${x.content}` : ""}`).join("\n")));
-    blocks.push(block("checkpoint", "Checkpoint", practice.slice(0, 3).map((x, i) => `Question ${i + 1}: ${x.title}${x.content ? `\n${x.content}` : ""}`).join("\n\n")));
-  } else if (examples.length) {
-    blocks.push(block("checkpoint", "Checkpoint", "Use one of the verified examples above to explain the key idea in your own words, then identify the rule or concept that made it work."));
+    blocks.push(block("checkpoint", "Checkpoint", practice.slice(0, 3).map((x, i) => `${i + 1}. ${x.title}${x.content ? `\n${x.content}` : ""}`).join("\n\n")));
+  }
+
+  // A verified example can support a reflective checkpoint without pretending it is a generated question.
+  if (!practice.length && examples.length) {
+    blocks.push(block("checkpoint", "Reflection", "Review the verified example above and identify the concept or rule it demonstrates."));
   }
 
   blocks.push(block("summary", "What to retain", [
-    "- Explain the requested topic using only the verified knowledge above.",
-    "- Connect the explanation to the listed syllabus objectives.",
-    practice.length ? "- Complete the verified practice before moving on." : "- More offline practice is unavailable until verified assessment content is cached.",
+    "- Explain the requested topic using the verified knowledge above.",
+    "- Connect the explanation to the relevant syllabus objective.",
+    practice.length ? "- Complete the verified practice before moving on." : "- Offline assessment content is not cached for this topic yet.",
   ].join("\n")));
 
   const substantive = blocks.filter(x => !["objective", "prior", "summary"].includes(x.type));
