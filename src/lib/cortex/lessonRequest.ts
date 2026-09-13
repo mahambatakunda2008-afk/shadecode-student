@@ -26,10 +26,12 @@ const SUBJECT_ALIASES: Record<string, string> = {
 
 const INTENT_PATTERNS: Array<[LessonIntent, RegExp]> = [
   ["comparison", /\b(compare|comparison|difference between|distinguish between|versus|vs\.?|contrast|similarities|differences)\b/i],
-  ["practice", /\b(practice|questions|question practice|past paper|exam questions|test me|quiz me|drill|worksheet|problems?)\b/i],
-  ["revision", /\b(revise|revision|revision of|recap|review|summari[sz]e|refresh|quick review|last minute)\b/i],
-  ["remedial", /\b(don'?t understand|do not understand|confused|struggling|stuck|help me understand|explain again|weak at|keep getting wrong|why can'?t i|make it simpler|from the basics)\b/i],
+  ["practice", /\b(practice|questions?|question practice|past paper|exam questions|test me|quiz me|drill|worksheet|problems?|exercises?)\b/i],
+  ["revision", /\b(revise|revision|revision of|recap|review|summari[sz]e|refresh|quick review|last minute|go over)\b/i],
+  ["remedial", /\b(don'?t understand|do not understand|confused|struggling|stuck|help me understand|explain again|weak at|keep getting wrong|why can'?t i|make it simpler|from the basics|teach me from scratch)\b/i],
 ];
+
+const COMMAND_PATTERNS = /^(?:please\s+)?(?:teach|explain|show|walk me through|help me learn|help me understand|help me with|go through|cover|learn)\b/i;
 
 function clean(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -50,14 +52,19 @@ function classifyIntent(prompt: string, goal = ""): LessonIntent {
   return "teach";
 }
 
+function stripCommand(text: string) {
+  let value = text.trim();
+  value = value.replace(/^\s*(please\s+)?(?:teach|explain|show|walk me through|help me learn|help me understand|help me with|go through|cover|learn)\s+(?:me\s+)?/i, "");
+  value = value.replace(/^\s*(?:revise|revision|review|recap|summarise|summarize)\s+(?:me\s+)?/i, "");
+  value = value.replace(/^\s*(?:give me|do)\s+(?:exam\s+)?(?:practice|questions?|problems?|exercises?)\s+(?:on|about)\s+/i, "");
+  value = value.replace(/^\s*(?:compare|contrast|differentiate)\s+/i, "");
+  return value.trim();
+}
+
 function extractTopic(prompt: string, subject: string) {
-  let topic = prompt.trim();
-  topic = topic.replace(/^\s*(please\s+)?(teach|explain|show|walk me through|help me learn|help me understand)\s+(me\s+)?/i, "");
-  topic = topic.replace(/^\s*(revise|revision|review|recap|summarise|summarize)\s+(me\s+)?/i, "");
-  topic = topic.replace(/^\s*(give me|do)\s+(exam\s+)?(practice|questions?|problems?)\s+(on|about)\s+/i, "");
-  topic = topic.replace(/^\s*(compare|contrast|differentiate)\s+/i, "");
+  let topic = stripCommand(prompt);
   if (subject) topic = topic.replace(new RegExp(`^${subject.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\s*[:,-]?\\s*`, "i"), "");
-  return topic.trim().replace(/[?.!]+$/, "").trim() || prompt;
+  return topic.trim().replace(/[?.!]+$/, "").trim() || prompt.trim();
 }
 
 function inferRequestShape(prompt: string, goal: string, intent: LessonIntent) {
@@ -67,17 +74,12 @@ function inferRequestShape(prompt: string, goal: string, intent: LessonIntent) {
     : /\b(quick|brief|short|summary|fast|recap)\b/.test(text)
       ? "quick"
       : "standard";
-  const wantsProof = /\b(prove|proof|derive|derivation|show that|justify)\b/.test(text);
-  const wantsExamples = /\b(example|examples|worked|demonstrate|demonstration)\b/.test(text);
-  const wantsExamTransfer = /\b(exam|past paper|mark scheme|marks?|cambridge|zimsec|edexcel|gcse|igcse|a[- ]?level|o[- ]?level)\b/.test(text);
-  const wantsPractical = /\b(real world|real-world|application|practical|project|scenario|use case)\b/.test(text);
-  const wantsCode = /\b(code|program|programming|algorithm|trace|debug|implement)\b/.test(text);
   const requestedParts = [
-    wantsProof && "proof/derivation",
-    wantsExamples && "worked examples",
-    wantsExamTransfer && "exam transfer",
-    wantsPractical && "application",
-    wantsCode && "code or algorithm reasoning",
+    /\b(prove|proof|derive|derivation|show that|justify)\b/.test(text) && "proof/derivation",
+    /\b(example|examples|worked|demonstrate|demonstration)\b/.test(text) && "worked examples",
+    /\b(exam|past paper|mark scheme|marks?|cambridge|zimsec|edexcel|gcse|igcse|a[- ]?level|o[- ]?level)\b/.test(text) && "exam transfer",
+    /\b(real world|real-world|application|practical|project|scenario|use case)\b/.test(text) && "application",
+    /\b(code|program|programming|algorithm|trace|debug|implement)\b/.test(text) && "code or algorithm reasoning",
   ].filter(Boolean) as string[];
   if (intent === "practice" && !requestedParts.includes("worked examples")) requestedParts.unshift("worked examples");
   return { depth, requestedParts };
@@ -88,9 +90,11 @@ export function resolveLessonRequest(input: LessonRequest) {
   const explicitSubject = clean(input.subject, 100);
   const subject = explicitSubject || inferSubject(prompt);
   const goal = clean(input.goal, 400);
-  const topic = clean(input.topic, 700) || extractTopic(prompt, subject);
+  const explicitTopic = clean(input.topic, 700);
+  const topic = explicitTopic || extractTopic(prompt, subject);
   const intent = classifyIntent(prompt, goal);
   const shape = inferRequestShape(prompt, goal, intent);
+  const commandLike = COMMAND_PATTERNS.test(prompt);
 
   return {
     prompt,
@@ -103,6 +107,7 @@ export function resolveLessonRequest(input: LessonRequest) {
     intent,
     depth: shape.depth,
     requestedParts: shape.requestedParts,
+    commandLike,
     ambiguousSubject: !explicitSubject && !subject,
   };
 }
@@ -117,22 +122,22 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     request.goal && `Learning goal: ${request.goal}`,
     `Difficulty: ${request.difficulty}`,
     `Requested depth: ${request.depth}`,
-    request.requestedParts.length > 0 && `Requested components: ${request.requestedParts.join(", ")}`,
+    request.requestedParts.length > 0 && `Explicitly requested components: ${request.requestedParts.join(", ")}`,
   ].filter(Boolean).join("\n");
 
   const intentContract = {
-    teach: "Teach one usable capability. Include a worked example, a thinking checkpoint, and an application. Include exam transfer when the learner is studying for an exam or the curriculum context makes it useful.",
-    remedial: "Diagnose the likely misconception, rebuild the mental model from the needed prerequisite, then use a worked example and correction. Keep the lesson focused on fixing the learner's actual gap.",
-    revision: "Prioritise high-yield recall plus discrimination between similar ideas, then transfer the knowledge into exam-style practice. Avoid reteaching an entire textbook chapter.",
-    practice: "Teach the method briefly, demonstrate one worked example, then give at least three progressively harder questions. Questions must test transfer rather than repeat the same numbers.",
-    comparison: "Define both sides precisely, compare them explicitly, expose the most important similarities and differences, then test the distinction with an application or checkpoint.",
+    teach: "The learner asked to learn the topic. Build understanding in a natural dependency order, then verify it. Do not turn a simple teach request into a survey of every technique in the subject. Cover the requested topic first and only introduce related techniques when they are necessary to understand or use that topic.",
+    remedial: "The learner is signalling a learning gap. Start by identifying the likely point of confusion, rebuild only the prerequisite knowledge needed, then guide the learner through corrected reasoning. Do not overwhelm them with a full chapter.",
+    revision: "The learner wants revision. Compress the topic into high-yield knowledge, distinctions, formulas or procedures, then test recall and transfer. Do not reteach unrelated material.",
+    practice: "The learner wants questions. Give only the minimum method teaching needed to make the questions solvable, one worked example, then progressively harder questions. Do not pad the session with unrelated theory.",
+    comparison: "The learner wants a distinction. Define the compared concepts, show the meaningful similarities and differences, then test whether the learner can choose or apply the correct one. Do not drift into an unrelated chapter.",
   }[request.intent];
 
   const requestedContract = request.requestedParts.length > 0
-    ? `Explicit learner requirements are mandatory and must not be silently dropped: ${request.requestedParts.join(", ")}.`
-    : "No extra learner components were explicitly requested. Do not add elaborate sections merely to make the lesson look longer.";
+    ? `These explicitly requested components are mandatory: ${request.requestedParts.join(", ")}. They must be integrated into the requested topic, not bolted on as filler.`
+    : "No extra components were requested. Do not manufacture proof, application, exam-transfer, real-world examples, or unrelated sections merely to reach a block count.";
 
-  const presentationContract = `Presentation contract: this is a learning interface, not an essay. Never return wall-of-text paragraphs. Keep every block scannable and visually structured. Use short lines and explicit labels instead of prose paragraphs. Put each distinct idea, objective, definition, formula, step, question, warning or takeaway on its own line. Prefer bullet lines beginning with "- " for objectives, definitions, key ideas, mistakes and summaries. Use numbered lines such as "1. " for procedures, proofs and practice questions. For worked examples use labelled lines such as "Given:", "Method:", "Step 1:", "Step 2:", "Answer:". For proofs use one logical transformation per numbered line. For formulas, put each formula on its own line and explain symbols on separate lines. For checkpoints use "Question:" and "Think:" or "Answer:" on separate lines. For exam transfer use "Question:", "Approach:", "Examiner looks for:" on separate lines. Keep individual lines concise, normally one sentence or less. Do not join multiple labelled items into a single paragraph. Do not use markdown tables. Do not wrap the whole lesson in conversational filler.`;
+  const presentationContract = `Presentation contract: this is an interactive learning session, not an essay. Organize information into small, purposeful learning units. Never produce wall-of-text paragraphs. Use short lines and explicit labels. Put each distinct idea, definition, formula, step, question, warning or takeaway on its own line. Use '- ' for compact lists and numbered lines for ordered reasoning. Worked examples use separate Given:, Method:, Step 1:, Step 2:, Answer: lines. Proofs use one transformation per numbered line. Formulas go on their own lines with symbols explained separately. Checkpoints use Question: and Think: on separate lines and should not reveal the answer in the same checkpoint block. Exam transfer, when actually relevant, uses Question:, Approach:, Examiner looks for:. Keep lines concise. No markdown tables. No filler headings such as Demanded worked example, Distribution myth, Verification habit, or other labels that sound like internal template instructions. Headings should describe the actual learning content.`;
 
-  return `${context}\n\nLearner's exact request: ${request.prompt}\n\nTeaching contract: ${intentContract}\n${requestedContract}\n\n${presentationContract}\n\nInterpretation rules: preserve the learner's requested scope and components. A short topic name is a valid request, not an instruction to ask for more detail. For a broad or multi-part request, decompose it into a coherent learning path and cover the requested parts in dependency order. Do not silently drop a requested component. Use application, exam-transfer, formula and prerequisite sections when they are relevant to the intent, topic, curriculum or learner request, rather than forcing the same template onto every lesson. If the subject is unresolved, teach only subject-neutral material or ask for clarification when subject knowledge is genuinely required; never invent a board, subject, qualification, or syllabus.`;
+  return `${context}\n\nLearner's exact request: ${request.prompt}\n\nIntent interpretation: ${intentContract}\n${requestedContract}\n\n${presentationContract}\n\nScope and reasoning rules:\n- Treat the learner's exact request as the primary source of intent. Do not let a generic goal such as "master ..." override a more specific command such as "teach me ...".\n- Normalize obvious spelling errors in the learner's wording internally while preserving the intended topic. Do not teach the misspelled token as if it were a different concept.\n- Distinguish the learning action from the topic. "Teach me integration" means teach integration. "Give me integration questions" means practice integration. "Compare integration and differentiation" means comparison.\n- Keep the lesson centered on the requested topic. Related concepts are allowed only when they are prerequisites, necessary distinctions, or direct applications of the requested topic.\n- A broad topic may be decomposed into a sensible sequence, but do not silently expand it into every adjacent chapter.\n- Do not force a fixed twelve-section template. The number and type of blocks should follow the learner's intent and topic.\n- If an application, exam transfer, proof, derivation, formula, or prerequisite is not relevant to the requested topic, leave it out.\n- If the learner did not ask for an exam-focused lesson, do not invent exam claims or arbitrary exam questions. Curriculum context may inform accuracy, but it does not change the learner's requested intent.\n- Every example and numerical result must have enough information to make the result meaningful. Never output an unexplained answer such as a bare number.\n- Every checkpoint must actually test the learner and should not immediately disclose its answer.\n- Do not invent official syllabus requirements, past-paper provenance, mark allocations, examiner expectations, or board-specific claims.\n- If verified curriculum context is supplied, use its objectives to constrain scope. Do not merely paste objectives into the lesson.`;
 }
