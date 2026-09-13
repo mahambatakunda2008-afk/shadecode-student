@@ -20,7 +20,7 @@ function resolveImport(fromPath, specifier, files) {
   if (!specifier.startsWith(".")) return null;
   const base = fromPath.split("/").slice(0, -1).join("/");
   const raw = normalizePath(base + "/" + specifier);
-  const candidates = [raw, raw + ".js", raw + ".mjs", raw + ".ts", raw + ".tsx", raw + "/index.js", raw + "/index.ts"];
+  const candidates = [raw, raw + ".js", raw + ".mjs", raw + "/index.js"];
   return candidates.find((candidate) => files.has(candidate)) || null;
 }
 function dataUrl(source, path) {
@@ -31,6 +31,7 @@ function buildModuleUrl(path, files, cache, building) {
   if (building.has(path)) throw new Error("Circular workspace import detected at '" + path + "'.");
   const source = files.get(path);
   if (source == null) throw new Error("Workspace file '" + path + "' was not found.");
+  if (!/\\.(js|mjs)$/.test(path)) throw new Error("Workspace runtime cannot execute '" + path + "' yet. TypeScript requires the compiler/transpiler runtime.");
   building.add(path);
   const pattern = /\\b(import\\s+(?:[\\s\\S]*?\\s+from\\s+|)|export\\s+(?:[\\s\\S]*?\\s+from\\s+))(["'])(\\.\\.?\\/[^"']+)\\2/g;
   const transformed = source.replace(pattern, (full, prefix, quote, specifier) => {
@@ -80,9 +81,9 @@ self.onmessage = async (event) => {
 `;
 
 function diagnosticFromError(message: string, stack?: string): RuntimeDiagnostic {
-  const location = stack?.match(/code-lab:\/\/([^\\s:)]+).*?:(\\d+):(\\d+)/m);
+  const location = stack?.match(/code-lab:\/\/([^\s:)]+).*?:(\d+):(\d+)/m);
   if (location) return { severity: "error", message, file: location[1], line: Number(location[2]), column: Number(location[3]), source: "runtime" };
-  const fallback = stack?.match(/:(\\d+):(\\d+)(?:\\)?$/m);
+  const fallback = stack?.match(/:(\d+):(\d+)(?:\)?$)/m);
   return { severity: "error", message, line: fallback ? Number(fallback[1]) : undefined, column: fallback ? Number(fallback[2]) : undefined, source: "runtime" };
 }
 
@@ -108,14 +109,14 @@ export function runBrowserJavaScript(request: RuntimeRequest): Promise<RuntimeRe
     const timer = window.setTimeout(() => {
       const diagnostic: RuntimeDiagnostic = { severity: "error", message: `Execution exceeded ${timeoutMs}ms and was terminated.`, source: "runtime" };
       diagnostics.push(diagnostic);
-      events.push({ type: "status", status: "timed_out" });
       events.push({ type: "error", message: diagnostic.message, diagnostic });
+      events.push({ type: "status", status: "timed_out" });
       finish(null);
     }, timeoutMs);
     worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
       events.push(event.data);
       if (event.data.type === "error") {
-        const diagnostic = diagnosticFromError(event.data.message, event.data.stack);
+        const diagnostic = event.data.diagnostic ?? diagnosticFromError(event.data.message, event.data.stack);
         diagnostics.push(diagnostic);
         events[events.length - 1] = { ...event.data, diagnostic };
       }
