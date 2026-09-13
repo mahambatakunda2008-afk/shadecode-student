@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "./CodeLabWorkspaceRuntime";
+export { default } from "./CodeLabWorkspaceRuntimeFixed";
