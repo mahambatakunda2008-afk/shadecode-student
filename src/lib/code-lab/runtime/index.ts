@@ -1,7 +1,7 @@
 import type { RuntimeRequest, RuntimeResult } from "./types";
 import { runBrowserJavaScript } from "./browser-runtime";
 
-export type { RuntimeEvent, RuntimeLanguage, RuntimeRequest, RuntimeResult } from "./types";
+export type { RuntimeDiagnostic, RuntimeEvent, RuntimeLanguage, RuntimeRequest, RuntimeResult } from "./types";
 
 export async function executeCode(request: RuntimeRequest): Promise<RuntimeResult> {
   if (request.language === "javascript") {
