@@ -20,6 +20,7 @@ export async function GET(req: Request) {
       status: result.status,
       reason: result.reason,
       promptContext: result.promptContext,
+      pack: result.status === "resolved" ? result.pack : undefined,
     }, { status: result.status === "blocked" ? 409 : 200 });
   } catch (error) {
     console.error("[api/curriculum/grounding] error:", error);
