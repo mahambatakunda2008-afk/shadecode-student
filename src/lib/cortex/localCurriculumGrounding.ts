@@ -1,4 +1,5 @@
 import type { OfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
+import { writeOfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
 
 const CACHE_PREFIX = "shadecode:cortex:curriculum-grounding:v2:";
 const MAX_CONTEXT_CHARS = 24000;
@@ -46,12 +47,17 @@ export function writeLocalCurriculumGrounding(subject: string, topic: string, da
       promptContext: data.promptContext.slice(0, MAX_CONTEXT_CHARS),
       cachedAt: new Date().toISOString(),
     }));
+    if (data.pack?.subject) writeOfflineCurriculumPack(data.pack);
   } catch {}
 }
 
 export async function getLocalCurriculumGrounding(subject: string, topic: string): Promise<string | null> {
   const cached = readLocalCurriculumGrounding(subject, topic);
-  if (cached) return cached;
+  if (cached) {
+    const cachedData = readLocalCurriculumGroundingData(subject, topic);
+    if (cachedData?.pack) writeOfflineCurriculumPack(cachedData.pack);
+    return cached;
+  }
   if (typeof window === "undefined" || !navigator.onLine) return null;
   try {
     const query = new URLSearchParams({ subject: subject.trim(), topic: topic.trim() });
