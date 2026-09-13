@@ -1,8 +1,8 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
-import { getLocalCurriculumGrounding, readLocalCurriculumGrounding } from "@/lib/cortex/localCurriculumGrounding";
-import { readOfflineCurriculumPack, buildOfflineCurriculumScope, writeOfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
+import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
+import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
@@ -21,19 +21,36 @@ function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? 
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
 function openCompletedLesson(result: LessonGenerationResult) { if (!isBrowser() || window.location.pathname !== "/learn") return; window.location.assign(`/learn/${encodeURIComponent(result.id)}`); }
-function localContext(job: GenerationJob<LessonGenerationInput>) {
-  const pack = readOfflineCurriculumPack(job.request.subject, job.request.examBoard, job.request.level);
+function resolvedRequest(job: GenerationJob<LessonGenerationInput>) {
   const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
-  const cachedGrounding = readLocalCurriculumGrounding(job.request.subject, request.topic);
+  const grounding = readLocalCurriculumGroundingData(job.request.subject, request.topic);
+  if (grounding?.resolvedTopic && grounding.resolvedTopic.trim()) request.topic = grounding.resolvedTopic.trim();
+  return request;
+}
+function localContext(job: GenerationJob<LessonGenerationInput>) {
+  const request = resolvedRequest(job);
+  const pack = readOfflineCurriculumPack(job.request.subject, job.request.examBoard, job.request.level);
+  const cachedGrounding = readLocalCurriculumGrounding(job.request.subject, request.topic) || readLocalCurriculumGrounding(job.request.subject, resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject }).topic);
   const curriculum = buildOfflineCurriculumScope(pack, request.topic);
   const memory = buildLocalLearnerContext(readLocalLearnerMemory());
   return `${cachedGrounding ? `\n\n${cachedGrounding}` : ""}${curriculum ? `\n\n${curriculum}` : ""}\n\n${memory}`;
 }
+function validateResult(result: LessonGenerationResult, request: ReturnType<typeof resolveLessonRequest>) {
+  const normalized = normalizeLessonBlocks(result.blocks);
+  const quality = lessonQualityFailures({ title: result.title, blocks: normalized.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content ?? "") })) }, request);
+  if (quality.failures.length) {
+    console.info("[LEARN] lesson rejected by client quality gate", { failures: quality.failures, topic: request.topic });
+    return null;
+  }
+  return { ...result, blocks: normalized };
+}
 async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, generated?: LessonGenerationResult) {
   const context = localContext(job);
+  const request = resolvedRequest(job);
   const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context);
-  const normalizedBlocks = normalizeLessonBlocks(local.blocks);
-  const result: LessonGenerationResult = { id: local.id, title: local.title, blocks: normalizedBlocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel };
+  const validated = validateResult(local, request);
+  if (!validated) throw new Error("Generated lesson failed the learning-quality checks.");
+  const result: LessonGenerationResult = { id: validated.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel };
   const now = new Date().toISOString();
   await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}` : `Offline curriculum lesson for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
@@ -59,6 +76,8 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise
   try {
     const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
     const grounding = await getLocalCurriculumGrounding(job.request.subject, request.topic);
+    const groundingData = readLocalCurriculumGroundingData(job.request.subject, request.topic);
+    if (groundingData?.resolvedTopic) request.topic = groundingData.resolvedTopic;
     const cachedContext = localContext(job);
     const resolved = buildResolvedLessonPrompt(request);
     const curriculum = grounding || cachedContext;
@@ -88,8 +107,11 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     const response = await fetch("/api/learn/generate", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject: job.request.subject, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }), cache: "no-store", signal: controller.signal }).finally(() => clearTimeout(timeout));
     const data = await response.json().catch(() => ({})); if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
     if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
-    const result: LessonGenerationResult = { id: data.id, title: data.title || job.request.prompt, blocks: normalizeLessonBlocks(data.blocks) }; const now = new Date().toISOString();
-    await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `A complete ${job.request.difficulty} lesson on ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
+    const request = resolvedRequest(job);
+    const result = validateResult({ id: data.id, title: data.title || request.topic || job.request.prompt, blocks: data.blocks }, request);
+    if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
+    const now = new Date().toISOString();
+    await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `A complete ${job.request.difficulty} lesson on ${request.topic}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
     updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined }); if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result); return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } catch (error) {
     const message = errorMessage(error); const context = localContext(job);
