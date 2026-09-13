@@ -15,7 +15,7 @@ function withDiagnosticEvents(result: RuntimeResult): RuntimeResult {
 
 function providerFor(language: RuntimeRequest["language"]) {
   if (language === "javascript") return "browser-javascript" as const;
-  if (language === "typescript") return "browser-javascript" as const;
+  if (language === "typescript") return "typescript-transpiler" as const;
   if (language === "csharp" || language === "vbnet") return "dotnet" as const;
   if (language === "python") return "python" as const;
   if (language === "java" || language === "kotlin") return "jvm" as const;
