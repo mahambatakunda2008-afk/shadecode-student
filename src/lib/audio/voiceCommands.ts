@@ -20,12 +20,12 @@
 export type VoiceCommand = "pause" | "resume" | "next" | "previous" | "repeat" | "explain";
 
 const COMMAND_PATTERNS: Record<VoiceCommand, string[]> = {
-  pause: ["pause", "stop", "hold on", "wait"],
-  resume: ["resume", "play", "continue", "go on", "keep going", "carry on"],
-  next: ["next", "skip", "move on", "skip ahead"],
-  previous: ["back", "previous", "go back", "rewind"],
-  repeat: ["repeat", "again", "say that again", "one more time", "come again"],
-  explain: ["explain", "i don't understand", "elaborate", "what does that mean", "can you explain"],
+  pause: ["pause", "stop", "hold on", "wait", "hang on", "give me a second", "give me a sec", "one sec", "hold up"],
+  resume: ["resume", "play", "continue", "go on", "keep going", "carry on", "let's continue", "go ahead"],
+  next: ["next", "skip", "move on", "skip ahead", "go to the next", "next one", "next part", "next slide"],
+  previous: ["back", "previous", "go back", "rewind", "previous one", "go to the last", "last part"],
+  repeat: ["repeat", "again", "say that again", "one more time", "come again", "say it again", "run that back"],
+  explain: ["explain", "i don't understand", "elaborate", "what does that mean", "can you explain", "not clear", "makes no sense", "i'm confused", "huh", "what do you mean"],
 };
 
 /**

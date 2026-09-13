@@ -118,6 +118,18 @@ export function useLessonNarration(blocks: LessonBlock[]) {
   const scriptRef = useRef<NarrationSegment[]>([]);
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
   const activeRef = useRef(false);
+  // speakIndex and listenForCommand call each other, and both need the
+  // freshest version of the other -- not whatever was captured in a
+  // useCallback closure at creation time. Without this, speakIndex (whose
+  // own deps don't include listenForCommand) keeps calling the very first
+  // render's listenForCommand forever, which itself closed over
+  // currentIndex=0 forever: narration would speak segment 1 once, then
+  // repeat it indefinitely regardless of "next"/"previous" commands, since
+  // every computed target index was based on a currentIndex that never
+  // advanced past its initial value. Refs sidestep the staleness entirely.
+  const listenForCommandRef = useRef<() => void>(() => {});
+  const speakIndexRef = useRef<(index: number) => void>(() => {});
+  const currentIndexRef = useRef(0);
 
   useEffect(() => {
     scriptRef.current = buildNarrationScript(blocks);
@@ -134,15 +146,11 @@ export function useLessonNarration(blocks: LessonBlock[]) {
   }, [speechSupported]);
 
   const listenForCommand = useCallback(() => {
-    // References speakIndex, declared further down in this same hook
-    // body -- valid via closures (by the time this callback actually
-    // fires, in response to a real speech event, speakIndex has already
-    // been assigned for this render pass), but non-obvious at a glance.
     const Recognition = getSpeechRecognitionConstructor();
     if (!Recognition || !activeRef.current) {
       // No voice command support -- just auto-continue after a short
       // pause, so the on-screen Listen button still works standalone.
-      setTimeout(() => activeRef.current && speakIndex(currentIndex + 1), 600);
+      setTimeout(() => activeRef.current && speakIndexRef.current(currentIndexRef.current + 1), 600);
       return;
     }
 
@@ -174,28 +182,32 @@ export function useLessonNarration(blocks: LessonBlock[]) {
       const transcript = event.results[0]?.[0]?.transcript ?? "";
       const command = matchVoiceCommand(transcript);
       if (!activeRef.current) return;
+      const at = currentIndexRef.current;
 
       switch (command) {
         case "pause":
           stop();
           return;
         case "previous":
-          speakIndex(Math.max(0, currentIndex - 1));
+          speakIndexRef.current(Math.max(0, at - 1));
           return;
         case "repeat":
-          speakIndex(currentIndex);
+        case "explain": // no elaboration generator yet -- repeating the
+          // current segment is a far better response to "I don't
+          // understand" than the old behavior of silently skipping ahead.
+          speakIndexRef.current(at);
           return;
         case "next":
         case "resume":
         default:
-          speakIndex(currentIndex + 1);
+          speakIndexRef.current(at + 1);
       }
     };
 
     recognition.onerror = () => {
       handled = true;
       clearTimeout(timeoutId);
-      if (activeRef.current) speakIndex(currentIndex + 1);
+      if (activeRef.current) speakIndexRef.current(currentIndexRef.current + 1);
     };
 
     recognition.onend = () => {
@@ -203,12 +215,12 @@ export function useLessonNarration(blocks: LessonBlock[]) {
       // Nothing was heard (no command recognized, no error) before
       // recognition naturally ended or the listen window timed out --
       // continue the lesson rather than leaving it stuck waiting.
-      if (!handled && activeRef.current) speakIndex(currentIndex + 1);
+      if (!handled && activeRef.current) speakIndexRef.current(currentIndexRef.current + 1);
     };
 
     recognition.start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, stop]);
+  }, [stop]);
+  listenForCommandRef.current = listenForCommand;
 
   const speakIndex = useCallback(
     async (index: number) => {
@@ -218,6 +230,7 @@ export function useLessonNarration(blocks: LessonBlock[]) {
       }
 
       activeRef.current = true;
+      currentIndexRef.current = index;
       setCurrentIndex(index);
       setStatus("speaking");
 
@@ -229,23 +242,23 @@ export function useLessonNarration(blocks: LessonBlock[]) {
       utterance.rate = 1.02;
       utterance.pitch = 1;
       utterance.onend = () => {
-        if (activeRef.current) listenForCommand();
+        if (activeRef.current) listenForCommandRef.current();
       };
       utterance.onerror = () => {
-        if (activeRef.current) listenForCommand();
+        if (activeRef.current) listenForCommandRef.current();
       };
 
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [speechSupported, stop]
   );
+  speakIndexRef.current = speakIndex;
 
   const start = useCallback(() => speakIndex(0), [speakIndex]);
-  const skipNext = useCallback(() => speakIndex(currentIndex + 1), [speakIndex, currentIndex]);
-  const skipPrevious = useCallback(() => speakIndex(Math.max(0, currentIndex - 1)), [speakIndex, currentIndex]);
-  const repeat = useCallback(() => speakIndex(currentIndex), [speakIndex, currentIndex]);
+  const skipNext = useCallback(() => speakIndex(currentIndexRef.current + 1), [speakIndex]);
+  const skipPrevious = useCallback(() => speakIndex(Math.max(0, currentIndexRef.current - 1)), [speakIndex]);
+  const repeat = useCallback(() => speakIndex(currentIndexRef.current), [speakIndex]);
 
   useEffect(() => () => stop(), [stop]);
 

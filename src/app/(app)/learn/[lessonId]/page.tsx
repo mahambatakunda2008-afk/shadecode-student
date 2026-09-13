@@ -73,14 +73,6 @@ function renderMath(latex: string, key: string): ReactNode {
   }
 }
 
-// A formula line the model wrote without $ delimiters (e.g. raw
-// "∫x^n dx = x^{n+1}/(n+1)+C, n≠-1.") still deserves native rendering rather
-// than showing caret/brace syntax verbatim. If a formula-type line has no
-// delimiters but looks mathematical, treat the whole line as one expression.
-function looksMathematical(line: string): boolean {
-  return /[\^_]|\\[a-zA-Z]+|[∫∑√±×÷≠≤≥→∞θπΔ]/.test(line);
-}
-
 function inline(text: string, key: string): ReactNode[] {
   return text.split(/(\$\$[^$]+\$\$|\$[^$]+\$|\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) => {
     const partKey = `${key}-${i}`;
@@ -104,8 +96,22 @@ function sentenceChunks(text: string): string[] {
   return out;
 }
 
+// Detects standalone LaTeX-ish tokens (a command, an exponent/subscript, or a
+// math symbol run) inside otherwise-plain text and wraps just that token in
+// $...$ -- not the whole line, which would risk feeding surrounding English
+// words into KaTeX. This is a safety net for ANY block type, not only
+// "formula" ones: the model is now instructed to wrap all math itself, but
+// this catches whatever it misses (and any already-generated lesson content
+// from before that instruction existed).
+const MATH_TOKEN = /(\\[a-zA-Z]+(?:\{[^{}]*\}){0,2}|[A-Za-z0-9)\]][\^_]\{[^{}]*\}|[A-Za-z0-9)\]][\^_][A-Za-z0-9+\-]+|[A-Za-z0-9]*[∫∑√±×÷≠≤≥→∞θπΔ][A-Za-z0-9+\-=./]*)/g;
+
+function autoWrapMathTokens(text: string): string {
+  if (!text || text.includes("$")) return text;
+  return text.replace(MATH_TOKEN, (m) => `$${m}$`);
+}
+
 function renderStructured(content: string, type: string): ReactNode {
-  const lines = sentenceChunks(content);
+  const lines = sentenceChunks(autoWrapMathTokens(content));
   if (!lines.length) return null;
 
   const isFormula = type === "formula" || type === "math";
@@ -117,11 +123,7 @@ function renderStructured(content: string, type: string): ReactNode {
 
   if (isFormula) return (
     <div style={{ display: "grid", gap: 9 }}>
-      {lines.map((line, i) => {
-        const stripped = line.replace(/^[-•]\s+/, "");
-        const wrapped = !stripped.includes("$") && looksMathematical(stripped) ? `$${stripped}$` : stripped;
-        return <div key={i} className="lesson-line formula-line">{inline(wrapped, `f-${i}`)}</div>;
-      })}
+      {lines.map((line, i) => <div key={i} className="lesson-line formula-line">{inline(line.replace(/^[-•]\s+/, ""), `f-${i}`)}</div>)}
     </div>
   );
 
