@@ -25,7 +25,13 @@ export function BottomNav() {
       ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.codeLab, NAV_ITEMS.examSim]
       : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.codeLab, NAV_ITEMS.projects];
   const primaryItems = primaryCandidates.filter(item => allItems.some(available => available.href === item.href));
-  const moreItems = allItems.filter(item => !primaryItems.some(primary => primary.href === item.href));
+
+  // Mobile navigation is a viewport constraint, not a feature allow-list.
+  // Everything available to the learner remains reachable through More, including Settings.
+  const moreItems = [...allItems, NAV_ITEMS.settings].filter(
+    (item, index, items) => items.findIndex(candidate => candidate.href === item.href) === index,
+  ).filter(item => !primaryItems.some(primary => primary.href === item.href));
+
   const primaryLabel = (href: string, fallback: string) => {
     if (family === "foundation" && href === "/dashboard") return "Home";
     if (family === "foundation" && href === "/discovery") return "Discover";
