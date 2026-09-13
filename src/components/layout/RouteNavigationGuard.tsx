@@ -3,8 +3,25 @@
 import Link from "next/link";
 import { ArrowLeft, Home } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { NAV_ITEMS } from "@/lib/navigation";
 
-const MANAGED_PREFIXES = ["/dashboard", "/focus", "/tasks", "/exams", "/exam-hub", "/exam-sim", "/learn", "/curriculum", "/math-checker", "/math-cortex", "/cortex-verify", "/timetable", "/study-plan", "/analytics", "/leaderboard", "/insights", "/study", "/achievements", "/settings", "/admin", "/share", "/onboarding", "/auth"];
+// Keep every first-party app module inside the app shell. This guard is only for
+// genuinely public/unmanaged routes, so adding a module to navigation cannot
+// accidentally make it render with the public-site navigation chrome.
+const NAV_MANAGED_PREFIXES = Object.values(NAV_ITEMS).map((item) => item.href);
+const EXTRA_APP_PREFIXES = [
+  "/math-checker",
+  "/math-cortex",
+  "/cortex-verify",
+  "/code-lab",
+  "/careers",
+  "/daily-challenge",
+  "/onboarding",
+  "/auth",
+  "/admin",
+];
+
+const MANAGED_PREFIXES = Array.from(new Set([...NAV_MANAGED_PREFIXES, ...EXTRA_APP_PREFIXES]));
 
 export function RouteNavigationGuard() {
   const pathname = usePathname();
