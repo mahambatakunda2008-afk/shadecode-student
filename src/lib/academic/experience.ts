@@ -2,19 +2,15 @@ import type { StudyLevel } from "@/types";
 
 export type ExperienceFamily = "foundation" | "school" | "beyond-school";
 export type AcademicModule = { id: string; label: string; href: string; description: string };
-export interface AcademicExperience {
-  stage: StudyLevel; family: ExperienceFamily; label: string; shortLabel: string; homeTitle: string; homeSubtitle: string; primaryAction: string; primaryHref: string; secondaryAction: string; secondaryHref: string;
-  navMode: "foundation" | "school" | "advanced-school" | "tertiary" | "professional"; showExamHub: boolean; showExamSim: boolean; showLeaderboard: boolean; showCareer: boolean; modules: AcademicModule[]; allowedRoutes: string[];
-  terminology: { progress: string; primaryNav: string; secondaryNav: string; profileStat: string; streakLabel: string };
-}
+export interface AcademicExperience { stage: StudyLevel; family: ExperienceFamily; label: string; shortLabel: string; homeTitle: string; homeSubtitle: string; primaryAction: string; primaryHref: string; secondaryAction: string; secondaryHref: string; navMode: "foundation" | "school" | "advanced-school" | "tertiary" | "professional"; showExamHub: boolean; showExamSim: boolean; showLeaderboard: boolean; showCareer: boolean; modules: AcademicModule[]; allowedRoutes: string[]; terminology: { progress: string; primaryNav: string; secondaryNav: string; profileStat: string; streakLabel: string } }
 
 const FOUNDATION_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/achievements", "/settings"];
-const PRIMARY_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/tasks", "/focus", "/timetable", "/study-plan", "/achievements", "/settings", "/code-lab"];
-const SCHOOL_ROUTES = ["/dashboard", "/discovery", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/exams", "/exam-sim", "/analytics", "/leaderboard", "/achievements", "/settings", "/code-lab"];
-const SENIOR_ROUTES = [...SCHOOL_ROUTES, "/exam-hub"];
-const TERTIARY_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/achievements", "/settings", "/code-lab"];
-const TVET_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/projects", "/workmate", "/exams", "/exam-sim", "/analytics", "/careers", "/achievements", "/settings", "/code-lab"];
-const PROFESSIONAL_ROUTES = ["/dashboard", "/learn", "/focus", "/tasks", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/settings", "/code-lab"];
+const PRIMARY_ROUTES = ["/dashboard", "/discovery", "/learn", "/daily-challenge", "/tasks", "/focus", "/timetable", "/study-plan", "/achievements", "/settings"];
+const SCHOOL_ROUTES = ["/dashboard", "/discovery", "/learn", "/curriculum", "/study", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/exams", "/exam-sim", "/exam-hub", "/analytics", "/leaderboard", "/achievements", "/insights/history", "/share", "/settings", "/code-lab"];
+const SENIOR_ROUTES = [...SCHOOL_ROUTES, "/careers"];
+const TERTIARY_ROUTES = ["/dashboard", "/discovery", "/learn", "/curriculum", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/insights/history", "/share", "/achievements", "/settings", "/code-lab"];
+const TVET_ROUTES = ["/dashboard", "/discovery", "/learn", "/curriculum", "/focus", "/tasks", "/timetable", "/study-plan", "/studyspace", "/projects", "/workmate", "/exams", "/exam-sim", "/analytics", "/careers", "/insights/history", "/share", "/achievements", "/settings", "/code-lab"];
+const PROFESSIONAL_ROUTES = ["/dashboard", "/discovery", "/learn", "/curriculum", "/focus", "/tasks", "/study-plan", "/studyspace", "/projects", "/workmate", "/analytics", "/careers", "/insights/history", "/share", "/settings", "/code-lab"];
 
 const foundationTerms = { progress: "Growth", primaryNav: "Discover", secondaryNav: "Keep exploring", profileStat: "Points", streakLabel: "days exploring" };
 const schoolTerms = { progress: "Progress", primaryNav: "Study", secondaryNav: "Practice", profileStat: "XP", streakLabel: "day study streak" };
