@@ -8,8 +8,18 @@ interface Props {
   content: string;
 }
 
+function cleanLessonText(content: string): string {
+  return content.split("\n").map((line) => {
+    let value = line;
+    const boldMarkers = (value.match(/\*\*/g) ?? []).length;
+    if (boldMarkers % 2 === 1) value = value.replace(/\*\*/g, "");
+    value = value.replace(/^(\d{2})(?=[A-Z][a-z])/g, "$1 ");
+    return value;
+  }).join("\n");
+}
+
 function InlineContent({ content }: { content: string }) {
-  const normalized = normalizeMathContent(content);
+  const normalized = cleanLessonText(normalizeMathContent(content));
   return containsMathSyntax(normalized) ? (
     <MathRenderer content={normalized} block={false} />
   ) : (
@@ -18,7 +28,7 @@ function InlineContent({ content }: { content: string }) {
 }
 
 export default function LessonBlock({ type, content }: Props) {
-  const normalized = normalizeMathContent(content);
+  const normalized = cleanLessonText(normalizeMathContent(content));
 
   switch (type) {
     case "text":
