@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+type MonacoDisposable = { dispose: () => void };
 type MonacoEditor = {
   getValue: () => string;
   setValue: (value: string) => void;
-  layout: () => void;
   dispose: () => void;
-  focus: () => void;
   addCommand: (keybinding: number, handler: () => void) => void;
+  onDidChangeModelContent: (callback: () => void) => MonacoDisposable;
 };
 
 type MonacoNamespace = {
@@ -108,6 +108,7 @@ export function CodeLabEditor({
 
   useEffect(() => {
     let alive = true;
+    let disposable: MonacoDisposable | undefined;
 
     void loadMonaco().then((monaco) => {
       if (!alive || !hostRef.current) return;
@@ -177,9 +178,7 @@ export function CodeLabEditor({
         insertSpaces: true,
         detectIndentation: true,
         wordWrap: "off",
-        wordWrapColumn: 120,
         cursorSmoothCaretAnimation: "on",
-        smoothScrolling: true,
         mouseWheelZoom: true,
         suggest: {
           showMethods: true,
@@ -198,25 +197,17 @@ export function CodeLabEditor({
 
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current());
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => onSaveRef.current?.());
-
-      const model = editor as unknown as {
-        onDidChangeModelContent?: (cb: () => void) => { dispose: () => void };
-      };
-      const disposable = model.onDidChangeModelContent?.(() => onChangeRef.current(editor.getValue()));
+      disposable = editor.onDidChangeModelContent(() => onChangeRef.current(editor.getValue()));
 
       editorRef.current = editor;
       setState("ready");
-
-      return () => {
-        disposable?.dispose();
-        editor.dispose();
-      };
     }).catch(() => {
       if (alive) setState("error");
     });
 
     return () => {
       alive = false;
+      disposable?.dispose();
       editorRef.current?.dispose();
       editorRef.current = null;
     };
