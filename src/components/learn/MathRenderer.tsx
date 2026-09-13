@@ -18,8 +18,7 @@ export function normalizeMathSource(source: string): string {
     "^{$1}"
   );
 
-  // Conservative fractions. This intentionally does not turn prose such as
-  // "and/or" into mathematics.
+  // Conservative fractions. Never turn ordinary prose such as and/or into math.
   value = value.replace(
     /(?<![A-Za-z0-9}])((?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?|\([^\n()]+\)))\s*\/\s*((?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?|\([^\n()]+\)))/g,
     "\\frac{$1}{$2}"
@@ -34,6 +33,9 @@ export function normalizeMathSource(source: string): string {
 /** Whether text contains mathematical syntax worth rendering. */
 export function containsMathSyntax(text: string): boolean {
   return (
+    /\$[^$\n]+\$/.test(text) ||
+    /\\\([^\n]+\\\)/.test(text) ||
+    /\\\[[\s\S]+\\\]/.test(text) ||
     /[A-Za-z0-9)\]}]\s*\^\s*(?:\{[^}]+\}|[A-Za-z0-9(+\-]+)/.test(text) ||
     /(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)\s*\/\s*(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)/.test(text) ||
     /\b(?:d[a-zA-Z])\s*\/\s*(?:d[a-zA-Z])\b/.test(text) ||
@@ -54,31 +56,46 @@ function renderMath(source: string, displayMode: boolean): string | null {
   }
 }
 
+function pushRendered(output: React.ReactNode[], source: string, key: string, displayMode = false) {
+  const html = renderMath(source, displayMode);
+  output.push(
+    html ? (
+      <span key={key} dangerouslySetInnerHTML={{ __html: html }} />
+    ) : (
+      <span key={key}>{source}</span>
+    )
+  );
+}
+
 /** Render mixed educational prose and mathematical expressions inline. */
 export function renderInlineMathContent(content: string) {
-  const expressionPattern = /(?:[A-Za-z0-9)\]}]+\s*\^\s*(?:\{[^}]+\}|[A-Za-z0-9()+\-]+)|(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)\s*\/\s*(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)|\bd[a-zA-Z]\s*\/\s*d[a-zA-Z]\b)(?:\s*[=+\-*/]\s*[A-Za-z0-9()^{}]+)*/g;
-  const matches = content.match(expressionPattern) ?? [];
-
-  if (matches.length === 0) return <>{content}</>;
-
   const output: React.ReactNode[] = [];
   let cursor = 0;
-  for (const match of matches) {
-    const index = content.indexOf(match, cursor);
-    if (index > cursor) output.push(content.slice(cursor, index));
 
-    const html = renderMath(match, false);
-    output.push(
-      html ? (
-        <span key={`${index}-${match}`} dangerouslySetInnerHTML={{ __html: html }} />
-      ) : (
-        <span key={`${index}-${match}`}>{match}</span>
-      )
-    );
-    cursor = index + match.length;
+  // First honor explicit math delimiters emitted by lesson/AI content.
+  const explicitPattern = /\$([^$\n]+)\$|\\\(([^\n]+)\\\)/g;
+  let explicitMatch: RegExpExecArray | null;
+  while ((explicitMatch = explicitPattern.exec(content)) !== null) {
+    if (explicitMatch.index > cursor) output.push(content.slice(cursor, explicitMatch.index));
+    pushRendered(output, explicitMatch[1] ?? explicitMatch[2], `explicit-${explicitMatch.index}`);
+    cursor = explicitMatch.index + explicitMatch[0].length;
   }
 
-  if (cursor < content.length) output.push(content.slice(cursor));
+  if (cursor < content.length) {
+    const remainder = content.slice(cursor);
+    const expressionPattern = /(?:[A-Za-z0-9)\]}]+\s*\^\s*(?:\{[^}]+\}|[A-Za-z0-9()+\-]+)|(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)\s*\/\s*(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)|\bd[a-zA-Z]\s*\/\s*d[a-zA-Z]\b)(?:\s*[=+\-*/]\s*[A-Za-z0-9()^{}]+)*/g;
+    let last = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = expressionPattern.exec(remainder)) !== null) {
+      if (match.index > last) output.push(remainder.slice(last, match.index));
+      pushRendered(output, match[0], `heuristic-${cursor + match.index}`);
+      last = match.index + match[0].length;
+    }
+
+    if (last < remainder.length) output.push(remainder.slice(last));
+  }
+
   return <>{output}</>;
 }
 
