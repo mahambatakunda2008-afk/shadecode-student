@@ -1,8 +1,8 @@
-export type CompLabProjectType = "console" | "web" | "windows-forms" | "desktop" | "database" | "spreadsheet";
+export type CompLabProjectType = "console" | "web" | "windows-forms" | "desktop" | "database" | "spreadsheet" | "mobile" | "systems";
 
 export type CompLabLanguage =
-  | "javascript" | "typescript" | "python" | "csharp" | "vbnet"
-  | "html" | "css" | "sql" | "json" | "markdown" | "xml";
+  | "javascript" | "typescript" | "python" | "csharp" | "vbnet" | "java" | "c" | "cpp" | "kotlin" | "php" | "rust" | "go"
+  | "html" | "css" | "sql" | "json" | "markdown" | "xml" | "pseudocode";
 
 export type CompLabCapabilityStatus = "browser" | "planned" | "external-runtime" | "artifact";
 
@@ -13,39 +13,33 @@ export type CompLabEnvironment = {
   languages: CompLabLanguage[];
   description: string;
   status: CompLabCapabilityStatus;
-  /** Broad computing areas. These are not exam-board claims. */
   curriculumTags: string[];
-  /** Curriculum families where this environment may be relevant when the learner's syllabus exposes it. */
   curriculumContexts: string[];
   fileExtensions: string[];
 };
 
-/**
- * Comp Lab is curriculum-neutral at the product layer.
- * Board, level, syllabus, subject and objective are supplied by the learner's academic profile.
- */
+const ALL_CONTEXTS = ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"];
+
 export const COMP_LAB_ENVIRONMENTS: CompLabEnvironment[] = [
-  { id: "javascript-console", label: "JavaScript Console", projectType: "console", languages: ["javascript", "typescript"], description: "Browser-safe console programming with files, modules and runtime diagnostics.", status: "browser", curriculumTags: ["programming", "algorithms", "web"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".js", ".mjs", ".ts"] },
-  { id: "python-console", label: "Python Console", projectType: "console", languages: ["python"], description: "Python programming for algorithms, problem solving, data and practical work.", status: "planned", curriculumTags: ["programming", "algorithms", "problem-solving", "data"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".py"] },
-  { id: "csharp-console", label: "C# Console App", projectType: "console", languages: ["csharp"], description: "C# console projects with a real .NET execution target when connected.", status: "external-runtime", curriculumTags: ["programming", "oop", "software-development"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".cs", ".csproj", ".sln"] },
-  { id: "vbnet-console", label: "Visual Basic Console App", projectType: "console", languages: ["vbnet"], description: "Visual Basic .NET console projects for structured programming and Windows development.", status: "external-runtime", curriculumTags: ["programming", "visual-basic", "problem-solving"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".vb", ".vbproj", ".sln"] },
-  { id: "csharp-windows-forms", label: "C# Windows Forms App", projectType: "windows-forms", languages: ["csharp"], description: "Desktop GUI projects with forms, controls, events and .NET project structure.", status: "external-runtime", curriculumTags: ["visual-programming", "gui", "event-driven-programming", "windows"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".cs", ".csproj", ".sln"] },
-  { id: "vbnet-windows-forms", label: "VB.NET Windows Forms App", projectType: "windows-forms", languages: ["vbnet"], description: "Visual Basic Windows Forms projects with controls, events, forms and designer-aware structure.", status: "external-runtime", curriculumTags: ["visual-basic", "visual-programming", "gui", "event-driven-programming", "windows"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".vb", ".vbproj", ".sln"] },
-  { id: "web", label: "Web Project", projectType: "web", languages: ["html", "css", "javascript", "typescript"], description: "HTML, CSS and JavaScript/TypeScript projects with browser preview and web workflow.", status: "browser", curriculumTags: ["web-design", "web-development", "html", "css", "javascript"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".html", ".css", ".js", ".mjs", ".ts"] },
-  { id: "sql-database", label: "SQL Database Project", projectType: "database", languages: ["sql"], description: "Relational database design, queries, relationships and test data.", status: "planned", curriculumTags: ["databases", "sql", "relational-databases", "queries"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".sql"] },
-  { id: "access-database", label: "Microsoft Access Project", projectType: "database", languages: ["sql"], description: "Access-style database projects covering tables, relationships, queries, forms and reports.", status: "artifact", curriculumTags: ["databases", "microsoft-access", "forms", "reports", "queries"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic"], fileExtensions: [".accdb", ".mdb"] },
-  { id: "excel-workbook", label: "Excel Workbook", projectType: "spreadsheet", languages: [], description: "Spreadsheet projects for formulas, functions, data analysis, charts and practical problem solving.", status: "artifact", curriculumTags: ["spreadsheets", "microsoft-excel", "data-analysis", "formulas", "charts"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"], fileExtensions: [".xlsx", ".xlsm", ".csv"] },
+  { id: "javascript-console", label: "JavaScript Console", projectType: "console", languages: ["javascript", "typescript"], description: "Browser-safe JavaScript projects with files, modules and runtime diagnostics.", status: "browser", curriculumTags: ["programming", "algorithms", "web"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".js", ".mjs", ".ts", ".tsx"] },
+  { id: "python-console", label: "Python", projectType: "console", languages: ["python"], description: "Python projects for programming, algorithms, data and practical work.", status: "external-runtime", curriculumTags: ["programming", "algorithms", "data", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".py"] },
+  { id: "java-console", label: "Java", projectType: "console", languages: ["java"], description: "Java projects targeting a real JVM.", status: "external-runtime", curriculumTags: ["programming", "oop", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".java"] },
+  { id: "c-console", label: "C", projectType: "systems", languages: ["c"], description: "C projects targeting a real native compiler.", status: "external-runtime", curriculumTags: ["programming", "systems", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".c", ".h"] },
+  { id: "cpp-console", label: "C++", projectType: "systems", languages: ["cpp"], description: "C++ projects targeting a real native compiler.", status: "external-runtime", curriculumTags: ["programming", "oop", "systems"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cpp", ".cc", ".cxx", ".hpp"] },
+  { id: "csharp-console", label: "C# Console App", projectType: "console", languages: ["csharp"], description: "C# console projects targeting real .NET execution.", status: "external-runtime", curriculumTags: ["programming", "oop", "software-development"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cs", ".csproj", ".sln"] },
+  { id: "vbnet-console", label: "Visual Basic .NET", projectType: "console", languages: ["vbnet"], description: "Visual Basic .NET console projects targeting real .NET execution.", status: "external-runtime", curriculumTags: ["programming", "visual-basic", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".vb", ".vbproj"] },
+  { id: "csharp-windows-forms", label: "C# Windows Forms", projectType: "windows-forms", languages: ["csharp"], description: "Real Windows Forms desktop projects with controls, events and designer-aware structure.", status: "external-runtime", curriculumTags: ["gui", "event-driven-programming", "windows"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cs", ".csproj", ".sln"] },
+  { id: "vbnet-windows-forms", label: "VB.NET Windows Forms", projectType: "windows-forms", languages: ["vbnet"], description: "Visual Basic Windows Forms projects with controls, events and designer-aware structure.", status: "external-runtime", curriculumTags: ["visual-basic", "gui", "event-driven-programming", "windows"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".vb", ".vbproj", ".sln"] },
+  { id: "web", label: "Web Project", projectType: "web", languages: ["html", "css", "javascript", "typescript"], description: "HTML, CSS and JavaScript/TypeScript web projects with browser preview.", status: "browser", curriculumTags: ["web-design", "web-development", "html", "css", "javascript"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".html", ".htm", ".css", ".js", ".mjs", ".ts", ".tsx"] },
+  { id: "sql-database", label: "SQL Database", projectType: "database", languages: ["sql"], description: "Relational database design, queries, relationships and test data against an isolated SQL engine.", status: "external-runtime", curriculumTags: ["databases", "sql", "queries", "relational-databases"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".sql"] },
+  { id: "access-database", label: "Microsoft Access", projectType: "database", languages: ["sql"], description: "Access-style projects covering tables, relationships, queries, forms and reports.", status: "artifact", curriculumTags: ["databases", "microsoft-access", "forms", "reports"], curriculumContexts: ["school", "secondary", "sixth-form", "university", "polytechnic"], fileExtensions: [".accdb", ".mdb"] },
+  { id: "excel-workbook", label: "Excel Workbook", projectType: "spreadsheet", languages: [], description: "Spreadsheet artifacts for formulas, functions, analysis, charts and practical work.", status: "artifact", curriculumTags: ["spreadsheets", "microsoft-excel", "data-analysis", "formulas"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".xlsx", ".xlsm", ".xls", ".csv"] },
+  { id: "pseudocode", label: "Pseudocode & Algorithms", projectType: "console", languages: ["pseudocode"], description: "Board-neutral algorithm design, trace tables and structured pseudocode.", status: "browser", curriculumTags: ["algorithms", "pseudocode", "trace-tables", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".pseudo", ".pseudocode", ".txt"] },
 ];
 
-export function getCompLabEnvironment(id: string) {
-  return COMP_LAB_ENVIRONMENTS.find((environment) => environment.id === id) ?? null;
-}
-
+export function getCompLabEnvironment(id: string) { return COMP_LAB_ENVIRONMENTS.find((environment) => environment.id === id) ?? null; }
 export function findCompLabEnvironmentForPath(path: string) {
   const lower = path.toLowerCase();
   return COMP_LAB_ENVIRONMENTS.find((environment) => environment.fileExtensions.some((extension) => lower.endsWith(extension))) ?? null;
 }
-
-export function isExecutableCompLabLanguage(language: CompLabLanguage) {
-  return language === "javascript";
-}
+export function isExecutableCompLabLanguage(language: CompLabLanguage) { return ["javascript"].includes(language); }
