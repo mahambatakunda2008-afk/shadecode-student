@@ -13,12 +13,13 @@ function withDiagnosticEvents(result: RuntimeResult): RuntimeResult {
   return { ...result, events: [...result.events, ...diagnostics.map((diagnostic) => ({ type: "diagnostic" as const, diagnostic }))] };
 }
 
-function publishDiagnostics(result: RuntimeResult) {
+function publishDiagnostics(request: RuntimeRequest, result: RuntimeResult) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("shadecode:comp-lab:runtime", {
     detail: {
       requestId: result.id,
       language: result.language,
+      entryFile: request.entryFile,
       diagnostics: result.diagnostics as RuntimeDiagnostic[],
     },
   }));
@@ -40,6 +41,6 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
   const result = request.language === "javascript"
     ? withDiagnosticEvents(await runBrowserJavaScript(request))
     : unavailableRuntimeResult(request, providerFor(request.language));
-  publishDiagnostics(result);
+  publishDiagnostics(request, result);
   return result;
 }
