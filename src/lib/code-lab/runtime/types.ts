@@ -1,5 +1,12 @@
 export type RuntimeLanguage = "javascript" | "typescript" | "python";
 
+export type RuntimeDiagnostic = {
+  message: string;
+  line?: number;
+  column?: number;
+  severity?: "error" | "warning" | "info";
+};
+
 export type RuntimeRequest = {
   id: string;
   language: RuntimeLanguage;
@@ -8,27 +15,18 @@ export type RuntimeRequest = {
   timeoutMs?: number;
 };
 
-export type RuntimeDiagnostic = {
-  severity: "error" | "warning" | "info";
-  message: string;
-  file?: string;
-  line?: number;
-  column?: number;
-  source: "runtime" | "compiler" | "language";
-};
-
 export type RuntimeEvent =
   | { type: "stdout"; text: string }
   | { type: "stderr"; text: string }
+  | { type: "diagnostic"; diagnostic: RuntimeDiagnostic }
   | { type: "status"; status: "starting" | "running" | "completed" | "failed" | "timed_out" }
   | { type: "exit"; code: number }
-  | { type: "error"; message: string; diagnostic?: RuntimeDiagnostic };
+  | { type: "error"; message: string };
 
 export type RuntimeResult = {
   id: string;
   language: RuntimeLanguage;
   events: RuntimeEvent[];
-  diagnostics: RuntimeDiagnostic[];
   exitCode: number | null;
   durationMs: number;
 };
