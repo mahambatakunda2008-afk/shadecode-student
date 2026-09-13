@@ -13,14 +13,19 @@ function withDiagnosticEvents(result: RuntimeResult): RuntimeResult {
   return { ...result, events: [...result.events, ...diagnostics.map((diagnostic) => ({ type: "diagnostic" as const, diagnostic }))] };
 }
 
-function unavailableProvider(request: RuntimeRequest) {
-  if (request.language === "csharp" || request.language === "vbnet") return "dotnet" as const;
-  if (request.language === "python") return "python" as const;
-  if (request.language === "sql") return "sql" as const;
-  return "browser-javascript" as const;
+function providerFor(language: RuntimeRequest["language"]) {
+  if (language === "javascript") return "browser-javascript" as const;
+  if (language === "typescript") return "browser-javascript" as const;
+  if (language === "csharp" || language === "vbnet") return "dotnet" as const;
+  if (language === "python") return "python" as const;
+  if (language === "java" || language === "kotlin") return "jvm" as const;
+  if (language === "c") return "native-c" as const;
+  if (language === "cpp") return "native-cpp" as const;
+  if (language === "sql") return "sql" as const;
+  return "generic-native" as const;
 }
 
 export async function executeCode(request: RuntimeRequest): Promise<RuntimeResult> {
   if (request.language === "javascript") return withDiagnosticEvents(await runBrowserJavaScript(request));
-  return unavailableRuntimeResult(request, unavailableProvider(request));
+  return unavailableRuntimeResult(request, providerFor(request.language));
 }
