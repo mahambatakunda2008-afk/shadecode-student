@@ -123,7 +123,11 @@ export async function resolveUserSystemCurriculum(userId: string, subjectId?: st
     return { identity, blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
   }
 
-  const resolvedIdentity: StoredCurriculumIdentity & { syllabusId: string; syllabusVersion: string } = identity;
+  const resolvedIdentity: StoredCurriculumIdentity & { syllabusId: string; syllabusVersion: string } = {
+    ...identity,
+    syllabusId: identity.syllabusId,
+    syllabusVersion: identity.syllabusVersion,
+  };
   const learner = toLearnerCurriculumContext(resolvedIdentity);
   const baseFilter = (query: any) => query
     .eq("board_id", resolvedIdentity.boardId)
