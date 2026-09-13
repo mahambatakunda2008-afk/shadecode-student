@@ -10,30 +10,34 @@ export const NAV_ITEMS: Record<string, NavItem> = {
 };
 export const ADMIN_NAV_GROUPS:NavGroup[]=[{group:"Admin",items:[NAV_ITEMS.adminDashboard,NAV_ITEMS.adminAnalytics,NAV_ITEMS.examHub,NAV_ITEMS.adminUpload,NAV_ITEMS.adminManage,NAV_ITEMS.adminModeration,NAV_ITEMS.adminQuestions,NAV_ITEMS.adminBoards,NAV_ITEMS.adminFeedback,NAV_ITEMS.settings]}];
 
-export function getExperienceNavGroups(experience: AcademicExperience, curriculumSubjects?: unknown): NavGroup[] {
+export function getExperienceNavGroups(experience: AcademicExperience, curriculumSubjects?: unknown, profileSubjects?: unknown): NavGroup[] {
   const foundation: NavGroup[] = [
     { group:"Start here", items:[NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn] },
-    { group:"Keep exploring", items:[NAV_ITEMS.tasks, NAV_ITEMS.timetable, NAV_ITEMS.achievements] },
+    { group:"Keep exploring", items:[NAV_ITEMS.tasks, NAV_ITEMS.timetable, NAV_ITEMS.studyPlan, NAV_ITEMS.achievements] },
   ];
   const school: NavGroup[] = [
-    { group:"Study", items:[NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.studyPlan] },
-    { group:"Practice", items:[NAV_ITEMS.codeLab, NAV_ITEMS.examHub, NAV_ITEMS.examSim, NAV_ITEMS.tasks, NAV_ITEMS.focus] },
+    { group:"Study", items:[NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.study, NAV_ITEMS.studyPlan] },
+    { group:"Practice", items:[NAV_ITEMS.codeLab, NAV_ITEMS.examHub, NAV_ITEMS.examSim, NAV_ITEMS.exams, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.timetable] },
+    { group:"Tools", items:[NAV_ITEMS.studyspace, NAV_ITEMS.cortex, NAV_ITEMS.share] },
     { group:"Progress", items:[NAV_ITEMS.analytics, NAV_ITEMS.achievements, NAV_ITEMS.leaderboard] },
   ];
   const beyond: NavGroup[] = [
-    { group:"Workspace", items:[NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.studyspace, NAV_ITEMS.learn] },
-    { group:"Work", items:[NAV_ITEMS.codeLab, NAV_ITEMS.workmate, NAV_ITEMS.projects, NAV_ITEMS.tasks, NAV_ITEMS.focus] },
-    { group:"Growth", items:[NAV_ITEMS.analytics, NAV_ITEMS.achievements] },
+    { group:"Workspace", items:[NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.curriculum, NAV_ITEMS.studyspace, NAV_ITEMS.learn, NAV_ITEMS.studyPlan] },
+    { group:"Work", items:[NAV_ITEMS.codeLab, NAV_ITEMS.workmate, NAV_ITEMS.projects, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.timetable] },
+    { group:"Growth", items:[NAV_ITEMS.analytics, NAV_ITEMS.cortex, NAV_ITEMS.achievements, NAV_ITEMS.share] },
   ];
   const groups = experience.family === "foundation" ? foundation : experience.family === "school" ? school : beyond;
-  const canUseCodeLab = hasComputerScienceCurriculum(curriculumSubjects);
+  // Curriculum subjects are the canonical capability source. `subjects` is kept as a
+  // compatibility fallback for older profiles that have not populated the newer field.
+  const subjectSource = Array.isArray(curriculumSubjects) && curriculumSubjects.length > 0 ? curriculumSubjects : profileSubjects;
+  const canUseCodeLab = hasComputerScienceCurriculum(subjectSource);
   return groups.map(group => ({
     ...group,
     items: group.items.filter(item => experience.allowedRoutes.includes(item.href) && (item.href !== "/code-lab" || canUseCodeLab)),
   })).filter(group => group.items.length > 0);
 }
 
-export const SIDEBAR_GROUPS:NavGroup[]=[{group:"Core",items:[NAV_ITEMS.dashboard,NAV_ITEMS.discovery,NAV_ITEMS.focus,NAV_ITEMS.study,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan]},{group:"Practice",items:[NAV_ITEMS.codeLab,NAV_ITEMS.examHub,NAV_ITEMS.tasks,NAV_ITEMS.exams,NAV_ITEMS.examSim]},{group:"Tools",items:[NAV_ITEMS.learn,NAV_ITEMS.curriculum,NAV_ITEMS.projects,NAV_ITEMS.workmate]},{group:"Progress",items:[NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements,NAV_ITEMS.cortex,NAV_ITEMS.share]}];
-export const BOTTOM_PRIMARY:NavItem[]=[NAV_ITEMS.dashboard,NAV_ITEMS.discovery,NAV_ITEMS.learn,NAV_ITEMS.projects,NAV_ITEMS.tasks];
-export const BOTTOM_MORE:NavItem[]=[NAV_ITEMS.codeLab,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan,NAV_ITEMS.study,NAV_ITEMS.exams,NAV_ITEMS.examSim,NAV_ITEMS.examHub,NAV_ITEMS.curriculum,NAV_ITEMS.workmate,NAV_ITEMS.studyspace,NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements,NAV_ITEMS.cortex,NAV_ITEMS.share,NAV_ITEMS.settings];
+export const SIDEBAR_GROUPS:NavGroup[]=[{group:"Core",items:[NAV_ITEMS.dashboard,NAV_ITEMS.discovery,NAV_ITEMS.focus,NAV_ITEMS.study,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan]},{group:"Practice",items:[NAV_ITEMS.codeLab,NAV_ITEMS.examHub,NAV_ITEMS.tasks,NAV_ITEMS.exams,NAV_ITEMS.examSim]},{group:"Tools",items:[NAV_ITEMS.learn,NAV_ITEMS.curriculum,NAV_ITEMS.projects,NAV_ITEMS.workmate,NAV_ITEMS.studyspace,NAV_ITEMS.cortex,NAV_ITEMS.share]},{group:"Progress",items:[NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements]}];
+export const BOTTOM_PRIMARY:NavItem[]=[NAV_ITEMS.dashboard,NAV_ITEMS.discovery,NAV_ITEMS.learn,NAV_ITEMS.codeLab,NAV_ITEMS.tasks];
+export const BOTTOM_MORE:NavItem[]=[NAV_ITEMS.curriculum,NAV_ITEMS.focus,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan,NAV_ITEMS.study,NAV_ITEMS.exams,NAV_ITEMS.examSim,NAV_ITEMS.examHub,NAV_ITEMS.studyspace,NAV_ITEMS.workmate,NAV_ITEMS.projects,NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements,NAV_ITEMS.cortex,NAV_ITEMS.share,NAV_ITEMS.settings];
 export function isRouteActive(pathname:string,href:string):boolean{if(href==="/")return pathname==="/";return pathname===href||pathname.startsWith(`${href}/`);}
