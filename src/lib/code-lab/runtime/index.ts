@@ -1,4 +1,4 @@
-import type { RuntimeRequest, RuntimeResult } from "./types";
+import type { RuntimeDiagnostic, RuntimeRequest, RuntimeResult } from "./types";
 import { runBrowserJavaScript } from "./browser-runtime";
 import { unavailableRuntimeResult } from "./providers";
 
@@ -11,6 +11,17 @@ function withDiagnosticEvents(result: RuntimeResult): RuntimeResult {
   const diagnostics = result.diagnostics.filter((diagnostic) => !existing.has(JSON.stringify(diagnostic)));
   if (!diagnostics.length) return result;
   return { ...result, events: [...result.events, ...diagnostics.map((diagnostic) => ({ type: "diagnostic" as const, diagnostic }))] };
+}
+
+function publishDiagnostics(result: RuntimeResult) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("shadecode:comp-lab:runtime", {
+    detail: {
+      requestId: result.id,
+      language: result.language,
+      diagnostics: result.diagnostics as RuntimeDiagnostic[],
+    },
+  }));
 }
 
 function providerFor(language: RuntimeRequest["language"]) {
@@ -26,6 +37,9 @@ function providerFor(language: RuntimeRequest["language"]) {
 }
 
 export async function executeCode(request: RuntimeRequest): Promise<RuntimeResult> {
-  if (request.language === "javascript") return withDiagnosticEvents(await runBrowserJavaScript(request));
-  return unavailableRuntimeResult(request, providerFor(request.language));
+  const result = request.language === "javascript"
+    ? withDiagnosticEvents(await runBrowserJavaScript(request))
+    : unavailableRuntimeResult(request, providerFor(request.language));
+  publishDiagnostics(result);
+  return result;
 }
