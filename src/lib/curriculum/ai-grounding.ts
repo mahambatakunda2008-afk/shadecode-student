@@ -5,7 +5,7 @@ import type { CurriculumKnowledgeItem } from "./knowledge";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
 import type { CurriculumCoverageRecord, CurriculumVersionRecord } from "./resolver";
 import { curriculumSystemPromptContext } from "./system-curriculum-context";
-import { buildLearnCurriculumGrounding, learnCurriculumPromptSection } from "./learn-grounding";
+import { buildLearnCurriculumGrounding, learnCurriculumPromptSection, resolveCurriculumTopic } from "./learn-grounding";
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,8 +20,8 @@ function extractRequestedTopic(prompt: string): string {
 }
 
 export type VerifiedCurriculumPromptResult =
-  | { status: "none"; promptContext: ""; reason: string; pack?: never }
-  | { status: "resolved"; promptContext: string; reason: string; pack: {
+  | { status: "none"; promptContext: ""; reason: string; pack?: never; resolvedTopic?: string }
+  | { status: "resolved"; promptContext: string; reason: string; resolvedTopic: string; pack: {
       version: 2;
       curriculumId?: string;
       board?: string;
@@ -31,35 +31,18 @@ export type VerifiedCurriculumPromptResult =
       syllabusId?: string;
       syllabusVersion?: string;
       objectives: Array<{ id?: string; code?: string; statement: string }>;
-      knowledge: Array<{
-        id: string;
-        kind: string;
-        code?: string;
-        title: string;
-        content: string;
-        topicCode?: string;
-        objectiveIds?: string[];
-        parentId?: string;
-        metadata?: Record<string, unknown>;
-      }>;
+      knowledge: Array<{ id: string; kind: string; code?: string; title: string; content: string; topicCode?: string; objectiveIds?: string[]; parentId?: string; metadata?: Record<string, unknown> }>;
       promptContext?: string;
       cachedAt: string;
     } }
-  | { status: "blocked"; promptContext: ""; reason: string; pack?: never };
+  | { status: "blocked"; promptContext: ""; reason: string; pack?: never; resolvedTopic?: string };
 
 /** Resolve the learner's exact curriculum and complete whole-syllabus evidence before AI can claim syllabus alignment. */
-export async function resolveVerifiedCurriculumPromptContext(
-  userId: string,
-  prompt: string,
-): Promise<VerifiedCurriculumPromptResult> {
+export async function resolveVerifiedCurriculumPromptContext(userId: string, prompt: string): Promise<VerifiedCurriculumPromptResult> {
   const supabase = adminClient();
   if (!supabase || !userId) return { status: "none", promptContext: "", reason: "No curriculum service is configured." };
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("curriculum_subjects")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("curriculum_subjects").eq("id", userId).maybeSingle();
   if (profileError) return { status: "none", promptContext: "", reason: "Curriculum profile could not be read." };
 
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
@@ -73,32 +56,15 @@ export async function resolveVerifiedCurriculumPromptContext(
   if (!identity) return { status: "blocked", promptContext: "", reason: "Select the subject attached to your curriculum before Cortex can apply syllabus-specific teaching." };
 
   const learner = toLearnerCurriculumContext(identity);
-  const versionsResult = await supabase
-    .from("curriculum_versions")
-    .select("*")
-    .eq("board_id", identity.boardId)
-    .eq("qualification_id", identity.qualificationId)
-    .eq("syllabus_id", identity.syllabusId)
-    .eq("syllabus_version", identity.syllabusVersion)
-    .eq("subject_id", identity.subjectId);
-
+  const versionsResult = await supabase.from("curriculum_versions").select("*")
+    .eq("board_id", identity.boardId).eq("qualification_id", identity.qualificationId).eq("syllabus_id", identity.syllabusId)
+    .eq("syllabus_version", identity.syllabusVersion).eq("subject_id", identity.subjectId);
   if (versionsResult.error) return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
 
   const versions: CurriculumVersionRecord[] = (versionsResult.data ?? []).map((version) => ({
     id: version.id,
-    identity: {
-      boardId: version.board_id,
-      qualificationId: version.qualification_id,
-      level: identity.level,
-      syllabusId: version.syllabus_id,
-      syllabusVersion: version.syllabus_version,
-      subjectId: version.subject_id,
-      paperOrComponentId: undefined,
-      examSession: undefined,
-    },
-    status: version.status,
-    effectiveFrom: version.effective_from,
-    effectiveTo: version.effective_to,
+    identity: { boardId: version.board_id, qualificationId: version.qualification_id, level: identity.level, syllabusId: version.syllabus_id, syllabusVersion: version.syllabus_version, subjectId: version.subject_id, paperOrComponentId: undefined, examSession: undefined },
+    status: version.status, effectiveFrom: version.effective_from, effectiveTo: version.effective_to,
   }));
   const matchingVersion = versions.find((version) => version.status === "verified");
   if (!matchingVersion) return { status: "blocked", promptContext: "", reason: "No verified curriculum version matches this learner's exact board, qualification, level, syllabus and subject." };
@@ -109,7 +75,6 @@ export async function resolveVerifiedCurriculumPromptContext(
     supabase.from("curriculum_knowledge").select("*").eq("curriculum_version_id", matchingVersion.id),
     supabase.from("curriculum_coverage_checks").select("dimension,status,evidence,notes").eq("curriculum_version_id", matchingVersion.id),
   ]);
-
   if (objectivesResult.error || mappingsResult.error || knowledgeResult.error || coverageResult.error) {
     return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
   }
@@ -117,97 +82,42 @@ export async function resolveVerifiedCurriculumPromptContext(
   const result = resolveSystemCurriculum({
     learner,
     versions,
-    coverageChecks: (coverageResult.data ?? []).map((check) => ({
-      dimension: check.dimension,
-      status: check.status,
-      evidence: check.evidence,
-      notes: check.notes,
-    })) as CurriculumCoverageRecord[],
+    coverageChecks: (coverageResult.data ?? []).map((check) => ({ dimension: check.dimension, status: check.status, evidence: check.evidence, notes: check.notes })) as CurriculumCoverageRecord[],
     objectives: (objectivesResult.data ?? []).map((objective) => ({
       id: objective.id,
-      curriculum: {
-        boardId: identity.boardId,
-        qualificationId: identity.qualificationId,
-        level: identity.level,
-        syllabusId: identity.syllabusId,
-        syllabusVersion: identity.syllabusVersion,
-        subjectId: identity.subjectId,
-        paperOrComponentId: objective.paper_component ?? undefined,
-      },
-      code: objective.objective_key,
-      statement: objective.description ?? objective.title,
-      status: objective.status,
-      provenance: objective.provenance ?? {},
+      curriculum: { boardId: identity.boardId, qualificationId: identity.qualificationId, level: identity.level, syllabusId: identity.syllabusId, syllabusVersion: identity.syllabusVersion, subjectId: identity.subjectId, paperOrComponentId: objective.paper_component ?? undefined },
+      code: objective.objective_key, statement: objective.description ?? objective.title, status: objective.status, provenance: objective.provenance ?? {},
     })) as CurriculumObjective[],
-    mappings: (mappingsResult.data ?? []).map((mapping) => ({
-      objectiveId: mapping.objective_id,
-      skillId: mapping.skill_id,
-      status: mapping.mapping_status === "verified" ? "verified" : "draft",
-      provenance: mapping.provenance ?? {},
-    })) as ObjectiveSkillMapping[],
+    mappings: (mappingsResult.data ?? []).map((mapping) => ({ objectiveId: mapping.objective_id, skillId: mapping.skill_id, status: mapping.mapping_status === "verified" ? "verified" : "draft", provenance: mapping.provenance ?? {} })) as ObjectiveSkillMapping[],
     knowledge: (knowledgeResult.data ?? []).map((item) => ({
-      id: item.id,
-      kind: item.kind,
-      code: item.knowledge_key ?? undefined,
-      title: item.title,
-      content: item.content,
-      status: item.status,
-      identity: {
-        boardId: item.board_id,
-        qualificationId: item.qualification_id,
-        level: item.level,
-        syllabusId: item.syllabus_id,
-        syllabusVersion: item.syllabus_version,
-        subjectId: item.subject_id,
-        paperComponentId: item.paper_component_id ?? undefined,
-      },
-      provenance: item.provenance ?? {},
-      parentId: item.parent_id ?? undefined,
-      topicCode: item.topic_key ?? undefined,
-      objectiveIds: item.objective_keys ?? [],
-      metadata: item.metadata ?? {},
+      id: item.id, kind: item.kind, code: item.knowledge_key ?? undefined, title: item.title, content: item.content, status: item.status,
+      identity: { boardId: item.board_id, qualificationId: item.qualification_id, level: item.level, syllabusId: item.syllabus_id, syllabusVersion: item.syllabus_version, subjectId: item.subject_id, paperComponentId: item.paper_component_id ?? undefined },
+      provenance: item.provenance ?? {}, parentId: item.parent_id ?? undefined, topicCode: item.topic_key ?? undefined, objectiveIds: item.objective_keys ?? [], metadata: item.metadata ?? {},
     })) as CurriculumKnowledgeItem[],
   });
   if (result.blocked || !result.context) return { status: "blocked", promptContext: "", reason: result.reason };
 
   const requestedTopic = extractRequestedTopic(prompt);
-  const topicGrounding = buildLearnCurriculumGrounding(requestedTopic, result.context.knowledge.items);
-  const usefulKnowledge = topicGrounding.items.length ? topicGrounding.items : result.context.knowledge.items.slice(0, 80);
-  const knowledgeLines = usefulKnowledge.map((item) => {
-    const code = item.code ? `[${item.code}] ` : "";
-    return `- ${item.kind}: ${code}${item.title}${item.content ? ` | ${item.content.slice(0, 500)}` : ""}`;
-  });
+  const topicResolution = resolveCurriculumTopic(requestedTopic, result.context.knowledge.items);
+  const effectiveTopic = topicResolution.matched ? topicResolution.topic : requestedTopic;
+  const topicGrounding = buildLearnCurriculumGrounding(effectiveTopic, result.context.knowledge.items);
+  const usefulKnowledge = topicGrounding.items;
+  const knowledgeLines = usefulKnowledge.map((item) => `- ${item.kind}: ${item.code ? `[${item.code}] ` : ""}${item.title}${item.content ? ` | ${item.content.slice(0, 500)}` : ""}`);
   const objectiveLines = result.context.objectives.map((objective) => `- ${objective.code}: ${objective.statement}`);
   const pack = {
-    version: 2 as const,
-    curriculumId: matchingVersion.id,
-    board: identity.boardId,
-    qualification: identity.qualificationId,
-    level: identity.level,
-    subject: identity.subjectName ?? identity.subjectId,
-    syllabusId: identity.syllabusId,
-    syllabusVersion: identity.syllabusVersion,
+    version: 2 as const, curriculumId: matchingVersion.id, board: identity.boardId, qualification: identity.qualificationId, level: identity.level,
+    subject: identity.subjectName ?? identity.subjectId, syllabusId: identity.syllabusId, syllabusVersion: identity.syllabusVersion,
     objectives: result.context.objectives.map((objective) => ({ id: objective.id, code: objective.code, statement: objective.statement })),
-    knowledge: usefulKnowledge.map((item) => ({
-      id: item.id,
-      kind: item.kind,
-      code: item.code,
-      title: item.title,
-      content: item.content,
-      topicCode: item.topicCode,
-      objectiveIds: item.objectiveIds,
-      parentId: item.parentId,
-      metadata: item.metadata,
-    })),
+    knowledge: usefulKnowledge.map((item) => ({ id: item.id, kind: item.kind, code: item.code, title: item.title, content: item.content, topicCode: item.topicCode, objectiveIds: item.objectiveIds, parentId: item.parentId, metadata: item.metadata })),
     promptContext: [
       "\n\n=== VERIFIED LEARNER CURRICULUM CONTEXT ===",
       curriculumSystemPromptContext(result.context),
+      `Canonical topic resolved from learner input: ${effectiveTopic}`,
       "Authoritative syllabus objectives. The lesson must first map the requested topic to these objectives:",
       ...objectiveLines,
-      "Topic-level grounding:",
-      learnCurriculumPromptSection(topicGrounding),
+      "Topic-level grounding:", learnCurriculumPromptSection(topicGrounding),
       "Verified syllabus knowledge available to the lesson generator:",
-      ...knowledgeLines,
+      ...(knowledgeLines.length ? knowledgeLines : ["- No verified knowledge matched this topic. Do not fabricate a syllabus lesson from unrelated material."]),
       "Curriculum rule: objectives are the scope gate. Teach the requested topic only insofar as it supports the verified objectives. Use verified knowledge for explanations, examples, terminology, assessment style and scope. Never claim missing or unverified material is required by this syllabus. If the requested topic is outside the verified objectives, clearly label it as enrichment rather than required syllabus content.",
       "=== END VERIFIED LEARNER CURRICULUM CONTEXT ===",
     ].join("\n"),
@@ -216,7 +126,8 @@ export async function resolveVerifiedCurriculumPromptContext(
 
   return {
     status: "resolved",
-    reason: "Verified objective-first curriculum context resolved with complete coverage evidence.",
+    reason: topicResolution.matched ? `Verified curriculum context resolved. Topic normalized from learner input to “${effectiveTopic}”.` : "Verified objective-first curriculum context resolved. The requested topic was not confidently normalized to a syllabus topic.",
+    resolvedTopic: effectiveTopic,
     promptContext: pack.promptContext,
     pack,
   };
