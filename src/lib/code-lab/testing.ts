@@ -1,6 +1,6 @@
 import { executeCode, type RuntimeDiagnostic, type RuntimeLanguage } from "./runtime";
 
-type TestCase = {
+export type TestCase = {
   id: string;
   name: string;
   code: string;
