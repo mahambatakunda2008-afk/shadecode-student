@@ -1,23 +1,18 @@
 "use client";
 
-import MathRenderer from "./MathRenderer";
+import MathRenderer, { containsMathSyntax } from "./MathRenderer";
 
 interface Props {
   type: string;
   content: string;
 }
 
-function containsMath(text: string) {
-  return (
-    /[A-Za-z0-9)\]}]\s*\^\s*(?:\{[^}]+\}|[A-Za-z0-9(+\-]+)/.test(text) ||
-    /[A-Za-z0-9)\]}]\s*\/\s*[A-Za-z0-9([{]/.test(text) ||
-    /\\(?:frac|sqrt|sin|cos|tan|log|ln|int|sum|prod|lim)\b/.test(text) ||
-    /\b(?:[A-Za-z]|\d+)\s*=\s*(?:[A-Za-z0-9+\-*/^().]+)/.test(text)
-  );
-}
-
 function InlineContent({ content }: { content: string }) {
-  return containsMath(content) ? <MathRenderer content={content} block={false} /> : <>{content}</>;
+  return containsMathSyntax(content) ? (
+    <MathRenderer content={content} block={false} />
+  ) : (
+    <>{content}</>
+  );
 }
 
 export default function LessonBlock({ type, content }: Props) {
