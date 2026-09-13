@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import CodeLabWorkspace from "@/components/code-lab/CodeLabWorkspace";
 
 type SizeKey = "left" | "right" | "bottom";
@@ -22,7 +22,6 @@ export default function ResizableCompLabWorkspace() {
   const [sizes, setSizes] = useState<PanelSizes>(DEFAULTS);
   const [collapsed, setCollapsed] = useState<Record<SizeKey, boolean>>({ left: false, right: false, bottom: false });
   const [dragging, setDragging] = useState<SizeKey | null>(null);
-  const hostRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ key: SizeKey; startX: number; startY: number; start: number } | null>(null);
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export default function ResizableCompLabWorkspace() {
         right: clamp(Number(parsed.right) || DEFAULTS.right, LIMITS.right),
         bottom: clamp(Number(parsed.bottom) || DEFAULTS.bottom, LIMITS.bottom),
       });
-      if (parsed.collapsed) setCollapsed({ ...{ left: false, right: false, bottom: false }, ...parsed.collapsed });
+      if (parsed.collapsed) setCollapsed({ left: false, right: false, bottom: false, ...parsed.collapsed });
     } catch {
       // Ignore corrupt local layout state.
     }
@@ -74,7 +73,7 @@ export default function ResizableCompLabWorkspace() {
     };
   }, [dragging]);
 
-  function begin(key: SizeKey, event: React.PointerEvent<HTMLDivElement>) {
+  function begin(key: SizeKey, event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
     dragRef.current = { key, startX: event.clientX, startY: event.clientY, start: sizes[key] };
     setDragging(key);
@@ -100,14 +99,13 @@ export default function ResizableCompLabWorkspace() {
 
   return (
     <div
-      ref={hostRef}
       data-comp-lab-resizable
       className={`relative ${dragging ? "select-none" : ""}`}
       style={{
         "--comp-left": `${left}px`,
         "--comp-right": `${right}px`,
         "--comp-bottom": `${bottom}px`,
-      } as React.CSSProperties}
+      } as CSSProperties}
     >
       <CodeLabWorkspace />
 
