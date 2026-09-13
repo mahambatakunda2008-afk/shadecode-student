@@ -14,6 +14,7 @@ export type RuntimeRequest = {
   language: RuntimeLanguage;
   code: string;
   files?: Array<{ path: string; content: string }>;
+  entryFile?: string;
   timeoutMs?: number;
 };
 
