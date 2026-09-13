@@ -5,6 +5,7 @@ import { getLocalCurriculumGrounding, readLocalCurriculumGrounding } from "@/lib
 import { readOfflineCurriculumPack, buildOfflineCurriculumScope, writeOfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
+import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
@@ -65,7 +66,14 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise
     const response = await fetch(`${LOCAL_MODEL_BASE_URL.replace(/\/$/, "")}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: LOCAL_MODEL_NAME, messages: [{ role: "user", content: prompt }], stream: false, format: "json", options: { temperature: 0.2, num_predict: 4200 } }), signal: controller.signal });
     if (!response.ok) throw new Error(`Local model HTTP ${response.status}`);
     const data = await response.json() as { message?: { content?: unknown } };
-    return typeof data?.message?.content === "string" ? parseLocalModelLesson(data.message.content) : null;
+    const parsed = typeof data?.message?.content === "string" ? parseLocalModelLesson(data.message.content) : null;
+    if (!parsed) return null;
+    const quality = lessonQualityFailures({ title: parsed.title, blocks: parsed.blocks.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content) })) }, request);
+    if (quality.failures.length) {
+      console.info("[LEARN] local model lesson rejected by quality gate", { failures: quality.failures, topic: request.topic });
+      return null;
+    }
+    return parsed;
   } catch (error) { console.info("[LEARN] local model unavailable", error instanceof Error ? error.message : String(error)); return null; }
   finally { clearTimeout(timer); }
 }
