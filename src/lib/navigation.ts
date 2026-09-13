@@ -1,6 +1,5 @@
 import { LayoutDashboard, Timer, CheckSquare, BookOpen, Brain, BarChart3, Trophy, BrainCircuit, Calendar, Gamepad2, Settings, Award, GraduationCap, Route, FileText, UploadCloud, ClipboardCheck, Tags, Globe, MessageSquare, Settings2, Share2, BriefcaseBusiness, FolderKanban, Library, Code2 } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
-import { hasComputerScienceCurriculum } from "@/lib/academic/code-lab";
 
 export interface NavItem { href:string; label:string; icon:any; badge?:string; urgent?:boolean; }
 export interface NavGroup { group:string; items:NavItem[]; }
@@ -10,7 +9,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
 };
 export const ADMIN_NAV_GROUPS:NavGroup[]=[{group:"Admin",items:[NAV_ITEMS.adminDashboard,NAV_ITEMS.adminAnalytics,NAV_ITEMS.examHub,NAV_ITEMS.adminUpload,NAV_ITEMS.adminManage,NAV_ITEMS.adminModeration,NAV_ITEMS.adminQuestions,NAV_ITEMS.adminBoards,NAV_ITEMS.adminFeedback,NAV_ITEMS.settings]}];
 
-export function getExperienceNavGroups(experience: AcademicExperience, curriculumSubjects?: unknown, profileSubjects?: unknown): NavGroup[] {
+export function getExperienceNavGroups(experience: AcademicExperience, _curriculumSubjects?: unknown, _profileSubjects?: unknown): NavGroup[] {
   const foundation: NavGroup[] = [
     { group:"Start here", items:[NAV_ITEMS.dashboard, NAV_ITEMS.learn] },
     { group:"Keep exploring", items:[NAV_ITEMS.tasks, NAV_ITEMS.timetable, NAV_ITEMS.studyPlan, NAV_ITEMS.achievements] },
@@ -27,16 +26,13 @@ export function getExperienceNavGroups(experience: AcademicExperience, curriculu
     { group:"Growth", items:[NAV_ITEMS.analytics, NAV_ITEMS.cortex, NAV_ITEMS.achievements, NAV_ITEMS.share] },
   ];
   const groups = experience.family === "foundation" ? foundation : experience.family === "school" ? school : beyond;
-  // Merge both representations. Older profiles may carry the real subject in `subjects`
-  // while newer curriculum records can coexist with partial catalog objects.
-  const subjectSource = [
-    ...(Array.isArray(curriculumSubjects) ? curriculumSubjects : []),
-    ...(Array.isArray(profileSubjects) ? profileSubjects : []),
-  ];
-  const canUseCodeLab = hasComputerScienceCurriculum(subjectSource);
+
+  // Navigation is about product access, not subject detection. Code Lab is a first-class
+  // learning module for school and beyond-school learners. Its own experience handles
+  // curriculum/board/subject eligibility inside the module, so the shell must never hide it.
   return groups.map(group => ({
     ...group,
-    items: group.items.filter(item => experience.allowedRoutes.includes(item.href) && (item.href !== "/code-lab" || canUseCodeLab)),
+    items: group.items.filter(item => experience.allowedRoutes.includes(item.href)),
   })).filter(group => group.items.length > 0);
 }
 
