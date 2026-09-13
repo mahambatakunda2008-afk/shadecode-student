@@ -1,7 +1,8 @@
 "use client";
 
-import CodeLabWorkspace from "@/components/code-lab/CodeLabWorkspace";
+import CompLabWorkspace from "@/components/comp-lab/CompLabWorkspace";
 
+/** Backward-compatible route. The student-facing experience is now Comp Lab. */
 export default function CodeLabPage() {
-  return <CodeLabWorkspace />;
+  return <CompLabWorkspace />;
 }
