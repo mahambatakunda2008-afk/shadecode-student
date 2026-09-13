@@ -2,7 +2,7 @@ import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markIn
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding } from "@/lib/cortex/localCurriculumGrounding";
-import { readOfflineCurriculumPack, buildOfflineCurriculumScope } from "@/lib/cortex/offlineCurriculumPack";
+import { readOfflineCurriculumPack, buildOfflineCurriculumScope, writeOfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
 import { readLocalLearnerMemory, buildLocalLearnerContext, rememberLocalTopic } from "@/lib/cortex/localLearnerMemory";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 
