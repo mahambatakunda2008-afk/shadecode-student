@@ -20,9 +20,32 @@ function extractRequestedTopic(prompt: string): string {
 }
 
 export type VerifiedCurriculumPromptResult =
-  | { status: "none"; promptContext: ""; reason: string }
-  | { status: "resolved"; promptContext: string; reason: string }
-  | { status: "blocked"; promptContext: ""; reason: string };
+  | { status: "none"; promptContext: ""; reason: string; pack?: never }
+  | { status: "resolved"; promptContext: string; reason: string; pack: {
+      version: 2;
+      curriculumId?: string;
+      board?: string;
+      qualification?: string;
+      level?: string;
+      subject: string;
+      syllabusId?: string;
+      syllabusVersion?: string;
+      objectives: Array<{ id?: string; code?: string; statement: string }>;
+      knowledge: Array<{
+        id: string;
+        kind: string;
+        code?: string;
+        title: string;
+        content: string;
+        topicCode?: string;
+        objectiveIds?: string[];
+        parentId?: string;
+        metadata?: Record<string, unknown>;
+      }>;
+      promptContext?: string;
+      cachedAt: string;
+    } }
+  | { status: "blocked"; promptContext: ""; reason: string; pack?: never };
 
 /** Resolve the learner's exact curriculum and complete whole-syllabus evidence before AI can claim syllabus alignment. */
 export async function resolveVerifiedCurriculumPromptContext(
@@ -155,10 +178,27 @@ export async function resolveVerifiedCurriculumPromptContext(
     return `- ${item.kind}: ${code}${item.title}${item.content ? ` | ${item.content.slice(0, 500)}` : ""}`;
   });
   const objectiveLines = result.context.objectives.map((objective) => `- ${objective.code}: ${objective.statement}`);
-
-  return {
-    status: "resolved",
-    reason: "Verified objective-first curriculum context resolved with complete coverage evidence.",
+  const pack = {
+    version: 2 as const,
+    curriculumId: matchingVersion.id,
+    board: identity.boardId,
+    qualification: identity.qualificationId,
+    level: identity.level,
+    subject: identity.subjectName ?? identity.subjectId,
+    syllabusId: identity.syllabusId,
+    syllabusVersion: identity.syllabusVersion,
+    objectives: result.context.objectives.map((objective) => ({ id: objective.id, code: objective.code, statement: objective.statement })),
+    knowledge: usefulKnowledge.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      code: item.code,
+      title: item.title,
+      content: item.content,
+      topicCode: item.topicCode,
+      objectiveIds: item.objectiveIds,
+      parentId: item.parentId,
+      metadata: item.metadata,
+    })),
     promptContext: [
       "\n\n=== VERIFIED LEARNER CURRICULUM CONTEXT ===",
       curriculumSystemPromptContext(result.context),
@@ -171,6 +211,14 @@ export async function resolveVerifiedCurriculumPromptContext(
       "Curriculum rule: objectives are the scope gate. Teach the requested topic only insofar as it supports the verified objectives. Use verified knowledge for explanations, examples, terminology, assessment style and scope. Never claim missing or unverified material is required by this syllabus. If the requested topic is outside the verified objectives, clearly label it as enrichment rather than required syllabus content.",
       "=== END VERIFIED LEARNER CURRICULUM CONTEXT ===",
     ].join("\n"),
+    cachedAt: new Date().toISOString(),
+  };
+
+  return {
+    status: "resolved",
+    reason: "Verified objective-first curriculum context resolved with complete coverage evidence.",
+    promptContext: pack.promptContext,
+    pack,
   };
 }
 
