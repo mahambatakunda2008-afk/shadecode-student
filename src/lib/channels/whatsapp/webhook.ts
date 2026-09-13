@@ -27,44 +27,59 @@ export interface ParsedWhatsAppTextEvent {
   phoneNumberId: string;
 }
 
-export function parseWhatsAppTextEvents(payload: unknown): ParsedWhatsAppTextEvent[] {
-  if (!payload || typeof payload !== "object") return [];
-  const root = payload as Record<string, unknown>;
-  const entries = Array.isArray(root.entry) ? root.entry : [];
-  const events: ParsedWhatsAppTextEvent[] = [];
+interface WhatsAppChange {
+  value?: unknown;
+}
 
-  for (const entry of entries) {
-    if (!entry || typeof entry !== "object") continue;
-    const changes = Array.isArray((entry as Record<string, unknown>).changes)
-      ? (entry as Record<string, unknown>).changes
-      : [];
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function asRecords(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.map(asRecord).filter((item): item is Record<string, unknown> => item !== null) : [];
+}
+
+export function parseWhatsAppTextEvents(payload: unknown): ParsedWhatsAppTextEvent[] {
+  const root = asRecord(payload);
+  if (!root) return [];
+
+  const events: ParsedWhatsAppTextEvent[] = [];
+  for (const entry of asRecords(root.entry)) {
+    const changes = asRecords(entry.changes) as WhatsAppChange[];
     for (const change of changes) {
-      if (!change || typeof change !== "object") continue;
-      const value = (change as Record<string, unknown>).value;
-      if (!value || typeof value !== "object") continue;
-      const valueRecord = value as Record<string, unknown>;
-      const metadata = valueRecord.metadata;
-      const phoneNumberId = metadata && typeof metadata === "object"
-        ? String((metadata as Record<string, unknown>).phone_number_id ?? "")
+      const value = asRecord(change.value);
+      if (!value) continue;
+
+      const metadata = asRecord(value.metadata);
+      const phoneNumberId = typeof metadata?.phone_number_id === "string"
+        ? metadata.phone_number_id
         : "";
-      const messages = Array.isArray(valueRecord.messages) ? valueRecord.messages : [];
-      for (const message of messages) {
-        if (!message || typeof message !== "object") continue;
-        const record = message as Record<string, unknown>;
-        const text = record.text;
-        if (record.type !== "text" || !text || typeof text !== "object") continue;
-        const body = (text as Record<string, unknown>).body;
-        if (typeof body !== "string" || !body.trim()) continue;
-        if (typeof record.id !== "string" || typeof record.from !== "string") continue;
+
+      for (const message of asRecords(value.messages)) {
+        const text = asRecord(message.text);
+        if (message.type !== "text" || !text) continue;
+
+        const body = text.body;
+        const messageId = message.id;
+        const externalUserId = message.from;
+        if (
+          typeof body !== "string" || !body.trim() ||
+          typeof messageId !== "string" ||
+          typeof externalUserId !== "string"
+        ) continue;
+
         events.push({
-          messageId: record.id,
-          externalUserId: record.from,
+          messageId,
+          externalUserId,
           text: body.trim(),
-          timestamp: typeof record.timestamp === "string" ? record.timestamp : undefined,
+          timestamp: typeof message.timestamp === "string" ? message.timestamp : undefined,
           phoneNumberId,
         });
       }
     }
   }
+
   return events;
 }
