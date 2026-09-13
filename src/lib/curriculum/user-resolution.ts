@@ -32,7 +32,7 @@ function asVersion(row: Record<string, unknown>): CurriculumVersionRecord {
   };
 }
 
-function asObjective(row: Record<string, unknown>, identity: StoredCurriculumIdentity): CurriculumObjective {
+function asObjective(row: Record<string, unknown>, identity: StoredCurriculumIdentity & { syllabusId: string; syllabusVersion: string }): CurriculumObjective {
   return {
     id: String(row.id),
     curriculum: {
@@ -84,14 +84,12 @@ function asKnowledge(row: Record<string, unknown>): CurriculumKnowledgeItem {
  * Load the learner's exact curriculum profile and resolve one shared,
  * verified curriculum context for all curriculum-aware features.
  *
- * The profile is deliberately exact. If there are multiple subjects, callers
- * must provide the subjectId they are operating on. We never guess a subject,
- * syllabus or version from display names.
+ * Board, level and selected subject determine the learner's curriculum. The
+ * syllabus/version are catalog metadata resolved by the system, never manual
+ * learner inputs. A curriculum identity is not usable until those catalog
+ * fields have been resolved.
  */
-export async function resolveUserSystemCurriculum(
-  userId: string,
-  subjectId?: string,
-): Promise<UserSystemCurriculumResolution> {
+export async function resolveUserSystemCurriculum(userId: string, subjectId?: string): Promise<UserSystemCurriculumResolution> {
   const supabase = await createSupabaseServerClient();
 
   const { data: profile, error: profileError } = await supabase
@@ -120,14 +118,20 @@ export async function resolveUserSystemCurriculum(
   }
 
   const identity = matches[0];
-  const learner = toLearnerCurriculumContext(identity);
+  if (!identity.syllabusId || !identity.syllabusVersion) {
+    const reason = "The learner's curriculum has not yet resolved to a current syllabus and version.";
+    return { identity, blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
+  }
+
+  const resolvedIdentity: StoredCurriculumIdentity & { syllabusId: string; syllabusVersion: string } = identity;
+  const learner = toLearnerCurriculumContext(resolvedIdentity);
   const baseFilter = (query: any) => query
-    .eq("board_id", identity.boardId)
-    .eq("qualification_id", identity.qualificationId)
-    .eq("level", identity.level)
-    .eq("syllabus_id", identity.syllabusId)
-    .eq("syllabus_version", identity.syllabusVersion)
-    .eq("subject_id", identity.subjectId);
+    .eq("board_id", resolvedIdentity.boardId)
+    .eq("qualification_id", resolvedIdentity.qualificationId)
+    .eq("level", resolvedIdentity.level)
+    .eq("syllabus_id", resolvedIdentity.syllabusId)
+    .eq("syllabus_version", resolvedIdentity.syllabusVersion)
+    .eq("subject_id", resolvedIdentity.subjectId);
 
   const [versionsResult, objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
     baseFilter(supabase.from("curriculum_versions").select("*")),
@@ -141,7 +145,7 @@ export async function resolveUserSystemCurriculum(
     return { identity, blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
   }
 
-  const objectives = (objectivesResult.data ?? []).map((row: Record<string, unknown>) => asObjective(row, identity));
+  const objectives = (objectivesResult.data ?? []).map((row: Record<string, unknown>) => asObjective(row, resolvedIdentity));
   const mappings = (mappingsResult.data ?? []).map((row: Record<string, unknown>) => asMapping(row));
   const knowledge = (knowledgeResult.data ?? []).map((row: Record<string, unknown>) => asKnowledge(row));
   const versions = (versionsResult.data ?? []).map((row: Record<string, unknown>) => asVersion(row));
