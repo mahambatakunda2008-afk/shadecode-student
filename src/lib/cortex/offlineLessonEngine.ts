@@ -28,9 +28,13 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
   if (!pack.knowledge.length || !pack.objectives.length) return null;
   const selected = relevant(pack.knowledge, topic);
   if (!selected.length) return null;
-  const objectiveTerms = topicTerms(topic);
-  const matchingObjectives = pack.objectives.filter(objective => objectiveTerms.some(term => objective.statement.toLowerCase().includes(term)));
-  const objectiveList = (matchingObjectives.length ? matchingObjectives : pack.objectives.slice(0, 8)).map(x => `- ${x.code ? `[${x.code}] ` : ""}${x.statement}`);
+
+  // Objectives are linked from the selected verified knowledge first. Never fall back
+  // to arbitrary objectives merely because the pack contains them.
+  const selectedObjectiveIds = new Set(selected.flatMap(item => item.objectiveIds ?? []));
+  const matchingObjectives = pack.objectives.filter(objective => objective.id && selectedObjectiveIds.has(objective.id));
+  const objectiveList = matchingObjectives.map(x => `- ${x.code ? `[${x.code}] ` : ""}${x.statement}`);
+  if (!objectiveList.length) return null;
 
   const definitions = byKind(selected, /terminology|definition|concept|content_scope|learning_outcome/i);
   const formulas = byKind(selected, /formula|equation|rule|relationship/i);
@@ -41,7 +45,7 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
 
   const blocks: OfflineLessonBlock[] = [
     block("objective", "Learning target", unique(objectiveList, 8).join("\n")),
-    block("prior", "Scope", `Subject: ${subject}\nRequested topic: ${clean(topic)}\n\nOffline teaching is limited to verified curriculum knowledge available on this device.`),
+    block("prior", "Scope", `Subject: ${subject}\nRequested topic: ${clean(topic)}\n\nOffline teaching is limited to verified curriculum knowledge mapped to the selected topic and its objectives.`),
   ];
   if (definitions.length) blocks.push(block("concept", "Key concepts", definitions.slice(0, 7).map(x => `- ${x.title}${content(x)}`).join("\n")));
   if (formulas.length) blocks.push(block("formula", "Rules and relationships", formulas.slice(0, 7).map(x => `- ${x.title}${content(x)}`).join("\n")));
@@ -49,15 +53,15 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
   if (warnings.length) blocks.push(block("misconception", "Watch for", warnings.slice(0, 5).map(x => `- ${x.title}${content(x)}`).join("\n")));
   if (applications.length) blocks.push(block("application", "Applications", applications.slice(0, 4).map(x => `- ${x.title}${content(x)}`).join("\n")));
   if (practice.length) {
-    blocks.push(block("practice", "Practice", practice.slice(0, 6).map((x, i) => `${i + 1}. ${x.title}${content(x)}`).join("\n")));
-    blocks.push(block("checkpoint", "Checkpoint", practice.slice(0, 3).map((x, i) => `${i + 1}. ${x.title}${content(x)}`).join("\n\n")));
+    blocks.push(block("practice", "Verified practice", practice.slice(0, 6).map((x, i) => `${i + 1}. ${x.title}${content(x)}`).join("\n")));
+    blocks.push(block("checkpoint", "Checkpoint", "Question: Choose one of the verified practice items and explain which syllabus concept or objective it tests.\nThink: State the relevant concept before attempting the item."));
   } else if (examples.length) {
     blocks.push(block("checkpoint", "Reflection", "Question: What concept or rule does the verified example demonstrate?\nThink: Explain the reasoning in your own words before checking the example again."));
   }
   blocks.push(block("summary", "What to retain", [
     `- Explain ${clean(topic)} using the verified knowledge above.`,
-    "- Connect the explanation to the relevant syllabus objective.",
-    practice.length ? "- Complete the verified practice before moving on." : "- Offline assessment content is not cached for this topic yet.",
+    "- Connect the explanation to the mapped syllabus objective.",
+    practice.length ? "- Complete the verified practice before moving on." : "- Verified assessment content is not cached for this topic yet.",
   ].join("\n")));
 
   if (blocks.filter(x => !["objective", "prior", "summary"].includes(x.type)).length < 2) return null;
