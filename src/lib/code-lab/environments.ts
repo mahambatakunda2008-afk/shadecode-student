@@ -2,7 +2,7 @@ export type CodeLabProjectType = "console" | "web" | "windows-forms" | "desktop"
 
 export type CodeLabLanguage =
   | "javascript" | "typescript" | "python" | "csharp" | "vbnet"
-  | "html" | "css" | "sql" | "json" | "markdown";
+  | "html" | "css" | "sql" | "json" | "markdown" | "xml";
 
 export type CodeLabCapabilityStatus = "browser" | "planned" | "external-runtime" | "artifact";
 
