@@ -30,12 +30,23 @@ export function normalizeLessonBlockType(value: string) {
 }
 
 function topicTokens(request: LessonQualityRequest) {
-  return `${request.topic} ${request.prompt}`.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length >= 4);
+  // Only the resolved topic belongs in the topic-drift signal. Including the full
+  // learner command made words such as "teach", "me" and "please" falsely count
+  // as evidence that an off-topic lesson was relevant.
+  return request.topic.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length >= 4);
 }
 
 function hasTopicSignal(block: { title?: string; content: string }, tokens: string[]) {
   const text = `${block.title ?? ""} ${block.content}`.toLowerCase();
   return tokens.some(token => text.includes(token));
+}
+
+function hasAnswerLeak(content: string) {
+  return /\b(?:answer|solution|correct answer|correct option|therefore)\s*:/i.test(content) || /\b(?:the answer is|the correct answer is|so the answer is)\b/i.test(content);
+}
+
+function hasBareNumericalResult(content: string) {
+  return /(?:^|\n)\s*(?:answer\s*)?[:=]?\s*[-+]?\d+(?:\.\d+)?\s*(?:[A-Za-z%°]+)?\s*(?:$|\n)/i.test(content.trim());
 }
 
 export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; title?: string }, request: LessonQualityRequest) {
@@ -48,6 +59,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const has = (...names: string[]) => names.some(name => types.has(name));
   const tokens = topicTokens(request);
 
+  if (normalized.length > 18) failures.push("too-many-blocks");
+  if (normalized.length < 4) failures.push("insufficient-structure");
   if (["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p))) failures.push("generic-language");
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
@@ -64,7 +77,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const structuredBlocks = normalized.filter(block => structuredTypes.has(block.normalizedType));
   const lineStructuredCount = structuredBlocks.filter(block => {
     const lines = block.content.split(/\n+/).map(line => line.trim()).filter(Boolean);
-    return lines.length >= 2 || /(^|\n)([-•]|\d+[.)]|Given:|Method:|Step\s+\d+:|Question:|Answer:|Approach:|Examiner looks for:)/i.test(block.content);
+    return lines.length >= 2 || /(^|\n)([-•]|\d+[.)]|Given:|Method:|Step\s+\d+:|Question:|Answer:|Approach:)/i.test(block.content);
   }).length;
   if (structuredBlocks.length >= 4 && lineStructuredCount < Math.min(3, structuredBlocks.length)) failures.push("weak-structure");
 
@@ -82,13 +95,16 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   if (tokens.length > 0 && !tokens.some(token => titleText.includes(token))) failures.push("title-topic-drift");
 
   const checkpointBlocks = normalized.filter(block => block.normalizedType === "checkpoint");
-  if (request.intent !== "practice" && checkpointBlocks.some(block => /\banswer\s*:/i.test(block.content) && /\bthink\s*:/i.test(block.content))) failures.push("checkpoint-reveals-answer");
+  if (request.intent !== "practice" && checkpointBlocks.some(block => hasAnswerLeak(block.content))) failures.push("checkpoint-reveals-answer");
 
   const artificialHeadings = ["demanded worked example", "distribution myth", "verification habit", "examiner looks for", "common exam error"];
   if (normalized.some(block => artificialHeadings.some(heading => `${block.title ?? ""} ${block.content}`.toLowerCase().startsWith(heading)))) failures.push("template-heading");
 
   const applications = normalized.filter(block => block.normalizedType === "application");
   if (applications.some(block => !/question:|task:|scenario:|apply|use this|calculate|determine|find/i.test(block.searchable))) failures.push("empty-application");
+
+  const numericalBlocks = normalized.filter(block => /\d/.test(block.content));
+  if (numericalBlocks.some(block => hasBareNumericalResult(block.content))) failures.push("bare-numerical-result");
 
   if (request.intent === "teach") {
     if (!has("example")) failures.push("teach-example");
