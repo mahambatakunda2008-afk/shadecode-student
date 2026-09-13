@@ -8,6 +8,7 @@ export interface LocalCurriculumGrounding {
   status: "resolved" | "enrichment" | "blocked";
   reason: string;
   promptContext: string;
+  resolvedTopic?: string;
   pack?: OfflineCurriculumPack;
 }
 
@@ -26,6 +27,7 @@ function readValue(subject: string, topic: string): LocalCurriculumGrounding | n
       status: value.status === "blocked" || value.status === "enrichment" ? value.status : "resolved",
       reason: typeof value.reason === "string" ? value.reason : "Cached verified curriculum grounding.",
       promptContext: value.promptContext.slice(0, MAX_CONTEXT_CHARS),
+      resolvedTopic: typeof value.resolvedTopic === "string" && value.resolvedTopic.trim() ? value.resolvedTopic.trim() : undefined,
       pack: value.pack && typeof value.pack === "object" ? value.pack as OfflineCurriculumPack : undefined,
     };
   } catch { return null; }
@@ -69,6 +71,7 @@ export async function getLocalCurriculumGrounding(subject: string, topic: string
       status: data.status,
       reason: typeof data.reason === "string" ? data.reason : "Verified curriculum grounding resolved.",
       promptContext: data.promptContext,
+      resolvedTopic: typeof data.resolvedTopic === "string" ? data.resolvedTopic : undefined,
       pack: data.pack,
     });
     return data.promptContext.slice(0, MAX_CONTEXT_CHARS);
