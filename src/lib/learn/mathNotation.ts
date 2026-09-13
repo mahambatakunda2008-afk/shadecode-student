@@ -1,10 +1,11 @@
 const SIMPLE_MATH_TOKEN = "(?:\\d+(?:\\.\\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)";
+const MATHISH_TOKEN = "(?:\\d+(?:\\.\\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?|\\([^\\n()]+\\)|\\[[^\\n\\]]+\\])";
 
 /** Normalize one mathematical expression without touching surrounding prose. */
 export function normalizeMathSource(source: string): string {
   let value = source.trim();
   value = value.replace(/\^\s*(?!\{)([-+]?\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?|\([^)]*\))/g, "^{$1}");
-  value = value.replace(new RegExp(`(?<![A-Za-z0-9}])(${SIMPLE_MATH_TOKEN}|\\([^\\n()]+\\))\\s*\\/\\s*(${SIMPLE_MATH_TOKEN}|\\([^\\n()]+\\))`, "g"), "\\frac{$1}{$2}");
+  value = value.replace(new RegExp(`(?<![A-Za-z0-9}])(${MATHISH_TOKEN})\\s*\\/\\s*(${MATHISH_TOKEN})`, "g"), "\\frac{$1}{$2}");
   value = value.replace(/\b(d[a-zA-Z])\s*\/\s*(d[a-zA-Z])\b/g, "\\frac{$1}{$2}");
   return value;
 }
@@ -12,23 +13,38 @@ export function normalizeMathSource(source: string): string {
 /** Canonicalize model output so persisted lessons carry renderable math notation. */
 export function normalizeMathContent(content: string): string {
   if (!content.trim()) return content;
-  const explicit = /\$[^$\n]+\$|\\\([^\n]+\\\)/g;
+  const explicit = /\$[^$\n]+\$|\\\([^\n]+\\\)|\\\[[^\n]+\\\]/g;
   let output = "";
   let cursor = 0;
   let match: RegExpExecArray | null;
   while ((match = explicit.exec(content)) !== null) {
     output += normalizePlainMath(content.slice(cursor, match.index));
-    output += match[0].startsWith("\\(") ? `\\(${normalizeMathSource(match[0].slice(2, -2))}\\)` : `$${normalizeMathSource(match[0].slice(1, -1))}$`;
-    cursor = match.index + match[0].length;
+    const token = match[0];
+    if (token.startsWith("\\(")) output += `\\(${normalizeMathSource(token.slice(2, -2))}\\)`;
+    else if (token.startsWith("\\[")) output += `\\[${normalizeMathSource(token.slice(2, -2))}\\]`;
+    else output += `$${normalizeMathSource(token.slice(1, -1))}$`;
+    cursor = match.index + token.length;
   }
   output += normalizePlainMath(content.slice(cursor));
   return output;
 }
 
+function isSafePlainFraction(numerator: string, denominator: string): boolean {
+  const isToken = (value: string) => /^(?:\d+(?:\.\d+)?|[A-Za-z](?:_[A-Za-z0-9]+)?)$/.test(value.trim());
+  return isToken(numerator) && isToken(denominator);
+}
+
 function normalizePlainMath(text: string): string {
   let value = text;
-  value = value.replace(/([A-Za-z0-9)\]}]+\s*\^\s*(?:\{[^}]+\}|[A-Za-z0-9()+\-]+)(?:\s*[=+\-*/]\s*[A-Za-z0-9()^{}]+)*)/g, (expression) => `$${normalizeMathSource(expression)}$`);
-  value = value.replace(new RegExp(`(${SIMPLE_MATH_TOKEN})\\s*\\/\\s*(${SIMPLE_MATH_TOKEN})`, "g"), (expression) => `$${normalizeMathSource(expression)}$`);
+
+  // Only promote expressions that contain an unmistakable math signal. This avoids
+  // turning ordinary prose such as "and/or" into a math fraction.
+  value = value.replace(/\b([A-Za-z0-9)\]}]+\s*\^\s*(?:\{[^}]+\}|[A-Za-z0-9()+\-]+)(?:\s*[=+\-*/]\s*[A-Za-z0-9()^{}]+)*)/g, (expression) => `$${normalizeMathSource(expression)}$`);
+
+  value = value.replace(new RegExp(`\\b(${SIMPLE_MATH_TOKEN})\\s*\\/\\s*(${SIMPLE_MATH_TOKEN})\\b`, "g"), (expression, numerator: string, denominator: string) => {
+    return isSafePlainFraction(numerator, denominator) ? `$${normalizeMathSource(expression)}$` : expression;
+  });
+
   value = value.replace(/\b(d[a-zA-Z])\s*\/\s*(d[a-zA-Z])\b/g, (expression) => `$${normalizeMathSource(expression)}$`);
   return value;
 }
