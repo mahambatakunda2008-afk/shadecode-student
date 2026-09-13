@@ -1,10 +1,12 @@
 export type RuntimeLanguage = "javascript" | "typescript" | "python";
 
 export type RuntimeDiagnostic = {
+  severity: "error" | "warning" | "info";
   message: string;
+  file?: string;
   line?: number;
   column?: number;
-  severity?: "error" | "warning" | "info";
+  source: "runtime" | "compiler" | "language";
 };
 
 export type RuntimeRequest = {
@@ -21,12 +23,13 @@ export type RuntimeEvent =
   | { type: "diagnostic"; diagnostic: RuntimeDiagnostic }
   | { type: "status"; status: "starting" | "running" | "completed" | "failed" | "timed_out" }
   | { type: "exit"; code: number }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string; diagnostic?: RuntimeDiagnostic };
 
 export type RuntimeResult = {
   id: string;
   language: RuntimeLanguage;
   events: RuntimeEvent[];
+  diagnostics: RuntimeDiagnostic[];
   exitCode: number | null;
   durationMs: number;
 };
