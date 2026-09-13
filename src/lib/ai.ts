@@ -81,6 +81,25 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
+  // Provider order is data-driven, not fixed: recent ai_usage_logs showed
+  // Gemini and Cloudflare both failing (mostly aborted) far more often than
+  // OpenRouter over the last two days, on both lesson and quiz generation.
+  // OpenRouter goes first so the common case reaches a working provider
+  // before burning the chain budget on providers currently struggling; the
+  // others remain as fallback in case OpenRouter itself has an outage.
+  if (process.env.OPENROUTER_API_KEY && canTry()) {
+    const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
+      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST", headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app", "X-Title": "Shadecode Student" },
+        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+      }, timeout);
+      if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
+    });
+    if (text) return text;
+  }
+
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
   for (const key of geminiKeys) {
     if (!canTry()) break;
@@ -106,19 +125,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
       const data = await res.json() as any;
       return typeof data?.result?.response === "string" ? data.result.response : null;
-    });
-    if (text) return text;
-  }
-
-  if (process.env.OPENROUTER_API_KEY && canTry()) {
-    const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
-      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST", headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app", "X-Title": "Shadecode Student" },
-        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
-      }, timeout);
-      if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
-      const data = await res.json() as any;
-      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
     });
     if (text) return text;
   }
