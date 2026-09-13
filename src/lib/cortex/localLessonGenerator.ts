@@ -1,12 +1,22 @@
-import { buildOfflineLesson, type OfflineLesson, type OfflineLessonBlock } from "@/lib/cortex/offlineLessonEngine";
+import { buildOfflineLesson, buildOfflineLessonWithPack, type OfflineLesson, type OfflineLessonBlock } from "@/lib/cortex/offlineLessonEngine";
+import { readOfflineCurriculumPack } from "@/lib/cortex/offlineCurriculumPack";
 
 export type LocalLessonBlock = OfflineLessonBlock;
 export type LocalLesson = OfflineLesson;
 
+function extractTopic(prompt: string) {
+  return prompt.trim()
+    .replace(/^\s*(?:please\s+)?(?:teach|explain|show|walk me through|help me learn|help me understand|help me with|go through|cover|learn)\s+(?:me\s+)?/i, "")
+    .replace(/^\s*(?:revise|revision|review|recap|summarise|summarize)\s+(?:me\s+)?/i, "")
+    .trim();
+}
+
 export function generateLocalLesson(subject: string, prompt: string, curriculumContext = ""): LocalLesson {
-  return buildOfflineLesson(subject, prompt, curriculumContext) ?? {
+  const topic = extractTopic(prompt);
+  const pack = readOfflineCurriculumPack(subject);
+  return buildOfflineLessonWithPack(subject, prompt, topic, pack) ?? buildOfflineLesson(subject, prompt, curriculumContext) ?? {
     id: `offline-unavailable-${Date.now().toString(36)}`,
-    title: `${prompt.trim()}: offline curriculum unavailable`,
+    title: `${topic || prompt.trim()}: offline curriculum unavailable`,
     blocks: [
       { type: "objective", title: "Curriculum data required", content: "- No verified curriculum knowledge pack containing this topic is cached on this device." },
       { type: "concept", title: "Offline boundary", content: "Cortex will not invent syllabus content when authoritative curriculum knowledge is unavailable." },
@@ -16,6 +26,8 @@ export function generateLocalLesson(subject: string, prompt: string, curriculumC
   };
 }
 
-export function hasLocalLessonFallback(_subject: string, _prompt: string, curriculumContext = "") {
-  return /=== VERIFIED LEARNER CURRICULUM CONTEXT ===/i.test(curriculumContext) && /Verified syllabus knowledge available/i.test(curriculumContext);
+export function hasLocalLessonFallback(subject: string, prompt: string, curriculumContext = "") {
+  const topic = extractTopic(prompt);
+  const pack = readOfflineCurriculumPack(subject);
+  return Boolean((pack && buildOfflineLessonWithPack(subject, prompt, topic, pack)) || buildOfflineLesson(subject, prompt, curriculumContext));
 }
