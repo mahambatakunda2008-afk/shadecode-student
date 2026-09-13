@@ -58,4 +58,14 @@ describe("buildNarrationScript", () => {
     const script = buildNarrationScript([{ type: "concept", content: "The **nucleus** controls the cell." }]);
     expect(script[0].text).toBe("The nucleus controls the cell.");
   });
+
+  it("replaces inline math with a spoken stand-in instead of reading raw LaTeX", () => {
+    const script = buildNarrationScript([{ type: "concept", content: "The derivative $\\frac{dy}{dx}$ gives the gradient." }]);
+    expect(script[0].text).toBe("The derivative the formula gives the gradient.");
+  });
+
+  it("substitutes a spoken formula line for type \"formula\", not just legacy \"math\"", () => {
+    const script = buildNarrationScript([{ type: "formula", content: "$\\int x^n\\,dx = \\frac{x^{n+1}}{n+1}+C$" }]);
+    expect(script[0].text).toBe("Here's a formula. Take a look at the screen for this one.");
+  });
 });

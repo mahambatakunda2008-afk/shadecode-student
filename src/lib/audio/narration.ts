@@ -32,9 +32,13 @@ const SPOKEN_PREFIX: Record<string, string> = {
 
 /**
  * Strips the visual-only markup the lesson renderer understands ("- "/"1. "
- * list markers, "**bold**" emphasis) before content is spoken. Without this,
- * TTS reads the literal characters aloud ("dash", "asterisk asterisk"),
- * which is unintelligible. Content with no markup passes through unchanged.
+ * list markers, "**bold**" emphasis, "$...$" math) before content is spoken.
+ * Without this, TTS reads the literal characters aloud ("dash", "asterisk
+ * asterisk", or raw LaTeX like "dollar sign backslash frac"), which is
+ * unintelligible. Math spans are replaced with a short spoken stand-in --
+ * the notation itself needs to be seen, not heard -- so the surrounding
+ * sentence still reads naturally. Content with no markup passes through
+ * unchanged.
  */
 function speakable(content: string): string {
   const lines = content
@@ -42,13 +46,14 @@ function speakable(content: string): string {
     .map(line => line.trim())
     .filter(Boolean)
     .map(line => line.replace(/^[-•]\s+/, "").replace(/^\d+[.)]\s+/, ""))
-    .map(line => line.replace(/\*\*([^*]+)\*\*/g, "$1"));
+    .map(line => line.replace(/\*\*([^*]+)\*\*/g, "$1"))
+    .map(line => line.replace(/\$\$[^$]+\$\$|\$[^$]+\$/g, "the formula"));
   return lines.join(". ");
 }
 
 export function buildNarrationScript(blocks: LessonBlock[]): NarrationSegment[] {
   return blocks.map((block, index) => {
-    if (block.type === "math") {
+    if (block.type === "math" || block.type === "formula") {
       return {
         index,
         type: block.type,

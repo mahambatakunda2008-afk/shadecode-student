@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 import { createClient } from "@/lib/supabase/client";
 import {
   ArrowLeft, ArrowRight, BookOpen, Calculator, CheckCircle2, Clock,
@@ -58,10 +60,35 @@ const ASIDES: Record<string, { label: string; icon: string; accent: string }> = 
 function theme(subject: string) { return THEMES[subject] ?? THEMES.default; }
 function xpForDiff(d: string) { return d === "hard" ? 50 : d === "medium" ? 35 : 20; }
 
+// Renders a LaTeX expression natively (proper fraction bars, exponents,
+// integral signs) instead of leaving raw notation like "x^{n+1}/(n+1)" as
+// literal text. Falls back to plain text if KaTeX can't parse it -- a
+// slightly-off expression should never take down the whole lesson.
+function renderMath(latex: string, key: string): ReactNode {
+  try {
+    const html = katex.renderToString(latex.trim(), { throwOnError: false, strict: false, displayMode: false });
+    return <span key={key} dangerouslySetInnerHTML={{ __html: html }} />;
+  } catch {
+    return <span key={key}>{latex}</span>;
+  }
+}
+
+// A formula line the model wrote without $ delimiters (e.g. raw
+// "∫x^n dx = x^{n+1}/(n+1)+C, n≠-1.") still deserves native rendering rather
+// than showing caret/brace syntax verbatim. If a formula-type line has no
+// delimiters but looks mathematical, treat the whole line as one expression.
+function looksMathematical(line: string): boolean {
+  return /[\^_]|\\[a-zA-Z]+|[∫∑√±×÷≠≤≥→∞θπΔ]/.test(line);
+}
+
 function inline(text: string, key: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
-    part.startsWith("**") ? <strong key={`${key}-${i}`} style={{ color: "var(--foreground)", fontWeight: 750 }}>{part.slice(2, -2)}</strong> : <span key={`${key}-${i}`}>{part}</span>
-  );
+  return text.split(/(\$\$[^$]+\$\$|\$[^$]+\$|\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) => {
+    const partKey = `${key}-${i}`;
+    if (part.startsWith("$$") && part.endsWith("$$")) return renderMath(part.slice(2, -2), partKey);
+    if (part.startsWith("$") && part.endsWith("$")) return renderMath(part.slice(1, -1), partKey);
+    if (part.startsWith("**")) return <strong key={partKey} style={{ color: "var(--foreground)", fontWeight: 750 }}>{part.slice(2, -2)}</strong>;
+    return <span key={partKey}>{part}</span>;
+  });
 }
 
 function sentenceChunks(text: string): string[] {
@@ -90,7 +117,11 @@ function renderStructured(content: string, type: string): ReactNode {
 
   if (isFormula) return (
     <div style={{ display: "grid", gap: 9 }}>
-      {lines.map((line, i) => <div key={i} className="lesson-line formula-line">{inline(line.replace(/^[-•]\s+/, ""), `f-${i}`)}</div>)}
+      {lines.map((line, i) => {
+        const stripped = line.replace(/^[-•]\s+/, "");
+        const wrapped = !stripped.includes("$") && looksMathematical(stripped) ? `$${stripped}$` : stripped;
+        return <div key={i} className="lesson-line formula-line">{inline(wrapped, `f-${i}`)}</div>;
+      })}
     </div>
   );
 
@@ -258,7 +289,7 @@ export default function LessonDetailPage() {
         .unit-body{font-size:15px;line-height:1.65;max-width:740px}
         .lesson-points{display:flex;flex-direction:column;gap:9px;margin:0;padding-left:20px;color:var(--muted-foreground)}.lesson-points li{padding-left:4px}.plain-points{padding-left:0;gap:11px}.plain-points>div{position:relative;padding-left:16px}.plain-points>div:before{content:"";position:absolute;left:0;top:.68em;width:5px;height:5px;border-radius:50%;background:var(--lesson-accent)}
         .lesson-steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;counter-reset:step}.lesson-steps li{counter-increment:step;position:relative;padding:11px 14px 11px 46px;background:var(--surface-2);border:1px solid var(--card-border);border-radius:12px;color:var(--muted-foreground)}.lesson-steps li:before{content:counter(step);position:absolute;left:13px;top:11px;width:23px;height:23px;border-radius:7px;background:var(--lesson-soft);color:var(--lesson-accent);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
-        .lesson-line{color:var(--muted-foreground);margin-bottom:7px}.lesson-step{color:var(--muted-foreground);padding:9px 12px;border-left:2px solid var(--lesson-border);margin-bottom:7px}.lesson-label{font-weight:800;color:var(--foreground);margin-right:4px}.formula-line{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--foreground);background:var(--surface-2);border:1px solid var(--card-border);border-radius:10px;padding:10px 13px;font-size:14px;overflow:auto}
+        .lesson-line{color:var(--muted-foreground);margin-bottom:7px}.lesson-step{color:var(--muted-foreground);padding:9px 12px;border-left:2px solid var(--lesson-border);margin-bottom:7px}.lesson-label{font-weight:800;color:var(--foreground);margin-right:4px}.formula-line{color:var(--foreground);background:var(--surface-2);border:1px solid var(--card-border);border-radius:10px;padding:12px 14px;font-size:15px;overflow:auto}.formula-line .katex{font-size:1.05em}
         .lesson-aside{margin:0 0 25px 14px;padding:13px 0 13px 16px;border-left:2px solid}.aside-title{font-size:12px;font-weight:850;display:flex;gap:8px;align-items:center;margin-bottom:7px}.aside-body{color:var(--muted-foreground);font-size:14px;line-height:1.65}
         .lesson-actions{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:4px}.lesson-action{min-height:48px;border-radius:13px;border:1px solid var(--card-border);background:var(--surface-2);color:var(--foreground);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;padding:8px}.lesson-action.primary{background:linear-gradient(135deg,rgba(16,185,129,.22),rgba(52,211,153,.10));border-color:rgba(52,211,153,.3);color:#34d399}.lesson-action.quiz{background:linear-gradient(135deg,#7c3aed,#2563eb);border-color:transparent;color:#fff}.lesson-action:disabled{opacity:.55;cursor:not-allowed}
         .lesson-note{text-align:center;color:var(--muted-foreground);font-size:11px;margin-top:8px}.lesson-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;background:var(--card);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:12px 16px;color:#34d399;font-size:13px;font-weight:750;box-shadow:0 12px 40px rgba(0,0,0,.35)}
