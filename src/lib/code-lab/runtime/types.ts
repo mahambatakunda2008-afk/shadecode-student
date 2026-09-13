@@ -1,10 +1,6 @@
 export type RuntimeLanguage =
-  | "javascript"
-  | "typescript"
-  | "python"
-  | "csharp"
-  | "vbnet"
-  | "sql";
+  | "javascript" | "typescript" | "python" | "csharp" | "vbnet" | "sql"
+  | "java" | "c" | "cpp" | "kotlin" | "php" | "rust" | "go";
 
 export type RuntimeDiagnostic = {
   severity: "error" | "warning" | "info";
