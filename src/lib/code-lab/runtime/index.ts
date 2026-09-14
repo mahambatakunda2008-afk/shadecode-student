@@ -1,5 +1,6 @@
 import type { RuntimeDiagnostic, RuntimeRequest, RuntimeResult } from "./types";
 import { runBrowserJavaScript } from "./browser-runtime";
+import { runBrowserPython, runBrowserSql, runBrowserTypeScript } from "./browser-polyglot";
 import { unavailableRuntimeResult } from "./providers";
 import { buildProjectDiagnostics } from "../project-diagnostics";
 
@@ -16,14 +17,7 @@ function withDiagnosticEvents(result: RuntimeResult): RuntimeResult {
 
 function publishDiagnostics(request: RuntimeRequest, result: RuntimeResult) {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("shadecode:comp-lab:runtime", {
-    detail: {
-      requestId: result.id,
-      language: result.language,
-      entryFile: request.entryFile,
-      diagnostics: result.diagnostics as RuntimeDiagnostic[],
-    },
-  }));
+  window.dispatchEvent(new CustomEvent("shadecode:comp-lab:runtime", { detail: { requestId: result.id, language: result.language, entryFile: request.entryFile, diagnostics: result.diagnostics as RuntimeDiagnostic[] } }));
 }
 
 function providerFor(language: RuntimeRequest["language"]) {
@@ -43,14 +37,16 @@ function addProjectDiagnostics(request: RuntimeRequest, result: RuntimeResult): 
   const graphDiagnostics = buildProjectDiagnostics(request.files);
   if (!graphDiagnostics.length) return result;
   const existing = new Set(result.diagnostics.map((diagnostic) => JSON.stringify(diagnostic)));
-  const diagnostics = [...result.diagnostics, ...graphDiagnostics.filter((diagnostic) => !existing.has(JSON.stringify(diagnostic)))];
-  return { ...result, diagnostics };
+  return { ...result, diagnostics: [...result.diagnostics, ...graphDiagnostics.filter((diagnostic) => !existing.has(JSON.stringify(diagnostic)))] };
 }
 
 export async function executeCode(request: RuntimeRequest): Promise<RuntimeResult> {
-  const base = request.language === "javascript"
-    ? withDiagnosticEvents(await runBrowserJavaScript(request))
-    : unavailableRuntimeResult(request, providerFor(request.language));
+  let base: RuntimeResult;
+  if (request.language === "javascript") base = await runBrowserJavaScript(request);
+  else if (request.language === "typescript") base = await runBrowserTypeScript(request);
+  else if (request.language === "python") base = await runBrowserPython(request);
+  else if (request.language === "sql") base = await runBrowserSql(request);
+  else base = unavailableRuntimeResult(request, providerFor(request.language));
   const result = withDiagnosticEvents(addProjectDiagnostics(request, base));
   publishDiagnostics(request, result);
   return result;
