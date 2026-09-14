@@ -3,6 +3,14 @@ import { executeCode, type RuntimeDiagnostic, type RuntimeLanguage } from "./run
 export type TestCase = {
   id: string;
   name: string;
+  /**
+   * Test program. Use {{ENTRY_FILE}} to reference the learner entry module.
+   * Example: import "{{ENTRY_FILE}}";
+   *
+   * Keeping the placeholder in the test definition lets the runner safely
+   * adapt it to the actual workspace path instead of asking curriculum data
+   * to guess a file name.
+   */
   code: string;
   expectedOutput?: string;
   timeoutMs?: number;
@@ -31,6 +39,22 @@ function normalizeOutput(value: string) {
   return value.replace(/\r\n/g, "\n").trim();
 }
 
+function moduleSpecifier(entryFile: string) {
+  const normalized = entryFile.replace(/\\/g, "/").replace(/^\/+/, "");
+  return `./${normalized}`;
+}
+
+/**
+ * Resolve a curriculum test against the learner's actual entry file.
+ *
+ * A test that does not use {{ENTRY_FILE}} remains a standalone test program,
+ * preserving the original contract. This is useful for language runtimes
+ * where the test harness is itself the executable program.
+ */
+export function resolveTestCode(testCode: string, entryFile: string) {
+  return testCode.replace(/\{\{ENTRY_FILE\}\}/g, moduleSpecifier(entryFile));
+}
+
 export async function runCodeLabTests({
   language,
   files,
@@ -49,7 +73,7 @@ export async function runCodeLabTests({
     const result = await executeCode({
       id: `test:${test.id}`,
       language,
-      code: test.code,
+      code: resolveTestCode(test.code, entryFile),
       files,
       entryFile,
       timeoutMs: test.timeoutMs ?? 5000,
