@@ -48,6 +48,10 @@ function languageFor(path: string): ProjectGraphLanguage {
   return "unknown";
 }
 
+function isSourceLanguage(language: ProjectGraphLanguage) {
+  return language !== "unknown";
+}
+
 export function normalizeProjectPath(path: string) {
   const parts = path.replaceAll("\\", "/").split("/");
   const out: string[] = [];
@@ -106,7 +110,10 @@ export function buildProjectGraph(input: FileInput[]): ProjectGraph {
 
   for (const edge of edges) nodeMap.get(edge.to)?.dependents.push(edge.from);
   const incoming = new Set(edges.map((edge) => edge.to));
-  const entrypoints = files.map((file) => file.path).filter((path) => !incoming.has(path));
+  const entrypoints = files
+    .filter((file) => isSourceLanguage(languageFor(file.path)))
+    .map((file) => file.path)
+    .filter((path) => !incoming.has(path));
   const cycles: string[][] = [];
   const visiting = new Set<string>();
   const visited = new Set<string>();
