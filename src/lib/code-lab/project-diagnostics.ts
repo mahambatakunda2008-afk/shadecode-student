@@ -1,5 +1,5 @@
 import type { RuntimeDiagnostic } from "./runtime/types";
-import { buildProjectGraph, type ProjectGraphLanguage } from "./project-graph";
+import { buildProjectGraph } from "./project-graph";
 
 type DiagnosticFile = { path: string; content: string };
 
@@ -13,11 +13,8 @@ function diagnostic(message: string, file?: string): RuntimeDiagnostic {
 }
 
 /** Convert lightweight project-graph health findings into editor diagnostics. */
-export function buildProjectDiagnostics(
-  files: DiagnosticFile[],
-  language: ProjectGraphLanguage = "javascript",
-): RuntimeDiagnostic[] {
-  const graph = buildProjectGraph(files, language);
+export function buildProjectDiagnostics(files: DiagnosticFile[]): RuntimeDiagnostic[] {
+  const graph = buildProjectGraph(files);
   const diagnostics: RuntimeDiagnostic[] = [];
 
   for (const node of graph.nodes) {
