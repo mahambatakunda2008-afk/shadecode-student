@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createBrowserClient } from "@supabase/ssr";
 import { CheckCircle2, Command, FileCode2, GitBranch, Play, Plus, Save, Search, Settings2, Sparkles, X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
@@ -131,44 +132,27 @@ export default function CodeLabWorkspaceRuntimeV2() {
   function addFile() {
     const path = newFileName.trim().replace(/^\/+/, "");
     if (!path) return;
-    if (!files.some((file) => file.path === path)) {
-      setFiles((items) => [...items, { path, content: "", language: languageFor(path), dirty: true }]);
-    }
-    setActive(path);
-    setNewFileName("");
-    setNewFileOpen(false);
+    if (!files.some((file) => file.path === path)) setFiles((items) => [...items, { path, content: "", language: languageFor(path), dirty: true }]);
+    setActive(path); setNewFileName(""); setNewFileOpen(false);
   }
 
   async function run() {
     if (!current || current.language !== "javascript") {
-      setPanel("terminal");
-      setOutput([`${current?.language ?? "This"} runtime is not connected to the browser executor yet. Comp Lab will not pretend it is.`]);
-      return;
+      setPanel("terminal"); setOutput([`${current?.language ?? "This"} runtime is not connected to the browser executor yet. Comp Lab will not pretend it is.`]); return;
     }
-    setRunning(true);
-    setPanel("terminal");
-    setOutput([]);
-    setDiagnostics([]);
+    setRunning(true); setPanel("terminal"); setOutput([]); setDiagnostics([]);
     try {
       const result = await executeCode({ id: crypto.randomUUID(), language: "javascript", code: current.content, files: files.map(({ path, content }) => ({ path, content })), entryFile: current.path, timeoutMs: 5000 });
       const found = result.events.flatMap((event) => event.type === "diagnostic" ? [event.diagnostic] : []);
       const captured = result.events.flatMap((event) => event.type === "stdout" ? [event.text] : event.type === "stderr" ? [event.text] : event.type === "error" ? [event.message] : []);
-      setDiagnostics(found);
-      setOutput(captured.length ? captured : [result.exitCode === 0 ? `Process exited successfully in ${result.durationMs}ms.` : "Process failed."]);
-      if (found.length) setPanel("problems");
-    } catch (error) {
-      setOutput([error instanceof Error ? error.message : String(error)]);
-    } finally {
-      setRunning(false);
-    }
+      setDiagnostics(found); setOutput(captured.length ? captured : [result.exitCode === 0 ? `Process exited successfully in ${result.durationMs}ms.` : "Process failed."]); if (found.length) setPanel("problems");
+    } catch (error) { setOutput([error instanceof Error ? error.message : String(error)]); } finally { setRunning(false); }
   }
 
   function checkWork() {
     if (!objective) return;
     const results = evaluateObjectiveEvidence(buildObjectiveEvidenceChecks(objective), files.map(({ path, content }) => ({ path, content })));
-    setEvidence(results);
-    setPanel("tests");
-    setOutput([`${results.filter((item) => item.status === "passed").length}/${results.length} evidence checks passed.`, "These are deterministic learning checks, not official examination marks."]);
+    setEvidence(results); setPanel("tests"); setOutput([`${results.filter((item) => item.status === "passed").length}/${results.length} evidence checks passed.`, "These are deterministic learning checks, not official examination marks."]);
   }
 
   useEffect(() => {
@@ -176,8 +160,7 @@ export default function CodeLabWorkspaceRuntimeV2() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen(true); }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); persist(); }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", handler); return () => window.removeEventListener("keydown", handler);
   });
 
   return (
@@ -210,8 +193,4 @@ export default function CodeLabWorkspaceRuntimeV2() {
       {paletteOpen && <div className="fixed inset-0 z-50 bg-black/60 p-4" onMouseDown={() => setPaletteOpen(false)}><div className="mx-auto mt-24 w-full max-w-lg rounded-xl border border-white/10 bg-[#101621] shadow-2xl" onMouseDown={(event) => event.stopPropagation()}><input ref={paletteInput} autoFocus placeholder="Command palette" className="w-full border-b border-white/10 bg-transparent px-4 py-3 text-sm outline-none"/><button type="button" onClick={() => { run(); setPaletteOpen(false); }} className="w-full px-4 py-3 text-left text-xs text-slate-300 hover:bg-white/5">Run current file</button><button type="button" onClick={() => { persist(); setPaletteOpen(false); }} className="w-full px-4 py-3 text-left text-xs text-slate-300 hover:bg-white/5">Save workspace</button></div></div>}
     </div>
   );
-}
-
-function createBrowserClient(url: string, key: string) {
-  return require("@supabase/ssr").createBrowserClient(url, key) as ReturnType<typeof import("@supabase/ssr").createBrowserClient>;
 }
