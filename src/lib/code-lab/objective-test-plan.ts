@@ -2,7 +2,7 @@ import type { SourceEvidenceCheck } from "./source-checks";
 
 type ObjectiveLike = {
   id: string;
-  objective_key: string;
+  objective_key?: string;
   title: string;
   description?: string | null;
   topic?: string | null;
@@ -53,14 +53,11 @@ export function buildObjectiveTestPlan(objective: ObjectiveLike): ObjectiveSourc
   if (/database|sql|query|table|relational/.test(text)) {
     add("database", "Database operation", "(?:\\b(?:SELECT|INSERT\\s+INTO|UPDATE|DELETE\\s+FROM|CREATE\\s+TABLE|ALTER\\s+TABLE)\\b)", "Include a database operation or structure relevant to the objective.");
   }
-
   if (/debug|error handling|exception|try\/catch|validation/.test(text)) {
     add("error-handling", "Error handling", "(?:\\btry\\s*(?:\\{|:)|\\bcatch\\s*(?:\\([^)]*\\))?\\s*\\{|\\bexcept\\s*[^:]*:|\\bthrow\\s+|\\bthrows\\s+)", "Include explicit error handling or validation where appropriate.");
   }
-
   if (!tests.length) {
     add("non-empty", "Learner evidence", "\\S", "Add source code that demonstrates the selected objective.");
   }
-
   return tests;
 }
