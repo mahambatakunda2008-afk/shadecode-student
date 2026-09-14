@@ -21,4 +21,10 @@ export const COMP_LAB_ENVIRONMENTS: CompLabEnvironment[] = [
 { id: "access-database", label: "Microsoft Access", projectType: "database", languages: ["sql"], description: "Access database workflow reserved for a real Office-capable environment.", status: "artifact", curriculumTags: ["database", "microsoft", "access"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".accdb"] },
 { id: "excel-workbook", label: "Excel Workbook", projectType: "spreadsheet", languages: ["json"], description: "Spreadsheet artifact workflow for formulas, tables and data analysis.", status: "artifact", curriculumTags: ["spreadsheets", "data", "microsoft"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".xlsx", ".xlsm"] },
 ];
+
+export function getCompLabEnvironment(id: string) { return COMP_LAB_ENVIRONMENTS.find((environment) => environment.id === id); }
+export function findCompLabEnvironmentForPath(path: string) {
+  const lower = path.toLowerCase();
+  return COMP_LAB_ENVIRONMENTS.find((environment) => environment.fileExtensions?.some((extension) => lower.endsWith(extension.toLowerCase())));
+}
 export function isExecutableCompLabLanguage(language: CompLabLanguage) { return ["javascript", "typescript", "python", "sql", "pseudocode"].includes(language); }
