@@ -1,5 +1,5 @@
 import type { RuntimeDiagnostic } from "./runtime/types";
-import { buildProjectGraph, type ProjectGraphLanguage, type ProjectGraphNode } from "./project-graph";
+import { buildProjectGraph, type ProjectGraphLanguage } from "./project-graph";
 
 type DiagnosticFile = { path: string; content: string };
 
@@ -7,10 +7,12 @@ function diagnostic(message: string, file?: string): RuntimeDiagnostic {
   return {
     message,
     severity: "error",
+    source: "language",
     ...(file ? { file } : {}),
   };
 }
 
+/** Convert lightweight project-graph health findings into editor diagnostics. */
 export function buildProjectDiagnostics(
   files: DiagnosticFile[],
   language: ProjectGraphLanguage = "javascript",
@@ -18,8 +20,8 @@ export function buildProjectDiagnostics(
   const graph = buildProjectGraph(files, language);
   const diagnostics: RuntimeDiagnostic[] = [];
 
-  for (const node of graph.nodes as ProjectGraphNode[]) {
-    for (const dependency of node.unresolvedDependencies) {
+  for (const node of graph.nodes) {
+    for (const dependency of node.unresolvedImports) {
       diagnostics.push(
         diagnostic(`Cannot resolve relative import '${dependency}'.`, node.path),
       );
