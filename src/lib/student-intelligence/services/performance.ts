@@ -126,9 +126,63 @@ export class PerformanceService {
     try {
       const supabase = createClient();
 
-      // TODO: Implement quiz results tracking
-      // For now, return empty array
-      return [];
+      // Quiz completions are recorded as canonical learning events (see
+      // src/app/api/intelligence/events/route.ts, which persists via the
+      // insert_canonical_cortex_event RPC) rather than a dedicated quiz
+      // table -- that's the real, durable write path the live quiz page
+      // (src/app/(app)/learn/[lessonId]/quiz/page.tsx) already uses via
+      // buildQuizCompletionEvidence + emitLearningEvent. This was
+      // previously an unconditional `return []` with a "TODO: Implement
+      // quiz results tracking" comment, written before that event
+      // pipeline existed -- the write side got built, but nothing was
+      // ever updated to read from it, so the dashboard showed zero
+      // quiz activity regardless of real usage.
+      const { data: events, error } = await supabase
+        .from("cortex_events")
+        .select("id, data, created_at")
+        .eq("user_id", userId)
+        .eq("type", "quiz_completed")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (error) throw error;
+      if (!events || events.length === 0) return [];
+
+      const lessonIds = [...new Set(
+        events
+          .map((row) => (row.data as { entityId?: unknown })?.entityId)
+          .filter((id): id is string => typeof id === "string" && id.length > 0)
+      )];
+
+      const subjectByLesson = new Map<string, string>();
+      if (lessonIds.length > 0) {
+        const { data: lessons } = await supabase.from("learn_lessons").select("id, subject").in("id", lessonIds);
+        for (const lesson of lessons ?? []) {
+          if (typeof lesson.id === "string" && typeof lesson.subject === "string") subjectByLesson.set(lesson.id, lesson.subject);
+        }
+      }
+
+      return events.map((row) => {
+        const event = row.data as {
+          eventId?: unknown; entityId?: unknown; attemptId?: unknown; occurredAt?: unknown;
+          metadata?: { percentage?: unknown; questionCount?: unknown; correctCount?: unknown };
+        } | null;
+        const lessonId = typeof event?.entityId === "string" ? event.entityId : "";
+        const metadata = event?.metadata ?? {};
+        const questionCount = Number(metadata.questionCount) || 0;
+        const correctCount = Number(metadata.correctCount) || 0;
+        const percentage = Number(metadata.percentage) || (questionCount > 0 ? Math.round((correctCount / questionCount) * 100) : 0);
+
+        return {
+          quizId: typeof event?.attemptId === "string" ? event.attemptId : (typeof event?.eventId === "string" ? event.eventId : row.id),
+          lessonId,
+          subject: subjectByLesson.get(lessonId) ?? "General",
+          score: correctCount,
+          totalQuestions: questionCount,
+          percentage,
+          date: typeof event?.occurredAt === "string" ? event.occurredAt : row.created_at,
+        };
+      });
     } catch (error) {
       console.error("[PerformanceService] Error getting quiz performance:", error);
       return [];
