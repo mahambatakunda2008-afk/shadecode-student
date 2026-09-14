@@ -24,7 +24,7 @@ const clean = (line: string) => line.replace(/\/\/.*$/, "").replace(/\{\*.*?\*\}
 const upper = (line: string) => clean(line).toUpperCase();
 const isBlockOnly = (line: string) => /^(BEGIN|END|THEN|ELSE|ENDIF|END\s+IF|ENDWHILE|END\s+WHILE|ENDFOR|END\s+FOR|UNTIL\b|ENDCASE|END\s+CASE|ENDPROCEDURE|END\s+PROCEDURE)$/i.test(line);
 const clone = (value: Value): Value => Array.isArray(value) ? [...value] : value;
-const display = (value: Value) => Array.isArray(value) ? `[${value.map(display).join(", ")}]` : String(value);
+const display = (value: Value): string => Array.isArray(value) ? `[${value.map(display).join(", ")}]` : String(value);
 
 function valueOf(raw: string, state: ExecState): Value {
   const text = raw.trim();
