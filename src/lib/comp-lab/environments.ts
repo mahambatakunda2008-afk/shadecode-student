@@ -1,43 +1,24 @@
 export type CompLabProjectType = "console" | "web" | "windows-forms" | "desktop" | "database" | "spreadsheet" | "mobile" | "systems";
-export type CompLabLanguage =
-  | "javascript" | "typescript" | "python" | "csharp" | "vbnet" | "java" | "c" | "cpp" | "kotlin" | "php" | "rust" | "go"
-  | "html" | "css" | "sql" | "json" | "markdown" | "xml" | "pseudocode";
+export type CompLabLanguage = "javascript" | "typescript" | "python" | "csharp" | "vbnet" | "java" | "c" | "cpp" | "kotlin" | "php" | "rust" | "go" | "html" | "css" | "sql" | "json" | "markdown" | "xml" | "pseudocode";
 export type CompLabCapabilityStatus = "browser" | "planned" | "external-runtime" | "artifact";
 export type CompLabCurriculumContext = "school" | "secondary" | "sixth-form" | "university" | "polytechnic" | "professional";
-
 const ALL_CONTEXTS: CompLabCurriculumContext[] = ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"];
-
-export type CompLabEnvironment = {
-  id: string;
-  label: string;
-  projectType: CompLabProjectType;
-  languages: CompLabLanguage[];
-  description: string;
-  status: CompLabCapabilityStatus;
-  curriculumTags: string[];
-  curriculumContexts: CompLabCurriculumContext[];
-  fileExtensions?: string[];
-};
-
+export type CompLabEnvironment = { id: string; label: string; projectType: CompLabProjectType; languages: CompLabLanguage[]; description: string; status: CompLabCapabilityStatus; curriculumTags: string[]; curriculumContexts: CompLabCurriculumContext[]; fileExtensions?: string[] };
 export const COMP_LAB_ENVIRONMENTS: CompLabEnvironment[] = [
-  { id: "javascript-console", label: "JavaScript Console", projectType: "console", languages: ["javascript"], description: "Run JavaScript with real browser execution, multi-file modules and diagnostics.", status: "browser", curriculumTags: ["programming", "debugging", "web"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".js", ".mjs"] },
-  { id: "python-console", label: "Python", projectType: "console", languages: ["python"], description: "Run Python through a browser Python runtime with stdout, errors and execution timing.", status: "browser", curriculumTags: ["programming", "data", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".py"] },
-  { id: "pseudocode", label: "Pseudocode & Algorithms", projectType: "console", languages: ["pseudocode"], description: "Board-neutral algorithm design with executable pseudocode, trace tables, test inputs, flowcharts and complexity guidance.", status: "browser", curriculumTags: ["algorithms", "pseudocode", "trace-tables", "flowcharts", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".pseudo", ".pseudocode", ".txt"] },
-  { id: "typescript-console", label: "TypeScript", projectType: "console", languages: ["typescript"], description: "Type-check and transpile TypeScript before executing it as JavaScript.", status: "browser", curriculumTags: ["programming", "web", "types"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".ts"] },
-  { id: "java-console", label: "Java", projectType: "console", languages: ["java"], description: "Java project surface reserved for a real JVM runtime.", status: "external-runtime", curriculumTags: ["programming", "oop"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".java"] },
-  { id: "c-console", label: "C", projectType: "console", languages: ["c"], description: "C project surface reserved for a real native compiler/runtime.", status: "external-runtime", curriculumTags: ["programming", "systems", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".c", ".h"] },
-  { id: "cpp-console", label: "C++", projectType: "console", languages: ["cpp"], description: "C++ project surface reserved for a real native compiler/runtime.", status: "external-runtime", curriculumTags: ["programming", "oop", "systems"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cpp", ".cc", ".cxx", ".hpp"] },
-  { id: "csharp-console", label: "C#", projectType: "console", languages: ["csharp"], description: "C# project surface reserved for a real .NET runtime.", status: "external-runtime", curriculumTags: ["programming", "oop", "dotnet"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cs"] },
-  { id: "vbnet-console", label: "VB.NET", projectType: "console", languages: ["vbnet"], description: "VB.NET project surface reserved for a real .NET runtime.", status: "external-runtime", curriculumTags: ["programming", "dotnet", "microsoft"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".vb"] },
-  { id: "csharp-windows-forms", label: "C# Windows Forms", projectType: "windows-forms", languages: ["csharp"], description: "Windows desktop UI workflow for a connected Windows/.NET runtime.", status: "external-runtime", curriculumTags: ["gui", "dotnet", "desktop"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cs"] },
-  { id: "vbnet-windows-forms", label: "VB.NET Windows Forms", projectType: "windows-forms", languages: ["vbnet"], description: "Windows desktop UI workflow for a connected Windows/.NET runtime.", status: "external-runtime", curriculumTags: ["gui", "dotnet", "desktop"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".vb"] },
-  { id: "web", label: "Web", projectType: "web", languages: ["html", "css", "javascript", "typescript"], description: "Build browser websites with HTML, CSS and JavaScript/TypeScript.", status: "browser", curriculumTags: ["web", "frontend", "html", "css"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".html", ".css", ".js", ".ts"] },
-  { id: "sql-database", label: "SQL Database", projectType: "database", languages: ["sql"], description: "Query an in-memory SQL database for learning and deterministic experiments.", status: "browser", curriculumTags: ["database", "sql", "data"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".sql"] },
-  { id: "access-database", label: "Microsoft Access", projectType: "database", languages: ["sql"], description: "Access database workflow reserved for a real Office-capable environment.", status: "artifact", curriculumTags: ["database", "microsoft", "access"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".accdb"] },
-  { id: "excel-workbook", label: "Excel Workbook", projectType: "spreadsheet", languages: ["json"], description: "Spreadsheet artifact workflow for formulas, tables and data analysis.", status: "artifact", curriculumTags: ["spreadsheets", "data", "microsoft"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".xlsx", ".xlsm"] },
-  { id: "pseudocode", label: "Pseudocode & Algorithms", projectType: "console", languages: ["pseudocode"], description: "Board-neutral algorithm design, trace tables and structured pseudocode.", status: "browser", curriculumTags: ["algorithms", "pseudocode", "trace-tables", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".pseudo", ".pseudocode", ".txt"] },
+{ id: "javascript-console", label: "JavaScript Console", projectType: "console", languages: ["javascript"], description: "Run JavaScript with real browser execution, multi-file modules and diagnostics.", status: "browser", curriculumTags: ["programming", "debugging", "web"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".js", ".mjs"] },
+{ id: "python-console", label: "Python", projectType: "console", languages: ["python"], description: "Run Python through a browser Python runtime with stdout, errors and execution timing.", status: "browser", curriculumTags: ["programming", "data", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".py"] },
+{ id: "pseudocode", label: "Pseudocode & Algorithms", projectType: "console", languages: ["pseudocode"], description: "Board-neutral algorithm design with executable pseudocode, trace tables, test inputs, flowcharts and complexity guidance.", status: "browser", curriculumTags: ["algorithms", "pseudocode", "trace-tables", "flowcharts", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".pseudo", ".pseudocode", ".txt"] },
+{ id: "typescript-console", label: "TypeScript", projectType: "console", languages: ["typescript"], description: "Type-check and transpile TypeScript before executing it as JavaScript.", status: "browser", curriculumTags: ["programming", "web", "types"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".ts"] },
+{ id: "java-console", label: "Java", projectType: "console", languages: ["java"], description: "Java project surface reserved for a real JVM runtime.", status: "external-runtime", curriculumTags: ["programming", "oop"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".java"] },
+{ id: "c-console", label: "C", projectType: "console", languages: ["c"], description: "C project surface reserved for a real native compiler/runtime.", status: "external-runtime", curriculumTags: ["programming", "systems", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".c", ".h"] },
+{ id: "cpp-console", label: "C++", projectType: "console", languages: ["cpp"], description: "C++ project surface reserved for a real native compiler/runtime.", status: "external-runtime", curriculumTags: ["programming", "oop", "systems"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cpp", ".cc", ".cxx", ".hpp"] },
+{ id: "csharp-console", label: "C#", projectType: "console", languages: ["csharp"], description: "C# project surface reserved for a real .NET runtime.", status: "external-runtime", curriculumTags: ["programming", "oop", "dotnet"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cs"] },
+{ id: "vbnet-console", label: "VB.NET", projectType: "console", languages: ["vbnet"], description: "VB.NET project surface reserved for a real .NET runtime.", status: "external-runtime", curriculumTags: ["programming", "dotnet", "microsoft"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".vb"] },
+{ id: "csharp-windows-forms", label: "C# Windows Forms", projectType: "windows-forms", languages: ["csharp"], description: "Windows desktop UI workflow for a connected Windows/.NET runtime.", status: "external-runtime", curriculumTags: ["gui", "dotnet", "desktop"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".cs"] },
+{ id: "vbnet-windows-forms", label: "VB.NET Windows Forms", projectType: "windows-forms", languages: ["vbnet"], description: "Windows desktop UI workflow for a connected Windows/.NET runtime.", status: "external-runtime", curriculumTags: ["gui", "dotnet", "desktop"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".vb"] },
+{ id: "web", label: "Web", projectType: "web", languages: ["html", "css", "javascript", "typescript"], description: "Build browser websites with HTML, CSS and JavaScript/TypeScript.", status: "browser", curriculumTags: ["web", "frontend", "html", "css"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".html", ".css", ".js", ".ts"] },
+{ id: "sql-database", label: "SQL Database", projectType: "database", languages: ["sql"], description: "Query an in-memory SQL database for learning and deterministic experiments.", status: "browser", curriculumTags: ["database", "sql", "data"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".sql"] },
+{ id: "access-database", label: "Microsoft Access", projectType: "database", languages: ["sql"], description: "Access database workflow reserved for a real Office-capable environment.", status: "artifact", curriculumTags: ["database", "microsoft", "access"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".accdb"] },
+{ id: "excel-workbook", label: "Excel Workbook", projectType: "spreadsheet", languages: ["json"], description: "Spreadsheet artifact workflow for formulas, tables and data analysis.", status: "artifact", curriculumTags: ["spreadsheets", "data", "microsoft"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".xlsx", ".xlsm"] },
 ];
-
-export function isExecutableCompLabLanguage(language: CompLabLanguage) {
-  return ["javascript", "typescript", "python", "sql", "pseudocode"].includes(language);
-}
+export function isExecutableCompLabLanguage(language: CompLabLanguage) { return ["javascript", "typescript", "python", "sql", "pseudocode"].includes(language); }
