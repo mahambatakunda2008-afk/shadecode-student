@@ -1,11 +1,12 @@
 "use client";
 
 import { AlertTriangle, ArrowDownLeft, Boxes, CircleDot, GitBranch, Network, Unlink2 } from "lucide-react";
-import { buildProjectGraph, type ProjectGraph } from "@/lib/code-lab/project-graph";
+import { buildProjectGraph, type ProjectGraph, type ProjectGraphLanguage } from "@/lib/code-lab/project-graph";
 
 export type ProjectGraphPanelProps = {
   files: Array<{ path: string; content: string }>;
   activePath?: string;
+  language?: ProjectGraphLanguage;
   onOpenFile?: (path: string) => void;
 };
 
@@ -15,8 +16,8 @@ function label(graph: ProjectGraph) {
   return `${fileCount} ${fileCount === 1 ? "file" : "files"} · ${edgeCount} ${edgeCount === 1 ? "dependency" : "dependencies"}`;
 }
 
-export function ProjectGraphPanel({ files, activePath, onOpenFile }: ProjectGraphPanelProps) {
-  const graph = buildProjectGraph(files);
+export function ProjectGraphPanel({ files, activePath, language, onOpenFile }: ProjectGraphPanelProps) {
+  const graph = buildProjectGraph(files, language ?? "unknown");
   const active = graph.nodes.find((node) => node.path === activePath);
 
   return (
