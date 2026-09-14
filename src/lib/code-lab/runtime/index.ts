@@ -1,6 +1,7 @@
 import type { RuntimeDiagnostic, RuntimeRequest, RuntimeResult } from "./types";
 import { runBrowserJavaScript } from "./browser-runtime";
 import { runBrowserPython, runBrowserSql, runBrowserTypeScript } from "./browser-polyglot";
+import { runPseudocode } from "./pseudocode";
 import { unavailableRuntimeResult } from "./providers";
 import { buildProjectDiagnostics } from "../project-diagnostics";
 
@@ -23,6 +24,7 @@ function publishDiagnostics(request: RuntimeRequest, result: RuntimeResult) {
 function providerFor(language: RuntimeRequest["language"]) {
   if (language === "javascript") return "browser-javascript" as const;
   if (language === "typescript") return "typescript-transpiler" as const;
+  if (language === "pseudocode") return "pseudocode-interpreter" as const;
   if (language === "csharp" || language === "vbnet") return "dotnet" as const;
   if (language === "python") return "python" as const;
   if (language === "java" || language === "kotlin") return "jvm" as const;
@@ -46,6 +48,7 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
   else if (request.language === "typescript") base = await runBrowserTypeScript(request);
   else if (request.language === "python") base = await runBrowserPython(request);
   else if (request.language === "sql") base = await runBrowserSql(request);
+  else if (request.language === "pseudocode") base = await runPseudocode(request);
   else base = unavailableRuntimeResult(request, providerFor(request.language));
   const result = withDiagnosticEvents(addProjectDiagnostics(request, base));
   publishDiagnostics(request, result);
