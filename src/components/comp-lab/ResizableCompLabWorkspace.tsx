@@ -71,24 +71,36 @@ export default function ResizableCompLabWorkspace() {
     <div data-comp-lab-resizable className={`relative min-w-0 ${dragging ? "select-none" : ""}`} style={{ "--comp-left": `${left}px`, "--comp-right": `${right}px`, "--comp-bottom": `${bottom}px` } as CSSProperties}>
       <CodeLabWorkspace />
       <style jsx global>{`
-        [data-comp-lab-resizable] > main > div[class*="lg:grid-cols-"] { grid-template-columns: var(--comp-left) minmax(0, 1fr) var(--comp-right) !important; }
-        [data-comp-lab-resizable] > main > div[class*="lg:grid-cols-"] > section { grid-template-rows: 42px minmax(0, 1fr) var(--comp-bottom) !important; }
+        /* CodeLabWorkspace owns the actual three-column shell. Keep the resizer attached to that live grid. */
+        [data-comp-lab-resizable] > div > div[class*="lg:grid-cols-"] {
+          grid-template-columns: var(--comp-left) minmax(0, 1fr) var(--comp-right) !important;
+        }
+        [data-comp-lab-resizable] > div > div[class*="lg:grid-cols-"] > main {
+          display: grid !important;
+          grid-template-rows: 40px minmax(0, 1fr) var(--comp-bottom) !important;
+          min-height: 0 !important;
+        }
+        [data-comp-lab-resizable] > div > div[class*="lg:grid-cols-"] > main > div:nth-child(2) {
+          height: auto !important;
+          min-height: 0 !important;
+        }
+        [data-comp-lab-resizable] > div > div[class*="lg:grid-cols-"] > main > div:nth-child(3) {
+          min-height: 0 !important;
+          max-height: none !important;
+          overflow: hidden !important;
+        }
         [data-comp-lab-resizable] .comp-lab-resize-handle { touch-action: none; user-select: none; }
         @media (max-width: 1023px) {
-          [data-comp-lab-resizable] > main > div[class*="lg:grid-cols-"] { grid-template-columns: minmax(0, 1fr) !important; }
+          [data-comp-lab-resizable] > div > div[class*="lg:grid-cols-"] { grid-template-columns: minmax(0, 1fr) !important; }
+          [data-comp-lab-resizable] > div > div[class*="lg:grid-cols-"] > main { grid-template-rows: 40px minmax(0, 1fr) 190px !important; }
           [data-comp-lab-resizable] .comp-lab-resize-handle { display: none; }
         }
       `}</style>
-
-      <div role="separator" tabIndex={0} aria-label="Resize explorer panel" aria-orientation="vertical" aria-valuenow={sizes.left} aria-valuemin={LIMITS.left[0]} aria-valuemax={LIMITS.left[1]} className="comp-lab-resize-handle absolute bottom-0 left-[var(--comp-left)] top-14 z-30 w-3 -translate-x-1/2 cursor-col-resize rounded-full focus:outline-none" onPointerDown={(event) => begin("left", event)} onDoubleClick={() => toggle("left")} onKeyDown={(event) => { if (event.key === "ArrowLeft") adjust("left", -20); if (event.key === "ArrowRight") adjust("left", 20); if (event.key === "Enter" || event.key === " ") toggle("left"); if (event.key === "Home") setSizes((current) => ({ ...current, left: LIMITS.left[0] })); if (event.key === "End") setSizes((current) => ({ ...current, left: LIMITS.left[1] })); }} />
-      <div role="separator" tabIndex={0} aria-label="Resize utility panel" aria-orientation="vertical" aria-valuenow={sizes.right} aria-valuemin={LIMITS.right[0]} aria-valuemax={LIMITS.right[1]} className="comp-lab-resize-handle absolute bottom-0 right-[var(--comp-right)] top-14 z-30 w-3 translate-x-1/2 cursor-col-resize rounded-full focus:outline-none" onPointerDown={(event) => begin("right", event)} onDoubleClick={() => toggle("right")} onKeyDown={(event) => { if (event.key === "ArrowLeft") adjust("right", 20); if (event.key === "ArrowRight") adjust("right", -20); if (event.key === "Enter" || event.key === " ") toggle("right"); if (event.key === "Home") setSizes((current) => ({ ...current, right: LIMITS.right[0] })); if (event.key === "End") setSizes((current) => ({ ...current, right: LIMITS.right[1] })); }} />
-      <div role="separator" tabIndex={0} aria-label="Resize bottom panel" aria-orientation="horizontal" aria-valuenow={sizes.bottom} aria-valuemin={LIMITS.bottom[0]} aria-valuemax={LIMITS.bottom[1]} className="comp-lab-resize-handle absolute bottom-[var(--comp-bottom)] left-[var(--comp-left)] right-[var(--comp-right)] z-30 h-3 translate-y-1/2 cursor-row-resize rounded-full focus:outline-none" onPointerDown={(event) => begin("bottom", event)} onDoubleClick={() => toggle("bottom")} onKeyDown={(event) => { if (event.key === "ArrowUp") adjust("bottom", 20); if (event.key === "ArrowDown") adjust("bottom", -20); if (event.key === "Enter" || event.key === " ") toggle("bottom"); if (event.key === "Home") setSizes((current) => ({ ...current, bottom: LIMITS.bottom[0] })); if (event.key === "End") setSizes((current) => ({ ...current, bottom: LIMITS.bottom[1] })); }} />
-
-      <div className="absolute right-2 top-16 z-40 flex items-center gap-1 rounded-lg border border-white/10 bg-[#0d121b]/95 p-1 shadow-xl opacity-0 transition hover:opacity-100 focus-within:opacity-100">
-        <button type="button" onClick={() => toggle("left")} className="rounded px-2 py-1 text-[10px] text-slate-400 hover:bg-white/5 hover:text-slate-200">Explorer</button>
-        <button type="button" onClick={() => toggle("right")} className="rounded px-2 py-1 text-[10px] text-slate-400 hover:bg-white/5 hover:text-slate-200">Assistant</button>
-        <button type="button" onClick={() => toggle("bottom")} className="rounded px-2 py-1 text-[10px] text-slate-400 hover:bg-white/5 hover:text-slate-200">Panel</button>
-        <button type="button" onClick={resetSizes} className="rounded px-2 py-1 text-[10px] text-slate-500 hover:bg-white/5 hover:text-slate-200">Reset</button>
+      <div className="pointer-events-none absolute inset-0 z-30 hidden lg:block">
+        <div className="pointer-events-auto absolute bottom-0 left-[var(--comp-left)] top-0 w-2 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-[var(--primary)]/20" onPointerDown={(event) => begin("left", event)} onDoubleClick={() => toggle("left")} role="separator" aria-orientation="vertical" aria-label="Resize explorer" tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowLeft") adjust("left", -16); if (event.key === "ArrowRight") adjust("left", 16); if (event.key === "Home") setSizes((s) => ({ ...s, left: LIMITS.left[0] })); if (event.key === "End") setSizes((s) => ({ ...s, left: LIMITS.left[1] })); if (event.key === "Enter" || event.key === " ") toggle("left"); }} />
+        <div className="pointer-events-auto absolute bottom-0 right-[var(--comp-right)] top-0 w-2 translate-x-1/2 cursor-col-resize bg-transparent hover:bg-[var(--primary)]/20" onPointerDown={(event) => begin("right", event)} onDoubleClick={() => toggle("right")} role="separator" aria-orientation="vertical" aria-label="Resize learning companion" tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowLeft") adjust("right", 16); if (event.key === "ArrowRight") adjust("right", -16); if (event.key === "Home") setSizes((s) => ({ ...s, right: LIMITS.right[0] })); if (event.key === "End") setSizes((s) => ({ ...s, right: LIMITS.right[1] })); if (event.key === "Enter" || event.key === " ") toggle("right"); }} />
+        <div className="pointer-events-auto absolute bottom-[var(--comp-bottom)] left-[var(--comp-left)] right-[var(--comp-right)] h-2 translate-y-1/2 cursor-row-resize bg-transparent hover:bg-[var(--primary)]/20" onPointerDown={(event) => begin("bottom", event)} onDoubleClick={() => toggle("bottom")} role="separator" aria-orientation="horizontal" aria-label="Resize bottom panel" tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowUp") adjust("bottom", 16); if (event.key === "ArrowDown") adjust("bottom", -16); if (event.key === "Home") setSizes((s) => ({ ...s, bottom: LIMITS.bottom[0] })); if (event.key === "End") setSizes((s) => ({ ...s, bottom: LIMITS.bottom[1] })); if (event.key === "Enter" || event.key === " ") toggle("bottom"); }} />
+        <button type="button" onClick={resetSizes} className="pointer-events-auto absolute right-3 top-3 rounded-md border border-white/10 bg-[#0d121b]/90 px-2 py-1 text-[9px] text-slate-500 shadow-lg hover:text-slate-200" title="Reset panel sizes">Reset layout</button>
       </div>
     </div>
   );
