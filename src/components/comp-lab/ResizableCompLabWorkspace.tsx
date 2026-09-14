@@ -75,6 +75,7 @@ export default function ResizableCompLabWorkspace() {
 
   function begin(key: SizeKey, event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     dragRef.current = { key, startX: event.clientX, startY: event.clientY, start: sizes[key] };
     setDragging(key);
   }
@@ -100,7 +101,7 @@ export default function ResizableCompLabWorkspace() {
   return (
     <div
       data-comp-lab-resizable
-      className={`relative ${dragging ? "select-none" : ""}`}
+      className={`relative min-w-0 ${dragging ? "select-none" : ""}`}
       style={{
         "--comp-left": `${left}px`,
         "--comp-right": `${right}px`,
@@ -110,14 +111,18 @@ export default function ResizableCompLabWorkspace() {
       <CodeLabWorkspace />
 
       <style jsx global>{`
-        [data-comp-lab-resizable] > div > div.grid {
+        [data-comp-lab-resizable] > main > div[data-comp-lab-grid] {
           grid-template-columns: var(--comp-left) minmax(0, 1fr) var(--comp-right) !important;
         }
-        [data-comp-lab-resizable] > div > div.grid > section {
-          grid-template-rows: 40px minmax(0, 1fr) var(--comp-bottom) !important;
+        [data-comp-lab-resizable] > main > div[data-comp-lab-grid] > section[data-comp-lab-main] {
+          grid-template-rows: 42px minmax(0, 1fr) var(--comp-bottom) !important;
+        }
+        [data-comp-lab-resizable] .comp-lab-resize-handle {
+          touch-action: none;
+          user-select: none;
         }
         @media (max-width: 1023px) {
-          [data-comp-lab-resizable] > div > div.grid {
+          [data-comp-lab-resizable] > main > div[data-comp-lab-grid] {
             grid-template-columns: minmax(0, 1fr) !important;
           }
           [data-comp-lab-resizable] .comp-lab-resize-handle {
@@ -134,7 +139,7 @@ export default function ResizableCompLabWorkspace() {
         aria-valuenow={sizes.left}
         aria-valuemin={LIMITS.left[0]}
         aria-valuemax={LIMITS.left[1]}
-        className="comp-lab-resize-handle absolute bottom-0 left-[var(--comp-left)] top-14 z-30 w-2 -translate-x-1/2 cursor-col-resize rounded-full transition hover:bg-[var(--primary)]/30 focus:bg-[var(--primary)]/30 focus:outline-none"
+        className="comp-lab-resize-handle absolute bottom-0 left-[var(--comp-left)] top-14 z-30 w-3 -translate-x-1/2 cursor-col-resize rounded-full focus:outline-none"
         onPointerDown={(event) => begin("left", event)}
         onDoubleClick={() => toggle("left")}
         onKeyDown={(event) => {
@@ -153,7 +158,7 @@ export default function ResizableCompLabWorkspace() {
         aria-valuenow={sizes.right}
         aria-valuemin={LIMITS.right[0]}
         aria-valuemax={LIMITS.right[1]}
-        className="comp-lab-resize-handle absolute bottom-0 right-[var(--comp-right)] top-14 z-30 w-2 translate-x-1/2 cursor-col-resize rounded-full transition hover:bg-[var(--primary)]/30 focus:bg-[var(--primary)]/30 focus:outline-none"
+        className="comp-lab-resize-handle absolute bottom-0 right-[var(--comp-right)] top-14 z-30 w-3 translate-x-1/2 cursor-col-resize rounded-full focus:outline-none"
         onPointerDown={(event) => begin("right", event)}
         onDoubleClick={() => toggle("right")}
         onKeyDown={(event) => {
@@ -172,7 +177,7 @@ export default function ResizableCompLabWorkspace() {
         aria-valuenow={sizes.bottom}
         aria-valuemin={LIMITS.bottom[0]}
         aria-valuemax={LIMITS.bottom[1]}
-        className="comp-lab-resize-handle absolute bottom-[var(--comp-bottom)] left-[var(--comp-left)] right-[var(--comp-right)] z-30 h-2 translate-y-1/2 cursor-row-resize rounded-full transition hover:bg-[var(--primary)]/30 focus:bg-[var(--primary)]/30 focus:outline-none"
+        className="comp-lab-resize-handle absolute bottom-[var(--comp-bottom)] left-[var(--comp-left)] right-[var(--comp-right)] z-30 h-3 translate-y-1/2 cursor-row-resize rounded-full focus:outline-none"
         onPointerDown={(event) => begin("bottom", event)}
         onDoubleClick={() => toggle("bottom")}
         onKeyDown={(event) => {
