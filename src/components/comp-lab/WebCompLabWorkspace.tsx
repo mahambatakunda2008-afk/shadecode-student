@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bug, Eye, Maximize2, Monitor, Play, RotateCcw, Save, Smartphone, Tablet, Terminal } from "lucide-react";
+import { Bug, Eye, EyeOff, Maximize2, Monitor, Play, RotateCcw, Save, Smartphone, Tablet, Terminal, X } from "lucide-react";
 import { CodeLabEditor } from "@/components/code-lab/CodeLabEditor";
 
 type WebPath = "index.html" | "styles.css" | "script.js";
 type WebFile = { path: WebPath; content: string; language: string };
 type Viewport = "desktop" | "tablet" | "mobile";
-
 type PreviewMessage = { source?: string; type?: string; level?: string; message?: string };
 
 const START: WebFile[] = [
@@ -36,6 +35,7 @@ export default function WebCompLabWorkspace() {
   const [files, setFiles] = useState<WebFile[]>(START);
   const [active, setActive] = useState<WebPath>("index.html");
   const [preview, setPreview] = useState("");
+  const [previewVisible, setPreviewVisible] = useState(true);
   const [saved, setSaved] = useState(false);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [consoleOpen, setConsoleOpen] = useState(false);
@@ -49,11 +49,15 @@ export default function WebCompLabWorkspace() {
     try {
       const raw = localStorage.getItem(STORAGE);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { files?: WebFile[]; active?: WebPath; viewport?: Viewport; autoPreview?: boolean };
-      if (Array.isArray(parsed.files) && parsed.files.length) setFiles(parsed.files);
+      const parsed = JSON.parse(raw) as { files?: WebFile[]; active?: WebPath; viewport?: Viewport; autoPreview?: boolean; previewVisible?: boolean };
+      if (Array.isArray(parsed.files) && parsed.files.length) {
+        const valid = parsed.files.filter((file) => file && typeof file.path === "string" && typeof file.content === "string");
+        if (valid.length) setFiles(valid as WebFile[]);
+      }
       if (parsed.active) setActive(parsed.active);
       if (parsed.viewport && parsed.viewport in VIEWPORTS) setViewport(parsed.viewport);
       if (typeof parsed.autoPreview === "boolean") setAutoPreview(parsed.autoPreview);
+      if (typeof parsed.previewVisible === "boolean") setPreviewVisible(parsed.previewVisible);
     } catch { /* ignore corrupt local state */ }
   }, []);
 
@@ -61,18 +65,18 @@ export default function WebCompLabWorkspace() {
     const handler = (event: MessageEvent<PreviewMessage>) => {
       if (event.source !== iframeRef.current?.contentWindow || event.data?.source !== "shadecode-comp-lab-preview") return;
       if (event.data.type !== "console") return;
+      const message = (event.data.message ?? "").trim();
+      if (!message) return;
       const level = event.data.level ?? "log";
-      const message = event.data.message ?? "";
       setConsoleLines((lines) => [...lines.slice(-99), `[${level}] ${message}`]);
-      setConsoleOpen(true);
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
 
   useEffect(() => {
-    if (autoPreview) setPreview(buildDocument(files));
-  }, [autoPreview, files]);
+    if (autoPreview && previewVisible) setPreview(buildDocument(files));
+  }, [autoPreview, files, previewVisible]);
 
   function update(value: string) {
     setFiles((currentFiles) => currentFiles.map((file) => file.path === active ? { ...file, content: value } : file));
@@ -80,11 +84,16 @@ export default function WebCompLabWorkspace() {
 
   function runPreview() {
     setConsoleLines([]);
+    setPreviewVisible(true);
     setPreview(buildDocument(files));
   }
 
+  function togglePreview() {
+    setPreviewVisible((visible) => !visible);
+  }
+
   function save() {
-    localStorage.setItem(STORAGE, JSON.stringify({ files, active, viewport, autoPreview }));
+    localStorage.setItem(STORAGE, JSON.stringify({ files, active, viewport, autoPreview, previewVisible }));
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1200);
   }
@@ -93,8 +102,11 @@ export default function WebCompLabWorkspace() {
     setFiles(START);
     setActive("index.html");
     setPreview("");
+    setPreviewVisible(true);
     setConsoleLines([]);
+    setConsoleOpen(false);
     setViewport("desktop");
+    setAutoPreview(false);
   }
 
   const viewportWidth = VIEWPORTS[viewport].width;
@@ -107,8 +119,9 @@ export default function WebCompLabWorkspace() {
           {files.map((file) => <button key={file.path} type="button" onClick={() => setActive(file.path)} className={`rounded-lg px-3 py-2 text-xs ${active === file.path ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5"}`}>{file.path}</button>)}
         </div>
         <button type="button" onClick={runPreview} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-white"><Play className="h-3.5 w-3.5" />Preview</button>
+        <button type="button" onClick={togglePreview} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs ${previewVisible ? "text-slate-300 hover:bg-white/5" : "bg-white/10 text-white"}`} title={previewVisible ? "Hide preview" : "Show preview"}>{previewVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}{previewVisible ? "Hide" : "Show"}</button>
         <button type="button" onClick={() => setAutoPreview((value) => !value)} className={`rounded-lg px-2.5 py-2 text-[10px] ${autoPreview ? "bg-emerald-500/10 text-emerald-300" : "text-slate-400 hover:bg-white/5"}`}>{autoPreview ? "Auto" : "Manual"}</button>
-        <button type="button" onClick={() => setConsoleOpen((value) => !value)} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs ${consoleOpen ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5"}`}><Terminal className="h-3.5 w-3.5" />Console</button>
+        <button type="button" onClick={() => setConsoleOpen((value) => !value)} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs ${consoleOpen ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5"}`}><Terminal className="h-3.5 w-3.5" />Console{consoleLines.length ? ` (${consoleLines.length})` : ""}</button>
         <button type="button" onClick={save} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-white/5"><Save className="h-3.5 w-3.5" />{saved ? "Saved" : "Save"}</button>
         <button type="button" onClick={reset} title="Reset project" className="rounded-lg p-2 text-slate-400 hover:bg-white/5"><RotateCcw className="h-3.5 w-3.5" /></button>
       </div>
@@ -119,17 +132,17 @@ export default function WebCompLabWorkspace() {
         <span className="ml-auto hidden items-center gap-1 text-[10px] text-slate-600 sm:flex"><ViewportIcon className="h-3 w-3" />Sandboxed preview</span>
       </div>
 
-      <div className="grid min-h-[620px] lg:grid-cols-2">
+      <div className={`grid min-h-[620px] ${previewVisible ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
         <div className="min-h-[430px] border-b border-white/10 lg:border-b-0 lg:border-r">
           <CodeLabEditor value={current.content} language={current.language} onChange={update} onRun={runPreview} onSave={save} />
         </div>
-        <div className="min-h-[320px] bg-slate-100">
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600"><Eye className="h-3.5 w-3.5" />Preview</div>
+        {previewVisible && <div className="min-h-[320px] bg-slate-100">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600"><span className="inline-flex items-center gap-2"><Eye className="h-3.5 w-3.5" />Preview</span><button type="button" onClick={togglePreview} className="rounded-md p-1 text-slate-500 hover:bg-slate-200" title="Hide preview"><X className="h-3.5 w-3.5" /></button></div>
           <div className="flex min-h-[520px] justify-center overflow-auto bg-slate-200/80 p-3 sm:p-5">
             {preview ? <div className="w-full transition-[width]" style={{ maxWidth: viewportWidth ? `${viewportWidth}px` : "100%" }}><iframe ref={iframeRef} title="Comp Lab web preview" sandbox="allow-scripts" srcDoc={preview} className="h-[480px] w-full border border-slate-300 bg-white shadow-sm" /></div> : <div className="m-auto max-w-sm p-8 text-center text-sm text-slate-500"><Maximize2 className="mx-auto mb-3 h-5 w-5" />Run Preview to render this project. The iframe is sandboxed and is not a production deployment.</div>}
           </div>
-          {consoleOpen && <div className="border-t border-slate-200 bg-[#080b11] text-slate-200"><div className="flex items-center justify-between border-b border-white/10 px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500"><span className="inline-flex items-center gap-1.5"><Bug className="h-3.5 w-3.5" />Preview console</span><button type="button" onClick={() => setConsoleLines([])} className="text-slate-500 hover:text-slate-300">Clear</button></div><div className="max-h-36 overflow-auto p-3 font-mono text-[11px]">{consoleLines.length ? consoleLines.map((line, index) => <div key={`${line}-${index}`} className="border-b border-white/5 py-1 last:border-0">{line}</div>) : <span className="text-slate-600">Console output will appear here when the preview logs or throws.</span>}</div></div>}
-        </div>
+          {consoleOpen && <div className="border-t border-slate-200 bg-[#080b11] text-slate-200"><div className="flex items-center justify-between border-b border-white/10 px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500"><span className="inline-flex items-center gap-1.5"><Bug className="h-3.5 w-3.5" />Preview console</span><button type="button" onClick={() => setConsoleLines([])} className="text-slate-500 hover:text-slate-300">Clear</button></div><div className="max-h-36 overflow-auto p-3 font-mono text-[11px]">{consoleLines.length ? consoleLines.map((line, index) => <div key={`${line}-${index}`} className="border-b border-white/5 py-1 last:border-0">{line}</div>) : <span className="text-slate-600">No console output yet.</span>}</div></div>}
+        </div>}
       </div>
     </div>
   );
