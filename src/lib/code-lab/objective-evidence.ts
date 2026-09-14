@@ -1,3 +1,5 @@
+import { sourceTextForChecks } from "./source-checks";
+
 export type ObjectiveEvidenceKind = "structure" | "runtime";
 
 export type ObjectiveEvidenceCheck = {
@@ -32,7 +34,7 @@ function structuralChecks(objective: ObjectiveLike): ObjectiveEvidenceCheck[] {
 
   if (/function|procedure|subroutine|method/.test(text)) add("function", "Reusable code", "(?:\\bfunction\\s+[A-Za-z_$][\\w$]*\\s*\\(|\\b(?:def|func)\\s+[A-Za-z_]\\w*\\s*\\(|\\b(?:public|private|protected|static|shared)?\\s*(?:[A-Za-z_][\\w<>\\[\\]]*\\s+)?[A-Za-z_]\\w*\\s*\\([^;{}]*\\)\\s*\\{|\\b(?:Sub|Function)\\s+[A-Za-z_]\\w*\\s*\\()", "Define a reusable function, procedure, method, or equivalent abstraction.");
   if (/selection|conditional|if statement|if\/else|decision/.test(text)) add("selection", "Selection", "(?:\\bif\\s*\\([^)]*\\)|\\bif\\s+[^\\n]+\\s+then\\b|\\bif\\s+[^:]+:)", "Use a conditional selection structure appropriate to the language.");
-  if (/loop|iteration|repetition|for loop|while loop/.test(text)) add("iteration", "Iteration", "(?:\\b(?:for|while)\\s*(?:\\([^)]*\\)|[^\\n{]+)|\\bdo\\s*\\{)", "Use an iteration structure appropriate to the task.");
+  if (/loop|iteration|repetition|for loop|while loop/.test(text)) add("iteration", "Iteration", "(?:\\b(?:for|while)\\s*(?:\\([^)]*\\)|[^\\n{]+)|\\bdo\\s*\\{)", "Use an iteration structure appropriate to the language.");
   if (/array|list|collection/.test(text)) add("collection", "Collection", "(?:\\[[^\\]]*\\]|\\b(?:new\\s+Array|ArrayList|List|vector|std::vector)\\b|\\.push\\s*\\()", "Use a collection or array structure to hold multiple values.");
   if (/output|print|display|console/.test(text)) add("output", "Output", "(?:\\bconsole\\.(?:log|info|warn|error)\\s*\\(|\\bprint(?:ln)?\\s*\\(|\\bSystem\\.out\\.(?:print|println)\\s*\\(|\\bprintf\\s*\\(|\\bConsole\\.(?:Write|WriteLine)\\s*\\()", "Produce observable program output.");
   if (/input|read|user input|keyboard input/.test(text)) add("input", "Input", "(?:\\b(?:prompt|input)\\s*\\(|\\b(?:readLine|readln|scanf|fgets)\\s*\\(|\\b(?:Console\\.)?ReadLine\\s*\\()", "Read or capture input from the user or an appropriate input source.");
@@ -51,12 +53,12 @@ export function buildObjectiveEvidenceChecks(objective: ObjectiveLike) {
 }
 
 export function evaluateObjectiveEvidence(checks: ObjectiveEvidenceCheck[], files: Array<{ path: string; content: string }>): ObjectiveEvidenceResult[] {
-  const source = files.map((file) => `// ${file.path}\n${file.content}`).join("\n\n");
+  const source = sourceTextForChecks(files);
   return checks.map((check) => {
     if (check.kind !== "structure" || !check.pattern) return { ...check, status: "passed", detail: "No structural check was required." };
     try {
       const matched = new RegExp(check.pattern, check.flags).test(source);
-      return { ...check, status: matched ? "passed" : "failed", detail: matched ? "Evidence found in the project." : check.message };
+      return { ...check, status: matched ? "passed" : "failed", detail: matched ? "Evidence found in source files." : check.message };
     } catch (cause) {
       return { ...check, status: "error", detail: `Evidence check could not run: ${cause instanceof Error ? cause.message : String(cause)}` };
     }
