@@ -1,5 +1,16 @@
 "use client";
 
+// ⚠️ NOT CURRENTLY MOUNTED: nothing in the live app imports LessonRenderer,
+// which is the only consumer of this file. Verified 2026-09-13 via
+// `grep -rln "MathRenderer" src` outside this file and LessonBlock.tsx --
+// zero other importers. The live lesson page (src/app/(app)/learn/[lessonId]/page.tsx)
+// has its own separate KaTeX rendering (inline()/renderMath() in that file).
+// Several commits have added real engineering work to this component chain
+// (LessonBlock -> LessonRenderer -> MathRenderer) without it ever reaching a
+// route. Before adding more here, either wire LessonRenderer into a real
+// page or confirm this chain is the intended long-term renderer and migrate
+// the live page to use it instead of its own parallel implementation --
+// don't let both keep evolving independently unmounted from each other.
 import katex from "katex";
 import "katex/dist/katex.min.css";
 

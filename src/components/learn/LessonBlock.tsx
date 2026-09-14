@@ -1,5 +1,8 @@
 "use client";
 
+// ⚠️ NOT CURRENTLY MOUNTED: only LessonRenderer.tsx imports this file, and
+// nothing in the live app imports LessonRenderer. See the note in
+// MathRenderer.tsx -- same unreached chain.
 import MathRenderer, { containsMathSyntax } from "./MathRenderer";
 import { normalizeMathContent } from "@/lib/learn/mathNotation";
 

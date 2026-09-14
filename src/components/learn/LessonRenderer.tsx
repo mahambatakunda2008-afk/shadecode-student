@@ -1,5 +1,8 @@
 "use client";
 
+// ⚠️ NOT CURRENTLY MOUNTED: no page or component in src/app imports this
+// component. Verified 2026-09-13 (`grep -rln "LessonRenderer" src --include="*.tsx"`
+// outside this file returns nothing). See the note in MathRenderer.tsx.
 import LessonBlock from "./LessonBlock";
 
 interface Block {
