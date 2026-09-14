@@ -77,12 +77,7 @@ export default function ResizableCompLabWorkspace() {
   function begin(key: SizeKey, event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
-    dragRef.current = {
-      key,
-      startX: event.clientX,
-      startY: event.clientY,
-      start: sizes[key],
-    };
+    dragRef.current = { key, startX: event.clientX, startY: event.clientY, start: sizes[key] };
     setDragging(key);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
@@ -105,38 +100,32 @@ export default function ResizableCompLabWorkspace() {
   const right = collapsed.right ? 0 : sizes.right;
   const bottom = collapsed.bottom ? 0 : sizes.bottom;
 
-  const style = {
-    "--comp-left": `${left}px`,
-    "--comp-right": `${right}px`,
-    "--comp-bottom": `${bottom}px`,
-  } as CSSProperties;
-
   return (
     <div
       data-comp-lab-resizable
       className={`relative mx-auto w-full max-w-[1600px] min-w-0 ${dragging ? "select-none" : ""}`}
-      style={style}
+      style={{ "--comp-left": `${left}px`, "--comp-right": `${right}px`, "--comp-bottom": `${bottom}px` } as CSSProperties}
     >
       <CodeLabWorkspace />
 
       <style jsx global>{`
-        /* The shell is explicitly tagged by Comp Lab so resizing does not depend on Tailwind class matching. */
-        [data-comp-lab-resizable] [data-comp-lab-shell] {
+        /* Target the actual V2 workspace structure, not generated Tailwind class names. */
+        [data-comp-lab-resizable] > div > div.grid {
           grid-template-columns: var(--comp-left) minmax(0, 1fr) var(--comp-right) !important;
         }
 
-        [data-comp-lab-resizable] [data-comp-lab-main] {
+        [data-comp-lab-resizable] > div > div.grid > main {
           display: grid !important;
           grid-template-rows: 40px minmax(0, 1fr) var(--comp-bottom) !important;
           min-height: 0 !important;
         }
 
-        [data-comp-lab-resizable] [data-comp-lab-main] > div:nth-child(2) {
+        [data-comp-lab-resizable] > div > div.grid > main > div:nth-child(2) {
           height: auto !important;
           min-height: 0 !important;
         }
 
-        [data-comp-lab-resizable] [data-comp-lab-main] > div:nth-child(3) {
+        [data-comp-lab-resizable] > div > div.grid > main > div:nth-child(3) {
           min-height: 0 !important;
           max-height: none !important;
           overflow: hidden !important;
@@ -148,11 +137,11 @@ export default function ResizableCompLabWorkspace() {
         }
 
         @media (max-width: 1023px) {
-          [data-comp-lab-resizable] [data-comp-lab-shell] {
+          [data-comp-lab-resizable] > div > div.grid {
             grid-template-columns: minmax(0, 1fr) !important;
           }
 
-          [data-comp-lab-resizable] [data-comp-lab-main] {
+          [data-comp-lab-resizable] > div > div.grid > main {
             grid-template-rows: 40px minmax(0, 1fr) 190px !important;
           }
 
@@ -162,7 +151,7 @@ export default function ResizableCompLabWorkspace() {
         }
       `}</style>
 
-      <div className="pointer-events-none absolute inset-0 z-30 hidden lg:block" aria-hidden={false}>
+      <div className="pointer-events-none absolute inset-0 z-30 hidden lg:block">
         <div
           className="comp-lab-resize-handle pointer-events-auto absolute bottom-0 left-[var(--comp-left)] top-0 w-3 -translate-x-1/2 cursor-col-resize rounded-sm bg-transparent hover:bg-[var(--primary)]/25"
           onPointerDown={(event) => begin("left", event)}
