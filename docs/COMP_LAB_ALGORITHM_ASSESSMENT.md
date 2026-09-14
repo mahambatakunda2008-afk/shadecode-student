@@ -25,3 +25,5 @@ Assessment evidence records the exercise ID, objective ID, pass state, number of
 - Complexity reasoning
 
 The next curriculum layer can attach verified board + syllabus + objective IDs and official assessment criteria to the same exercise model.
+
+Build verification branch created to validate the complete main branch after the runtime/type fixes.
