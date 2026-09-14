@@ -1,4 +1,4 @@
-import type { TestCase } from "./testing";
+import type { SourceEvidenceCheck } from "./source-checks";
 
 type ObjectiveLike = {
   id: string;
@@ -8,21 +8,25 @@ type ObjectiveLike = {
   topic?: string | null;
 };
 
+export type ObjectiveSourceCheck = { id: string; name: string; check: SourceEvidenceCheck };
+
 function textFor(objective: ObjectiveLike) {
   return `${objective.title} ${objective.description ?? ""} ${objective.topic ?? ""}`.toLowerCase();
 }
 
-const source = (pattern: string, message: string) => ({ pattern, message });
+const source = (pattern: string, message: string): SourceEvidenceCheck => ({ pattern, message });
 
 /**
- * Generates inspectable checks from curriculum wording. This is a learning
- * evidence layer, not a substitute for official examination marking schemes.
+ * Generates inspectable source-evidence checks from curriculum wording,
+ * evaluated via evaluateSourceEvidence() in source-checks.ts. This is a
+ * learning evidence layer, not a substitute for official examination
+ * marking schemes.
  */
-export function buildObjectiveTestPlan(objective: ObjectiveLike): TestCase[] {
+export function buildObjectiveTestPlan(objective: ObjectiveLike): ObjectiveSourceCheck[] {
   const text = textFor(objective);
-  const tests: TestCase[] = [];
+  const tests: ObjectiveSourceCheck[] = [];
   const add = (id: string, name: string, pattern: string, message: string) => {
-    tests.push({ id: `${objective.id}:${id}`, name, code: "", sourceCheck: source(pattern, message) });
+    tests.push({ id: `${objective.id}:${id}`, name, check: source(pattern, message) });
   };
 
   if (/function|procedure|subroutine|method/.test(text)) {
