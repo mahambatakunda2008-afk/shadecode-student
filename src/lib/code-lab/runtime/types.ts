@@ -18,6 +18,7 @@ export type RuntimeRequest = {
   files?: Array<{ path: string; content: string }>;
   entryFile?: string;
   timeoutMs?: number;
+  inputs?: string[];
 };
 
 export type RuntimeEvent =
