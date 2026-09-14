@@ -1,6 +1,7 @@
 import type { RuntimeDiagnostic, RuntimeRequest, RuntimeResult } from "./types";
 import { runBrowserJavaScript } from "./browser-runtime";
 import { unavailableRuntimeResult } from "./providers";
+import { buildProjectDiagnostics } from "../project-diagnostics";
 
 export type { RuntimeDiagnostic, RuntimeEvent, RuntimeLanguage, RuntimeRequest, RuntimeResult } from "./types";
 export type { RuntimeProvider, RuntimeProviderId } from "./providers";
@@ -37,10 +38,20 @@ function providerFor(language: RuntimeRequest["language"]) {
   return "generic-native" as const;
 }
 
+function addProjectDiagnostics(request: RuntimeRequest, result: RuntimeResult): RuntimeResult {
+  if (!request.files?.length) return result;
+  const graphDiagnostics = buildProjectDiagnostics(request.files);
+  if (!graphDiagnostics.length) return result;
+  const existing = new Set(result.diagnostics.map((diagnostic) => JSON.stringify(diagnostic)));
+  const diagnostics = [...result.diagnostics, ...graphDiagnostics.filter((diagnostic) => !existing.has(JSON.stringify(diagnostic)))];
+  return { ...result, diagnostics };
+}
+
 export async function executeCode(request: RuntimeRequest): Promise<RuntimeResult> {
-  const result = request.language === "javascript"
+  const base = request.language === "javascript"
     ? withDiagnosticEvents(await runBrowserJavaScript(request))
     : unavailableRuntimeResult(request, providerFor(request.language));
+  const result = withDiagnosticEvents(addProjectDiagnostics(request, base));
   publishDiagnostics(request, result);
   return result;
 }
