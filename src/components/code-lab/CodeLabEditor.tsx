@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Settings2 } from "lucide-react";
-import type { RuntimeDiagnostic } from "@/lib/code-lab/runtime";
+import { Loader2, Play, Settings2, TestTube2 } from "lucide-react";
+import type { RuntimeDiagnostic, RuntimeLanguage } from "@/lib/code-lab/runtime";
+import { runCodeLabTests, type CodeLabTestRun } from "@/lib/code-lab/testing";
 
 type MonacoDisposable = { dispose: () => void };
 type MonacoModel = { getLineCount: () => number; getLineMaxColumn: (lineNumber: number) => number };
@@ -38,7 +39,7 @@ function toMarker(monaco: MonacoNamespace, diagnostic: RuntimeDiagnostic, model:
   return { severity: diagnostic.severity === "error" ? monaco.editor.MarkerSeverity.Error : diagnostic.severity === "warning" ? monaco.editor.MarkerSeverity.Warning : monaco.editor.MarkerSeverity.Info, message: diagnostic.message, startLineNumber: line, startColumn: Math.min(column, maxColumn), endLineNumber: line, endColumn: Math.min(Math.max(column + 1, 2), maxColumn) };
 }
 
-export function CodeLabEditor({ value, language, onChange, onRun, onSave }: { value: string; language: string; onChange: (value: string) => void; onRun?: () => void; onSave?: () => void }) {
+export function CodeLabEditor({ value, language, entryFile = "main.js", onChange, onRun, onSave }: { value: string; language: string; entryFile?: string; onChange: (value: string) => void; onRun?: () => void; onSave?: () => void }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<MonacoEditor | null>(null);
   const latestValue = useRef(value);
@@ -48,11 +49,17 @@ export function CodeLabEditor({ value, language, onChange, onRun, onSave }: { va
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<EditorSettings>(DEFAULT_SETTINGS);
+  const [testsOpen, setTestsOpen] = useState(false);
+  const [testCode, setTestCode] = useState(() => `import "{{ENTRY_FILE}}";`);
+  const [expectedOutput, setExpectedOutput] = useState("");
+  const [testRun, setTestRun] = useState<CodeLabTestRun | null>(null);
+  const [testing, setTesting] = useState(false);
 
   latestValue.current = value; onChangeRef.current = onChange; onRunRef.current = onRun; onSaveRef.current = onSave;
 
   useEffect(() => { try { const raw = localStorage.getItem(SETTINGS_KEY); if (raw) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) }); } catch {} }, []);
   useEffect(() => { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {} const editor = editorRef.current as (MonacoEditor & { updateOptions?: (options: Record<string, unknown>) => void }) | null; editor?.updateOptions?.({ fontSize: settings.fontSize, tabSize: settings.tabSize, wordWrap: settings.wordWrap, minimap: { enabled: settings.minimap } }); }, [settings]);
+  useEffect(() => { setTestRun(null); }, [value, language, entryFile]);
 
   useEffect(() => {
     let alive = true; let disposable: MonacoDisposable | undefined;
@@ -70,9 +77,33 @@ export function CodeLabEditor({ value, language, onChange, onRun, onSave }: { va
   useEffect(() => { const editor = editorRef.current; if (editor && editor.getValue() !== value) editor.setValue(value); }, [value]);
   useEffect(() => { const handler = (event: Event) => { const detail = (event as CustomEvent<{ entryFile?: string; diagnostics?: RuntimeDiagnostic[] }>).detail; const editor = editorRef.current; const model = editor?.getModel(); if (!editor || !model) return; const diagnostics = Array.isArray(detail?.diagnostics) ? detail.diagnostics : []; const relevant = diagnostics.filter((d) => !d.file || !detail?.entryFile || d.file === detail.entryFile); const monaco = window.monaco; if (monaco) monaco.editor.setModelMarkers(model, "shadecode-runtime", relevant.map((d) => toMarker(monaco, d, model))); }; window.addEventListener("shadecode:comp-lab:runtime", handler); return () => window.removeEventListener("shadecode:comp-lab:runtime", handler); }, []);
 
-  return <div className="relative h-full min-h-[430px] overflow-hidden bg-[#0b0f17]"><div ref={hostRef} className="absolute inset-0" />
+  async function runTests() {
+    const runtimeLanguages: RuntimeLanguage[] = ["javascript", "typescript", "python", "csharp", "vbnet", "sql", "java", "c", "cpp", "kotlin", "php", "rust", "go", "pseudocode"];
+    if (!runtimeLanguages.includes(language as RuntimeLanguage)) {
+      setTestRun({ passed: 0, failed: 0, errors: 1, durationMs: 0, results: [{ id: "unsupported", name: "Runtime availability", status: "error", actualOutput: "", diagnostics: [], durationMs: 0, message: `${language} is not currently executable in this browser workspace.` }] });
+      return;
+    }
+    setTesting(true);
+    try {
+      const run = await runCodeLabTests({ language: language as RuntimeLanguage, files: [{ path: entryFile, content: value }], entryFile, tests: [{ id: "workspace-smoke", name: "Workspace smoke test", code: testCode, expectedOutput: expectedOutput.trim() ? expectedOutput : undefined, timeoutMs: 5000 }] });
+      setTestRun(run);
+    } catch (error) {
+      setTestRun({ passed: 0, failed: 0, errors: 1, durationMs: 0, results: [{ id: "runner", name: "Test runner", status: "error", actualOutput: "", diagnostics: [], durationMs: 0, message: error instanceof Error ? error.message : String(error) }] });
+    } finally { setTesting(false); }
+  }
+
+  return <div className="relative h-full min-h-[430px] overflow-hidden bg-[#0b0f17]">
+    <div ref={hostRef} className="absolute inset-0" />
     {state === "loading" && <div className="absolute inset-0 grid place-items-center bg-[#0b0f17] text-slate-400"><div className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin" />Loading editor engine…</div></div>}
     {state === "error" && <div className="absolute inset-0 grid place-items-center bg-[#0b0f17] p-6 text-center text-slate-400"><div><p className="font-medium text-slate-200">Editor engine unavailable</p><p className="mt-1 text-sm">The workspace remains available, but the advanced editor could not load.</p></div></div>}
-    {state === "ready" && <><button type="button" onClick={() => setSettingsOpen((v) => !v)} title="Editor settings" className="absolute right-3 top-3 z-10 rounded-lg border border-white/10 bg-[#0d121b]/90 p-2 text-slate-400 shadow-sm hover:text-slate-200"><Settings2 className="h-3.5 w-3.5" /></button>{settingsOpen && <div className="absolute right-3 top-12 z-20 w-56 rounded-xl border border-white/10 bg-[#0d121b] p-3 text-xs text-slate-300 shadow-2xl"><div className="mb-3 font-semibold text-slate-100">Editor settings</div><label className="mb-3 block">Font size <span className="float-right text-slate-500">{settings.fontSize}px</span><input type="range" min="12" max="20" value={settings.fontSize} onChange={(e) => setSettings((s) => ({ ...s, fontSize: Number(e.target.value) }))} className="mt-2 w-full" /></label><label className="mb-3 block">Tab size<select value={settings.tabSize} onChange={(e) => setSettings((s) => ({ ...s, tabSize: Number(e.target.value) }))} className="mt-1 w-full rounded-md border border-white/10 bg-[#080b11] p-1.5"><option value={2}>2 spaces</option><option value={4}>4 spaces</option><option value={8}>8 spaces</option></select></label><label className="mb-3 flex items-center justify-between">Word wrap<input type="checkbox" checked={settings.wordWrap === "on"} onChange={(e) => setSettings((s) => ({ ...s, wordWrap: e.target.checked ? "on" : "off" }))} /></label><label className="flex items-center justify-between">Minimap<input type="checkbox" checked={settings.minimap} onChange={(e) => setSettings((s) => ({ ...s, minimap: e.target.checked }))} /></label></div>}<div className="pointer-events-none absolute bottom-2 right-3 rounded bg-black/30 px-2 py-1 font-mono text-[9px] text-slate-600">Ctrl/Cmd+Enter Run · Ctrl/Cmd+S Save · wheel+Ctrl Zoom</div></>}
+    {state === "ready" && <>
+      <div className="absolute right-3 top-3 z-20 flex gap-1">
+        <button type="button" onClick={() => setTestsOpen((v) => !v)} title="Run tests" className={`rounded-lg border border-white/10 bg-[#0d121b]/90 p-2 shadow-sm ${testsOpen ? "text-white" : "text-slate-400 hover:text-slate-200"}`}><TestTube2 className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={() => setSettingsOpen((v) => !v)} title="Editor settings" className="rounded-lg border border-white/10 bg-[#0d121b]/90 p-2 text-slate-400 shadow-sm hover:text-slate-200"><Settings2 className="h-3.5 w-3.5" /></button>
+      </div>
+      {settingsOpen && <div className="absolute right-3 top-12 z-30 w-56 rounded-xl border border-white/10 bg-[#0d121b] p-3 text-xs text-slate-300 shadow-2xl"><div className="mb-3 font-semibold text-slate-100">Editor settings</div><label className="mb-3 block">Font size <span className="float-right text-slate-500">{settings.fontSize}px</span><input type="range" min="12" max="20" value={settings.fontSize} onChange={(e) => setSettings((s) => ({ ...s, fontSize: Number(e.target.value) }))} className="mt-2 w-full" /></label><label className="mb-3 block">Tab size<select value={settings.tabSize} onChange={(e) => setSettings((s) => ({ ...s, tabSize: Number(e.target.value) }))} className="mt-1 w-full rounded-md border border-white/10 bg-[#080b11] p-1.5"><option value={2}>2 spaces</option><option value={4}>4 spaces</option><option value={8}>8 spaces</option></select></label><label className="mb-3 flex items-center justify-between">Word wrap<input type="checkbox" checked={settings.wordWrap === "on"} onChange={(e) => setSettings((s) => ({ ...s, wordWrap: e.target.checked ? "on" : "off" }))} /></label><label className="flex items-center justify-between">Minimap<input type="checkbox" checked={settings.minimap} onChange={(e) => setSettings((s) => ({ ...s, minimap: e.target.checked }))} /></label></div>}
+      {testsOpen && <div className="absolute right-3 top-12 z-25 mt-0 w-[min(420px,calc(100%-24px))] rounded-xl border border-white/10 bg-[#0d121b] p-3 text-xs text-slate-300 shadow-2xl" style={{ zIndex: 25 }}><div className="mb-2 flex items-center justify-between"><div><div className="font-semibold text-slate-100">Test runner</div><div className="text-[10px] text-slate-500">Executes the test program against the current file.</div></div><button type="button" onClick={runTests} disabled={testing} className="flex items-center gap-1 rounded-md bg-[var(--primary)] px-2.5 py-1.5 text-[10px] font-semibold text-white disabled:opacity-50"><Play className="h-3 w-3" />{testing ? "Testing" : "Run test"}</button></div><label className="mb-2 block text-[10px] text-slate-500">Test program<textarea value={testCode} onChange={(e) => setTestCode(e.target.value)} className="mt-1 h-24 w-full resize-y rounded-md border border-white/10 bg-[#080b11] p-2 font-mono text-[10px] text-slate-200 outline-none" spellCheck={false} /></label><label className="block text-[10px] text-slate-500">Expected stdout (optional)<textarea value={expectedOutput} onChange={(e) => setExpectedOutput(e.target.value)} className="mt-1 h-14 w-full resize-y rounded-md border border-white/10 bg-[#080b11] p-2 font-mono text-[10px] text-slate-200 outline-none" spellCheck={false} placeholder="Leave blank to assert only that the test runs without errors." /></label>{testRun && <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2"><div className="flex items-center justify-between"><span className="font-semibold text-slate-200">{testRun.passed} passed · {testRun.failed} failed · {testRun.errors} errors</span><span className="text-[9px] text-slate-600">{testRun.durationMs}ms</span></div>{testRun.results.map((result) => <div key={result.id} className="mt-2"><div className={result.status === "passed" ? "text-emerald-400" : result.status === "failed" ? "text-amber-400" : "text-red-400"}>{result.status.toUpperCase()} · {result.name}</div><div className="mt-1 whitespace-pre-wrap text-[10px] text-slate-500">{result.message}{result.actualOutput ? `\nstdout: ${result.actualOutput}` : ""}</div>{result.diagnostics.map((diagnostic, index) => <div key={index} className="text-[10px] text-red-300">{diagnostic.message}</div>)}</div>)}</div>}</div>}
+      <div className="pointer-events-none absolute bottom-2 right-3 rounded bg-black/30 px-2 py-1 font-mono text-[9px] text-slate-600">Ctrl/Cmd+Enter Run · Ctrl/Cmd+S Save · wheel+Ctrl Zoom</div>
+    </>}
   </div>;
 }
