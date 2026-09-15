@@ -20,27 +20,19 @@ export function BottomNav() {
   const allItems = groups.flatMap(group => group.items);
   const family = experience.family;
   const primaryCandidates = family === "foundation"
-    ? [NAV_ITEMS.dashboard, NAV_ITEMS.discovery, NAV_ITEMS.learn, NAV_ITEMS.achievements]
+    ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.achievements]
     : family === "school"
-      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.codeLab, NAV_ITEMS.examSim]
-      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.codeLab, NAV_ITEMS.projects];
+      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.compLab, NAV_ITEMS.examSim]
+      : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.compLab, NAV_ITEMS.projects];
   const primaryItems = primaryCandidates.filter(item => allItems.some(available => available.href === item.href));
-
-  // Mobile navigation is a viewport constraint, not a feature allow-list.
-  // Everything available to the learner remains reachable through More, including Settings.
   const moreItems = [...allItems, NAV_ITEMS.settings].filter(
     (item, index, items) => items.findIndex(candidate => candidate.href === item.href) === index,
   ).filter(item => !primaryItems.some(primary => primary.href === item.href));
-
   const primaryLabel = (href: string, fallback: string) => {
-    if (family === "foundation" && href === "/dashboard") return "Home";
-    if (family === "foundation" && href === "/discovery") return "Discover";
+    if (href === "/dashboard") return "Home";
+    if (href === "/comp-lab") return "Comp Lab";
     if (family === "foundation" && href === "/achievements") return "Milestones";
-    if (family === "school" && href === "/dashboard") return "Home";
-    if (family === "school" && href === "/code-lab") return "Code";
-    if (family === "beyond-school" && href === "/dashboard") return "Home";
     if (family === "beyond-school" && href === "/curriculum") return "Courses";
-    if (family === "beyond-school" && href === "/code-lab") return "Code";
     return fallback;
   };
   const moreTitle = family === "foundation" ? "Keep exploring" : family === "school" ? "More study tools" : "More workspace tools";
