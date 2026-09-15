@@ -36,6 +36,7 @@ function languageFor(path: string) {
   if (ext === "css") return "css";
   if (ext === "json") return "json";
   if (ext === "md") return "markdown";
+  if (ext === "pseudo" || ext === "pseudocode") return "pseudocode";
   return "javascript";
 }
 
@@ -144,8 +145,10 @@ export default function CodeLabWorkspaceRuntimeV2() {
     try {
       const result = await executeCode({ id: crypto.randomUUID(), language, code: current.content, files: files.map(({ path, content }) => ({ path, content })), entryFile: current.path, timeoutMs: 5000 });
       const found = result.events.flatMap((event) => event.type === "diagnostic" ? [event.diagnostic] : []);
-      const captured = result.events.flatMap((event) => event.type === "stdout" ? [event.text] : event.type === "stderr" ? [event.text] : event.type === "error" ? [event.message] : []);
-      setDiagnostics(found); setOutput(captured.length ? captured : [result.exitCode === 0 ? `Process exited successfully in ${result.durationMs}ms.` : "Process failed."]); if (found.length) setPanel("problems");
+      const captured = result.events.flatMap((event) => event.type === "stdout" ? [event.text] : event.type === "stderr" ? [`[stderr] ${event.text}`] : event.type === "error" ? [`[error] ${event.message}`] : []);
+      setDiagnostics(found);
+      setOutput(captured.length ? captured : [result.exitCode === 0 ? `Process exited successfully in ${result.durationMs}ms.` : `Process failed with exit code ${result.exitCode}.`]);
+      if (found.length) setPanel("problems");
     } catch (error) { setOutput([error instanceof Error ? error.message : String(error)]); } finally { setRunning(false); }
   }
   function checkWork() {
@@ -186,7 +189,7 @@ export default function CodeLabWorkspaceRuntimeV2() {
 
           <main data-comp-lab-main className="min-w-0 bg-[#080b11]">
             <div className="flex h-10 items-center overflow-x-auto border-b border-white/10 bg-[#0b0f17]">{files.map((file) => <button key={file.path} type="button" onClick={() => setActive(file.path)} className={`group flex h-full shrink-0 items-center gap-2 border-r border-white/10 px-3 text-xs ${compactTabs ? "max-w-32" : "max-w-48"} ${active === file.path ? "bg-[#080b11] text-white" : "text-slate-500"}`}><FileCode2 className="h-3.5 w-3.5" /><span className="truncate">{file.path}</span>{file.dirty && <span className="text-amber-400">●</span>}<span role="button" tabIndex={0} onClick={(event) => { event.stopPropagation(); closeFile(file.path); }} className="ml-1 rounded p-0.5 text-slate-600 hover:text-slate-200"><X className="h-3 w-3" /></span></button>)}<button type="button" onClick={() => setNewFileOpen(true)} className="ml-1 rounded p-2 text-slate-500"><Plus className="h-3.5 w-3.5" /></button></div>
-            <div className="min-h-0"><CodeLabEditor value={current?.content ?? ""} language={current?.language ?? "javascript"} onChange={updateCurrent} onSave={persist} /></div>
+            <div className="min-h-0"><CodeLabEditor value={current?.content ?? ""} language={current?.language ?? "javascript"} onChange={updateCurrent} onRun={run} onSave={persist} /></div>
             <div data-comp-lab-bottom className="border-t border-white/10 bg-[#0b0f17]"><div className="flex h-9 items-center gap-1 px-2">{(["terminal", "problems", "tests", "output"] as Panel[]).map((item) => <button key={item} type="button" onClick={() => setPanel(item)} className={`rounded px-2 py-1 text-[10px] uppercase tracking-wider ${panel === item ? "bg-white/10 text-white" : "text-slate-500"}`}>{item}{item === "problems" && diagnostics.length ? ` ${diagnostics.length}` : ""}{item === "tests" && evidence.length ? ` ${evidence.filter((x) => x.status === "passed").length}/${evidence.length}` : ""}</button>)}</div><div className="max-h-48 min-h-24 overflow-auto border-t border-white/10 p-3 font-mono text-[11px]">{panel === "problems" ? (diagnostics.length ? diagnostics.map((d, i) => <div key={i} className="mb-1 text-red-300">{d.message}{d.line ? ` (line ${d.line})` : ""}</div>) : <span className="text-slate-600">No problems detected.</span>) : panel === "tests" ? (evidence.length ? evidence.map((item) => <div key={item.id} className="mb-2 flex gap-2"><span className={item.status === "passed" ? "text-emerald-400" : "text-amber-400"}>{item.status === "passed" ? "✓" : "!"}</span><div><div className="text-slate-200">{item.name}</div><div className="text-slate-500">{item.status === "passed" ? item.detail : item.message}</div></div></div>) : <span className="text-slate-600">Select an objective and use Check work.</span>) : output.length ? output.map((line, i) => <div key={i} className="mb-1 whitespace-pre-wrap text-slate-300">{line}</div>) : <span className="text-slate-600">Run the current file to see output.</span>}</div></div>
           </main>
 
