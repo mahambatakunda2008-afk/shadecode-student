@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 import { UserProvider } from "@/contexts/UserContext";
@@ -39,11 +39,13 @@ async function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promi
   finally { if (timer) clearTimeout(timer); }
 }
 
-/** Authenticated application shell. Middleware is the security/access-control boundary; browser auth and role refresh never block rendering. */
+/** Authenticated application shell. Comp Lab owns its own workspace chrome instead of rendering inside the study navigation shell. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
+  const isCompLab = pathname === "/comp-lab" || pathname.startsWith("/comp-lab/");
 
   useEffect(() => installLearningEventSync(), []);
   useEffect(() => installTractionSync(), []);
@@ -79,5 +81,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router, supabase]);
 
   if (isAdmin) return <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><AdminSidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><AdminBottomNav /></div></div>;
+  if (isCompLab) return <UserProvider><AchievementsProvider><div className="relative h-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><ExperienceRouteGuard /><main className="h-full min-w-0 overflow-y-auto"><LessonEvidenceRecorder />{children}</main><CortexCommandBar /><CortexGenerationIndicator /></div></AchievementsProvider></UserProvider>;
   return <UserProvider><AchievementsProvider><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><ExperienceRouteGuard /><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder /><ExperienceContextBanner />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><CortexCommandBar /><CortexGenerationIndicator /><AchievementToast /><FeedbackWidget /></div></AchievementsProvider></UserProvider>;
 }
