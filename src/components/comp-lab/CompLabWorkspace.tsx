@@ -9,6 +9,7 @@ import ResizableCompLabWorkspace from "./ResizableCompLabWorkspace";
 import WebCompLabWorkspace from "./WebCompLabWorkspace";
 import CompLabIntelligencePanel from "./CompLabIntelligencePanel";
 import AlgorithmStudioPlus from "./AlgorithmStudioPlus";
+import CompLabProjectWorkspace from "./CompLabProjectWorkspace";
 
 const ICONS = { console: TerminalSquare, web: Globe2, "windows-forms": MonitorCog, database: Database, spreadsheet: FileSpreadsheet, desktop: MonitorCog, mobile: Smartphone, systems: Cpu } as const;
 
@@ -21,8 +22,8 @@ function statusLabel(status: CompLabEnvironment["status"]) {
 
 function runtimeSummary(item: CompLabEnvironment) {
   if (item.status === "browser") return "Runs in the browser runtime";
-  if (item.status === "external-runtime") return "Connect a native or remote runtime when needed";
-  if (item.status === "artifact") return "Uses a native artifact workflow";
+  if (item.status === "external-runtime") return "Project editing is available now; execution uses the matching native or remote toolchain.";
+  if (item.status === "artifact") return "Artifact editing and export are available now; the full Office/native application is used when required.";
   return "Capability registered, runtime not connected yet";
 }
 
@@ -32,6 +33,8 @@ function capabilityFor(item: CompLabEnvironment) {
   if (item.id.includes("csharp") || item.id.includes("vbnet")) return getCapability("runtime.dotnet");
   if (item.id.includes("sql")) return getCapability("runtime.sql");
   if (item.id === "javascript-console" || item.id === "web") return getCapability("runtime.javascript");
+  if (item.languages.includes("cpp")) return getCapability("runtime.cpp");
+  if (item.languages.includes("c")) return getCapability("runtime.c");
   return null;
 }
 
@@ -92,7 +95,7 @@ export default function CompLabWorkspace() {
               </div>
             </header>
             <div className="p-4 sm:p-6 lg:p-8">
-              <div className="mb-5 flex items-end justify-between gap-3"><div><h2 className="text-sm font-semibold text-[var(--foreground)]">Choose an environment</h2><p className="mt-1 text-xs text-[var(--muted-foreground)]">The environment determines the editor, runtime, files and tools you get.</p></div><span className="rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[10px] text-[var(--muted-foreground)]">{COMP_LAB_ENVIRONMENTS.length} environments</span></div>
+              <div className="mb-5 flex items-end justify-between gap-3"><div><h2 className="text-sm font-semibold text-[var(--foreground)]">Choose an environment</h2><p className="mt-1 text-xs text-[var(--muted-foreground)]">Every environment opens a usable project surface. Runtime status is explicit, so Comp Lab never pretends a native toolchain exists when it does not.</p></div><span className="rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[10px] text-[var(--muted-foreground)]">{COMP_LAB_ENVIRONMENTS.length} environments</span></div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {COMP_LAB_ENVIRONMENTS.map(item => <button key={item.id} type="button" onClick={() => openEnvironment(item.id)} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--primary)]/40 hover:bg-[var(--surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"><div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><EnvironmentIcon environment={item} /></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><h3 className="truncate text-sm font-semibold text-[var(--foreground)]">{item.label}</h3><ChevronDown className="h-4 w-4 -rotate-90 text-[var(--muted-foreground)] transition group-hover:translate-x-0.5" /></div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--muted-foreground)]">{item.description}</p><div className="mt-3 flex items-center gap-2"><span className="rounded-full bg-[var(--surface-muted)] px-2 py-1 text-[10px] text-[var(--muted-foreground)]">{statusLabel(item.status)}</span>{item.languages.slice(0, 2).map(language => <span key={language} className="rounded-full bg-[var(--surface-muted)] px-2 py-1 text-[10px] text-[var(--muted-foreground)]">{language}</span>)}</div></div></div></button>)}
               </div>
@@ -119,7 +122,7 @@ export default function CompLabWorkspace() {
       </section>
 
       <section className="flex-1 p-2 sm:p-5 lg:p-6">
-        {selectedIsCodeWorkspace ? <><ResizableCompLabWorkspace /><CompLabIntelligencePanel /></> : selectedIsWebWorkspace ? <WebCompLabWorkspace /> : selectedIsAlgorithmWorkspace ? <AlgorithmStudioPlus /> : <div className="mx-auto max-w-4xl rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-6 sm:p-10"><div className="flex items-start gap-4"><Code2 className="mt-0.5 h-6 w-6 shrink-0 text-[var(--primary)]" /><div><h2 className="text-lg font-semibold text-[var(--foreground)]">{selected.label}</h2><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">This workspace is registered with Comp Lab, but its native runtime is not connected in the web app yet. We will not fake execution with a different language or pretend a browser sandbox is the real toolchain.</p><p className="mt-4 text-xs text-[var(--muted-foreground)]">Languages: {selected.languages.length ? selected.languages.join(", ") : "workspace artifact"}</p></div></div></div>}
+        {selectedIsCodeWorkspace ? <><ResizableCompLabWorkspace /><CompLabIntelligencePanel /></> : selectedIsWebWorkspace ? <WebCompLabWorkspace /> : selectedIsAlgorithmWorkspace ? <AlgorithmStudioPlus /> : <CompLabProjectWorkspace environment={selected} />}
       </section>
       <footer className="border-t border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-xs text-[var(--muted-foreground)]"><Code2 className="mr-2 inline h-4 w-4" />Pick an environment, build something, run it, understand what happened, and keep improving.</footer>
     </main>
