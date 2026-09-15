@@ -7,61 +7,21 @@
  */
 
 export type CapabilityId =
-  | "device.files"
-  | "device.camera"
-  | "device.microphone"
-  | "device.speech-input"
-  | "device.speech-output"
-  | "device.ocr"
-  | "device.notifications"
-  | "device.background"
-  | "device.local-ai"
-  | "runtime.javascript"
-  | "runtime.typescript"
-  | "runtime.python"
-  | "runtime.java"
-  | "runtime.c"
-  | "runtime.cpp"
-  | "runtime.dotnet"
-  | "runtime.sql"
-  | "runtime.sqlite"
-  | "runtime.office"
-  | "runtime.windows-forms"
-  | "device.print"
-  | "device.usb"
-  | "device.bluetooth";
+  | "device.files" | "device.camera" | "device.microphone" | "device.speech-input" | "device.speech-output"
+  | "device.ocr" | "device.notifications" | "device.background" | "device.local-ai"
+  | "network.internet" | "runtime.javascript" | "runtime.typescript" | "runtime.python" | "runtime.java"
+  | "runtime.c" | "runtime.cpp" | "runtime.dotnet" | "runtime.sql" | "runtime.sqlite" | "runtime.office"
+  | "runtime.windows-forms" | "device.print" | "device.usb" | "device.bluetooth";
 
-export type CapabilityAvailability =
-  | "available"
-  | "permission-required"
-  | "native-required"
-  | "remote"
-  | "cloud"
-  | "unavailable"
-  | "disabled";
-
+export type CapabilityAvailability = "available" | "permission-required" | "native-required" | "remote" | "cloud" | "unavailable" | "disabled";
 export type CapabilityPrivacyClass = "public" | "device" | "private" | "sensitive";
 
-export interface CapabilityResourceLimits {
-  timeoutMs?: number;
-  maxMemoryMb?: number;
-  maxOutputBytes?: number;
-  maxInputBytes?: number;
-  allowNetwork?: boolean;
-}
-
+export interface CapabilityResourceLimits { timeoutMs?: number; maxMemoryMb?: number; maxOutputBytes?: number; maxInputBytes?: number; allowNetwork?: boolean; }
 export interface CapabilityContract {
-  id: CapabilityId;
-  version: 1;
-  label: string;
-  description: string;
+  id: CapabilityId; version: 1; label: string; description: string;
   platforms: Array<"web" | "mobile" | "desktop" | "native" | "edge" | "cloud">;
-  availability: CapabilityAvailability;
-  permissions: string[];
-  privacyClass: CapabilityPrivacyClass;
-  networkRequired: boolean;
-  limits?: CapabilityResourceLimits;
-  fallbackIds?: CapabilityId[];
+  availability: CapabilityAvailability; permissions: string[]; privacyClass: CapabilityPrivacyClass;
+  networkRequired: boolean; limits?: CapabilityResourceLimits; fallbackIds?: CapabilityId[];
 }
 
 export const PLATFORM_CAPABILITIES: CapabilityContract[] = [
@@ -74,6 +34,7 @@ export const PLATFORM_CAPABILITIES: CapabilityContract[] = [
   { id: "device.notifications", version: 1, label: "Notifications", description: "Schedule local learning and workflow notifications.", platforms: ["web", "mobile", "desktop", "native"], availability: "permission-required", permissions: ["notifications"], privacyClass: "device", networkRequired: false },
   { id: "device.background", version: 1, label: "Background work", description: "Run bounded synchronization and processing outside the foreground UI.", platforms: ["mobile", "desktop", "native", "edge"], availability: "native-required", permissions: [], privacyClass: "device", networkRequired: false },
   { id: "device.local-ai", version: 1, label: "Local AI", description: "Run supported models on the user's device.", platforms: ["desktop", "native", "edge"], availability: "native-required", permissions: [], privacyClass: "private", networkRequired: false },
+  { id: "network.internet", version: 1, label: "Internet access", description: "Access approved network resources through a governed runtime.", platforms: ["web", "mobile", "desktop", "native", "edge", "cloud"], availability: "permission-required", permissions: ["network.user-approved"], privacyClass: "sensitive", networkRequired: true, limits: { allowNetwork: true } },
   { id: "runtime.javascript", version: 1, label: "JavaScript runtime", description: "Execute JavaScript in an isolated browser runtime.", platforms: ["web", "mobile", "desktop"], availability: "available", permissions: [], privacyClass: "device", networkRequired: false, limits: { timeoutMs: 15000, maxOutputBytes: 200000, allowNetwork: false } },
   { id: "runtime.typescript", version: 1, label: "TypeScript runtime", description: "Transpile TypeScript and execute it through an isolated JavaScript runtime.", platforms: ["web", "mobile", "desktop", "native"], availability: "native-required", permissions: [], privacyClass: "device", networkRequired: false, fallbackIds: ["runtime.javascript"] },
   { id: "runtime.python", version: 1, label: "Python runtime", description: "Execute real Python programs in an isolated Python runtime.", platforms: ["desktop", "native", "edge", "cloud"], availability: "native-required", permissions: [], privacyClass: "device", networkRequired: false },
@@ -90,10 +51,5 @@ export const PLATFORM_CAPABILITIES: CapabilityContract[] = [
   { id: "device.bluetooth", version: 1, label: "Bluetooth", description: "Interact with explicitly approved Bluetooth peripherals.", platforms: ["mobile", "desktop", "native"], availability: "native-required", permissions: ["bluetooth.user-approved"], privacyClass: "sensitive", networkRequired: false },
 ];
 
-export function getCapability(id: CapabilityId): CapabilityContract | undefined {
-  return PLATFORM_CAPABILITIES.find((capability) => capability.id === id);
-}
-
-export function getAvailableCapabilities(): CapabilityContract[] {
-  return PLATFORM_CAPABILITIES.filter((capability) => capability.availability === "available");
-}
+export function getCapability(id: CapabilityId): CapabilityContract | undefined { return PLATFORM_CAPABILITIES.find((capability) => capability.id === id); }
+export function getAvailableCapabilities(): CapabilityContract[] { return PLATFORM_CAPABILITIES.filter((capability) => capability.availability === "available"); }
