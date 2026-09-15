@@ -36,4 +36,11 @@ export type RuntimeResult = {
   diagnostics: RuntimeDiagnostic[];
   exitCode: number | null;
   durationMs: number;
+  /** Structured model/evidence produced by a native runtime when available. */
+  metadata?: {
+    semantic?: unknown;
+    project?: unknown;
+    executionPlan?: unknown;
+    evidence?: unknown;
+  };
 };
