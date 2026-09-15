@@ -26,6 +26,21 @@ export type ShadeProjectModel = {
   graph: { from: string; to: string; relation: "imports" | "requires" | "tests" | "contains" }[];
 };
 
+/** Stable artifact identity derived from a project-relative path. */
+export function createShadeArtifactId(path: string): string {
+  const normalized = path.trim().replace(/\\/g, "/").replace(/^\.\//, "");
+  let hash = 2166136261;
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash ^= normalized.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `artifact-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export function createShadeArtifact(input: Omit<ShadeArtifact, "id"> & { id?: string }): ShadeArtifact {
+  return { ...input, id: input.id ?? createShadeArtifactId(input.path) };
+}
+
 export function createShadeProjectModel(input: {
   name: string;
   entry: string;
@@ -33,10 +48,12 @@ export function createShadeProjectModel(input: {
   artifacts?: ShadeArtifact[];
   languageVersion: string;
 }): ShadeProjectModel {
-  const artifacts = input.artifacts ?? [{ id: "entry", path: input.entry, type: "source", language: "shade" }];
+  const entryArtifact = createShadeArtifact({ path: input.entry, type: "source", language: "shade" });
+  const artifacts = input.artifacts?.map((artifact) => createShadeArtifact(artifact)) ?? [entryArtifact];
+  const entryId = artifacts.find((artifact) => artifact.path === input.entry)?.id ?? entryArtifact.id;
   const graph = [
-    { from: "project", to: "entry", relation: "contains" as const },
-    ...input.semantic.dependencies.map((dependency) => ({ from: "entry", to: dependency, relation: "requires" as const })),
+    { from: "project", to: entryId, relation: "contains" as const },
+    ...input.semantic.dependencies.map((dependency) => ({ from: entryId, to: dependency, relation: "requires" as const })),
   ];
   return {
     manifest: {
