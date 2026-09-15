@@ -23,7 +23,13 @@ function parseLearningRequest(text: string): { type: "learn"; topic: string } | 
   const trimmed = text.trim();
   if (!trimmed) return null;
 
-  const firstWhitespace = trimmed.search(/\s/);
+  let firstWhitespace = -1;
+  for (let index = 0; index < trimmed.length; index += 1) {
+    if (/\s/.test(trimmed[index])) {
+      firstWhitespace = index;
+      break;
+    }
+  }
   if (firstWhitespace < 0) return null;
 
   const command = trimmed.slice(0, firstWhitespace).toUpperCase();
