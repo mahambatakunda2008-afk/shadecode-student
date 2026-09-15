@@ -4,7 +4,6 @@ import { parseShade } from "./parser";
 export type ShadeRunOptions = { inputs?: string[]; maxSteps?: number };
 
 type FunctionValue = { params: string[]; body: ShadeStatement[] };
-
 type Scope = { values: Map<string, ShadeValue | FunctionValue>; parent?: Scope };
 
 export function runShade(source: string, options: ShadeRunOptions = {}): ShadeExecutionResult {
@@ -20,8 +19,9 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
   const root: Scope = { values: new Map() };
 
   const lookup = (scope: Scope, name: string): ShadeValue | FunctionValue | undefined => scope.values.has(name) ? scope.values.get(name) : scope.parent ? lookup(scope.parent, name) : undefined;
-  const valueText = (value: ShadeValue) => value === null ? "none" : Array.isArray(value) ? `[${value.map(valueText).join(", ")}]` : String(value);
-  const truthy = (value: ShadeValue) => Boolean(value);
+  const valueText = (value: ShadeValue): string => value === null ? "none" : Array.isArray(value) ? `[${value.map(valueText).join(", ")}]` : String(value);
+  const truthy = (value: ShadeValue): boolean => Boolean(value);
+  const numeric = (value: ShadeValue): number => typeof value === "number" ? value : Number(value);
 
   const evaluate = (expression: ShadeExpression, scope: Scope): ShadeValue => {
     if (++steps > maxSteps) throw new ShadeRuntimeError("Execution step limit exceeded.", 0);
@@ -39,24 +39,24 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
         if (expression.operator === "or") return truthy(left) || truthy(evaluate(expression.right, scope));
         const right = evaluate(expression.right, scope);
         switch (expression.operator) {
-          case "+": return typeof left === "string" || typeof right === "string" ? valueText(left) + valueText(right) : Number(left) + Number(right);
-          case "-": return Number(left) - Number(right);
-          case "*": return Number(left) * Number(right);
-          case "/": if (Number(right) === 0) throw new ShadeRuntimeError("Division by zero.", 0); return Number(left) / Number(right);
-          case "%": if (Number(right) === 0) throw new ShadeRuntimeError("Division by zero.", 0); return Number(left) % Number(right);
+          case "+": return typeof left === "string" || typeof right === "string" ? valueText(left) + valueText(right) : numeric(left) + numeric(right);
+          case "-": return numeric(left) - numeric(right);
+          case "*": return numeric(left) * numeric(right);
+          case "/": if (numeric(right) === 0) throw new ShadeRuntimeError("Division by zero.", 0); return numeric(left) / numeric(right);
+          case "%": if (numeric(right) === 0) throw new ShadeRuntimeError("Division by zero.", 0); return numeric(left) % numeric(right);
           case "==": return left === right;
           case "!=": return left !== right;
-          case "<": return Number(left) < Number(right);
-          case "<=": return Number(left) <= Number(right);
-          case ">": return Number(left) > Number(right);
-          case ">=": return Number(left) >= Number(right);
+          case "<": return numeric(left) < numeric(right);
+          case "<=": return numeric(left) <= numeric(right);
+          case ">": return numeric(left) > numeric(right);
+          case ">=": return numeric(left) >= numeric(right);
         }
       }
       case "call": {
         const fn = lookup(scope, expression.name);
         const args = expression.args.map((arg) => evaluate(arg, scope));
         if (expression.name === "length") return Array.isArray(args[0]) || typeof args[0] === "string" ? args[0].length : 0;
-        if (expression.name === "sum") return Array.isArray(args[0]) ? args[0].reduce((total, item) => total + Number(item), 0) : 0;
+        if (expression.name === "sum") return Array.isArray(args[0]) ? args[0].reduce((total: number, item) => total + numeric(item), 0) : 0;
         if (!fn || Array.isArray(fn) || typeof fn !== "object" || !("body" in fn)) throw new ShadeRuntimeError(`Unknown function '${expression.name}'.`, 0);
         const child: Scope = { values: new Map(), parent: scope };
         fn.params.forEach((param, index) => child.values.set(param, args[index] ?? null));
