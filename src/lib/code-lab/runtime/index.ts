@@ -4,7 +4,7 @@ import { runBrowserPython, runBrowserSql, runBrowserTypeScript } from "./browser
 import { runPseudocode } from "./pseudocode";
 import { unavailableRuntimeResult } from "./providers";
 import { buildProjectDiagnostics } from "../project-diagnostics";
-import { analyzeShade, createShadeEvidence, createShadeExecutionPlan, createShadeProjectModel, runShade, SHADE_LANGUAGE_VERSION, parseShade } from "../../shade";
+import { analyzeShade, buildShadeProjectGraph, createShadeEvidence, createShadeExecutionPlan, createShadeProjectModel, lowerShadeToIR, runShade, SHADE_LANGUAGE_VERSION, parseShade } from "../../shade";
 
 export type { RuntimeDiagnostic, RuntimeEvent, RuntimeLanguage, RuntimeRequest, RuntimeResult } from "./types";
 export type { RuntimeProvider, RuntimeProviderId } from "./providers";
@@ -53,6 +53,8 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
     const semantic = analyzeShade(parsedSource.program);
     const executionPlan = createShadeExecutionPlan(semantic, request.entryFile ?? "main.shade");
     const project = createShadeProjectModel({ name: "Comp Lab Shade project", entry: request.entryFile ?? "main.shade", semantic, languageVersion: SHADE_LANGUAGE_VERSION });
+    const graph = buildShadeProjectGraph(project);
+    const ir = lowerShadeToIR(parsedSource.program);
     const diagnostics: RuntimeDiagnostic[] = [...parsed.diagnostics, ...semantic.diagnostics.map((diagnostic) => ({ ...diagnostic, source: "language" as const }))].map((diagnostic) => ({ ...diagnostic, source: "language" as const, file: request.entryFile }));
     const exitCode = diagnostics.some((d) => d.severity === "error") ? 1 : 0;
     const durationMs = Math.max(parsed.durationMs, performance.now() - started);
@@ -71,7 +73,7 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
       diagnostics,
       exitCode,
       durationMs,
-      metadata: { semantic, project, executionPlan, evidence },
+      metadata: { semantic, project, graph, executionPlan, ir, evidence },
     };
   } else if (request.language === "javascript") base = await runBrowserJavaScript(request);
   else if (request.language === "typescript") base = await runBrowserTypeScript(request);
