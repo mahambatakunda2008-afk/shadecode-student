@@ -1,5 +1,6 @@
 export type AlgorithmContext = "school" | "secondary" | "sixth-form" | "university" | "polytechnic" | "professional";
 export type AlgorithmQuestionType = "write" | "trace" | "flowchart" | "complexity" | "test";
+export type AlgorithmTestKind = "normal" | "boundary" | "invalid" | "hidden";
 
 export type AlgorithmObjective = {
   id: string;
@@ -8,6 +9,15 @@ export type AlgorithmObjective = {
   contexts: AlgorithmContext[];
   tags: string[];
   officialReference?: string;
+};
+
+export type AlgorithmTestCase = {
+  id: string;
+  kind: AlgorithmTestKind;
+  inputs: string[];
+  expectedOutput?: string;
+  hidden?: boolean;
+  rationale?: string;
 };
 
 export type AlgorithmExercise = {
@@ -20,17 +30,14 @@ export type AlgorithmExercise = {
   starterCode?: string;
   testInputs?: string[];
   expectedOutputs?: string[];
+  testCases?: AlgorithmTestCase[];
   syllabusReferences?: string[];
   contexts: AlgorithmContext[];
 };
 
 const ALL_CONTEXTS: AlgorithmContext[] = ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"];
 
-/**
- * These are board-neutral computing competencies. They are deliberately not
- * presented as official Cambridge, ZIMSEC or university syllabus wording.
- * Official syllabus/objective IDs can be attached through officialReference.
- */
+/** Board-neutral competencies. Not official Cambridge/ZIMSEC wording. */
 export const ALGORITHM_OBJECTIVES: AlgorithmObjective[] = [
   { id: "alg.input-output", title: "Input, output and assignment", description: "Design a clear algorithm that receives data, processes it and produces a result.", contexts: ALL_CONTEXTS, tags: ["input", "output", "assignment"] },
   { id: "alg.sequence", title: "Sequential problem solving", description: "Translate a problem into ordered, unambiguous algorithmic steps.", contexts: ALL_CONTEXTS, tags: ["sequence", "logic"] },
@@ -56,35 +63,44 @@ IF C > Largest THEN
 END IF
 OUTPUT Largest`;
 
+const LARGEST_TESTS: AlgorithmTestCase[] = [
+  { id: "normal-1", kind: "normal", inputs: ["12", "7", "19"], expectedOutput: "19", rationale: "Typical distinct values." },
+  { id: "normal-2", kind: "normal", inputs: ["5", "18", "11"], expectedOutput: "18", rationale: "Largest value occurs in the middle input." },
+  { id: "boundary-equal", kind: "boundary", inputs: ["3", "3", "2"], expectedOutput: "3", rationale: "Checks equality handling." },
+  { id: "hidden-negative", kind: "hidden", inputs: ["-10", "-3", "-7"], expectedOutput: "-3", hidden: true },
+  { id: "hidden-equal", kind: "hidden", inputs: ["9", "9", "9"], expectedOutput: "9", hidden: true },
+];
+
 export const ALGORITHM_EXERCISES: AlgorithmExercise[] = [
-  { id: "largest-three", title: "Find the largest of three", objectiveId: "alg.selection", questionType: "write", difficulty: 1, prompt: "Write an algorithm that accepts three numbers and outputs the largest value.", starterCode: START_LARGEST, testInputs: ["12\n7\n19", "5\n18\n11", "3\n3\n2"], expectedOutputs: ["19", "18", "3"], contexts: ALL_CONTEXTS },
-  { id: "sum-one-to-n", title: "Sum from 1 to N", objectiveId: "alg.iteration", questionType: "write", difficulty: 2, prompt: "Write an algorithm that accepts N and outputs the sum of all integers from 1 to N.", starterCode: "INPUT N\nTotal <- 0\nFOR I <- 1 TO N\n    Total <- Total + I\nEND FOR\nOUTPUT Total", testInputs: ["5", "1", "10"], expectedOutputs: ["15", "1", "55"], contexts: ALL_CONTEXTS },
-  { id: "array-total", title: "Array total", objectiveId: "alg.arrays", questionType: "write", difficulty: 3, prompt: "Read five values into an array and output their total.", starterCode: "DECLARE Values AS ARRAY\nFOR I <- 1 TO 5\n    INPUT X\n    Values[I] <- X\nEND FOR\nTotal <- 0\nFOR I <- 1 TO 5\n    Total <- Total + Values[I]\nEND FOR\nOUTPUT Total", testInputs: ["1\n2\n3\n4\n5", "10\n0\n-2\n7\n5"], expectedOutputs: ["15", "20"], contexts: ALL_CONTEXTS },
-  { id: "trace-selection", title: "Trace a selection", objectiveId: "alg.tracing", questionType: "trace", difficulty: 2, prompt: "Run the algorithm and inspect how Largest changes as each input is considered.", starterCode: START_LARGEST, testInputs: ["9\n4\n12"], expectedOutputs: ["12"], contexts: ALL_CONTEXTS },
+  { id: "largest-three", title: "Find the largest of three", objectiveId: "alg.selection", questionType: "write", difficulty: 1, prompt: "Write an algorithm that accepts three numbers and outputs the largest value.", starterCode: START_LARGEST, testInputs: LARGEST_TESTS.filter((test) => !test.hidden).map((test) => test.inputs.join("\n")), expectedOutputs: LARGEST_TESTS.filter((test) => !test.hidden).map((test) => test.expectedOutput ?? ""), testCases: LARGEST_TESTS, contexts: ALL_CONTEXTS },
+  { id: "sum-one-to-n", title: "Sum from 1 to N", objectiveId: "alg.iteration", questionType: "write", difficulty: 2, prompt: "Write an algorithm that accepts N and outputs the sum of all integers from 1 to N.", starterCode: "INPUT N\nTotal <- 0\nFOR I <- 1 TO N\n    Total <- Total + I\nEND FOR\nOUTPUT Total", testInputs: ["5", "1", "10"], expectedOutputs: ["15", "1", "55"], testCases: [{ id: "normal-1", kind: "normal", inputs: ["5"], expectedOutput: "15" }, { id: "boundary-1", kind: "boundary", inputs: ["1"], expectedOutput: "1" }, { id: "hidden-10", kind: "hidden", inputs: ["10"], expectedOutput: "55", hidden: true }], contexts: ALL_CONTEXTS },
+  { id: "array-total", title: "Array total", objectiveId: "alg.arrays", questionType: "write", difficulty: 3, prompt: "Read five values into an array and output their total.", starterCode: "DECLARE Values AS ARRAY\nFOR I <- 1 TO 5\n    INPUT X\n    Values[I] <- X\nEND FOR\nTotal <- 0\nFOR I <- 1 TO 5\n    Total <- Total + Values[I]\nEND FOR\nOUTPUT Total", testInputs: ["1\n2\n3\n4\n5", "10\n0\n-2\n7\n5"], expectedOutputs: ["15", "20"], testCases: [{ id: "normal-1", kind: "normal", inputs: ["1", "2", "3", "4", "5"], expectedOutput: "15" }, { id: "normal-2", kind: "normal", inputs: ["10", "0", "-2", "7", "5"], expectedOutput: "20" }, { id: "hidden-negative", kind: "hidden", inputs: ["-1", "-2", "-3", "-4", "-5"], expectedOutput: "-15", hidden: true }], contexts: ALL_CONTEXTS },
+  { id: "trace-selection", title: "Trace a selection", objectiveId: "alg.tracing", questionType: "trace", difficulty: 2, prompt: "Run the algorithm and inspect how Largest changes as each input is considered.", starterCode: START_LARGEST, testInputs: ["9\n4\n12"], expectedOutputs: ["12"], testCases: [{ id: "trace-1", kind: "normal", inputs: ["9", "4", "12"], expectedOutput: "12" }], contexts: ALL_CONTEXTS },
   { id: "boundary-tests", title: "Choose boundary tests", objectiveId: "alg.testing", questionType: "test", difficulty: 3, prompt: "Create test cases that challenge an algorithm at its smallest, largest, equal-value and invalid-input boundaries.", contexts: ALL_CONTEXTS },
   { id: "complexity-nested", title: "Analyse nested loops", objectiveId: "alg.complexity", questionType: "complexity", difficulty: 4, prompt: "Determine the dominant time complexity of an algorithm containing one loop nested inside another loop.", contexts: ["sixth-form", "university", "polytechnic", "professional"] },
 ];
 
 export function getAlgorithmExercise(id: string) { return ALGORITHM_EXERCISES.find((exercise) => exercise.id === id); }
 export function getAlgorithmObjective(id: string) { return ALGORITHM_OBJECTIVES.find((objective) => objective.id === id); }
+export function getAssessmentTestCases(exercise: AlgorithmExercise) { return exercise.testCases ?? (exercise.testInputs ?? []).map((inputs, index) => ({ id: `visible-${index + 1}`, kind: "normal" as const, inputs: inputs.split(/\r?\n/), expectedOutput: exercise.expectedOutputs?.[index] })); }
+export function normalizeOutput(value: string) { return value.replace(/\r/g, "").split("\n").map((line) => line.trim()).filter(Boolean).join("\n").trim(); }
+export function compareExpectedOutput(actual: string, expected?: string) { if (expected === undefined) return { checked: false, passed: true }; return { checked: true, passed: normalizeOutput(actual) === normalizeOutput(expected) }; }
 
-export function normalizeOutput(value: string) {
-  return value.replace(/\r/g, "").split("\n").map((line) => line.trim()).filter(Boolean).join("\n").trim();
+export function scoreAlgorithmEvidence(input: { executionPassed: number; executionTotal: number; hiddenPassed: number; hiddenTotal: number; traceScore?: number; flowchartScore?: number; complexityScore?: number }) {
+  const execution = input.executionTotal ? input.executionPassed / input.executionTotal : 0;
+  const hidden = input.hiddenTotal ? input.hiddenPassed / input.hiddenTotal : execution;
+  const testing = input.executionTotal ? Math.min(1, input.executionTotal / 3) : 0;
+  const tracing = input.traceScore ?? 0;
+  const flowchart = input.flowchartScore ?? 0;
+  const complexity = input.complexityScore ?? 0;
+  const score = Math.round((execution * 0.45 + hidden * 0.25 + testing * 0.1 + tracing * 0.1 + flowchart * 0.05 + complexity * 0.05) * 100);
+  return { score, execution, testing, tracing, flowchart, complexity, hidden };
 }
 
-export function compareExpectedOutput(actual: string, expected?: string) {
-  if (expected === undefined) return { checked: false, passed: true };
-  return { checked: true, passed: normalizeOutput(actual) === normalizeOutput(expected) };
-}
-
-export function recordAlgorithmEvidence(input: { exerciseId: string; objectiveId: string; passed: boolean; testCount: number; durationMs: number }) {
-  return {
-    type: "comp-lab.algorithm-assessment",
-    exerciseId: input.exerciseId,
-    objectiveId: input.objectiveId,
-    passed: input.passed,
-    testCount: input.testCount,
-    durationMs: Math.round(input.durationMs),
-    recordedAt: new Date().toISOString(),
-  } as const;
+export function recordAlgorithmEvidence(input: { exerciseId: string; objectiveId: string; passed: boolean; testCount: number; durationMs: number; passedTests?: number; hiddenTestCount?: number; hiddenPassedTests?: number; traceScore?: number; flowchartScore?: number; complexityScore?: number }) {
+  const passedTests = input.passedTests ?? (input.passed ? input.testCount : 0);
+  const hiddenTestCount = input.hiddenTestCount ?? 0;
+  const hiddenPassedTests = input.hiddenPassedTests ?? 0;
+  const scored = scoreAlgorithmEvidence({ executionPassed: passedTests, executionTotal: input.testCount, hiddenPassed: hiddenPassedTests, hiddenTotal: hiddenTestCount, traceScore: input.traceScore, flowchartScore: input.flowchartScore, complexityScore: input.complexityScore });
+  return { type: "comp-lab.algorithm-assessment", exerciseId: input.exerciseId, objectiveId: input.objectiveId, passed: input.passed, score: scored.score, testCount: input.testCount, passedTests, hiddenTestCount, hiddenPassedTests, durationMs: Math.round(input.durationMs), dimensions: { execution: Math.round(scored.execution * 100), testing: Math.round(scored.testing * 100), tracing: Math.round(scored.tracing * 100), flowchart: Math.round(scored.flowchart * 100), complexity: Math.round(scored.complexity * 100) }, recordedAt: new Date().toISOString() } as const;
 }
