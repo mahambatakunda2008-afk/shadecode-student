@@ -11,9 +11,7 @@ function getServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Missing server database configuration.");
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 function digest(code: string): string {
@@ -55,26 +53,33 @@ export async function consumeWhatsAppLinkCode(input: {
 }): Promise<{ userId: string; role: ClientRole } | null> {
   const normalized = input.code.trim().toUpperCase();
   if (!/^[A-Z0-9]{8}$/.test(normalized)) return null;
+  if (!input.externalUserId.trim()) return null;
 
   const client = getServerClient();
+  const now = new Date().toISOString();
   const { data, error } = await client
     .from("platform_channel_link_codes")
-    .select("id, user_id, role, expires_at, used_at")
+    .select("id, user_id, role")
     .eq("code_digest", digest(normalized))
     .eq("channel", "whatsapp")
     .is("used_at", null)
-    .gt("expires_at", new Date().toISOString())
+    .gt("expires_at", now)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) return null;
 
-  const { error: consumeError } = await client
+  const { data: consumed, error: consumeError } = await client
     .from("platform_channel_link_codes")
-    .update({ used_at: new Date().toISOString() })
+    .update({ used_at: now })
     .eq("id", data.id)
-    .is("used_at", null);
+    .is("used_at", null)
+    .gt("expires_at", now)
+    .select("id")
+    .maybeSingle();
+
   if (consumeError) throw new Error(consumeError.message);
+  if (!consumed) return null;
 
   return { userId: data.user_id as string, role: data.role as ClientRole };
 }
