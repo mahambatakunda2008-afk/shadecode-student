@@ -1,8 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import CompLabWorkspace from "@/components/comp-lab/CompLabWorkspace";
-
-/** Backward-compatible route. The student-facing experience is now Comp Lab. */
+/** Legacy route. Comp Lab is now the canonical student-facing computing environment. */
 export default function CodeLabPage() {
-  return <CompLabWorkspace />;
+  redirect("/comp-lab");
 }
