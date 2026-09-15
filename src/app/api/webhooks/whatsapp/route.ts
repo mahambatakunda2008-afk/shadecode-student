@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dispatchWhatsAppTextEvent } from "@/lib/channels/whatsapp/application";
+import { sendWhatsAppTextMessage } from "@/lib/channels/whatsapp/delivery";
 import {
   parseWhatsAppTextEvents,
   verifyWhatsAppChallenge,
@@ -57,9 +58,18 @@ export async function POST(request: Request) {
     try {
       const linkCode = parseLinkCommand(event.text);
       if (linkCode) {
-        const linked = await consumeWhatsAppLinkCode({ code: linkCode, externalUserId: event.externalUserId });
+        const linked = await consumeWhatsAppLinkCode({
+          code: linkCode,
+          externalUserId: event.externalUserId,
+        });
         if (!linked) {
-          results.push({ event, userId: null, response: { text: "That Shadecode link code is invalid, expired, or already used." } });
+          results.push({
+            event,
+            userId: null,
+            response: {
+              text: "That Shadecode link code is invalid, expired, or already used.",
+            },
+          });
           continue;
         }
 
@@ -83,9 +93,32 @@ export async function POST(request: Request) {
 
       results.push(await dispatchWhatsAppTextEvent(event));
     } catch (error) {
-      console.error("WhatsApp webhook dispatch failed", { messageId: event.messageId, error });
+      console.error("WhatsApp webhook dispatch failed", {
+        messageId: event.messageId,
+        error,
+      });
     }
   }
 
-  return NextResponse.json({ received: true, processed: results.length }, { status: 200 });
+  let delivered = 0;
+  for (const result of results) {
+    try {
+      await sendWhatsAppTextMessage({
+        phoneNumberId: result.event.phoneNumberId,
+        recipient: result.event.externalUserId,
+        text: result.response.text,
+      });
+      delivered += 1;
+    } catch (error) {
+      console.error("WhatsApp response delivery failed", {
+        messageId: result.event.messageId,
+        error,
+      });
+    }
+  }
+
+  return NextResponse.json(
+    { received: true, processed: results.length, delivered },
+    { status: 200 },
+  );
 }
