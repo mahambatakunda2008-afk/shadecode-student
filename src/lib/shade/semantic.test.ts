@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { analyzeShade, createShadeExecutionPlan, createShadeProjectModel, runShade } from "./index";
+import { parseShade } from "./parser";
 
 describe("Shade native vertical slice", () => {
   it("builds semantic, project, capability, and evidence data from executable Shade", () => {
     const source = `numbers = [1, 2, 3]\nshow sum(numbers)`;
     const parsed = runShade(source);
-    const semantic = analyzeShade(requireParse(source));
+    const semantic = analyzeShade(parseShade(source).program);
     const project = createShadeProjectModel({ name: "demo", entry: "main.shade", semantic, languageVersion: "0.1.0-design-core" });
     const plan = createShadeExecutionPlan(semantic);
 
@@ -20,13 +21,8 @@ describe("Shade native vertical slice", () => {
   });
 
   it("detects capabilities from semantic calls without executing them", () => {
-    const semantic = analyzeShade(requireParse(`show http("https://example.com")`));
+    const semantic = analyzeShade(parseShade(`show http("https://example.com")`).program);
     expect(semantic.capabilities).toContain("network.internet");
     expect(createShadeExecutionPlan(semantic).networkRequired).toBe(true);
   });
 });
-
-function requireParse(source: string) {
-  const { parseShade } = require("./parser") as typeof import("./parser");
-  return parseShade(source).program;
-}
