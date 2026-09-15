@@ -17,11 +17,22 @@ export interface WhatsAppApplicationResult {
   userId: string | null;
 }
 
+const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH", "HELP"]);
+
 function parseLearningRequest(text: string): { type: "learn"; topic: string } | null {
   const trimmed = text.trim();
-  const match = trimmed.match(/^(?:LEARN|EXPLAIN|TEACH|HELP)\s+(.+)$/i);
-  if (!match?.[1]) return null;
-  return { type: "learn", topic: match[1].trim() };
+  if (!trimmed) return null;
+
+  const firstWhitespace = trimmed.search(/\s/);
+  if (firstWhitespace < 0) return null;
+
+  const command = trimmed.slice(0, firstWhitespace).toUpperCase();
+  if (!LEARNING_COMMANDS.has(command)) return null;
+
+  const topic = trimmed.slice(firstWhitespace).trim();
+  if (!topic) return null;
+
+  return { type: "learn", topic };
 }
 
 export async function dispatchWhatsAppTextEvent(
