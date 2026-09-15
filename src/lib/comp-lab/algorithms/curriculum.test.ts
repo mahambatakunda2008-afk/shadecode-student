@@ -3,7 +3,7 @@ import { attachVerifiedCurriculumBinding, isVerifiedCurriculumBinding, matchesCu
 import { getAlgorithmExercise } from "./assessment";
 
 const binding = {
-  board: "Example Board",
+  board: "ZIMSEC",
   qualification: "O Level",
   level: "Secondary",
   subject: "Computer Science",
@@ -11,7 +11,7 @@ const binding = {
   syllabusVersion: "2026",
   objectiveId: "alg.selection",
   objectiveLabel: "Selection",
-  sourceReference: "https://example.invalid/syllabus",
+  sourceReference: "verified:syllabus-source",
   verified: true,
 };
 
@@ -30,7 +30,7 @@ describe("Comp Lab curriculum contract", () => {
 
   it("matches a verified board and syllabus context without changing the runtime", () => {
     const exercise = attachVerifiedCurriculumBinding(getAlgorithmExercise("largest-three")!, binding);
-    expect(matchesCurriculumContext(exercise, { context: "secondary", board: "Example Board", qualification: "O Level", level: "Secondary", subject: "Computer Science", syllabusId: "CS-001", syllabusVersion: "2026" })).toBe(true);
+    expect(matchesCurriculumContext(exercise, { context: "secondary", board: "ZIMSEC", qualification: "O Level", level: "Secondary", subject: "Computer Science", syllabusId: "CS-001", syllabusVersion: "2026" })).toBe(true);
     expect(matchesCurriculumContext(exercise, { context: "secondary", board: "Other Board" })).toBe(false);
     expect(matchesCurriculumContext(exercise, { context: "university" })).toBe(false);
   });
