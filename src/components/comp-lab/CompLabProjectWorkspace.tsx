@@ -5,10 +5,14 @@ import { Download, FileCode2, FolderOpen, Play, RotateCcw, Save, Terminal } from
 import { CodeLabEditor } from "@/components/code-lab/CodeLabEditor";
 import type { CompLabEnvironment } from "@/lib/comp-lab/environments";
 import { getCapability } from "@/lib/platform/capabilities";
+import { executeCode } from "@/lib/code-lab/runtime";
 
 type ProjectFile = { path: string; language: string; content: string };
 
 const STARTERS: Record<string, ProjectFile[]> = {
+  "shade-console": [
+    { path: "main.shade", language: "shade", content: "numbers = [1, 2, 3, 4, 5]\nshow sum(numbers)\n" },
+  ],
   "java-console": [
     { path: "Main.java", language: "java", content: "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello from Comp Lab\");\n    }\n}\n" },
   ],
@@ -66,7 +70,9 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
   const [active, setActive] = useState(0);
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState("");
+  const [shadeResult, setShadeResult] = useState<{ stdout: string[]; concepts: string[]; capabilities: string[]; durationMs: number } | null>(null);
   const current = files[active] ?? files[0];
+  const isShade = environment.languages.includes("shade");
   const capability = useMemo(() => {
     if (environment.id.includes("java")) return getCapability("runtime.java");
     if (environment.id.includes("csharp") || environment.id.includes("vbnet")) return getCapability("runtime.dotnet");
@@ -102,6 +108,7 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
     setFiles(starterFiles(environment));
     setActive(0);
     setSaved(false);
+    setShadeResult(null);
     setMessage("Starter project restored.");
   }
 
@@ -114,6 +121,19 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
     anchor.click();
     URL.revokeObjectURL(url);
     setMessage(`Downloaded ${current?.path ?? "file"}.`);
+  }
+
+  async function buildOrRun() {
+    if (!isShade) {
+      setMessage("Build request recorded. A real native toolchain is required before Comp Lab can execute this project.");
+      return;
+    }
+    if (!current) return;
+    setMessage("Running through the Shade interpreter and semantic model…");
+    const result = await executeCode({ id: crypto.randomUUID(), language: "shade", code: current.content, entryFile: current.path, files: files.map(({ path, content }) => ({ path, content })), timeoutMs: 5000 });
+    const metadata = result.metadata?.semantic as { concepts?: string[]; capabilities?: string[] } | undefined;
+    setShadeResult({ stdout: result.events.filter((event) => event.type === "stdout").map((event) => event.text), concepts: metadata?.concepts ?? [], capabilities: metadata?.capabilities ?? [], durationMs: result.durationMs });
+    setMessage(result.exitCode === 0 ? "Shade execution completed with structured evidence." : "Shade execution failed. Check the diagnostics in the editor.");
   }
 
   return (
@@ -135,11 +155,18 @@ export default function CompLabProjectWorkspace({ environment }: { environment: 
           <div className="flex items-center gap-2 text-xs font-semibold"><Terminal className="h-3.5 w-3.5" />Project status</div>
           <div className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
             <p className="text-[10px] uppercase tracking-wider text-slate-500">Runtime</p>
-            <p className="mt-1 text-sm font-medium text-slate-200">{capability?.availability ?? "native / artifact"}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">{capability?.description ?? "This environment has a complete project surface, but execution requires the appropriate native or artifact capability."}</p>
+            <p className="mt-1 text-sm font-medium text-slate-200">{isShade ? "Shade interpreter · browser" : capability?.availability ?? "native / artifact"}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{isShade ? "Real Shade execution with semantic analysis, capability requirements, project graph and structured evidence." : capability?.description ?? "This environment has a complete project surface, but execution requires the appropriate native or artifact capability."}</p>
           </div>
-          <button type="button" onClick={() => setMessage("Build request recorded. A real native toolchain is required before Comp Lab can execute this project.")} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/5"><Play className="h-3.5 w-3.5" />Build / Run</button>
+          <button type="button" onClick={buildOrRun} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/5"><Play className="h-3.5 w-3.5" />{isShade ? "Run Shade" : "Build / Run"}</button>
           {message && <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs leading-5 text-slate-400">{message}</p>}
+          {isShade && shadeResult && <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/10 p-3 text-xs">
+            <p className="font-semibold text-slate-300">Structured evidence</p>
+            <p className="text-slate-500">Output: <span className="text-slate-300">{shadeResult.stdout.join(" · ") || "none"}</span></p>
+            <p className="text-slate-500">Concepts: <span className="text-slate-300">{shadeResult.concepts.join(", ") || "none"}</span></p>
+            <p className="text-slate-500">Capabilities: <span className="text-slate-300">{shadeResult.capabilities.join(", ") || "none"}</span></p>
+            <p className="text-slate-500">Execution: <span className="text-slate-300">{Math.round(shadeResult.durationMs)} ms</span></p>
+          </div>}
           <div className="mt-5 space-y-2 text-xs text-slate-500">
             <p><span className="text-slate-300">Files:</span> {files.length}</p>
             <p><span className="text-slate-300">Languages:</span> {environment.languages.join(", ")}</p>
