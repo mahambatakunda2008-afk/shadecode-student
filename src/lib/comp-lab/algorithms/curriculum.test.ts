@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachVerifiedCurriculumBinding, isVerifiedCurriculumBinding, matchesCurriculumContext, objectiveIsCurriculumCompatible, officialAlignmentLabel } from "./curriculum";
+import { attachVerifiedCurriculumBinding, getEligibleExercises, isVerifiedCurriculumBinding, matchesCurriculumContext, objectiveIsCurriculumCompatible, officialAlignmentLabel } from "./curriculum";
 import { getAlgorithmExercise } from "./assessment";
 
 const binding = {
@@ -33,5 +33,10 @@ describe("Comp Lab curriculum contract", () => {
     expect(matchesCurriculumContext(exercise, { context: "secondary", board: "ZIMSEC", qualification: "O Level", level: "Secondary", subject: "Computer Science", syllabusId: "CS-001", syllabusVersion: "2026" })).toBe(true);
     expect(matchesCurriculumContext(exercise, { context: "secondary", board: "Other Board" })).toBe(false);
     expect(matchesCurriculumContext(exercise, { context: "university" })).toBe(false);
+    expect(getEligibleExercises([exercise], { context: "secondary", board: "ZIMSEC" })).toHaveLength(1);
+  });
+
+  it("refuses to attach a binding to the wrong learning objective", () => {
+    expect(() => attachVerifiedCurriculumBinding(getAlgorithmExercise("array-total")!, binding)).toThrow(/objective/);
   });
 });
