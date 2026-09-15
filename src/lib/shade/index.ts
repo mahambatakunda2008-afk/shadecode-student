@@ -2,6 +2,8 @@ export * from "./types";
 export * from "./semantic";
 export * from "./project";
 export * from "./execution";
+export * from "./ir";
+export * from "./graph";
 export { lexShade } from "./lexer";
 export { parseShade } from "./parser";
 export { runShade } from "./interpreter";
