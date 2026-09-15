@@ -5,6 +5,8 @@ import {
   verifyWhatsAppChallenge,
   verifyWhatsAppSignature,
 } from "@/lib/channels/whatsapp/webhook";
+import { consumeWhatsAppLinkCode } from "@/lib/platform/channel-link-codes";
+import { linkChannelIdentity } from "@/lib/platform/channel-identity-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +15,11 @@ function getRequiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name}.`);
   return value;
+}
+
+function parseLinkCommand(text: string): string | null {
+  const match = text.trim().match(/^(?:LINK|CONNECT)\s+([A-Z0-9]{8})$/i);
+  return match?.[1]?.toUpperCase() ?? null;
 }
 
 export async function GET(request: Request) {
@@ -24,10 +31,7 @@ export async function GET(request: Request) {
     expectedToken: getRequiredEnv("WHATSAPP_VERIFY_TOKEN"),
   });
 
-  if (challenge === null) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
-
+  if (challenge === null) return new NextResponse("Forbidden", { status: 403 });
   return new NextResponse(challenge, { status: 200 });
 }
 
@@ -51,12 +55,35 @@ export async function POST(request: Request) {
 
   for (const event of events) {
     try {
+      const linkCode = parseLinkCommand(event.text);
+      if (linkCode) {
+        const linked = await consumeWhatsAppLinkCode({ code: linkCode, externalUserId: event.externalUserId });
+        if (!linked) {
+          results.push({ event, userId: null, response: { text: "That Shadecode link code is invalid, expired, or already used." } });
+          continue;
+        }
+
+        const identity = await linkChannelIdentity({
+          channel: "whatsapp",
+          externalUserId: event.externalUserId,
+          userId: linked.userId,
+          role: linked.role,
+        });
+
+        results.push({
+          event,
+          userId: identity.userId,
+          response: {
+            text: "WhatsApp is now linked to your Shadecode account. You can start by asking me what you want to learn.",
+            metadata: { status: "linked", role: identity.role },
+          },
+        });
+        continue;
+      }
+
       results.push(await dispatchWhatsAppTextEvent(event));
     } catch (error) {
-      console.error("WhatsApp webhook dispatch failed", {
-        messageId: event.messageId,
-        error,
-      });
+      console.error("WhatsApp webhook dispatch failed", { messageId: event.messageId, error });
     }
   }
 
