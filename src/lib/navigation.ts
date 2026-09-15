@@ -16,13 +16,15 @@ export function getExperienceNavGroups(experience: AcademicExperience, _curricul
   ];
   const school: NavGroup[] = [
     { group:"Study", items:[NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.curriculum, NAV_ITEMS.study, NAV_ITEMS.studyPlan] },
-    { group:"Practice", items:[NAV_ITEMS.compLab, NAV_ITEMS.examHub, NAV_ITEMS.examSim, NAV_ITEMS.exams, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.timetable] },
+    { group:"Comp Lab", items:[NAV_ITEMS.compLab] },
+    { group:"Practice", items:[NAV_ITEMS.examHub, NAV_ITEMS.examSim, NAV_ITEMS.exams, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.timetable] },
     { group:"Tools", items:[NAV_ITEMS.studyspace, NAV_ITEMS.cortex, NAV_ITEMS.share] },
     { group:"Progress", items:[NAV_ITEMS.analytics, NAV_ITEMS.achievements, NAV_ITEMS.leaderboard] },
   ];
   const beyond: NavGroup[] = [
     { group:"Workspace", items:[NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.studyspace, NAV_ITEMS.learn, NAV_ITEMS.studyPlan] },
-    { group:"Work", items:[NAV_ITEMS.compLab, NAV_ITEMS.workmate, NAV_ITEMS.projects, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.timetable] },
+    { group:"Comp Lab", items:[NAV_ITEMS.compLab] },
+    { group:"Work", items:[NAV_ITEMS.workmate, NAV_ITEMS.projects, NAV_ITEMS.tasks, NAV_ITEMS.focus, NAV_ITEMS.timetable] },
     { group:"Growth", items:[NAV_ITEMS.analytics, NAV_ITEMS.cortex, NAV_ITEMS.achievements, NAV_ITEMS.share] },
   ];
   const groups = experience.family === "foundation" ? foundation : experience.family === "school" ? school : beyond;
@@ -33,7 +35,7 @@ export function getExperienceNavGroups(experience: AcademicExperience, _curricul
   })).filter(group => group.items.length > 0);
 }
 
-export const SIDEBAR_GROUPS:NavGroup[]=[{group:"Core",items:[NAV_ITEMS.dashboard,NAV_ITEMS.focus,NAV_ITEMS.study,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan]},{group:"Practice",items:[NAV_ITEMS.compLab,NAV_ITEMS.examHub,NAV_ITEMS.tasks,NAV_ITEMS.exams,NAV_ITEMS.examSim]},{group:"Tools",items:[NAV_ITEMS.learn,NAV_ITEMS.curriculum,NAV_ITEMS.projects,NAV_ITEMS.workmate,NAV_ITEMS.studyspace,NAV_ITEMS.cortex,NAV_ITEMS.share]},{group:"Progress",items:[NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements]}];
+export const SIDEBAR_GROUPS:NavGroup[]=[{group:"Core",items:[NAV_ITEMS.dashboard,NAV_ITEMS.focus,NAV_ITEMS.study,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan]},{group:"Comp Lab",items:[NAV_ITEMS.compLab]},{group:"Practice",items:[NAV_ITEMS.examHub,NAV_ITEMS.tasks,NAV_ITEMS.exams,NAV_ITEMS.examSim]},{group:"Tools",items:[NAV_ITEMS.learn,NAV_ITEMS.curriculum,NAV_ITEMS.projects,NAV_ITEMS.workmate,NAV_ITEMS.studyspace,NAV_ITEMS.cortex,NAV_ITEMS.share]},{group:"Progress",items:[NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements]}];
 export const BOTTOM_PRIMARY:NavItem[]=[NAV_ITEMS.dashboard,NAV_ITEMS.learn,NAV_ITEMS.compLab,NAV_ITEMS.tasks,NAV_ITEMS.focus];
 export const BOTTOM_MORE:NavItem[]=[NAV_ITEMS.curriculum,NAV_ITEMS.timetable,NAV_ITEMS.studyPlan,NAV_ITEMS.study,NAV_ITEMS.exams,NAV_ITEMS.examSim,NAV_ITEMS.examHub,NAV_ITEMS.studyspace,NAV_ITEMS.workmate,NAV_ITEMS.projects,NAV_ITEMS.analytics,NAV_ITEMS.leaderboard,NAV_ITEMS.achievements,NAV_ITEMS.cortex,NAV_ITEMS.share,NAV_ITEMS.settings];
 export function isRouteActive(pathname:string,href:string):boolean{if(href==="/")return pathname==="/";return pathname===href||pathname.startsWith(`${href}/`);}
