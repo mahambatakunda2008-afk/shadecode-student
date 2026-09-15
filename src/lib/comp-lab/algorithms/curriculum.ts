@@ -28,36 +28,19 @@ export type CompLabCurriculumContext = {
   syllabusVersion?: string;
 };
 
-export type CurriculumAwareExercise = AlgorithmExercise & {
-  curriculum?: CurriculumBinding[];
-};
+export type CurriculumAwareExercise = AlgorithmExercise & { curriculum?: CurriculumBinding[] };
 
 export function isVerifiedCurriculumBinding(binding: CurriculumBinding): boolean {
-  return Boolean(
-    binding.verified &&
-      binding.board.trim() &&
-      binding.qualification.trim() &&
-      binding.level.trim() &&
-      binding.subject.trim() &&
-      binding.syllabusId.trim() &&
-      binding.syllabusVersion.trim() &&
-      binding.objectiveId.trim() &&
-      binding.objectiveLabel.trim() &&
-      binding.sourceReference.trim(),
-  );
+  return Boolean(binding.verified && binding.board.trim() && binding.qualification.trim() && binding.level.trim() && binding.subject.trim() && binding.syllabusId.trim() && binding.syllabusVersion.trim() && binding.objectiveId.trim() && binding.objectiveLabel.trim() && binding.sourceReference.trim());
 }
 
 export function officialAlignmentLabel(binding?: CurriculumBinding): "official" | "practice" {
   return binding && isVerifiedCurriculumBinding(binding) ? "official" : "practice";
 }
 
-export function matchesCurriculumContext(
-  exercise: Pick<CurriculumAwareExercise, "contexts" | "curriculum">,
-  context: CompLabCurriculumContext,
-): boolean {
+export function matchesCurriculumContext(exercise: Pick<CurriculumAwareExercise, "contexts" | "curriculum">, context: CompLabCurriculumContext): boolean {
   if (!exercise.contexts.includes(context.context)) return false;
   if (!context.board && !context.qualification && !context.level && !context.subject && !context.syllabusId) return true;
-
   return (exercise.curriculum ?? []).some((binding) => {
     if (!isVerifiedCurriculumBinding(binding)) return false;
     if (context.board && binding.board !== context.board) return false;
@@ -70,19 +53,15 @@ export function matchesCurriculumContext(
   });
 }
 
-export function attachVerifiedCurriculumBinding(
-  exercise: CurriculumAwareExercise,
-  binding: CurriculumBinding,
-): CurriculumAwareExercise {
-  if (!isVerifiedCurriculumBinding(binding)) {
-    throw new Error("Curriculum binding must contain a verified source and complete syllabus metadata.");
-  }
+export function attachVerifiedCurriculumBinding(exercise: CurriculumAwareExercise, binding: CurriculumBinding): CurriculumAwareExercise {
+  if (!isVerifiedCurriculumBinding(binding)) throw new Error("Curriculum binding must contain a verified source and complete syllabus metadata.");
   return { ...exercise, curriculum: [...(exercise.curriculum ?? []), binding] };
 }
 
-export function objectiveIsCurriculumCompatible(
-  objective: Pick<AlgorithmObjective, "id">,
-  binding: CurriculumBinding,
-): boolean {
+export function objectiveIsCurriculumCompatible(objective: Pick<AlgorithmObjective, "id">, binding: CurriculumBinding): boolean {
   return objective.id === binding.objectiveId;
+}
+
+export function getVerifiedBindings(exercises: CurriculumAwareExercise[], context: CompLabCurriculumContext): CurriculumBinding[] {
+  return exercises.flatMap(exercise => (exercise.curriculum ?? []).filter(binding => isVerifiedCurriculumBinding(binding) && matchesCurriculumContext(exercise, context)));
 }
