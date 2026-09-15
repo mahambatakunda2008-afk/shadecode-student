@@ -8,12 +8,7 @@ export function verifyWhatsAppSignature(rawBody: string, signature: string | nul
   return provided.length === expectedBuffer.length && timingSafeEqual(provided, expectedBuffer);
 }
 
-export function verifyWhatsAppChallenge(input: {
-  mode: string | null;
-  token: string | null;
-  challenge: string | null;
-  expectedToken: string;
-}): string | null {
+export function verifyWhatsAppChallenge(input: { mode: string | null; token: string | null; challenge: string | null; expectedToken: string }): string | null {
   if (input.mode !== "subscribe") return null;
   if (!input.token || input.token !== input.expectedToken) return null;
   return input.challenge;
@@ -27,52 +22,31 @@ export interface ParsedWhatsAppTextEvent {
   phoneNumberId: string;
 }
 
-interface WhatsAppChange {
-  value?: unknown;
+type UnknownRecord = Record<string, unknown>;
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
-function asRecords(value: unknown): Record<string, unknown>[] {
-  return Array.isArray(value) ? value.map(asRecord).filter((item): item is Record<string, unknown> => item !== null) : [];
+function asRecords(value: unknown): UnknownRecord[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
 export function parseWhatsAppTextEvents(payload: unknown): ParsedWhatsAppTextEvent[] {
-  const root = asRecord(payload);
-  if (!root) return [];
-
+  if (!isRecord(payload)) return [];
   const events: ParsedWhatsAppTextEvent[] = [];
-  for (const entry of asRecords(root.entry)) {
-    const changes = asRecords(entry.changes) as WhatsAppChange[];
-    for (const change of changes) {
-      const value = asRecord(change.value);
-      if (!value) continue;
-
-      const metadata = asRecord(value.metadata);
-      const phoneNumberId = typeof metadata?.phone_number_id === "string"
-        ? metadata.phone_number_id
-        : "";
-
+  for (const entry of asRecords(payload.entry)) {
+    for (const change of asRecords(entry.changes)) {
+      const value = change.value;
+      if (!isRecord(value)) continue;
+      const metadata = isRecord(value.metadata) ? value.metadata : null;
+      const phoneNumberId = typeof metadata?.phone_number_id === "string" ? metadata.phone_number_id : "";
       for (const message of asRecords(value.messages)) {
-        const text = asRecord(message.text);
-        if (message.type !== "text" || !text) continue;
-
-        const body = text.body;
-        const messageId = message.id;
-        const externalUserId = message.from;
-        if (
-          typeof body !== "string" || !body.trim() ||
-          typeof messageId !== "string" ||
-          typeof externalUserId !== "string"
-        ) continue;
-
+        if (message.type !== "text" || !isRecord(message.text)) continue;
+        const body = message.text.body;
+        if (typeof body !== "string" || !body.trim()) continue;
+        if (typeof message.id !== "string" || typeof message.from !== "string") continue;
         events.push({
-          messageId,
-          externalUserId,
+          messageId: message.id,
+          externalUserId: message.from,
           text: body.trim(),
           timestamp: typeof message.timestamp === "string" ? message.timestamp : undefined,
           phoneNumberId,
@@ -80,6 +54,5 @@ export function parseWhatsAppTextEvents(payload: unknown): ParsedWhatsAppTextEve
       }
     }
   }
-
   return events;
 }
