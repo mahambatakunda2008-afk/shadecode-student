@@ -1,10 +1,11 @@
 export type CompLabProjectType = "console" | "web" | "windows-forms" | "desktop" | "database" | "spreadsheet" | "mobile" | "systems";
-export type CompLabLanguage = "javascript" | "typescript" | "python" | "csharp" | "vbnet" | "java" | "c" | "cpp" | "kotlin" | "php" | "rust" | "go" | "html" | "css" | "sql" | "json" | "markdown" | "xml" | "pseudocode";
+export type CompLabLanguage = "shade" | "javascript" | "typescript" | "python" | "csharp" | "vbnet" | "java" | "c" | "cpp" | "kotlin" | "php" | "rust" | "go" | "html" | "css" | "sql" | "json" | "markdown" | "xml" | "pseudocode";
 export type CompLabCapabilityStatus = "browser" | "planned" | "external-runtime" | "artifact";
 export type CompLabCurriculumContext = "school" | "secondary" | "sixth-form" | "university" | "polytechnic" | "professional";
 const ALL_CONTEXTS: CompLabCurriculumContext[] = ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"];
 export type CompLabEnvironment = { id: string; label: string; projectType: CompLabProjectType; languages: CompLabLanguage[]; description: string; status: CompLabCapabilityStatus; curriculumTags: string[]; curriculumContexts: CompLabCurriculumContext[]; fileExtensions?: string[] };
 export const COMP_LAB_ENVIRONMENTS: CompLabEnvironment[] = [
+{ id: "shade-console", label: "Shade", projectType: "console", languages: ["shade"], description: "Native Shade language workspace: write, run, test, understand and evolve programs through Shade's computational model.", status: "browser", curriculumTags: ["programming", "algorithms", "learning", "native-language"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".shade"] },
 { id: "javascript-console", label: "JavaScript Console", projectType: "console", languages: ["javascript"], description: "Run JavaScript with real browser execution, multi-file modules and diagnostics.", status: "browser", curriculumTags: ["programming", "debugging", "web"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".js", ".mjs"] },
 { id: "python-console", label: "Python", projectType: "console", languages: ["python"], description: "Run Python through a browser Python runtime with stdout, errors and execution timing.", status: "browser", curriculumTags: ["programming", "data", "algorithms"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".py"] },
 { id: "pseudocode", label: "Pseudocode & Algorithms", projectType: "console", languages: ["pseudocode"], description: "Board-neutral algorithm design with executable pseudocode, trace tables, test inputs, flowcharts and complexity guidance.", status: "browser", curriculumTags: ["algorithms", "pseudocode", "trace-tables", "flowcharts", "problem-solving"], curriculumContexts: ALL_CONTEXTS, fileExtensions: [".pseudo", ".pseudocode", ".txt"] },
@@ -29,8 +30,5 @@ export const COMP_LAB_ENVIRONMENTS: CompLabEnvironment[] = [
 ];
 
 export function getCompLabEnvironment(id: string) { return COMP_LAB_ENVIRONMENTS.find((environment) => environment.id === id); }
-export function findCompLabEnvironmentForPath(path: string) {
-  const lower = path.toLowerCase();
-  return COMP_LAB_ENVIRONMENTS.find((environment) => environment.fileExtensions?.some((extension) => lower.endsWith(extension.toLowerCase())));
-}
-export function isExecutableCompLabLanguage(language: CompLabLanguage) { return ["javascript", "typescript", "python", "sql", "pseudocode"].includes(language); }
+export function findCompLabEnvironmentForPath(path: string) { const lower = path.toLowerCase(); return COMP_LAB_ENVIRONMENTS.find((environment) => environment.fileExtensions?.some((extension) => lower.endsWith(extension.toLowerCase()))); }
+export function isExecutableCompLabLanguage(language: CompLabLanguage) { return ["shade", "javascript", "typescript", "python", "sql", "pseudocode"].includes(language); }
