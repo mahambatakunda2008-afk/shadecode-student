@@ -1,4 +1,5 @@
 import type { ChannelResponse } from "@/lib/channels/types";
+import type { ChannelIdentityRecord } from "@/lib/platform/channel-identity";
 
 export function unlinkedWhatsAppResponse(): ChannelResponse {
   return {
@@ -11,5 +12,28 @@ export function inactiveWhatsAppResponse(status: "blocked" | "unlinked"): Channe
   return {
     text: "This Shadecode WhatsApp connection is currently inactive. Please reconnect it from your Shadecode account.",
     metadata: { status },
+  };
+}
+
+export function buildWhatsAppResponse(
+  identity: ChannelIdentityRecord | null,
+): ChannelResponse {
+  if (!identity) {
+    return {
+      text: "Your WhatsApp number is not linked to a Shadecode account yet.",
+      metadata: { reason: "unlinked" },
+    };
+  }
+
+  if (identity.status !== "active") {
+    return {
+      text: "This Shadecode WhatsApp connection is currently inactive.",
+      metadata: { reason: identity.status },
+    };
+  }
+
+  return {
+    text: "Your Shadecode WhatsApp connection is active.",
+    metadata: { reason: "connected", userId: identity.userId },
   };
 }
