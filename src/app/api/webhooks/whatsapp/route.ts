@@ -97,6 +97,14 @@ export async function POST(request: Request) {
         messageId: event.messageId,
         error,
       });
+      results.push({
+        event,
+        userId: null,
+        response: {
+          text: "I couldn't process that message right now. Please try again in a moment.",
+          metadata: { status: "error", retryable: true },
+        },
+      });
     }
   }
 
