@@ -1,4 +1,5 @@
 import type { RuntimeDiagnostic, RuntimeRequest, RuntimeResult } from "./types";
+import { evaluateExpression } from "./expression-parser";
 
 type Scalar = number | string | boolean;
 type Value = Scalar | Scalar[];
@@ -26,39 +27,16 @@ const isBlockOnly = (line: string) => /^(BEGIN|END|THEN|ELSE|ENDIF|END\s+IF|ENDW
 const clone = (value: Value): Value => Array.isArray(value) ? [...value] : value;
 const display = (value: Value): string => Array.isArray(value) ? `[${value.map(display).join(", ")}]` : String(value);
 
-function valueOf(raw: string, state: ExecState): Value {
-  const text = raw.trim();
-  if (/^[-+]?\d+(?:\.\d+)?$/.test(text)) return Number(text);
-  if (/^(true|false)$/i.test(text)) return text.toLowerCase() === "true";
-  if ((text.startsWith("\"") && text.endsWith("\"")) || (text.startsWith("'") && text.endsWith("'"))) return text.slice(1, -1);
-  const index = text.match(/^([A-Za-z_]\w*)\s*\[\s*(.+)\s*\]$/);
-  if (index) {
-    const source = state.vars[index[1]];
-    if (Array.isArray(source)) return source[Math.max(0, Math.trunc(numeric(evalExpr(index[2], state))) - 1)] ?? "";
-    return "";
-  }
-  if (text in state.vars) return clone(state.vars[text]);
-  return text;
-}
-
 function numeric(v: Value) { const n = typeof v === "number" ? v : Number(v); return Number.isFinite(n) ? n : 0; }
 function truthy(v: Value) { return typeof v === "boolean" ? v : Boolean(numeric(v) || (typeof v === "string" && v.length)); }
 
 function evalExpr(raw: string, state: ExecState): Value {
-  let expr = raw.trim();
-  const len = expr.match(/^LENGTH\s*\(\s*([A-Za-z_]\w*)\s*\)$/i);
-  if (len) { const value = state.vars[len[1]]; return Array.isArray(value) || typeof value === "string" ? value.length : 0; }
-  const upperExpr = expr.toUpperCase();
-  if (upperExpr.startsWith("NOT ")) return !truthy(evalExpr(expr.slice(4), state));
-  expr = expr.replace(/<>/g, "!=").replace(/\bAND\b/gi, "&&").replace(/\bOR\b/gi, "||").replace(/\bNOT\b/gi, "!").replace(/\bMOD\b/gi, "%").replace(/\bDIV\b/gi, "/").replace(/\bTRUE\b/gi, "true").replace(/\bFALSE\b/gi, "false");
-  for (const [name, value] of Object.entries(state.vars)) {
-    const literal = Array.isArray(value) ? JSON.stringify(value) : typeof value === "string" ? JSON.stringify(value) : String(value);
-    expr = expr.replace(new RegExp(`\\b${name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\b`, "g"), literal);
-  }
-  if (/^[\d\s+\-*/%().<>=!&|"'A-Za-z_\[\],]+$/.test(expr)) {
-    try { return Function(`"use strict"; return (${expr});`)(); } catch { /* fall through */ }
-  }
-  return valueOf(raw, state);
+  return evaluateExpression(raw, state.vars) as Value;
+}
+
+function valueOf(raw: string, state: ExecState): Value {
+  const text = raw.trim();
+  try { return evalExpr(text, state); } catch { return text; }
 }
 
 function matchingEnd(lines: string[], start: number, opens: RegExp, closes: RegExp) {
