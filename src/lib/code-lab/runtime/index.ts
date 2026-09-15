@@ -4,6 +4,7 @@ import { runBrowserPython, runBrowserSql, runBrowserTypeScript } from "./browser
 import { runPseudocode } from "./pseudocode";
 import { unavailableRuntimeResult } from "./providers";
 import { buildProjectDiagnostics } from "../project-diagnostics";
+import { runShade } from "../../shade";
 
 export type { RuntimeDiagnostic, RuntimeEvent, RuntimeLanguage, RuntimeRequest, RuntimeResult } from "./types";
 export type { RuntimeProvider, RuntimeProviderId } from "./providers";
@@ -22,6 +23,7 @@ function publishDiagnostics(request: RuntimeRequest, result: RuntimeResult) {
 }
 
 function providerFor(language: RuntimeRequest["language"]) {
+  if (language === "shade") return "shade-interpreter" as const;
   if (language === "javascript") return "browser-javascript" as const;
   if (language === "typescript") return "typescript-transpiler" as const;
   if (language === "pseudocode") return "pseudocode-interpreter" as const;
@@ -44,7 +46,19 @@ function addProjectDiagnostics(request: RuntimeRequest, result: RuntimeResult): 
 
 export async function executeCode(request: RuntimeRequest): Promise<RuntimeResult> {
   let base: RuntimeResult;
-  if (request.language === "javascript") base = await runBrowserJavaScript(request);
+  if (request.language === "shade") {
+    const started = performance.now();
+    const execution = runShade(request.code, { inputs: request.inputs, maxSteps: Math.max(1000, Math.floor((request.timeoutMs ?? 5000) * 100)) });
+    const diagnostics: RuntimeDiagnostic[] = execution.diagnostics.map((diagnostic) => ({ ...diagnostic, source: "language" as const, file: request.entryFile }));
+    base = { id: request.id, language: request.language, events: [
+      { type: "status", status: "starting" },
+      { type: "status", status: diagnostics.some((d) => d.severity === "error") ? "failed" : "running" },
+      ...execution.stdout.map((text) => ({ type: "stdout" as const, text })),
+      ...diagnostics.map((diagnostic) => ({ type: "diagnostic" as const, diagnostic })),
+      { type: "status", status: diagnostics.some((d) => d.severity === "error") ? "failed" : "completed" },
+      { type: "exit", code: diagnostics.some((d) => d.severity === "error") ? 1 : 0 },
+    ], diagnostics, exitCode: diagnostics.some((d) => d.severity === "error") ? 1 : 0, durationMs: Math.max(execution.durationMs, performance.now() - started) };
+  } else if (request.language === "javascript") base = await runBrowserJavaScript(request);
   else if (request.language === "typescript") base = await runBrowserTypeScript(request);
   else if (request.language === "python") base = await runBrowserPython(request);
   else if (request.language === "sql") base = await runBrowserSql(request);
