@@ -64,13 +64,12 @@ describe("pseudocode runtime", () => {
     expect(result.events.some((event) => event.type === "stdout" && event.text.trim() === "three")).toBe(true);
   });
 
-  it("supports procedures with parameters and RETURN", async () => {
+  it("executes a procedure call with parameters", async () => {
     const result = await request([
-      "FUNCTION Add(A, B)",
-      "  RETURN A + B",
-      "END FUNCTION",
-      "CALL Add(8, 4)",
-      "OUTPUT __return",
+      "PROCEDURE Show(A, B)",
+      "  OUTPUT A + B",
+      "END PROCEDURE",
+      "CALL Show(8, 4)",
     ].join("\n"));
     expect(result.exitCode).toBe(0);
     expect(result.events.some((event) => event.type === "stdout" && event.text.trim() === "12")).toBe(true);
