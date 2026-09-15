@@ -7,7 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { selectComputerScienceCurriculum } from "@/lib/academic/code-lab";
 import { CodeLabEditor } from "./CodeLabEditor";
-import { executeCode, type RuntimeDiagnostic } from "@/lib/code-lab/runtime";
+import { executeCode, type RuntimeDiagnostic, type RuntimeLanguage } from "@/lib/code-lab/runtime";
 import { buildObjectiveEvidenceChecks, evaluateObjectiveEvidence, type ObjectiveEvidenceResult } from "@/lib/code-lab/objective-evidence";
 
 type Objective = { id: string; objective_key: string; title: string; description: string | null; topic: string | null };
@@ -39,6 +39,8 @@ function languageFor(path: string) {
   return "javascript";
 }
 
+const RUNTIME_LANGUAGES: RuntimeLanguage[] = ["javascript", "typescript", "python", "csharp", "vbnet", "sql", "java", "c", "cpp", "kotlin", "php", "rust", "go", "pseudocode"];
+function isRuntimeLanguage(language: string): language is RuntimeLanguage { return RUNTIME_LANGUAGES.includes(language as RuntimeLanguage); }
 function isProgrammingObjective(o: Objective) {
   return /(program|algorithm|function|procedure|selection|loop|iteration|debug|test|code|array|record|database|web|software|object-oriented|oop)/.test(`${o.title} ${o.description ?? ""} ${o.topic ?? ""}`.toLowerCase());
 }
@@ -116,11 +118,7 @@ export default function CodeLabWorkspaceRuntimeV2() {
       window.setTimeout(() => setSaved(false), 1200);
     } catch {}
   }
-
-  function updateCurrent(value: string) {
-    setFiles((items) => items.map((file) => file.path === active ? { ...file, content: value, dirty: true } : file));
-  }
-
+  function updateCurrent(value: string) { setFiles((items) => items.map((file) => file.path === active ? { ...file, content: value, dirty: true } : file)); }
   function closeFile(path: string) {
     if (files.length === 1) return;
     const index = files.findIndex((file) => file.path === path);
@@ -128,7 +126,6 @@ export default function CodeLabWorkspaceRuntimeV2() {
     setFiles(remaining);
     if (path === active) setActive(remaining[Math.max(0, index - 1)]?.path ?? remaining[0].path);
   }
-
   function addFile() {
     const path = newFileName.trim().replace(/^\/+/, "");
     if (!path) return;
@@ -137,24 +134,25 @@ export default function CodeLabWorkspaceRuntimeV2() {
   }
 
   async function run() {
-    if (!current || current.language !== "javascript") {
-      setPanel("terminal"); setOutput([`${current?.language ?? "This"} runtime is not connected to the browser executor yet. Comp Lab will not pretend it is.`]); return;
+    const language = current?.language ?? "";
+    if (!current || !isRuntimeLanguage(language)) {
+      setPanel("terminal");
+      setOutput([`${language || "This"} is an artifact/editor language here, not an executable runtime. Comp Lab will not pretend otherwise.`]);
+      return;
     }
     setRunning(true); setPanel("terminal"); setOutput([]); setDiagnostics([]);
     try {
-      const result = await executeCode({ id: crypto.randomUUID(), language: "javascript", code: current.content, files: files.map(({ path, content }) => ({ path, content })), entryFile: current.path, timeoutMs: 5000 });
+      const result = await executeCode({ id: crypto.randomUUID(), language, code: current.content, files: files.map(({ path, content }) => ({ path, content })), entryFile: current.path, timeoutMs: 5000 });
       const found = result.events.flatMap((event) => event.type === "diagnostic" ? [event.diagnostic] : []);
       const captured = result.events.flatMap((event) => event.type === "stdout" ? [event.text] : event.type === "stderr" ? [event.text] : event.type === "error" ? [event.message] : []);
       setDiagnostics(found); setOutput(captured.length ? captured : [result.exitCode === 0 ? `Process exited successfully in ${result.durationMs}ms.` : "Process failed."]); if (found.length) setPanel("problems");
     } catch (error) { setOutput([error instanceof Error ? error.message : String(error)]); } finally { setRunning(false); }
   }
-
   function checkWork() {
     if (!objective) return;
     const results = evaluateObjectiveEvidence(buildObjectiveEvidenceChecks(objective), files.map(({ path, content }) => ({ path, content })));
     setEvidence(results); setPanel("tests"); setOutput([`${results.filter((item) => item.status === "passed").length}/${results.length} evidence checks passed.`, "These are deterministic learning checks, not official examination marks."]);
   }
-
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen(true); }
@@ -171,6 +169,13 @@ export default function CodeLabWorkspaceRuntimeV2() {
           <div className="hidden items-center gap-2 text-xs text-slate-500 md:flex"><GitBranch className="h-3.5 w-3.5" />main · {experience.shortLabel}</div>
           <div className="ml-auto flex items-center gap-1">{saved && <span className="mr-1 hidden text-[10px] text-emerald-400 sm:inline">Saved locally</span>}<button type="button" onClick={() => setPaletteOpen(true)} title="Command palette" className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/5 sm:block"><Command className="h-4 w-4" /></button><button type="button" onClick={() => setCompactTabs((value) => !value)} title="Tab density" className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/5 lg:block"><Settings2 className="h-4 w-4" /></button><button type="button" onClick={persist} title="Save workspace" className="rounded-lg p-2 text-slate-400 hover:bg-white/5"><Save className="h-4 w-4" /></button><button type="button" onClick={run} disabled={running} className="flex items-center gap-1 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><Play className="h-3.5 w-3.5" />{running ? "Running" : "Run"}</button></div>
         </header>
+
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-white/10 bg-[#0a0e15] px-2 py-1.5 lg:hidden">
+          <button type="button" onClick={() => setNewFileOpen(true)} className="flex shrink-0 items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-300"><Plus className="h-3 w-3" />File</button>
+          <select value={active} onChange={(event) => setActive(event.target.value)} className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/20 px-2 py-1.5 text-[10px] text-slate-300 outline-none">{files.map((file) => <option key={file.path} value={file.path}>{file.path}</option>)}</select>
+          <select value={selectedObjective ?? ""} onChange={(event) => setSelectedObjective(event.target.value || null)} className="max-w-[42%] rounded-md border border-white/10 bg-black/20 px-2 py-1.5 text-[10px] text-slate-300 outline-none"><option value="">Objective</option>{visibleObjectives.map((item) => <option key={item.id} value={item.id}>{item.objective_key} · {item.title}</option>)}</select>
+          <button type="button" onClick={checkWork} disabled={!objective} className="shrink-0 rounded-md border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-300 disabled:opacity-40">Check</button>
+        </div>
 
         <div data-comp-lab-grid className="grid min-h-0 flex-1 lg:grid-cols-[240px_minmax(0,1fr)_300px]">
           <aside className="hidden min-h-0 border-r border-white/10 bg-[#0a0e15] lg:block">
