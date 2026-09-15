@@ -2,38 +2,9 @@ export type AlgorithmContext = "school" | "secondary" | "sixth-form" | "universi
 export type AlgorithmQuestionType = "write" | "trace" | "flowchart" | "complexity" | "test";
 export type AlgorithmTestKind = "normal" | "boundary" | "invalid" | "hidden";
 
-export type AlgorithmObjective = {
-  id: string;
-  title: string;
-  description: string;
-  contexts: AlgorithmContext[];
-  tags: string[];
-  officialReference?: string;
-};
-
-export type AlgorithmTestCase = {
-  id: string;
-  kind: AlgorithmTestKind;
-  inputs: string[];
-  expectedOutput?: string;
-  hidden?: boolean;
-  rationale?: string;
-};
-
-export type AlgorithmExercise = {
-  id: string;
-  title: string;
-  objectiveId: string;
-  questionType: AlgorithmQuestionType;
-  difficulty: 1 | 2 | 3 | 4 | 5;
-  prompt: string;
-  starterCode?: string;
-  testInputs?: string[];
-  expectedOutputs?: string[];
-  testCases?: AlgorithmTestCase[];
-  syllabusReferences?: string[];
-  contexts: AlgorithmContext[];
-};
+export type AlgorithmObjective = { id: string; title: string; description: string; contexts: AlgorithmContext[]; tags: string[]; officialReference?: string };
+export type AlgorithmTestCase = { id: string; kind: AlgorithmTestKind; inputs: string[]; expectedOutput?: string; hidden?: boolean; rationale?: string };
+export type AlgorithmExercise = { id: string; title: string; objectiveId: string; questionType: AlgorithmQuestionType; difficulty: 1 | 2 | 3 | 4 | 5; prompt: string; starterCode?: string; testInputs?: string[]; expectedOutputs?: string[]; testCases?: AlgorithmTestCase[]; syllabusReferences?: string[]; contexts: AlgorithmContext[] };
 
 const ALL_CONTEXTS: AlgorithmContext[] = ["school", "secondary", "sixth-form", "university", "polytechnic", "professional"];
 
@@ -73,7 +44,7 @@ const LARGEST_TESTS: AlgorithmTestCase[] = [
 
 export const ALGORITHM_EXERCISES: AlgorithmExercise[] = [
   { id: "largest-three", title: "Find the largest of three", objectiveId: "alg.selection", questionType: "write", difficulty: 1, prompt: "Write an algorithm that accepts three numbers and outputs the largest value.", starterCode: START_LARGEST, testInputs: LARGEST_TESTS.filter((test) => !test.hidden).map((test) => test.inputs.join("\n")), expectedOutputs: LARGEST_TESTS.filter((test) => !test.hidden).map((test) => test.expectedOutput ?? ""), testCases: LARGEST_TESTS, contexts: ALL_CONTEXTS },
-  { id: "sum-one-to-n", title: "Sum from 1 to N", objectiveId: "alg.iteration", questionType: "write", difficulty: 2, prompt: "Write an algorithm that accepts N and outputs the sum of all integers from 1 to N.", starterCode: "INPUT N\nTotal <- 0\nFOR I <- 1 TO N\n    Total <- Total + I\nEND FOR\nOUTPUT Total", testInputs: ["5", "1", "10"], expectedOutputs: ["15", "1", "55"], testCases: [{ id: "normal-1", kind: "normal", inputs: ["5"], expectedOutput: "15" }, { id: "boundary-1", kind: "boundary", inputs: ["1"], expectedOutput: "1" }, { id: "hidden-10", kind: "hidden", inputs: ["10"], expectedOutput: "55", hidden: true }], contexts: ALL_CONTEXTS },
+  { id: "sum-one-to-n", title: "Sum from 1 to N", objectiveId: "alg.iteration", questionType: "write", difficulty: 2, prompt: "Write an algorithm that accepts N and outputs the sum of all integers from 1 to N.", starterCode: "INPUT N\nTotal <- 0\nFOR I <- 1 TO N\n    Total <- Total + I\nEND FOR\nOUTPUT Total", testInputs: ["5", "1"], expectedOutputs: ["15", "1"], testCases: [{ id: "normal-1", kind: "normal", inputs: ["5"], expectedOutput: "15" }, { id: "boundary-1", kind: "boundary", inputs: ["1"], expectedOutput: "1" }, { id: "hidden-10", kind: "hidden", inputs: ["10"], expectedOutput: "55", hidden: true }], contexts: ALL_CONTEXTS },
   { id: "array-total", title: "Array total", objectiveId: "alg.arrays", questionType: "write", difficulty: 3, prompt: "Read five values into an array and output their total.", starterCode: "DECLARE Values AS ARRAY\nFOR I <- 1 TO 5\n    INPUT X\n    Values[I] <- X\nEND FOR\nTotal <- 0\nFOR I <- 1 TO 5\n    Total <- Total + Values[I]\nEND FOR\nOUTPUT Total", testInputs: ["1\n2\n3\n4\n5", "10\n0\n-2\n7\n5"], expectedOutputs: ["15", "20"], testCases: [{ id: "normal-1", kind: "normal", inputs: ["1", "2", "3", "4", "5"], expectedOutput: "15" }, { id: "normal-2", kind: "normal", inputs: ["10", "0", "-2", "7", "5"], expectedOutput: "20" }, { id: "hidden-negative", kind: "hidden", inputs: ["-1", "-2", "-3", "-4", "-5"], expectedOutput: "-15", hidden: true }], contexts: ALL_CONTEXTS },
   { id: "trace-selection", title: "Trace a selection", objectiveId: "alg.tracing", questionType: "trace", difficulty: 2, prompt: "Run the algorithm and inspect how Largest changes as each input is considered.", starterCode: START_LARGEST, testInputs: ["9\n4\n12"], expectedOutputs: ["12"], testCases: [{ id: "trace-1", kind: "normal", inputs: ["9", "4", "12"], expectedOutput: "12" }], contexts: ALL_CONTEXTS },
   { id: "boundary-tests", title: "Choose boundary tests", objectiveId: "alg.testing", questionType: "test", difficulty: 3, prompt: "Create test cases that challenge an algorithm at its smallest, largest, equal-value and invalid-input boundaries.", contexts: ALL_CONTEXTS },
@@ -83,6 +54,8 @@ export const ALGORITHM_EXERCISES: AlgorithmExercise[] = [
 export function getAlgorithmExercise(id: string) { return ALGORITHM_EXERCISES.find((exercise) => exercise.id === id); }
 export function getAlgorithmObjective(id: string) { return ALGORITHM_OBJECTIVES.find((objective) => objective.id === id); }
 export function getAssessmentTestCases(exercise: AlgorithmExercise) { return exercise.testCases ?? (exercise.testInputs ?? []).map((inputs, index) => ({ id: `visible-${index + 1}`, kind: "normal" as const, inputs: inputs.split(/\r?\n/), expectedOutput: exercise.expectedOutputs?.[index] })); }
+export function getVisibleTestCases(exercise: AlgorithmExercise) { return getAssessmentTestCases(exercise).filter((test) => !test.hidden); }
+export function getHiddenTestCases(exercise: AlgorithmExercise) { return getAssessmentTestCases(exercise).filter((test) => test.hidden); }
 export function normalizeOutput(value: string) { return value.replace(/\r/g, "").split("\n").map((line) => line.trim()).filter(Boolean).join("\n").trim(); }
 export function compareExpectedOutput(actual: string, expected?: string) { if (expected === undefined) return { checked: false, passed: true }; return { checked: true, passed: normalizeOutput(actual) === normalizeOutput(expected) }; }
 
