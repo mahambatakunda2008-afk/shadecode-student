@@ -6,7 +6,19 @@ import type { ClientRole } from "@/lib/channels/types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_ROLES = new Set<ClientRole>(["student", "teacher", "parent", "school_admin", "tutor"]);
+const ROLE_PRIORITY: ClientRole[] = [
+  "student",
+  "teacher",
+  "parent",
+  "school_admin",
+  "tutor",
+];
+const ALLOWED_ROLES = new Set<ClientRole>(ROLE_PRIORITY);
+
+function resolveLinkRole(rows: Array<{ role: string }>): ClientRole | null {
+  const roles = new Set(rows.map((row) => row.role));
+  return ROLE_PRIORITY.find((role) => roles.has(role)) ?? null;
+}
 
 export async function POST() {
   const supabase = await createSupabaseServerClient();
@@ -19,15 +31,13 @@ export async function POST() {
   const roleResult = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+    .eq("user_id", user.id);
 
   if (roleResult.error) {
     return NextResponse.json({ error: "Unable to resolve account role." }, { status: 500 });
   }
 
-  const role = roleResult.data?.role as ClientRole | undefined;
+  const role = resolveLinkRole((roleResult.data ?? []) as Array<{ role: string }>);
   if (!role || !ALLOWED_ROLES.has(role)) {
     return NextResponse.json({ error: "This account cannot link WhatsApp yet." }, { status: 403 });
   }
