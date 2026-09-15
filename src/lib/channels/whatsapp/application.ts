@@ -3,9 +3,10 @@ import "server-only";
 import type { ChannelResponse } from "@/lib/channels/types";
 import { buildPlatformRequestContext } from "@/lib/platform/server-context";
 import { resolveChannelIdentity } from "@/lib/platform/channel-identity-store";
+import { resolveUserSystemCurriculum } from "@/lib/curriculum/user-resolution";
+import { CortexCore } from "@/lib/cortex/core";
 import type { ParsedWhatsAppTextEvent } from "@/lib/channels/whatsapp/webhook";
 import {
-  buildWhatsAppResponse,
   inactiveWhatsAppResponse,
   unlinkedWhatsAppResponse,
 } from "@/lib/channels/whatsapp/response";
@@ -16,17 +17,20 @@ export interface WhatsAppApplicationResult {
   userId: string | null;
 }
 
+function parseLearningRequest(text: string): { type: "learn"; topic: string } | null {
+  const trimmed = text.trim();
+  const match = trimmed.match(/^(?:LEARN|EXPLAIN|TEACH|HELP)\s+(.+)$/i);
+  if (!match?.[1]) return null;
+  return { type: "learn", topic: match[1].trim() };
+}
+
 export async function dispatchWhatsAppTextEvent(
   event: ParsedWhatsAppTextEvent,
 ): Promise<WhatsAppApplicationResult> {
   const identity = await resolveChannelIdentity("whatsapp", event.externalUserId);
 
   if (!identity) {
-    return {
-      event,
-      userId: null,
-      response: unlinkedWhatsAppResponse(),
-    };
+    return { event, userId: null, response: unlinkedWhatsAppResponse() };
   }
 
   if (identity.status !== "active") {
@@ -47,19 +51,51 @@ export async function dispatchWhatsAppTextEvent(
     },
   });
 
-  const connected = buildWhatsAppResponse(identity);
+  const learningRequest = parseLearningRequest(event.text);
+  if (!learningRequest) {
+    return {
+      event,
+      userId: context.identity.userId,
+      response: {
+        text: "I’m connected to your Shadecode account. Try `LEARN algebra`, `EXPLAIN photosynthesis`, or `HELP binary search`.",
+        metadata: { status: "authenticated", role: context.identity.role, channel: context.identity.channel },
+      },
+    };
+  }
+
+  const curriculum = await resolveUserSystemCurriculum(context.identity.userId);
+  if (curriculum.blocked && !curriculum.context) {
+    return {
+      event,
+      userId: context.identity.userId,
+      response: {
+        text: `I can help you learn ${learningRequest.topic}, but I need your exact curriculum subject configured in Shadecode first. ${curriculum.reason ?? "Choose your subject and syllabus in the app."}`,
+        metadata: { status: "curriculum_required", role: context.identity.role },
+      },
+    };
+  }
+
+  const result = await CortexCore({
+    userId: context.identity.userId,
+    type: learningRequest.type,
+    payload: { topic: learningRequest.topic },
+    curriculum: curriculum.context ?? null,
+  });
 
   return {
     event,
     userId: context.identity.userId,
     response: {
-      text: "Your message reached Shadecode. Cortex routing is ready to be connected to this verified platform context.",
+      text: result.response,
       metadata: {
-        ...connected.metadata,
-        status: "authenticated",
+        status: "learning",
         role: context.identity.role,
         channel: context.identity.channel,
+        curriculumResolved: !curriculum.blocked,
       },
+      actions: result.nextAction
+        ? [{ id: "next", label: "Continue", type: "reply", value: result.nextAction }]
+        : undefined,
     },
   };
 }
