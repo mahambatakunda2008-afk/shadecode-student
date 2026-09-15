@@ -4,7 +4,7 @@ import { runBrowserPython, runBrowserSql, runBrowserTypeScript } from "./browser
 import { runPseudocode } from "./pseudocode";
 import { unavailableRuntimeResult } from "./providers";
 import { buildProjectDiagnostics } from "../project-diagnostics";
-import { analyzeShade, createShadeEvidence, createShadeExecutionPlan, createShadeProjectModel, runShade, SHADE_LANGUAGE_VERSION } from "../../shade";
+import { analyzeShade, createShadeEvidence, createShadeExecutionPlan, createShadeProjectModel, runShade, SHADE_LANGUAGE_VERSION, parseShade } from "../../shade";
 
 export type { RuntimeDiagnostic, RuntimeEvent, RuntimeLanguage, RuntimeRequest, RuntimeResult } from "./types";
 export type { RuntimeProvider, RuntimeProviderId } from "./providers";
@@ -48,8 +48,9 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
   let base: RuntimeResult;
   if (request.language === "shade") {
     const started = performance.now();
+    const parsedSource = parseShade(request.code);
     const parsed = runShade(request.code, { inputs: request.inputs, maxSteps: Math.max(1000, Math.floor((request.timeoutMs ?? 5000) * 100)) });
-    const semantic = analyzeShade(parsed.program);
+    const semantic = analyzeShade(parsedSource.program);
     const executionPlan = createShadeExecutionPlan(semantic, request.entryFile ?? "main.shade");
     const project = createShadeProjectModel({ name: "Comp Lab Shade project", entry: request.entryFile ?? "main.shade", semantic, languageVersion: SHADE_LANGUAGE_VERSION });
     const diagnostics: RuntimeDiagnostic[] = [...parsed.diagnostics, ...semantic.diagnostics.map((diagnostic) => ({ ...diagnostic, source: "language" as const }))].map((diagnostic) => ({ ...diagnostic, source: "language" as const, file: request.entryFile }));
