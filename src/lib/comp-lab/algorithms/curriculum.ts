@@ -53,8 +53,17 @@ export function matchesCurriculumContext(exercise: Pick<CurriculumAwareExercise,
   });
 }
 
+/**
+ * Returns exercises valid for the learner context. Once a board or syllabus is
+ * explicitly known, only exercises with a verified matching binding are eligible.
+ */
+export function getEligibleExercises(exercises: CurriculumAwareExercise[], context: CompLabCurriculumContext): CurriculumAwareExercise[] {
+  return exercises.filter((exercise) => matchesCurriculumContext(exercise, context));
+}
+
 export function attachVerifiedCurriculumBinding(exercise: CurriculumAwareExercise, binding: CurriculumBinding): CurriculumAwareExercise {
   if (!isVerifiedCurriculumBinding(binding)) throw new Error("Curriculum binding must contain a verified source and complete syllabus metadata.");
+  if (exercise.objectiveId !== binding.objectiveId) throw new Error("Curriculum binding objective must match the exercise objective.");
   return { ...exercise, curriculum: [...(exercise.curriculum ?? []), binding] };
 }
 
