@@ -27,44 +27,47 @@ export interface ParsedWhatsAppTextEvent {
   phoneNumberId: string;
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asRecords(value: unknown): UnknownRecord[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
 export function parseWhatsAppTextEvents(payload: unknown): ParsedWhatsAppTextEvent[] {
-  if (!payload || typeof payload !== "object") return [];
-  const root = payload as Record<string, unknown>;
-  const entries = Array.isArray(root.entry) ? root.entry : [];
+  if (!isRecord(payload)) return [];
   const events: ParsedWhatsAppTextEvent[] = [];
 
-  for (const entry of entries) {
-    if (!entry || typeof entry !== "object") continue;
-    const changes = Array.isArray((entry as Record<string, unknown>).changes)
-      ? (entry as Record<string, unknown>).changes
-      : [];
-    for (const change of changes) {
-      if (!change || typeof change !== "object") continue;
-      const value = (change as Record<string, unknown>).value;
-      if (!value || typeof value !== "object") continue;
-      const valueRecord = value as Record<string, unknown>;
-      const metadata = valueRecord.metadata;
-      const phoneNumberId = metadata && typeof metadata === "object"
-        ? String((metadata as Record<string, unknown>).phone_number_id ?? "")
+  for (const entry of asRecords(payload.entry)) {
+    for (const change of asRecords(entry.changes)) {
+      const value = change.value;
+      if (!isRecord(value)) continue;
+
+      const metadata = isRecord(value.metadata) ? value.metadata : null;
+      const phoneNumberId = typeof metadata?.phone_number_id === "string"
+        ? metadata.phone_number_id
         : "";
-      const messages = Array.isArray(valueRecord.messages) ? valueRecord.messages : [];
-      for (const message of messages) {
-        if (!message || typeof message !== "object") continue;
-        const record = message as Record<string, unknown>;
-        const text = record.text;
-        if (record.type !== "text" || !text || typeof text !== "object") continue;
-        const body = (text as Record<string, unknown>).body;
+
+      for (const message of asRecords(value.messages)) {
+        if (message.type !== "text" || !isRecord(message.text)) continue;
+
+        const body = message.text.body;
         if (typeof body !== "string" || !body.trim()) continue;
-        if (typeof record.id !== "string" || typeof record.from !== "string") continue;
+        if (typeof message.id !== "string" || typeof message.from !== "string") continue;
+
         events.push({
-          messageId: record.id,
-          externalUserId: record.from,
+          messageId: message.id,
+          externalUserId: message.from,
           text: body.trim(),
-          timestamp: typeof record.timestamp === "string" ? record.timestamp : undefined,
+          timestamp: typeof message.timestamp === "string" ? message.timestamp : undefined,
           phoneNumberId,
         });
       }
     }
   }
+
   return events;
 }
