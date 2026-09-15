@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseShade, runShade } from "./index";
 import { analyzeShade } from "./semantic";
-import { createShadeProjectModel } from "./project";
+import { createShadeArtifact, createShadeArtifactId, createShadeProjectModel } from "./project";
 import { buildShadeProjectGraph } from "./graph";
 import { lowerShadeToIR } from "./ir";
 
@@ -34,6 +34,11 @@ describe("Shade language core", () => {
     expect(result.diagnostics.some((diagnostic) => diagnostic.message.includes("limit exceeded"))).toBe(true);
   });
 
+  it("creates stable artifact identities", () => {
+    expect(createShadeArtifactId("./main.shade")).toBe(createShadeArtifactId("main.shade"));
+    expect(createShadeArtifact({ path: "main.shade", type: "source", language: "shade" }).id).toMatch(/^artifact-[0-9a-f]{8}$/);
+  });
+
   it("lowers source into semantic, graph, and IR representations", () => {
     const parsed = parseShade(["name = 7", "if name > 3", "    show name", "else", "    show 0"].join("\n"));
     expect(parsed.diagnostics.filter((d) => d.severity === "error")).toHaveLength(0);
@@ -41,11 +46,14 @@ describe("Shade language core", () => {
     const project = createShadeProjectModel({ name: "Shade Core Test", entry: "main.shade", semantic, languageVersion: "0.1.0-design-core" });
     const graph = buildShadeProjectGraph(project);
     const ir = lowerShadeToIR(parsed.program);
+    const entryArtifact = project.manifest.artifacts.find((artifact) => artifact.path === "main.shade");
 
+    expect(entryArtifact).toBeDefined();
     expect(semantic.concepts).toEqual(expect.arrayContaining(["variables", "selection", "input-output"]));
     expect(semantic.capabilities).toContain("console.output");
     expect(graph.nodes.some((node) => node.kind === "symbol" && node.label === "name")).toBe(true);
     expect(graph.nodes.some((node) => node.kind === "capability" && node.label === "console.output")).toBe(true);
+    expect(graph.edges.some((edge) => edge.from === `artifact:${entryArtifact?.id}` && edge.relation === "defines")).toBe(true);
     expect(ir.instructions.some((instruction) => instruction.op === "jump_if_false")).toBe(true);
     expect(ir.instructions.some((instruction) => instruction.op === "show")).toBe(true);
   });
