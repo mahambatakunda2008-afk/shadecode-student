@@ -46,6 +46,36 @@ describe("pseudocode runtime", () => {
     expect(result.events.some((event) => event.type === "stdout" && event.text.trim() === "15")).toBe(true);
   });
 
+  it("handles REPEAT UNTIL and CASE branches", async () => {
+    const result = await request([
+      "INPUT N",
+      "Count <- 0",
+      "REPEAT",
+      "  Count <- Count + 1",
+      "UNTIL Count = N",
+      "CASE Count OF",
+      "  3:",
+      "    OUTPUT \"three\"",
+      "  OTHERWISE:",
+      "    OUTPUT \"other\"",
+      "END CASE",
+    ].join("\n"), ["3"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.events.some((event) => event.type === "stdout" && event.text.trim() === "three")).toBe(true);
+  });
+
+  it("supports procedures with parameters and RETURN", async () => {
+    const result = await request([
+      "FUNCTION Add(A, B)",
+      "  RETURN A + B",
+      "END FUNCTION",
+      "CALL Add(8, 4)",
+      "OUTPUT __return",
+    ].join("\n"));
+    expect(result.exitCode).toBe(0);
+    expect(result.events.some((event) => event.type === "stdout" && event.text.trim() === "12")).toBe(true);
+  });
+
   it("emits a diagnostic for an unsupported statement", async () => {
     const result = await request("MAGIC THING");
     expect(result.exitCode).not.toBe(0);
