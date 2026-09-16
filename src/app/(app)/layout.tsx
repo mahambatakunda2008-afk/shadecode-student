@@ -18,6 +18,7 @@ import CortexGenerationIndicator from "@/components/cortex/CortexGenerationIndic
 import LessonEvidenceRecorder from "@/components/studyspace/LessonEvidenceRecorder";
 import ExperienceRouteGuard from "@/components/academic/ExperienceRouteGuard";
 import ExperienceContextBanner from "@/components/academic/ExperienceContextBanner";
+import OfflineStatus from "@/components/OfflineStatus";
 import { installLearningEventSync } from "@/lib/intelligence/emitLearningEvent";
 import { installTractionSync, trackEvent, trackPageView } from "@/lib/traction/client";
 
@@ -80,7 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; subscription.unsubscribe(); };
   }, [router, supabase]);
 
-  if (isAdmin) return <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><AdminSidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><AdminBottomNav /></div></div>;
-  if (isCompLab) return <UserProvider><AchievementsProvider><div className="relative h-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><ExperienceRouteGuard /><main className="h-full min-w-0 overflow-y-auto"><LessonEvidenceRecorder />{children}</main><CortexCommandBar /><CortexGenerationIndicator /></div></AchievementsProvider></UserProvider>;
-  return <UserProvider><AchievementsProvider><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><ExperienceRouteGuard /><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder /><ExperienceContextBanner />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><CortexCommandBar /><CortexGenerationIndicator /><AchievementToast /><FeedbackWidget /></div></AchievementsProvider></UserProvider>;
+  if (isAdmin) return <div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><OfflineStatus /><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><AdminSidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><AdminBottomNav /></div></div>;
+  if (isCompLab) return <UserProvider><AchievementsProvider><div className="relative h-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><OfflineStatus /><ExperienceRouteGuard /><main className="h-full min-w-0 overflow-y-auto"><LessonEvidenceRecorder />{children}</main><CortexCommandBar /><CortexGenerationIndicator /></div></AchievementsProvider></UserProvider>;
+  return <UserProvider><AchievementsProvider><div className="relative h-screen flex overflow-hidden bg-[var(--background)] text-[var(--foreground)]"><OfflineStatus /><ExperienceRouteGuard /><aside className="hidden md:flex md:w-[240px] md:flex-shrink-0"><Sidebar /></aside><main className="flex-1 overflow-y-auto min-w-0 pb-[80px] md:pb-0"><LessonEvidenceRecorder /><ExperienceContextBanner />{children}</main><div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999]"><BottomNav /></div><CortexCommandBar /><CortexGenerationIndicator /><AchievementToast /><FeedbackWidget /></div></AchievementsProvider></UserProvider>;
 }
