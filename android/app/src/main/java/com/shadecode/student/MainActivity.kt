@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -147,7 +146,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         when (selected) {
             0 -> DashboardScreen(padding, profile, subjects, loading, error)
             1 -> LearnNativeScreen(padding, session, subjects, database, api)
-            2 -> PracticeNativeScreen(padding)
+            2 -> NativePracticeScreen(padding, subjects, database)
             else -> ProfileNativeScreen(padding, profile) {
                 scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
             }
@@ -232,14 +231,6 @@ private fun NativeLessonRow(lesson: NativeLessonEntity, onOpen: () -> Unit) {
             if (lesson.description.isNotBlank()) { Spacer(Modifier.height(6.dp)); Text(lesson.description, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             Spacer(Modifier.height(10.dp)); Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { Text(lesson.difficulty.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium, color = ShadePrimary); Text("${(lesson.progress * 100).toInt()}%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
-    }
-}
-
-@Composable
-private fun PracticeNativeScreen(padding: PaddingValues) {
-    Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
-        Text("Practice", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(14.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) { Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.CheckCircle, null, tint = ShadePrimary, modifier = Modifier.size(30.dp)); Spacer(Modifier.width(14.dp)); Column { Text("Exam workspace", fontWeight = FontWeight.Bold); Text("Native question, answer and working tools are next in the migration.", color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
     }
 }
 
