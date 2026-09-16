@@ -52,17 +52,18 @@ class Parser {
   private parseBlock(stopKeywords: string[]): ShadeStatement[] { const body: ShadeStatement[] = []; this.skipLines(); while (this.current()?.kind !== "eof" && !stopKeywords.includes(this.current().value)) { const statement = this.parseStatement(); if (statement) body.push(statement); if (this.current()?.kind !== "eof" && !this.at("\n") && !stopKeywords.includes(this.current().value)) while (this.current()?.kind !== "eof" && !this.at("\n") && !stopKeywords.includes(this.current().value)) this.advance(); this.skipLines(); } return body; }
   private parseExpression() { return this.parseBinary(0); }
   private precedence(operator: string) { return ({ or: 1, and: 2, "==": 3, "!=": 3, "<": 4, "<=": 4, ">": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6 } as Record<string, number>)[operator] ?? -1; }
-  private parseBinary(min: number): ShadeExpression { let left = this.parsePrimary(); while (this.current()?.kind === "operator" || this.current()?.value === "and" || this.current()?.value === "or") { const op = this.current().value; const prec = this.precedence(op); if (prec < min) break; this.advance(); const right = this.parseBinary(prec + 1); left = { type: "binary", operator: op as ShadeBinaryOperator, left, right }; } return left; }
+  private parseBinary(min: number): ShadeExpression { let left = this.parsePrimary(); while (this.current()?.kind === "operator" || this.current()?.value === "and" || this.current()?.value === "or") { const op = this.current().value; const prec = this.precedence(op); if (prec < min) break; const operatorToken = this.advance(); const right = this.parseBinary(prec + 1); left = { type: "binary", operator: op as ShadeBinaryOperator, left, right, location: { line: operatorToken?.line ?? left.location?.line ?? 1, column: operatorToken?.column } }; } return left; }
   private parsePrimary(): ShadeExpression {
     const t = this.current(); if (!t) return { type: "literal", value: null };
-    if (t.kind === "number") { this.advance(); return { type: "literal", value: Number(t.value) }; }
-    if (t.kind === "string") { this.advance(); return { type: "literal", value: t.value }; }
-    if (t.value === "true" || t.value === "false") { this.advance(); return { type: "literal", value: t.value === "true" }; }
-    if (t.value === "none") { this.advance(); return { type: "literal", value: null }; }
-    if (t.kind === "lbracket") { this.advance(); const elements: ShadeExpression[] = []; while (!this.at("]") && this.current()?.kind !== "eof") { elements.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect("]"); return { type: "array", elements }; }
-    if (t.kind === "identifier") { const name = this.advance().value; if (this.at("(")) { this.advance(); const args: ShadeExpression[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { args.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect(")"); return { type: "call", name, args }; } return { type: "variable", name }; }
+    const location = { line: t.line, column: t.column };
+    if (t.kind === "number") { this.advance(); return { type: "literal", value: Number(t.value), location }; }
+    if (t.kind === "string") { this.advance(); return { type: "literal", value: t.value, location }; }
+    if (t.value === "true" || t.value === "false") { this.advance(); return { type: "literal", value: t.value === "true", location }; }
+    if (t.value === "none") { this.advance(); return { type: "literal", value: null, location }; }
+    if (t.kind === "lbracket") { this.advance(); const elements: ShadeExpression[] = []; while (!this.at("]") && this.current()?.kind !== "eof") { elements.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect("]"); return { type: "array", elements, location }; }
+    if (t.kind === "identifier") { const name = this.advance().value; if (this.at("(")) { this.advance(); const args: ShadeExpression[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { args.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect(")"); return { type: "call", name, args, location }; } return { type: "variable", name, location }; }
     if (this.at("(")) { this.advance(); const expression = this.parseExpression(); this.expect(")"); return expression; }
-    this.diagnostics.push({ severity: "error", message: `Unexpected token '${t.value}'.`, line: t.line, column: t.column }); this.advance(); return { type: "literal", value: null };
+    this.diagnostics.push({ severity: "error", message: `Unexpected token '${t.value}'.`, line: t.line, column: t.column }); this.advance(); return { type: "literal", value: null, location };
   }
   private expectIdentifier(message: string) { const t = this.current(); if (t?.kind === "identifier") { this.advance(); return t.value; } this.diagnostics.push({ severity: "error", message, line: t?.line ?? 1, column: t?.column ?? 1 }); return undefined; }
 }
