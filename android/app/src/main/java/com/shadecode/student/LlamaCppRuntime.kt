@@ -8,9 +8,7 @@ import kotlinx.coroutines.withContext
 class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     private val modelManager = NativeLocalModelManager(context.applicationContext)
 
-    init {
-        System.loadLibrary("shadecode_cortex_native")
-    }
+    init { System.loadLibrary("shadecode_cortex_native") }
 
     override suspend fun installedModels(): List<NativeLocalModelSpec> = withContext(Dispatchers.IO) {
         NativeLocalModelCatalog.models.filter { it.enabled && modelManager.isInstalled(it) }
@@ -19,8 +17,7 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
     override suspend fun isReady(modelId: String): Boolean = withContext(Dispatchers.IO) {
         val model = NativeLocalModelCatalog.models.firstOrNull { it.id == modelId && it.enabled } ?: return@withContext false
         if (!modelManager.isInstalled(model)) return@withContext false
-        val file = modelManager.modelFile(model)
-        if (!nativeIsLoaded()) nativeLoad(file.absolutePath) else true
+        nativeIsLoaded() || nativeLoad(modelManager.modelFile(model).absolutePath)
     }
 
     override suspend fun generate(modelId: String, prompt: String, maxTokens: Int): String? = withContext(Dispatchers.Default) {
@@ -31,16 +28,14 @@ class LlamaCppRuntime(context: Context) : NativeLocalModelRuntime {
         nativeGenerate(prompt.take(MAX_PROMPT_CHARS), maxTokens.coerceIn(16, 512))?.trim()?.takeIf { it.isNotBlank() }
     }
 
-    override suspend fun unload(modelId: String) {
-        if (nativeIsLoaded()) nativeUnload()
-    }
+    override suspend fun unload(modelId: String) { if (nativeIsLoaded()) nativeUnload() }
+
+    override fun close() { if (nativeIsLoaded()) nativeUnload() }
 
     private external fun nativeLoad(path: String): Boolean
     private external fun nativeIsLoaded(): Boolean
     private external fun nativeGenerate(prompt: String, maxTokens: Int): String?
     private external fun nativeUnload()
 
-    companion object {
-        private const val MAX_PROMPT_CHARS = 12_000
-    }
+    companion object { private const val MAX_PROMPT_CHARS = 12_000 }
 }
