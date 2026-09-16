@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
@@ -20,7 +21,19 @@ export default function ServiceWorkerRegistration() {
     };
 
     void register();
-    return () => { cancelled = true; };
+
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      void navigator.serviceWorker.ready.then((registration) => {
+        registration.active?.postMessage({ type: "CLEAR_APP_CACHE" });
+      }).catch(() => undefined);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return null;
