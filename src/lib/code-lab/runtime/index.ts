@@ -49,7 +49,12 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
   if (request.language === "shade") {
     const started = performance.now();
     const parsedSource = parseShade(request.code);
-    const parsed = runShade(request.code, { inputs: request.inputs, maxSteps: Math.max(1000, Math.floor((request.timeoutMs ?? 5000) * 100)) });
+    const parsed = runShade(request.code, {
+      inputs: request.inputs,
+      maxSteps: Math.max(1000, Math.floor((request.timeoutMs ?? 5000) * 100)),
+      trace: true,
+      maxTraceEvents: 2_000,
+    });
     const semantic = analyzeShade(parsedSource.program);
     const executionPlan = createShadeExecutionPlan(semantic, request.entryFile ?? "main.shade");
     const project = createShadeProjectModel({ name: "Comp Lab Shade project", entry: request.entryFile ?? "main.shade", semantic, languageVersion: SHADE_LANGUAGE_VERSION });
@@ -73,7 +78,7 @@ export async function executeCode(request: RuntimeRequest): Promise<RuntimeResul
       diagnostics,
       exitCode,
       durationMs,
-      metadata: { semantic, project, graph, executionPlan, ir, evidence },
+      metadata: { semantic, project, graph, executionPlan, ir, evidence, trace: parsed.trace },
     };
   } else if (request.language === "javascript") base = await runBrowserJavaScript(request);
   else if (request.language === "typescript") base = await runBrowserTypeScript(request);
