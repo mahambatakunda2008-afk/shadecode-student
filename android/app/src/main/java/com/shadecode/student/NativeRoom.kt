@@ -63,7 +63,7 @@ interface NativeLessonDao {
     suspend fun all(): List<NativeLessonEntity>
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun replaceAll(lessons: List<NativeLessonEntity>)
-    @androidx.room.Query("DELETE FROM lessons WHERE subjectId = :subjectId")
+    @androidx.room.Query("DELETE FROM lessons WHERE subjectId = :subjectId AND id NOT LIKE 'local:%'")
     suspend fun clearSubject(subjectId: String)
 }
 
