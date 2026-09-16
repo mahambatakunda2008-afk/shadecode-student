@@ -17,6 +17,8 @@ const MAX_PAGES = 40;
 const DEFAULT_PAGE_END = 8;
 
 type AuthContext = { supabase: SupabaseClient; user: User };
+type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
+type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -81,11 +83,18 @@ function parsePlan(raw: string) {
   try {
     const value = JSON.parse(candidate) as { title?: unknown; overview?: unknown; blocks?: unknown };
     if (typeof value.title !== "string" || !value.title.trim() || !Array.isArray(value.blocks)) return null;
-    const blocks = value.blocks.filter((block): block is { type: string; title?: string; content: string } => {
+    const blocks = value.blocks.filter((block): block is Block => {
       if (!block || typeof block !== "object") return false;
-      const item = block as { type?: unknown; title?: unknown; content?: unknown };
-      return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 20;
-    }).slice(0, 20);
+      const item = block as Record<string, unknown>;
+      if (typeof item.type !== "string" || typeof item.content !== "string" || item.content.trim().length < 20) return false;
+      const interaction = item.interaction && typeof item.interaction === "object" ? item.interaction as Record<string, unknown> : undefined;
+      if ((item.type === "checkpoint" || item.type === "mastery") && (!interaction || typeof interaction.prompt !== "string" || interaction.prompt.trim().length < 10 || typeof interaction.rubric !== "string" || interaction.rubric.trim().length < 10)) return false;
+      return true;
+    }).slice(0, 24).map((item, index) => ({
+      ...item,
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim().slice(0, 80) : `block-${index + 1}`,
+      sourcePages: Array.isArray(item.sourcePages) ? item.sourcePages.filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n > 0).slice(0, 8) : [],
+    }));
     if (blocks.length < 4) return null;
     return {
       title: value.title.trim().slice(0, 255),
@@ -95,6 +104,21 @@ function parsePlan(raw: string) {
   } catch {
     return null;
   }
+}
+
+function safePlan(plan: { title?: string; overview?: string; blocks?: Block[] }) {
+  return {
+    title: plan.title || "Learning from your paper",
+    overview: plan.overview || "Cortex built this session from the selected source pages.",
+    blocks: (plan.blocks ?? []).map(({ interaction, ...block }) => ({
+      ...block,
+      interaction: interaction ? {
+        prompt: interaction.prompt,
+        evaluationMode: interaction.evaluationMode,
+        expectedConcepts: interaction.expectedConcepts,
+      } : undefined,
+    })),
+  };
 }
 
 function paperPrompt(pages: PaperPage[], questions: ReturnType<typeof extractTopLevelQuestionsFromPages>) {
@@ -117,15 +141,17 @@ RULES
 3. First explain what the selected pages cover and what each question is testing.
 4. Teach prerequisite concepts before the method when needed.
 5. For worked reasoning, explain WHY each step is taken, not merely the algebra.
-6. Highlight recognition patterns. For example, identify when a problem is a disguised quadratic, identity proof, factorisation, graph/intersection task, etc., only when the source actually supports that classification.
-7. Include checkpoints where the learner must think. Do not reveal the checkpoint answer in the same block.
-8. Include common traps only when supported by the actual mathematics/question structure. Do not invent examiner claims.
-9. Finish with a short mastery check using NEW questions based on the concepts encountered. Do not simply repeat the source questions.
-10. If a page has no selectable text, explicitly say that the page may require visual/OCR inspection. Do not hallucinate its contents.
-11. Use concise, scannable student-facing blocks. Every mathematical expression must be wrapped in single-dollar LaTeX delimiters.
+6. Highlight recognition patterns only when the source supports that classification.
+7. Include 2-6 interactive checkpoints and finish with a mastery check. Checkpoints must make the student think, not merely recall a sentence.
+8. For every checkpoint/mastery block, provide interaction.prompt, interaction.evaluationMode (conceptual|numeric|steps|mixed), interaction.expectedConcepts, interaction.rubric, interaction.modelAnswer, and 1-3 progressive interaction.hints. The rubric must describe what a correct, partial, and incorrect response would demonstrate. Keep modelAnswer and rubric server-side by treating them as tutor evaluation data.
+9. Do not reveal the checkpoint answer in the block content. The modelAnswer is only for the evaluator.
+10. Include common traps only when supported by the actual mathematics/question structure. Do not invent examiner claims.
+11. Finish with NEW mastery questions based on the concepts encountered. Do not simply repeat source questions.
+12. If a page has no selectable text, explicitly say that the page may require visual/OCR inspection. Do not hallucinate its contents.
+13. Use concise, scannable student-facing blocks. Every mathematical expression must be wrapped in single-dollar LaTeX delimiters.
 
 Return ONLY JSON:
-{"title":"specific learning-session title","overview":"what these pages cover","blocks":[{"type":"source-map|concept|definition|method|example|checkpoint|mistake|pattern|application|mastery|summary","title":"short heading","content":"student-facing explanation"}]}`;
+{"title":"specific learning-session title","overview":"what these pages cover","blocks":[{"id":"b1","type":"source-map|concept|definition|method|example|checkpoint|mistake|pattern|application|mastery|summary","title":"short heading","content":"student-facing explanation","sourcePages":[1],"interaction":{"prompt":"question for the student","evaluationMode":"mixed","expectedConcepts":["concept"],"rubric":"evaluation rubric","modelAnswer":"answer or reasoning","hints":["small hint","stronger hint"]}}]}`;
 }
 
 export async function GET(req: Request) {
@@ -134,14 +160,14 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (id) {
-    const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,mime_type,source_size_bytes,page_count,selected_page_start,selected_page_end,status,source_metadata,pages,learning_plan,created_at,updated_at").eq("id", id).eq("user_id", auth.user.id).maybeSingle();
+    const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,mime_type,source_size_bytes,page_count,selected_page_start,selected_page_end,status,source_metadata,pages,learning_plan,progress,created_at,updated_at").eq("id", id).eq("user_id", auth.user.id).maybeSingle();
     if (error) return NextResponse.json({ error: "Couldn't load the paper session." }, { status: 500 });
     if (!data) return NextResponse.json({ error: "Paper session not found." }, { status: 404 });
-    return NextResponse.json(data);
+    return NextResponse.json({ ...data, learning_plan: safePlan(data.learning_plan as { title?: string; overview?: string; blocks?: Block[] }) });
   }
-  const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,page_count,selected_page_start,selected_page_end,status,learning_plan,created_at,updated_at").eq("user_id", auth.user.id).order("updated_at", { ascending: false }).limit(20);
+  const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,page_count,selected_page_start,selected_page_end,status,learning_plan,progress,created_at,updated_at").eq("user_id", auth.user.id).order("updated_at", { ascending: false }).limit(20);
   if (error) return NextResponse.json({ error: "Couldn't load paper sessions." }, { status: 500 });
-  return NextResponse.json({ sessions: data ?? [] });
+  return NextResponse.json({ sessions: (data ?? []).map(session => ({ ...session, learning_plan: safePlan(session.learning_plan as { title?: string; overview?: string; blocks?: Block[] }) })) });
 }
 
 export async function POST(req: Request) {
@@ -180,10 +206,11 @@ export async function POST(req: Request) {
       source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length },
       pages: selectedPages,
       learning_plan: {},
+      progress: {},
     }).select("id").single();
     if (insertError || !session?.id) return NextResponse.json({ error: "The paper was read but the learning session could not be created." }, { status: 500 });
 
-    const raw = await callAI(paperPrompt(selectedPages, questions), 5000, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
+    const raw = await callAI(paperPrompt(selectedPages, questions), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
     const plan = raw ? parsePlan(raw) : null;
     if (!plan) {
       await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
@@ -194,7 +221,7 @@ export async function POST(req: Request) {
     if (updateError) return NextResponse.json({ error: "The learning plan was generated but could not be saved." }, { status: 500 });
 
     await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: "medium" });
-    return NextResponse.json({ id: session.id, ...plan, pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questionCount: questions.length });
+    return NextResponse.json({ id: session.id, ...safePlan(plan), pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questionCount: questions.length });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Something went wrong while processing the paper." }, { status: 500 });
   }
