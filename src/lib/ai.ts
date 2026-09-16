@@ -20,6 +20,8 @@ export interface CallAIOptions {
   preferLocal?: boolean;
   /** Pre-resolved verified curriculum context. Prevents a second DB lookup in the same request. */
   curriculumContext?: string;
+  /** The caller has already resolved and embedded curriculum grounding in its prompt. */
+  skipCurriculumGrounding?: boolean;
 }
 
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
@@ -36,7 +38,10 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   let curriculumGroundingAvailable = false;
   let curriculumGroundingReason = "not requested";
 
-  if (options.curriculumContext !== undefined) {
+  if (options.skipCurriculumGrounding) {
+    curriculumGroundingAvailable = options.curriculumContext?.trim().length ? true : prompt.includes("VERIFIED CURRICULUM CONTEXT:") && !prompt.includes("No verified curriculum context was returned");
+    curriculumGroundingReason = curriculumGroundingAvailable ? "provided-in-prompt" : "skipped";
+  } else if (options.curriculumContext !== undefined) {
     const curriculumContext = options.curriculumContext;
     curriculumGroundingAvailable = curriculumContext.trim().length > 0;
     curriculumGroundingReason = curriculumGroundingAvailable ? "provided" : "unavailable";
