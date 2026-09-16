@@ -6,6 +6,11 @@ import {
   verifyWhatsAppChallenge,
   verifyWhatsAppSignature,
 } from "@/lib/channels/whatsapp/webhook";
+import {
+  claimWhatsAppMessage,
+  markWhatsAppMessageDelivered,
+  markWhatsAppMessageReady,
+} from "@/lib/channels/whatsapp/message-receipts";
 import { consumeWhatsAppLinkCode } from "@/lib/platform/channel-link-codes";
 import { linkChannelIdentity } from "@/lib/platform/channel-identity-store";
 
@@ -19,8 +24,22 @@ function getRequiredEnv(name: string): string {
 }
 
 function parseLinkCommand(text: string): string | null {
-  const match = text.trim().match(/^(?:LINK|CONNECT)\s+([A-Z0-9]{8})$/i);
-  return match?.[1]?.toUpperCase() ?? null;
+  const trimmed = text.trim();
+  let firstWhitespace = -1;
+  for (let index = 0; index < trimmed.length; index += 1) {
+    if (/\s/.test(trimmed[index])) {
+      firstWhitespace = index;
+      break;
+    }
+  }
+  if (firstWhitespace < 0) return null;
+
+  const command = trimmed.slice(0, firstWhitespace).toUpperCase();
+  if (command !== "LINK" && command !== "CONNECT") return null;
+
+  const code = trimmed.slice(firstWhitespace).trim().toUpperCase();
+  if (code.length !== 8 || !/^[A-Z0-9]{8}$/.test(code)) return null;
+  return code;
 }
 
 export async function GET(request: Request) {
@@ -56,6 +75,18 @@ export async function POST(request: Request) {
 
   for (const event of events) {
     try {
+      const receipt = await claimWhatsAppMessage({
+        messageId: event.messageId,
+        externalUserId: event.externalUserId,
+      });
+
+      if (receipt.kind === "duplicate") {
+        if (receipt.status === "delivered") continue;
+        if (!receipt.responseText) continue;
+        results.push({ event, receiptId: null, response: { text: receipt.responseText } });
+        continue;
+      }
+
       const linkCode = parseLinkCommand(event.text);
       if (linkCode) {
         const linked = await consumeWhatsAppLinkCode({
@@ -63,13 +94,9 @@ export async function POST(request: Request) {
           externalUserId: event.externalUserId,
         });
         if (!linked) {
-          results.push({
-            event,
-            userId: null,
-            response: {
-              text: "That Shadecode link code is invalid, expired, or already used.",
-            },
-          });
+          const response = { text: "That Shadecode link code is invalid, expired, or already used." };
+          await markWhatsAppMessageReady({ receiptId: receipt.id, responseText: response.text });
+          results.push({ event, receiptId: receipt.id, response });
           continue;
         }
 
@@ -80,18 +107,18 @@ export async function POST(request: Request) {
           role: linked.role,
         });
 
-        results.push({
-          event,
-          userId: identity.userId,
-          response: {
-            text: "WhatsApp is now linked to your Shadecode account. You can start by asking me what you want to learn.",
-            metadata: { status: "linked", role: identity.role },
-          },
-        });
+        const response = {
+          text: "WhatsApp is now linked to your Shadecode account. You can start by asking me what you want to learn.",
+          metadata: { status: "linked", role: identity.role },
+        };
+        await markWhatsAppMessageReady({ receiptId: receipt.id, responseText: response.text });
+        results.push({ event, receiptId: receipt.id, response });
         continue;
       }
 
-      results.push(await dispatchWhatsAppTextEvent(event));
+      const result = await dispatchWhatsAppTextEvent(event);
+      await markWhatsAppMessageReady({ receiptId: receipt.id, responseText: result.response.text });
+      results.push({ ...result, receiptId: receipt.id });
     } catch (error) {
       console.error("WhatsApp webhook dispatch failed", {
         messageId: event.messageId,
@@ -99,6 +126,7 @@ export async function POST(request: Request) {
       });
       results.push({
         event,
+        receiptId: null,
         userId: null,
         response: {
           text: "I couldn't process that message right now. Please try again in a moment.",
@@ -117,6 +145,7 @@ export async function POST(request: Request) {
         text: result.response.text,
       });
       delivered += 1;
+      if (result.receiptId) await markWhatsAppMessageDelivered(result.receiptId);
     } catch (error) {
       console.error("WhatsApp response delivery failed", {
         messageId: result.event.messageId,
