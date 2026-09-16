@@ -9,26 +9,15 @@ class NativeCortexOrchestrator(
     private val gguf: NativeLocalModelRuntime = LlamaCppRuntime(NativeRuntimeContext.require()),
     private val cloud: NativeCloudCortex = NativeCloudCortex(),
 ) {
-    suspend fun generateLesson(
-        session: NativeSession,
-        subjectId: String,
-        subject: String,
-        topic: String,
-        level: String,
-    ): NativeLessonEntity? {
+    suspend fun generateLesson(session: NativeSession, subjectId: String, subject: String, topic: String, level: String): NativeLessonEntity? {
         val model = NativeLocalModelCatalog.recommendedFor(availableRamMb())
         if (model != null && gguf.isReady(model.id)) {
-            val prompt = buildLessonPrompt(subject, topic, level)
-            val raw = gguf.generate(model.id, prompt, 420)
-            raw?.let { parseLocalLesson(it, subjectId, topic) }?.let { return it }
+            gguf.generate(model.id, buildLessonPrompt(subject, topic, level), 420)
+                ?.let { parseLocalLesson(it, subjectId, topic) }
+                ?.let { return it }
         }
-
-        val localLesson = local.generateLesson(subject, topic, level)
-        if (localLesson != null) return localLesson.copy(subjectId = subjectId)
-
-        return withContext(Dispatchers.IO) {
-            cloud.generateLesson(session, subjectId, subject, topic, level)
-        }
+        local.generateLesson(subject, topic, level)?.let { return it.copy(subjectId = subjectId) }
+        return withContext(Dispatchers.IO) { cloud.generateLesson(session, subjectId, subject, topic, level) }
     }
 
     suspend fun warmLocalModel(): Boolean {
@@ -38,7 +27,7 @@ class NativeCortexOrchestrator(
     }
 
     fun close() {
-        runCatching { gguf.unload("") }
+        gguf.close()
         local.close()
     }
 
@@ -51,8 +40,9 @@ Use 8-12 useful blocks. Teach understanding, not a generic summary. Include prec
 """.trimIndent()
 
     private fun parseLocalLesson(raw: String, subjectId: String, topic: String): NativeLessonEntity? {
-        val candidate = raw.substringAfter('{', "").let { if (it.isBlank()) return null else "{$it" }
-        val json = runCatching { org.json.JSONObject(candidate.substringBeforeLast('}') + "}") }.getOrNull() ?: return null
+        val start = raw.indexOf('{'); val end = raw.lastIndexOf('}')
+        if (start < 0 || end <= start) return null
+        val json = runCatching { org.json.JSONObject(raw.substring(start, end + 1)) }.getOrNull() ?: return null
         val blocks = json.optJSONArray("blocks") ?: return null
         if (blocks.length() < 8) return null
         val normalized = org.json.JSONArray()
@@ -68,18 +58,8 @@ Use 8-12 useful blocks. Teach understanding, not a generic summary. Include prec
             })
         }
         if (normalized.length() < 8) return null
-        return NativeLessonEntity(
-            id = "local:gguf:${java.util.UUID.randomUUID()}",
-            subjectId = subjectId,
-            topic = topic.take(500),
-            title = json.optString("title").ifBlank { topic }.take(255),
-            description = json.optString("description").take(1000),
-            difficulty = json.optString("difficulty").ifBlank { "intermediate" }.take(40),
-            blocksJson = normalized.toString(),
-            progress = 0f,
-        )
+        return NativeLessonEntity("local:gguf:${java.util.UUID.randomUUID()}", subjectId, topic.take(500), json.optString("title").ifBlank { topic }.take(255), json.optString("description").take(1000), json.optString("difficulty").ifBlank { "intermediate" }.take(40), normalized.toString(), 0f)
     }
 
-    private fun availableRamMb(): Int =
-        (Runtime.getRuntime().maxMemory() / 1024L / 1024L).toInt()
+    private fun availableRamMb(): Int = (Runtime.getRuntime().maxMemory() / 1024L / 1024L).toInt()
 }
