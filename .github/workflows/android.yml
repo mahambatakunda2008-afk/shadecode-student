@@ -18,6 +18,8 @@ permissions:
 env:
   ANDROID_VERSION_CODE: ${{ github.run_number }}
   ANDROID_VERSION_NAME: "0.2.0"
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
 jobs:
   build:
@@ -139,10 +141,11 @@ jobs:
           body: |
             ## Shadecode Student Android
 
-            Official Android distribution for Shadecode Student.
+            Official native Android distribution for Shadecode Student.
 
             - APK: direct installation
             - AAB: Google Play publishing bundle
             - Package: `com.shadecode.student`
+            - UI: Jetpack Compose
 
             Do not install Android packages from unofficial mirrors.
