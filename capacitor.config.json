@@ -1,0 +1,10 @@
+{
+  "appId": "com.shadecode.student",
+  "appName": "Shadecode Student",
+  "webDir": "out",
+  "server": {
+    "url": "https://shadecodestudent.vercel.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}
