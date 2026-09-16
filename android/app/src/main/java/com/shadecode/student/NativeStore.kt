@@ -14,6 +14,8 @@ class NativeStore(private val context: Context) {
     private val userId = stringPreferencesKey("user_id")
     private val email = stringPreferencesKey("email")
 
+    fun context(): Context = context
+
     suspend fun saveSession(session: NativeSession) {
         context.nativeStore.edit { prefs ->
             prefs[accessToken] = session.accessToken
