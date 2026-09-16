@@ -14,19 +14,30 @@ Shadecode Student uses a local-first Cortex architecture. A language model is an
    - first local generative runtime when the device exposes it
    - no network request required
    - short structured generation only
-3. **Bundled or downloaded GGUF runtime**
-   - llama.cpp Android backend
+3. **Bundled or downloaded GGUF / LiteRT runtime**
+   - llama.cpp Android backend for GGUF models
+   - LiteRT-LM for models published in that format
    - optional model selected by device capability and available storage/RAM
    - model files stay on-device
 4. **Cloud Cortex**
    - only when local generation is unavailable or the task is intentionally escalated
    - server-side provider chain remains responsible for provider selection
 
+## Current Hugging Face candidates
+
+These are candidates for validation, not hard-coded product dependencies:
+
+- `litert-community/SmolLM2-135M-Instruct` is tagged for `litert-lm`, `on-device`, and text generation. Its small size makes it a useful candidate for a very lightweight local runtime. Validate quality and Android latency before adoption.
+- `tensorblock/SmolLM2-360M-Instruct-GGUF` provides GGUF files compatible with llama.cpp and is Apache-2.0 licensed. Its model card includes multiple quantizations, including a Q4_K_M file around 0.27 GB. This is a practical candidate for a downloadable GGUF tier.
+- `HuggingFaceTB/SmolLM2-360M-Instruct` is the upstream 361.8M-parameter instruction model. Use it as the reference model when comparing quantized/mobile variants.
+
+The candidates above are deliberately small. Shadecode should not equate parameter count with teaching quality. Every candidate must pass a Shadecode evaluation set covering curriculum grounding, explanation quality, hallucination resistance, structured JSON reliability, latency, RAM use, battery impact, and offline recovery.
+
 ## Why the second local runtime matters
 
-Gemini Nano depends on device/runtime availability. It cannot be treated as the only local intelligence path. A llama.cpp-backed GGUF runtime gives Shadecode Student an independent local path and lets us support devices where AICore/Gemini Nano is unavailable.
+Gemini Nano depends on device/runtime availability. It cannot be treated as the only local intelligence path. A llama.cpp-backed GGUF runtime gives Shadecode Student an independent local path and lets us support devices where AICore/Gemini Nano is unavailable. LiteRT-LM provides another route for models explicitly packaged for on-device inference.
 
-The upstream llama.cpp Android implementation supports loading GGUF models from app-private storage and streaming generated tokens through a Kotlin-facing Android binding. Its current Android documentation supports arm64-v8a and runtime hardware feature detection.
+The upstream llama.cpp Android implementation supports GGUF models from app-private storage and Android hardware-aware execution. The exact runtime and model should be selected after testing on representative Shadecode devices.
 
 ## Model policy
 
@@ -66,10 +77,28 @@ curriculum = local
 cached_lessons = local
 generation_short = Gemini Nano
 generation_long = GGUF
+action_or_tiny_task = LiteRT-LM
 multimodal = cloud
 ```
 
 This prevents the product from becoming coupled to one model vendor.
+
+## Shadecode model evaluation gate
+
+Before a model becomes a production local provider, evaluate it against:
+
+1. curriculum fidelity
+2. teaching depth
+3. factual accuracy
+4. structured lesson reliability
+5. response latency
+6. peak RAM
+7. battery/thermal behaviour
+8. cold-start time
+9. offline repeatability
+10. graceful fallback behaviour
+
+A model that is fast but teaches badly is not a successful local runtime.
 
 ## Failure behaviour
 
@@ -96,7 +125,8 @@ The intended architecture is therefore:
       Local Rules   Local Models    Cloud
           |             |             |
        Math/RAG     +---+---+      Provider chain
-                    |       |
-               Gemini Nano  GGUF
-                           llama.cpp
+                    |   |   |
+               Nano  GGUF LiteRT-LM
+                    |   |   |
+                 on-device runtimes
 ```
