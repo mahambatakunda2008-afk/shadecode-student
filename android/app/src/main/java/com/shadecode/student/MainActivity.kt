@@ -13,7 +13,6 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.view.KeyEvent
-import android.view.Window
 import android.widget.Toast
 
 class MainActivity : Activity() {
@@ -24,7 +23,6 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.requestFeature(Window.FEATURE_NO_TITLE)
 
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
