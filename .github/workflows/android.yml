@@ -45,6 +45,9 @@ jobs:
           java-version: "17"
           cache: gradle
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -69,8 +72,6 @@ jobs:
       - name: Validate Android project
         run: gradle projects --stacktrace --no-daemon
 
-      # Native-only validation: this build must compile the Compose app itself,
-      # without WebView or the hosted Student web client.
       - name: Build installable debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
 
