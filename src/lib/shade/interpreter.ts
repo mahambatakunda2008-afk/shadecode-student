@@ -35,9 +35,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
     let current: Scope | undefined = scope;
     while (current) { chain.unshift(current); current = current.parent; }
     const values: Record<string, ShadeValue> = {};
-    for (const entry of chain) for (const [key, value] of entry.values) {
-      if (value === null || typeof value !== "object" || Array.isArray(value)) values[key] = value as ShadeValue;
-    }
+    for (const entry of chain) for (const [key, value] of entry.values) if (value === null || typeof value !== "object" || Array.isArray(value)) values[key] = value as ShadeValue;
     return values;
   };
   const recordTrace = (event: Omit<ShadeExecutionTraceEvent, "step">) => {
@@ -49,7 +47,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
   const evaluate = (expression: ShadeExpression, scope: Scope): ShadeValue => {
     const expressionStarted = performance.now();
     if (++steps > maxSteps) throw new ShadeRuntimeError("Execution step limit exceeded.", expression.location?.line ?? 0, expression.location?.column);
-    let result: ShadeValue;
+    let result: ShadeValue | undefined;
     switch (expression.type) {
       case "literal": result = expression.value; break;
       case "variable": {
@@ -97,8 +95,9 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
         }
       } break;
     }
+    if (result === undefined) throw new ShadeRuntimeError("Expression did not produce a value.", expression.location?.line ?? 0, expression.location?.column);
     recordTrace({ phase: "expression", expressionType: expression.type, location: expression.location ?? { line: 0 }, locals: snapshot(scope), durationMs: performance.now() - expressionStarted });
-    return result!;
+    return result;
   };
 
   const executeStatements = (statements: ShadeStatement[], scope: Scope): void => {
