@@ -89,17 +89,11 @@ private fun ShadecodeStudentNative(context: Context) {
             }
 
             if (restoring) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (session == null) {
                 LoginScreen(onSignedIn = { session = it }, sessionStore = store)
             } else {
-                StudentShell(
-                    session = session!!,
-                    onSignOut = { session = null },
-                    sessionStore = store,
-                )
+                StudentShell(session = session!!, onSignOut = { session = null }, sessionStore = store)
             }
         }
     }
@@ -150,8 +144,7 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: Nativ
             enabled = !loading && email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth().height(52.dp),
         ) {
-            if (loading) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-            else Text("Sign in")
+            if (loading) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp) else Text("Sign in")
         }
         Spacer(Modifier.height(12.dp))
         Text("Native Android client. No WebView.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
@@ -162,7 +155,6 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: Nativ
 private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionStore: NativeStore) {
     val api = remember { NativeApi() }
     val database = remember { NativeDatabase.get(sessionStore.context()) }
-    val subjects = remember { NativeSubjectRepository(database) }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }
     var cachedSubjects by remember { mutableStateOf<List<NativeSubjectEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -171,15 +163,21 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(session.accessToken) {
-        cachedSubjects = withContext(Dispatchers.IO) { subjects.cached() }
+        cachedSubjects = withContext(Dispatchers.IO) { database.subjects().all() }
         try {
             val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
             profile = loaded
-            withContext(Dispatchers.IO) { subjects.replaceFromProfile(loaded) }
-            cachedSubjects = withContext(Dispatchers.IO) { subjects.cached() }
+            val serverSubjects = withContext(Dispatchers.IO) { api.loadSubjects(session, loaded) }
+            if (serverSubjects.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    database.subjects().clear()
+                    database.subjects().replaceAll(serverSubjects)
+                }
+            }
+            cachedSubjects = withContext(Dispatchers.IO) { database.subjects().all() }
             error = null
         } catch (e: Exception) {
-            error = e.message ?: "Could not load your profile."
+            error = e.message ?: "Could not refresh your profile."
         } finally {
             loading = false
         }
@@ -198,7 +196,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     ) { padding ->
         when (selected) {
             0 -> DashboardScreen(padding, profile, cachedSubjects, loading, error)
-            1 -> LearnNativeScreen(padding, cachedSubjects)
+            1 -> LearnNativeScreen(padding, session, cachedSubjects, database, api)
             2 -> PracticeNativeScreen(padding)
             else -> ProfileNativeScreen(padding, profile) {
                 scope.launch {
@@ -247,22 +245,111 @@ private fun SubjectRow(subject: String) {
 }
 
 @Composable
-private fun LearnNativeScreen(padding: PaddingValues, subjects: List<NativeSubjectEntity>) {
-    Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
-        Text("Learn", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Offline-first native learning workspace", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(20.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
-            Column(Modifier.padding(20.dp)) {
-                Text("Your subjects", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(10.dp))
-                if (subjects.isEmpty()) {
-                    Text("No subjects are configured for this account yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    subjects.forEach { subject ->
-                        Text("• ${subject.name.replace('_', ' ').replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.padding(vertical = 5.dp))
+private fun LearnNativeScreen(
+    padding: PaddingValues,
+    session: NativeSession,
+    subjects: List<NativeSubjectEntity>,
+    database: NativeDatabase,
+    api: NativeApi,
+) {
+    var selectedSubjectId by remember { mutableStateOf<String?>(null) }
+    var lessons by remember { mutableStateOf<List<NativeLessonEntity>>(emptyList()) }
+    var refreshing by remember { mutableStateOf(false) }
+    var offline by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(subjects) {
+        if (selectedSubjectId == null) selectedSubjectId = subjects.firstOrNull()?.id
+    }
+
+    LaunchedEffect(selectedSubjectId) {
+        val subjectId = selectedSubjectId ?: return@LaunchedEffect
+        lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subjectId) }
+        refreshing = true
+        try {
+            val remote = withContext(Dispatchers.IO) { api.loadLessons(session, subjectId) }
+            if (remote.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    database.lessons().clearSubject(subjectId)
+                    database.lessons().replaceAll(remote)
+                }
+                lessons = remote
+                offline = false
+            } else {
+                offline = false
+            }
+        } catch (_: Exception) {
+            offline = true
+        } finally {
+            refreshing = false
+        }
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Spacer(Modifier.height(18.dp))
+            Text("Learn", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("Your actual courses and lessons, cached for offline study.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (subjects.isEmpty()) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                    Text("No subjects are configured for this account yet. Complete onboarding first.", modifier = Modifier.padding(20.dp))
+                }
+            }
+        } else {
+            item { Text("Subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+            items(subjects) { subject ->
+                val active = subject.id == selectedSubjectId
+                Card(
+                    onClick = { selectedSubjectId = subject.id },
+                    colors = CardDefaults.cardColors(containerColor = if (active) ShadePrimary.copy(alpha = 0.16f) else ShadeSurface),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Book, null, tint = if (active) ShadePrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(12.dp))
+                        Text(subject.name, fontWeight = if (active) FontWeight.Bold else FontWeight.Normal)
                     }
                 }
+            }
+            item {
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Lessons", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (refreshing) {
+                        Spacer(Modifier.width(10.dp))
+                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    }
+                }
+                if (offline) Text("Offline: showing the lessons already cached on this device.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 5.dp))
+            }
+            if (lessons.isEmpty()) {
+                item {
+                    Text(
+                        if (offline) "No cached lessons for this subject yet." else "No saved lessons for this subject yet. Generate or open a lesson on the web client and it will appear here after sync.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                items(lessons) { lesson -> NativeLessonRow(lesson) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NativeLessonRow(lesson: NativeLessonEntity) {
+    Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(18.dp)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp)) {
+            Text(lesson.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (lesson.description.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(lesson.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(lesson.difficulty.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium, color = ShadePrimary)
+                Text("${(lesson.progress * 100).toInt()}%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -277,7 +364,10 @@ private fun PracticeNativeScreen(padding: PaddingValues) {
             Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CheckCircle, null, tint = ShadePrimary, modifier = Modifier.size(30.dp))
                 Spacer(Modifier.width(14.dp))
-                Column { Text("Exam workspace", fontWeight = FontWeight.Bold); Text("Native question, answer and working tools are next in the migration.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Column {
+                    Text("Exam workspace", fontWeight = FontWeight.Bold)
+                    Text("Native question, answer and working tools are next in the migration.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
