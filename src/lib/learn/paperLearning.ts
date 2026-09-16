@@ -51,7 +51,7 @@ export async function extractPdfPages(file: File): Promise<PaperPage[]> {
       pages.push({ pageNumber, text, textHash: hashText(text) });
     }
   } finally {
-    await pdf.destroy();
+    await loadingTask.destroy();
   }
   return pages;
 }
