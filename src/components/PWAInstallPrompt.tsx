@@ -64,7 +64,7 @@ export default function PWAInstallPrompt() {
         <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(34,211,238,0.09)", border: "1px solid rgba(34,211,238,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#22D3EE" }}>
           <BrandMark width={27} height={27} aria-hidden="true" />
         </div>
-        <div><h3 style={{ fontSize: 16, fontWeight: 400, color: "#fff", margin: "0 0 4px", fontFamily: "var(--font-brand), sans-serif" }}>Install Shadecode Student</h3><p style={{ fontSize: 12, color: "#9fb2bc", margin: 0 }}>Get a dedicated app window and faster repeat access.</p></div>
+        <div><h3 style={{ fontSize: 16, fontWeight: 400, color: "#fff", margin: "0 0 4px", fontFamily: "var(--font-brand), sans-serif" }}>Install Shadecode Student</h3><p style={{ fontSize: 12, color: "#9fb2bc", margin: 0 }}>Put your learning workspace on your phone. Reopen it like an app and keep saved study work available when your connection drops.</p></div>
       </div>
       <button onClick={handleInstall} style={{ width: "100%", padding: "12px", borderRadius: 10, background: "#22D3EE", border: "none", color: "#06111C", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-brand), sans-serif" }}>Install App</button>
       <a href="/download" style={{ display: "block", marginTop: 10, textAlign: "center", color: "#67E8F9", fontSize: 12, textDecoration: "none" }}>See every install option →</a>
