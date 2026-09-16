@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,15 +31,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -61,12 +64,12 @@ private val ShadePrimary = Color(0xFF22D3EE)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { ShadecodeStudentNative() }
+        setContent { ShadecodeStudentNative(applicationContext) }
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun ShadecodeStudentNative() {
+@Composable
+private fun ShadecodeStudentNative(context: android.content.Context) {
     MaterialTheme(
         colorScheme = androidx.compose.material3.darkColorScheme(
             primary = ShadePrimary,
@@ -75,15 +78,34 @@ private fun ShadecodeStudentNative() {
         ),
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = ShadeBackground) {
+            val store = remember { SessionStore(context) }
             var session by remember { mutableStateOf<NativeSession?>(null) }
-            if (session == null) LoginScreen(onSignedIn = { session = it })
-            else StudentShell(session = session!!, onSignOut = { session = null })
+            var restoring by remember { mutableStateOf(true) }
+
+            LaunchedEffect(Unit) {
+                session = store.session.first()
+                restoring = false
+            }
+
+            if (restoring) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (session == null) {
+                LoginScreen(onSignedIn = { signedIn ->
+                    session = signedIn
+                }, sessionStore = store)
+            } else {
+                StudentShell(session = session!!, onSignOut = {
+                    session = null
+                }, sessionStore = store)
+            }
         }
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun LoginScreen(onSignedIn: (NativeSession) -> Unit) {
+@Composable
+private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: SessionStore) {
     val scope = rememberCoroutineScope()
     val api = remember { NativeApi() }
     var email by remember { mutableStateOf("") }
@@ -114,6 +136,7 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit) {
                 scope.launch {
                     try {
                         val result = withContext(Dispatchers.IO) { api.signIn(email.trim(), password) }
+                        sessionStore.save(result)
                         onSignedIn(result)
                     } catch (e: Exception) {
                         error = e.message ?: "Sign in failed."
@@ -127,20 +150,20 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit) {
             else Text("Sign in")
         }
         Spacer(Modifier.height(12.dp))
-        Text("This is the native Android client. No WebView.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Text("Native Android client. No WebView.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun StudentShell(session: NativeSession, onSignOut: () -> Unit) {
-    val scope = rememberCoroutineScope()
+@Composable
+private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionStore: SessionStore) {
     val api = remember { NativeApi() }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
 
-    androidx.compose.runtime.LaunchedEffect(session.accessToken) {
+    LaunchedEffect(session.accessToken) {
         try { profile = withContext(Dispatchers.IO) { api.loadProfile(session) } }
         catch (e: Exception) { error = e.message ?: "Could not load your profile." }
         finally { loading = false }
@@ -161,13 +184,18 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit) {
             0 -> DashboardScreen(padding, profile, loading, error)
             1 -> LearnNativeScreen(padding, profile)
             2 -> PracticeNativeScreen(padding)
-            else -> ProfileNativeScreen(padding, profile, onSignOut)
+            else -> ProfileNativeScreen(padding, profile) {
+                scope.launch {
+                    sessionStore.clear()
+                    onSignOut()
+                }
+            }
         }
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun DashboardScreen(padding: androidx.compose.foundation.layout.PaddingValues, profile: NativeProfile?, loading: Boolean, error: String?) {
+@Composable
+private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, loading: Boolean, error: String?) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Spacer(Modifier.height(18.dp))
@@ -183,15 +211,13 @@ private fun DashboardScreen(padding: androidx.compose.foundation.layout.PaddingV
                 }
             }
         }
-        item {
-            Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
+        item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
         if (profile?.subjects.isNullOrEmpty()) item { Text("No subjects selected yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         else items(profile!!.subjects) { subject -> SubjectRow(subject) }
     }
 }
 
-@androidx.compose.runtime.Composable
+@Composable
 private fun SubjectRow(subject: String) {
     Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(16.dp)) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -204,11 +230,11 @@ private fun SubjectRow(subject: String) {
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun LearnNativeScreen(padding: androidx.compose.foundation.layout.PaddingValues, profile: NativeProfile?) {
+@Composable
+private fun LearnNativeScreen(padding: PaddingValues, profile: NativeProfile?) {
     Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
         Text("Learn", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Native learning is being built as a first-class offline workspace.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Your native learning workspace", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(20.dp))
         Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(20.dp)) {
@@ -220,8 +246,8 @@ private fun LearnNativeScreen(padding: androidx.compose.foundation.layout.Paddin
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun PracticeNativeScreen(padding: androidx.compose.foundation.layout.PaddingValues) {
+@Composable
+private fun PracticeNativeScreen(padding: PaddingValues) {
     Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
         Text("Practice", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(14.dp))
@@ -235,8 +261,8 @@ private fun PracticeNativeScreen(padding: androidx.compose.foundation.layout.Pad
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun ProfileNativeScreen(padding: androidx.compose.foundation.layout.PaddingValues, profile: NativeProfile?, onSignOut: () -> Unit) {
+@Composable
+private fun ProfileNativeScreen(padding: PaddingValues, profile: NativeProfile?, onSignOut: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
         Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(18.dp))
