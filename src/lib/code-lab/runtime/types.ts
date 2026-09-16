@@ -43,5 +43,6 @@ export type RuntimeResult = {
     executionPlan?: unknown;
     ir?: unknown;
     evidence?: unknown;
+    trace?: unknown;
   };
 };
