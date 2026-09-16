@@ -13,7 +13,7 @@ import { log } from "@/lib/observability";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 90;
+export const maxDuration = 60;
 
 type LessonBlock = { type: string; title?: string; content: string; formula?: string; example?: { question: string; answer: string }; options?: string[]; answer?: string };
 type AuthContext = { supabase: SupabaseClient; user: User };
@@ -101,7 +101,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 45000, perProviderMaxMs: 13000 });
+    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 18000, perProviderMaxMs: 5000, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -117,7 +117,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   if (parsed && initialFailures.length === 0) return parsed;
 
   try {
-    const repair = await callAI(`You are repairing a Cortex lesson that failed its quality gate. Rebuild it around the learner's actual intent and exact topic. Do not add unrelated material to make it longer. Fix these failures: ${initialFailures.join(", ")}. Return ONLY JSON with 8-14 purposeful blocks. Preserve subject, level, board, intent and topic. Do not invent curriculum claims.\n\n${buildResolvedLessonPrompt(request)}\n\nPresentation: short scannable lines, no wall-of-text. Use Given:/Method:/Step 1:/Answer: for worked examples. Use Question:/Think: for checkpoints without immediately giving the answer. Wrap every math expression in single dollar signs using real LaTeX. Never leave a caret exponent or ASCII slash fraction in plain text. Do not fabricate unexplained numerical results. Do not use internal-template headings.\n\nDRAFT:\n${raw.slice(0, 14000)}`, 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 28000, perProviderMaxMs: 10000 });
+    const repair = await callAI(`You are repairing a Cortex lesson that failed its quality gate. Rebuild it around the learner's actual intent and exact topic. Do not add unrelated material to make it longer. Fix these failures: ${initialFailures.join(", ")}. Return ONLY JSON with 8-14 purposeful blocks. Preserve subject, level, board, intent and topic. Do not invent curriculum claims.\n\n${buildResolvedLessonPrompt(request)}\n\nPresentation: short scannable lines, no wall-of-text. Use Given:/Method:/Step 1:/Answer: for worked examples. Use Question:/Think: for checkpoints without immediately giving the answer. Wrap every math expression in single dollar signs using real LaTeX. Never leave a caret exponent or ASCII slash fraction in plain text. Do not fabricate unexplained numerical results. Do not use internal-template headings.\n\nDRAFT:\n${raw.slice(0, 12000)}`, 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext });
     if (repair) {
       parsed = parseLesson(repair);
       if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
