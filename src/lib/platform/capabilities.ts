@@ -7,6 +7,7 @@
  */
 
 export type CapabilityId =
+  | "console.input" | "console.output"
   | "device.files" | "device.camera" | "device.microphone" | "device.speech-input" | "device.speech-output"
   | "device.ocr" | "device.notifications" | "device.background" | "device.local-ai"
   | "network.internet" | "runtime.javascript" | "runtime.typescript" | "runtime.python" | "runtime.java"
@@ -25,6 +26,8 @@ export interface CapabilityContract {
 }
 
 export const PLATFORM_CAPABILITIES: CapabilityContract[] = [
+  { id: "console.input", version: 1, label: "Console input", description: "Receive explicit learner input for an interactive program.", platforms: ["web", "mobile", "desktop", "native", "edge"], availability: "available", permissions: [], privacyClass: "device", networkRequired: false },
+  { id: "console.output", version: 1, label: "Console output", description: "Display program output to the learner.", platforms: ["web", "mobile", "desktop", "native", "edge"], availability: "available", permissions: [], privacyClass: "device", networkRequired: false },
   { id: "device.files", version: 1, label: "Files", description: "Read and write user-approved project files.", platforms: ["web", "mobile", "desktop", "native"], availability: "permission-required", permissions: ["filesystem.user-selected"], privacyClass: "private", networkRequired: false },
   { id: "device.camera", version: 1, label: "Camera", description: "Capture images and video for learning, design and practical work.", platforms: ["web", "mobile", "desktop", "native"], availability: "permission-required", permissions: ["camera"], privacyClass: "sensitive", networkRequired: false },
   { id: "device.microphone", version: 1, label: "Microphone", description: "Capture voice input and audio when explicitly authorized.", platforms: ["web", "mobile", "desktop", "native"], availability: "permission-required", permissions: ["microphone"], privacyClass: "sensitive", networkRequired: false },
