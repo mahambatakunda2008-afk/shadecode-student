@@ -11,7 +11,16 @@ const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
 
-export interface CallAIOptions { userId?: string; feature?: string; subfeature?: string; maxChainMs?: number; perProviderMaxMs?: number; preferLocal?: boolean; }
+export interface CallAIOptions {
+  userId?: string;
+  feature?: string;
+  subfeature?: string;
+  maxChainMs?: number;
+  perProviderMaxMs?: number;
+  preferLocal?: boolean;
+  /** Pre-resolved verified curriculum context. Prevents a second DB lookup in the same request. */
+  curriculumContext?: string;
+}
 
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
   const controller = new AbortController();
@@ -27,7 +36,14 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   let curriculumGroundingAvailable = false;
   let curriculumGroundingReason = "not requested";
 
-  if (userId) {
+  if (options.curriculumContext !== undefined) {
+    const curriculumContext = options.curriculumContext;
+    curriculumGroundingAvailable = curriculumContext.trim().length > 0;
+    curriculumGroundingReason = curriculumGroundingAvailable ? "provided" : "unavailable";
+    groundedPrompt = curriculumGroundingAvailable
+      ? `${prompt}${curriculumContext}`
+      : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+  } else if (userId) {
     try {
       const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt);
       curriculumGroundingAvailable = curriculumContext.trim().length > 0;
