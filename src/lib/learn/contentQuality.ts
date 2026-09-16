@@ -1,34 +1,7 @@
+import { formatTeachingProfile } from "@/lib/learn/teachingProfiles";
+import { formatCurriculumPlan, isBroadTopic } from "@/lib/learn/curriculumPlanner";
+
 export type LessonDifficulty = "easy" | "medium" | "hard";
-
-const BROAD_TOPIC_MARKERS = [
-  "organic chemistry",
-  "inorganic chemistry",
-  "physical chemistry",
-  "chemistry",
-  "mechanics",
-  "electricity",
-  "waves",
-  "thermodynamics",
-  "calculus",
-  "trigonometry",
-  "algebra",
-  "statistics",
-  "probability",
-  "programming",
-  "data structures",
-  "computer science",
-  "physics",
-  "biology",
-  "genetics",
-  "cell biology",
-  "ecology",
-  "evolution",
-];
-
-function isBroadTopic(topic: string) {
-  const normalized = topic.trim().toLowerCase();
-  return BROAD_TOPIC_MARKERS.some((marker) => normalized === marker || normalized.includes(marker));
-}
 
 export function buildDeepLessonPrompt(
   subject: string,
@@ -54,6 +27,10 @@ REQUEST: ${topic}
 DIFFICULTY: ${difficulty}
 ${curriculumContext ? `VERIFIED CURRICULUM CONTEXT:\n${curriculumContext}` : "No verified curriculum context is available. Teach accurately as general educational material and do not invent exam-board requirements."}
 
+${formatTeachingProfile(subject)}
+
+${formatCurriculumPlan(topic)}
+
 ${depth}
 
 TEACHING STANDARD
@@ -62,7 +39,7 @@ This must NOT read like an AI summary, Wikipedia paragraph, revision-card dump, 
 
 The lesson must build a mental model. Explain WHAT something is, WHY it behaves that way, HOW to recognise it, HOW to use it, and WHERE it connects to other ideas. When a rule is given, explain the mechanism or reasoning behind the rule where appropriate. When a formula appears, explain what the symbols mean, why the relationship makes sense, its conditions, units, and how to rearrange/use it. When a process or mechanism is taught, make the sequence explicit.
 
-For a BROAD topic, first establish the map of the territory. Cover the major canonical branches rather than spending the whole lesson on the first definition. For example, a broad chemistry request should move through foundations, classification, structure/bonding, nomenclature, reactions/mechanisms, important functional groups or families, synthesis/interconversion, analytical ideas, applications, and exam/problem-solving connections as appropriate to that subject. Adapt the actual branches to the requested topic rather than blindly copying this example.
+For a BROAD topic, use the curriculum map above as the spine. Every major branch must receive substantive teaching. Do not spend the whole response on the first branch. If the request is too broad for one lesson, explicitly teach the map and the highest-value foundations, then create clear next-step blocks that continue the journey. Never pretend a tiny answer covers the whole field.
 
 CONTENT ARCHITECTURE
 Return ONLY valid JSON with this shape:
@@ -96,7 +73,7 @@ DEPTH RULES
 3. Include at least 3 worked examples or worked applications when the topic supports them.
 4. Include at least 3 checkpoints spread through the lesson, not all at the end.
 5. Include at least 2 misconception/comparison blocks when the topic has common confusions.
-6. For broad topics, every major branch needs substantive treatment, not merely a heading.
+6. For broad topics, every major branch in the curriculum map needs substantive treatment or a clearly explained continuation path. Never imply that a definition equals mastery.
 7. Do not repeat the same explanation with synonyms. Each block must advance the learner.
 8. Define unfamiliar terminology at first meaningful use.
 9. Use precise notation. For equations, readable plain text is acceptable, but never omit symbols, units, assumptions, or conditions.
@@ -106,9 +83,10 @@ DEPTH RULES
 13. Never claim a syllabus includes something unless it is supported by the verified curriculum context.
 14. Never mention being an AI, this prompt, JSON, token limits, or generation instructions.
 15. Do not pad the lesson with motivational filler. Substance first.
+16. Prefer connections over isolated facts. A learner should finish knowing not only the pieces, but the structure formed by the pieces.
 
 QUALITY BAR
-Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? If not, deepen it before returning it.`;
+Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? If not, deepen it before returning it.`;
 }
 
 export function buildLessonRepairPrompt(subject: string, topic: string, raw: string) {
@@ -117,7 +95,11 @@ export function buildLessonRepairPrompt(subject: string, topic: string, raw: str
 SUBJECT: ${subject}
 TOPIC: ${topic}
 
-The draft below may be shallow, repetitive, incomplete, or structurally invalid. Rewrite it into a genuinely teachable lesson. Preserve correct useful material, but replace generic filler and expand missing reasoning. If the topic is broad, cover its major branches rather than treating it as one tiny definition.
+${formatTeachingProfile(subject)}
+
+${formatCurriculumPlan(topic)}
+
+The draft below may be shallow, repetitive, incomplete, or structurally invalid. Rewrite it into a genuinely teachable lesson. Preserve correct useful material, but replace generic filler and expand missing reasoning. If the topic is broad, use the curriculum map as the spine and cover its major branches rather than treating the request as one tiny definition.
 
 Requirements:
 - Return ONLY valid JSON.
@@ -127,6 +109,7 @@ Requirements:
 - Include at least 3 worked examples/applications, 3 checkpoints, 2 misconception/comparison blocks, 2 synthesis/connection moments, and a curiosity block.
 - Explain WHY and HOW, not only WHAT.
 - Do not invent syllabus requirements.
+- Make the subject's reasoning style visible in explanations and worked examples.
 
 Draft to repair:
 ${raw.slice(0, 30000)}`;
@@ -139,7 +122,10 @@ export function lessonQualityScore(blocks: Array<{ type: string; content: string
   const rich = blocks.filter((b) => richTypes.has(b.type) && b.content.trim().length >= 120).length;
   const checkpoints = blocks.filter((b) => b.type === "checkpoint").length;
   const examples = blocks.filter((b) => ["example", "application"].includes(b.type)).length;
+  const misconceptions = blocks.filter((b) => ["misconception", "comparison"].includes(b.type)).length;
+  const curiosity = blocks.filter((b) => b.type === "curiosity").length;
+  const synthesis = blocks.filter((b) => b.type === "synthesis").length;
   return Math.round(
-    Math.min(100, (substantive / Math.max(1, blocks.length)) * 45 + (rich / Math.max(1, blocks.length)) * 35 + Math.min(10, checkpoints * 3) + Math.min(10, examples * 3)),
+    Math.min(100, (substantive / Math.max(1, blocks.length)) * 35 + (rich / Math.max(1, blocks.length)) * 25 + Math.min(12, checkpoints * 4) + Math.min(10, examples * 3) + Math.min(5, misconceptions * 2) + Math.min(4, curiosity * 4) + Math.min(4, synthesis * 2)),
   );
 }
