@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getLessonCache, saveLessonCache, type LocalLessonList } from "@/lib/local-first/lesson-cache";
+import PaperStudyLauncher from "./PaperStudyLauncher";
 import { AlertCircle, BookOpen, CheckCircle2, Clock3, RefreshCw, Sparkles, WifiOff, Zap } from "lucide-react";
 
 const REQUEST_TIMEOUT_MS = 12000;
@@ -118,7 +119,6 @@ export default function LearnPageClientV2() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      // /api/learn is list/detail. The curriculum-aware lesson generator is /api/learn/generate.
       const result = await requestJson<{ id?: string; error?: string }>("/api/learn/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -145,7 +145,7 @@ export default function LearnPageClientV2() {
             <h1 className="mt-1 text-3xl font-black tracking-tight">Turn a topic into a lesson.</h1>
             <p className="mt-1 max-w-2xl text-sm text-[var(--muted-foreground)]">Generate curriculum-aware lessons, continue where you left off, and keep your workspace available offline.</p>
           </div>
-          <button type="button" onClick={() => token && userId && void refresh(userId, token)} disabled={refreshing || offline} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-4 text-sm font-semibold disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh</button>
+          <div className="flex flex-wrap gap-2"><PaperStudyLauncher /><button type="button" onClick={() => token && userId && void refresh(userId, token)} disabled={refreshing || offline} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-4 text-sm font-semibold disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh</button></div>
         </header>
 
         {(offline || error) && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="rounded-lg bg-[var(--primary-glow)] p-2">{offline ? <WifiOff className="h-4 w-4 text-[var(--primary)]" /> : <AlertCircle className="h-4 w-4 text-[var(--primary)]" />}</div><div><p className="text-sm font-semibold">{offline ? "You're offline" : "Learn couldn't refresh"}</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">{error || "Your cached lessons are still available."}</p></div></div>}
