@@ -87,3 +87,29 @@ abstract class NativeDatabase : RoomDatabase() {
         }
     }
 }
+
+class NativeSubjectRepository(private val database: NativeDatabase) {
+    suspend fun cached(): List<NativeSubjectEntity> = database.subjects().all()
+
+    suspend fun replaceFromProfile(profile: NativeProfile) {
+        val subjects = profile.subjects
+            .map { it.trim() }
+            .filter { it.isNotBlank() && !it.equals("general", ignoreCase = true) }
+            .distinctBy { normalize(it) }
+            .map { subject ->
+                val normalized = normalize(subject)
+                NativeSubjectEntity(
+                    id = "profile:${profile.id}:$normalized",
+                    name = subject,
+                    normalizedName = normalized,
+                )
+            }
+        database.subjects().clear()
+        if (subjects.isNotEmpty()) database.subjects().replaceAll(subjects)
+    }
+
+    private fun normalize(value: String): String = value
+        .lowercase()
+        .replace(Regex("[^a-z0-9]+"), "-")
+        .trim('-')
+}
