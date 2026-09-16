@@ -21,10 +21,22 @@ class NativeCortex {
     private val router = NativeCortexRouter()
     private val inferenceLock = Mutex()
     private val lessonCache = LinkedHashMap<String, NativeLessonEntity>(8, 0.75f, true)
+    private var availability: Boolean? = null
+    private var availabilityCheckedAt = 0L
 
-    suspend fun isAvailable(): Boolean = runCatching {
-        model.checkStatus() == FeatureStatus.AVAILABLE
-    }.getOrDefault(false)
+    suspend fun isAvailable(forceRefresh: Boolean = false): Boolean {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && availability != null && now - availabilityCheckedAt < STATUS_CACHE_MS) {
+            return availability == true
+        }
+
+        return runCatching {
+            model.checkStatus() == FeatureStatus.AVAILABLE
+        }.getOrDefault(false).also {
+            availability = it
+            availabilityCheckedAt = System.currentTimeMillis()
+        }
+    }
 
     suspend fun generateLesson(
         subject: String,
@@ -89,6 +101,7 @@ Use 8-12 purposeful blocks. Keep the output under 3000 tokens.
 
     fun close() {
         lessonCache.clear()
+        availability = null
         model.close()
     }
 
@@ -152,5 +165,9 @@ Use 8-12 purposeful blocks. Keep the output under 3000 tokens.
             else if (ch == '}' && --depth == 0) return text.substring(start, index + 1)
         }
         return null
+    }
+
+    companion object {
+        private const val STATUS_CACHE_MS = 30_000L
     }
 }
