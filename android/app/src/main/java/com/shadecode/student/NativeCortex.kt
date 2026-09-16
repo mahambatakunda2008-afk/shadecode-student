@@ -15,6 +15,9 @@ import java.util.UUID
  * provider choice separate from feature code so LiteRT-LM/llama.cpp/custom
  * models can be added without making Gemini Nano a hard dependency of every
  * feature.
+ *
+ * Capability status is cached briefly because feature screens may probe local
+ * inference more than once during a single interaction.
  */
 class NativeCortex {
     private val model = Generation.getClient()
