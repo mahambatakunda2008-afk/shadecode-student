@@ -2,19 +2,25 @@ package com.shadecode.student
 
 import com.google.mlkit.genai.prompt.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
 /**
- * On-device Cortex for native Android.
+ * Local Cortex model adapter.
  *
- * Gemini Nano is the first generation path. If AICore is unavailable, callers
- * should fall back to the server Cortex pipeline rather than pretending that
- * a local answer was generated.
+ * This is deliberately only one provider in the Cortex pool. The router keeps
+ * provider choice separate from feature code so LiteRT-LM/llama.cpp/custom
+ * models can be added without making Gemini Nano a hard dependency of every
+ * feature.
  */
 class NativeCortex {
     private val model = Generation.getClient()
+    private val router = NativeCortexRouter()
+    private val inferenceLock = Mutex()
+    private val lessonCache = LinkedHashMap<String, NativeLessonEntity>(8, 0.75f, true)
 
     suspend fun isAvailable(): Boolean = runCatching {
         model.checkStatus() == FeatureStatus.AVAILABLE
@@ -25,14 +31,28 @@ class NativeCortex {
         topic: String,
         level: String,
     ): NativeLessonEntity? {
-        if (!isAvailable()) return null
-
         val safeSubject = subject.trim()
         val safeTopic = topic.trim()
         val safeLevel = level.trim().ifBlank { "student" }
         if (safeSubject.isBlank() || safeTopic.isBlank()) return null
 
-        val prompt = """
+        val key = cacheKey(safeSubject, safeTopic, safeLevel)
+        lessonCache[key]?.let { return it }
+
+        val route = router.route(
+            CortexTask.LESSON_GENERATION,
+            CortexCapabilities(
+                localModelAvailable = isAvailable(),
+                networkAvailable = false,
+                hasCachedResult = false,
+            ),
+        )
+        if (route != CortexRoute.LOCAL_MODEL) return null
+
+        return inferenceLock.withLock {
+            lessonCache[key]?.let { return@withLock it }
+            runCatching {
+                val prompt = """
 You are Cortex, the offline teaching engine inside Shadecode Student.
 Generate a compact but genuinely useful lesson for a $safeLevel student.
 Subject: $safeSubject
@@ -46,27 +66,38 @@ Do not invent syllabus claims or citations.
 Return ONLY JSON:
 {"title":"specific title","description":"short description","difficulty":"beginner|intermediate|advanced","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|misconception|application|practice|summary|tip","title":"short heading","content":"substantive student-facing content"}]}
 
-Use 8-12 purposeful blocks. Keep the output under 3500 tokens.
+Use 8-12 purposeful blocks. Keep the output under 3000 tokens.
 """.trimIndent()
 
-        return runCatching {
-            val response = model.generateContent(prompt)
-            val raw = response.text?.trim().orEmpty()
-            parseLesson(raw, safeTopic)
-        }.getOrNull()
+                val response = model.generateContent(prompt)
+                val raw = response.text?.trim().orEmpty()
+                parseLesson(raw, safeTopic)?.also { lesson ->
+                    lessonCache[key] = lesson
+                    while (lessonCache.size > 8) lessonCache.remove(lessonCache.entries.first().key)
+                }
+            }.getOrNull()
+        }
     }
 
     suspend fun warmup(): Boolean = runCatching {
         if (!isAvailable()) return false
-        model.warmup()
+        inferenceLock.withLock { model.warmup() }
         true
     }.getOrDefault(false)
 
-    fun close() = model.close()
+    fun clearMemoryCache() = lessonCache.clear()
+
+    fun close() {
+        lessonCache.clear()
+        model.close()
+    }
+
+    private fun cacheKey(subject: String, topic: String, level: String): String =
+        "${subject.lowercase().trim()}|${topic.lowercase().trim()}|${level.lowercase().trim()}"
 
     private fun parseLesson(raw: String, topic: String): NativeLessonEntity? {
         val candidate = extractObject(raw) ?: return null
-        val value = JSONObject(candidate)
+        val value = runCatching { JSONObject(candidate) }.getOrNull() ?: return null
         val title = value.optString("title").trim().ifBlank { topic }
         val description = value.optString("description").trim()
         val difficulty = value.optString("difficulty").trim().ifBlank { "intermediate" }
