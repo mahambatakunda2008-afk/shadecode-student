@@ -4,7 +4,7 @@ export type ShadeIROp =
   | "const" | "load" | "store" | "binary" | "call" | "show" | "input"
   | "jump_if_false" | "jump" | "label" | "return";
 
-export type ShadeIRInstruction = { id: number; op: ShadeIROp; args: string[]; line: number };
+export type ShadeIRInstruction = { id: number; op: ShadeIROp; args: string[]; line: number; column?: number };
 export type ShadeIR = { version: "0.1"; instructions: ShadeIRInstruction[]; entry: number; labels: Record<string, number> };
 
 export function lowerShadeToIR(program: ShadeProgram): ShadeIR {
@@ -12,16 +12,18 @@ export function lowerShadeToIR(program: ShadeProgram): ShadeIR {
   const labels: Record<string, number> = {};
   let nextId = 0;
   let nextLabel = 0;
-  const emit = (op: ShadeIROp, args: string[], line: number) => instructions.push({ id: nextId++, op, args, line });
-  const label = (line: number) => { const name = `L${nextLabel++}`; labels[name] = instructions.length; emit("label", [name], line); return name; };
+  const emit = (op: ShadeIROp, args: string[], line: number, column?: number) => instructions.push({ id: nextId++, op, args, line, ...(column === undefined ? {} : { column }) });
+  const label = (line: number, column?: number) => { const name = `L${nextLabel++}`; labels[name] = instructions.length; emit("label", [name], line, column); return name; };
 
-  const expression = (node: ShadeExpression, line: number) => {
+  const expression = (node: ShadeExpression, fallbackLine: number, fallbackColumn?: number) => {
+    const line = node.location?.line ?? fallbackLine;
+    const column = node.location?.column ?? fallbackColumn;
     switch (node.type) {
-      case "literal": emit("const", [JSON.stringify(node.value)], line); break;
-      case "variable": emit("load", [node.name], line); break;
-      case "array": node.elements.forEach((child) => expression(child, line)); emit("call", ["array", String(node.elements.length)], line); break;
-      case "binary": expression(node.left, line); expression(node.right, line); emit("binary", [node.operator], line); break;
-      case "call": node.args.forEach((child) => expression(child, line)); emit("call", [node.name, String(node.args.length)], line); break;
+      case "literal": emit("const", [JSON.stringify(node.value)], line, column); break;
+      case "variable": emit("load", [node.name], line, column); break;
+      case "array": node.elements.forEach((child) => expression(child, line, column)); emit("call", ["array", String(node.elements.length)], line, column); break;
+      case "binary": expression(node.left, line, column); expression(node.right, line, column); emit("binary", [node.operator], line, column); break;
+      case "call": node.args.forEach((child) => expression(child, line, column)); emit("call", [node.name, String(node.args.length)], line, column); break;
     }
   };
 
