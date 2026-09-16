@@ -4,6 +4,7 @@ import { analyzeShade } from "./semantic";
 import { createShadeArtifact, createShadeArtifactId, createShadeProjectModel } from "./project";
 import { buildShadeProjectGraph } from "./graph";
 import { lowerShadeToIR } from "./ir";
+import { getShadeInstructionsForLine } from "./debug";
 
 describe("Shade language core", () => {
   it("parses and executes basic values", () => {
@@ -56,6 +57,18 @@ describe("Shade language core", () => {
     expect(graph.edges.some((edge) => edge.from === `artifact:${entryArtifact?.id}` && edge.relation === "defines")).toBe(true);
     expect(ir.instructions.some((instruction) => instruction.op === "jump_if_false")).toBe(true);
     expect(ir.instructions.some((instruction) => instruction.op === "show")).toBe(true);
+  });
+
+  it("keeps nested expression IR mapped to real source lines and columns", () => {
+    const parsed = parseShade(["value = 10", "show (value + 2) * 3"].join("\n"));
+    expect(parsed.diagnostics.filter((d) => d.severity === "error")).toHaveLength(0);
+    const ir = lowerShadeToIR(parsed.program);
+    const lineTwo = getShadeInstructionsForLine(ir, 2);
+    expect(lineTwo.length).toBeGreaterThan(0);
+    expect(lineTwo.every((instruction) => instruction.line === 2)).toBe(true);
+    expect(lineTwo.some((instruction) => instruction.op === "binary" && instruction.args[0] === "+")).toBe(true);
+    expect(lineTwo.some((instruction) => instruction.op === "binary" && instruction.args[0] === "*")).toBe(true);
+    expect(lineTwo.every((instruction) => typeof instruction.column === "number")).toBe(true);
   });
 
   it("models required capabilities without granting them", () => {
