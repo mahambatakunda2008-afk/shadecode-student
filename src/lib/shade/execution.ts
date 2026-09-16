@@ -1,4 +1,5 @@
 import type { ShadeSemanticModel } from "./semantic";
+import { summarizeShadeCapabilities } from "./capabilities";
 
 export type ShadeExecutionPlan = {
   version: "0.1";
@@ -10,6 +11,11 @@ export type ShadeExecutionPlan = {
   privacy: "local" | "device" | "network";
   isolation: "interpreter";
   deterministic: boolean;
+  capabilityPolicy: {
+    requested: number;
+    allowed: number;
+    blocked: number;
+  };
 };
 
 export type ShadeEvidence = {
@@ -24,6 +30,7 @@ export type ShadeEvidence = {
 
 export function createShadeExecutionPlan(semantic: ShadeSemanticModel, entryFile = "main.shade"): ShadeExecutionPlan {
   const networkRequired = semantic.capabilities.includes("network.internet");
+  const policy = summarizeShadeCapabilities(semantic.capabilities);
   return {
     version: "0.1",
     language: "shade",
@@ -34,6 +41,7 @@ export function createShadeExecutionPlan(semantic: ShadeSemanticModel, entryFile
     privacy: networkRequired ? "network" : semantic.capabilities.some((capability) => capability.startsWith("device.")) ? "device" : "local",
     isolation: "interpreter",
     deterministic: !networkRequired,
+    capabilityPolicy: { requested: policy.requested, allowed: policy.allowed, blocked: policy.blocked },
   };
 }
 
