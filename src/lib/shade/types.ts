@@ -54,4 +54,5 @@ export type ShadeExecutionResult = {
   variables: Record<string, ShadeValue>;
   steps: number;
   durationMs: number;
+  trace?: import("./debug").ShadeExecutionTrace;
 };
