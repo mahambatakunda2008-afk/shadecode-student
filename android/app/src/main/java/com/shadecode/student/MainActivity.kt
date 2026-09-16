@@ -193,20 +193,20 @@ private fun LearnNativeScreen(
     api: NativeApi,
 ) {
     val context = LocalContext.current
-    val cortex = remember { NativeCortex() }
+    val cortex = remember { NativeCortexOrchestrator() }
     var selectedSubjectId by remember { mutableStateOf<String?>(null) }
     var lessons by remember { mutableStateOf<List<NativeLessonEntity>>(emptyList()) }
     var activeLesson by remember { mutableStateOf<NativeLessonEntity?>(null) }
     var refreshing by remember { mutableStateOf(false) }; var offline by remember { mutableStateOf(false) }
     var localAvailable by remember { mutableStateOf(false) }
     var localTopic by remember { mutableStateOf("") }
-    var localGenerating by remember { mutableStateOf(false) }
-    var localMessage by remember { mutableStateOf<String?>(null) }
+    var generating by remember { mutableStateOf(false) }
+    var generationMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     DisposableEffect(cortex) { onDispose { cortex.close() } }
     LaunchedEffect(Unit) {
-        localAvailable = withContext(Dispatchers.IO) { cortex.isAvailable() }
+        localAvailable = withContext(Dispatchers.IO) { cortex.warmLocalModel() }
     }
     LaunchedEffect(subjects) { if (selectedSubjectId == null || subjects.none { it.id == selectedSubjectId }) selectedSubjectId = subjects.firstOrNull()?.id }
     LaunchedEffect(selectedSubjectId) {
@@ -214,7 +214,13 @@ private fun LearnNativeScreen(
         lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subjectId) }; refreshing = true
         try {
             val remote = withContext(Dispatchers.IO) { api.loadLessons(session, subjectId) }
-            if (remote.isNotEmpty()) { withContext(Dispatchers.IO) { database.lessons().clearSubject(subjectId); database.lessons().replaceAll(remote) }; lessons = remote }
+            if (remote.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    database.lessons().clearSubject(subjectId)
+                    database.lessons().replaceAll(remote)
+                }
+            }
+            lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subjectId) }
             offline = false
         } catch (_: Exception) { offline = true } finally { refreshing = false }
     }
@@ -235,54 +241,58 @@ private fun LearnNativeScreen(
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
                     Column(Modifier.padding(18.dp)) {
-                        Text("Cortex Local", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Cortex", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            if (localAvailable) "Generate a lesson on this device with Gemini Nano. No network call is needed for the generation step."
-                            else "On-device generation is unavailable on this device right now. Cloud generation remains the fallback.",
+                            if (localAvailable) "Local-first generation is ready. Cortex tries the on-device model first, then uses cloud Cortex only if needed."
+                            else "This device cannot use the local model right now. Cortex will use cloud generation when connected, or stay cached-only offline.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (localAvailable) {
-                            Spacer(Modifier.height(12.dp))
-                            OutlinedTextField(
-                                value = localTopic,
-                                onValueChange = { localTopic = it; localMessage = null },
-                                label = { Text("What do you want to learn?") },
-                                placeholder = { Text("e.g. Trigonometric identities") },
-                                singleLine = true,
-                                enabled = !localGenerating,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Button(
-                                onClick = {
-                                    val subject = subjects.firstOrNull { it.id == selectedSubjectId } ?: return@Button
-                                    val topic = localTopic.trim()
-                                    if (topic.isBlank()) { localMessage = "Enter a topic first."; return@Button }
-                                    localGenerating = true; localMessage = null
-                                    scope.launch {
-                                        val generated = withContext(Dispatchers.IO) {
-                                            cortex.generateLesson(subject.name, topic, profile?.studyLevel.orEmpty())
-                                        }
-                                        if (generated == null) {
-                                            localMessage = "Local Cortex could not complete that lesson. Try again or use cloud generation when connected."
-                                        } else {
-                                            val saved = generated.copy(subjectId = subject.id)
-                                            withContext(Dispatchers.IO) { database.lessons().replaceAll(listOf(saved)) }
-                                            lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subject.id) }
-                                            localMessage = "Generated locally and saved on this device."
-                                            activeLesson = saved
-                                        }
-                                        localGenerating = false
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = localTopic,
+                            onValueChange = { localTopic = it; generationMessage = null },
+                            label = { Text("What do you want to learn?") },
+                            placeholder = { Text("e.g. Trigonometric identities") },
+                            singleLine = true,
+                            enabled = !generating,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Button(
+                            onClick = {
+                                val subject = subjects.firstOrNull { it.id == selectedSubjectId } ?: return@Button
+                                val topic = localTopic.trim()
+                                if (topic.isBlank()) { generationMessage = "Enter a topic first."; return@Button }
+                                generating = true; generationMessage = null
+                                scope.launch {
+                                    val generated = withContext(Dispatchers.IO) {
+                                        cortex.generateLesson(
+                                            session = session,
+                                            subjectId = subject.id,
+                                            subject = subject.name,
+                                            topic = topic,
+                                            level = profile?.studyLevel.orEmpty(),
+                                        )
                                     }
-                                },
-                                enabled = !localGenerating && localTopic.isNotBlank(),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                if (localGenerating) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Generate locally")
-                            }
+                                    if (generated == null) {
+                                        generationMessage = if (localAvailable) "Local Cortex could not complete that lesson, and cloud fallback was unavailable." else "Cloud Cortex could not complete that lesson. Cached lessons remain available offline."
+                                    } else {
+                                        val saved = generated.copy(subjectId = subject.id)
+                                        withContext(Dispatchers.IO) { database.lessons().replaceAll(listOf(saved)) }
+                                        lessons = withContext(Dispatchers.IO) { database.lessons().forSubject(subject.id) }
+                                        generationMessage = if (saved.id.startsWith("local:")) "Generated on-device and saved locally." else "Generated by cloud Cortex and saved locally for offline study."
+                                        activeLesson = saved
+                                    }
+                                    generating = false
+                                }
+                            },
+                            enabled = !generating && localTopic.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            if (generating) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text(if (localAvailable) "Generate with Cortex" else "Generate with Cortex")
                         }
-                        if (localMessage != null) Text(localMessage!!, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+                        if (generationMessage != null) Text(generationMessage!!, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
                     }
                 }
             }
