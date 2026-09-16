@@ -49,10 +49,8 @@ data class NativePendingSyncEntity(
 interface NativeSubjectDao {
     @androidx.room.Query("SELECT * FROM subjects ORDER BY name COLLATE NOCASE")
     suspend fun all(): List<NativeSubjectEntity>
-
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun replaceAll(subjects: List<NativeSubjectEntity>)
-
     @androidx.room.Query("DELETE FROM subjects")
     suspend fun clear()
 }
@@ -61,13 +59,10 @@ interface NativeSubjectDao {
 interface NativeLessonDao {
     @androidx.room.Query("SELECT * FROM lessons WHERE subjectId = :subjectId ORDER BY updatedAt DESC")
     suspend fun forSubject(subjectId: String): List<NativeLessonEntity>
-
     @androidx.room.Query("SELECT * FROM lessons ORDER BY updatedAt DESC")
     suspend fun all(): List<NativeLessonEntity>
-
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun replaceAll(lessons: List<NativeLessonEntity>)
-
     @androidx.room.Query("DELETE FROM lessons WHERE subjectId = :subjectId")
     suspend fun clearSubject(subjectId: String)
 }
@@ -76,7 +71,6 @@ interface NativeLessonDao {
 interface NativeProgressDao {
     @androidx.room.Query("SELECT * FROM lesson_progress WHERE lessonId = :lessonId LIMIT 1")
     suspend fun get(lessonId: String): NativeLessonProgressEntity?
-
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun save(progress: NativeLessonProgressEntity)
 }
@@ -85,10 +79,8 @@ interface NativeProgressDao {
 interface NativeSyncDao {
     @androidx.room.Query("SELECT * FROM pending_sync ORDER BY createdAt ASC")
     suspend fun pending(): List<NativePendingSyncEntity>
-
     @androidx.room.Insert
     suspend fun enqueue(item: NativePendingSyncEntity)
-
     @androidx.room.Delete
     suspend fun delete(item: NativePendingSyncEntity)
 }
@@ -106,14 +98,18 @@ abstract class NativeDatabase : RoomDatabase() {
 
     companion object {
         @Volatile private var instance: NativeDatabase? = null
+        @Volatile private var applicationContext: Context? = null
 
         fun get(context: Context): NativeDatabase = instance ?: synchronized(this) {
+            applicationContext = context.applicationContext
             instance ?: Room.databaseBuilder(
                 context.applicationContext,
                 NativeDatabase::class.java,
                 "shadecode_student.db",
             ).fallbackToDestructiveMigration().build().also { instance = it }
         }
+
+        fun appContext(): Context = requireNotNull(applicationContext) { "Native database has not been initialized." }
     }
 }
 
@@ -127,18 +123,11 @@ class NativeSubjectRepository(private val database: NativeDatabase) {
             .distinctBy { normalize(it) }
             .map { subject ->
                 val normalized = normalize(subject)
-                NativeSubjectEntity(
-                    id = "profile:${profile.id}:$normalized",
-                    name = subject,
-                    normalizedName = normalized,
-                )
+                NativeSubjectEntity("profile:${profile.id}:$normalized", subject, normalized)
             }
         database.subjects().clear()
         if (subjects.isNotEmpty()) database.subjects().replaceAll(subjects)
     }
 
-    private fun normalize(value: String): String = value
-        .lowercase()
-        .replace(Regex("[^a-z0-9]+"), "-")
-        .trim('-')
+    private fun normalize(value: String): String = value.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
 }
