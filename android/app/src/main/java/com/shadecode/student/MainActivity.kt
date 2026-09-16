@@ -1,126 +1,250 @@
 package com.shadecode.student
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.webkit.CookieManager
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.view.KeyEvent
-import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class MainActivity : Activity() {
-    private lateinit var webView: WebView
-    private var filePathCallback: ValueCallback<Array<Uri>>? = null
-    private var showingOfflinePage = false
+private val ShadeBackground = Color(0xFF06111C)
+private val ShadeSurface = Color(0xFF0B1E2D)
+private val ShadePrimary = Color(0xFF22D3EE)
 
-    @SuppressLint("SetJavaScriptEnabled")
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContent { ShadecodeStudentNative() }
+    }
+}
 
-        webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.databaseEnabled = true
-            settings.allowFileAccess = false
-            settings.allowContentAccess = false
-            settings.mediaPlaybackRequiresUserGesture = false
-            settings.loadsImagesAutomatically = true
-            settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+@androidx.compose.runtime.Composable
+private fun ShadecodeStudentNative() {
+    MaterialTheme(
+        colorScheme = androidx.compose.material3.darkColorScheme(
+            primary = ShadePrimary,
+            background = ShadeBackground,
+            surface = ShadeSurface,
+        ),
+    ) {
+        Surface(modifier = Modifier.fillMaxSize(), color = ShadeBackground) {
+            var session by remember { mutableStateOf<NativeSession?>(null) }
+            if (session == null) LoginScreen(onSignedIn = { session = it })
+            else StudentShell(session = session!!, onSignOut = { session = null })
+        }
+    }
+}
 
-            CookieManager.getInstance().setAcceptCookie(true)
-            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+@androidx.compose.runtime.Composable
+private fun LoginScreen(onSignedIn: (NativeSession) -> Unit) {
+    val scope = rememberCoroutineScope()
+    val api = remember { NativeApi() }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
-
-                override fun onPageFinished(view: WebView, url: String) {
-                    super.onPageFinished(view, url)
-                    showingOfflinePage = false
+    Column(
+        modifier = Modifier.fillMaxSize().padding(28.dp).navigationBarsPadding(),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text("Shadecode", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text("Student", style = MaterialTheme.typography.headlineMedium, color = ShadePrimary, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(12.dp))
+        Text("A native learning workspace built around you.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(32.dp))
+        OutlinedTextField(email, { email = it; error = null }, label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(password, { password = it; error = null }, label = { Text("Password") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+        if (error != null) {
+            Spacer(Modifier.height(10.dp))
+            Text(error!!, color = MaterialTheme.colorScheme.error)
+        }
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = {
+                loading = true
+                scope.launch {
+                    try {
+                        val result = withContext(Dispatchers.IO) { api.signIn(email.trim(), password) }
+                        onSignedIn(result)
+                    } catch (e: Exception) {
+                        error = e.message ?: "Sign in failed."
+                    } finally { loading = false }
                 }
+            },
+            enabled = !loading && email.isNotBlank() && password.isNotBlank(),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) {
+            if (loading) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+            else Text("Sign in")
+        }
+        Spacer(Modifier.height(12.dp))
+        Text("This is the native Android client. No WebView.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+    }
+}
 
-                override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                    super.onReceivedError(view, request, error)
-                    if (request.isForMainFrame && !showingOfflinePage) showOfflinePage()
+@androidx.compose.runtime.Composable
+private fun StudentShell(session: NativeSession, onSignOut: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val api = remember { NativeApi() }
+    var profile by remember { mutableStateOf<NativeProfile?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var selected by remember { mutableStateOf(0) }
+
+    androidx.compose.runtime.LaunchedEffect(session.accessToken) {
+        try { profile = withContext(Dispatchers.IO) { api.loadProfile(session) } }
+        catch (e: Exception) { error = e.message ?: "Could not load your profile." }
+        finally { loading = false }
+    }
+
+    Scaffold(
+        containerColor = ShadeBackground,
+        bottomBar = {
+            NavigationBar(containerColor = ShadeSurface) {
+                NavigationBarItem(selected == 0, { selected = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
+                NavigationBarItem(selected == 1, { selected = 1 }, icon = { Icon(Icons.Default.Book, null) }, label = { Text("Learn") })
+                NavigationBarItem(selected == 2, { selected = 2 }, icon = { Icon(Icons.Default.PlayArrow, null) }, label = { Text("Practice") })
+                NavigationBarItem(selected == 3, { selected = 3 }, icon = { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
+            }
+        },
+    ) { padding ->
+        when (selected) {
+            0 -> DashboardScreen(padding, profile, loading, error)
+            1 -> LearnNativeScreen(padding, profile)
+            2 -> PracticeNativeScreen(padding)
+            else -> ProfileNativeScreen(padding, profile, onSignOut)
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun DashboardScreen(padding: androidx.compose.foundation.layout.PaddingValues, profile: NativeProfile?, loading: Boolean, error: String?) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        item {
+            Spacer(Modifier.height(18.dp))
+            Text("Good to see you.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(profile?.displayName ?: "Student", color = ShadePrimary, style = MaterialTheme.typography.titleLarge)
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(22.dp)) {
+                Column(Modifier.padding(20.dp)) {
+                    Text("Your learning system", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    Text(if (loading) "Syncing your academic profile…" else if (error != null) "Offline mode: your native workspace is ready. Reconnect to sync." else "Your subjects and learning context are connected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+        }
+        item {
+            Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+        if (profile?.subjects.isNullOrEmpty()) item { Text("No subjects selected yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        else items(profile!!.subjects) { subject -> SubjectRow(subject) }
+    }
+}
 
-            webChromeClient = object : WebChromeClient() {
-                override fun onShowFileChooser(
-                    view: WebView,
-                    callback: ValueCallback<Array<Uri>>,
-                    fileChooserParams: FileChooserParams,
-                ): Boolean {
-                    filePathCallback?.onReceiveValue(null)
-                    filePathCallback = callback
-                    return try {
-                        startActivityForResult(fileChooserParams.createIntent(), FILE_CHOOSER_REQUEST)
-                        true
-                    } catch (_: Exception) {
-                        filePathCallback = null
-                        Toast.makeText(this@MainActivity, "Could not open the file picker.", Toast.LENGTH_SHORT).show()
-                        false
-                    }
-                }
+@androidx.compose.runtime.Composable
+private fun SubjectRow(subject: String) {
+    Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(16.dp)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).background(ShadePrimary.copy(alpha = 0.14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Book, null, tint = ShadePrimary)
             }
-
-            WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+            Spacer(Modifier.width(14.dp))
+            Text(subject.replace('_', ' ').replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.SemiBold)
         }
-
-        setContentView(webView)
-        webView.loadUrl(PRODUCTION_URL)
     }
+}
 
-    private fun showOfflinePage() {
-        showingOfflinePage = true
-        val html = """
-            <!doctype html><html><head>
-            <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-            <style>
-              :root{color-scheme:dark}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#06111C;color:#F8FAFC;font-family:system-ui,sans-serif;padding:24px;box-sizing:border-box}
-              main{width:min(420px,100%);text-align:center}.mark{width:64px;height:64px;margin:0 auto 24px;border-radius:18px;background:#0B1E2D;display:grid;place-items:center;color:#22D3EE;font-size:28px;font-weight:800}
-              h1{margin:0 0 10px;font-size:25px}p{margin:0 0 24px;color:#94A3B8;line-height:1.55}button{border:0;border-radius:14px;padding:13px 20px;background:#22D3EE;color:#06111C;font-weight:800;font-size:16px}
-            </style></head><body><main><div class="mark">S</div><h1>You're offline</h1>
-            <p>Shadecode Student couldn't reach the learning server. Your locally saved work is still on this device. Reconnect and try again.</p>
-            <button onclick="location.href='${PRODUCTION_URL}'">Try again</button></main></body></html>
-        """.trimIndent()
-        webView.loadDataWithBaseURL(PRODUCTION_URL, html, "text/html", "UTF-8", PRODUCTION_URL)
-    }
-
-    @Deprecated("Use Activity Result APIs when this shell grows beyond one file picker.")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != FILE_CHOOSER_REQUEST) return
-        val callback = filePathCallback ?: return
-        filePathCallback = null
-        val results = if (resultCode == RESULT_OK) WebChromeClient.FileChooserParams.parseResult(resultCode, data) else null
-        callback.onReceiveValue(results)
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
-            webView.goBack()
-            return true
+@androidx.compose.runtime.Composable
+private fun LearnNativeScreen(padding: androidx.compose.foundation.layout.PaddingValues, profile: NativeProfile?) {
+    Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
+        Text("Learn", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Native learning is being built as a first-class offline workspace.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(20.dp))
+        Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Your subjects", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(10.dp))
+                profile?.subjects?.forEach { Text("• ${it.replace('_', ' ').replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.padding(vertical = 5.dp)) }
+            }
         }
-        return super.onKeyDown(keyCode, event)
     }
+}
 
-    override fun onDestroy() {
-        filePathCallback?.onReceiveValue(null)
-        filePathCallback = null
-        webView.stopLoading()
-        webView.destroy()
-        super.onDestroy()
+@androidx.compose.runtime.Composable
+private fun PracticeNativeScreen(padding: androidx.compose.foundation.layout.PaddingValues) {
+    Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
+        Text("Practice", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(14.dp))
+        Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+            Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CheckCircle, null, tint = ShadePrimary, modifier = Modifier.size(30.dp))
+                Spacer(Modifier.width(14.dp))
+                Column { Text("Exam workspace", fontWeight = FontWeight.Bold); Text("Native question, answer and working tools are next in the migration.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+        }
     }
+}
 
-    companion object {
-        private const val FILE_CHOOSER_REQUEST = 1001
-        private const val PRODUCTION_URL = "https://shadecodestudent.vercel.app/"
+@androidx.compose.runtime.Composable
+private fun ProfileNativeScreen(padding: androidx.compose.foundation.layout.PaddingValues, profile: NativeProfile?, onSignOut: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
+        Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(18.dp))
+        Text(profile?.displayName ?: "Student", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(profile?.email ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        Text("Study level: ${profile?.studyLevel ?: "Not set"}")
+        Spacer(Modifier.height(24.dp))
+        TextButton(onClick = onSignOut) { Text("Sign out") }
     }
 }
