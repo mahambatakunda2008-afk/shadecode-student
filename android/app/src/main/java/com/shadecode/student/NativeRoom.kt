@@ -15,6 +15,19 @@ data class NativeSubjectEntity(
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
+@Entity(tableName = "lessons")
+data class NativeLessonEntity(
+    @PrimaryKey val id: String,
+    val subjectId: String,
+    val topic: String,
+    val title: String,
+    val description: String,
+    val difficulty: String,
+    val blocksJson: String,
+    val progress: Float,
+    val updatedAt: Long = System.currentTimeMillis(),
+)
+
 @Entity(tableName = "lesson_progress")
 data class NativeLessonProgressEntity(
     @PrimaryKey val lessonId: String,
@@ -45,6 +58,21 @@ interface NativeSubjectDao {
 }
 
 @androidx.room.Dao
+interface NativeLessonDao {
+    @androidx.room.Query("SELECT * FROM lessons WHERE subjectId = :subjectId ORDER BY updatedAt DESC")
+    suspend fun forSubject(subjectId: String): List<NativeLessonEntity>
+
+    @androidx.room.Query("SELECT * FROM lessons ORDER BY updatedAt DESC")
+    suspend fun all(): List<NativeLessonEntity>
+
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun replaceAll(lessons: List<NativeLessonEntity>)
+
+    @androidx.room.Query("DELETE FROM lessons WHERE subjectId = :subjectId")
+    suspend fun clearSubject(subjectId: String)
+}
+
+@androidx.room.Dao
 interface NativeProgressDao {
     @androidx.room.Query("SELECT * FROM lesson_progress WHERE lessonId = :lessonId LIMIT 1")
     suspend fun get(lessonId: String): NativeLessonProgressEntity?
@@ -66,12 +94,13 @@ interface NativeSyncDao {
 }
 
 @Database(
-    entities = [NativeSubjectEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class],
-    version = 1,
+    entities = [NativeSubjectEntity::class, NativeLessonEntity::class, NativeLessonProgressEntity::class, NativePendingSyncEntity::class],
+    version = 2,
     exportSchema = false,
 )
 abstract class NativeDatabase : RoomDatabase() {
     abstract fun subjects(): NativeSubjectDao
+    abstract fun lessons(): NativeLessonDao
     abstract fun progress(): NativeProgressDao
     abstract fun sync(): NativeSyncDao
 
@@ -83,7 +112,7 @@ abstract class NativeDatabase : RoomDatabase() {
                 context.applicationContext,
                 NativeDatabase::class.java,
                 "shadecode_student.db",
-            ).build().also { instance = it }
+            ).fallbackToDestructiveMigration().build().also { instance = it }
         }
     }
 }
