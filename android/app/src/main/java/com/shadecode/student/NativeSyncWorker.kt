@@ -8,6 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class NativeSyncWorker(
@@ -15,12 +16,40 @@ class NativeSyncWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
+        val store = NativeStore(applicationContext)
         val database = NativeDatabase.get(applicationContext)
         val pending = database.sync().pending()
+        if (pending.isEmpty()) return Result.success()
 
-        // Queue processing is deliberately conservative until each operation has
-        // a corresponding authenticated API contract. Never discard user work.
-        if (pending.isNotEmpty()) return Result.success()
+        var session = store.readSession() ?: return Result.success()
+        val api = NativeApi()
+
+        for (item in pending) {
+            try {
+                if (item.operation != "lesson_progress") {
+                    database.sync().delete(item)
+                    continue
+                }
+
+                val payload = JSONObject(item.payload)
+                val lessonId = payload.getString("lessonId")
+                val progress = payload.getDouble("progress").toFloat().coerceIn(0f, 1f)
+
+                try {
+                    api.updateLessonProgress(session, lessonId, progress)
+                } catch (error: Exception) {
+                    if (!error.message.orEmpty().contains("401") && !error.message.orEmpty().contains("JWT", ignoreCase = true)) throw error
+                    session = api.refreshSession(session)
+                    store.saveSession(session)
+                    api.updateLessonProgress(session, lessonId, progress)
+                }
+
+                database.sync().delete(item)
+            } catch (error: Exception) {
+                return Result.retry()
+            }
+        }
+
         return Result.success()
     }
 
