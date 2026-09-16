@@ -2,6 +2,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { callAI as sharedCallAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { buildDeepLessonPrompt } from "@/lib/learn/contentQuality";
+import { formatCurriculumPlan, planCurriculum } from "@/lib/learn/curriculumPlanner";
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -63,19 +64,33 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
     }
   } catch (e) { if (e instanceof Error && e.message.startsWith("Cooldown")) throw e; }
 
-  const prompt = `${buildDeepLessonPrompt("${level}-level multidisciplinary curriculum", topic, "medium")}
+  const plan = planCurriculum(topic);
+  const planContext = formatCurriculumPlan(topic);
+  const prompt = `${buildDeepLessonPrompt(topic, topic, "medium")}
 
-COURSE MODE: Do not turn the whole request into one giant lesson. Design a coherent learning journey of 8-16 lessons. Each lesson must have a distinct purpose and must move the learner from foundations to mastery. Broad requests must be decomposed into their major branches. Do not create filler lessons just to increase the count.
+COURSE MODE: This request is a learning journey, not a single oversized lesson. The curriculum map below is the backbone. Create one lesson for each major unit where practical. Do not merge the whole map into a shallow overview. Do not invent filler units merely to hit a number.
+
+${planContext}
 
 COURSE GOAL: ${goal}
 LEARNER LEVEL: ${level}
 
-Return this additional JSON shape around the lesson content:
+COURSE DESIGN RULES
+- The course must have ${plan.isBroad ? "8-16" : "3-8"} lessons, depending on the true scope. For broad topics, cover the major units in the map in order.
+- Lesson titles must correspond to real concepts, not generic labels such as "Introduction" or "Advanced Topics" unless they accurately describe the unit.
+- Each lesson must have a distinct learning outcome and a substantive summary.
+- Each lesson must contain 10-16 useful blocks. Its content must be deep enough to stand alone while connecting to the previous and next lessons.
+- Build prerequisites forward. A lesson may depend only on earlier lesson titles, and the first lesson should have no artificial prerequisites.
+- The final lessons must synthesize the course, handle unfamiliar problems, and open genuine extension questions.
+- Include curiosity in multiple lessons, not just the final lesson.
+- Preserve the requested learner level while never equating beginner-friendly with shallow.
+
+Return ONLY valid JSON:
 {"title":"...","description":"...","lessons":[{"title":"...","summary":"substantive overview","difficulty":"easy|medium|hard","estimatedMinutes":30,"blocks":[{"type":"...","title":"...","content":"substantive teaching content"}],"prerequisites":["exact earlier lesson title"]}],"projects":[],"checkpoints":[],"assessments":[]}
 
-Every lesson must contain 8-14 useful blocks and enough substance to stand alone. The first lesson should establish foundations and the final lessons should include synthesis, challenging application and curiosity. Use prerequisites to create a real dependency graph, not a flat list.`;
+Before returning, silently verify that the sequence forms a coherent learning journey, every mapped major unit is represented, prerequisites are acyclic and useful, and the course would still make sense if the learner studied it from beginning to end.`;
 
-  const raw = await aiCaller(prompt, 9000, user.id);
+  const raw = await aiCaller(prompt, 12000, user.id);
   if (!raw) throw new Error("AI unavailable or curriculum grounding unavailable");
   const parsed = repairAndParseJSON(raw, isCoursePayload);
   if (!parsed || parsed.lessons.length === 0) throw new Error("Invalid course structure returned by AI");
