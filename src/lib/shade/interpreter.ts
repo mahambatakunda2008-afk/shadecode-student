@@ -2,12 +2,7 @@ import type { ShadeExecutionTraceEvent } from "./debug";
 import type { ShadeExecutionResult, ShadeExpression, ShadeProgram, ShadeStatement, ShadeValue } from "./types";
 import { parseShade } from "./parser";
 
-export type ShadeRunOptions = {
-  inputs?: string[];
-  maxSteps?: number;
-  trace?: boolean;
-  maxTraceEvents?: number;
-};
+export type ShadeRunOptions = { inputs?: string[]; maxSteps?: number; trace?: boolean; maxTraceEvents?: number };
 type FunctionValue = { params: string[]; body: ShadeStatement[] };
 type Scope = { values: Map<string, ShadeValue | FunctionValue>; parent?: Scope };
 
@@ -59,9 +54,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
       case "literal": result = expression.value; break;
       case "variable": {
         const value = lookup(scope, expression.name);
-        if (value === undefined || (typeof value === "object" && value !== null && !Array.isArray(value) && "body" in value)) {
-          throw new ShadeRuntimeError(`Unknown value '${expression.name}'.`, expression.location?.line ?? 0, expression.location?.column);
-        }
+        if (value === undefined || (typeof value === "object" && value !== null && !Array.isArray(value) && "body" in value)) throw new ShadeRuntimeError(`Unknown value '${expression.name}'.`, expression.location?.line ?? 0, expression.location?.column);
         result = value;
         break;
       }
@@ -104,13 +97,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
         }
       } break;
     }
-    recordTrace({
-      phase: "expression",
-      expressionType: expression.type,
-      location: expression.location ?? { line: 0 },
-      locals: snapshot(scope),
-      durationMs: performance.now() - expressionStarted,
-    });
+    recordTrace({ phase: "expression", expressionType: expression.type, location: expression.location ?? { line: 0 }, locals: snapshot(scope), durationMs: performance.now() - expressionStarted });
     return result!;
   };
 
@@ -122,6 +109,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
     const statementStarted = performance.now();
     if (++steps > maxSteps) throw new ShadeRuntimeError("Execution step limit exceeded.", statement.line);
     const stdoutBefore = stdout.length;
+    const traceIndex = traceEvents.length;
     recordTrace({ phase: "statement", statementType: statement.type, location: { line: statement.line }, locals: snapshot(scope), durationMs: 0 });
     switch (statement.type) {
       case "assignment": scope.values.set(statement.name, evaluate(statement.expression, scope)); break;
@@ -146,11 +134,10 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
         break;
       }
     }
-    const last = traceEvents[traceEvents.length - 1];
-    if (tracing && last?.phase === "statement" && last.statementType === statement.type && last.location.line === statement.line) {
-      last.locals = snapshot(scope);
-      last.stdoutDelta = stdout.slice(stdoutBefore);
-      last.durationMs = performance.now() - statementStarted;
+    if (tracing && traceEvents[traceIndex]?.phase === "statement") {
+      traceEvents[traceIndex].locals = snapshot(scope);
+      traceEvents[traceIndex].stdoutDelta = stdout.slice(stdoutBefore);
+      traceEvents[traceIndex].durationMs = performance.now() - statementStarted;
     }
   };
 
@@ -163,14 +150,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
   }
   const variables: Record<string, ShadeValue> = {};
   for (const [key, value] of root.values) if (value === null || typeof value !== "object" || Array.isArray(value)) variables[key] = value as ShadeValue;
-  return {
-    stdout,
-    diagnostics,
-    variables,
-    steps,
-    durationMs: performance.now() - started,
-    ...(tracing ? { trace: { events: traceEvents, truncated: traceTruncated, maxEvents: maxTraceEvents } } : {}),
-  };
+  return { stdout, diagnostics, variables, steps, durationMs: performance.now() - started, ...(tracing ? { trace: { events: traceEvents, truncated: traceTruncated, maxEvents: maxTraceEvents } } : {}) };
 }
 
 class ShadeRuntimeError extends Error {
