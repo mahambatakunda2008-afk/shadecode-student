@@ -11,6 +11,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 import { log } from "@/lib/observability";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -144,23 +145,20 @@ export async function POST(req: Request) {
     if (!resolved.prompt || resolved.prompt.length < 2) return NextResponse.json({ error: "Tell Cortex what you want to learn." }, { status: 400 });
     if (!resolved.subject) return NextResponse.json({ error: "Choose a subject so Cortex does not have to guess from a short prompt." }, { status: 400 });
 
-    const curriculumLookupPrompt = `${buildResolvedLessonPrompt(resolved)}\nmaster this request: "${resolved.topic}"`;
+    const subjectAccess = await resolveLearnerSubject(auth.supabase, auth.user.id, resolved.subject, body.subjectId);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
+    const authorizedSubject = subjectAccess.subject;
+
+    const curriculumLookupPrompt = `${buildResolvedLessonPrompt({ ...resolved, subject: authorizedSubject })}\nmaster this request: "${resolved.topic}"`;
     const curriculum = await resolveVerifiedCurriculumPromptContext(auth.user.id, curriculumLookupPrompt);
     if (curriculum.status === "blocked") return NextResponse.json({ error: curriculum.reason, code: "CURRICULUM_OBJECTIVES_REQUIRED" }, { status: 409 });
 
     const effectiveTopic = curriculum.resolvedTopic?.trim() || resolved.topic;
-    const generationRequest = resolveLessonRequest({ prompt: resolved.prompt, subject: resolved.subject, topic: effectiveTopic, level: resolved.level, difficulty: resolved.difficulty, goal: resolved.goal, examBoard: resolved.examBoard });
+    const generationRequest = resolveLessonRequest({ prompt: resolved.prompt, subject: authorizedSubject, topic: effectiveTopic, level: resolved.level, difficulty: resolved.difficulty, goal: resolved.goal, examBoard: resolved.examBoard });
     const parsed = await generateAndValidate(generationRequest, curriculum.promptContext, auth.user.id);
     if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. The topic itself is valid, so try again while Cortex retries the lesson construction." }, { status: 422 });
 
-    const { data: existing } = await auth.supabase.from("subjects").select("id").eq("user_id", auth.user.id).eq("name", generationRequest.subject).maybeSingle();
-    let subjectId = existing?.id ?? null;
-    if (!subjectId) {
-      const { data: created } = await auth.supabase.from("subjects").insert({ user_id: auth.user.id, name: generationRequest.subject }).select("id").single();
-      subjectId = created?.id ?? null;
-    }
-    if (!subjectId) return NextResponse.json({ error: "The lesson was generated but its subject could not be saved." }, { status: 500 });
-
+    const subjectId = subjectAccess.subjectId;
     const { data: inserted, error } = await auth.supabase.from("learn_lessons").insert({ user_id: auth.user.id, subject_id: subjectId, topic: generationRequest.topic.slice(0, 500), title: parsed.title, description: `A complete ${generationRequest.intent} lesson on ${generationRequest.topic}`.slice(0, 1000), difficulty: generationRequest.difficulty, progress: 0, blocks: parsed.blocks }).select("id").single();
     if (error || !inserted?.id) {
       log.lessonGenerationFailed({ userId: auth.user.id, subject: generationRequest.subject, topic: generationRequest.topic, difficulty: generationRequest.difficulty, error: error?.message || "Insert returned no lesson id" });
@@ -168,7 +166,7 @@ export async function POST(req: Request) {
     }
 
     await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: generationRequest.difficulty });
-    return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks });
+    return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, subject: authorizedSubject, subjectId });
   } catch (error) {
     log.apiFailure({ route: "/api/learn/generate", method: "POST", error: error instanceof Error ? error.message : String(error), userId: auth?.user.id });
     return NextResponse.json({ error: "Something went wrong while Cortex was generating the lesson." }, { status: 500 });
