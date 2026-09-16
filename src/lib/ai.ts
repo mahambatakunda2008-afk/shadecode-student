@@ -43,11 +43,14 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     curriculumGroundingReason = curriculumGroundingAvailable ? "provided-in-prompt" : "skipped";
   } else if (options.curriculumContext !== undefined) {
     const curriculumContext = options.curriculumContext;
-    curriculumGroundingAvailable = curriculumContext.trim().length > 0;
-    curriculumGroundingReason = curriculumGroundingAvailable ? "provided" : "unavailable";
-    groundedPrompt = curriculumGroundingAvailable
-      ? `${prompt}${curriculumContext}`
-      : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+    const promptAlreadyGrounded = prompt.includes("VERIFIED CURRICULUM CONTEXT:");
+    curriculumGroundingAvailable = curriculumContext.trim().length > 0 || (promptAlreadyGrounded && !prompt.includes("No verified curriculum context was returned"));
+    curriculumGroundingReason = curriculumGroundingAvailable ? (promptAlreadyGrounded ? "provided-in-prompt" : "provided") : "unavailable";
+    if (!promptAlreadyGrounded) {
+      groundedPrompt = curriculumGroundingAvailable
+        ? `${prompt}${curriculumContext}`
+        : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+    }
   } else if (userId) {
     try {
       const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt);
