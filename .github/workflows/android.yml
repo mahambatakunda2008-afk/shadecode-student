@@ -21,14 +21,18 @@ env:
 
 jobs:
   build:
+    name: Build Android app
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       HAS_ANDROID_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     defaults:
       run:
         working-directory: android
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -61,45 +65,59 @@ jobs:
       - name: Validate Android project
         run: gradle projects --stacktrace --no-daemon
 
-      - name: Build installable APK
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/shadecode-release.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle :app:assembleReleaseApk --stacktrace --no-daemon
+      - name: Build installable debug APK
+        run: gradle :app:assembleDebug --stacktrace --no-daemon
 
-      - name: Build Play Store AAB
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/shadecode-release.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle :app:bundleRelease --stacktrace --no-daemon
-
-      - name: Prepare distribution files
+      - name: Prepare debug APK
         working-directory: .
         run: |
           mkdir -p dist/android
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/android/ShadecodeStudent-debug.apk
+
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadecode-student-android-debug-${{ github.run_number }}
+          path: dist/android/ShadecodeStudent-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build signed release APK and Play Store bundle
+        if: env.HAS_ANDROID_SIGNING == 'true'
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/shadecode-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          gradle :app:assembleReleaseApk :app:bundleRelease --stacktrace --no-daemon
+
+      - name: Prepare signed release files
+        if: env.HAS_ANDROID_SIGNING == 'true'
+        working-directory: .
+        run: |
           cp android/app/build/outputs/apk/releaseApk/app-releaseApk.apk dist/android/ShadecodeStudent-Android.apk
           cp android/app/build/outputs/bundle/release/*.aab dist/android/ShadecodeStudent-Android.aab
-          echo "SIGNED_BUILD=$HAS_ANDROID_SIGNING" >> "$GITHUB_ENV"
 
-      - name: Upload APK artifact
+      - name: Upload signed release APK
+        if: env.HAS_ANDROID_SIGNING == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: shadecode-student-apk-${{ github.run_number }}
+          name: shadecode-student-android-release-${{ github.run_number }}
           path: dist/android/ShadecodeStudent-Android.apk
           if-no-files-found: error
+          retention-days: 30
 
-      - name: Upload AAB artifact
+      - name: Upload Play Store AAB
+        if: env.HAS_ANDROID_SIGNING == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: shadecode-student-aab-${{ github.run_number }}
+          name: shadecode-student-android-aab-${{ github.run_number }}
           path: dist/android/ShadecodeStudent-Android.aab
           if-no-files-found: error
+          retention-days: 30
 
-      - name: Refuse unsigned production release
+      - name: Refuse unsigned tagged production release
         if: startsWith(github.ref, 'refs/tags/android-v') && env.HAS_ANDROID_SIGNING != 'true'
         run: |
           echo "Production Android releases require signing secrets." >&2
@@ -126,7 +144,5 @@ jobs:
             - APK: direct installation
             - AAB: Google Play publishing bundle
             - Package: `com.shadecode.student`
-
-            **Signing:** `${{ env.HAS_ANDROID_SIGNING }}`
 
             Do not install Android packages from unofficial mirrors.
