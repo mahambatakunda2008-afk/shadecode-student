@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { callAI as sharedCallAI } from "@/lib/ai";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
+import { buildDeepLessonPrompt } from "@/lib/learn/contentQuality";
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,8 +23,8 @@ function moderateDraft(draft: any) {
   if (/https?:\/\//.test(text)) issues.push("Contains external links — review for safety");
   if ((draft.lessons?.length ?? 0) > 40) issues.push("Large number of lessons (>40) — consider reducing");
   for (const l of draft.lessons ?? []) {
-    if ((l.summary ?? "").length < 10) issues.push(`Lesson '${l.title}' summary too short`);
-    if ((l.blocks ?? []).length === 0) issues.push(`Lesson '${l.title}' has no content blocks`);
+    if ((l.summary ?? "").length < 100) issues.push(`Lesson '${l.title}' summary too short`);
+    if ((l.blocks ?? []).length < 8) issues.push(`Lesson '${l.title}' needs more teaching blocks`);
   }
   return issues;
 }
@@ -35,10 +36,10 @@ function isCoursePayload(value: unknown): value is { title?: unknown; descriptio
 function normalizeLessons(lessons: unknown[]) {
   return lessons.filter(l => !!l && typeof l === "object").slice(0, 50).map((l: any) => ({
     title: (l.title ?? l.summary ?? "Untitled").toString().slice(0, 255),
-    summary: (l.summary ?? "").toString().slice(0, 1000),
+    summary: (l.summary ?? "").toString().slice(0, 1500),
     difficulty: l.difficulty === "hard" ? "hard" : l.difficulty === "medium" ? "medium" : "easy",
-    estimatedMinutes: typeof l.estimatedMinutes === "number" ? Math.max(5, Math.min(240, Math.round(l.estimatedMinutes))) : 30,
-    blocks: Array.isArray(l.blocks) && l.blocks.length ? l.blocks.slice(0, 30) : [{ type: "text", content: (l.summary ?? "").toString().slice(0, 1000) }],
+    estimatedMinutes: typeof l.estimatedMinutes === "number" ? Math.max(10, Math.min(240, Math.round(l.estimatedMinutes))) : 40,
+    blocks: Array.isArray(l.blocks) && l.blocks.length ? l.blocks.slice(0, 36) : [{ type: "text", content: (l.summary ?? "").toString().slice(0, 1500) }],
     prerequisites: Array.isArray(l.prerequisites) ? l.prerequisites.map((p: any) => p.toString().slice(0, 255)).slice(0, 20) : [],
   }));
 }
@@ -62,15 +63,26 @@ export async function generateCourseDraft(userToken: string, params: { topic: st
     }
   } catch (e) { if (e instanceof Error && e.message.startsWith("Cooldown")) throw e; }
 
-  const prompt = `You are an expert curriculum designer. Produce a compact JSON course for topic: "${topic}", goal: "${goal}", level: "${level}". Return an object with title, description, lessons (array with title, summary, difficulty, estimatedMinutes, blocks, prerequisites), projects, checkpoints, assessments. Return valid JSON only.`;
-  const raw = await aiCaller(prompt, 4000, user.id);
+  const prompt = `${buildDeepLessonPrompt("${level}-level multidisciplinary curriculum", topic, "medium")}
+
+COURSE MODE: Do not turn the whole request into one giant lesson. Design a coherent learning journey of 8-16 lessons. Each lesson must have a distinct purpose and must move the learner from foundations to mastery. Broad requests must be decomposed into their major branches. Do not create filler lessons just to increase the count.
+
+COURSE GOAL: ${goal}
+LEARNER LEVEL: ${level}
+
+Return this additional JSON shape around the lesson content:
+{"title":"...","description":"...","lessons":[{"title":"...","summary":"substantive overview","difficulty":"easy|medium|hard","estimatedMinutes":30,"blocks":[{"type":"...","title":"...","content":"substantive teaching content"}],"prerequisites":["exact earlier lesson title"]}],"projects":[],"checkpoints":[],"assessments":[]}
+
+Every lesson must contain 8-14 useful blocks and enough substance to stand alone. The first lesson should establish foundations and the final lessons should include synthesis, challenging application and curiosity. Use prerequisites to create a real dependency graph, not a flat list.`;
+
+  const raw = await aiCaller(prompt, 9000, user.id);
   if (!raw) throw new Error("AI unavailable or curriculum grounding unavailable");
   const parsed = repairAndParseJSON(raw, isCoursePayload);
   if (!parsed || parsed.lessons.length === 0) throw new Error("Invalid course structure returned by AI");
 
   const lessons = normalizeLessons(parsed.lessons);
   if (!lessons.length) throw new Error("AI returned no usable lessons");
-  const normalized = { title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim().slice(0, 255) : topic, description: typeof parsed.description === "string" ? parsed.description.slice(0, 2000) : "", lessons, projects: Array.isArray(parsed.projects) ? parsed.projects.slice(0, 20) : [], checkpoints: Array.isArray(parsed.checkpoints) ? parsed.checkpoints.slice(0, 20) : [], assessments: Array.isArray(parsed.assessments) ? parsed.assessments.slice(0, 20) : [] };
+  const normalized = { title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim().slice(0, 255) : topic, description: typeof parsed.description === "string" ? parsed.description.slice(0, 3000) : "", lessons, projects: Array.isArray(parsed.projects) ? parsed.projects.slice(0, 20) : [], checkpoints: Array.isArray(parsed.checkpoints) ? parsed.checkpoints.slice(0, 30) : [], assessments: Array.isArray(parsed.assessments) ? parsed.assessments.slice(0, 30) : [] };
   const moderationIssues = moderateDraft(normalized);
 
   try { await supabase.from("generated_course_drafts").insert({ user_id: user.id, draft: normalized, moderation_issues: moderationIssues }).select("id"); }
@@ -89,7 +101,7 @@ export async function generateCourseForUser(userToken: string, params: { topic: 
   let subjectId = existing.data?.id ?? null;
   if (!subjectId) { const ins = await supabase.from("subjects").insert({ user_id: user.id, name: subjName }).select("id").single(); subjectId = ins.data?.id ?? null; }
   if (!subjectId) throw new Error("Failed to resolve subject");
-  const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, title: l.title, description: l.summary, difficulty: l.difficulty, blocks: l.blocks, progress: 0 }));
+  const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, topic: (l.topic ?? params.topic ?? l.title ?? "").toString().slice(0, 500), title: l.title, description: l.summary, difficulty: l.difficulty, blocks: l.blocks, progress: 0 }));
   const inserted = await supabase.from("learn_lessons").insert(lessonsToInsert).select("id, title");
   if (inserted.error) throw new Error(`Failed to save generated lessons: ${inserted.error.message}`);
   const titleToId = new Map<string, string>();
