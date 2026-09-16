@@ -3,7 +3,7 @@ import { isGeneralSubject, matchAllowedSubject, normalizeSubjectNames } from "./
 
 export type SubjectAccessResult =
   | { ok: true; subject: string; subjectId: string }
-  | { ok: false; status: 400 | 403 | 404 | 409; error: string };
+  | { ok: false; status: 400 | 403 | 409 | 500; error: string };
 
 /**
  * Single server-side subject contract for learner-facing modules.
@@ -29,7 +29,7 @@ export async function resolveLearnerSubject(
     .maybeSingle();
 
   if (profileError) {
-    return { ok: false, status: 500 as 500, error: "Could not verify your academic subjects." };
+    return { ok: false, status: 500, error: "Could not verify your academic subjects." };
   }
 
   const allowed = normalizeSubjectNames(profile?.subjects);
@@ -56,21 +56,20 @@ export async function resolveLearnerSubject(
       .eq("id", requestedId)
       .eq("user_id", userId)
       .maybeSingle();
-    if (error) return { ok: false, status: 500 as 500, error: "Could not verify the selected subject." };
-    if (!row || !matchAllowedSubject(row.name, allowed) || matchAllowedSubject(row.name, allowed) !== subject) {
+    if (error) return { ok: false, status: 500, error: "Could not verify the selected subject." };
+    if (!row || matchAllowedSubject(row.name, allowed) !== subject) {
       return { ok: false, status: 403, error: "The selected subject is not available for this learner." };
     }
     return { ok: true, subject, subjectId: row.id };
   }
 
-  const { data: existing, error: lookupError } = await supabase
+  const { data: rows, error: lookupError } = await supabase
     .from("subjects")
     .select("id,name")
-    .eq("user_id", userId)
-    .ilike("name", subject)
-    .maybeSingle();
+    .eq("user_id", userId);
 
-  if (lookupError) return { ok: false, status: 500 as 500, error: "Could not resolve the selected subject." };
+  if (lookupError) return { ok: false, status: 500, error: "Could not resolve the selected subject." };
+  const existing = (rows ?? []).find((row) => matchAllowedSubject(row.name, allowed) === subject);
   if (existing?.id) return { ok: true, subject, subjectId: existing.id };
 
   const { data: created, error: createError } = await supabase
@@ -80,7 +79,7 @@ export async function resolveLearnerSubject(
     .single();
 
   if (createError || !created?.id) {
-    return { ok: false, status: 500 as 500, error: "The selected subject could not be registered." };
+    return { ok: false, status: 500, error: "The selected subject could not be registered." };
   }
 
   return { ok: true, subject, subjectId: created.id };
