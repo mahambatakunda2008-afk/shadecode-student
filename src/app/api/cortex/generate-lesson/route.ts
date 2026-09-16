@@ -7,6 +7,7 @@ import { createExplanationTemplate, createPracticeTemplate, createQuizTemplate }
 import { getCache, generateCacheKey, shouldCache } from "@/lib/cortex/cache";
 import { checkCompleteness, validateLessonStructure } from "@/lib/cortex/validators";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const maxDuration = 90;
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
     if (authError || !user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
     const body = (await request.json().catch(() => ({}))) as GenerateLessonRequest;
-    const subject = typeof body.subject === "string" ? body.subject.trim() : "";
+    const requestedSubject = typeof body.subject === "string" ? body.subject.trim() : "";
     const topic = typeof body.topic === "string" ? body.topic.trim() : "";
     const level = body.level ?? "intermediate";
     const format = body.format ?? "explanation";
@@ -49,10 +50,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
     if (!["beginner", "intermediate", "advanced"].includes(level)) return NextResponse.json({ success: false, error: "invalid level" }, { status: 400 });
     if (!["explanation", "practice", "quiz"].includes(format)) return NextResponse.json({ success: false, error: "invalid format" }, { status: 400 });
 
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, requestedSubject, body.subjectId);
+    if (!subjectAccess.ok) return NextResponse.json({ success: false, error: subjectAccess.error }, { status: subjectAccess.status });
+    const subject = subjectAccess.subject;
+    const subjectId = subjectAccess.subjectId;
+
     const cache = getCache();
-    // Subject is part of the lesson identity. A Physics lesson and a Chemistry lesson
-    // on similarly named topics must never collide in the cache.
-    const cacheTopic = subject ? `${subject}::${topic}` : topic;
+    const cacheTopic = `${subject}::${topic}`;
     const cacheKey = generateCacheKey(cacheTopic, level, format, user.id);
     const cachedContent = await cache.get(cacheKey);
 
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
         : createExplanationTemplate(topic, level);
 
     const prompt = `You are the senior teacher and exam writer for Shadecode Student.
-Create a rigorous ${level}-level ${format} lesson on "${topic}"${subject ? ` in ${subject}` : ""}.
+Create a rigorous ${level}-level ${format} lesson on "${topic}" in ${subject}.
 
 The student should finish able to DEFINE the key terms, EXPLAIN the mechanisms, CONNECT related ideas, APPLY them to unfamiliar situations, SOLVE representative problems, avoid common misconceptions, and recognise how the topic appears in examinations.
 
@@ -97,7 +101,7 @@ Required structure/content:
 9. A curiosity bridge: a deeper question, surprising consequence, or connection that motivates further study.
 10. At least one useful diagram when the topic is visual, spatial, mathematical, physical, chemical, algorithmic, or process-based. Describe diagrams precisely enough to render them.
 
-Do not pad the lesson with generic motivational text. Do not invent syllabus facts. Use the requested subject and topic consistently. Return detailed educational content that a student can actually study from.`;
+Do not pad the lesson with generic motivational text. Do not invent syllabus facts. Use the authorized subject and topic consistently. Return detailed educational content that a student can actually study from.`;
 
     const aiResponse = await callAI(prompt, 5000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_v2" });
     if (!aiResponse) return NextResponse.json({ success: false, error: "Cortex could not generate the lesson right now. Please try again." }, { status: 503 });
@@ -130,7 +134,7 @@ Do not pad the lesson with generic motivational text. Do not invent syllabus fac
 
     try {
       await supabase.from("generated_lessons").insert({
-        id: lesson.id, user_id: user.id, topic, subject_id: body.subjectId,
+        id: lesson.id, user_id: user.id, topic, subject_id: subjectId,
         title: lesson.title, content: lesson.content, metadata: lesson.metadata,
         format, validation_score: validation.score, created_at: new Date().toISOString(),
       });
