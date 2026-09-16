@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,9 +45,19 @@ private data class NativeLessonBlock(
     val formula: String? = null,
     val exampleQuestion: String? = null,
     val exampleAnswer: String? = null,
+    val steps: List<String> = emptyList(),
     val options: List<String> = emptyList(),
     val answer: String? = null,
 )
+
+private fun firstText(item: JSONObject, vararg keys: String): String =
+    keys.asSequence().map { item.optString(it) }.firstOrNull { it.isNotBlank() }.orEmpty()
+
+private fun parseStringArray(value: Any?): List<String> = when (value) {
+    is JSONArray -> buildList { for (i in 0 until value.length()) value.optString(i).takeIf { it.isNotBlank() }?.let(::add) }
+    is String -> value.lines().map { it.trim() }.filter { it.isNotBlank() }
+    else -> emptyList()
+}
 
 private fun parseNativeLessonBlocks(json: String): List<NativeLessonBlock> = runCatching {
     val array = JSONArray(json)
@@ -53,18 +65,21 @@ private fun parseNativeLessonBlocks(json: String): List<NativeLessonBlock> = run
         for (i in 0 until array.length()) {
             val item = array.optJSONObject(i) ?: continue
             val example = item.optJSONObject("example")
+            val steps = parseStringArray(item.opt("steps"))
+                .ifEmpty { parseStringArray(item.opt("step")) }
             add(
                 NativeLessonBlock(
-                    type = item.optString("type").ifBlank { "concept" },
-                    title = item.optString("title"),
-                    content = item.optString("content"),
-                    formula = item.optString("formula").takeIf { it.isNotBlank() },
-                    exampleQuestion = example?.optString("question")?.takeIf { it.isNotBlank() },
-                    exampleAnswer = example?.optString("answer")?.takeIf { it.isNotBlank() },
-                    options = item.optJSONArray("options")?.let { options ->
-                        buildList { for (j in 0 until options.length()) add(options.optString(j)) }
-                    }.orEmpty(),
-                    answer = item.optString("answer").takeIf { it.isNotBlank() },
+                    type = firstText(item, "type", "kind").ifBlank { "concept" },
+                    title = firstText(item, "title", "heading"),
+                    content = firstText(item, "content", "text", "body", "explanation", "description"),
+                    formula = firstText(item, "formula", "equation").takeIf { it.isNotBlank() },
+                    exampleQuestion = example?.let { firstText(it, "question", "prompt") }
+                        ?.takeIf { it.isNotBlank() },
+                    exampleAnswer = example?.let { firstText(it, "answer", "solution", "reasoning") }
+                        ?.takeIf { it.isNotBlank() },
+                    steps = steps,
+                    options = parseStringArray(item.opt("options")),
+                    answer = firstText(item, "answer", "correctAnswer").takeIf { it.isNotBlank() },
                 ),
             )
         }
@@ -99,32 +114,35 @@ fun NativeLessonReader(
         progress = normalized
         val completed = normalized >= 1f
         saved = false
-        scope.launch(Dispatchers.IO) {
-            database.progress().save(
-                NativeLessonProgressEntity(
-                    lessonId = lesson.id,
-                    subjectId = lesson.subjectId,
-                    progress = normalized,
-                    completed = completed,
-                ),
-            )
-            database.sync().enqueue(
-                NativePendingSyncEntity(
-                    operation = "lesson_progress",
-                    payload = JSONObject()
-                        .put("lessonId", lesson.id)
-                        .put("progress", normalized)
-                        .toString(),
-                ),
-            )
-            NativeSyncWorker.schedule(context)
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                database.progress().save(
+                    NativeLessonProgressEntity(
+                        lessonId = lesson.id,
+                        subjectId = lesson.subjectId,
+                        progress = normalized,
+                        completed = completed,
+                    ),
+                )
+                database.sync().enqueue(
+                    NativePendingSyncEntity(
+                        operation = "lesson_progress",
+                        payload = JSONObject()
+                            .put("lessonId", lesson.id)
+                            .put("progress", normalized)
+                            .toString(),
+                    ),
+                )
+                NativeSyncWorker.schedule(context)
+                runCatching { api.updateLessonProgress(session, lesson.id, normalized) }
+            }
             saved = true
         }
     }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+        contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -146,7 +164,10 @@ fun NativeLessonReader(
         if (blocks.isEmpty()) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0B1E2D)), shape = RoundedCornerShape(18.dp)) {
-                    Text("This lesson has no readable content yet. Open it on the web client to regenerate the lesson content.", modifier = Modifier.padding(20.dp))
+                    Text(
+                        "This lesson has no readable content yet. Open it on the web client to regenerate the lesson content.",
+                        modifier = Modifier.padding(20.dp),
+                    )
                 }
             }
         } else {
@@ -156,15 +177,19 @@ fun NativeLessonReader(
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (current > 0) {
-                        Button(onClick = { current--; saveProgress(current.toFloat() / blocks.size) }, modifier = Modifier.weight(1f)) {
-                            Text("Previous")
-                        }
+                        Button(
+                            onClick = {
+                                current--
+                                saveProgress(current.toFloat() / blocks.size)
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Previous") }
                     }
                     Button(
                         onClick = {
                             if (current < blocks.lastIndex) {
                                 current++
-                                saveProgress(current.toFloat() / blocks.size)
+                                saveProgress((current + 1).toFloat() / blocks.size)
                             } else {
                                 saveProgress(1f)
                             }
@@ -184,7 +209,12 @@ private fun NativeLessonBlockCard(number: Int, block: NativeLessonBlock, active:
     val surface = if (active) Color(0xFF102B3C) else Color(0xFF0B1E2D)
     Card(colors = CardDefaults.cardColors(containerColor = surface), shape = RoundedCornerShape(18.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp)) {
-            Text(block.type.replace('_', ' ').replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium, color = Color(0xFF22D3EE), fontWeight = FontWeight.Bold)
+            Text(
+                block.type.replace('_', ' ').replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.labelMedium,
+                color = Color(0xFF22D3EE),
+                fontWeight = FontWeight.Bold,
+            )
             if (block.title.isNotBlank()) {
                 Spacer(Modifier.height(5.dp))
                 Text("$number. ${block.title}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -195,17 +225,43 @@ private fun NativeLessonBlockCard(number: Int, block: NativeLessonBlock, active:
             }
             if (block.formula != null) {
                 Spacer(Modifier.height(12.dp))
-                Text(block.formula, modifier = Modifier.fillMaxWidth().background(Color(0xFF06111C), RoundedCornerShape(12.dp)).padding(14.dp), fontWeight = FontWeight.SemiBold)
+                Text(
+                    block.formula,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF06111C), RoundedCornerShape(12.dp))
+                        .padding(14.dp),
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            if (block.steps.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text("Steps", fontWeight = FontWeight.Bold)
+                block.steps.forEachIndexed { index, step ->
+                    Row(Modifier.fillMaxWidth().padding(top = 7.dp)) {
+                        Text("${index + 1}.", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(8.dp))
+                        Text(step)
+                    }
+                }
             }
             if (block.exampleQuestion != null || block.exampleAnswer != null) {
                 Spacer(Modifier.height(12.dp))
                 Text("Worked example", fontWeight = FontWeight.Bold)
                 block.exampleQuestion?.let { Text(it, modifier = Modifier.padding(top = 6.dp)) }
-                block.exampleAnswer?.let { Text("Answer / reasoning: $it", modifier = Modifier.padding(top = 6.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                block.exampleAnswer?.let {
+                    Text(
+                        "Answer / reasoning: $it",
+                        modifier = Modifier.padding(top = 6.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             if (block.options.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                block.options.forEachIndexed { index, option -> Text("${('A'.code + index).toChar()}. $option", modifier = Modifier.padding(top = 4.dp)) }
+                block.options.forEachIndexed { index, option ->
+                    Text("${('A'.code + index).toChar()}. $option", modifier = Modifier.padding(top = 4.dp))
+                }
                 block.answer?.let { Text("Answer: $it", modifier = Modifier.padding(top = 8.dp), fontWeight = FontWeight.Bold) }
             } else if (block.answer != null && block.exampleAnswer == null) {
                 Spacer(Modifier.height(8.dp))
