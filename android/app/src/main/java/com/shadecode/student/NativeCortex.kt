@@ -2,7 +2,6 @@ package com.shadecode.student
 
 import com.google.mlkit.genai.prompt.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
-import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -53,22 +52,22 @@ Use 8-12 purposeful blocks. Keep the output under 3500 tokens.
         return runCatching {
             val response = model.generateContent(prompt)
             val raw = response.text?.trim().orEmpty()
-            parseLesson(raw, safeSubject, safeTopic)
+            parseLesson(raw, safeTopic)
         }.getOrNull()
     }
 
     suspend fun warmup(): Boolean = runCatching {
         if (!isAvailable()) return false
-        model.warmup().first()
+        model.warmup()
         true
     }.getOrDefault(false)
 
     fun close() = model.close()
 
-    private fun parseLesson(raw: String, subject: String, topic: String): NativeLessonEntity? {
+    private fun parseLesson(raw: String, topic: String): NativeLessonEntity? {
         val candidate = extractObject(raw) ?: return null
         val value = JSONObject(candidate)
-        val title = value.optString("title").trim().ifBlank { "$topic" }
+        val title = value.optString("title").trim().ifBlank { topic }
         val description = value.optString("description").trim()
         val difficulty = value.optString("difficulty").trim().ifBlank { "intermediate" }
         val blocks = value.optJSONArray("blocks") ?: return null
@@ -110,14 +109,16 @@ Use 8-12 purposeful blocks. Keep the output under 3500 tokens.
         var inString = false
         var escaped = false
         for (index in start until text.length) {
-            when (val ch = text[index]) {
-                '"' -> if (!escaped) inString = !inString
-                '\\' -> if (inString) escaped = !escaped
-                else -> escaped = false
+            val ch = text[index]
+            if (inString) {
+                if (escaped) escaped = false
+                else if (ch == '\\') escaped = true
+                else if (ch == '"') inString = false
+                continue
             }
-            if (inString) continue
-            if (text[index] == '{') depth++
-            if (text[index] == '}' && --depth == 0) return text.substring(start, index + 1)
+            if (ch == '"') inString = true
+            else if (ch == '{') depth++
+            else if (ch == '}' && --depth == 0) return text.substring(start, index + 1)
         }
         return null
     }
