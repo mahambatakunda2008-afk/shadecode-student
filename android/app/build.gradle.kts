@@ -27,18 +27,25 @@ android {
         versionName = ciVersionName
         buildConfigField("String", "SUPABASE_URL", "\"${supabaseUrl.replace("\"", "\\\"")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${supabaseAnonKey.replace("\"", "\\\"")}\"")
+        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++17", "-fno-exceptions", "-fno-rtti")
+                arguments += listOf("-DCMAKE_BUILD_TYPE=Release")
+            }
+        }
     }
 
-    buildFeatures {
-        compose = true
-        buildConfig = true
+    buildFeatures { compose = true; buildConfig = true }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 
     signingConfigs {
@@ -53,20 +60,13 @@ android {
     }
 
     buildTypes {
-        debug {
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-        }
+        debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("production")
         }
-        create("releaseApk") {
-            initWith(getByName("release"))
-            isMinifyEnabled = false
-            matchingFallbacks += listOf("release")
-        }
+        create("releaseApk") { initWith(getByName("release")); isMinifyEnabled = false; matchingFallbacks += listOf("release") }
     }
 }
 
