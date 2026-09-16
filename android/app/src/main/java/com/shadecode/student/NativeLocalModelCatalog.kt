@@ -1,13 +1,6 @@
 package com.shadecode.student
 
-/**
- * Downloadable local-model catalog for Cortex.
- *
- * Model files are deliberately NOT bundled into the APK. The catalog describes
- * compatible candidates so a future GGUF runtime can download, verify and
- * select a model according to device constraints. Gemini Nano remains the
- * currently active Android local runtime through [NativeCortex].
- */
+/** Downloadable local-model catalog for Cortex. */
 data class NativeLocalModelSpec(
     val id: String,
     val displayName: String,
@@ -21,58 +14,14 @@ data class NativeLocalModelSpec(
     val enabled: Boolean = false,
 )
 
-enum class NativeLocalModelRole {
-    ULTRA_LIGHT,
-    CORE,
-    STRONG,
-}
+enum class NativeLocalModelRole { ULTRA_LIGHT, CORE, STRONG }
 
 object NativeLocalModelCatalog {
     val models: List<NativeLocalModelSpec> = listOf(
-        NativeLocalModelSpec(
-            id = "gemma-3-270m-it-q4",
-            displayName = "Gemma 3 270M IT",
-            repository = "ggml-org/gemma-3-270m-it-GGUF",
-            filePattern = "*Q4*.gguf",
-            approximateSizeMb = 250,
-            license = "Gemma",
-            runtime = "llama.cpp",
-            minimumRamMb = 2048,
-            role = NativeLocalModelRole.ULTRA_LIGHT,
-        ),
-        NativeLocalModelSpec(
-            id = "qwen3-0.6b-q4",
-            displayName = "Qwen3 0.6B",
-            repository = "Qwen/Qwen3-0.6B-GGUF",
-            filePattern = "*Q4*.gguf",
-            approximateSizeMb = 500,
-            license = "Apache-2.0",
-            runtime = "llama.cpp",
-            minimumRamMb = 3072,
-            role = NativeLocalModelRole.CORE,
-        ),
-        NativeLocalModelSpec(
-            id = "smollm2-360m-instruct-q4",
-            displayName = "SmolLM2 360M Instruct",
-            repository = "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF",
-            filePattern = "*Q4*.gguf",
-            approximateSizeMb = 300,
-            license = "Apache-2.0",
-            runtime = "llama.cpp",
-            minimumRamMb = 2048,
-            role = NativeLocalModelRole.ULTRA_LIGHT,
-        ),
-        NativeLocalModelSpec(
-            id = "llama-3.2-1b-instruct-q4",
-            displayName = "Llama 3.2 1B Instruct",
-            repository = "bartowski/Llama-3.2-1B-Instruct-GGUF",
-            filePattern = "*Q4_K_M*.gguf",
-            approximateSizeMb = 800,
-            license = "Llama 3.2",
-            runtime = "llama.cpp",
-            minimumRamMb = 4096,
-            role = NativeLocalModelRole.STRONG,
-        ),
+        NativeLocalModelSpec("gemma-3-270m-it-q4", "Gemma 3 270M IT", "ggml-org/gemma-3-270m-it-GGUF", "*Q4_K_M*.gguf", 250, "Gemma", "llama.cpp", 2048, NativeLocalModelRole.ULTRA_LIGHT, enabled = true),
+        NativeLocalModelSpec("qwen3-0.6b-q4", "Qwen3 0.6B", "Qwen/Qwen3-0.6B-GGUF", "*Q4*.gguf", 500, "Apache-2.0", "llama.cpp", 3072, NativeLocalModelRole.CORE),
+        NativeLocalModelSpec("smollm2-360m-instruct-q4", "SmolLM2 360M Instruct", "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF", "*Q4*.gguf", 300, "Apache-2.0", "llama.cpp", 2048, NativeLocalModelRole.ULTRA_LIGHT),
+        NativeLocalModelSpec("llama-3.2-1b-instruct-q4", "Llama 3.2 1B Instruct", "bartowski/Llama-3.2-1B-Instruct-GGUF", "*Q4_K_M*.gguf", 800, "Llama 3.2", "llama.cpp", 4096, NativeLocalModelRole.STRONG),
     )
 
     fun recommendedFor(ramMb: Int): NativeLocalModelSpec? = models
