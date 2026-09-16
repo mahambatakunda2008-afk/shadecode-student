@@ -21,5 +21,11 @@ function Fallback() {
 }
 
 export default function ExamSimulationPage() {
-  return <Suspense fallback={<Fallback />}><ExamSimulationClient /></Suspense>;
+  return (
+    <Suspense fallback={<Fallback />}>
+      <div className="exam-sim-mobile-shell min-w-0">
+        <ExamSimulationClient />
+      </div>
+    </Suspense>
+  );
 }
