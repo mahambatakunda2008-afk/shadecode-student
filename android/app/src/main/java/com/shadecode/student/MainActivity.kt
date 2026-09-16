@@ -1,5 +1,6 @@
 package com.shadecode.student
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -53,7 +54,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun ShadecodeStudentNative(context: android.content.Context) {
+private fun ShadecodeStudentNative(context: Context) {
     MaterialTheme(
         colorScheme = androidx.compose.material3.darkColorScheme(
             primary = ShadePrimary,
@@ -78,12 +78,12 @@ private fun ShadecodeStudentNative(context: android.content.Context) {
         ),
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = ShadeBackground) {
-            val store = remember { SessionStore(context) }
+            val store = remember { NativeStore(context) }
             var session by remember { mutableStateOf<NativeSession?>(null) }
             var restoring by remember { mutableStateOf(true) }
 
             LaunchedEffect(Unit) {
-                session = store.session.first()
+                session = withContext(Dispatchers.IO) { store.readSession() }
                 restoring = false
             }
 
@@ -92,20 +92,20 @@ private fun ShadecodeStudentNative(context: android.content.Context) {
                     CircularProgressIndicator()
                 }
             } else if (session == null) {
-                LoginScreen(onSignedIn = { signedIn ->
-                    session = signedIn
-                }, sessionStore = store)
+                LoginScreen(onSignedIn = { session = it }, sessionStore = store)
             } else {
-                StudentShell(session = session!!, onSignOut = {
-                    session = null
-                }, sessionStore = store)
+                StudentShell(
+                    session = session!!,
+                    onSignOut = { session = null },
+                    sessionStore = store,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: SessionStore) {
+private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: NativeStore) {
     val scope = rememberCoroutineScope()
     val api = remember { NativeApi() }
     var email by remember { mutableStateOf("") }
@@ -136,11 +136,13 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: Sessi
                 scope.launch {
                     try {
                         val result = withContext(Dispatchers.IO) { api.signIn(email.trim(), password) }
-                        sessionStore.save(result)
+                        withContext(Dispatchers.IO) { sessionStore.saveSession(result) }
                         onSignedIn(result)
                     } catch (e: Exception) {
                         error = e.message ?: "Sign in failed."
-                    } finally { loading = false }
+                    } finally {
+                        loading = false
+                    }
                 }
             },
             enabled = !loading && email.isNotBlank() && password.isNotBlank(),
@@ -155,7 +157,7 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: Sessi
 }
 
 @Composable
-private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionStore: SessionStore) {
+private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionStore: NativeStore) {
     val api = remember { NativeApi() }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -164,9 +166,13 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(session.accessToken) {
-        try { profile = withContext(Dispatchers.IO) { api.loadProfile(session) } }
-        catch (e: Exception) { error = e.message ?: "Could not load your profile." }
-        finally { loading = false }
+        try {
+            profile = withContext(Dispatchers.IO) { api.loadProfile(session) }
+        } catch (e: Exception) {
+            error = e.message ?: "Could not load your profile."
+        } finally {
+            loading = false
+        }
     }
 
     Scaffold(
@@ -186,7 +192,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             2 -> PracticeNativeScreen(padding)
             else -> ProfileNativeScreen(padding, profile) {
                 scope.launch {
-                    sessionStore.clear()
+                    withContext(Dispatchers.IO) { sessionStore.clearSession() }
                     onSignOut()
                 }
             }
@@ -212,7 +218,7 @@ private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, loa
             }
         }
         item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-        if (profile?.subjects.isNullOrEmpty()) item { Text("No subjects selected yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        if (profile?.subjects.isNullOrEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         else items(profile!!.subjects) { subject -> SubjectRow(subject) }
     }
 }
@@ -240,7 +246,13 @@ private fun LearnNativeScreen(padding: PaddingValues, profile: NativeProfile?) {
             Column(Modifier.padding(20.dp)) {
                 Text("Your subjects", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
-                profile?.subjects?.forEach { Text("• ${it.replace('_', ' ').replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.padding(vertical = 5.dp)) }
+                if (profile?.subjects.isNullOrEmpty()) {
+                    Text("No subjects are configured for this account yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    profile!!.subjects.forEach { subject ->
+                        Text("• ${subject.replace('_', ' ').replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.padding(vertical = 5.dp))
+                    }
+                }
             }
         }
     }
