@@ -14,14 +14,19 @@ export type ShadeToken = {
   column: number;
 };
 
+export type ShadeSourceLocation = {
+  line: number;
+  column?: number;
+};
+
 export type ShadeBinaryOperator = "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "and" | "or";
 
 export type ShadeExpression =
-  | { type: "literal"; value: ShadeValue }
-  | { type: "variable"; name: string }
-  | { type: "array"; elements: ShadeExpression[] }
-  | { type: "binary"; operator: ShadeBinaryOperator; left: ShadeExpression; right: ShadeExpression }
-  | { type: "call"; name: string; args: ShadeExpression[] };
+  | { type: "literal"; value: ShadeValue; location?: ShadeSourceLocation }
+  | { type: "variable"; name: string; location?: ShadeSourceLocation }
+  | { type: "array"; elements: ShadeExpression[]; location?: ShadeSourceLocation }
+  | { type: "binary"; operator: ShadeBinaryOperator; left: ShadeExpression; right: ShadeExpression; location?: ShadeSourceLocation }
+  | { type: "call"; name: string; args: ShadeExpression[]; location?: ShadeSourceLocation };
 
 export type ShadeStatement =
   | { type: "assignment"; name: string; expression: ShadeExpression; line: number }
