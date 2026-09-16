@@ -84,6 +84,7 @@ private fun ShadecodeStudentNative(context: Context) {
 
             LaunchedEffect(Unit) {
                 session = withContext(Dispatchers.IO) { store.readSession() }
+                NativeSyncWorker.schedule(context)
                 restoring = false
             }
 
@@ -137,6 +138,7 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: Nativ
                     try {
                         val result = withContext(Dispatchers.IO) { api.signIn(email.trim(), password) }
                         withContext(Dispatchers.IO) { sessionStore.saveSession(result) }
+                        NativeSyncWorker.schedule(sessionStore.context())
                         onSignedIn(result)
                     } catch (e: Exception) {
                         error = e.message ?: "Sign in failed."
@@ -159,15 +161,23 @@ private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: Nativ
 @Composable
 private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionStore: NativeStore) {
     val api = remember { NativeApi() }
+    val database = remember { NativeDatabase.get(sessionStore.context()) }
+    val subjects = remember { NativeSubjectRepository(database) }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }
+    var cachedSubjects by remember { mutableStateOf<List<NativeSubjectEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(session.accessToken) {
+        cachedSubjects = withContext(Dispatchers.IO) { subjects.cached() }
         try {
-            profile = withContext(Dispatchers.IO) { api.loadProfile(session) }
+            val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
+            profile = loaded
+            withContext(Dispatchers.IO) { subjects.replaceFromProfile(loaded) }
+            cachedSubjects = withContext(Dispatchers.IO) { subjects.cached() }
+            error = null
         } catch (e: Exception) {
             error = e.message ?: "Could not load your profile."
         } finally {
@@ -187,8 +197,8 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         },
     ) { padding ->
         when (selected) {
-            0 -> DashboardScreen(padding, profile, loading, error)
-            1 -> LearnNativeScreen(padding, profile)
+            0 -> DashboardScreen(padding, profile, cachedSubjects, loading, error)
+            1 -> LearnNativeScreen(padding, cachedSubjects)
             2 -> PracticeNativeScreen(padding)
             else -> ProfileNativeScreen(padding, profile) {
                 scope.launch {
@@ -201,7 +211,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
 }
 
 @Composable
-private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, loading: Boolean, error: String?) {
+private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, subjects: List<NativeSubjectEntity>, loading: Boolean, error: String?) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Spacer(Modifier.height(18.dp))
@@ -213,13 +223,13 @@ private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, loa
                 Column(Modifier.padding(20.dp)) {
                     Text("Your learning system", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text(if (loading) "Syncing your academic profile…" else if (error != null) "Offline mode: your native workspace is ready. Reconnect to sync." else "Your subjects and learning context are connected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (loading) "Syncing your academic profile…" else if (error != null) "Offline mode: using your last saved subjects." else "Your subjects and learning context are connected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-        if (profile?.subjects.isNullOrEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        else items(profile!!.subjects) { subject -> SubjectRow(subject) }
+        if (subjects.isEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        else items(subjects) { subject -> SubjectRow(subject.name) }
     }
 }
 
@@ -237,20 +247,20 @@ private fun SubjectRow(subject: String) {
 }
 
 @Composable
-private fun LearnNativeScreen(padding: PaddingValues, profile: NativeProfile?) {
+private fun LearnNativeScreen(padding: PaddingValues, subjects: List<NativeSubjectEntity>) {
     Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
         Text("Learn", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text("Your native learning workspace", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Offline-first native learning workspace", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(20.dp))
         Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(20.dp)) {
                 Text("Your subjects", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
-                if (profile?.subjects.isNullOrEmpty()) {
+                if (subjects.isEmpty()) {
                     Text("No subjects are configured for this account yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    profile!!.subjects.forEach { subject ->
-                        Text("• ${subject.replace('_', ' ').replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.padding(vertical = 5.dp))
+                    subjects.forEach { subject ->
+                        Text("• ${subject.name.replace('_', ' ').replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.padding(vertical = 5.dp))
                     }
                 }
             }
