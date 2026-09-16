@@ -180,15 +180,37 @@ export async function POST(req: Request) {
     const validDifficulty: LessonDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
     const prompt = buildDeepLessonPrompt(effectiveSubject, topic.trim(), validDifficulty);
 
-    let raw = await callAI(prompt, 11000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_deep_lesson" });
+    // Keep the rich lesson structure, but cap generation to the amount the schema can actually use.
+    // The previous 11k token ceiling allowed long, repetitive JSON and increased provider latency.
+    let raw = await callAI(prompt, 5200, {
+      userId: user.id,
+      feature: "lesson_assistant",
+      subfeature: "generate_deep_lesson",
+      maxChainMs: 18000,
+      perProviderMaxMs: 5000,
+    });
     if (!raw) return NextResponse.json({ error: "Lesson generation is temporarily unavailable. Please check your connection and try again." }, { status: 503 });
     let parsed = safeParseJSON(raw);
 
     const initialScore = parsed ? lessonQualityScore(parsed.blocks) : 0;
-    if (!parsed || initialScore < 58 || parsed.blocks.length < 14) {
+    // A repair is worthwhile only after we have a real AI draft. Avoid spending a second full
+    // generation call when the provider returned nothing, and keep repair targeted and bounded.
+    if (parsed && (initialScore < 58 || parsed.blocks.length < 14)) {
       const repairPrompt = buildLessonRepairPrompt(effectiveSubject, topic.trim(), raw);
-      const repaired = await callAI(repairPrompt, 10000, { userId: user.id, feature: "lesson_assistant", subfeature: "deepen_lesson" });
-      if (repaired) { const repairedParsed = safeParseJSON(repaired); if (repairedParsed && lessonQualityScore(repairedParsed.blocks) >= initialScore) { parsed = repairedParsed; raw = repaired; } }
+      const repaired = await callAI(repairPrompt, 4200, {
+        userId: user.id,
+        feature: "lesson_assistant",
+        subfeature: "deepen_lesson",
+        maxChainMs: 10000,
+        perProviderMaxMs: 4500,
+      });
+      if (repaired) {
+        const repairedParsed = safeParseJSON(repaired);
+        if (repairedParsed && lessonQualityScore(repairedParsed.blocks) >= initialScore) {
+          parsed = repairedParsed;
+          raw = repaired;
+        }
+      }
     }
     if (!parsed?.blocks.length) {
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `AI returned invalid/deeply incomplete lesson JSON: ${raw.slice(0, 300)}` });
