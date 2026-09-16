@@ -30,7 +30,7 @@ class NativeApi {
             path = "/rest/v1/profiles?select=id,display_name,study_level,subjects,onboarding_completed&id=eq.${session.userId}&limit=1",
             accessToken = session.accessToken,
         )
-        val array = JSONArray(rows.toString())
+        val array = JSONArray(rows)
         if (array.length() == 0) return NativeProfile(session.userId, session.email, "Student", "upper-secondary", emptyList(), false)
         val row = array.getJSONObject(0)
         val subjects = mutableListOf<String>()
@@ -45,6 +45,55 @@ class NativeApi {
             subjects = subjects,
             onboardingCompleted = row.optBoolean("onboarding_completed", false),
         )
+    }
+
+    fun loadSubjects(session: NativeSession, profile: NativeProfile): List<NativeSubjectEntity> {
+        if (profile.subjects.isEmpty()) return emptyList()
+        val rows = request(
+            method = "GET",
+            path = "/rest/v1/subjects?select=id,name&user_id=eq.${session.userId}&order=name.asc",
+            accessToken = session.accessToken,
+        )
+        val array = JSONArray(rows)
+        val allowed = profile.subjects.map { it.trim().lowercase() }.toSet()
+        val result = mutableListOf<NativeSubjectEntity>()
+        for (i in 0 until array.length()) {
+            val row = array.getJSONObject(i)
+            val name = row.optString("name").trim()
+            if (name.isBlank() || name.equals("general", ignoreCase = true)) continue
+            if (name.lowercase() !in allowed) continue
+            result += NativeSubjectEntity(
+                id = row.getString("id"),
+                name = name,
+                normalizedName = name.lowercase(),
+            )
+        }
+        return result
+    }
+
+    fun loadLessons(session: NativeSession, subjectId: String): List<NativeLessonEntity> {
+        val rows = request(
+            method = "GET",
+            path = "/rest/v1/learn_lessons?select=id,subject_id,topic,title,description,difficulty,blocks,progress,updated_at&user_id=eq.${session.userId}&subject_id=eq.$subjectId&order=updated_at.desc&limit=100",
+            accessToken = session.accessToken,
+        )
+        val array = JSONArray(rows)
+        val result = mutableListOf<NativeLessonEntity>()
+        for (i in 0 until array.length()) {
+            val row = array.getJSONObject(i)
+            val blocks = row.opt("blocks")
+            result += NativeLessonEntity(
+                id = row.getString("id"),
+                subjectId = row.getString("subject_id"),
+                topic = row.optString("topic"),
+                title = row.optString("title").ifBlank { row.optString("topic") },
+                description = row.optString("description"),
+                difficulty = row.optString("difficulty").ifBlank { "standard" },
+                blocksJson = blocks?.toString() ?: "[]",
+                progress = row.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f),
+            )
+        }
+        return result
     }
 
     private fun request(method: String, path: String, body: String? = null, accessToken: String? = null): String {
