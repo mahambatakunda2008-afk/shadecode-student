@@ -3,7 +3,7 @@
 import { useLayoutEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { matchAllowedSubject } from "@/lib/academic/subjectContract";
+import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
 import LearnPageResilient from "./LearnPageResilient";
 
 const LAST_REQUEST_KEY = "shadecode:learn:last-request";
@@ -47,6 +47,7 @@ export default function LearnPrefillGuard() {
       }
 
       let allowedSubjects: string[] = [];
+      let profileResolved = false;
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -56,7 +57,10 @@ export default function LearnPrefillGuard() {
             .select("subjects, onboarding_completed")
             .eq("id", user.id)
             .maybeSingle();
-          if (Array.isArray(profile?.subjects)) allowedSubjects = profile.subjects;
+          if (profile) {
+            profileResolved = true;
+            if (Array.isArray(profile.subjects)) allowedSubjects = profile.subjects;
+          }
         }
       } catch {
         // Keep the deterministic General guard even if profile lookup is unavailable.
@@ -70,10 +74,10 @@ export default function LearnPrefillGuard() {
       const savedSubjectMatch = matchAllowedSubject(saved?.subject, allowedSubjects);
       const badQueryTopic = Boolean(queryTopic) && !safeQueryTopic;
       const badSavedTopic = Boolean(saved?.topic) && !safeSavedTopic;
-      const badQuerySubject = Boolean(querySubject) && !querySubjectMatch;
-      const badSavedSubject = Boolean(saved?.subject) && !savedSubjectMatch;
+      const badQuerySubject = Boolean(querySubject) && (isGeneralSubject(querySubject) || (profileResolved && !querySubjectMatch));
+      const badSavedSubject = Boolean(saved?.subject) && (isGeneralSubject(saved?.subject) || (profileResolved && !savedSubjectMatch));
 
-      if (saved && (badSavedTopic || badSavedSubject)) {
+      if (saved && (badSavedTopic || badSavedSubject || (profileResolved && savedSubjectMatch && saved.subject !== savedSubjectMatch))) {
         const cleaned = {
           ...saved,
           topic: safeSavedTopic,
