@@ -13,6 +13,15 @@ type AuthContext = { supabase: SupabaseClient; user: User };
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
 type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
+type EvaluationVerdict = "correct" | "partially_correct" | "incorrect";
+type Evaluation = {
+  verdict: EvaluationVerdict;
+  feedback: string;
+  misconception: string;
+  nextAction: string;
+  hint: string;
+  solution: string;
+};
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -71,7 +80,7 @@ function extractObject(raw: string) {
   return null;
 }
 
-function parseEvaluation(raw: string) {
+function parseEvaluation(raw: string): Evaluation | null {
   const candidate = extractObject(raw);
   if (!candidate) return null;
   try {
@@ -80,7 +89,7 @@ function parseEvaluation(raw: string) {
     if (verdict !== "correct" && verdict !== "partially_correct" && verdict !== "incorrect") return null;
     const text = (key: string, max: number) => typeof value[key] === "string" ? value[key].trim().slice(0, max) : "";
     return {
-      verdict,
+      verdict: verdict as EvaluationVerdict,
       feedback: text("feedback", 1800),
       misconception: text("misconception", 900),
       nextAction: text("nextAction", 700),
@@ -98,7 +107,7 @@ function cleanTopic(value: string) {
   return value.replace(/\s+/g, " ").trim().slice(0, 160);
 }
 
-async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: "correct" | "partially_correct" | "incorrect", attemptNo: number) {
+async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number) {
   const subject = cleanTopic(plan.subject || "Paper Study") || "Paper Study";
   const topics = [...new Set((block.interaction?.expectedConcepts ?? []).map(cleanTopic).filter(Boolean))].slice(0, 6);
   const score = verdict === "correct" ? 1 : verdict === "partially_correct" ? 0.55 : 0;
