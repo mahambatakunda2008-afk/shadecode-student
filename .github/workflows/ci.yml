@@ -35,6 +35,8 @@ jobs:
 
       - name: Run tests
         run: npm test
+        env:
+          VITE_CONFIG_NATIVE_IGNORE_WARNING: "true"
 
       - name: Build
         run: npm run build
