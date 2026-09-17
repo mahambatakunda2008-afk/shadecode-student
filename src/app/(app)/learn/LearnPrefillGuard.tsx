@@ -63,7 +63,7 @@ export default function LearnPrefillGuard() {
           }
         }
       } catch {
-        // Keep the deterministic General guard even if profile lookup is unavailable.
+        // If profile lookup fails, do not manufacture a subject. The API remains authoritative.
       }
 
       if (cancelled) return;
@@ -84,13 +84,41 @@ export default function LearnPrefillGuard() {
           ...(savedSubjectMatch ? { subject: savedSubjectMatch } : { subject: "" }),
         };
         localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify(cleaned));
+        saved = cleaned;
+      }
+
+      // If onboarding has resolved, make the URL carry a canonical subject whenever
+      // an invalid/legacy subject was supplied. This also forces LearnPageResilient's
+      // state to update instead of leaving a stale "General" selection on screen.
+      if (profileResolved && allowedSubjects.length > 0) {
+        const canonicalSubject = querySubjectMatch ?? (badQuerySubject ? allowedSubjects[0] : null);
+        if (canonicalSubject && querySubject !== canonicalSubject) {
+          const next = new URLSearchParams(params.toString());
+          next.set("subject", canonicalSubject);
+          if (badQueryTopic) next.delete("topic");
+          router.replace(`${pathname}?${next.toString()}`);
+          return;
+        }
+
+        if (!querySubject && saved?.subject) {
+          const savedCanonical = matchAllowedSubject(saved.subject, allowedSubjects);
+          if (savedCanonical) {
+            const next = new URLSearchParams(params.toString());
+            next.set("subject", savedCanonical);
+            router.replace(`${pathname}?${next.toString()}`);
+            return;
+          }
+        }
       }
 
       if (!badQueryTopic && !badQuerySubject) return;
 
       const next = new URLSearchParams(params.toString());
       if (badQueryTopic) next.delete("topic");
-      if (badQuerySubject) next.delete("subject");
+      if (badQuerySubject) {
+        if (allowedSubjects.length > 0) next.set("subject", allowedSubjects[0]);
+        else next.delete("subject");
+      }
       const query = next.toString();
       router.replace(query ? `${pathname}?${query}` : pathname);
     };
