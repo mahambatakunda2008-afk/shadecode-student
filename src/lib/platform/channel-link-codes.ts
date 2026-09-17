@@ -29,11 +29,22 @@ export async function createWhatsAppLinkCode(input: {
 }): Promise<{ code: string; expiresAt: string }> {
   if (!input.userId.trim()) throw new Error("A userId is required.");
   const ttlMs = Math.min(Math.max(input.ttlMs ?? DEFAULT_TTL_MS, 60_000), 30 * 60 * 1000);
+  const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+  const client = getServerClient();
+
+  const { error: invalidateError } = await client
+    .from("platform_channel_link_codes")
+    .update({ used_at: now })
+    .eq("user_id", input.userId)
+    .eq("channel", "whatsapp")
+    .is("used_at", null);
+
+  if (invalidateError) throw new Error(invalidateError.message);
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = createCode();
-    const { error } = await getServerClient().from("platform_channel_link_codes").insert({
+    const { error } = await client.from("platform_channel_link_codes").insert({
       user_id: input.userId,
       channel: "whatsapp",
       role: input.role,
