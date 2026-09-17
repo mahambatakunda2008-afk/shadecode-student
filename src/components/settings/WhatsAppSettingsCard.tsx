@@ -60,7 +60,7 @@ export function WhatsAppSettingsCard() {
             <button type="button" onClick={copyCode} className="ssc-button"><Copy size={17} />{copied ? "Copied" : "Copy code"}</button>
           </div>
           <ol className="mt-4 grid gap-2 text-sm text-[var(--muted-foreground)] md:grid-cols-3">
-            <li><span className="font-semibold text-[var(--foreground)]">1.</span> Open the official Shadecode WhatsApp chat.</li>
+            <li><span className="font-semibold text-[var(--foreground)]">1.</span> Open the Shadecode WhatsApp number.</li>
             <li><span className="font-semibold text-[var(--foreground)]">2.</span> Send <code className="rounded bg-[var(--surface)] px-1.5 py-0.5">LINK {code}</code>.</li>
             <li><span className="font-semibold text-[var(--foreground)]">3.</span> Start learning when Shadecode confirms the link.</li>
           </ol>
