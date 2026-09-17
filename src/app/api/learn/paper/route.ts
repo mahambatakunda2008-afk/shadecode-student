@@ -19,6 +19,7 @@ const DEFAULT_PAGE_END = 8;
 type AuthContext = { supabase: SupabaseClient; user: User };
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
+type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -81,35 +82,48 @@ function parsePlan(raw: string) {
   const candidate = extractObject(raw);
   if (!candidate) return null;
   try {
-    const value = JSON.parse(candidate) as { title?: unknown; overview?: unknown; blocks?: unknown };
+    const value = JSON.parse(candidate) as { title?: unknown; overview?: unknown; subject?: unknown; level?: unknown; board?: unknown; topics?: unknown; blocks?: unknown };
     if (typeof value.title !== "string" || !value.title.trim() || !Array.isArray(value.blocks)) return null;
     const blocks = value.blocks.filter((block): block is Block => {
       if (!block || typeof block !== "object") return false;
       const item = block as Record<string, unknown>;
       if (typeof item.type !== "string" || typeof item.content !== "string" || item.content.trim().length < 20) return false;
       const interaction = item.interaction && typeof item.interaction === "object" ? item.interaction as Record<string, unknown> : undefined;
-      if ((item.type === "checkpoint" || item.type === "mastery") && (!interaction || typeof interaction.prompt !== "string" || interaction.prompt.trim().length < 10 || typeof interaction.rubric !== "string" || interaction.rubric.trim().length < 10)) return false;
+      if ((item.type === "checkpoint" || item.type === "mastery") && (!interaction || typeof interaction.prompt !== "string" || interaction.prompt.trim().length < 10 || typeof interaction.rubric !== "string" || interaction.rubric.trim().length < 10 || typeof interaction.modelAnswer !== "string" || interaction.modelAnswer.trim().length < 2)) return false;
       return true;
     }).slice(0, 24).map((item, index) => ({
       ...item,
       id: typeof item.id === "string" && item.id.trim() ? item.id.trim().slice(0, 80) : `block-${index + 1}`,
       sourcePages: Array.isArray(item.sourcePages) ? item.sourcePages.filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n > 0).slice(0, 8) : [],
+      interaction: item.interaction && typeof item.interaction === "object" ? {
+        ...(item.interaction as Interaction),
+        expectedConcepts: Array.isArray((item.interaction as Interaction).expectedConcepts) ? (item.interaction as Interaction).expectedConcepts!.filter((x): x is string => typeof x === "string").slice(0, 8) : [],
+        hints: Array.isArray((item.interaction as Interaction).hints) ? (item.interaction as Interaction).hints!.filter((x): x is string => typeof x === "string").slice(0, 3) : [],
+      } : undefined,
     }));
     if (blocks.length < 4) return null;
     return {
       title: value.title.trim().slice(0, 255),
       overview: typeof value.overview === "string" ? value.overview.trim().slice(0, 2000) : "",
+      subject: typeof value.subject === "string" ? value.subject.trim().slice(0, 120) : "",
+      level: typeof value.level === "string" ? value.level.trim().slice(0, 120) : "",
+      board: typeof value.board === "string" ? value.board.trim().slice(0, 120) : "",
+      topics: Array.isArray(value.topics) ? value.topics.filter((x): x is string => typeof x === "string").map(x => x.trim()).filter(Boolean).slice(0, 20) : [],
       blocks,
-    };
+    } satisfies Plan;
   } catch {
     return null;
   }
 }
 
-function safePlan(plan: { title?: string; overview?: string; blocks?: Block[] }) {
+function safePlan(plan: Plan) {
   return {
     title: plan.title || "Learning from your paper",
     overview: plan.overview || "Cortex built this session from the selected source pages.",
+    subject: plan.subject || "",
+    level: plan.level || "",
+    board: plan.board || "",
+    topics: plan.topics ?? [],
     blocks: (plan.blocks ?? []).map(({ interaction, ...block }) => ({
       ...block,
       interaction: interaction ? {
@@ -138,20 +152,22 @@ ${questionIndex}
 RULES
 1. Stay grounded in the supplied pages. Never invent missing question text, values, diagrams, marks, syllabus claims or provenance.
 2. Preserve page and question references whenever discussing a question.
-3. First explain what the selected pages cover and what each question is testing.
-4. Teach prerequisite concepts before the method when needed.
-5. For worked reasoning, explain WHY each step is taken, not merely the algebra.
-6. Highlight recognition patterns only when the source supports that classification.
-7. Include 2-6 interactive checkpoints and finish with a mastery check. Checkpoints must make the student think, not merely recall a sentence.
-8. For every checkpoint/mastery block, provide interaction.prompt, interaction.evaluationMode (conceptual|numeric|steps|mixed), interaction.expectedConcepts, interaction.rubric, interaction.modelAnswer, and 1-3 progressive interaction.hints. The rubric must describe what a correct, partial, and incorrect response would demonstrate. Keep modelAnswer and rubric server-side by treating them as tutor evaluation data.
-9. Do not reveal the checkpoint answer in the block content. The modelAnswer is only for the evaluator.
-10. Include common traps only when supported by the actual mathematics/question structure. Do not invent examiner claims.
-11. Finish with NEW mastery questions based on the concepts encountered. Do not simply repeat source questions.
-12. If a page has no selectable text, explicitly say that the page may require visual/OCR inspection. Do not hallucinate its contents.
-13. Use concise, scannable student-facing blocks. Every mathematical expression must be wrapped in single-dollar LaTeX delimiters.
+3. Identify the most defensible subject, level and exam board from the source. If uncertain, use an empty string rather than guessing.
+4. Build a compact topic map of the concepts actually taught/tested in these pages. Do not manufacture syllabus topics.
+5. First explain what the selected pages cover and what each question is testing.
+6. Teach prerequisite concepts before the method when needed.
+7. For worked reasoning, explain WHY each step is taken, not merely the algebra.
+8. Highlight recognition patterns only when the source supports that classification.
+9. Include 2-6 interactive checkpoints and finish with a mastery check. Checkpoints must make the student think, not merely recall a sentence.
+10. For every checkpoint/mastery block, provide interaction.prompt, interaction.evaluationMode (conceptual|numeric|steps|mixed), interaction.expectedConcepts, interaction.rubric, interaction.modelAnswer, and 1-3 progressive interaction.hints. The rubric must describe what a correct, partial, and incorrect response would demonstrate. Keep modelAnswer and rubric server-side by treating them as tutor evaluation data.
+11. Do not reveal the checkpoint answer in the block content. The modelAnswer is only for the evaluator.
+12. Include common traps only when supported by the actual mathematics/question structure. Do not invent examiner claims.
+13. Finish with NEW mastery questions based on the concepts encountered. Do not simply repeat source questions.
+14. If a page has no selectable text, explicitly say that the page may require visual/OCR inspection. Do not hallucinate its contents.
+15. Use concise, scannable student-facing blocks. Every mathematical expression must be wrapped in single-dollar LaTeX delimiters.
 
 Return ONLY JSON:
-{"title":"specific learning-session title","overview":"what these pages cover","blocks":[{"id":"b1","type":"source-map|concept|definition|method|example|checkpoint|mistake|pattern|application|mastery|summary","title":"short heading","content":"student-facing explanation","sourcePages":[1],"interaction":{"prompt":"question for the student","evaluationMode":"mixed","expectedConcepts":["concept"],"rubric":"evaluation rubric","modelAnswer":"answer or reasoning","hints":["small hint","stronger hint"]}}]}`;
+{"title":"specific learning-session title","overview":"what these pages cover","subject":"defensible subject or empty","level":"defensible level or empty","board":"defensible exam board or empty","topics":["concept actually covered"],"blocks":[{"id":"b1","type":"source-map|concept|definition|method|example|checkpoint|mistake|pattern|application|mastery|summary","title":"short heading","content":"student-facing explanation","sourcePages":[1],"interaction":{"prompt":"question for the student","evaluationMode":"mixed","expectedConcepts":["concept"],"rubric":"evaluation rubric","modelAnswer":"answer or reasoning","hints":["small hint","stronger hint"]}}]}`;
 }
 
 export async function GET(req: Request) {
@@ -163,11 +179,11 @@ export async function GET(req: Request) {
     const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,mime_type,source_size_bytes,page_count,selected_page_start,selected_page_end,status,source_metadata,pages,learning_plan,progress,created_at,updated_at").eq("id", id).eq("user_id", auth.user.id).maybeSingle();
     if (error) return NextResponse.json({ error: "Couldn't load the paper session." }, { status: 500 });
     if (!data) return NextResponse.json({ error: "Paper session not found." }, { status: 404 });
-    return NextResponse.json({ ...data, learning_plan: safePlan(data.learning_plan as { title?: string; overview?: string; blocks?: Block[] }) });
+    return NextResponse.json({ ...data, learning_plan: safePlan(data.learning_plan as Plan) });
   }
   const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,page_count,selected_page_start,selected_page_end,status,learning_plan,progress,created_at,updated_at").eq("user_id", auth.user.id).order("updated_at", { ascending: false }).limit(20);
   if (error) return NextResponse.json({ error: "Couldn't load paper sessions." }, { status: 500 });
-  return NextResponse.json({ sessions: (data ?? []).map(session => ({ ...session, learning_plan: safePlan(session.learning_plan as { title?: string; overview?: string; blocks?: Block[] }) })) });
+  return NextResponse.json({ sessions: (data ?? []).map(session => ({ ...session, learning_plan: safePlan(session.learning_plan as Plan) })) });
 }
 
 export async function POST(req: Request) {
@@ -217,7 +233,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cortex couldn't turn these pages into a reliable learning session. The extracted paper is still preserved so you can retry." }, { status: 422 });
     }
 
-    const { error: updateError } = await auth.supabase.from("paper_learning_sessions").update({ status: "processed", learning_plan: plan, source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedPageCount: selectedPages.length, processedAt: new Date().toISOString() } }).eq("id", session.id).eq("user_id", auth.user.id);
+    const { error: updateError } = await auth.supabase.from("paper_learning_sessions").update({ status: "processed", learning_plan: plan, source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedPageCount: selectedPages.length, subject: plan.subject || null, level: plan.level || null, board: plan.board || null, topics: plan.topics ?? [], processedAt: new Date().toISOString() } }).eq("id", session.id).eq("user_id", auth.user.id);
     if (updateError) return NextResponse.json({ error: "The learning plan was generated but could not be saved." }, { status: 500 });
 
     await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: "medium" });
