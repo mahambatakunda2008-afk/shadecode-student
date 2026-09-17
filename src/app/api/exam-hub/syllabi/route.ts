@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({ syllabi: [], subjects: [], onboardingComplete: learner.onboardingComplete });
+    }
+
     const { data, error } = await supabase
       .from("syllabi")
       .select("id, subject, board, levels")
@@ -19,12 +25,11 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    let syllabi = data ?? [];
+    const allowedNames = new Set(learner.subjects.map((subject) => subject.name.trim().toLowerCase()));
+    let syllabi = (data ?? []).filter(
+      (syllabus) => typeof syllabus.subject === "string" && allowedNames.has(syllabus.subject.trim().toLowerCase())
+    );
 
-    // ?scope=browse: filter which boards show, based on where the request
-    // is coming from. Only the student browse page opts into this --
-    // admin (managing the catalog) and contribute (submitting for any
-    // board) intentionally see everything regardless of their own location.
     const { searchParams } = new URL(request.url);
     if (searchParams.get("scope") === "browse") {
       const country =
@@ -38,10 +43,6 @@ export async function GET(request: Request) {
 
       if (boardsError) throw boardsError;
 
-      // If we can't detect a country, or a board isn't in exam_boards at
-      // all (e.g. it hasn't been classified yet), fail open rather than
-      // silently hiding content -- a detection gap shouldn't mean a
-      // student sees nothing.
       const visibleBoardIds = new Set(
         (boards ?? [])
           .filter((b) => b.is_global || !country || b.countries.includes(country))
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ syllabi });
+    return NextResponse.json({ syllabi, subjects: learner.subjects, onboardingComplete: learner.onboardingComplete });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load syllabi" },
