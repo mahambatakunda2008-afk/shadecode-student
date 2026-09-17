@@ -12,6 +12,7 @@ export const maxDuration = 45;
 type AuthContext = { supabase: SupabaseClient; user: User };
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
+type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -89,8 +90,86 @@ function parseEvaluation(raw: string) {
   } catch { return null; }
 }
 
-function findBlock(plan: { blocks?: Block[] }, blockId: string) {
+function findBlock(plan: Plan, blockId: string) {
   return (plan.blocks ?? []).find(block => block.id === blockId && (block.type === "checkpoint" || block.type === "mastery"));
+}
+
+function cleanTopic(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
+async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: "correct" | "partially_correct" | "incorrect", attemptNo: number) {
+  const subject = cleanTopic(plan.subject || "Paper Study") || "Paper Study";
+  const topics = [...new Set((block.interaction?.expectedConcepts ?? []).map(cleanTopic).filter(Boolean))].slice(0, 6);
+  const score = verdict === "correct" ? 1 : verdict === "partially_correct" ? 0.55 : 0;
+  const now = new Date().toISOString();
+
+  for (const topic of topics) {
+    const { data: existing } = await auth.supabase
+      .from("topic_mastery")
+      .select("mastery_score,last_score,attempts,trend,retention,confidence,stability,exposure,error_rate,response_speed,prerequisite_health,recent_improvement,uncertainty")
+      .eq("user_id", auth.user.id)
+      .eq("subject", subject)
+      .eq("topic", topic)
+      .maybeSingle();
+
+    const previous = Number(existing?.mastery_score ?? 0.5);
+    const nextMastery = Math.max(0, Math.min(1, previous * 0.65 + score * 0.35));
+    const previousAttempts = Number(existing?.attempts ?? 0);
+    const attempts = previousAttempts + 1;
+    const previousError = Number(existing?.error_rate ?? 0.5);
+    const errorRate = Math.max(0, Math.min(1, previousError * 0.7 + (verdict === "correct" ? 0 : 1) * 0.3));
+    const confidence = Math.max(0, Math.min(1, Number(existing?.confidence ?? 0.4) * 0.7 + score * 0.3));
+    const trend = Math.max(-1, Math.min(1, score - previous));
+    const uncertainty = Math.max(0, Math.min(1, 1 - confidence));
+
+    await auth.supabase.from("topic_mastery").upsert({
+      user_id: auth.user.id,
+      subject,
+      topic,
+      mastery_score: nextMastery,
+      last_score: score,
+      attempts,
+      last_attempted: now,
+      trend,
+      retention: Number(existing?.retention ?? 0.5),
+      confidence,
+      stability: Number(existing?.stability ?? 0.5),
+      exposure: Number(existing?.exposure ?? 0) + 1,
+      error_rate: errorRate,
+      response_speed: Number(existing?.response_speed ?? 0),
+      prerequisite_health: Number(existing?.prerequisite_health ?? 0.5),
+      recent_improvement: trend,
+      uncertainty,
+    }, { onConflict: "user_id,subject,topic" });
+
+    const priority = verdict === "incorrect" ? 9 : verdict === "partially_correct" ? 6 : nextMastery < 0.65 ? 4 : 1;
+    await auth.supabase.from("revision_queue").upsert({
+      user_id: auth.user.id,
+      topic,
+      subject,
+      priority,
+      source: "paper_learning",
+      last_seen: now,
+    }, { onConflict: "user_id,topic,subject" });
+  }
+
+  await auth.supabase.from("learning_events").insert({
+    user_id: auth.user.id,
+    type: "paper_checkpoint",
+    subject,
+    topic: topics[0] || cleanTopic(block.title || "paper checkpoint") || "Paper checkpoint",
+    score,
+    metadata: {
+      source: "paper_learning",
+      blockId: block.id,
+      attemptNo,
+      verdict,
+      concepts: topics,
+      level: plan.level || null,
+      board: plan.board || null,
+    },
+  });
 }
 
 export async function POST(req: Request, context: { params: Promise<{ sessionId: string }> }) {
@@ -117,7 +196,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     if (sessionError) return NextResponse.json({ error: "Couldn't load this learning session." }, { status: 500 });
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
 
-    const plan = session.learning_plan as { title?: string; overview?: string; blocks?: Block[] };
+    const plan = session.learning_plan as Plan;
     const block = findBlock(plan, blockId);
     if (!block?.interaction?.prompt || !block.interaction.rubric || !block.interaction.modelAnswer) {
       return NextResponse.json({ error: "This checkpoint does not have enough evaluation data yet. Generate a new paper session." }, { status: 422 });
@@ -183,7 +262,7 @@ Return ONLY JSON with:
     if (!evaluation) return NextResponse.json({ error: "Cortex couldn't reliably grade that attempt. Your answer was not recorded as correct." }, { status: 422 });
 
     const attemptNo = submitCount + 1;
-    await auth.supabase.from("paper_learning_attempts").insert({
+    const { error: attemptError } = await auth.supabase.from("paper_learning_attempts").insert({
       session_id: sessionId,
       user_id: auth.user.id,
       block_id: blockId,
@@ -195,12 +274,19 @@ Return ONLY JSON with:
       misconception: evaluation.misconception || null,
       next_action: evaluation.nextAction || null,
     });
+    if (attemptError) return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
 
     const progress = (session.progress && typeof session.progress === "object" ? session.progress : {}) as Record<string, unknown>;
     const completed = Array.isArray(progress.completedBlockIds) ? progress.completedBlockIds.filter((id): id is string => typeof id === "string") : [];
     const nextCompleted = evaluation.verdict === "correct" && !completed.includes(blockId) ? [...completed, blockId] : completed;
     const nextProgress = { ...progress, completedBlockIds: nextCompleted, lastBlockId: blockId, lastVerdict: evaluation.verdict, updatedAt: new Date().toISOString() };
     await auth.supabase.from("paper_learning_sessions").update({ progress: nextProgress }).eq("id", sessionId).eq("user_id", auth.user.id);
+
+    try {
+      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo);
+    } catch (signalError) {
+      console.error("[paper-learning] learning signal update failed", signalError);
+    }
 
     return NextResponse.json({
       action: "submit",
