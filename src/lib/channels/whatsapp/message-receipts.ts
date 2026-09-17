@@ -4,14 +4,15 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 interface ReceiptRow {
   id: string;
-  status: "processing" | "ready" | "delivered";
+  status: "processing" | "completed" | "failed";
   response_text: string | null;
   lease_until: string;
+  delivery_status: "pending" | "delivered" | "failed" | null;
 }
 
 export type WhatsAppReceiptClaim =
   | { kind: "claimed"; id: string }
-  | { kind: "duplicate"; status: ReceiptRow["status"]; responseText: string | null };
+  | { kind: "duplicate"; id: string; status: ReceiptRow["status"]; responseText: string | null; deliveryStatus: ReceiptRow["delivery_status"] };
 
 function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -27,13 +28,18 @@ function getSupabaseAdmin(): SupabaseClient {
 export async function claimWhatsAppMessage(input: {
   messageId: string;
   externalUserId: string;
+  phoneNumberId: string;
 }): Promise<WhatsAppReceiptClaim> {
   const messageId = input.messageId.trim();
   const externalUserId = input.externalUserId.trim();
-  if (!messageId || !externalUserId) throw new Error("WhatsApp receipt requires message and user ids.");
+  const phoneNumberId = input.phoneNumberId.trim();
+  if (!messageId || !externalUserId || !phoneNumberId) {
+    throw new Error("WhatsApp receipt requires message, user and phone number ids.");
+  }
 
   const supabase = getSupabaseAdmin();
   const now = new Date();
+  const nowIso = now.toISOString();
   const leaseUntil = new Date(now.getTime() + 2 * 60 * 1000).toISOString();
 
   const { data: inserted, error: insertError } = await supabase
@@ -42,7 +48,10 @@ export async function claimWhatsAppMessage(input: {
       channel: "whatsapp",
       external_message_id: messageId,
       external_user_id: externalUserId,
+      phone_number_id: phoneNumberId,
       status: "processing",
+      delivery_status: "pending",
+      processing_started_at: nowIso,
       lease_until: leaseUntil,
     })
     .select("id")
@@ -56,10 +65,10 @@ export async function claimWhatsAppMessage(input: {
 
   const { data: existing, error: existingError } = await supabase
     .from("platform_channel_message_receipts")
-    .select("id,status,response_text,lease_until")
+    .select("id,status,response_text,lease_until,delivery_status")
     .eq("channel", "whatsapp")
     .eq("external_message_id", messageId)
-    .maybeSingle();
+    .maybeSingle<ReceiptRow>();
 
   if (existingError || !existing) {
     throw new Error(`Failed to read WhatsApp message receipt: ${existingError?.message ?? "not found"}`);
@@ -69,10 +78,33 @@ export async function claimWhatsAppMessage(input: {
   if (existing.status === "processing" && leaseExpired) {
     const { data: reclaimed, error: reclaimError } = await supabase
       .from("platform_channel_message_receipts")
-      .update({ lease_until: leaseUntil, updated_at: now.toISOString() })
+      .update({
+        lease_until: leaseUntil,
+        processing_started_at: nowIso,
+        updated_at: nowIso,
+      })
       .eq("id", existing.id)
       .eq("status", "processing")
-      .lte("lease_until", now.toISOString())
+      .lte("lease_until", nowIso)
+      .select("id")
+      .maybeSingle();
+
+    if (!reclaimError && reclaimed?.id) return { kind: "claimed", id: reclaimed.id };
+  }
+
+  if (existing.status === "failed") {
+    const { data: reclaimed, error: reclaimError } = await supabase
+      .from("platform_channel_message_receipts")
+      .update({
+        status: "processing",
+        delivery_status: "pending",
+        response_text: null,
+        lease_until: leaseUntil,
+        processing_started_at: nowIso,
+        updated_at: nowIso,
+      })
+      .eq("id", existing.id)
+      .eq("status", "failed")
       .select("id")
       .maybeSingle();
 
@@ -81,30 +113,49 @@ export async function claimWhatsAppMessage(input: {
 
   return {
     kind: "duplicate",
+    id: existing.id,
     status: existing.status,
     responseText: existing.response_text,
+    deliveryStatus: existing.delivery_status,
   };
 }
 
-export async function markWhatsAppMessageReady(input: {
+export async function markWhatsAppMessageCompleted(input: {
   receiptId: string;
   responseText: string;
 }): Promise<void> {
   const responseText = input.responseText.trim();
   if (!input.receiptId || !responseText) throw new Error("A receipt id and response are required.");
 
+  const now = new Date().toISOString();
   const { error } = await getSupabaseAdmin()
     .from("platform_channel_message_receipts")
     .update({
-      status: "ready",
+      status: "completed",
       response_text: responseText,
-      processed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      delivery_status: "pending",
+      updated_at: now,
     })
     .eq("id", input.receiptId)
     .eq("status", "processing");
 
   if (error) throw new Error(`Failed to persist WhatsApp response: ${error.message}`);
+}
+
+export async function markWhatsAppMessageFailed(receiptId: string): Promise<void> {
+  if (!receiptId) return;
+
+  const { error } = await getSupabaseAdmin()
+    .from("platform_channel_message_receipts")
+    .update({
+      status: "failed",
+      delivery_status: "failed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", receiptId)
+    .eq("status", "processing");
+
+  if (error) throw new Error(`Failed to persist WhatsApp failure state: ${error.message}`);
 }
 
 export async function markWhatsAppMessageDelivered(receiptId: string): Promise<void> {
@@ -113,12 +164,28 @@ export async function markWhatsAppMessageDelivered(receiptId: string): Promise<v
   const { error } = await getSupabaseAdmin()
     .from("platform_channel_message_receipts")
     .update({
-      status: "delivered",
+      status: "completed",
+      delivery_status: "delivered",
       delivered_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", receiptId)
-    .in("status", ["ready", "delivered"]);
+    .eq("status", "completed");
 
   if (error) throw new Error(`Failed to persist WhatsApp delivery state: ${error.message}`);
+}
+
+export async function markWhatsAppMessageDeliveryFailed(receiptId: string): Promise<void> {
+  if (!receiptId) return;
+
+  const { error } = await getSupabaseAdmin()
+    .from("platform_channel_message_receipts")
+    .update({
+      delivery_status: "failed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", receiptId)
+    .eq("status", "completed");
+
+  if (error) throw new Error(`Failed to persist WhatsApp delivery failure: ${error.message}`);
 }
