@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
 import { buildFallbackExam } from "@/lib/exam/fallbackExam";
+import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -29,38 +30,44 @@ export async function POST(req) {
 
     const { subject, topic, difficulty, questionCount } = validation.data;
     const userId = user.id;
+    const supabase = await createSupabaseServerClient();
+    const learnerSubjects = await resolveLearnerSubjects(supabase, userId);
+    const canonicalSubject = assertRequestedLearnerSubject(learnerSubjects, subject);
+
+    if (!canonicalSubject) {
+      return NextResponse.json({
+        error: learnerSubjects.length
+          ? "That subject is not in your selected subjects. Choose one of your subjects and try again."
+          : "Choose your subjects in onboarding before generating an exam.",
+        code: "SUBJECT_NOT_ALLOWED",
+        subjects: learnerSubjects,
+      }, { status: 400 });
+    }
+
     const cleanTopic = typeof topic === "string" ? topic.replace(/\s*\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\)\s*$/i, "").trim() : "";
 
-    let exam = await generateExam(subject, cleanTopic ? [cleanTopic] : [subject], difficulty, questionCount, userId);
+    let exam = await generateExam(canonicalSubject.name, cleanTopic ? [cleanTopic] : [canonicalSubject.name], difficulty, questionCount, userId);
     let source = "cortex";
 
-    // The generator deliberately returns null when providers fail or the AI
-    // response fails quality validation. The old route incorrectly converted
-    // that into a 503, even though the product already had enough deterministic
-    // exam knowledge to keep the learner moving. Use a markable emergency paper
-    // instead of returning an empty/error state.
     if (!exam) {
-      exam = buildFallbackExam(subject, cleanTopic, difficulty, questionCount);
+      exam = buildFallbackExam(canonicalSubject.name, cleanTopic, difficulty, questionCount);
       source = "deterministic-fallback";
     }
 
-    // Background persistence must never delay the learner's exam room.
-    void createSupabaseServerClient().then((supabase) =>
-      supabase.from("exams").insert({
-        user_id: userId,
-        subject,
-        difficulty,
-        questions: exam.questions,
-      }).then(({ error }) => {
-        if (error) console.error("[exam/generate] Background save failed:", error.message);
-      })
-    ).catch((error) => console.error("[exam/generate] Background save setup failed:", error));
+    void supabase.from("exams").insert({
+      user_id: userId,
+      subject: canonicalSubject.name,
+      difficulty,
+      questions: exam.questions,
+    }).then(({ error }) => {
+      if (error) console.error("[exam/generate] Background save failed:", error.message);
+    }).catch((error) => console.error("[exam/generate] Background save setup failed:", error));
 
     return NextResponse.json({
       questions: exam.questions,
       metadata: {
-        subject,
-        topic: cleanTopic || subject,
+        subject: canonicalSubject.name,
+        topic: cleanTopic || canonicalSubject.name,
         source,
         title: exam.title,
         durationMinutes: exam.durationMinutes,
