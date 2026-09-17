@@ -4,8 +4,7 @@ import { lexShade } from "./lexer";
 export function parseShade(source: string): { program: ShadeProgram; diagnostics: ShadeDiagnostic[] } {
   const lexed = lexShade(source);
   const parser = new Parser(lexed.tokens);
-  const program = parser.parseProgram();
-  return { program, diagnostics: [...lexed.diagnostics, ...parser.diagnostics] };
+  return { program: parser.parseProgram(), diagnostics: [...lexed.diagnostics, ...parser.diagnostics] };
 }
 
 class Parser {
@@ -22,11 +21,14 @@ class Parser {
     return undefined;
   }
   parseProgram(): ShadeProgram {
-    const body: ShadeStatement[] = []; this.skipLines();
+    const body: ShadeStatement[] = [];
+    this.skipLines();
     while (this.current()?.kind !== "eof") {
-      const statement = this.parseStatement(); if (statement) body.push(statement);
+      const statement = this.parseStatement();
+      if (statement) body.push(statement);
       if (this.current()?.kind !== "eof" && !this.at("\n")) {
-        const t = this.current(); this.diagnostics.push({ severity: "error", message: "Expected a new line between statements.", line: t.line, column: t.column });
+        const t = this.current();
+        this.diagnostics.push({ severity: "error", message: "Expected a new line between statements.", line: t.line, column: t.column });
         while (this.current()?.kind !== "eof" && !this.at("\n")) this.advance();
       }
       this.skipLines();
@@ -45,11 +47,27 @@ class Parser {
     if (t.kind === "identifier" && this.tokens[this.index + 1]?.value === "=") { const name = this.advance().value; this.advance(); return { type: "assignment", name, expression: this.parseExpression(), line: t.line }; }
     return { type: "expression", expression: this.parseExpression(), line: t.line };
   }
-  private parseIf(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the if condition."); const thenBody = this.parseBlock(["else"]); let elseBody: ShadeStatement[] = []; if (this.at("else")) { this.advance(); this.expect("\n", "Expected a new line after else."); elseBody = this.parseBlock([]); } return { type: "if", condition, thenBody, elseBody, line: t.line }; }
-  private parseWhile(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the while condition."); return { type: "while", condition, body: this.parseBlock([]), line: t.line }; }
-  private parseFor(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a loop variable after for."); this.expect("in", "Expected 'in' in a for loop."); const iterable = this.parseExpression(); this.expect("\n", "Expected a new line after the for loop."); return { type: "for", name: name ?? "item", iterable, body: this.parseBlock([]), line: t.line }; }
-  private parseFunction(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a function name."); this.expect("("); const params: string[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { const param = this.expectIdentifier("Expected a parameter name."); if (param) params.push(param); if (!this.at(",")) break; this.advance(); } this.expect(")"); this.expect("\n", "Expected a new line after the function declaration."); return { type: "function", name: name ?? "anonymous", params, body: this.parseBlock([]), line: t.line }; }
-  private parseBlock(stopKeywords: string[]): ShadeStatement[] { const body: ShadeStatement[] = []; this.skipLines(); while (this.current()?.kind !== "eof" && !stopKeywords.includes(this.current().value)) { const statement = this.parseStatement(); if (statement) body.push(statement); if (this.current()?.kind !== "eof" && !this.at("\n") && !stopKeywords.includes(this.current().value)) while (this.current()?.kind !== "eof" && !this.at("\n") && !stopKeywords.includes(this.current().value)) this.advance(); this.skipLines(); } return body; }
+  private parseIf(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the if condition."); const thenBody = this.parseBlock(["else"], t.column); let elseBody: ShadeStatement[] = []; if (this.at("else")) { this.advance(); this.expect("\n", "Expected a new line after else."); elseBody = this.parseBlock([], t.column); } return { type: "if", condition, thenBody, elseBody, line: t.line }; }
+  private parseWhile(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the while condition."); return { type: "while", condition, body: this.parseBlock([], t.column), line: t.line }; }
+  private parseFor(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a loop variable after for."); this.expect("in", "Expected 'in' in a for loop."); const iterable = this.parseExpression(); this.expect("\n", "Expected a new line after the for loop."); return { type: "for", name: name ?? "item", iterable, body: this.parseBlock([], t.column), line: t.line }; }
+  private parseFunction(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a function name."); this.expect("("); const params: string[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { const param = this.expectIdentifier("Expected a parameter name."); if (param) params.push(param); if (!this.at(",")) break; this.advance(); } this.expect(")"); this.expect("\n", "Expected a new line after the function declaration."); return { type: "function", name: name ?? "anonymous", params, body: this.parseBlock([], t.column), line: t.line }; }
+  private parseBlock(stopKeywords: string[], parentColumn: number): ShadeStatement[] {
+    const body: ShadeStatement[] = [];
+    this.skipLines();
+    while (this.current()?.kind !== "eof") {
+      const token = this.current();
+      if (!token || stopKeywords.includes(token.value) || token.column <= parentColumn) break;
+      const statement = this.parseStatement();
+      if (statement) body.push(statement);
+      if (this.current()?.kind !== "eof" && !this.at("\n")) {
+        const t = this.current();
+        this.diagnostics.push({ severity: "error", message: "Expected a new line between statements.", line: t.line, column: t.column });
+        while (this.current()?.kind !== "eof" && !this.at("\n")) this.advance();
+      }
+      this.skipLines();
+    }
+    return body;
+  }
   private parseExpression() { return this.parseBinary(0); }
   private precedence(operator: string) { return ({ or: 1, and: 2, "==": 3, "!=": 3, "<": 4, "<=": 4, ">": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6 } as Record<string, number>)[operator] ?? -1; }
   private parseBinary(min: number): ShadeExpression { let left = this.parsePrimary(); while (this.current()?.kind === "operator" || this.current()?.value === "and" || this.current()?.value === "or") { const op = this.current().value; const prec = this.precedence(op); if (prec < min) break; const operatorToken = this.advance(); const right = this.parseBinary(prec + 1); left = { type: "binary", operator: op as ShadeBinaryOperator, left, right, location: { line: operatorToken?.line ?? left.location?.line ?? 1, column: operatorToken?.column } }; } return left; }
@@ -61,7 +79,7 @@ class Parser {
     if (t.value === "true" || t.value === "false") { this.advance(); return { type: "literal", value: t.value === "true", location }; }
     if (t.value === "none") { this.advance(); return { type: "literal", value: null, location }; }
     if (t.kind === "lbracket") { this.advance(); const elements: ShadeExpression[] = []; while (!this.at("]") && this.current()?.kind !== "eof") { elements.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect("]"); return { type: "array", elements, location }; }
-    if (t.kind === "identifier") { const name = this.advance().value; if (this.at("(")) { this.advance(); const args: ShadeExpression[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { args.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect(")"); return { type: "call", name, args, location }; } return { type: "variable", name, location }; }
+    if (t.kind === "identifier" || t.kind === "keyword") { const name = this.advance().value; if (this.at("(")) { this.advance(); const args: ShadeExpression[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { args.push(this.parseExpression()); if (!this.at(",")) break; this.advance(); } this.expect(")"); return { type: "call", name, args, location }; } return { type: "variable", name, location }; }
     if (this.at("(")) { this.advance(); const expression = this.parseExpression(); this.expect(")"); return expression; }
     this.diagnostics.push({ severity: "error", message: `Unexpected token '${t.value}'.`, line: t.line, column: t.column }); this.advance(); return { type: "literal", value: null, location };
   }
