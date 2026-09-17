@@ -16,10 +16,10 @@ constexpr int kMaxThreads = 4;
 llama_model * g_model = nullptr;
 llama_context * g_context = nullptr;
 llama_batch g_batch{};
-common_sampler * g_sampler = nullptr;
+llama_sampler * g_sampler = nullptr;
 
 void cleanup() {
-    if (g_sampler) { common_sampler_free(g_sampler); g_sampler = nullptr; }
+    if (g_sampler) { llama_sampler_free(g_sampler); g_sampler = nullptr; }
     if (g_batch.token) { llama_batch_free(g_batch); g_batch = {}; }
     if (g_context) { llama_free(g_context); g_context = nullptr; }
     if (g_model) { llama_model_free(g_model); g_model = nullptr; }
@@ -44,6 +44,17 @@ bool decode(const std::vector<llama_token> & tokens) {
         if (llama_decode(g_context, g_batch) != 0) return false;
     }
     return true;
+}
+
+llama_sampler * create_sampler() {
+    llama_sampler_chain_params params = llama_sampler_chain_default_params();
+    llama_sampler * chain = llama_sampler_chain_init(params);
+    if (!chain) return nullptr;
+    llama_sampler_chain_add(chain, llama_sampler_init_top_k(40));
+    llama_sampler_chain_add(chain, llama_sampler_init_top_p(0.95f, 1));
+    llama_sampler_chain_add(chain, llama_sampler_init_temp(0.25f));
+    llama_sampler_chain_add(chain, llama_sampler_init_greedy());
+    return chain;
 }
 }
 
@@ -76,9 +87,7 @@ Java_com_shadecode_student_LlamaCppRuntime_nativeLoad(JNIEnv * env, jobject, jst
     }
 
     g_batch = llama_batch_init(kBatch, 0, 1);
-    common_params_sampling sampling;
-    sampling.temp = 0.25f;
-    g_sampler = common_sampler_init(g_model, sampling);
+    g_sampler = create_sampler();
     if (!g_sampler) {
         cleanup();
         llama_backend_free();
@@ -101,6 +110,7 @@ Java_com_shadecode_student_LlamaCppRuntime_nativeGenerate(JNIEnv * env, jobject,
     if (tokens.empty() || tokens.size() >= static_cast<size_t>(kContext - 64)) return nullptr;
 
     llama_memory_clear(llama_get_memory(g_context), false);
+    llama_sampler_reset(g_sampler);
     if (!decode(tokens)) return nullptr;
 
     std::string output;
@@ -109,8 +119,8 @@ Java_com_shadecode_student_LlamaCppRuntime_nativeGenerate(JNIEnv * env, jobject,
     auto * vocab = llama_model_get_vocab(g_model);
 
     for (int i = 0; i < limit; ++i) {
-        const llama_token next = common_sampler_sample(g_sampler, g_context, -1);
-        common_sampler_accept(g_sampler, next, true);
+        const llama_token next = llama_sampler_sample(g_sampler, g_context, -1);
+        llama_sampler_accept(g_sampler, next);
         if (llama_vocab_is_eog(vocab, next)) break;
 
         output += common_token_to_piece(g_context, next);
