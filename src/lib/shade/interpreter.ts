@@ -21,6 +21,8 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
   let traceTruncated = false;
   let steps = 0;
   const root: Scope = { values: new Map() };
+  const frameStack = [{ id: "global", name: "global" }];
+  let frameCounter = 0;
 
   const lookup = (scope: Scope, name: string): ShadeValue | FunctionValue | undefined => scope.values.has(name) ? scope.values.get(name) : scope.parent ? lookup(scope.parent, name) : undefined;
   const valueText = (value: ShadeValue): string => {
@@ -41,7 +43,14 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
   const recordTrace = (event: Omit<ShadeExecutionTraceEvent, "step">) => {
     if (!tracing) return;
     if (traceEvents.length >= maxTraceEvents) { traceTruncated = true; return; }
-    traceEvents.push({ ...event, step: traceEvents.length + 1 });
+    const frame = frameStack[frameStack.length - 1];
+    traceEvents.push({
+      ...event,
+      step: traceEvents.length + 1,
+      frameId: event.frameId ?? frame.id,
+      callDepth: event.callDepth ?? Math.max(0, frameStack.length - 1),
+      callStack: event.callStack ?? frameStack.map(item => item.name),
+    });
   };
 
   const evaluate = (expression: ShadeExpression, scope: Scope): ShadeValue => {
@@ -90,7 +99,16 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
           if (!fn || Array.isArray(fn) || typeof fn !== "object" || !("body" in fn)) throw new ShadeRuntimeError(`Unknown function '${expression.name}'.`, expression.location?.line ?? 0, expression.location?.column);
           const child: Scope = { values: new Map(), parent: scope };
           fn.params.forEach((param, index) => child.values.set(param, args[index] ?? null));
-          try { executeStatements(fn.body, child); } catch (error) { if (error instanceof ShadeReturn) result = error.value; else throw error; }
+          const frame = { id: `frame-${++frameCounter}`, name: expression.name };
+          frameStack.push(frame);
+          try {
+            executeStatements(fn.body, child);
+          } catch (error) {
+            if (error instanceof ShadeReturn) result = error.value;
+            else throw error;
+          } finally {
+            frameStack.pop();
+          }
           if (result === undefined) result = null;
         }
       } break;
