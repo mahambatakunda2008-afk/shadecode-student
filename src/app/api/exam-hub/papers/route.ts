@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRequestedLearnerSubject, resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Browse endpoint for the past-papers catalog.
  *
- * Two response shapes depending on how far the caller has drilled down —
- * this keeps the query cheap at every step even with thousands of papers,
- * instead of pulling a whole syllabus and computing distinct values client-side.
- *
- * 1) ?syllabus=9702                                 -> { facets: { levels, sessions, years } }
- * 2) ?syllabus=9702&level=..&session=..&year=2025    -> { papers: PastPaper[] }
+ * A syllabus is only accessible when its subject belongs to the authenticated
+ * learner's canonical onboarding subjects. This prevents stale URLs or legacy
+ * General selections from exposing unrelated learner content.
  */
 export async function GET(request: Request) {
   try {
@@ -32,10 +30,38 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "syllabus is required" }, { status: 400 });
     }
 
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json(
+        { error: "Choose your subjects in onboarding before using Exam Hub.", code: "SUBJECT_NOT_ALLOWED", subjects: [] },
+        { status: 400 }
+      );
+    }
+
+    const { data: syllabusRow, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id, subject")
+      .eq("id", syllabus)
+      .maybeSingle();
+
+    if (syllabusError) throw syllabusError;
+    if (!syllabusRow) return NextResponse.json({ error: "Syllabus not found" }, { status: 404 });
+
+    const allowedSubject = assertRequestedLearnerSubject(learner.subjects, syllabusRow.subject);
+    if (!allowedSubject) {
+      return NextResponse.json(
+        {
+          error: "That syllabus is not available for your selected subjects.",
+          code: "SUBJECT_NOT_ALLOWED",
+          subjects: learner.subjects,
+        },
+        { status: 403 }
+      );
+    }
+
     const fullyFiltered = Boolean(level && session && year);
 
     if (!fullyFiltered) {
-      // Facet mode: cheap distinct-value lookup to drive the next filter step.
       let query = supabase
         .from("past_papers")
         .select("level, session, year")
@@ -54,8 +80,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ facets: { levels, sessions, years } });
     }
 
-    // Fully filtered: return actual papers (qp/ms/in/gt) for this combination,
-    // joined with the requesting user's own progress/bookmark state.
     const { data: papers, error: papersError } = await supabase
       .from("past_papers")
       .select("*")
