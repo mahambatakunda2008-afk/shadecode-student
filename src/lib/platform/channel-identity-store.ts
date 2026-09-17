@@ -21,15 +21,7 @@ function getServerClient() {
 }
 
 function mapIdentity(data: Record<string, unknown>): StoredChannelIdentity {
-  return {
-    id: data.id as string,
-    channel: data.channel as ClientChannel,
-    externalUserId: data.external_user_id as string,
-    userId: data.user_id as string,
-    role: data.role as ClientRole,
-    status: data.status as StoredChannelIdentity["status"],
-    linkedAt: data.linked_at as string,
-  };
+  return { id: data.id as string, channel: data.channel as ClientChannel, externalUserId: data.external_user_id as string, userId: data.user_id as string, role: data.role as ClientRole, status: data.status as StoredChannelIdentity["status"], linkedAt: data.linked_at as string };
 }
 
 export async function resolveChannelIdentity(channel: ClientChannel, externalUserId: string): Promise<StoredChannelIdentity | null> {
@@ -58,10 +50,15 @@ export async function unlinkUserChannelIdentity(channel: ClientChannel, userId: 
 export async function linkChannelIdentity(input: { channel: ClientChannel; externalUserId: string; userId: string; role: ClientRole }): Promise<StoredChannelIdentity> {
   const external = normalizeChannelExternalId(input.externalUserId);
   if (!input.userId.trim()) throw new Error("A userId is required.");
+  const client = getServerClient();
   const existing = await resolveChannelIdentity(input.channel, external);
   if (existing && existing.userId !== input.userId) throw new Error("This external channel identity is already linked to another account.");
-  const client = getServerClient();
-  const { data, error } = await client.from("platform_channel_identities").upsert({ channel: input.channel, external_user_id: external, user_id: input.userId, role: input.role, status: "active", linked_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "channel,external_user_id" }).select("id, channel, external_user_id, user_id, role, status, linked_at").single();
+
+  const now = new Date().toISOString();
+  const { error: deactivateError } = await client.from("platform_channel_identities").update({ status: "unlinked", updated_at: now }).eq("channel", input.channel).eq("user_id", input.userId).eq("status", "active").neq("external_user_id", external);
+  if (deactivateError) throw new Error(deactivateError.message);
+
+  const { data, error } = await client.from("platform_channel_identities").upsert({ channel: input.channel, external_user_id: external, user_id: input.userId, role: input.role, status: "active", linked_at: now, updated_at: now }, { onConflict: "channel,external_user_id" }).select("id, channel, external_user_id, user_id, role, status, linked_at").single();
   if (error) throw new Error(error.message);
   return mapIdentity(data);
 }
