@@ -27,7 +27,8 @@ export type RuntimeEvent =
   | { type: "diagnostic"; diagnostic: RuntimeDiagnostic }
   | { type: "status"; status: "starting" | "running" | "completed" | "failed" | "timed_out" }
   | { type: "exit"; code: number }
-  | { type: "error"; message: string; diagnostic?: RuntimeDiagnostic };
+  | { type: "error"; message: string; diagnostic?: RuntimeDiagnostic }
+  | { type: "trace"; text: string };
 
 export type RuntimeResult = {
   id: string;
