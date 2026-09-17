@@ -22,22 +22,14 @@ type ExecState = {
 };
 
 const clean = (line: string) => line.replace(/\/\/.*$/, "").replace(/\{\*.*?\*\}/g, "").trim();
-const upper = (line: string) => clean(line).toUpperCase();
 const isBlockOnly = (line: string) => /^(BEGIN|END|THEN|ELSE|ENDIF|END\s+IF|ENDWHILE|END\s+WHILE|ENDFOR|END\s+FOR|UNTIL\b|ENDCASE|END\s+CASE|ENDPROCEDURE|END\s+PROCEDURE)$/i.test(line);
 const clone = (value: Value): Value => Array.isArray(value) ? [...value] : value;
 const display = (value: Value): string => Array.isArray(value) ? `[${value.map(display).join(", ")}]` : String(value);
 
 function numeric(v: Value) { const n = typeof v === "number" ? v : Number(v); return Number.isFinite(n) ? n : 0; }
 function truthy(v: Value) { return typeof v === "boolean" ? v : Boolean(numeric(v) || (typeof v === "string" && v.length)); }
-
-function evalExpr(raw: string, state: ExecState): Value {
-  return evaluateExpression(raw, state.vars) as Value;
-}
-
-function valueOf(raw: string, state: ExecState): Value {
-  const text = raw.trim();
-  try { return evalExpr(text, state); } catch { return text; }
-}
+function evalExpr(raw: string, state: ExecState): Value { return evaluateExpression(raw, state.vars) as Value; }
+function valueOf(raw: string, state: ExecState): Value { try { return evalExpr(raw.trim(), state); } catch { return raw.trim(); } }
 
 function matchingEnd(lines: string[], start: number, opens: RegExp, closes: RegExp) {
   let depth = 0;
@@ -162,7 +154,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
         const inputMatch = line.match(/^INPUT\s+(.+)$/i);
         if (inputMatch) {
           const parts = inputMatch[1].split(/\s*,\s*/); const name = parts[0].trim();
-          state.vars[name] = valueOf(readInput(parts.slice(1).join(",").trim()), state);
+          state.vars[name] = valueOf(readInput(parts.slice(1).join(",").trim(), state), state);
         } else if (/^(OUTPUT|PRINT)\s+/i.test(line)) {
           state.output.push(display(evalExpr(line.replace(/^(OUTPUT|PRINT)\s+/i, ""), state)));
         } else if (/^RETURN(?:\s+(.+))?$/i.test(line)) {
@@ -188,17 +180,18 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
           } else if (assignment) state.vars[assignment[1]] = evalExpr(assignment[2], state);
           else { error(`Unsupported pseudocode statement: ${line}`, i + 1); return; }
         }
-        state.step += 1; state.trace.push({ step: state.step, line: i + 1, statement: line, variables: Object.fromEntries(Object.entries(state.vars).filter(([key]) => key !== "__return").map(([key, value]) => [key, clone(value)])) });
+        state.step += 1;
+        state.trace.push({ step: state.step, line: i + 1, statement: line, variables: Object.fromEntries(Object.entries(state.vars).filter(([key]) => key !== "__return").map(([key, value]) => [key, clone(value)])) });
       } catch (cause) { error(cause instanceof Error ? cause.message : "Algorithm execution failed.", i + 1); return; }
       i += 1;
     }
   };
 
   await executeRange(0, state.lines.length);
-  const stdout = [...state.output, traceText(state.trace)].filter(Boolean).join("\n\n");
-  if (stdout) events.push({ type: "stdout", text: stdout });
+  const trace = traceText(state.trace);
+  if (state.output.length) events.push({ type: "stdout", text: state.output.join("\n") });
   for (const diagnostic of state.diagnostics) events.push({ type: "diagnostic", diagnostic });
   const failed = state.diagnostics.some(diagnostic => diagnostic.severity === "error");
   events.push({ type: "status", status: failed ? "failed" : "completed" }, { type: "exit", code: failed ? 1 : 0 });
-  return { id: request.id, language: request.language, events, diagnostics: state.diagnostics, exitCode: failed ? 1 : 0, durationMs: Math.round(performance.now() - started) };
+  return { id: request.id, language: request.language, events, diagnostics: state.diagnostics, exitCode: failed ? 1 : 0, durationMs: Math.round(performance.now() - started), metadata: { trace } };
 }
