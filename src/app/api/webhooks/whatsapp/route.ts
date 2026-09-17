@@ -8,8 +8,10 @@ import {
 } from "@/lib/channels/whatsapp/webhook";
 import {
   claimWhatsAppMessage,
+  markWhatsAppMessageCompleted,
   markWhatsAppMessageDelivered,
-  markWhatsAppMessageReady,
+  markWhatsAppMessageDeliveryFailed,
+  markWhatsAppMessageFailed,
 } from "@/lib/channels/whatsapp/message-receipts";
 import { consumeWhatsAppLinkCode } from "@/lib/platform/channel-link-codes";
 import { linkChannelIdentity } from "@/lib/platform/channel-identity-store";
@@ -25,6 +27,8 @@ function getRequiredEnv(name: string): string {
 
 function parseLinkCommand(text: string): string | null {
   const trimmed = text.trim();
+  if (!trimmed) return null;
+
   let firstWhitespace = -1;
   for (let index = 0; index < trimmed.length; index += 1) {
     if (/\s/.test(trimmed[index])) {
@@ -71,22 +75,33 @@ export async function POST(request: Request) {
   }
 
   const events = parseWhatsAppTextEvents(payload);
-  const results = [];
+  const results: Array<{
+    event: (typeof events)[number];
+    receiptId: string | null;
+    response: { text: string; metadata?: Record<string, unknown> };
+  }> = [];
 
   for (const event of events) {
+    let receiptId: string | null = null;
     try {
       const receipt = await claimWhatsAppMessage({
         messageId: event.messageId,
         externalUserId: event.externalUserId,
+        phoneNumberId: event.phoneNumberId,
       });
 
       if (receipt.kind === "duplicate") {
-        if (receipt.status === "delivered") continue;
+        if (receipt.status === "completed" && receipt.deliveryStatus === "delivered") continue;
         if (!receipt.responseText) continue;
-        results.push({ event, receiptId: null, response: { text: receipt.responseText } });
+        results.push({
+          event,
+          receiptId: receipt.id,
+          response: { text: receipt.responseText },
+        });
         continue;
       }
 
+      receiptId = receipt.id;
       const linkCode = parseLinkCommand(event.text);
       if (linkCode) {
         const linked = await consumeWhatsAppLinkCode({
@@ -95,8 +110,8 @@ export async function POST(request: Request) {
         });
         if (!linked) {
           const response = { text: "That Shadecode link code is invalid, expired, or already used." };
-          await markWhatsAppMessageReady({ receiptId: receipt.id, responseText: response.text });
-          results.push({ event, receiptId: receipt.id, response });
+          await markWhatsAppMessageCompleted({ receiptId, responseText: response.text });
+          results.push({ event, receiptId, response });
           continue;
         }
 
@@ -111,23 +126,29 @@ export async function POST(request: Request) {
           text: "WhatsApp is now linked to your Shadecode account. You can start by asking me what you want to learn.",
           metadata: { status: "linked", role: identity.role },
         };
-        await markWhatsAppMessageReady({ receiptId: receipt.id, responseText: response.text });
-        results.push({ event, receiptId: receipt.id, response });
+        await markWhatsAppMessageCompleted({ receiptId, responseText: response.text });
+        results.push({ event, receiptId, response });
         continue;
       }
 
       const result = await dispatchWhatsAppTextEvent(event);
-      await markWhatsAppMessageReady({ receiptId: receipt.id, responseText: result.response.text });
-      results.push({ ...result, receiptId: receipt.id });
+      await markWhatsAppMessageCompleted({ receiptId, responseText: result.response.text });
+      results.push({ ...result, receiptId });
     } catch (error) {
       console.error("WhatsApp webhook dispatch failed", {
         messageId: event.messageId,
         error,
       });
+      if (receiptId) {
+        try {
+          await markWhatsAppMessageFailed(receiptId);
+        } catch (stateError) {
+          console.error("WhatsApp receipt failure-state update failed", { messageId: event.messageId, error: stateError });
+        }
+      }
       results.push({
         event,
         receiptId: null,
-        userId: null,
         response: {
           text: "I couldn't process that message right now. Please try again in a moment.",
           metadata: { status: "error", retryable: true },
@@ -151,6 +172,13 @@ export async function POST(request: Request) {
         messageId: result.event.messageId,
         error,
       });
+      if (result.receiptId) {
+        try {
+          await markWhatsAppMessageDeliveryFailed(result.receiptId);
+        } catch (stateError) {
+          console.error("WhatsApp delivery-state update failed", { messageId: result.event.messageId, error: stateError });
+        }
+      }
     }
   }
 
