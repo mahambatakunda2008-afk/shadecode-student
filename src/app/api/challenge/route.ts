@@ -1,6 +1,7 @@
 // src/app/api/challenge/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,21 @@ export async function POST(request: NextRequest) {
       result_id, subject, topic, difficulty,
       question_count, percentage, total_score, max_score, time_taken, grade,
     } = body
+
+    if (user && typeof subject === 'string' && subject.trim()) {
+      const learnerSubjects = await resolveLearnerSubjects(supabase, user.id)
+      const canonicalSubject = assertRequestedLearnerSubject(learnerSubjects, subject)
+      if (!canonicalSubject) {
+        return NextResponse.json({
+          error: learnerSubjects.length
+            ? 'That subject is not in your selected subjects.'
+            : 'Choose your subjects in onboarding before creating a challenge.',
+          code: 'SUBJECT_NOT_ALLOWED',
+          subjects: learnerSubjects,
+        }, { status: 400 })
+      }
+      body.subject = canonicalSubject.name
+    }
 
     let challenger_name: string | null = null
     if (user) {
@@ -31,7 +47,7 @@ export async function POST(request: NextRequest) {
         result_id:      result_id ?? null,
         challenger_id:  user?.id ?? null,
         challenger_name,
-        subject,
+        subject:        body.subject ?? null,
         topic:          topic ?? null,
         difficulty,
         question_count: question_count ?? 10,
