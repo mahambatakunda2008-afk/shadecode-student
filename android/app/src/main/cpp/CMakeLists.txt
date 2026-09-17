@@ -7,8 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# Pin to a full commit SHA. A shallow FetchContent clone cannot reliably
-# checkout an abbreviated commit via GIT_TAG because CMake treats it as a ref.
+# Pin to a full immutable commit so CI and local Android builds use the same API surface.
 FetchContent_Declare(
     llama_cpp
     GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
