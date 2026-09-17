@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (user && typeof subject === 'string' && subject.trim()) {
-      const learnerSubjects = await resolveLearnerSubjects(supabase, user.id)
+      const resolved = await resolveLearnerSubjects(supabase, user.id)
+      const learnerSubjects = resolved.subjects
       const canonicalSubject = assertRequestedLearnerSubject(learnerSubjects, subject)
       if (!canonicalSubject) {
         return NextResponse.json({
