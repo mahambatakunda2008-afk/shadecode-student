@@ -69,7 +69,7 @@ function extractTopic(prompt: string, subject: string) {
 
 function inferRequestShape(prompt: string, goal: string, intent: LessonIntent) {
   const text = `${prompt} ${goal}`.toLowerCase();
-  const depth = /\b(from (the )?basics|step[- ]by[- ]step|in depth|deep dive|thorough|comprehensive|detailed|properly|master|mastery)\b/.test(text)
+  const depth: "quick" | "standard" | "deep" = /\b(from (the )?basics|step[- ]by[- ]step|in depth|deep dive|thorough|comprehensive|detailed|properly|master|mastery)\b/.test(text)
     ? "deep"
     : /\b(quick|brief|short|summary|fast|recap)\b/.test(text)
       ? "quick"
