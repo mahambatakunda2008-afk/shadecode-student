@@ -28,6 +28,7 @@ const display = (value: Value): string => Array.isArray(value) ? `[${value.map(d
 
 function numeric(v: Value) { const n = typeof v === "number" ? v : Number(v); return Number.isFinite(n) ? n : 0; }
 function truthy(v: Value) { return typeof v === "boolean" ? v : Boolean(numeric(v) || (typeof v === "string" && v.length)); }
+function equalCaseValue(a: Value, b: Value) { return Array.isArray(a) || Array.isArray(b) ? JSON.stringify(a) === JSON.stringify(b) : a === b || numeric(a) === numeric(b); }
 function evalExpr(raw: string, state: ExecState): Value { return evaluateExpression(raw, state.vars) as Value; }
 function valueOf(raw: string, state: ExecState): Value { try { return evalExpr(raw.trim(), state); } catch { return raw.trim(); } }
 
@@ -140,7 +141,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
   await executeRange(0, state.lines.length);
   const hasErrors = state.diagnostics.some(diagnostic => diagnostic.severity === "error");
   if (state.trace.length) events.push({ type: "trace", text: traceText(state.trace) });
-  if (state.output.length) events.push({ type: "stdout", text: state.output.join("\n") });
+  if (state.output.length) events.push({ type: "stdout", text: `${state.output.join("\n")}\n` });
   if (state.diagnostics.length) for (const diagnostic of state.diagnostics) events.push({ type: "diagnostic", diagnostic });
   events.push({ type: "status", status: hasErrors ? "failed" : "completed" }, { type: "exit", code: hasErrors ? 1 : 0 });
   return { id: request.id, language: request.language, events, diagnostics: state.diagnostics, exitCode: hasErrors ? 1 : 0, durationMs: performance.now() - started };
