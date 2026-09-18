@@ -47,14 +47,20 @@ class Parser {
     if (t.kind === "identifier" && this.tokens[this.index + 1]?.value === "=") { const name = this.advance().value; this.advance(); return { type: "assignment", name, expression: this.parseExpression(), line: t.line }; }
     return { type: "expression", expression: this.parseExpression(), line: t.line };
   }
-  private parseIf(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the if condition."); const thenBody = this.parseBlock(["else"], t.column); let elseBody: ShadeStatement[] = []; if (this.at("else")) { this.advance(); this.expect("\n", "Expected a new line after else."); elseBody = this.parseBlock([], t.column); } return { type: "if", condition, thenBody, elseBody, line: t.line }; }
+  private parseIf(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the if condition."); const thenBody = this.parseBlock(["else"], t.column); this.skipLines(); let elseBody: ShadeStatement[] = []; if (this.at("else")) { this.advance(); this.expect("\n", "Expected a new line after else."); elseBody = this.parseBlock([], t.column); } return { type: "if", condition, thenBody, elseBody, line: t.line }; }
   private parseWhile(): ShadeStatement { const t = this.advance(); const condition = this.parseExpression(); this.expect("\n", "Expected a new line after the while condition."); return { type: "while", condition, body: this.parseBlock([], t.column), line: t.line }; }
   private parseFor(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a loop variable after for."); this.expect("in", "Expected 'in' in a for loop."); const iterable = this.parseExpression(); this.expect("\n", "Expected a new line after the for loop."); return { type: "for", name: name ?? "item", iterable, body: this.parseBlock([], t.column), line: t.line }; }
-  private parseFunction(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a function name."); this.expect("("); const params: string[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { const param = this.expectIdentifier("Expected a parameter name."); if (param) params.push(param); if (!this.at(",")) break; this.advance(); } this.expect(")"); this.expect("\n", "Expected a new line after the function declaration."); return { type: "function", name: name ?? "anonymous", params, body: this.parseBlock([], t.column), line: t.line }; }
+  private parseFunction(): ShadeStatement { const t = this.advance(); const name = this.expectIdentifier("Expected a function name."); this.expect("("); const params: string[] = []; while (!this.at(")") && this.current()?.kind !== "eof") { const param = this.expectIdentifier("Expected a parameter name."); if (param) params.push(param); if (!this.at(",")) break; this.advance(); } this.expect(")"); this.expect("\n", "Expected a new line after the function declaration."); const body = this.parseBlock(["end"], t.column); let cursor = this.index; while (this.tokens[cursor]?.value === "\n") cursor += 1; if (this.tokens[cursor]?.value === "end") { while (this.at("\n")) this.advance(); this.advance(); } return { type: "function", name: name ?? "anonymous", params, body, line: t.line }; }
   private parseBlock(stopKeywords: string[], parentColumn: number): ShadeStatement[] {
     const body: ShadeStatement[] = [];
     this.skipLines();
     while (this.current()?.kind !== "eof") {
+      if (this.at("\n")) {
+        const next = this.tokens[this.index + 1];
+        if (!next || next.kind === "eof" || next.column <= parentColumn || stopKeywords.includes(next.value)) break;
+        this.skipLines();
+        continue;
+      }
       const token = this.current();
       if (!token || stopKeywords.includes(token.value) || token.column <= parentColumn) break;
       const statement = this.parseStatement();
@@ -64,7 +70,13 @@ class Parser {
         this.diagnostics.push({ severity: "error", message: "Expected a new line between statements.", line: t.line, column: t.column });
         while (this.current()?.kind !== "eof" && !this.at("\n")) this.advance();
       }
-      this.skipLines();
+      if (this.at("\n")) {
+        const next = this.tokens[this.index + 1];
+        if (!next || next.kind === "eof" || next.column <= parentColumn || stopKeywords.includes(next.value)) {
+          break;
+        }
+        this.skipLines();
+      }
     }
     return body;
   }

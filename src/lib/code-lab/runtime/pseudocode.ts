@@ -28,6 +28,7 @@ const display = (value: Value): string => Array.isArray(value) ? `[${value.map(d
 
 function numeric(v: Value) { const n = typeof v === "number" ? v : Number(v); return Number.isFinite(n) ? n : 0; }
 function truthy(v: Value) { return typeof v === "boolean" ? v : Boolean(numeric(v) || (typeof v === "string" && v.length)); }
+function equalCaseValue(a: Value, b: Value) { return Array.isArray(a) || Array.isArray(b) ? JSON.stringify(a) === JSON.stringify(b) : a === b || numeric(a) === numeric(b); }
 function evalExpr(raw: string, state: ExecState): Value { return evaluateExpression(raw, state.vars) as Value; }
 function valueOf(raw: string, state: ExecState): Value { try { return evalExpr(raw.trim(), state); } catch { return raw.trim(); } }
 
@@ -71,7 +72,13 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
   state.procedures = collectProcedures(state.lines);
   const events: RuntimeResult["events"] = [{ type: "status", status: "starting" }, { type: "status", status: "running" }];
   const error = (message: string, line = state.pc + 1) => state.diagnostics.push({ severity: "error", message, file: request.entryFile, line, source: "language" });
-  const readInput = (prompt?: string) => { if (prompt) state.output.push(display(evalExpr(prompt, state))); return state.inputs[state.inputIndex++] ?? ""; };
+  const readInput = (prompt?: string) => {
+    if (prompt) state.output.push(display(evalExpr(prompt, state)));
+    const raw = state.inputs[state.inputIndex++] ?? "";
+    if (/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw.trim())) return Number(raw);
+    if (/^(?:true|false)$/i.test(raw.trim())) return raw.trim().toLowerCase() === "true";
+    return raw;
+  };
 
   const executeRange = async (from: number, to: number): Promise<void> => {
     let i = from;
@@ -79,7 +86,13 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
       if (performance.now() > state.timeoutAt) { error("Algorithm exceeded the execution time limit.", i + 1); return; }
       state.pc = i;
       const line = clean(state.lines[i]);
-      if (!line || isBlockOnly(line) || /^(?:PROCEDURE|FUNCTION)\b/i.test(line)) { i += 1; continue; }
+      if (!line || isBlockOnly(line) || /^.+:\s*$/.test(line)) { i += 1; continue; }
+      const procedureDeclaration = line.match(/^(?:PROCEDURE|FUNCTION)\s+(\w+)/i);
+      if (procedureDeclaration) {
+        const procedure = state.procedures.get(procedureDeclaration[1].toUpperCase());
+        i = procedure ? procedure.end + 1 : i + 1;
+        continue;
+      }
       const record = (statement: string) => { state.step += 1; state.trace.push({ step: state.step, line: i + 1, statement, variables: Object.fromEntries(Object.entries(state.vars).map(([key, value]) => [key, clone(value)])) }); };
       record(line);
 
@@ -109,7 +122,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
         if (assignment) {
           const target = assignment[1].replace(/\s+/g, ""); const value = valueOf(assignment[2], state);
           const indexed = target.match(/^([A-Za-z_]\w*)\[(.+)\]$/);
-          if (indexed) { const array = state.vars[indexed[1]]; if (!Array.isArray(array)) { error(`Variable ${indexed[1]} is not an array.`, i + 1); return; } const index = Math.trunc(numeric(valueOf(indexed[2], state))) - 1; if (index < 0 || index >= array.length) { error("Array index out of bounds.", i + 1); return; } array[index] = value as Scalar; }
+          if (indexed) { const array = state.vars[indexed[1]]; if (!Array.isArray(array)) { error(`Variable ${indexed[1]} is not an array.`, i + 1); return; } const index = Math.trunc(numeric(valueOf(indexed[2], state))) - 1; if (index < 0) { error("Array index out of bounds.", i + 1); return; } while (array.length <= index) array.push(0); array[index] = value as Scalar; }
           else state.vars[target] = value;
         } else if (/^IF\s+/i.test(line)) {
           const end = matchingEnd(state.lines, i, /^IF\b/i, /^END\s*IF$|^ENDIF$/i); if (end < 0) { error("Missing END IF.", i + 1); return; }
@@ -127,10 +140,42 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
           const down = /DOWNTO/i.test(line); const startValue = Math.trunc(numeric(valueOf(match[2], state))); const endValue = Math.trunc(numeric(valueOf(match[3], state))); const step = Math.abs(Math.trunc(numeric(valueOf(match[4] ?? "1", state)))) || 1;
           for (let value = startValue; down ? value >= endValue : value <= endValue; value += down ? -step : step) { state.vars[match[1]] = value; await executeRange(i + 1, end); if (state.returned) break; }
           i = end;
+        } else if (/^REPEAT$/i.test(line)) {
+          const end = matchingEnd(state.lines, i, /^REPEAT$/i, /^UNTIL\b/i);
+          if (end < 0) { error("Missing UNTIL for REPEAT loop.", i + 1); return; }
+          let guard = 0;
+          do {
+            await executeRange(i + 1, end);
+            if (state.returned) break;
+            if (++guard > 10000) { error("Loop exceeded the iteration limit.", i + 1); return; }
+          } while (!truthy(evalExpr(clean(state.lines[end]).replace(/^UNTIL\s+/i, ""), state)));
+          i = end;
+        } else if (/^CASE\s+/i.test(line)) {
+          const end = matchingEnd(state.lines, i, /^CASE\b/i, /^END\s*CASE$|^ENDCASE$/i);
+          if (end < 0) { error("Missing END CASE.", i + 1); return; }
+          const selector = valueOf(line.replace(/^CASE\s+/i, "").replace(/\s+OF$/i, "").trim(), state);
+          const labels: Array<{ index: number; value?: Value; otherwise?: boolean }> = [];
+          for (let cursor = i + 1; cursor < end; cursor += 1) {
+            const candidate = clean(state.lines[cursor]);
+            const label = candidate.match(/^(.+?):$/);
+            if (!label) continue;
+            if (/^OTHERWISE$/i.test(label[1].trim())) labels.push({ index: cursor, otherwise: true });
+            else labels.push({ index: cursor, value: valueOf(label[1].trim(), state) });
+          }
+          const selected = labels.find(label => !label.otherwise && equalCaseValue(label.value!, selector)) ?? labels.find(label => label.otherwise);
+          if (selected) {
+            const next = labels.find(label => label.index > selected.index);
+            await executeRange(selected.index + 1, next?.index ?? end);
+          }
+          i = end;
         } else if (/^DECLARE\s+/i.test(line)) {
-          for (const name of line.replace(/^DECLARE\s+/i, "").split(/\s*,\s*/)) if (name.trim()) state.vars[name.trim()] = 0;
+          for (const declaration of line.replace(/^DECLARE\s+/i, "").split(/\s*,\s*/)) {
+            const match = declaration.trim().match(/^([A-Za-z_]\w*)\s*(?:AS\s+(.+))?$/i);
+            if (!match) continue;
+            state.vars[match[1]] = /\bARRAY\b/i.test(match[2] ?? "") ? [] : 0;
+          }
         } else if (!/^BEGIN$/i.test(line)) {
-          error(`Unsupported statement: ${line}`, i + 1); return;
+          error(`Unsupported pseudocode statement: ${line}`, i + 1); return;
         }
       }
       i += 1;
@@ -140,7 +185,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
   await executeRange(0, state.lines.length);
   const hasErrors = state.diagnostics.some(diagnostic => diagnostic.severity === "error");
   if (state.trace.length) events.push({ type: "trace", text: traceText(state.trace) });
-  if (state.output.length) events.push({ type: "stdout", text: state.output.join("\n") });
+  if (state.output.length) events.push({ type: "stdout", text: `${state.output.join("\n")}\n` });
   if (state.diagnostics.length) for (const diagnostic of state.diagnostics) events.push({ type: "diagnostic", diagnostic });
   events.push({ type: "status", status: hasErrors ? "failed" : "completed" }, { type: "exit", code: hasErrors ? 1 : 0 });
   return { id: request.id, language: request.language, events, diagnostics: state.diagnostics, exitCode: hasErrors ? 1 : 0, durationMs: performance.now() - started };

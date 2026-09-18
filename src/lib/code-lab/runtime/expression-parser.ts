@@ -52,7 +52,23 @@ export function evaluateExpression(input: string, context: ExpressionContext): E
   const multiplicative = () => { let left = unary(); while (peek().kind === "operator" && ["*", "/", "%", "MOD", "DIV"].includes((peek() as Extract<Token, { kind: "operator" }>).value)) { const op = (consume() as Extract<Token, { kind: "operator" }>).value; const right = unary(); if ((op === "/" || op === "%" || op === "MOD" || op === "DIV") && numeric(right) === 0) throw new Error("Division by zero."); left = op === "*" ? numeric(left) * numeric(right) : op === "/" ? numeric(left) / numeric(right) : op === "%" || op === "MOD" ? numeric(left) % numeric(right) : Math.trunc(numeric(left) / numeric(right)); } return left; };
   const additive = () => { let left = multiplicative(); while (peek().kind === "operator" && ["+", "-"].includes((peek() as Extract<Token, { kind: "operator" }>).value)) { const op = (consume() as Extract<Token, { kind: "operator" }>).value; const right = multiplicative(); left = op === "+" && (typeof left === "string" || typeof right === "string") ? String(left) + String(right) : op === "+" ? numeric(left) + numeric(right) : numeric(left) - numeric(right); } return left; };
   const comparison = () => { let left = additive(); while (peek().kind === "operator" && ["<", ">", "<=", ">=", "=", "==", "!="].includes((peek() as Extract<Token, { kind: "operator" }>).value)) { const op = (consume() as Extract<Token, { kind: "operator" }>).value; const right = additive(); if (op === "=" || op === "==") left = equal(left, right); else if (op === "!=") left = !equal(left, right); else if (op === "<") left = numeric(left) < numeric(right); else if (op === ">") left = numeric(left) > numeric(right); else if (op === "<=") left = numeric(left) <= numeric(right); else left = numeric(left) >= numeric(right); } return left; };
-  const andExpr = () => { let left = comparison(); while (peek().kind === "operator" && (peek() as Extract<Token, { kind: "operator" }>).value === "AND") { consume(); left = truthy(left) && truthy(comparison()); } return left; };
-  const orExpr = () => { let left = andExpr(); while (peek().kind === "operator" && (peek() as Extract<Token, { kind: "operator" }>).value === "OR") { consume(); left = truthy(left) || truthy(andExpr()); } return left; };
+  const andExpr = () => {
+    let left = comparison();
+    while (peek().kind === "operator" && (peek() as Extract<Token, { kind: "operator" }>).value === "AND") {
+      consume();
+      const right = comparison();
+      left = truthy(left) && truthy(right);
+    }
+    return left;
+  };
+  const orExpr = () => {
+    let left = andExpr();
+    while (peek().kind === "operator" && (peek() as Extract<Token, { kind: "operator" }>).value === "OR") {
+      consume();
+      const right = andExpr();
+      left = truthy(left) || truthy(right);
+    }
+    return left;
+  };
   const result = orExpr(); if (peek().kind !== "eof") throw new Error("Unexpected tokens after expression."); return result;
 }
