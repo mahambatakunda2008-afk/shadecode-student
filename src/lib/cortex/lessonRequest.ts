@@ -69,7 +69,7 @@ function extractTopic(prompt: string, subject: string) {
 
 function inferRequestShape(prompt: string, goal: string, intent: LessonIntent) {
   const text = `${prompt} ${goal}`.toLowerCase();
-  const depth = /\b(from (the )?basics|step[- ]by[- ]step|in depth|deep dive|thorough|comprehensive|detailed|properly|master|mastery)\b/.test(text)
+  const depth: "quick" | "standard" | "deep" = /\b(from (the )?basics|step[- ]by[- ]step|in depth|deep dive|thorough|comprehensive|detailed|properly|master|mastery)\b/.test(text)
     ? "deep"
     : /\b(quick|brief|short|summary|fast|recap)\b/.test(text)
       ? "quick"
@@ -82,7 +82,8 @@ function inferRequestShape(prompt: string, goal: string, intent: LessonIntent) {
     /\b(code|program|programming|algorithm|trace|debug|implement)\b/.test(text) && "code or algorithm reasoning",
   ].filter(Boolean) as string[];
   if (intent === "practice" && !requestedParts.includes("worked examples")) requestedParts.unshift("worked examples");
-  return { depth, requestedParts };
+  const broadTopic = /\b(organic chemistry|inorganic chemistry|physical chemistry|mechanics|electricity and magnetism|electromagnetism|waves|thermodynamics|calculus|algebra|trigonometry|statistics|probability|kinematics|dynamics|genetics|cell biology|ecology|evolution|number systems|data structures|algorithms|object oriented programming|database systems|computer networks)\b/i.test(prompt);
+  return { depth, requestedParts, broadTopic };
 }
 
 export function resolveLessonRequest(input: LessonRequest) {
@@ -106,6 +107,7 @@ export function resolveLessonRequest(input: LessonRequest) {
     difficulty: input.difficulty ?? "medium",
     intent,
     depth: shape.depth,
+    broadTopic: shape.broadTopic,
     requestedParts: shape.requestedParts,
     commandLike,
     ambiguousSubject: !explicitSubject && !subject,
@@ -123,6 +125,7 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
     `Difficulty: ${request.difficulty}`,
     `Requested depth: ${request.depth}`,
     request.requestedParts.length > 0 && `Explicitly requested components: ${request.requestedParts.join(", ")}`,
+    request.broadTopic && `Topic scope: broad discipline/topic, so this request should be taught as a connected mini-course rather than a single thin lesson.`,
   ].filter(Boolean).join("\n");
 
   const intentContract = {
@@ -139,5 +142,6 @@ export function buildResolvedLessonPrompt(request: ReturnType<typeof resolveLess
 
   const presentationContract = `Presentation contract: this is an interactive learning session, not an essay. Organize information into small, purposeful learning units. Never produce wall-of-text paragraphs. Use short lines and explicit labels. Put each distinct idea, definition, formula, step, question, warning or takeaway on its own line. Use '- ' for compact lists and numbered lines for ordered reasoning. Worked examples use separate Given:, Method:, Step 1:, Step 2:, Answer: lines. Proofs use one transformation per numbered line. Formulas go on their own lines with symbols explained separately. Checkpoints use Question: and Think: on separate lines and should not reveal the answer in the same checkpoint block. Exam transfer, when actually relevant, uses Question:, Approach:, Examiner looks for:. Keep lines concise. No markdown tables. No filler headings such as Demanded worked example, Distribution myth, Verification habit, or other labels that sound like internal template instructions. Headings should describe the actual learning content.`;
 
-  return `${context}\n\nLearner's exact request: ${request.prompt}\n\nIntent interpretation: ${intentContract}\n${requestedContract}\n\n${presentationContract}\n\nScope and reasoning rules:\n- Treat the learner's exact request as the primary source of intent. Do not let a generic goal such as "master ..." override a more specific command such as "teach me ...".\n- Normalize obvious spelling errors in the learner's wording internally while preserving the intended topic. Do not teach the misspelled token as if it were a different concept.\n- Distinguish the learning action from the topic. "Teach me integration" means teach integration. "Give me integration questions" means practice integration. "Compare integration and differentiation" means comparison.\n- Keep the lesson centered on the requested topic. Related concepts are allowed only when they are prerequisites, necessary distinctions, or direct applications of the requested topic.\n- A broad topic may be decomposed into a sensible sequence, but do not silently expand it into every adjacent chapter.\n- Do not force a fixed twelve-section template. The number and type of blocks should follow the learner's intent and topic.\n- If an application, exam transfer, proof, derivation, formula, or prerequisite is not relevant to the requested topic, leave it out.\n- If the learner did not ask for an exam-focused lesson, do not invent exam claims or arbitrary exam questions. Curriculum context may inform accuracy, but it does not change the learner's requested intent.\n- Every example and numerical result must have enough information to make the result meaningful. Never output an unexplained answer such as a bare number.\n- Every checkpoint must actually test the learner and should not immediately disclose its answer.\n- Do not invent official syllabus requirements, past-paper provenance, mark allocations, examiner expectations, or board-specific claims.\n- If verified curriculum context is supplied, use its objectives to constrain scope. Do not merely paste objectives into the lesson.`;
+  return `${context}\n\nLearner's exact request: ${request.prompt}\n\nIntent interpretation: ${intentContract}\n${requestedContract}\n\n${presentationContract}\n\nScope and reasoning rules:\n- Treat the learner's exact request as the primary source of intent. Do not let a generic goal such as "master ..." override a more specific command such as "teach me ...".\n- Normalize obvious spelling errors in the learner's wording internally while preserving the intended topic. Do not teach the misspelled token as if it were a different concept.\n- Distinguish the learning action from the topic. "Teach me integration" means teach integration. "Give me integration questions" means practice integration. "Compare integration and differentiation" means comparison.\n- Keep the lesson centered on the requested topic. Related concepts are allowed only when they are prerequisites, necessary distinctions, or direct applications of the requested topic.\n- A broad topic should be decomposed into its major internal subdomains and taught as a connected mini-course. Do not merely list the subdomains: teach the core idea, relationships, representative example/application, and a checkpoint for the important ones. Do not silently expand into unrelated chapters.
+- For a broad topic, prioritize coverage of the topic's actual internal structure. For example, "organic chemistry" should build from organic foundations and representation into functional groups, characteristic reactions, reaction patterns, synthesis, analysis and the relationships between them, with exact scope governed by the verified curriculum context.\n- Do not force a fixed twelve-section template. The number and type of blocks should follow the learner's intent and topic.\n- If an application, exam transfer, proof, derivation, formula, or prerequisite is not relevant to the requested topic, leave it out.\n- If the learner did not ask for an exam-focused lesson, do not invent exam claims or arbitrary exam questions. Curriculum context may inform accuracy, but it does not change the learner's requested intent.\n- Every example and numerical result must have enough information to make the result meaningful. Never output an unexplained answer such as a bare number.\n- Every checkpoint must actually test the learner and should not immediately disclose its answer.\n- Do not invent official syllabus requirements, past-paper provenance, mark allocations, examiner expectations, or board-specific claims.\n- If verified curriculum context is supplied, use its objectives to constrain scope. Do not merely paste objectives into the lesson.`;
 }
