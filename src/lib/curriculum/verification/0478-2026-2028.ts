@@ -1,4 +1,5 @@
 import type { CurriculumKnowledgeKind } from "../knowledge";
+import type { CurriculumVerificationManifest } from "../verification";
 
 export const CAMBRIDGE_0478_2026_2028_REQUIRED_KINDS: CurriculumKnowledgeKind[] = [
   "topic", "content_scope", "competency", "skill", "progression", "assessment_requirement",
@@ -22,3 +23,18 @@ export const CAMBRIDGE_0478_2026_2028_DOCUMENT = {
   syllabusId: "0478", syllabusVersion: "2026-2028", qualification: "Cambridge IGCSE", subject: "Computer Science",
   officialUrl: "https://www.cambridgeinternational.org/Images/697167-2026-2028-syllabus.pdf", version: 5, pageCount: 56,
 } as const;
+
+
+/**
+ * Authoritative verification contract consumed by the production curriculum gate.
+ * Keep this as the single manifest source. Do not duplicate these expectations in
+ * CI, ingestion scripts, or database seed files.
+ */
+export const CAMBRIDGE_0478_2026_2028_VERIFICATION_MANIFEST: CurriculumVerificationManifest = {
+  syllabusId: CAMBRIDGE_0478_2026_2028_DOCUMENT.syllabusId,
+  syllabusVersion: CAMBRIDGE_0478_2026_2028_DOCUMENT.syllabusVersion,
+  officialUrl: CAMBRIDGE_0478_2026_2028_DOCUMENT.officialUrl,
+  requiredKinds: CAMBRIDGE_0478_2026_2028_REQUIRED_KINDS,
+  topicKeys: CAMBRIDGE_0478_2026_2028_TOPICS,
+  assessment: CAMBRIDGE_0478_2026_2028_ASSESSMENT,
+};
