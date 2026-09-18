@@ -84,7 +84,7 @@ describe("Cambridge 0478 production verification manifest", () => {
   it("fails when assessment evidence disagrees with the manifest", () => {
     const incorrectExtraction = {
       ...extraction,
-      rawText: extraction.rawText.replace("75 marks", "70 marks"),
+      rawText: extraction.rawText\n        .replace("Paper 1 Computer Systems 75 marks", "Paper 1 Computer Systems 70 marks")\n        .replace("Paper 2 Algorithms, Programming and Logic 75 marks", "Paper 2 Algorithms, Programming and Logic 71 marks"),
     };
 
     const result = verifyCurriculumBundle(
