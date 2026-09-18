@@ -86,7 +86,13 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
       if (performance.now() > state.timeoutAt) { error("Algorithm exceeded the execution time limit.", i + 1); return; }
       state.pc = i;
       const line = clean(state.lines[i]);
-      if (!line || isBlockOnly(line) || /^.+:\s*$/.test(line) || /^(?:PROCEDURE|FUNCTION)\b/i.test(line)) { i += 1; continue; }
+      if (!line || isBlockOnly(line) || /^.+:\s*$/.test(line)) { i += 1; continue; }
+      const procedureDeclaration = line.match(/^(?:PROCEDURE|FUNCTION)\s+(\w+)/i);
+      if (procedureDeclaration) {
+        const procedure = state.procedures.get(procedureDeclaration[1].toUpperCase());
+        i = procedure ? procedure.end + 1 : i + 1;
+        continue;
+      }
       const record = (statement: string) => { state.step += 1; state.trace.push({ step: state.step, line: i + 1, statement, variables: Object.fromEntries(Object.entries(state.vars).map(([key, value]) => [key, clone(value)])) }); };
       record(line);
 
