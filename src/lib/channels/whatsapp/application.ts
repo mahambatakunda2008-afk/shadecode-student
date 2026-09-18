@@ -13,7 +13,7 @@ export interface WhatsAppApplicationResult {
   userId: string | null;
 }
 
-const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH"]);
+const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH"]);\nconst HELP_COMMAND = "HELP";
 
 function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
