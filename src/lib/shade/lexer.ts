@@ -1,6 +1,6 @@
 import type { ShadeDiagnostic, ShadeToken } from "./types";
 
-const KEYWORDS = new Set(["show", "input", "if", "else", "while", "for", "in", "function", "return", "true", "false", "none", "and", "or"]);
+const KEYWORDS = new Set(["show", "input", "if", "else", "while", "for", "in", "function", "return", "true", "false", "none", "and", "or", "then"]);
 
 export function lexShade(source: string): { tokens: ShadeToken[]; diagnostics: ShadeDiagnostic[] } {
   const tokens: ShadeToken[] = [];
