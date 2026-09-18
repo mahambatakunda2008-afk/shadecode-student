@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractTopLevelQuestionsFromPages, normalizePageRange } from "./paperLearning";
+import { extractTopLevelQuestionsFromPages, normalizePageRange, selectPaperQuestions } from "./paperLearning";
 
 describe("paper learning page scope", () => {
   it("keeps a valid inclusive page range inside the document", () => {
@@ -38,5 +38,38 @@ describe("paper learning question provenance", () => {
     expect(extractTopLevelQuestionsFromPages([
       { pageNumber: 4, text: "This page contains a diagram and explanatory prose only." },
     ])).toEqual([]);
+  });
+});
+
+
+describe("paper learning question selection", () => {
+  const questions = [
+    { questionNumber: "1", questionText: "Algebra" },
+    { questionNumber: "2", questionText: "Functions" },
+    { questionNumber: "3", questionText: "Trigonometry" },
+  ];
+
+  it("selects only requested top-level questions and preserves order", () => {
+    expect(selectPaperQuestions(questions, ["3", "1"])).toEqual({
+      selected: [questions[0], questions[2]],
+      requestedNumbers: ["3", "1"],
+      missingNumbers: [],
+    });
+  });
+
+  it("reports requested questions that cannot be traced", () => {
+    expect(selectPaperQuestions(questions, ["2", "9"])).toEqual({
+      selected: [questions[1]],
+      requestedNumbers: ["2", "9"],
+      missingNumbers: ["9"],
+    });
+  });
+
+  it("treats an empty selection as full-page scope", () => {
+    expect(selectPaperQuestions(questions, [])).toEqual({
+      selected: questions,
+      requestedNumbers: [],
+      missingNumbers: [],
+    });
   });
 });
