@@ -19,7 +19,8 @@ const DEFAULT_PAGE_END = 8;
 type AuthContext = { supabase: SupabaseClient; user: User };
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
-type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };\ntype QuestionSelection = { questionNumber: string; sourcePageStart: number; sourcePageEnd: number; questionText: string; marks: number | null; extractionConfidence: number; extractionMethod: string };
+type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
+type QuestionSelection = { questionNumber: string; sourcePageStart: number; sourcePageEnd: number; questionText: string; marks: number | null; extractionConfidence: number; extractionMethod: string };
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -138,8 +139,11 @@ function safePlan(plan: Plan) {
 function paperPrompt(pages: PaperPage[], questions: ReturnType<typeof extractTopLevelQuestionsFromPages>, selectedQuestionNumbers: string[]) {
   const source = buildPaperSourceText(pages);
   const questionIndex = questions.length
-    ? questions.map(q => `Q${q.questionNumber}: pages ${q.sourcePageStart}-${q.sourcePageEnd}; marks ${q.marks ?? "unknown"}`).join("\n")
+    ? questions.map(q => `Q${q.questionNumber}: pages ${q.sourcePageStart}-${q.sourcePageEnd}; marks ${q.marks ?? "unknown"}; confidence ${q.extractionConfidence}`).join("\n")
     : "No reliable top-level question index was extracted. Do not invent one.";
+  const selection = selectedQuestionNumbers.length
+    ? `ONLY THESE QUESTIONS ARE IN SCOPE: ${selectedQuestionNumbers.map(number => `Q${number}`).join(", ")}. You may use surrounding source text for prerequisites/context, but do not teach or solve unrelated questions.`
+    : "QUESTION SCOPE: all reliably extracted top-level questions in the selected pages.";
 
   return `You are Cortex, the learning engine inside Shadecode Student. Turn the student's actual source pages into a grounded learning session. This is NOT an answer dump and NOT a generic textbook lesson.
 
@@ -148,6 +152,8 @@ ${source}
 
 EXTRACTED QUESTION INDEX
 ${questionIndex}
+
+${selection}
 
 RULES
 1. Stay grounded in the supplied pages. Never invent missing question text, values, diagrams, marks, syllabus claims or provenance.
@@ -209,6 +215,39 @@ export async function POST(req: Request) {
     const range = normalizePageRange(Number.isFinite(requestedStart) ? requestedStart : 1, Number.isFinite(requestedEnd) ? requestedEnd : DEFAULT_PAGE_END, pages.length);
     const selectedPages = pages.slice(range.start - 1, range.end);
     const questions = extractTopLevelQuestionsFromPages(selectedPages);
+    const inspectOnly = String(form.get("inspect") ?? "").toLowerCase() === "1" || String(form.get("inspect") ?? "").toLowerCase() === "true";
+    if (inspectOnly) {
+      const inspectQuestions: QuestionSelection[] = questions.map(question => ({
+        questionNumber: question.questionNumber,
+        sourcePageStart: question.sourcePageStart ?? range.start,
+        sourcePageEnd: question.sourcePageEnd ?? range.end,
+        questionText: question.questionText.slice(0, 1200),
+        marks: question.marks,
+        extractionConfidence: question.extractionConfidence,
+        extractionMethod: question.extractionMethod,
+      }));
+      return NextResponse.json({ pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questions: inspectQuestions });
+    }
+
+    const rawQuestionSelection = form.get("questionNumbers");
+    let requestedQuestionNumbers: string[] = [];
+    if (typeof rawQuestionSelection === "string" && rawQuestionSelection.trim()) {
+      try {
+        const parsed = JSON.parse(rawQuestionSelection);
+        if (Array.isArray(parsed)) requestedQuestionNumbers = parsed.filter((value): value is string => typeof value === "string").map(value => value.trim()).filter(Boolean);
+      } catch {
+        requestedQuestionNumbers = rawQuestionSelection.split(",").map(value => value.trim()).filter(Boolean);
+      }
+    }
+    requestedQuestionNumbers = [...new Set(requestedQuestionNumbers)].slice(0, 40);
+    const availableQuestionNumbers = new Set(questions.map(question => question.questionNumber));
+    const selectedQuestionNumbers = requestedQuestionNumbers.filter(number => availableQuestionNumbers.has(number));
+    if (requestedQuestionNumbers.length > 0 && selectedQuestionNumbers.length === 0) {
+      return NextResponse.json({ error: "None of the selected questions could be traced to the extracted paper." }, { status: 422 });
+    }
+    const scopedQuestions = selectedQuestionNumbers.length
+      ? questions.filter(question => selectedQuestionNumbers.includes(question.questionNumber))
+      : questions;
 
     const { data: session, error: insertError } = await auth.supabase.from("paper_learning_sessions").insert({
       user_id: auth.user.id,
