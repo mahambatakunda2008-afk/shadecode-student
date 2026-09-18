@@ -72,7 +72,13 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
   state.procedures = collectProcedures(state.lines);
   const events: RuntimeResult["events"] = [{ type: "status", status: "starting" }, { type: "status", status: "running" }];
   const error = (message: string, line = state.pc + 1) => state.diagnostics.push({ severity: "error", message, file: request.entryFile, line, source: "language" });
-  const readInput = (prompt?: string) => { if (prompt) state.output.push(display(evalExpr(prompt, state))); return state.inputs[state.inputIndex++] ?? ""; };
+  const readInput = (prompt?: string) => {
+    if (prompt) state.output.push(display(evalExpr(prompt, state)));
+    const raw = state.inputs[state.inputIndex++] ?? "";
+    if (/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw.trim())) return Number(raw);
+    if (/^(?:true|false)$/i.test(raw.trim())) return raw.trim().toLowerCase() === "true";
+    return raw;
+  };
 
   const executeRange = async (from: number, to: number): Promise<void> => {
     let i = from;
@@ -80,7 +86,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
       if (performance.now() > state.timeoutAt) { error("Algorithm exceeded the execution time limit.", i + 1); return; }
       state.pc = i;
       const line = clean(state.lines[i]);
-      if (!line || isBlockOnly(line) || /^(?:PROCEDURE|FUNCTION)\b/i.test(line)) { i += 1; continue; }
+      if (!line || isBlockOnly(line) || /^.+:\s*$/.test(line) || /^(?:PROCEDURE|FUNCTION)\b/i.test(line)) { i += 1; continue; }
       const record = (statement: string) => { state.step += 1; state.trace.push({ step: state.step, line: i + 1, statement, variables: Object.fromEntries(Object.entries(state.vars).map(([key, value]) => [key, clone(value)])) }); };
       record(line);
 
@@ -110,7 +116,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
         if (assignment) {
           const target = assignment[1].replace(/\s+/g, ""); const value = valueOf(assignment[2], state);
           const indexed = target.match(/^([A-Za-z_]\w*)\[(.+)\]$/);
-          if (indexed) { const array = state.vars[indexed[1]]; if (!Array.isArray(array)) { error(`Variable ${indexed[1]} is not an array.`, i + 1); return; } const index = Math.trunc(numeric(valueOf(indexed[2], state))) - 1; if (index < 0 || index >= array.length) { error("Array index out of bounds.", i + 1); return; } array[index] = value as Scalar; }
+          if (indexed) { const array = state.vars[indexed[1]]; if (!Array.isArray(array)) { error(`Variable ${indexed[1]} is not an array.`, i + 1); return; } const index = Math.trunc(numeric(valueOf(indexed[2], state))) - 1; if (index < 0) { error("Array index out of bounds.", i + 1); return; } while (array.length <= index) array.push(0); array[index] = value as Scalar; }
           else state.vars[target] = value;
         } else if (/^IF\s+/i.test(line)) {
           const end = matchingEnd(state.lines, i, /^IF\b/i, /^END\s*IF$|^ENDIF$/i); if (end < 0) { error("Missing END IF.", i + 1); return; }
