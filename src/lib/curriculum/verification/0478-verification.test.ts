@@ -21,8 +21,8 @@ const extraction: CurriculumExtraction = {
   sections: [],
   rawText: [
     "Cambridge IGCSE Computer Science 0478 2026-2028",
-    "Paper 1 Computer Systems 75 marks 105 minutes 50 percent calculators false externally assessed",
-    "Paper 2 Algorithms, Programming and Logic 75 marks 105 minutes 50 percent calculators false externally assessed",
+    "Paper 1 Computer Systems 75 marks 105 minutes 50 percent topics 1-6 calculators false externally assessed true",
+    "Paper 2 Algorithms, Programming and Logic 75 marks 105 minutes 50 percent topics 7-10 calculators false externally assessed true",
     "AO1 40 AO2 40 AO3 20",
   ].join("\n"),
 };
