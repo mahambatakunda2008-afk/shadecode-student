@@ -73,7 +73,7 @@ function metadataString(item: CurriculumKnowledgeDraft, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-function hasTextEvidence(text: string, expected: string | number): boolean {
+function hasTextEvidence(text: string, expected: string | number | boolean): boolean {
   return normalise(text).includes(normalise(String(expected)));
 }
 
