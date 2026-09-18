@@ -4,6 +4,14 @@ export type LessonQualityRequest = {
   topic: string;
   prompt: string;
   requestedParts: string[];
+  level?: string;
+  goal?: string;
+  examBoard?: string;
+  difficulty?: "easy" | "medium" | "hard";
+  depth?: "quick" | "standard" | "deep";
+  broadTopic?: boolean;
+  commandLike?: boolean;
+  ambiguousSubject?: boolean;
 };
 
 export type LessonQualityBlock = { type: string; title?: string; content: string };
@@ -61,6 +69,8 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
 
   if (normalized.length > 18) failures.push("too-many-blocks");
   if (normalized.length < 4) failures.push("insufficient-structure");
+  if (request.depth === "deep" && normalized.length < 10) failures.push("deep-session-too-thin");
+  if (request.broadTopic && normalized.length < 12) failures.push("broad-topic-too-thin");
   if (["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p))) failures.push("generic-language");
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
@@ -88,7 +98,9 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   if (!has("summary") && !/key takeaway|in summary|to recap|remember that|you should now be able to/i.test(searchableText)) failures.push("summary");
 
   const topicRelevantCount = normalized.filter(block => hasTopicSignal(block, tokens)).length;
-  const requiredRelevant = Math.max(2, Math.ceil(normalized.length * 0.45));
+  const requiredRelevant = request.broadTopic
+    ? Math.max(2, Math.ceil(normalized.length * 0.25))
+    : Math.max(2, Math.ceil(normalized.length * 0.45));
   if (tokens.length > 0 && topicRelevantCount < requiredRelevant) failures.push("topic-drift");
 
   const titleText = (lesson.title ?? "").toLowerCase();
