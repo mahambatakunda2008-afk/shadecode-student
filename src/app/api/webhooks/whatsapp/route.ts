@@ -48,11 +48,16 @@ function parseLinkCommand(text: string): string | null {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
+  if (!verifyToken) {
+    return NextResponse.json({ error: "WhatsApp webhook is not configured." }, { status: 503 });
+  }
+
   const challenge = verifyWhatsAppChallenge({
     mode: url.searchParams.get("hub.mode"),
     token: url.searchParams.get("hub.verify_token"),
     challenge: url.searchParams.get("hub.challenge"),
-    expectedToken: getRequiredEnv("WHATSAPP_VERIFY_TOKEN"),
+    expectedToken: verifyToken,
   });
 
   if (challenge === null) return new NextResponse("Forbidden", { status: 403 });
@@ -62,8 +67,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-hub-signature-256");
+  const appSecret = process.env.WHATSAPP_APP_SECRET?.trim();
+  if (!appSecret) {
+    return NextResponse.json({ error: "WhatsApp webhook is not configured." }, { status: 503 });
+  }
 
-  if (!verifyWhatsAppSignature(rawBody, signature, getRequiredEnv("WHATSAPP_APP_SECRET"))) {
+  if (!verifyWhatsAppSignature(rawBody, signature, appSecret)) {
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
   }
 
