@@ -82,7 +82,7 @@ function inferRequestShape(prompt: string, goal: string, intent: LessonIntent) {
     /\b(code|program|programming|algorithm|trace|debug|implement)\b/.test(text) && "code or algorithm reasoning",
   ].filter(Boolean) as string[];
   if (intent === "practice" && !requestedParts.includes("worked examples")) requestedParts.unshift("worked examples");
-  const broadTopic = /\\b(organic chemistry|inorganic chemistry|physical chemistry|mechanics|electricity and magnetism|electromagnetism|waves|thermodynamics|calculus|algebra|trigonometry|statistics|probability|kinematics|dynamics|genetics|cell biology|ecology|evolution|number systems|data structures|algorithms|object oriented programming|database systems|computer networks)\\b/i.test(prompt);
+  const broadTopic = /\b(organic chemistry|inorganic chemistry|physical chemistry|mechanics|electricity and magnetism|electromagnetism|waves|thermodynamics|calculus|algebra|trigonometry|statistics|probability|kinematics|dynamics|genetics|cell biology|ecology|evolution|number systems|data structures|algorithms|object oriented programming|database systems|computer networks)\b/i.test(prompt);
   return { depth, requestedParts, broadTopic };
 }
 
