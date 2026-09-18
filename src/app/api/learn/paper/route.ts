@@ -263,7 +263,7 @@ export async function POST(req: Request) {
     }).select("id").single();
     if (insertError || !session?.id) return NextResponse.json({ error: "The paper was read but the learning session could not be created." }, { status: 500 });
 
-    const raw = await callAI(paperPrompt(selectedPages, scopedQuestions), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
+    const raw = await callAI(paperPrompt(selectedPages, scopedQuestions, selectedQuestionNumbers), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
     const plan = raw ? parsePlan(raw) : null;
     if (!plan) {
       await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })), error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
