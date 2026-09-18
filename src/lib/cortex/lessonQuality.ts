@@ -4,8 +4,14 @@ export type LessonQualityRequest = {
   topic: string;
   prompt: string;
   requestedParts: string[];
+  level?: string;
+  goal?: string;
+  examBoard?: string;
+  difficulty?: "easy" | "medium" | "hard";
   depth?: "quick" | "standard" | "deep";
   broadTopic?: boolean;
+  commandLike?: boolean;
+  ambiguousSubject?: boolean;
 };
 
 export type LessonQualityBlock = { type: string; title?: string; content: string };
