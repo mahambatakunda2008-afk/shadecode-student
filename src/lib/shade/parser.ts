@@ -66,7 +66,10 @@ class Parser {
       }
       if (this.at("\n")) {
         const next = this.tokens[this.index + 1];
-        if (!next || next.kind === "eof" || next.column <= parentColumn || stopKeywords.includes(next.value)) break;
+        if (!next || next.kind === "eof" || next.column <= parentColumn || stopKeywords.includes(next.value)) {
+          this.skipLines();
+          break;
+        }
         this.skipLines();
       }
     }
