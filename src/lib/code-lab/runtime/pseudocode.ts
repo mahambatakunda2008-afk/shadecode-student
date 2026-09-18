@@ -134,10 +134,42 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
           const down = /DOWNTO/i.test(line); const startValue = Math.trunc(numeric(valueOf(match[2], state))); const endValue = Math.trunc(numeric(valueOf(match[3], state))); const step = Math.abs(Math.trunc(numeric(valueOf(match[4] ?? "1", state)))) || 1;
           for (let value = startValue; down ? value >= endValue : value <= endValue; value += down ? -step : step) { state.vars[match[1]] = value; await executeRange(i + 1, end); if (state.returned) break; }
           i = end;
+        } else if (/^REPEAT$/i.test(line)) {
+          const end = matchingEnd(state.lines, i, /^REPEAT$/i, /^UNTIL\b/i);
+          if (end < 0) { error("Missing UNTIL for REPEAT loop.", i + 1); return; }
+          let guard = 0;
+          do {
+            await executeRange(i + 1, end);
+            if (state.returned) break;
+            if (++guard > 10000) { error("Loop exceeded the iteration limit.", i + 1); return; }
+          } while (!truthy(evalExpr(clean(state.lines[end]).replace(/^UNTIL\s+/i, ""), state)));
+          i = end;
+        } else if (/^CASE\s+/i.test(line)) {
+          const end = matchingEnd(state.lines, i, /^CASE\b/i, /^END\s*CASE$|^ENDCASE$/i);
+          if (end < 0) { error("Missing END CASE.", i + 1); return; }
+          const selector = valueOf(line.replace(/^CASE\s+/i, "").replace(/\s+OF$/i, "").trim(), state);
+          const labels: Array<{ index: number; value?: Value; otherwise?: boolean }> = [];
+          for (let cursor = i + 1; cursor < end; cursor += 1) {
+            const candidate = clean(state.lines[cursor]);
+            const label = candidate.match(/^(.+?):$/);
+            if (!label) continue;
+            if (/^OTHERWISE$/i.test(label[1].trim())) labels.push({ index: cursor, otherwise: true });
+            else labels.push({ index: cursor, value: valueOf(label[1].trim(), state) });
+          }
+          const selected = labels.find(label => !label.otherwise && equalCaseValue(label.value!, selector)) ?? labels.find(label => label.otherwise);
+          if (selected) {
+            const next = labels.find(label => label.index > selected.index);
+            await executeRange(selected.index + 1, next?.index ?? end);
+          }
+          i = end;
         } else if (/^DECLARE\s+/i.test(line)) {
-          for (const name of line.replace(/^DECLARE\s+/i, "").split(/\s*,\s*/)) if (name.trim()) state.vars[name.trim()] = 0;
+          for (const declaration of line.replace(/^DECLARE\s+/i, "").split(/\s*,\s*/)) {
+            const match = declaration.trim().match(/^([A-Za-z_]\w*)\s*(?:AS\s+(.+))?$/i);
+            if (!match) continue;
+            state.vars[match[1]] = /\bARRAY\b/i.test(match[2] ?? "") ? [] : 0;
+          }
         } else if (!/^BEGIN$/i.test(line)) {
-          error(`Unsupported statement: ${line}`, i + 1); return;
+          error(`Unsupported pseudocode statement: ${line}`, i + 1); return;
         }
       }
       i += 1;
