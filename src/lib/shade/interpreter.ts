@@ -131,7 +131,7 @@ export function runShade(source: string, options: ShadeRunOptions = {}): ShadeEx
     switch (statement.type) {
       case "assignment": scope.values.set(statement.name, evaluate(statement.expression, scope)); break;
       case "show": stdout.push(valueText(evaluate(statement.expression, scope))); break;
-      case "input": if (statement.prompt) evaluate(statement.prompt, scope); scope.values.set(statement.name, inputs.shift() ?? ""); break;
+      case "input": if (statement.prompt) evaluate(statement.prompt, scope); { const raw = inputs.shift() ?? ""; const value = /^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw.trim()) ? Number(raw) : /^(?:true|false)$/i.test(raw.trim()) ? raw.trim().toLowerCase() === "true" : raw; scope.values.set(statement.name, value); } break;
       case "expression": evaluate(statement.expression, scope); break;
       case "function": scope.values.set(statement.name, { params: statement.params, body: statement.body }); break;
       case "return": throw new ShadeReturn(statement.expression ? evaluate(statement.expression, scope) : null);
