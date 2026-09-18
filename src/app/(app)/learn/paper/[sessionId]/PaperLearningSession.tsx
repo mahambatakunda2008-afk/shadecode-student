@@ -65,9 +65,6 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const currentBlock = checkpoints.find(block => block.id === currentId) ?? null;
   const completedCount = checkpoints.filter(block => completedIds.has(block.id)).length;
   const allComplete = checkpoints.length > 0 && completedCount === checkpoints.length;
-  const selectedQuestionNumbers = session.source_metadata?.selectedQuestionNumbers ?? [];
-  const uncertainQuestions = (session.source_metadata?.questionIndex ?? []).filter(question => question.extractionConfidence < 0.95);
-
   function selectCheckpoint(id: string) {
     setActiveId(id); setAnswer(""); setResult(null); setHint(null); setRevealed(null); setActionError(null); setInteraction(null);
   }
@@ -117,6 +114,8 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
 
   if (!session && !error) return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[var(--primary)]" /><p className="mt-3 text-sm text-[var(--muted-foreground)]">Opening your learning session…</p></div></main>;
   if (!session) return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><p className="font-semibold">{error}</p><button type="button" onClick={() => router.push("/learn")} className="mt-4 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--primary-foreground)]">Back to Learn</button></div></main>;
+  const selectedQuestionNumbers = session.source_metadata?.selectedQuestionNumbers ?? [];
+  const uncertainQuestions = (session.source_metadata?.questionIndex ?? []).filter(question => question.extractionConfidence < 0.95);
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
