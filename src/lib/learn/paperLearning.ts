@@ -67,3 +67,73 @@ export function normalizePageRange(start: number, end: number, pageCount: number
   const safeEnd = Math.max(safeStart, Math.min(pageCount, Math.trunc(end)));
   return { start: safeStart, end: safeEnd };
 }
+
+type NumberedQuestionStart = {
+  pageNumber: number;
+  lineIndex: number;
+  number: string;
+};
+
+const TOP_LEVEL_QUESTION_RE = /^\s*(\d{1,3})[.)](?:\s+|$)/;
+const MARKS_RE = /\[(\d{1,3})\]\s*$/;
+
+function findTopLevelQuestionStarts(pages: Array<Pick<PaperPage, "pageNumber" | "text">>) {
+  const starts: NumberedQuestionStart[] = [];
+  for (const page of pages) {
+    const lines = page.text.split(/\r?\n/);
+    lines.forEach((line, lineIndex) => {
+      const match = line.match(TOP_LEVEL_QUESTION_RE);
+      if (!match) return;
+      starts.push({ pageNumber: page.pageNumber, lineIndex, number: match[1] });
+    });
+  }
+  return starts;
+}
+
+export function extractTopLevelQuestionsFromPages(
+  pages: Array<Pick<PaperPage, "pageNumber" | "text">>,
+): PaperQuestion[] {
+  const starts = findTopLevelQuestionStarts(pages);
+  if (!starts.length) return [];
+
+  const pageLines = new Map(pages.map((page) => [page.pageNumber, page.text.split(/\r?\n/)]));
+  const questions: PaperQuestion[] = [];
+
+  for (let index = 0; index < starts.length; index += 1) {
+    const start = starts[index];
+    const next = starts[index + 1];
+    const collected: string[] = [];
+    let sourcePageEnd = start.pageNumber;
+
+    for (const page of pages) {
+      if (page.pageNumber < start.pageNumber || (next && page.pageNumber > next.pageNumber)) continue;
+      const lines = pageLines.get(page.pageNumber) ?? [];
+      const from = page.pageNumber === start.pageNumber ? start.lineIndex : 0;
+      let to = lines.length;
+      if (next && page.pageNumber === next.pageNumber) to = next.lineIndex;
+      if (page.pageNumber === start.pageNumber && next?.pageNumber === start.pageNumber) {
+        to = next.lineIndex;
+      }
+      if (from < to) collected.push(...lines.slice(from, to));
+      if (page.pageNumber >= start.pageNumber) sourcePageEnd = page.pageNumber;
+    }
+
+    const questionText = collected.join("\n").trim();
+    if (!questionText) continue;
+
+    const marksMatches = [...questionText.matchAll(/\[(\d{1,3})\]/g)];
+    const marks = marksMatches.length ? Number(marksMatches[marksMatches.length - 1][1]) : null;
+
+    questions.push({
+      questionNumber: start.number,
+      sourcePageStart: start.pageNumber,
+      sourcePageEnd,
+      questionText: questionText.replace(/\n\s*\(\s*[a-z]\s*\)[^\n]*/gi, "").trim(),
+      extractionMethod: "deterministic-top-level-numbering",
+      extractionConfidence: 0.96,
+      marks,
+    });
+  }
+
+  return questions;
+}
