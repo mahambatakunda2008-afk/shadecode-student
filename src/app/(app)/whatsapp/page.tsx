@@ -12,7 +12,7 @@ const capabilities = [
   { icon: Bell, title: "Stay on track", text: "Receive useful study reminders and learning updates." },
 ];
 
-const commands = ["HELP", "LEARN Biology: cell structure", "EXPLAIN Physics: momentum", "TEACH Mathematics: differentiation", "PROGRESS", "PLAN"];
+const commands = ["HELP", "LEARN Biology: cell structure", "EXPLAIN Physics: momentum", "TEACH Mathematics: differentiation"];
 
 type Status = { connected: boolean; status: "active" | "blocked" | "unlinked"; phone: string | null; whatsappNumber: string | null };
 
@@ -57,7 +57,7 @@ export default function WhatsAppPage() {
           <Link href="/settings" className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--primary-foreground)] hover:opacity-90">{status?.connected ? "Manage connection" : "Connect WhatsApp in Settings"} <ArrowRight size={16} /></Link>
           {waLink && <a href={waLink} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-[var(--primary)] hover:underline">Open Shadecode on WhatsApp <ExternalLink size={15} /></a>}
           <div className="mt-6 border-t border-[var(--card-border)] pt-5"><p className="text-sm font-semibold">Things you can say</p><div className="mt-3 grid gap-2">{commands.map((command) => <code key={command} className="rounded-xl bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--foreground)]">{command}</code>)}</div></div>
-          <p className="mt-5 text-xs leading-5 text-[var(--muted-foreground)]">Natural language works too. For example: “teach me organic chemistry” or “explain momentum.” Shadecode uses your configured subjects rather than inventing a General subject.</p>
+          <p className="mt-5 text-xs leading-5 text-[var(--muted-foreground)]">Use a command prefix such as “teach me organic chemistry” or “explain momentum.” Shadecode uses your configured subjects rather than inventing a General subject.</p>
         </div>
       </section>
     </div>
