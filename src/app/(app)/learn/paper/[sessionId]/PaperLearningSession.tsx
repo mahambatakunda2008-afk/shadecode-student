@@ -18,7 +18,8 @@ type Session = {
   progress?: { completedBlockIds?: string[]; lastBlockId?: string; lastVerdict?: string };
   updated_at: string;
 };
-type Evaluation = { verdict: "correct" | "partially_correct" | "incorrect"; feedback: string; misconception?: string | null; nextAction?: string | null; hint?: string | null; solution?: string | null; attemptCount: number; completed: boolean };\ntype InteractionResponse = { action: string; message?: string; question?: string; attemptCount?: number };
+type Evaluation = { verdict: "correct" | "partially_correct" | "incorrect"; feedback: string; misconception?: string | null; nextAction?: string | null; hint?: string | null; solution?: string | null; attemptCount: number; completed: boolean };
+type InteractionResponse = { action: string; message?: string; question?: string; attemptCount?: number };
 
 const cacheKey = (id: string) => `shadecode:paper-session:${id}`;
 const isCheckpoint = (block: Block) => block.type === "checkpoint" || block.type === "mastery";
@@ -34,7 +35,8 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const [result, setResult] = useState<Evaluation | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);\n  const [interaction, setInteraction] = useState<InteractionResponse | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [interaction, setInteraction] = useState<InteractionResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
