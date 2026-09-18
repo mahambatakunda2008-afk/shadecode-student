@@ -13,7 +13,7 @@ export interface WhatsAppApplicationResult {
   userId: string | null;
 }
 
-const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH"]);\nconst HELP_COMMAND = "HELP";
+const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH"]);
 
 function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -57,6 +57,17 @@ export async function dispatchWhatsAppTextEvent(event: ParsedWhatsAppTextEvent):
   const identity = await resolveChannelIdentity("whatsapp", event.externalUserId);
   if (!identity) return { event, userId: null, response: unlinkedWhatsAppResponse() };
   if (identity.status !== "active") return { event, userId: identity.userId, response: inactiveWhatsAppResponse(identity.status) };
+
+  if (normalize(event.text) === "help") {
+    return {
+      event,
+      userId: identity.userId,
+      response: {
+        text: "Shadecode WhatsApp commands:\n\n• LEARN <topic>\n• LEARN <subject>: <topic>\n• EXPLAIN <topic>\n• TEACH <topic>\n\nExample: LEARN Mathematics: quadratic functions",
+        metadata: { status: "help", role: identity.role, channel: "whatsapp" },
+      },
+    };
+  }
 
   const request = parseLearningRequest(event.text);
   if (!request) {
