@@ -258,7 +258,7 @@ export async function POST(req: Request) {
       selected_page_start: range.start,
       selected_page_end: range.end,
       status: "processing",
-      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers },
+      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })) },
       pages: selectedPages,
       learning_plan: {},
       progress: {},
@@ -268,7 +268,7 @@ export async function POST(req: Request) {
     const raw = await callAI(paperPrompt(selectedPages, scopedQuestions), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
     const plan = raw ? parsePlan(raw) : null;
     if (!plan) {
-      await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
+      await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })), error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
       return NextResponse.json({ error: "Cortex couldn't turn these pages into a reliable learning session. The extracted paper is still preserved so you can retry." }, { status: 422 });
     }
 
