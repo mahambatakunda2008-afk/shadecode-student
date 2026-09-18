@@ -191,7 +191,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const { sessionId } = await context.params;
     const body = await req.json().catch(() => ({})) as { blockId?: unknown; action?: unknown; response?: unknown };
     const blockId = typeof body.blockId === "string" ? body.blockId.trim().slice(0, 80) : "";
-    const action = body.action === "hint" || body.action === "reveal" ? body.action : "submit";
+    const action = body.action === "hint" || body.action === "reveal" || body.action === "teach-page" || body.action === "explain-step" || body.action === "why" || body.action === "quiz" ? body.action : "submit";
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
     if (!blockId) return NextResponse.json({ error: "Checkpoint is missing." }, { status: 400 });
     if (action === "submit" && !responseText) return NextResponse.json({ error: "Write an attempt before submitting." }, { status: 400 });
@@ -234,6 +234,35 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     }
 
     const sourcePages = (session.pages as Array<{ pageNumber: number; text: string }>).filter(page => (block.sourcePages ?? []).includes(page.pageNumber));
+
+    if (action === "teach-page" || action === "explain-step" || action === "why" || action === "quiz") {
+      const source = sourcePages.length
+        ? sourcePages.map(page => `PAGE ${page.pageNumber}\n${page.text.slice(0, 9000)}`).join("\n\n")
+        : `Selected paper pages ${session.selected_page_start}-${session.selected_page_end}.`;
+      const actionInstruction = action === "teach-page"
+        ? "Teach the selected source page(s) as a short, grounded explanation. Start with what the page is testing, then prerequisites, then the method and why it works. Do not solve a question unless needed to explain the method."
+        : action === "explain-step"
+          ? "Explain the next useful reasoning step for the checkpoint. Do not dump the full solution. Explain why that step is justified."
+          : action === "why"
+            ? "Explain why the key method or step in this checkpoint works. Connect the reasoning to the underlying concept, not just a rule."
+            : "Create one NEW short mastery question testing the same concept as this checkpoint, but with different values or context. Include the question, what skill it tests, and a compact answer hidden from the student UI contract.";
+      const actionPrompt = `You are Cortex inside Shadecode Student. Respond only from the supplied checkpoint and source pages. Never invent source facts. Student action: ${action}.\n\nCHECKPOINT\n${block.interaction.prompt}\n\nCONTEXT\n${block.content}\n\nEXPECTED CONCEPTS\n${(block.interaction.expectedConcepts ?? []).join(", ") || "not specified"}\n\nSOURCE\n${source}\n\nINSTRUCTION\n${actionInstruction}\n\nReturn JSON: {"message":"student-facing response","question":"only for quiz, otherwise empty","answer":"only for quiz, keep concise"}`;
+      const raw = await callAI(actionPrompt, 2200, { userId: auth.user.id, feature: "paper_learning", subfeature: `interaction_${action}`, maxChainMs: 18000, perProviderMaxMs: 7000, skipCurriculumGrounding: true });
+      const candidate = raw ? extractObject(raw) : null;
+      if (!candidate) return NextResponse.json({ error: "Cortex couldn't reliably answer that action. Try again." }, { status: 422 });
+      try {
+        const parsed = JSON.parse(candidate) as Record<string, unknown>;
+        const message = typeof parsed.message === "string" ? parsed.message.trim().slice(0, 3500) : "";
+        const question = typeof parsed.question === "string" ? parsed.question.trim().slice(0, 1600) : "";
+        const answer = typeof parsed.answer === "string" ? parsed.answer.trim().slice(0, 1600) : "";
+        if (!message && action !== "quiz") return NextResponse.json({ error: "Cortex returned an incomplete response." }, { status: 422 });
+        return NextResponse.json({ action, message, question: action === "quiz" ? question : "", answer: "" });
+      } catch {
+        return NextResponse.json({ error: "Cortex returned an invalid interaction response." }, { status: 422 });
+      }
+    }
+
+
     const source = sourcePages.length
       ? sourcePages.map(page => `PAGE ${page.pageNumber}\n${page.text.slice(0, 9000)}`).join("\n\n")
       : `Selected paper pages ${session.selected_page_start}-${session.selected_page_end}.`;
