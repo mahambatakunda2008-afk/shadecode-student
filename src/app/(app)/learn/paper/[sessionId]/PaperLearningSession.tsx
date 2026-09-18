@@ -15,6 +15,7 @@ type Session = {
   status: "processing" | "processed" | "failed";
   learning_plan: { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
   pages: Array<{ pageNumber: number; text: string }>;
+  source_metadata?: { selectionMode?: string; selectedQuestionNumbers?: string[]; questionIndex?: Array<{ questionNumber: string; sourcePageStart: number; sourcePageEnd: number; extractionConfidence: number; extractionMethod: string }>; [key: string]: unknown };
   progress?: { completedBlockIds?: string[]; lastBlockId?: string; lastVerdict?: string };
   updated_at: string;
 };
@@ -37,6 +38,8 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const [revealed, setRevealed] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [interaction, setInteraction] = useState<InteractionResponse | null>(null);
+  const [guidedMode, setGuidedMode] = useState(false);
+  const [revealedBlocks, setRevealedBlocks] = useState<string[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -62,7 +65,6 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const currentBlock = checkpoints.find(block => block.id === currentId) ?? null;
   const completedCount = checkpoints.filter(block => completedIds.has(block.id)).length;
   const allComplete = checkpoints.length > 0 && completedCount === checkpoints.length;
-
   function selectCheckpoint(id: string) {
     setActiveId(id); setAnswer(""); setResult(null); setHint(null); setRevealed(null); setActionError(null); setInteraction(null);
   }
@@ -112,6 +114,8 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
 
   if (!session && !error) return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[var(--primary)]" /><p className="mt-3 text-sm text-[var(--muted-foreground)]">Opening your learning session…</p></div></main>;
   if (!session) return <main className="min-h-screen bg-[var(--background)] p-6"><div className="mx-auto max-w-4xl py-16 text-center"><p className="font-semibold">{error}</p><button type="button" onClick={() => router.push("/learn")} className="mt-4 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--primary-foreground)]">Back to Learn</button></div></main>;
+  const selectedQuestionNumbers = session.source_metadata?.selectedQuestionNumbers ?? [];
+  const uncertainQuestions = (session.source_metadata?.questionIndex ?? []).filter(question => question.extractionConfidence < 0.95);
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
@@ -130,18 +134,24 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
             {session.learning_plan.level && <span className="rounded-lg bg-[var(--surface)] px-3 py-2">{session.learning_plan.level}</span>}
             {session.learning_plan.board && <span className="rounded-lg bg-[var(--surface)] px-3 py-2">{session.learning_plan.board}</span>}
           </div>
+          {selectedQuestionNumbers.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs"><span className="font-bold">Question scope:</span> {selectedQuestionNumbers.map(number => `Q${number}`).join(", ")} <span className="text-[var(--muted-foreground)]">with surrounding page context</span></div>}
+          {uncertainQuestions.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs leading-5"><span className="font-bold">Extraction needs checking:</span> {uncertainQuestions.map(question => `Q${question.questionNumber}`).join(", ")}. Numbering was less certain, so Cortex must not treat that provenance as guaranteed.</div>}
           {session.learning_plan.topics?.length ? <div className="mt-4 flex flex-wrap gap-2">{session.learning_plan.topics.slice(0, 10).map(topic => <span key={topic} className="rounded-full border border-[var(--card-border)] px-3 py-1 text-xs">{topic}</span>)}</div> : null}
           {checkpoints.length > 0 && <div className="mt-6"><div className="flex items-center justify-between text-xs font-bold"><span>{allComplete ? "Mastery complete" : `${completedCount} of ${checkpoints.length} checkpoints mastered`}</span><span>{Math.round((completedCount / checkpoints.length) * 100)}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface)]"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{ width: `${(completedCount / checkpoints.length) * 100}%` }} /></div></div>}
         </header>
 
         <section className="space-y-3" aria-label="Learning session">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4">
+            <div><p className="text-sm font-bold">How do you want to learn?</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Guided mode lets you reveal the reasoning only when you are ready.</p></div>
+            <button type="button" onClick={() => { setGuidedMode(value => !value); setRevealedBlocks([]); }} className={`rounded-xl px-4 py-2.5 text-xs font-black ${guidedMode ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "border border-[var(--card-border)] bg-[var(--surface)]"}`}>{guidedMode ? "Guided mode on" : "Turn on Guided mode"}</button>
+          </div>
           {blocks.map((block, index) => {
-            if (!isCheckpoint(block)) return <article key={block.id || `${block.type}-${index}`} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-6"><div className="flex items-start gap-3"><div className="mt-0.5 rounded-lg bg-[var(--primary-glow)] p-2"><BookOpen className="h-4 w-4 text-[var(--primary)]" /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">{block.type.replace(/-/g, " ")}</p>{block.title && <h2 className="mt-1 text-lg font-bold">{block.title}</h2>}<div className="mt-3 whitespace-pre-line text-sm leading-7">{block.content}</div>{block.sourcePages?.length ? <p className="mt-3 text-[10px] font-semibold text-[var(--muted-foreground)]">Source pages: {block.sourcePages.join(", ")}</p> : null}</div></div></article>;
+            if (!isCheckpoint(block)) return <article key={block.id || `${block.type}-${index}`} className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-6"><div className="flex items-start gap-3"><div className="mt-0.5 rounded-lg bg-[var(--primary-glow)] p-2"><BookOpen className="h-4 w-4 text-[var(--primary)]" /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">{block.type.replace(/-/g, " ")}</p>{block.title && <h2 className="mt-1 text-lg font-bold">{block.title}</h2>}{(() => { const gated = guidedMode && ["method","example","application","mistake","pattern"].includes(block.type) && !revealedBlocks.includes(block.id); return gated ? <div className="mt-3 rounded-xl border border-dashed border-[var(--card-border)] bg-[var(--surface)] p-4"><p className="text-sm font-semibold">Reasoning hidden</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">Try to explain the idea yourself before revealing this part.</p><button type="button" onClick={() => setRevealedBlocks(current => [...current, block.id])} className="mt-3 rounded-lg bg-[var(--primary)] px-3 py-2 text-xs font-bold text-[var(--primary-foreground)]">Reveal reasoning</button></div> : <div className="mt-3 whitespace-pre-line text-sm leading-7">{block.content}</div>})()}{block.sourcePages?.length ? <p className="mt-3 text-[10px] font-semibold text-[var(--muted-foreground)]">Source pages: {block.sourcePages.join(", ")}</p> : null}</div></div></article>;
             const done = completedIds.has(block.id); const selected = currentId === block.id;
             return <article key={block.id || `${block.type}-${index}`} className={`rounded-2xl border bg-[var(--card)] p-5 sm:p-6 ${selected ? "border-[var(--primary)] shadow-sm" : "border-[var(--card-border)]"}`}>
               <button type="button" onClick={() => selectCheckpoint(block.id)} className="flex w-full items-start gap-3 text-left">
                 <div className="mt-0.5 rounded-lg bg-[var(--primary-glow)] p-2">{done ? <Check className="h-4 w-4 text-[var(--primary)]" /> : <Lightbulb className="h-4 w-4 text-[var(--primary)]" />}</div>
-                <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">{done ? "mastered" : block.type.replace(/-/g, " ")}</p>{block.title && <h2 className="mt-1 text-lg font-bold">{block.title}</h2>}<div className="mt-2 whitespace-pre-line text-sm leading-7">{block.content}</div></div>
+                <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">{done ? "mastered" : block.type.replace(/-/g, " ")}</p>{block.title && <h2 className="mt-1 text-lg font-bold">{block.title}</h2>}{guidedMode && ["method","example","application","mistake","pattern"].includes(block.type) && !revealedBlocks.includes(block.id) ? <div className="mt-2 rounded-xl border border-dashed border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs text-[var(--muted-foreground)]"><p>Reasoning hidden in Guided mode. Try to explain the idea before opening it.</p><button type="button" onClick={() => setRevealedBlocks(current => [...current, block.id])} className="mt-2 rounded-lg bg-[var(--primary)] px-3 py-2 font-bold text-[var(--primary-foreground)]">Reveal reasoning</button></div> : <div className="mt-2 whitespace-pre-line text-sm leading-7">{block.content}</div>}{block.sourcePages?.length ? <p className="mt-2 text-[10px] font-semibold text-[var(--muted-foreground)]">Source pages: {block.sourcePages.join(", ")}</p> : null}</div>
                 {done && <span className="shrink-0 rounded-full bg-[var(--primary-glow)] px-2.5 py-1 text-[10px] font-black text-[var(--primary)]">Done</span>}
               </button>
 

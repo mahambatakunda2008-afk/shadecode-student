@@ -68,6 +68,15 @@ export function normalizePageRange(start: number, end: number, pageCount: number
   return { start: safeStart, end: safeEnd };
 }
 
+export function selectPaperQuestions<T extends { questionNumber: string }>(questions: T[], requestedNumbers: string[]) {
+  const requested = [...new Set(requestedNumbers.map(number => number.trim()).filter(Boolean))];
+  if (!requested.length) return { selected: questions, requestedNumbers: [], missingNumbers: [] as string[] };
+  const available = new Set(questions.map(question => question.questionNumber));
+  const selected = questions.filter(question => requested.includes(question.questionNumber));
+  const missingNumbers = requested.filter(number => !available.has(number));
+  return { selected, requestedNumbers: requested, missingNumbers };
+}
+
 type NumberedQuestionStart = {
   pageNumber: number;
   lineIndex: number;
