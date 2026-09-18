@@ -19,7 +19,7 @@ const DEFAULT_PAGE_END = 8;
 type AuthContext = { supabase: SupabaseClient; user: User };
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
-type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
+type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };\ntype QuestionSelection = { questionNumber: string; sourcePageStart: number; sourcePageEnd: number; questionText: string; marks: number | null; extractionConfidence: number; extractionMethod: string };
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -135,7 +135,7 @@ function safePlan(plan: Plan) {
   };
 }
 
-function paperPrompt(pages: PaperPage[], questions: ReturnType<typeof extractTopLevelQuestionsFromPages>) {
+function paperPrompt(pages: PaperPage[], questions: ReturnType<typeof extractTopLevelQuestionsFromPages>, selectedQuestionNumbers: string[]) {
   const source = buildPaperSourceText(pages);
   const questionIndex = questions.length
     ? questions.map(q => `Q${q.questionNumber}: pages ${q.sourcePageStart}-${q.sourcePageEnd}; marks ${q.marks ?? "unknown"}`).join("\n")
@@ -219,25 +219,25 @@ export async function POST(req: Request) {
       selected_page_start: range.start,
       selected_page_end: range.end,
       status: "processing",
-      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length },
+      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers },
       pages: selectedPages,
       learning_plan: {},
       progress: {},
     }).select("id").single();
     if (insertError || !session?.id) return NextResponse.json({ error: "The paper was read but the learning session could not be created." }, { status: 500 });
 
-    const raw = await callAI(paperPrompt(selectedPages, questions), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
+    const raw = await callAI(paperPrompt(selectedPages, scopedQuestions), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
     const plan = raw ? parsePlan(raw) : null;
     if (!plan) {
-      await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
+      await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
       return NextResponse.json({ error: "Cortex couldn't turn these pages into a reliable learning session. The extracted paper is still preserved so you can retry." }, { status: 422 });
     }
 
-    const { error: updateError } = await auth.supabase.from("paper_learning_sessions").update({ status: "processed", learning_plan: plan, source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedPageCount: selectedPages.length, subject: plan.subject || null, level: plan.level || null, board: plan.board || null, topics: plan.topics ?? [], processedAt: new Date().toISOString() } }).eq("id", session.id).eq("user_id", auth.user.id);
+    const { error: updateError } = await auth.supabase.from("paper_learning_sessions").update({ status: "processed", learning_plan: plan, source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedPageCount: selectedPages.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, subject: plan.subject || null, level: plan.level || null, board: plan.board || null, topics: plan.topics ?? [], processedAt: new Date().toISOString() } }).eq("id", session.id).eq("user_id", auth.user.id);
     if (updateError) return NextResponse.json({ error: "The learning plan was generated but could not be saved." }, { status: 500 });
 
     await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: "medium" });
-    return NextResponse.json({ id: session.id, ...safePlan(plan), pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questionCount: questions.length });
+    return NextResponse.json({ id: session.id, ...safePlan(plan), pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questionCount: questions.length, selectedQuestionNumbers });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Something went wrong while processing the paper." }, { status: 500 });
   }
