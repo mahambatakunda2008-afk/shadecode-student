@@ -169,6 +169,7 @@ export function verifyCurriculumManifest(
     verifyAssessmentDetail(extraction, knowledge, paper.marks, `${paperLabel}.marks`, issues);
     verifyAssessmentDetail(extraction, knowledge, paper.durationMinutes, `${paperLabel}.durationMinutes`, issues);
     verifyAssessmentDetail(extraction, knowledge, paper.weightingPercent, `${paperLabel}.weightingPercent`, issues);
+    paper.topics.forEach((topic) => verifyAssessmentDetail(extraction, knowledge, topic, `${paperLabel}.topics`, issues));
     verifyAssessmentDetail(extraction, knowledge, paper.calculators, `${paperLabel}.calculators`, issues);
     verifyAssessmentDetail(extraction, knowledge, paper.externallyAssessed, `${paperLabel}.externallyAssessed`, issues);
   });
