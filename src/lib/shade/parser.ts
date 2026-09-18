@@ -55,6 +55,12 @@ class Parser {
     const body: ShadeStatement[] = [];
     this.skipLines();
     while (this.current()?.kind !== "eof") {
+      if (this.at("\n")) {
+        const next = this.tokens[this.index + 1];
+        if (!next || next.kind === "eof" || next.column <= parentColumn || stopKeywords.includes(next.value)) break;
+        this.skipLines();
+        continue;
+      }
       const token = this.current();
       if (!token || stopKeywords.includes(token.value) || token.column <= parentColumn) break;
       const statement = this.parseStatement();
