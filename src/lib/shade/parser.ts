@@ -31,7 +31,11 @@ class Parser {
         this.diagnostics.push({ severity: "error", message: "Expected a new line between statements.", line: t.line, column: t.column });
         while (this.current()?.kind !== "eof" && !this.at("\n")) this.advance();
       }
-      this.skipLines();
+      if (this.at("\n")) {
+        const next = this.tokens[this.index + 1];
+        if (!next || next.kind === "eof" || next.column <= parentColumn || stopKeywords.includes(next.value)) break;
+        this.skipLines();
+      }
     }
     return { type: "program", body };
   }
