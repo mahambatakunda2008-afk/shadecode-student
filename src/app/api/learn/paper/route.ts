@@ -5,7 +5,7 @@ import { createClient as createSupabaseClient, type SupabaseClient, type User } 
 import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
-import { buildPaperSourceText, extractPdfPages, normalizePageRange, type PaperPage } from "@/lib/learn/paperLearning";
+import { buildPaperSourceText, extractPdfPages, normalizePageRange, selectPaperQuestions, type PaperPage } from "@/lib/learn/paperLearning";
 import { extractTopLevelQuestionsFromPages } from "@/lib/exam/question-extraction";
 
 export const dynamic = "force-dynamic";
@@ -240,14 +240,12 @@ export async function POST(req: Request) {
       }
     }
     requestedQuestionNumbers = [...new Set(requestedQuestionNumbers)].slice(0, 40);
-    const availableQuestionNumbers = new Set(questions.map(question => question.questionNumber));
-    const selectedQuestionNumbers = requestedQuestionNumbers.filter(number => availableQuestionNumbers.has(number));
+    const questionSelection = selectPaperQuestions(questions, requestedQuestionNumbers);
+    const selectedQuestionNumbers = questionSelection.requestedNumbers.filter(number => !questionSelection.missingNumbers.includes(number));
     if (requestedQuestionNumbers.length > 0 && selectedQuestionNumbers.length === 0) {
       return NextResponse.json({ error: "None of the selected questions could be traced to the extracted paper." }, { status: 422 });
     }
-    const scopedQuestions = selectedQuestionNumbers.length
-      ? questions.filter(question => selectedQuestionNumbers.includes(question.questionNumber))
-      : questions;
+    const scopedQuestions = questionSelection.selected;
 
     const { data: session, error: insertError } = await auth.supabase.from("paper_learning_sessions").insert({
       user_id: auth.user.id,
