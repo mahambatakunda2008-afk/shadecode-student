@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-19 — Offline progress sync: silent-loss path removed, `/api/sync` gets regression coverage
+
+**Bug (root-caused, not a symptom):** `downloadManager.syncProgress()` — fired on every `online` event from the lesson page — POSTed to `/api/learn/progress`, a route that does not exist (404). `fetch` does not throw on HTTP errors and the status was never checked, so it then called `markProgressSynced()` → `acknowledgeEntityOperations()` with no lamport ceiling, marking *every* pending local progress operation for that lesson as synced without the server ever confirming it. It raced the real path (`offlineSync.syncAll()` → mutation queue → `POST /api/sync`), and any operation acknowledged before `bridgeLocalOperations()` enqueued it was lost permanently. Introduced by the migration of progress into the local-first store (the legacy method kept its old contract on top of the new store).
+
+**Fix:** `syncProgress()` now only delegates to `offlineSync.syncAll()` — the single canonical path from audit §3.1. It no longer touches the network or acknowledges operations; acknowledgement happens only on a server-confirmed `accepted`/`already-applied` result. Signature unchanged, so the lesson page is untouched.
+
+**Tests added:** `downloadManager.syncProgress.test.ts` (3; verified failing against the old implementation) and `src/tests/server/api/sync.test.ts` (16) — the previously untested authenticated write boundary: 401 without a session, store allowlist, record-id validation, version/device validation, owner spoofing (403 + server forces `user_id`), and result semantics (200 accepted/replay, 409 conflict, 500 otherwise). Mutation-checked: removing the ownership guard or the store allowlist each fail the suite.
+
+**Verified:** `tsc --noEmit` clean, full vitest 154 files / 614 passed (was 611), no unrelated files touched.
+
+**Queue correction:** `.cortex/active-queue.md` listed server-side idempotency as open; it was already shipped (`apply_sync_mutation`). Queue updated to match the code.
+
+**Noted, not changed:** `/api/sync` returns the raw Postgres error message to the client on RPC failure (minor information disclosure); worth normalizing to a generic message while logging the detail server-side.
+
+---
+
 ## 2026-09-12 — Cambridge 0478 verification: real progress, not a finish
 
 Full status and evidence in `docs/curriculum/0478-verification-status.md`. Summary:
