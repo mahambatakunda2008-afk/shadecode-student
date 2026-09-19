@@ -12,9 +12,9 @@ import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
+const CLOUD_GENERATION_TIMEOUT_MS = 45_000;
 const LOCAL_MODEL_TIMEOUT_MS = 30_000;
-const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL) || "http://127.0.0.1:11434";
+const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL?.trim()) || "";
 const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
@@ -74,7 +74,8 @@ function parseLocalModelLesson(raw: string): LessonGenerationResult | null {
   } catch { return null; }
 }
 async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise<LessonGenerationResult | null> {
-  if (!isBrowser()) return null;
+  // Never probe localhost in production. Ollama is an explicit opt-in local runtime.
+  if (!isBrowser() || !LOCAL_MODEL_BASE_URL) return null;
   const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), LOCAL_MODEL_TIMEOUT_MS);
   try {
     const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
