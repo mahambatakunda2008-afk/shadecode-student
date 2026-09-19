@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { secretsMatch } from '@/lib/auth/secret-compare';
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const adminToken = req.headers.get('x-admin-token') || '';
-    if (!process.env.ADMIN_REVIEW_TOKEN || adminToken !== process.env.ADMIN_REVIEW_TOKEN) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+    if (!secretsMatch(adminToken, process.env.ADMIN_REVIEW_TOKEN)) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
     const body = await req.json().catch(() => ({}));
     const action = body.action;
     const supabase = getSupabaseAdmin();

@@ -7,6 +7,7 @@ import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
 export const dynamic = "force-dynamic";
 
 const VALID_KINDS = ["qp", "ms", "in", "gt"];
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // matches /api/exam-hub/community/submit
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
     }
     if (file.type !== "application/pdf") {
       return NextResponse.json({ error: "File must be a PDF" }, { status: 400 });
+    }
+    if (file.size <= 0 || file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: "File too large (25MB limit)" }, { status: 413 });
     }
     if (!syllabusId || !level || !session) {
       return NextResponse.json({ error: "Missing syllabus, level, or session" }, { status: 400 });

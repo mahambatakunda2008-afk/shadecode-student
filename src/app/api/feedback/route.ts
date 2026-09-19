@@ -1,12 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
+import { bearerToken, secretsMatch } from "@/lib/auth/secret-compare";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
-    const auth = req.headers.get("authorization");
+    // Fails closed: if ADMIN_SECRET is unset this never matches (previously the
+    // expected value became the literal "Bearer undefined"). Constant-time compare.
+    const presented = bearerToken(req.headers.get("authorization"));
 
-    if (auth !== `Bearer ${process.env.ADMIN_SECRET}`) {
+    if (!secretsMatch(presented, process.env.ADMIN_SECRET)) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
