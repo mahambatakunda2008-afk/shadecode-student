@@ -21,7 +21,6 @@ begin
     'platform_channel_link_codes',
     'platform_channel_message_receipts'
   ] loop
-    drop policy if exists "deny_public_data_api" on public.curriculum_documents;
     execute format('drop policy if exists "deny_public_data_api" on public.%I', t);
     execute format(
       'create policy "deny_public_data_api" on public.%I for all to anon, authenticated using (false) with check (false)',
