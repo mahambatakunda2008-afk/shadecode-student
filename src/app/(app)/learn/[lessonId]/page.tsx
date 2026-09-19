@@ -44,9 +44,10 @@ const THEMES: Record<string, Theme> = {
 const DIFF: Record<string, { label: string; text: string }> = {
   easy: { label: "Guided", text: "#6ee7b7" }, medium: { label: "Standard", text: "#93c5fd" }, hard: { label: "Challenge", text: "#c4b5fd" },
 };
-const FLOW = new Set(["objective", "prior", "concept", "definition", "formula", "math", "example", "exam", "summary", "application", "comparison", "practice"]);
+const FLOW = new Set(["objective", "map", "prior", "concept", "definition", "structure", "mechanism", "formula", "math", "example", "exam", "summary", "application", "comparison", "synthesis", "curiosity", "practice", "next"]);
 const LABELS: Record<string, string> = {
-  objective: "Learning objectives", prior: "Before you begin", concept: "Core idea", definition: "Key definitions",
+  objective: "Learning objectives", map: "The big picture", prior: "Before you begin", concept: "Core idea", definition: "Key definitions",
+  structure: "Structure and patterns", mechanism: "How it works",
   formula: "Formula / method", math: "Formula / method", example: "Worked example", application: "Apply it",
   comparison: "Compare", exam: "Exam transfer", practice: "Practice", summary: "Key takeaways",
 };
