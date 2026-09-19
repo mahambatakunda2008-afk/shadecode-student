@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
+type VisualAnalysis = { page: number; visualType: string; elements: string[]; labels: string[]; relationships: string[]; observations: string[]; confidence: number };
 type Session = {
   id: string;
   source_name: string;
@@ -13,9 +14,9 @@ type Session = {
   selected_page_start: number;
   selected_page_end: number;
   status: "processing" | "processed" | "failed";
-  learning_plan: { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
+  learning_plan: { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; visualAnalysis?: VisualAnalysis[]; blocks?: Block[] };
   pages: Array<{ pageNumber: number; text: string }>;
-  source_metadata?: { selectionMode?: string; selectedQuestionNumbers?: string[]; questionIndex?: Array<{ questionNumber: string; sourcePageStart: number; sourcePageEnd: number; extractionConfidence: number; extractionMethod: string }>; [key: string]: unknown };
+  source_metadata?: { selectionMode?: string; selectedQuestionNumbers?: string[]; questionIndex?: Array<{ questionNumber: string; sourcePageStart: number; sourcePageEnd: number; extractionConfidence: number; extractionMethod: string }>; visualAnalysis?: VisualAnalysis[]; [key: string]: unknown };
   progress?: { completedBlockIds?: string[]; lastBlockId?: string; lastVerdict?: string };
   updated_at: string;
 };
@@ -160,6 +161,7 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const selectedQuestionNumbers = session.source_metadata?.selectedQuestionNumbers ?? [];
   const uncertainQuestions = (session.source_metadata?.questionIndex ?? []).filter(question => question.extractionConfidence < 0.95);
   const visualPages = ((session.source_metadata?.pageVisuals as Array<{ pageNumber?: number; hasVisualContent?: boolean }> | undefined) ?? []).filter(page => page.hasVisualContent);
+  const visualAnalysis = session.source_metadata?.visualAnalysis ?? session.learning_plan.visualAnalysis ?? [];
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-6 lg:px-8">
@@ -179,7 +181,7 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
             {session.learning_plan.board && <span className="rounded-lg bg-[var(--surface)] px-3 py-2">{session.learning_plan.board}</span>}
           </div>
           {selectedQuestionNumbers.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs"><span className="font-bold">Question scope:</span> {selectedQuestionNumbers.map(number => `Q${number}`).join(", ")} <span className="text-[var(--muted-foreground)]">with surrounding page context</span></div>}
-          {uncertainQuestions.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs leading-5"><span className="font-bold">Extraction needs checking:</span> {uncertainQuestions.map(question => `Q${question.questionNumber}`).join(", ")}. Numbering was less certain, so Cortex must not treat that provenance as guaranteed.</div>}{visualPages.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs leading-5"><span className="font-bold">Visual source content:</span> Pages {visualPages.map(page => page.pageNumber).filter((n): n is number => typeof n === "number").join(", ")} contain embedded images or vector graphics. Cortex has preserved that fact, but this session does not pretend to understand pixels it cannot inspect.</div>}
+          {uncertainQuestions.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs leading-5"><span className="font-bold">Extraction needs checking:</span> {uncertainQuestions.map(question => `Q${question.questionNumber}`).join(", ")}. Numbering was less certain, so Cortex must not treat that provenance as guaranteed.</div>}{visualPages.length > 0 && <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs leading-5"><span className="font-bold">Visual source content:</span> Pages {visualPages.map(page => page.pageNumber).filter((n): n is number => typeof n === "number").join(", ")} contain embedded visual material.</div>}{visualAnalysis.length > 0 && <div className="mt-4 space-y-3"><p className="text-xs font-black uppercase tracking-wider text-[var(--primary)]">Source visual evidence</p>{visualAnalysis.slice(0, 12).map(item => <article key={item.page + item.visualType} className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold">Page {item.page} · {item.visualType}</p><span className="rounded-full border border-[var(--card-border)] px-2.5 py-1 text-[10px] font-bold">Confidence {Math.round(item.confidence * 100)}%</span></div>{item.observations.length > 0 && <ul className="mt-3 list-disc space-y-1 pl-5 text-xs leading-5">{item.observations.slice(0, 6).map((x, i) => <li key={i}>{x}</li>)}</ul>}{item.elements.length > 0 && <p className="mt-3 text-xs"><span className="font-bold">Visible elements:</span> {item.elements.slice(0, 10).join(", ")}</p>}{item.labels.length > 0 && <p className="mt-2 text-xs"><span className="font-bold">Visible labels:</span> {item.labels.slice(0, 10).join(", ")}</p>}{item.relationships.length > 0 && <p className="mt-2 text-xs"><span className="font-bold">Visible relationships:</span> {item.relationships.slice(0, 6).join(" · ")}</p>}<p className="mt-3 text-[10px] font-semibold text-[var(--muted-foreground)]">Source: exact PDF page {item.page}. Visual interpretation, not OCR text.</p></article>)}</div>}
           {session.learning_plan.topics?.length ? <div className="mt-4 flex flex-wrap gap-2">{session.learning_plan.topics.slice(0, 10).map(topic => <span key={topic} className="rounded-full border border-[var(--card-border)] px-3 py-1 text-xs">{topic}</span>)}</div> : null}
           {checkpoints.length > 0 && <div className="mt-6"><div className="flex items-center justify-between text-xs font-bold"><span>{allComplete ? "Mastery complete" : `${completedCount} of ${checkpoints.length} checkpoints mastered`}</span><span>{Math.round((completedCount / checkpoints.length) * 100)}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--surface)]"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{ width: `${(completedCount / checkpoints.length) * 100}%` }} /></div></div>}
         </header>
