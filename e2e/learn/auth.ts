@@ -12,7 +12,11 @@ export async function signIn(page: Page) {
   await page.locator("#login-password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard|\/onboarding/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/dashboard|\/onboarding/, { timeout: 20_000 }).catch(async () => {
+    const alert = page.getByRole("alert");
+    const message = (await alert.count()) ? (await alert.first().innerText()).trim() : "";
+    throw new Error(`Sign-in did not complete. ${message || "No authentication error was rendered; verify E2E credentials and account status."}`);
+  });
   if (page.url().includes("/onboarding")) {
     throw new Error("The E2E account has not completed onboarding. Use an existing test/student account.");
   }
