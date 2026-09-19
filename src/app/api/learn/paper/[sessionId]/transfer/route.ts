@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { callAI } from "@/lib/ai";
+import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -75,6 +76,8 @@ async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict) {
 
 export async function POST(req: Request, context: { params: Promise<{ sessionId: string }> }) {
   try {
+    const limited = await applyRateLimit(req, aiEndpointLimiter);
+    if (limited) return limited;
     const auth = await authenticate(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { sessionId } = await context.params;
@@ -123,6 +126,8 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
       if (parsed.verdict !== "correct" && parsed.verdict !== "partially_correct" && parsed.verdict !== "incorrect") throw new Error();
       evaluation = { verdict: parsed.verdict as Verdict, feedback: typeof parsed.feedback === "string" ? parsed.feedback.slice(0,1800) : "", misconception: typeof parsed.misconception === "string" ? parsed.misconception.slice(0,900) : "", nextAction: typeof parsed.nextAction === "string" ? parsed.nextAction.slice(0,700) : "" };
     } catch { return NextResponse.json({ error: "Cortex returned invalid grading data." }, { status: 422 }); }
+    const { data: previousAttempts } = await auth.supabase.from("paper_learning_attempts").select("attempt_no").eq("session_id", sessionId).eq("user_id", auth.user.id).eq("block_id", blockId).eq("action", "transfer-submit").order("attempt_no", { ascending: false }).limit(1);
+    const attemptNo = Number(previousAttempts?.[0]?.attempt_no ?? 0) + 1;
     const { data: claimed } = await auth.supabase.from("paper_learning_transfer_questions").update({ status: "graded", response: responseText, verdict: evaluation.verdict, feedback: evaluation.feedback, misconception: evaluation.misconception || null, next_action: evaluation.nextAction || null, graded_at: new Date().toISOString() }).eq("id", transferId).eq("user_id", auth.user.id).eq("status", "pending").select("id").maybeSingle();
     if (!claimed) {
       const { data: finalTransfer } = await auth.supabase.from("paper_learning_transfer_questions").select("verdict,feedback,misconception,next_action").eq("id", transferId).eq("user_id", auth.user.id).single();
