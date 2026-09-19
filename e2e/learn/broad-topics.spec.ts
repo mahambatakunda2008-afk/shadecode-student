@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { signIn } from "./auth";
 
 const cases = (process.env.E2E_LEARN_TOPICS || "Organic Chemistry").split(",").map((topic) => topic.trim()).filter(Boolean);
-const subject = process.env.E2E_LEARN_SUBJECT || "Chemistry";
+const requestedSubject = (process.env.E2E_LEARN_SUBJECT || "").trim();
 
 test.describe("Learn deep-generation browser contract", () => {
   test.beforeEach(async ({ page }) => {
@@ -13,7 +13,19 @@ test.describe("Learn deep-generation browser contract", () => {
 
   for (const topic of cases) {
     test(`builds and renders a substantive lesson for: ${topic}`, async ({ page }) => {
-      await page.getByLabel("Subject").selectOption({ label: subject });
+      const subjectSelect = page.getByRole("combobox", { name: "Subject" });
+      await expect(subjectSelect).toBeVisible({ timeout: 15_000 });
+      await expect.poll(async () => subjectSelect.locator("option").count(), { timeout: 15_000 }).toBeGreaterThan(1);
+
+      const options = await subjectSelect.locator("option").evaluateAll((elements) =>
+        elements.map((element) => ({ value: (element as HTMLOptionElement).value, label: (element.textContent || "").trim() }))
+          .filter((option) => option.value && option.label)
+      );
+      const selected = requestedSubject
+        ? options.find((option) => option.label.toLowerCase() === requestedSubject.toLowerCase())
+        : options[0];
+      expect(selected, requestedSubject ? `Subject "${requestedSubject}" is not available in this user's Learn subjects.` : "No usable Learn subject was available.").toBeTruthy();
+      await subjectSelect.selectOption({ value: selected!.value });
       await page.getByLabel("What do you need help with?").fill(topic);
       await page.getByRole("button", { name: "Start learning" }).click();
 
