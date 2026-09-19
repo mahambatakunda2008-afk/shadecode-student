@@ -29,6 +29,9 @@ ${curriculumContext ? `VERIFIED CURRICULUM CONTEXT:\n${curriculumContext}` : "No
 
 ${formatTeachingProfile(subject)}
 
+DIFFICULTY: ${difficulty}
+${curriculumContext ? `VERIFIED CURRICULUM CONTEXT:\n${curriculumContext}` : "No verified curriculum context is available. Do not invent exam-board requirements."}
+
 ${formatCurriculumPlan(topic)}
 
 ${depth}
@@ -89,7 +92,7 @@ QUALITY BAR
 Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? If not, deepen it before returning it.`;
 }
 
-export function buildLessonRepairPrompt(subject: string, topic: string, raw: string) {
+export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium") {
   return `You are repairing a weak educational lesson for Shadecode Student.
 
 SUBJECT: ${subject}
