@@ -32,7 +32,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "Shadecode Student", description: "Study smarter. Live sharper.", images: ["/og-image.png"] },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Shadecode Student" },
   icons: {
-    icon: [{ url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "any" }],
+    icon: [
+      { url: "/icons/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/shadecode-student-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/shadecode-student-512.png", type: "image/png", sizes: "512x512" }
+    ],
     apple: [{ url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
     other: [{ rel: "mask-icon", url: "/brand/shadecode-mark-white.svg", color: "#245BFF" }],
   },
@@ -62,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/brand/shadecode-app-icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/icons/favicon.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
         <meta name="theme-color" content="#06111C" />
         <meta name="mobile-web-app-capable" content="yes" />
