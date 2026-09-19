@@ -36,4 +36,12 @@ alter function public.has_role(uuid, text) set search_path = public;
 alter function public.increment_xp(uuid, integer) set search_path = public;
 alter function public.upsert_revision_item(uuid, text, text, text) set search_path = public;
 
+-- RPCs that are admin/internal-only must not be callable directly through
+-- the authenticated Data API. Server-side trusted code uses service_role.
+revoke execute on function public.get_traction_metrics() from authenticated;
+revoke execute on function public.get_user_permissions(uuid) from authenticated;
+revoke execute on function public.has_permission(uuid, text) from authenticated;
+revoke execute on function public.has_role(uuid, text) from authenticated;
+revoke execute on function public.review_exam_question_topic_proposal(uuid, text) from authenticated;
+
 commit;
