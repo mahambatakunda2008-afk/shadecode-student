@@ -7,7 +7,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
-import { buildDeepLessonPrompt } from "@/lib/learn/contentQuality";
+import { buildDeepLessonPrompt, buildLessonRepairPrompt } from "@/lib/learn/contentQuality";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
@@ -174,7 +174,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   if (parsed && initialFailures.length === 0) return parsed;
 
   try {
-    const repair = await callAI(`You are repairing a Cortex lesson that failed its quality gate. Rebuild it around the learner's actual intent and exact topic. Do not add unrelated material to make it longer. Fix these failures: ${initialFailures.join(", ")}. Return ONLY JSON with 12-18 purposeful blocks for deep or broad requests, or 8-14 for standard requests. Preserve subject, level, board, intent and topic. Do not invent curriculum claims.\n\n${buildResolvedLessonPrompt(request)}\n\nPresentation: short scannable lines, no wall-of-text. Use Given:/Method:/Step 1:/Answer: for worked examples. Use Question:/Think: for checkpoints without immediately giving the answer. Wrap every math expression in single dollar signs using real LaTeX. Never leave a caret exponent or ASCII slash fraction in plain text. Do not fabricate unexplained numerical results. Do not use internal-template headings.\n\nDRAFT:\n${raw.slice(0, 12000)}`, 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext });
+    const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext } 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext });
     if (repair) {
       parsed = parseLesson(repair);
       if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
