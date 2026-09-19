@@ -299,7 +299,7 @@ export async function POST(req: Request) {
       selected_page_start: range.start,
       selected_page_end: range.end,
       status: "processing",
-      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, visualAnalysis: plan.visualAnalysis ?? [], pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: question.questionText.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: null, correctionStatus: "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })) },
+      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, visualAnalysis: [], pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: question.questionText.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: null, correctionStatus: "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })) },
       pages: selectedPages,
       learning_plan: {},
       progress: {},
@@ -315,6 +315,17 @@ export async function POST(req: Request) {
       media: [{ mimeType: file.type || "application/pdf", data: Buffer.from(await file.arrayBuffer()).toString("base64") }],
     });
     const plan = raw ? parsePlan(raw) : null;
+    if (plan) {
+      await auth.supabase.from("paper_learning_sessions").update({
+        source_metadata: {
+          extraction: "pdf-text",
+          extractedAt: new Date().toISOString(),
+          questionCount: questions.length,
+          selectedQuestionNumbers,
+          visualAnalysis: plan.visualAnalysis ?? [],
+        },
+      }).eq("id", session.id).eq("user_id", auth.user.id);
+    }
     if (!plan) {
       await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => { const corrected = correctionResult.questions.find(item => item.questionNumber === question.questionNumber)?.questionText ?? question.questionText; return { questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: corrected.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: corrected !== question.questionText ? corrected.slice(0, 6000) : null, correctionStatus: corrected !== question.questionText ? "user-verified" : "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod }; }), error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
       return NextResponse.json({ error: "Cortex couldn't turn these pages into a reliable learning session. The extracted paper is still preserved so you can retry." }, { status: 422 });
