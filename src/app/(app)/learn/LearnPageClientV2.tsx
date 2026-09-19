@@ -83,7 +83,9 @@ export default function LearnPageClientV2() {
 
   useEffect(() => {
     const selected = params.get("subject");
+    const prefilledTopic = params.get("topic");
     if (selected) setSubject(selected);
+    if (prefilledTopic) setTopic(prefilledTopic);
     let alive = true;
     void createClient().auth.getSession().then(async ({ data: sessionData }) => {
       if (!alive) return;
