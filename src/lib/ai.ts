@@ -22,6 +22,8 @@ export interface CallAIOptions {
   curriculumContext?: string;
   /** The caller has already resolved and embedded curriculum grounding in its prompt. */
   skipCurriculumGrounding?: boolean;
+  /** Optional multimodal inputs. Only providers with verified media support receive these parts. */
+  media?: Array<{ mimeType: string; data: string }>;
 }
 
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
@@ -131,7 +133,15 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: groundedPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 } }),
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: groundedPrompt },
+              ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+            ],
+          }],
+          generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
+        }),
       }, Math.min(timeout, 12000));
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
