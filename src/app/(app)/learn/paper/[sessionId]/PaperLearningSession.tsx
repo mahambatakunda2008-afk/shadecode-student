@@ -44,6 +44,7 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const [transferQuestion, setTransferQuestion] = useState<string | null>(null);
   const [transferAnswer, setTransferAnswer] = useState("");
   const [transferResult, setTransferResult] = useState<InteractionResponse | null>(null);
+  const [transferSubmitActionId, setTransferSubmitActionId] = useState<string | null>(null);
   const [submitActionId, setSubmitActionId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +79,7 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const completedCount = checkpoints.filter(block => completedIds.has(block.id)).length;
   const allComplete = checkpoints.length > 0 && completedCount === checkpoints.length;
   function selectCheckpoint(id: string) {
-    setActiveId(id); setAnswer(""); setResult(null); setHint(null); setRevealed(null); setActionError(null); setInteraction(null); setSubmitActionId(null);
+    setActiveId(id); setAnswer(""); setResult(null); setHint(null); setRevealed(null); setActionError(null); setInteraction(null); setSubmitActionId(null); setTransferSubmitActionId(null);
   }
 
   function continueToNext() {
@@ -139,7 +140,9 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
     setActionError(null);
     setChecking(true);
     try {
-      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/transfer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit", blockId: currentBlock.id, transferId, response: transferAnswer }) });
+      const actionId = transferSubmitActionId ?? crypto.randomUUID();
+      if (!transferSubmitActionId) setTransferSubmitActionId(actionId);
+      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/transfer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit", blockId: currentBlock.id, transferId, response: transferAnswer, clientActionId: actionId }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Cortex couldn't grade the transfer.");
       setTransferResult(data as InteractionResponse);

@@ -81,11 +81,12 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const auth = await authenticate(req);
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { sessionId } = await context.params;
-    const body = await req.json().catch(() => ({})) as { action?: unknown; blockId?: unknown; transferId?: unknown; response?: unknown };
+    const body = await req.json().catch(() => ({})) as { action?: unknown; blockId?: unknown; transferId?: unknown; response?: unknown; clientActionId?: unknown };
     const action = body.action === "generate" || body.action === "submit" ? body.action : null;
     const blockId = typeof body.blockId === "string" ? body.blockId.trim().slice(0, 80) : "";
     const transferId = typeof body.transferId === "string" ? body.transferId.trim().slice(0, 80) : "";
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
+    const clientActionId = typeof body.clientActionId === "string" ? body.clientActionId.trim().slice(0, 120) : "";
     if (!action || !blockId) return NextResponse.json({ error: "Transfer action and source checkpoint are required." }, { status: 400 });
     const { data: session } = await auth.supabase.from("paper_learning_sessions").select("id,selected_page_start,selected_page_end,pages,learning_plan").eq("id", sessionId).eq("user_id", auth.user.id).maybeSingle();
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
@@ -112,9 +113,20 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
       } catch { return NextResponse.json({ error: "Cortex returned invalid transfer data." }, { status: 422 }); }
     }
     if (!transferId || !responseText) return NextResponse.json({ error: "Transfer question and answer are required." }, { status: 400 });
-    const { data: transfer } = await auth.supabase.from("paper_learning_transfer_questions").select("id,question,expected_answer,rubric,expected_concepts,status,verdict,feedback,misconception,next_action").eq("id", transferId).eq("session_id", sessionId).eq("user_id", auth.user.id).maybeSingle();
+    if (!clientActionId) return NextResponse.json({ error: "Submission identity is missing. Please try again." }, { status: 400 });
+    const { data: transfer } = await auth.supabase.from("paper_learning_transfer_questions").select("id,question,expected_answer,rubric,expected_concepts,status,submit_action_id,verdict,feedback,misconception,next_action").eq("id", transferId).eq("session_id", sessionId).eq("user_id", auth.user.id).maybeSingle();
     if (!transfer) return NextResponse.json({ error: "Transfer question not found." }, { status: 404 });
     if (transfer.status === "graded") return NextResponse.json({ action: "submit", transferId, verdict: transfer.verdict, feedback: transfer.feedback, misconception: transfer.misconception, nextAction: transfer.next_action, completed: transfer.verdict === "correct", idempotent: true });
+    if (transfer.submit_action_id && transfer.submit_action_id !== clientActionId) return NextResponse.json({ error: "This transfer is already being graded. Retry the same submission shortly." }, { status: 409 });
+    if (!transfer.submit_action_id) {
+      const { data: claimed } = await auth.supabase.from("paper_learning_transfer_questions").update({ submit_action_id: clientActionId, grading_started_at: new Date().toISOString() }).eq("id", transferId).eq("session_id", sessionId).eq("user_id", auth.user.id).eq("status", "pending").is("submit_action_id", null).select("id").maybeSingle();
+      if (!claimed) {
+        const { data: race } = await auth.supabase.from("paper_learning_transfer_questions").select("status,submit_action_id,verdict,feedback,misconception,next_action").eq("id", transferId).eq("session_id", sessionId).eq("user_id", auth.user.id).maybeSingle();
+        if (!race) return NextResponse.json({ error: "Transfer question not found." }, { status: 404 });
+        if (race.status === "graded") return NextResponse.json({ action: "submit", transferId, verdict: race.verdict, feedback: race.feedback, misconception: race.misconception, nextAction: race.next_action, completed: race.verdict === "correct", idempotent: true });
+        if (race.submit_action_id !== clientActionId) return NextResponse.json({ error: "This transfer is already being graded. Retry the same submission shortly." }, { status: 409 });
+      }
+    }
     const concepts = Array.isArray(transfer.expected_concepts) ? transfer.expected_concepts.filter((v): v is string => typeof v === "string") : [];
     const prompt = "You are Cortex grading a transfer question after paper study. Grade ONLY against the transfer question, rubric, expected concepts and source context. Return ONLY JSON: verdict correct|partially_correct|incorrect, feedback, misconception, nextAction, hint, solution.\n\nQUESTION\n" + transfer.question + "\n\nEXPECTED CONCEPTS\n" + concepts.join(", ") + "\n\nRUBRIC\n" + transfer.rubric + "\n\nREFERENCE ANSWER\n" + transfer.expected_answer + "\n\nSTUDENT\n" + responseText;
     const raw = await callAI(prompt, 2800, { userId: auth.user.id, feature: "paper_learning", subfeature: "transfer_evaluation", maxChainMs: 28000, perProviderMaxMs: 9000, skipCurriculumGrounding: true });
