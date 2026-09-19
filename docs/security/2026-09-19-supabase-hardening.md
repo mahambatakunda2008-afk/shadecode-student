@@ -34,4 +34,6 @@ Supabase also reports leaked-password protection as disabled. That setting requi
 
 After applying the SQL, the 11 internal tables have an explicit `deny_public_data_api` policy for `anon, authenticated`, with `USING (false)` and `WITH CHECK (false)`.
 
-The remaining advisor warnings are therefore known, bounded items rather than hidden regressions.
+The admin-only RPCs were subsequently tightened further: `get_traction_metrics`, `get_user_permissions`, `has_permission`, `has_role`, and `review_exam_question_topic_proposal` now have EXECUTE only for `service_role` (plus the owner/postgres role). `increment_xp` and `upsert_revision_item` intentionally remain callable by authenticated users because their function bodies enforce ownership for end-user calls, while trusted server code can use `service_role`.
+
+The remaining advisor warnings are therefore bounded configuration/code-review items rather than hidden access paths.
