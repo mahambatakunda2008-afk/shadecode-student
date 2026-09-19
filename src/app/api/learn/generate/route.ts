@@ -210,7 +210,7 @@ export async function POST(req: Request) {
     if (curriculum.status === "blocked") return NextResponse.json({ error: curriculum.reason, code: "CURRICULUM_OBJECTIVES_REQUIRED" }, { status: 409 });
 
     const effectiveTopic = curriculum.resolvedTopic?.trim() || resolved.topic;
-    const generationRequest = resolveLessonRequest({ prompt: resolved.prompt, subject: authorizedSubject, topic: effectiveTopic, level: resolved.level, difficulty: resolved.difficulty, goal: resolved.goal, examBoard: resolved.examBoard });
+    const generationRequest = { ...resolveLessonRequest({ prompt: resolved.prompt, subject: authorizedSubject, topic: effectiveTopic, level: resolved.level, difficulty: resolved.difficulty, goal: resolved.goal, examBoard: resolved.examBoard }), broadTopic: resolved.broadTopic || isBroadTopic(effectiveTopic) };
     const parsed = await generateAndValidate(generationRequest, curriculum.promptContext, auth.user.id);
     if (!parsed) return NextResponse.json({ error: "Cortex could not produce a lesson that met the teaching standard. The topic itself is valid, so try again while Cortex retries the lesson construction." }, { status: 422 });
 
