@@ -30,6 +30,12 @@ const aliases: Record<string, string> = {
   common_mistake: "mistake", "common-mistakes": "mistake", "common mistake": "mistake", common_mistakes: "mistake", trap: "misconception", misconception: "misconception", misconceptions: "misconception", error: "mistake", errors: "mistake",
   questions: "practice", question: "practice", practice_questions: "practice", "practice-questions": "practice", "practice questions": "practice", exercises: "practice", exercise: "practice", drill: "practice",
   comparison: "comparison", compare: "comparison", differences: "comparison",
+  map: "map", roadmap: "map", overview_map: "map", "overview map": "map",
+  structure: "structure", classification: "structure", framework: "structure",
+  mechanism: "mechanism", process: "mechanism", reasoning: "mechanism",
+  synthesis: "synthesis", integration: "synthesis", connection: "synthesis", connections: "synthesis",
+  curiosity: "curiosity", exploration: "curiosity", "further exploration": "curiosity",
+  next: "next", continuation: "next", "next steps": "next",
 };
 
 export function normalizeLessonBlockType(value: string) {
