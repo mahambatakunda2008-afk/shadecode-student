@@ -174,7 +174,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   if (parsed && initialFailures.length === 0) return parsed;
 
   try {
-    const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext } 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext });
+    const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 10000, perProviderMaxMs: 4000, curriculumContext });
     if (repair) {
       parsed = parseLesson(repair);
       if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
