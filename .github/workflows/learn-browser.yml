@@ -1,0 +1,52 @@
+name: Learn browser verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      topics:
+        description: "Comma-separated Learn topics"
+        required: false
+        default: "Organic Chemistry"
+      subject:
+        description: "Subject used for the selected topics"
+        required: false
+        default: "Chemistry"
+
+jobs:
+  learn-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Learn
+        env:
+          BASE_URL: https://shadecodestudent.vercel.app
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_LEARN_SUBJECT: ${{ inputs.subject }}
+          E2E_LEARN_TOPICS: ${{ inputs.topics }}
+        run: npm run test:learn:e2e
+
+      - name: Upload browser artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: learn-browser-artifacts
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
