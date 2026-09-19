@@ -104,7 +104,7 @@ function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curricul
 
 The learner is asking for a serious teaching session. A broad request such as "Organic Chemistry" is not a request for a definition or a handful of revision cards. It is a request to build a connected mental model of the territory.
 
-${buildDeepLessonPrompt(request.subject, request.topic, request.difficulty, curriculumContext)}
+${buildDeepLessonPrompt(request.subject || "General", request.topic, request.difficulty, curriculumContext)}
 
 LEARNER REQUEST CONTEXT
 ${buildResolvedLessonPrompt(request)}
