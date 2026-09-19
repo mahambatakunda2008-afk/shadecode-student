@@ -50,6 +50,24 @@ describe("paper learning question provenance", () => {
     expect(buildPaperSourceText([{ pageNumber: 3, text: "", textHash: "x" }]))
       .toContain("[No selectable text extracted. The page may contain an image, scan, or diagram.]");
   });
+
+  it("surfaces detected visual content without pretending to understand the pixels", () => {
+    const source = buildPaperSourceText([{
+      pageNumber: 5,
+      text: "A particle moves.",
+      textHash: "x",
+      visual: {
+        width: 612,
+        height: 792,
+        imageCount: 1,
+        vectorGraphicCount: 4,
+        hasVisualContent: true,
+      },
+    }]);
+    expect(source).toContain("VISUAL CONTENT DETECTED");
+    expect(source).toContain("1 embedded image operation(s)");
+    expect(source).toContain("Do not invent what it contains");
+  });
 });
 
 describe("paper learning question selection", () => {
