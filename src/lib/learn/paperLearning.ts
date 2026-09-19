@@ -4,7 +4,7 @@ export type PaperPage = {
   pageNumber: number;
   text: string;
   textHash: string;
-  visual?: {
+  visual: {
     width: number;
     height: number;
     imageCount: number;
