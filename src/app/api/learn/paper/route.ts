@@ -19,7 +19,16 @@ const DEFAULT_PAGE_END = 8;
 type AuthContext = { supabase: SupabaseClient; user: User };
 type Interaction = { prompt?: string; evaluationMode?: string; expectedConcepts?: string[]; rubric?: string; modelAnswer?: string; hints?: string[] };
 type Block = { id: string; type: string; title?: string; content: string; sourcePages?: number[]; interaction?: Interaction };
-type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; blocks?: Block[] };
+type VisualAnalysis = {
+  page: number;
+  visualType: string;
+  elements: string[];
+  labels: string[];
+  relationships: string[];
+  observations: string[];
+  confidence: number;
+};
+type Plan = { title?: string; overview?: string; subject?: string; level?: string; board?: string; topics?: string[]; visualAnalysis?: VisualAnalysis[]; blocks?: Block[] };
 type QuestionSelection = { questionNumber: string; sourcePageStart: number; sourcePageEnd: number; questionText: string; marks: number | null; extractionConfidence: number; extractionMethod: string };
 
 function adminClient() {
@@ -83,7 +92,7 @@ function parsePlan(raw: string) {
   const candidate = extractObject(raw);
   if (!candidate) return null;
   try {
-    const value = JSON.parse(candidate) as { title?: unknown; overview?: unknown; subject?: unknown; level?: unknown; board?: unknown; topics?: unknown; blocks?: unknown };
+    const value = JSON.parse(candidate) as { title?: unknown; overview?: unknown; subject?: unknown; level?: unknown; board?: unknown; topics?: unknown; visualAnalysis?: unknown; blocks?: unknown };
     if (typeof value.title !== "string" || !value.title.trim() || !Array.isArray(value.blocks)) return null;
     const blocks = value.blocks.filter((block): block is Block => {
       if (!block || typeof block !== "object") return false;
@@ -110,6 +119,15 @@ function parsePlan(raw: string) {
       level: typeof value.level === "string" ? value.level.trim().slice(0, 120) : "",
       board: typeof value.board === "string" ? value.board.trim().slice(0, 120) : "",
       topics: Array.isArray(value.topics) ? value.topics.filter((x): x is string => typeof x === "string").map(x => x.trim()).filter(Boolean).slice(0, 20) : [],
+      visualAnalysis: Array.isArray(value.visualAnalysis) ? value.visualAnalysis.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object")).map(item => ({
+        page: typeof item.page === "number" && Number.isInteger(item.page) ? item.page : 0,
+        visualType: typeof item.visualType === "string" ? item.visualType.trim().slice(0, 120) : "",
+        elements: Array.isArray(item.elements) ? item.elements.filter((x): x is string => typeof x === "string").map(x => x.trim()).filter(Boolean).slice(0, 20) : [],
+        labels: Array.isArray(item.labels) ? item.labels.filter((x): x is string => typeof x === "string").map(x => x.trim()).filter(Boolean).slice(0, 20) : [],
+        relationships: Array.isArray(item.relationships) ? item.relationships.filter((x): x is string => typeof x === "string").map(x => x.trim()).filter(Boolean).slice(0, 20) : [],
+        observations: Array.isArray(item.observations) ? item.observations.filter((x): x is string => typeof x === "string").map(x => x.trim()).filter(Boolean).slice(0, 20) : [],
+        confidence: typeof item.confidence === "number" ? Math.max(0, Math.min(1, item.confidence)) : 0,
+      })).filter(item => item.page > 0 && item.visualType) : [],
       blocks,
     } satisfies Plan;
   } catch {
@@ -125,6 +143,7 @@ function safePlan(plan: Plan) {
     level: plan.level || "",
     board: plan.board || "",
     topics: plan.topics ?? [],
+    visualAnalysis: plan.visualAnalysis ?? [],
     blocks: (plan.blocks ?? []).map(({ interaction, ...block }) => ({
       ...block,
       interaction: interaction ? {
@@ -173,10 +192,13 @@ RULES
 12. Include common traps only when supported by the actual mathematics/question structure. Do not invent examiner claims.
 13. Finish with NEW mastery questions based on the concepts encountered. Do not simply repeat source questions.
 14. If a page has no selectable text, explicitly say that the page may require visual/OCR inspection. Do not hallucinate its contents.
-15. Use concise, scannable student-facing blocks. Every mathematical expression must be wrapped in single-dollar LaTeX delimiters.
+15. When visual content is present, use the supplied PDF itself as the authoritative visual source. Describe only what is visibly established. Do not infer hidden components, values, labels, wiring, graph shapes, or measurements.
+16. Return visualAnalysis for pages with meaningful diagrams, graphs, tables, circuits, apparatus, maps, geometry figures, screenshots, or other visual material. Each entry must include the exact source page, visualType, visible elements, visible labels, relationships that are actually visible, concrete observations, and confidence from 0 to 1. If a visual is ambiguous, say so in observations and lower confidence.
+17. A visual observation may be used in teaching only when its page is included in sourcePages. Never present visual interpretation as extracted text.
+18. Use concise, scannable student-facing blocks. Every mathematical expression must be wrapped in single-dollar LaTeX delimiters.
 
 Return ONLY JSON:
-{"title":"specific learning-session title","overview":"what these pages cover","subject":"defensible subject or empty","level":"defensible level or empty","board":"defensible exam board or empty","topics":["concept actually covered"],"blocks":[{"id":"b1","type":"source-map|concept|definition|method|example|checkpoint|mistake|pattern|application|mastery|summary","title":"short heading","content":"student-facing explanation","sourcePages":[1],"interaction":{"prompt":"question for the student","evaluationMode":"mixed","expectedConcepts":["concept"],"rubric":"evaluation rubric","modelAnswer":"answer or reasoning","hints":["small hint","stronger hint"]}}]}`;
+{"title":"specific learning-session title","overview":"what these pages cover","subject":"defensible subject or empty","level":"defensible level or empty","board":"defensible exam board or empty","topics":["concept actually covered"],"visualAnalysis":[{"page":1,"visualType":"circuit diagram","elements":["resistor"],"labels":["R1"],"relationships":["R1 is connected in series with the cell"],"observations":["A closed circuit is visibly drawn"],"confidence":0.9}],"blocks":[{"id":"b1","type":"source-map|concept|definition|method|example|checkpoint|mistake|pattern|application|mastery|summary","title":"short heading","content":"student-facing explanation","sourcePages":[1],"interaction":{"prompt":"question for the student","evaluationMode":"mixed","expectedConcepts":["concept"],"rubric":"evaluation rubric","modelAnswer":"answer or reasoning","hints":["small hint","stronger hint"]}}]}`;
 }
 
 export async function GET(req: Request) {
@@ -277,14 +299,21 @@ export async function POST(req: Request) {
       selected_page_start: range.start,
       selected_page_end: range.end,
       status: "processing",
-      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: question.questionText.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: null, correctionStatus: "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })) },
+      source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), questionCount: questions.length, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, visualAnalysis: plan.visualAnalysis ?? [], pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => ({ questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: question.questionText.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: null, correctionStatus: "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod })) },
       pages: selectedPages,
       learning_plan: {},
       progress: {},
     }).select("id").single();
     if (insertError || !session?.id) return NextResponse.json({ error: "The paper was read but the learning session could not be created." }, { status: 500 });
 
-    const raw = await callAI(paperPrompt(selectedPages, scopedQuestions, selectedQuestionNumbers, correctedQuestionNumbers), 6500, { userId: auth.user.id, feature: "paper_learning", subfeature: "build_session", maxChainMs: 55000, perProviderMaxMs: 15000 });
+    const raw = await callAI(paperPrompt(selectedPages, scopedQuestions, selectedQuestionNumbers, correctedQuestionNumbers), 6500, {
+      userId: auth.user.id,
+      feature: "paper_learning",
+      subfeature: "build_session",
+      maxChainMs: 55000,
+      perProviderMaxMs: 15000,
+      media: [{ mimeType: file.type || "application/pdf", data: Buffer.from(await file.arrayBuffer()).toString("base64") }],
+    });
     const plan = raw ? parsePlan(raw) : null;
     if (!plan) {
       await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => { const corrected = correctionResult.questions.find(item => item.questionNumber === question.questionNumber)?.questionText ?? question.questionText; return { questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: corrected.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: corrected !== question.questionText ? corrected.slice(0, 6000) : null, correctionStatus: corrected !== question.questionText ? "user-verified" : "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod }; }), error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);

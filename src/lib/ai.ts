@@ -22,6 +22,8 @@ export interface CallAIOptions {
   curriculumContext?: string;
   /** The caller has already resolved and embedded curriculum grounding in its prompt. */
   skipCurriculumGrounding?: boolean;
+  /** Optional multimodal inputs. Only providers with verified media support receive these parts. */
+  media?: Array<{ mimeType: string; data: string }>;
 }
 
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
@@ -31,7 +33,7 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
 }
 
 export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOptions = {}): Promise<string | null> {
-  const { userId, feature = "ai_assistant", subfeature = "generate" } = options;
+  const { userId, feature = "ai_assistant", subfeature = "generate", media = [] } = options;
   const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, 60000));
   const perProviderMaxMs = Math.max(1000, Math.min(options.perProviderMaxMs ?? DEFAULT_PER_PROVIDER_MAX_MS, maxChainMs));
   let groundedPrompt = prompt;
@@ -105,13 +107,10 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Provider order is data-driven, not fixed: recent ai_usage_logs showed
-  // Gemini and Cloudflare both failing (mostly aborted) far more often than
-  // OpenRouter over the last two days, on both lesson and quiz generation.
-  // OpenRouter goes first so the common case reaches a working provider
-  // before burning the chain budget on providers currently struggling; the
-  // others remain as fallback in case OpenRouter itself has an outage.
-  if (process.env.OPENROUTER_API_KEY && canTry()) {
+  // Text requests use the normal data-driven fallback order. Multimodal requests
+  // must start with a provider that can actually consume the supplied media.
+  // Never silently discard the visual source and pretend a text-only provider saw it.
+  if (!media.length && process.env.OPENROUTER_API_KEY && canTry()) {
     const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
       const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST", headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app", "X-Title": "Shadecode Student" },
@@ -131,7 +130,15 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: groundedPrompt }] }], generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 } }),
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: groundedPrompt },
+              ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+            ],
+          }],
+          generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
+        }),
       }, Math.min(timeout, 12000));
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
@@ -140,7 +147,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  if (process.env.CLOUDFLARE_API_TOKEN && canTry()) {
+
+  if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
     const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
       const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
         method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
@@ -153,7 +161,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  if (ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
+  if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
     const text = await tryProvider("openai", "gpt-4o-mini", async timeout => {
       const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST", headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
