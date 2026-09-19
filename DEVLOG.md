@@ -4,6 +4,19 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-19 (2) — Failed-sync visibility and `/api/sync` error hygiene
+
+**Why:** after the silent-loss fix, the remaining offline gap was that a permanently failed change (8 retries exhausted) was only a bare count in `OfflineShell`; `lastError` was stored but never shown, so a student had no idea what failed or what to do. Separately, `/api/sync` returned raw Postgres error text to the client on any RPC failure (constraint/schema names).
+
+**Implemented:**
+- `src/lib/offline/failureSummary.ts` (pure, 25 tests): classifies stored `lastError` text into `signed-out` / `wrong-account` / `network` / `conflict` / `server` / `unknown` and groups failed mutations by (store, reason) into short user-facing lines. Raw error text is used only to classify and is never returned. Checked in an order that keeps "does not match authenticated user" from being misread as a sign-in problem.
+- `OfflineShell`: when online with failed changes, the "N changes need attention" message becomes a toggle (`aria-expanded`) that opens a small list, e.g. "Task × 2 — Couldn't reach the server". Auto-closes when failures clear. Existing retry button unchanged. No discard action: deleting a student's unsynced work needs a product decision.
+- `/api/sync`: RPC failure now returns a generic `{ error: "Sync failed" }` (500) and logs `code`/`message`/store/operation/recordId server-side (never the payload); the RPC's deliberate ownership exception maps to 403 with its fixed message.
+
+**Verified:** `tsc --noEmit` clean, full vitest 156 files / 656 passed (was 630), repo lint 0 errors (same 45 pre-existing warnings). The `OfflineShell` behavior (pill, expand/collapse, reason text, raw error hidden, auto-close after retry) was exercised in a throwaway jsdom render test, then removed so no new dependency is added. **Not verified:** actual visual rendering in a browser (styling follows the file's existing inline pill style).
+
+---
+
 ## 2026-09-19 — Offline progress sync: silent-loss path removed, `/api/sync` gets regression coverage
 
 **Bug (root-caused, not a symptom):** `downloadManager.syncProgress()` — fired on every `online` event from the lesson page — POSTed to `/api/learn/progress`, a route that does not exist (404). `fetch` does not throw on HTTP errors and the status was never checked, so it then called `markProgressSynced()` → `acknowledgeEntityOperations()` with no lamport ceiling, marking *every* pending local progress operation for that lesson as synced without the server ever confirming it. It raced the real path (`offlineSync.syncAll()` → mutation queue → `POST /api/sync`), and any operation acknowledged before `bridgeLocalOperations()` enqueued it was lost permanently. Introduced by the migration of progress into the local-first store (the legacy method kept its old contract on top of the new store).

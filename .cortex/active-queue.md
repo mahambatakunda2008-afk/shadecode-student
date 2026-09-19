@@ -18,7 +18,8 @@ This is the executable queue for Cortex Engineering. `.cortex/tasks.md` remains 
 - [x] Duplicate progress sync path (audit §3.1) collapsed: `downloadManager.syncProgress` posted to a non-existent `/api/learn/progress` (404), ignored the HTTP status, then acknowledged local ops as synced (silent offline-progress loss). It now delegates to `offlineSync.syncAll()`; regression test in `src/lib/offline/__tests__/downloadManager.syncProgress.test.ts`.
 - [x] Retry/backoff: exponential 5s -> 15min cap, 8 attempts (`mutationQueue.ts`); failed count surfaced in `OfflineShell` with a manual retry.
 - Still open: operation-specific conflict policies. Today there is one rule (optimistic concurrency, server wins, client reconciles via `reconcileConflict`); e.g. delete-vs-update has no dedicated policy.
-- Still open: permanent-failure detail. `OfflineShell` shows a count only; the user cannot see which change failed or why (`lastError` is stored but never displayed).
+- [x] Permanent-failure detail (2026-09-19): `OfflineShell`'s "need attention" pill now expands to show which kinds of change failed and a friendly reason (`src/lib/offline/failureSummary.ts`). Raw `lastError` text is only used to classify, never displayed. There is deliberately no "discard" action yet: dropping a student's unsynced work is a product call.
+- [x] `/api/sync` no longer returns raw database errors (generic `Sync failed`, detail logged server-side); a cross-account write returns a truthful 403.
 - Still open: verify account switching and logout/login behavior in a real browser.
 
 ## 🔴 Product observability completion
