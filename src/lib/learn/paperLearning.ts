@@ -16,6 +16,11 @@ export type PaperQuestion = {
   marks: number | null;
 };
 
+export type PaperQuestionCorrection = {
+  questionNumber: string;
+  correctedText: string;
+};
+
 function hashText(text: string) {
   return createHash("sha256").update(text.trim()).digest("hex");
 }
@@ -77,6 +82,33 @@ export function selectPaperQuestions<T extends { questionNumber: string }>(quest
   return { selected, requestedNumbers: requested, missingNumbers };
 }
 
+export function applyQuestionCorrections<T extends { questionNumber: string; questionText: string }>(
+  questions: T[],
+  corrections: PaperQuestionCorrection[],
+) {
+  const correctionMap = new Map(
+    corrections
+      .map(item => ({ questionNumber: item.questionNumber.trim(), correctedText: item.correctedText.trim() }))
+      .filter(item => item.questionNumber && item.correctedText.length >= 3 && item.correctedText.length <= 6000)
+      .map(item => [item.questionNumber, item.correctedText]),
+  );
+  const invalidNumbers = corrections
+    .map(item => item.questionNumber.trim())
+    .filter(Boolean)
+    .filter(number => !questions.some(question => question.questionNumber === number));
+  if (invalidNumbers.length) {
+    return { questions, appliedNumbers: [] as string[], invalidNumbers: [...new Set(invalidNumbers)] };
+  }
+  const appliedNumbers: string[] = [];
+  const corrected = questions.map(question => {
+    const replacement = correctionMap.get(question.questionNumber);
+    if (!replacement || replacement === question.questionText.trim()) return question;
+    appliedNumbers.push(question.questionNumber);
+    return { ...question, questionText: replacement };
+  });
+  return { questions: corrected, appliedNumbers, invalidNumbers: [] as string[] };
+}
+
 type NumberedQuestionStart = {
   pageNumber: number;
   lineIndex: number;
@@ -84,7 +116,6 @@ type NumberedQuestionStart = {
 };
 
 const TOP_LEVEL_QUESTION_RE = /^\s*(\d{1,3})[.)](?:\s+|$)/;
-const MARKS_RE = /\[(\d{1,3})\]\s*$/;
 
 function findTopLevelQuestionStarts(pages: Array<Pick<PaperPage, "pageNumber" | "text">>) {
   const starts: NumberedQuestionStart[] = [];
