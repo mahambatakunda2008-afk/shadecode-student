@@ -55,7 +55,14 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
       .then(async response => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Couldn't load this paper session."); return data as Session; })
       .then(data => { if (!alive) return; setSession(data); setOffline(false); window.localStorage.setItem(cacheKey(sessionId), JSON.stringify(data)); })
       .catch(e => { if (alive && !cached) setError(e instanceof Error ? e.message : "Couldn't load this session."); });
-    const online = () => setOffline(false); const offlineEvent = () => setOffline(true);
+    const online = () => {
+      setOffline(false);
+      fetch(`/api/learn/paper?id=${encodeURIComponent(sessionId)}`, { cache: "no-store" })
+        .then(async response => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Couldn't refresh this learning session."); return data as Session; })
+        .then(data => { if (!alive) return; setSession(data); window.localStorage.setItem(cacheKey(sessionId), JSON.stringify(data)); })
+        .catch(() => { if (alive) setOffline(true); });
+    };
+    const offlineEvent = () => setOffline(true);
     window.addEventListener("online", online); window.addEventListener("offline", offlineEvent);
     return () => { alive = false; window.removeEventListener("online", online); window.removeEventListener("offline", offlineEvent); };
   }, [sessionId]);
