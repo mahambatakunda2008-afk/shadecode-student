@@ -23,6 +23,7 @@ export default function PaperStudyLauncher() {
   const [pageEnd, setPageEnd] = useState("8");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+  const [corrections, setCorrections] = useState<Record<string, string>>({});
   const [inspected, setInspected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function PaperStudyLauncher() {
   function resetSelection() {
     setQuestions([]);
     setSelectedQuestions([]);
+    setCorrections({});
     setInspected(false);
     setError(null);
   }
@@ -47,8 +49,10 @@ export default function PaperStudyLauncher() {
       const response = await fetch("/api/learn/paper", { method: "POST", body: form, cache: "no-store" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Couldn't inspect the paper.");
-      setQuestions(Array.isArray(data.questions) ? data.questions : []);
+      const nextQuestions = Array.isArray(data.questions) ? data.questions as Question[] : [];
+      setQuestions(nextQuestions);
       setSelectedQuestions([]);
+      setCorrections(Object.fromEntries(nextQuestions.map(question => [question.questionNumber, question.questionText])));
       setInspected(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't inspect the paper.");
@@ -67,6 +71,13 @@ export default function PaperStudyLauncher() {
       form.set("pageStart", pageStart);
       form.set("pageEnd", pageEnd);
       if (selectedQuestions.length) form.set("questionNumbers", JSON.stringify(selectedQuestions));
+      const questionCorrections = Object.entries(corrections)
+        .filter(([number, text]) => {
+          const original = questions.find(question => question.questionNumber === number)?.questionText ?? "";
+          return text.trim() && text.trim() !== original.trim();
+        })
+        .map(([questionNumber, correctedText]) => ({ questionNumber, correctedText: correctedText.trim() }));
+      if (questionCorrections.length) form.set("questionCorrections", JSON.stringify(questionCorrections));
       const response = await fetch("/api/learn/paper", { method: "POST", body: form, cache: "no-store" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.id) throw new Error(data.error || "Couldn't process the paper.");
@@ -141,7 +152,22 @@ export default function PaperStudyLauncher() {
                           <span className="text-[10px] font-semibold text-[var(--muted-foreground)]">Pages {question.sourcePageStart}–{question.sourcePageEnd}{question.marks ? ` · ${question.marks} marks` : ""}</span>
                           {uncertain && <span className="rounded-full border border-[var(--card-border)] px-2 py-0.5 text-[9px] font-bold">Check extraction</span>}
                         </span>
-                        <span className="mt-1 block line-clamp-3 text-xs leading-5 text-[var(--muted-foreground)]">{question.questionText}</span>
+                        <span className="mt-1 block text-xs leading-5 text-[var(--muted-foreground)]">{question.questionText}</span>
+                        {uncertain && (
+                          <span className="mt-2 block">
+                            <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--primary)]">Verify extracted text</span>
+                            <textarea
+                              value={corrections[question.questionNumber] ?? question.questionText}
+                              onChange={event => setCorrections(current => ({ ...current, [question.questionNumber]: event.target.value }))}
+                              onClick={event => event.stopPropagation()}
+                              onChangeCapture={event => event.stopPropagation()}
+                              rows={4}
+                              className="w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] p-3 text-xs leading-5 outline-none focus:border-[var(--primary)]"
+                              aria-label={`Corrected text for question ${question.questionNumber}`}
+                            />
+                            <span className="mt-1 block text-[10px] text-[var(--muted-foreground)]">This correction is sent to Cortex as student-verified wording. The original extraction remains in provenance.</span>
+                          </span>
+                        )}
                       </span>
                     </label>
                   );
