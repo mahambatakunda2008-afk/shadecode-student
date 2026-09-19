@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -86,7 +87,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const blockId = typeof body.blockId === "string" ? body.blockId.trim().slice(0, 80) : "";
     const transferId = typeof body.transferId === "string" ? body.transferId.trim().slice(0, 80) : "";
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
-    const clientActionId = typeof body.clientActionId === "string" ? body.clientActionId.trim().slice(0, 120) : "";
+    const clientActionId = normalizeClientActionId(body.clientActionId);
     if (!action || !blockId) return NextResponse.json({ error: "Transfer action and source checkpoint are required." }, { status: 400 });
     const { data: session } = await auth.supabase.from("paper_learning_sessions").select("id,selected_page_start,selected_page_end,pages,learning_plan").eq("id", sessionId).eq("user_id", auth.user.id).maybeSingle();
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
