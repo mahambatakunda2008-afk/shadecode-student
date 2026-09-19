@@ -39,7 +39,11 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const [actionError, setActionError] = useState<string | null>(null);
   const [interaction, setInteraction] = useState<InteractionResponse | null>(null);
   const [guidedMode, setGuidedMode] = useState(false);
-  const [revealedBlocks, setRevealedBlocks] = useState<string[]>([]);\n  const [transferId, setTransferId] = useState<string | null>(null);\n  const [transferQuestion, setTransferQuestion] = useState<string | null>(null);\n  const [transferAnswer, setTransferAnswer] = useState("");\n  const [transferResult, setTransferResult] = useState<InteractionResponse | null>(null);
+  const [revealedBlocks, setRevealedBlocks] = useState<string[]>([]);
+  const [transferId, setTransferId] = useState<string | null>(null);
+  const [transferQuestion, setTransferQuestion] = useState<string | null>(null);
+  const [transferAnswer, setTransferAnswer] = useState("");
+  const [transferResult, setTransferResult] = useState<InteractionResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
