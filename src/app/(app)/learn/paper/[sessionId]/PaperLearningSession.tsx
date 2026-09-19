@@ -20,7 +20,7 @@ type Session = {
   updated_at: string;
 };
 type Evaluation = { verdict: "correct" | "partially_correct" | "incorrect"; feedback: string; misconception?: string | null; nextAction?: string | null; hint?: string | null; solution?: string | null; attemptCount: number; completed: boolean };
-type InteractionResponse = { action: string; message?: string; question?: string; attemptCount?: number };
+type InteractionResponse = { action: string; message?: string; question?: string; transferId?: string; attemptCount?: number; verdict?: "correct" | "partially_correct" | "incorrect"; feedback?: string; misconception?: string | null; nextAction?: string | null; completed?: boolean };
 
 const cacheKey = (id: string) => `shadecode:paper-session:${id}`;
 const isCheckpoint = (block: Block) => block.type === "checkpoint" || block.type === "mastery";
@@ -40,6 +40,10 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const [interaction, setInteraction] = useState<InteractionResponse | null>(null);
   const [guidedMode, setGuidedMode] = useState(false);
   const [revealedBlocks, setRevealedBlocks] = useState<string[]>([]);
+  const [transferId, setTransferId] = useState<string | null>(null);
+  const [transferQuestion, setTransferQuestion] = useState<string | null>(null);
+  const [transferAnswer, setTransferAnswer] = useState("");
+  const [transferResult, setTransferResult] = useState<InteractionResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -102,12 +106,38 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
     if (!currentBlock || offline) return;
     setActionError(null);
     setInteraction(null);
+    if (action === "quiz") { setTransferId(null); setTransferQuestion(null); setTransferAnswer(""); setTransferResult(null); }
     setChecking(true);
     try {
-      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/attempt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ blockId: currentBlock.id, action, response: answer }) });
+      const endpoint = action === "quiz"
+        ? `/api/learn/paper/${encodeURIComponent(sessionId)}/transfer`
+        : `/api/learn/paper/${encodeURIComponent(sessionId)}/attempt`;
+      const body = action === "quiz"
+        ? { action: "generate", blockId: currentBlock.id }
+        : { blockId: currentBlock.id, action, response: answer };
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Cortex couldn't process that action.");
       setInteraction(data as InteractionResponse);
+      if (action === "quiz") { setTransferId(data.transferId || null); setTransferQuestion(data.question || null); }
+    } catch (e) { setActionError(e instanceof Error ? e.message : "Something went wrong."); }
+    finally { setChecking(false); }
+  }
+
+  async function submitTransfer() {
+    if (!currentBlock || !transferId || !transferAnswer.trim() || offline) return;
+    setActionError(null);
+    setChecking(true);
+    try {
+      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/transfer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit", blockId: currentBlock.id, transferId, response: transferAnswer }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Cortex couldn't grade the transfer.");
+      setTransferResult(data as InteractionResponse);
+      if (data.completed) {
+        const next = new Set(completedIds); next.add(currentBlock.id);
+        const nextSession = { ...session, progress: { ...(session?.progress ?? {}), completedBlockIds: [...next], lastBlockId: currentBlock.id, lastVerdict: data.verdict } } as Session;
+        setSession(nextSession); window.localStorage.setItem(cacheKey(sessionId), JSON.stringify(nextSession));
+      }
     } catch (e) { setActionError(e instanceof Error ? e.message : "Something went wrong."); }
     finally { setChecking(false); }
   }
@@ -164,7 +194,8 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
                 </div>}
                 {revealed && <div className="mt-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 text-sm leading-6"><p className="font-bold">Reference solution</p><p className="mt-2 whitespace-pre-line">{revealed}</p></div>}
                 {actionError && <p className="mt-3 text-sm font-semibold">{actionError}</p>}
-                {interaction && <div className="mt-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><p className="text-sm leading-7 whitespace-pre-line">{interaction.message}</p>{interaction.question && <div className="mt-3 border-t border-[var(--card-border)] pt-3"><p className="text-sm font-bold">New mastery question</p><p className="mt-2 text-sm leading-7 whitespace-pre-line">{interaction.question}</p><p className="mt-2 text-xs text-[var(--muted-foreground)]">Answer it in your own words or working, then use Check my reasoning.</p></div>}</div>}
+                {interaction && <div className="mt-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><p className="text-sm leading-7 whitespace-pre-line">{interaction.message}</p>{interaction.question && !transferQuestion && <div className="mt-3 border-t border-[var(--card-border)] pt-3"><p className="text-sm font-bold">New mastery question</p><p className="mt-2 text-sm leading-7 whitespace-pre-line">{interaction.question}</p></div>}</div>}
+                {transferQuestion && <div className="mt-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4"><p className="text-xs font-black uppercase tracking-wider text-[var(--primary)]">Transfer challenge</p><p className="mt-2 text-sm leading-7 whitespace-pre-line">{transferQuestion}</p><textarea value={transferAnswer} onChange={e => setTransferAnswer(e.target.value)} disabled={checking || offline || !!transferResult} rows={5} placeholder="Solve the new problem. Show your reasoning." className="mt-4 w-full resize-y rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4 text-sm outline-none focus:border-[var(--primary)]" /><button type="button" onClick={submitTransfer} disabled={checking || offline || !transferAnswer.trim() || !!transferResult} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)] disabled:opacity-50">{checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Submit transfer</button>{transferResult && <div className="mt-4 border-t border-[var(--card-border)] pt-4"><p className="text-sm font-black uppercase tracking-wide">{transferResult.verdict?.replace("_", " ")}</p><p className="mt-2 text-sm leading-6">{transferResult.feedback}</p>{transferResult.misconception && <p className="mt-2 text-sm leading-6"><span className="font-bold">What to fix:</span> {transferResult.misconception}</p>}{transferResult.nextAction && <p className="mt-2 text-sm leading-6"><span className="font-bold">Next:</span> {transferResult.nextAction}</p>}</div>}</div>}
                 <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => checkpointAction("submit")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)] disabled:opacity-50">{checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Check my reasoning</button><button type="button" onClick={() => checkpointAction("hint")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-bold disabled:opacity-50"><Lightbulb className="h-4 w-4" /> Give me a hint</button><button type="button" onClick={() => checkpointAction("reveal")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><RotateCcw className="h-4 w-4" /> Show solution</button><button type="button" onClick={() => learningAction("teach-page")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><BookOpen className="h-4 w-4" /> Teach this page</button><button type="button" onClick={() => learningAction("explain-step")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Explain this step</button><button type="button" onClick={() => learningAction("why")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Why?</button><button type="button" onClick={() => learningAction("quiz")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Quiz me</button></div>
               </div>}
             </article>;
