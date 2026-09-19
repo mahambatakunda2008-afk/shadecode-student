@@ -48,6 +48,7 @@ const FLOW = new Set(["objective", "map", "prior", "concept", "definition", "str
 const LABELS: Record<string, string> = {
   objective: "Learning objectives", map: "The big picture", prior: "Before you begin", concept: "Core idea", definition: "Key definitions",
   structure: "Structure and patterns", mechanism: "How it works",
+  synthesis: "Put it together", curiosity: "Go deeper", next: "Where to go next",
   formula: "Formula / method", math: "Formula / method", example: "Worked example", application: "Apply it",
   comparison: "Compare", exam: "Exam transfer", practice: "Practice", summary: "Key takeaways",
 };
