@@ -189,12 +189,14 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { sessionId } = await context.params;
-    const body = await req.json().catch(() => ({})) as { blockId?: unknown; action?: unknown; response?: unknown };
+    const body = await req.json().catch(() => ({})) as { blockId?: unknown; action?: unknown; response?: unknown; clientActionId?: unknown };
     const blockId = typeof body.blockId === "string" ? body.blockId.trim().slice(0, 80) : "";
     const action = body.action === "hint" || body.action === "reveal" || body.action === "teach-page" || body.action === "explain-step" || body.action === "why" || body.action === "quiz" ? body.action : "submit";
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
+    const clientActionId = typeof body.clientActionId === "string" ? body.clientActionId.trim().slice(0, 120) : "";
     if (!blockId) return NextResponse.json({ error: "Checkpoint is missing." }, { status: 400 });
     if (action === "submit" && !responseText) return NextResponse.json({ error: "Write an attempt before submitting." }, { status: 400 });
+    if (action === "submit" && !clientActionId) return NextResponse.json({ error: "Submission identity is missing. Please try again." }, { status: 400 });
 
     const { data: session, error: sessionError } = await auth.supabase
       .from("paper_learning_sessions")
@@ -204,6 +206,30 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
       .maybeSingle();
     if (sessionError) return NextResponse.json({ error: "Couldn't load this learning session." }, { status: 500 });
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
+
+    if (action === "submit" && clientActionId) {
+      const { data: existingAction } = await auth.supabase
+        .from("paper_learning_attempts")
+        .select("attempt_no,verdict,feedback,misconception,next_action")
+        .eq("session_id", sessionId)
+        .eq("user_id", auth.user.id)
+        .eq("client_action_id", clientActionId)
+        .maybeSingle();
+      if (existingAction) {
+        return NextResponse.json({
+          action: "submit",
+          verdict: existingAction.verdict,
+          feedback: existingAction.feedback || "",
+          misconception: existingAction.misconception || null,
+          nextAction: existingAction.next_action || null,
+          hint: null,
+          solution: existingAction.verdict === "correct" ? undefined : null,
+          attemptCount: existingAction.attempt_no,
+          completed: existingAction.verdict === "correct",
+          replayed: true,
+        });
+      }
+    }
 
     const plan = session.learning_plan as Plan;
     const block = findBlock(plan, blockId);
@@ -311,8 +337,15 @@ Return ONLY JSON with:
       feedback: evaluation.feedback,
       misconception: evaluation.misconception || null,
       next_action: evaluation.nextAction || null,
+      client_action_id: clientActionId || null,
     });
-    if (attemptError) return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
+    if (attemptError) {
+      const { data: savedAction } = clientActionId
+        ? await auth.supabase.from("paper_learning_attempts").select("attempt_no,verdict,feedback,misconception,next_action").eq("session_id", sessionId).eq("user_id", auth.user.id).eq("client_action_id", clientActionId).maybeSingle()
+        : { data: null };
+      if (savedAction) return NextResponse.json({ action: "submit", verdict: savedAction.verdict, feedback: savedAction.feedback || "", misconception: savedAction.misconception || null, nextAction: savedAction.next_action || null, hint: null, solution: savedAction.verdict === "correct" ? undefined : null, attemptCount: savedAction.attempt_no, completed: savedAction.verdict === "correct", replayed: true });
+      return NextResponse.json({ error: "The attempt could not be saved, so mastery was not changed." }, { status: 500 });
+    }
 
     const progress = (session.progress && typeof session.progress === "object" ? session.progress : {}) as Record<string, unknown>;
     const completed = Array.isArray(progress.completedBlockIds) ? progress.completedBlockIds.filter((id): id is string => typeof id === "string") : [];
