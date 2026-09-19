@@ -44,6 +44,7 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const [transferQuestion, setTransferQuestion] = useState<string | null>(null);
   const [transferAnswer, setTransferAnswer] = useState("");
   const [transferResult, setTransferResult] = useState<InteractionResponse | null>(null);
+  const [submitActionId, setSubmitActionId] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -77,7 +78,7 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
   const completedCount = checkpoints.filter(block => completedIds.has(block.id)).length;
   const allComplete = checkpoints.length > 0 && completedCount === checkpoints.length;
   function selectCheckpoint(id: string) {
-    setActiveId(id); setAnswer(""); setResult(null); setHint(null); setRevealed(null); setActionError(null); setInteraction(null);
+    setActiveId(id); setAnswer(""); setResult(null); setHint(null); setRevealed(null); setActionError(null); setInteraction(null); setSubmitActionId(null);
   }
 
   function continueToNext() {
@@ -90,9 +91,11 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
     if (!currentBlock || offline) return;
     setActionError(null);
     if (action === "submit" && !answer.trim()) { setActionError("Write your reasoning first. Even a rough attempt gives Cortex something to diagnose."); return; }
+    const actionId = action === "submit" ? (submitActionId ?? crypto.randomUUID()) : undefined;
+    if (actionId && !submitActionId) setSubmitActionId(actionId);
     setChecking(true);
     try {
-      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/attempt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ blockId: currentBlock.id, action, response: answer }) });
+      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/attempt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ blockId: currentBlock.id, action, response: answer, clientActionId: actionId }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Cortex couldn't process that action.");
       if (action === "hint") setHint(data.hint || null);
