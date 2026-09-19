@@ -135,7 +135,17 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
       return NextResponse.json({ action: "submit", transferId, verdict: finalTransfer.verdict, feedback: finalTransfer.feedback, misconception: finalTransfer.misconception, nextAction: finalTransfer.next_action, completed: finalTransfer.verdict === "correct", idempotent: true });
     }
     const transferBlock: Block = { id: "transfer:" + transfer.id, type: "mastery", title: "Transfer question", content: transfer.question, sourcePages: block.sourcePages, interaction: { prompt: transfer.question, expectedConcepts: concepts, evaluationMode: "mixed", rubric: transfer.rubric, modelAnswer: transfer.expected_answer } };
-    await auth.supabase.from("paper_learning_attempts").insert({ session_id: sessionId, user_id: auth.user.id, block_id: blockId, attempt_no: attemptNo, action: "transfer-submit", response: responseText, verdict: evaluation.verdict, feedback: evaluation.feedback || null, misconception: evaluation.misconception || null, next_action: evaluation.nextAction || null });
+    const { error: attemptError } = await auth.supabase.from("paper_learning_attempts").insert({ session_id: sessionId, user_id: auth.user.id, block_id: blockId, attempt_no: attemptNo, action: "transfer-submit", response: responseText, verdict: evaluation.verdict, feedback: evaluation.feedback || null, misconception: evaluation.misconception || null, next_action: evaluation.nextAction || null });
+    if (attemptError) return NextResponse.json({ error: "The transfer result was saved, but its attempt record could not be created. Mastery was not changed." }, { status: 500 });
+    if (evaluation.verdict === "correct") {
+      const { data: currentSession, error: progressReadError } = await auth.supabase.from("paper_learning_sessions").select("progress").eq("id", sessionId).eq("user_id", auth.user.id).maybeSingle();
+      if (progressReadError || !currentSession) return NextResponse.json({ error: "The transfer was graded, but mastery progress could not be persisted. Please retry from this result." }, { status: 500 });
+      const progress = (currentSession.progress && typeof currentSession.progress === "object" ? currentSession.progress : {}) as Record<string, unknown>;
+      const completed = Array.isArray(progress.completedBlockIds) ? progress.completedBlockIds.filter((id): id is string => typeof id === "string") : [];
+      const completedBlockIds = completed.includes(blockId) ? completed : [...completed, blockId];
+      const { error: progressError } = await auth.supabase.from("paper_learning_sessions").update({ progress: { ...progress, completedBlockIds, lastBlockId: blockId, lastVerdict: evaluation.verdict, updatedAt: new Date().toISOString() } }).eq("id", sessionId).eq("user_id", auth.user.id);
+      if (progressError) return NextResponse.json({ error: "The transfer was graded, but mastery progress could not be persisted. Please retry from this result." }, { status: 500 });
+    }
     try { await signal(auth, plan, transferBlock, evaluation.verdict); } catch (error) { console.error("[paper-learning] transfer signal failed", error); }
     return NextResponse.json({ action: "submit", transferId, verdict: evaluation.verdict, feedback: evaluation.feedback, misconception: evaluation.misconception || null, nextAction: evaluation.nextAction || null, completed: evaluation.verdict === "correct" });
   } catch (error) {
