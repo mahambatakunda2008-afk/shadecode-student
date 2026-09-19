@@ -232,3 +232,21 @@ same gate, the same way lint and typecheck now are.
 
 Verified: `tsc --noEmit` clean, `npm run lint` 0 errors, full test suite passing,
 on both code changes made in this pass.
+
+---
+
+## 6. Follow-up (2026-09-19): flagged items closed or re-triaged
+
+| Item | Result |
+|---|---|
+| `ADMIN_REVIEW_TOKEN` timing-unsafe comparison (`/api/admin/careers` POST) | **Fixed** — constant-time compare via `src/lib/auth/secret-compare.ts`. It already failed closed on an unset variable. |
+| `ADMIN_SECRET` check on legacy `GET /api/feedback` | **Fixed, and worse than flagged.** The guard compared against `` `Bearer ${process.env.ADMIN_SECRET}` ``: with the variable unset the expected value was the literal `Bearer undefined`, so that header returned every `feedback` row via the service-role client. Now fails closed and compares in constant time. The route has **zero callers** (feedback is submitted via `/api/feedback-email`; admins read via the RBAC route `/api/admin/feedback`), so retiring it is a reasonable follow-up product call. |
+| Upload route missing file-size cap | **Fixed** for the one route lacking it (`/api/admin/exam-hub/upload`, admin-only, 25 MB / 413, same limit as community submit). The other four upload routes already capped size. |
+| `/api/cortex/event`, `/api/cortex/state` unauthenticated stubs | Unchanged — still a product call (finish or retire). |
+| `exam_logs`/`insights_archive` unused RLS-locked tables | Unchanged — product call. |
+| Leaked-password-protection disabled | Unchanged — Supabase dashboard toggle, not code. |
+
+**Could not verify:** whether `ADMIN_SECRET` is set in production. The Vercel connector used for this work is not permitted to list project env vars (403). If it was unset, the feedback endpoint was readable by anyone sending `Authorization: Bearer undefined` until this fix deployed; check the Vercel env settings and treat feedback content as potentially exposed in that case.
+
+Regression coverage: `src/lib/auth/__tests__/secret-compare.test.ts`, `src/tests/server/api/admin-secrets.test.ts` (the `Bearer undefined` and oversize-upload cases fail against the pre-fix routes).
+

@@ -4,6 +4,20 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-19 (3) — Security audit follow-ups: legacy feedback endpoint bypass, timing-safe secrets, upload cap
+
+Closed the code-only items the 2026-08-24 audit had flagged and left. Full write-up in `docs/audits/2026-08-24-security-audit.md` §6.
+
+**Real bug found while doing it:** `GET /api/feedback` (service-role client) authorized by comparing the header to the template string "Bearer " + `ADMIN_SECRET`. With `ADMIN_SECRET` unset the expected value is the string `Bearer undefined`, which any caller can send. The audit had only recorded this as a low-severity "timing-unsafe comparison". No caller exists in the app; the RBAC route `/api/admin/feedback` replaced it.
+
+**Implemented:** `src/lib/auth/secret-compare.ts` (`secretsMatch`: SHA-256 both sides then `timingSafeEqual`, fails closed on missing/empty; `bearerToken`), used by `/api/feedback` and `/api/admin/careers`; 25 MB / 413 cap on `/api/admin/exam-hub/upload`.
+
+**Verified:** `tsc` clean, vitest 158 files / 673 passed (was 656), lint 0 errors. New route tests fail against the pre-fix routes for the `Bearer undefined` bypass and the missing size cap (checked by stashing the fix). The careers change is timing hardening with identical behavior, so no unit test can distinguish it.
+
+**Not verifiable from here:** whether `ADMIN_SECRET` is set in production (Vercel connector lacks env-list permission). Owner should check; if unset, treat feedback content as potentially exposed.
+
+---
+
 ## 2026-09-19 (2) — Failed-sync visibility and `/api/sync` error hygiene
 
 **Why:** after the silent-loss fix, the remaining offline gap was that a permanently failed change (8 retries exhausted) was only a bare count in `OfflineShell`; `lastError` was stored but never shown, so a student had no idea what failed or what to do. Separately, `/api/sync` returned raw Postgres error text to the client on any RPC failure (constraint/schema names).
