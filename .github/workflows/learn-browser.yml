@@ -8,9 +8,9 @@ on:
         required: false
         default: "Organic Chemistry"
       subject:
-        description: "Subject used for the selected topics"
+        description: "Optional exact subject; leave blank to use the first available subject"
         required: false
-        default: "Chemistry"
+        default: ""
 
 jobs:
   learn-browser:
