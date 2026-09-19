@@ -129,3 +129,17 @@ Completed the security audit task by adding regression coverage for authorizatio
 **Change:** Created `src/lib/auth_utils.ts` with an `UnauthorizedError` class and a `getAuthorizedTask` function. This function fetches a task by ID and explicitly verifies its ownership against the authenticated user's ID. This provides a robust application-level authorization boundary check, acting as a safeguard against potential RLS misconfigurations and ensuring that sensitive data is only accessed by authorized users. API endpoints handling tasks should use this utility to ensure proper authorization.
 
 ---
+
+## 2026-09-19 — Cortex Auto-Cycle
+
+Completed a key aspect of the security audit by implementing regression coverage for authorization boundaries. I've added a comprehensive test suite at `src/api/__tests__/profile-authorization.test.ts` to rigorously verify the security of the profile API endpoint. This ensures that only authenticated users can access their own profile data, preventing common unauthorized access attempts and reinforcing our defense-in-depth strategy.
+
+**Task:** Add authorization regression tests for profile API
+
+**Change:** Created `src/api/__tests__/profile-authorization.test.ts` to provide robust regression coverage for the authorization boundaries of the `/api/profile` endpoint. This new test suite ensures:
+1. Unauthenticated requests to the profile API are correctly rejected with a 401 Unauthorized status.
+2. An authenticated user can successfully fetch their own profile data.
+3. The API gracefully handles scenarios where an authenticated user's profile is not found in the database by returning a 404 Not Found status.
+4. Crucially, the API strictly enforces that only the authenticated user's profile is queried, ignoring any external (potentially malicious) user IDs provided in the request query parameters. This prevents unauthorized data access across user profiles and reinforces the 'own-data-only' authorization boundary.
+
+---
