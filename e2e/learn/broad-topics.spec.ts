@@ -21,10 +21,7 @@ test.describe("Learn deep-generation browser contract", () => {
       await expect(page.locator("h1.lesson-title")).toBeVisible({ timeout: 15_000 });
 
       const units = page.locator(".lesson-unit");
-      await expect(units).toHaveCount(16, { timeout: 10_000 }).catch(async () => {
-        const count = await units.count();
-        throw new Error(`Deep lesson contract failed: expected at least 16 rendered lesson units, got ${count} for "${topic}".`);
-      });
+      await expect.poll(async () => units.count(), { timeout: 15_000 }).toBeGreaterThanOrEqual(16);
 
       const unitCount = await units.count();
       expect(unitCount).toBeGreaterThanOrEqual(16);
