@@ -168,10 +168,30 @@ describe("POST /api/sync", () => {
       expect(await res.json()).toMatchObject({ status: "conflict", currentVersion: 9, currentDeviceId: "device-b" });
     });
 
-    it("returns 500 (so the client retries) when the database call fails", async () => {
-      rpc.mockResolvedValue({ data: null, error: { message: "db down" } });
+    it("returns a generic 500 (client retries) and never leaks database error text", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      rpc.mockResolvedValue({
+        data: null,
+        error: { code: "23505", message: 'duplicate key value violates unique constraint "sync_revisions_pkey"' },
+      });
       const res = await post(validBody());
       expect(res.status).toBe(500);
+      const text = JSON.stringify(await res.json());
+      expect(text).toBe(JSON.stringify({ ok: false, error: "Sync failed" }));
+      expect(text).not.toContain("sync_revisions_pkey");
+      // ...but the detail is still available to operators, without the payload.
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      const logged = JSON.stringify(consoleError.mock.calls[0]);
+      expect(logged).toContain("sync_revisions_pkey");
+      expect(logged).not.toContain("Revise algebra");
+      consoleError.mockRestore();
+    });
+
+    it("returns 403 with the fixed message for a cross-account record", async () => {
+      rpc.mockResolvedValue({ data: null, error: { message: "Record ownership does not match authenticated user" } });
+      const res = await post(validBody());
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ ok: false, error: "Record ownership does not match authenticated user" });
     });
 
     it("never reports success for an unrecognised RPC result", async () => {

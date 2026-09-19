@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 const ALLOWED = new Set(["tasks", "subjects", "learn_lessons"]);
 const ID_RE = /^[A-Za-z0-9:_-]{1,200}$/;
+const OWNERSHIP_ERROR = "Record ownership does not match authenticated user";
 type Body = { operation?: "create" | "update" | "delete"; store?: string; payload?: Record<string, unknown>; clientVersion?: number; baseVersion?: number; deviceId?: string };
 function bad(message: string, status = 400) { return NextResponse.json({ ok: false, error: message }, { status }); }
 export async function POST(request: Request) {
@@ -23,7 +24,14 @@ export async function POST(request: Request) {
   if (!id || !ID_RE.test(id)) return bad("A valid record id is required");
   if (typeof payload.user_id === "string" && payload.user_id !== user.id) return bad("Payload owner does not match authenticated user", 403);
   const { data, error } = await supabase.rpc("apply_sync_mutation", { p_store: store, p_operation: operation, p_record_id: id, p_payload: { ...payload, user_id: user.id }, p_base_version: baseVersion, p_client_version: clientVersion, p_device_id: deviceId });
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (error) {
+    // The RPC raises this exact message for a cross-account write; it is safe to
+    // surface and lets the client classify the failure as permanent.
+    if (error.message === OWNERSHIP_ERROR) return bad(OWNERSHIP_ERROR, 403);
+    // Anything else may contain schema/constraint detail: log it, don't return it.
+    console.error("[api/sync] apply_sync_mutation failed", { store, operation, recordId: id, code: error.code, message: error.message });
+    return bad("Sync failed", 500);
+  }
   const result = (data ?? {}) as Record<string, unknown>;
   if (result.status === "conflict") return NextResponse.json(result, { status: 409 });
   if (result.status === "accepted" || result.status === "already-applied") return NextResponse.json(result, { status: 200 });
