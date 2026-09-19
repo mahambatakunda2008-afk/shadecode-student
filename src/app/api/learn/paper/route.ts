@@ -256,17 +256,17 @@ export async function POST(req: Request) {
       }
     }
     requestedQuestionNumbers = [...new Set(requestedQuestionNumbers)].slice(0, 40);
-    const questionSelection = selectPaperQuestions(questions, requestedQuestionNumbers);
-    const selectedQuestionNumbers = questionSelection.requestedNumbers.filter(number => !questionSelection.missingNumbers.includes(number));
-    if (requestedQuestionNumbers.length > 0 && selectedQuestionNumbers.length === 0) {
-      return NextResponse.json({ error: "None of the selected questions could be traced to the extracted paper." }, { status: 422 });
-    }
-    const correctionResult = applyQuestionCorrections(questionSelection.selected, requestedCorrections.slice(0, 40));
+    const correctionResult = applyQuestionCorrections(questions, requestedCorrections.slice(0, 40));
     if (correctionResult.invalidNumbers.length) {
       return NextResponse.json({ error: `A correction referenced an unknown question: Q${correctionResult.invalidNumbers[0]}.` }, { status: 422 });
     }
     const correctedQuestionNumbers = correctionResult.appliedNumbers;
-    const scopedQuestions = correctionResult.questions;
+    const questionSelection = selectPaperQuestions(correctionResult.questions, requestedQuestionNumbers);
+    const selectedQuestionNumbers = questionSelection.requestedNumbers.filter(number => !questionSelection.missingNumbers.includes(number));
+    if (requestedQuestionNumbers.length > 0 && selectedQuestionNumbers.length === 0) {
+      return NextResponse.json({ error: "None of the selected questions could be traced to the extracted paper." }, { status: 422 });
+    }
+    const scopedQuestions = questionSelection.selected;
 
     const { data: session, error: insertError } = await auth.supabase.from("paper_learning_sessions").insert({
       user_id: auth.user.id,
