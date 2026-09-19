@@ -67,10 +67,22 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const has = (...names: string[]) => names.some(name => types.has(name));
   const tokens = topicTokens(request);
 
-  if (normalized.length > 18) failures.push("too-many-blocks");
+  const broadOrDeep = request.broadTopic || request.depth === "deep";
+  if (normalized.length > (broadOrDeep ? 24 : 18)) failures.push("too-many-blocks");
   if (normalized.length < 4) failures.push("insufficient-structure");
   if (request.depth === "deep" && normalized.length < 10) failures.push("deep-session-too-thin");
-  if (request.broadTopic && normalized.length < 12) failures.push("broad-topic-too-thin");
+  if (request.broadTopic && normalized.length < 16) failures.push("broad-topic-too-thin");
+  if (broadOrDeep) {
+    const richTypes = new Set(["map", "concept", "structure", "mechanism", "example", "application", "synthesis", "curiosity"]);
+    const richBlocks = normalized.filter(block => richTypes.has(block.normalizedType) && block.content.trim().length >= 100);
+    const examples = normalized.filter(block => ["example", "application"].includes(block.normalizedType)).length;
+    const checkpoints = normalized.filter(block => block.normalizedType === "checkpoint").length;
+    const continuation = normalized.filter(block => ["synthesis", "curiosity", "next"].includes(block.normalizedType)).length;
+    if (richBlocks.length < 6) failures.push("deep-content-too-thin");
+    if (examples < 3 && request.intent === "teach") failures.push("deep-examples-too-thin");
+    if (checkpoints < 3 && request.intent !== "practice") failures.push("deep-checkpoints-too-thin");
+    if (continuation < 1) failures.push("deep-continuation-missing");
+  }
   if (["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p))) failures.push("generic-language");
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
