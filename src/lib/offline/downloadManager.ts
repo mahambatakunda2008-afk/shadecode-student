@@ -5,6 +5,7 @@
  */
 
 import { offlineStorage, OfflineLesson, OfflineNotes, OfflineQuiz, OfflineProgress } from "./storage";
+import { offlineSync } from "./sync";
 import { log } from "@/lib/observability";
 
 export interface DownloadProgress {
@@ -262,34 +263,26 @@ class DownloadManager {
     return await offlineStorage.getProgress(lessonId, userId);
   }
 
+  /**
+   * Flush offline progress. Progress lives in the local-first store and reaches
+   * Supabase through the single canonical path: local op -> mutationQueue ->
+   * POST /api/sync (idempotent, version-checked). This method deliberately does
+   * NOT talk to the network or acknowledge operations itself: a previous
+   * implementation posted to a non-existent endpoint, ignored the HTTP status,
+   * and then marked the local operations as synced, silently dropping offline
+   * quiz progress. Acknowledgement must only happen on a server-confirmed result.
+   */
   async syncProgress(userId: string): Promise<void> {
-    const unsyncedProgress = await offlineStorage.getUnsyncedProgress();
-    
-    for (const progress of unsyncedProgress) {
-      if (progress.userId !== userId) continue;
-
-      try {
-        await fetch("/api/learn/progress", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lessonId: progress.lessonId,
-            completed: progress.completed,
-            progress: progress.progress,
-            quizScore: progress.quizScore,
-          }),
-        });
-
-        await offlineStorage.markProgressSynced(progress.lessonId, userId);
-      } catch (error) {
-        console.error("Failed to sync progress:", error);
-        log.offlineSyncFailed({
-          userId,
-          operation: "syncProgress",
-          table: "learn_lessons_progress",
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
+    try {
+      await offlineSync.syncAll();
+    } catch (error) {
+      console.error("Failed to sync progress:", error);
+      log.offlineSyncFailed({
+        userId,
+        operation: "syncProgress",
+        table: "learn_lessons",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 }
