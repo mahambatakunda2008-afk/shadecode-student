@@ -47,8 +47,26 @@ describe("paper learning question provenance", () => {
   });
 
   it("preserves an explicit empty-text warning instead of inventing a page", () => {
-    expect(buildPaperSourceText([{ pageNumber: 3, text: "", textHash: "x" }]))
+    expect(buildPaperSourceText([{ pageNumber: 3, text: "", textHash: "x", visual: { width: 612, height: 792, imageCount: 0, vectorGraphicCount: 0, hasVisualContent: false } }]))
       .toContain("[No selectable text extracted. The page may contain an image, scan, or diagram.]");
+  });
+
+  it("surfaces detected visual content without pretending to understand the pixels", () => {
+    const source = buildPaperSourceText([{
+      pageNumber: 5,
+      text: "A particle moves.",
+      textHash: "x",
+      visual: {
+        width: 612,
+        height: 792,
+        imageCount: 1,
+        vectorGraphicCount: 4,
+        hasVisualContent: true,
+      },
+    }]);
+    expect(source).toContain("VISUAL CONTENT DETECTED");
+    expect(source).toContain("1 embedded image operation(s)");
+    expect(source).toContain("Do not invent what it contains");
   });
 });
 

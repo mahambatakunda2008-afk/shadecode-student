@@ -4,6 +4,13 @@ export type PaperPage = {
   pageNumber: number;
   text: string;
   textHash: string;
+  visual: {
+    width: number;
+    height: number;
+    imageCount: number;
+    vectorGraphicCount: number;
+    hasVisualContent: boolean;
+  };
 };
 
 export type PaperQuestion = {
@@ -53,7 +60,42 @@ export async function extractPdfPages(file: File): Promise<PaperPage[]> {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
       const text = pageTextFromItems(content.items as Array<Record<string, unknown>>);
-      pages.push({ pageNumber, text, textHash: hashText(text) });
+      const viewport = page.getViewport({ scale: 1 });
+      let imageCount = 0;
+      let vectorGraphicCount = 0;
+      try {
+        const operatorList = await page.getOperatorList();
+        const OPS = pdfjs.OPS as Record<string, number>;
+        const imageOps = new Set([
+          OPS.paintImageMaskXObject,
+          OPS.paintImageMaskXObjectRepeat,
+          OPS.paintSolidColorImageMask,
+          OPS.paintImageXObject,
+          OPS.paintInlineImageXObject,
+        ].filter((value): value is number => typeof value === "number"));
+        const vectorOps = new Set([
+          OPS.constructPath,
+          OPS.paintSolidColorImageMask,
+        ].filter((value): value is number => typeof value === "number"));
+        for (const op of operatorList.fnArray) {
+          if (imageOps.has(op)) imageCount += 1;
+          if (vectorOps.has(op)) vectorGraphicCount += 1;
+        }
+      } catch {
+        // Keep text extraction usable if operator inspection is unavailable.
+      }
+      pages.push({
+        pageNumber,
+        text,
+        textHash: hashText(text),
+        visual: {
+          width: Math.round(viewport.width),
+          height: Math.round(viewport.height),
+          imageCount,
+          vectorGraphicCount,
+          hasVisualContent: imageCount > 0 || vectorGraphicCount > 0,
+        },
+      });
     }
   } finally {
     await loadingTask.destroy();
@@ -63,7 +105,15 @@ export async function extractPdfPages(file: File): Promise<PaperPage[]> {
 
 export function buildPaperSourceText(pages: PaperPage[]) {
   return pages
-    .map((page) => `=== SOURCE PAGE ${page.pageNumber} ===\n${page.text || "[No selectable text extracted. The page may contain an image, scan, or diagram.]"}`)
+    .map((page) => {
+      const visualInfo = page.visual;
+      const visual = visualInfo?.hasVisualContent
+        ? `[VISUAL CONTENT DETECTED: ${visualInfo.imageCount} embedded image operation(s), ${visualInfo.vectorGraphicCount} vector graphic operation(s), page ${visualInfo.width}×${visualInfo.height}pt. The extracted text does not fully represent this visual content. Do not invent what it contains.]`
+        : visualInfo
+          ? `[No embedded image/vector operations detected; page dimensions ${visualInfo.width}×${visualInfo.height}pt.]`
+          : `[Visual inspection metadata unavailable. Do not infer diagrams, images, or layout that are not represented in extracted text.]`;
+      return `=== SOURCE PAGE ${page.pageNumber} ===\n${visual}\n${page.text || "[No selectable text extracted. The page may contain an image, scan, or diagram.]"}`;
+    })
     .join("\n\n");
 }
 
