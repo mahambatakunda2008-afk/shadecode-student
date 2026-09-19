@@ -4,7 +4,7 @@ export type PaperPage = {
   pageNumber: number;
   text: string;
   textHash: string;
-  visual: {
+  visual?: {
     width: number;
     height: number;
     imageCount: number;
@@ -106,9 +106,12 @@ export async function extractPdfPages(file: File): Promise<PaperPage[]> {
 export function buildPaperSourceText(pages: PaperPage[]) {
   return pages
     .map((page) => {
-      const visual = page.visual.hasVisualContent
-        ? `[VISUAL CONTENT DETECTED: ${page.visual.imageCount} embedded image operation(s), ${page.visual.vectorGraphicCount} vector graphic operation(s), page ${page.visual.width}×${page.visual.height}pt. The extracted text does not fully represent this visual content. Do not invent what it contains.]`
-        : `[No embedded image/vector operations detected; page dimensions ${page.visual.width}×${page.visual.height}pt.]`;
+      const visualInfo = page.visual;
+      const visual = visualInfo?.hasVisualContent
+        ? `[VISUAL CONTENT DETECTED: ${visualInfo.imageCount} embedded image operation(s), ${visualInfo.vectorGraphicCount} vector graphic operation(s), page ${visualInfo.width}×${visualInfo.height}pt. The extracted text does not fully represent this visual content. Do not invent what it contains.]`
+        : visualInfo
+          ? `[No embedded image/vector operations detected; page dimensions ${visualInfo.width}×${visualInfo.height}pt.]`
+          : `[Visual inspection metadata unavailable. Do not infer diagrams, images, or layout that are not represented in extracted text.]`;
       return `=== SOURCE PAGE ${page.pageNumber} ===\n${visual}\n${page.text || "[No selectable text extracted. The page may contain an image, scan, or diagram.]"}`;
     })
     .join("\n\n");
