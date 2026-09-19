@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -193,7 +194,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const blockId = typeof body.blockId === "string" ? body.blockId.trim().slice(0, 80) : "";
     const action = body.action === "hint" || body.action === "reveal" || body.action === "teach-page" || body.action === "explain-step" || body.action === "why" || body.action === "quiz" ? body.action : "submit";
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
-    const clientActionId = typeof body.clientActionId === "string" ? body.clientActionId.trim().slice(0, 120) : "";
+    const clientActionId = normalizeClientActionId(body.clientActionId);
     if (!blockId) return NextResponse.json({ error: "Checkpoint is missing." }, { status: 400 });
     if (action === "submit" && !responseText) return NextResponse.json({ error: "Write an attempt before submitting." }, { status: 400 });
     if (action === "submit" && !clientActionId) return NextResponse.json({ error: "Submission identity is missing. Please try again." }, { status: 400 });
