@@ -4,6 +4,16 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 — `main` head red on CI/Vercel (settings icon collision); `ADMIN_SECRET` exposure assessed
+
+**Fix:** upstream's brand PR (#329, `8a93b37`) made `main` fail Typecheck (CI) and the Vercel build. `src/app/(app)/settings/page.tsx` imports Lucide's `Settings` icon while the page itself is `export default function Settings()`; `icon={Settings}` therefore pointed at the page component (TS2440 + TS2741). Aliased the import (`Settings as SettingsIcon`); nothing else changed. Same recurring pattern as the 09-19 Playwright and the earlier BottomNav parse break (`34be6f4`, deployment `dpl_7PhCw…` ERROR, since repaired by #329): a UI commit pushed without running `npm run verify`. Production was never down; it kept serving the last READY build (`a1bc851`).
+
+**Incident follow-up:** owner confirmed `ADMIN_SECRET` was unset in production, so the legacy `GET /api/feedback` bypass (removed in entry (4)) was live. Exposure and evidence are written up in `docs/audits/2026-08-24-security-audit.md` §6: 8 feedback rows (free text + `user_id`, no email), no access found in the 24 h of logs available, history unrecoverable. No other route has the same bug pattern (swept).
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 668 tests).
+
+---
+
 ## 2026-09-19 (4) — Retired three dead endpoints; hardened the push gate
 
 **Retired (deleted), each after checking for callers in `src`, docs and dynamically built URLs:**

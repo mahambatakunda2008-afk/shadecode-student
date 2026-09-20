@@ -246,7 +246,11 @@ on both code changes made in this pass.
 | `exam_logs`/`insights_archive` unused RLS-locked tables | Unchanged — product call. |
 | Leaked-password-protection disabled | Unchanged — Supabase dashboard toggle, not code. |
 
-**Could not verify:** whether `ADMIN_SECRET` is set in production. The Vercel connector used for this work is not permitted to list project env vars (403). If it was unset, the feedback endpoint was readable by anyone sending `Authorization: Bearer undefined` until this fix deployed; check the Vercel env settings and treat feedback content as potentially exposed in that case.
+**Exposure assessment (2026-09-20):** the owner confirmed `ADMIN_SECRET` was **not set** in production, so the `Bearer undefined` bypass on `GET /api/feedback` was live and reachable by anyone until the fix deployed. There was no real secret to rotate.
+- *What was readable:* the whole `public.feedback` table via the service-role client: `id`, `user_id` (UUID), `type`, free-text `message`, `created_at`. No email or name columns. **8 rows** (2026-05-06 to 2026-08-30), all with a `user_id`. Message text is free-form and may contain whatever a student typed.
+- *Evidence of access:* none found, but the evidence is thin. Supabase API logs (24 h window, source verified healthy: 2,692 edge events, 1,063 database API calls) show **no** requests to `rest/v1/feedback`. Vercel runtime logs returned nothing for any path, even for the last hour, so they neither confirm nor rule out access. Anything before the last ~24 h is not recoverable with the tools available.
+- *Conclusion:* exposure was possible for months; exploitation is unproven either way. Low likelihood (obscure legacy route, no callers, tiny table) but not excluded. Route now deleted and the deletion confirmed live (production deployment `a1bc851`, READY).
+- *Sweep for the same bug class:* no other route compares a request credential against a possibly-unset env var. All other `Authorization` readers verify a Supabase JWT via `auth.getUser(token)`, and all 17 `/api/admin/*` routes gate on `has_role` (fails closed on error) or, for careers, the now constant-time token check.
 
 Regression coverage: `src/lib/auth/__tests__/secret-compare.test.ts`, `src/tests/server/api/admin-secrets.test.ts` (the `Bearer undefined` and oversize-upload cases fail against the pre-fix routes).
 
