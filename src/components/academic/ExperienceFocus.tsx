@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BriefcaseBusiness, Brain, Clock3, Coffee, Focus, Hammer, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
@@ -207,9 +208,9 @@ export default function ExperienceFocus() {
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
           <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Icon className="h-5 w-5" /></div>
+            <ShadecodeFeatureIcon feature="focus" size="sm" />
             <div>
-              <div className="text-sm font-semibold" style={{ color: accent }}>{copy.eyebrow}</div>
+              <div className="ssc-kicker ssc-brand-gradient">{copy.eyebrow}</div>
               <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{copy.title}</h1>
               <p className="mt-2 max-w-2xl text-[15px] leading-6 text-[var(--muted-foreground)]">{copy.body}</p>
             </div>
