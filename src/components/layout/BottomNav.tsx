@@ -109,7 +109,7 @@ export function BottomNav() {
             active ? "bg-[var(--primary-glow)]" : "bg-transparent",
           )}
         >
-          <ShadecodeFeatureIcon icon={Icon} size="sm" tile={false} active={active} />
+          <ShadecodeFeatureIcon icon={Icon} feature={item.feature} size="sm" tile={false} active={active} />
           {(() => {
             const resolved = resolveBadge(item.href, item.badge, item.urgent);
             return resolved.badge ? (
