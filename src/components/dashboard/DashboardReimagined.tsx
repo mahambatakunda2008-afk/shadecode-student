@@ -4,7 +4,7 @@ import "./DashboardReimagined.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, BrainCircuit, CheckCircle2, Loader2, RotateCcw, Target, Trophy, BookOpen, Clock3, Sparkles, Lightbulb } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, RotateCcw, Target, Trophy, BookOpen, Clock3, Sparkles, Lightbulb } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { progressService, performanceService, activityService, intelligenceEngine } from "@/lib/student-intelligence";
 import type { StudentProgress, StudentPerformance, StudentActivity, StudentIntelligenceData } from "@/lib/student-intelligence";
