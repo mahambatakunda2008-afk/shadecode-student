@@ -19,6 +19,7 @@ import {
   Trophy,
   Zap,
 } from "lucide-react";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 interface LeaderboardEntry {
   id: string;
@@ -200,22 +201,16 @@ export default function LeaderboardPage() {
 
       {/* HEADER */}
       <div style={{ marginBottom: "28px" }}>
-        <p
-          style={{
-            fontSize: "12px",
-            fontWeight: 700,
-            letterSpacing: "1px",
-            textTransform: "uppercase",
-            color: "var(--primary)",
-            marginBottom: "8px",
-          }}
-        >
-          Cortex OS
-        </p>
-        <h1 style={{ fontSize: "56px", lineHeight: 1, fontWeight: 900, margin: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <ShadecodeFeatureIcon feature="leaderboard" size="sm" />
+          <p style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "1.4px", textTransform: "uppercase", color: "var(--primary)", margin: 0 }}>
+            Progress & competition
+          </p>
+        </div>
+        <h1 style={{ fontSize: "clamp(32px, 6vw, 56px)", lineHeight: 1, fontWeight: 900, margin: 0 }}>
           Leaderboard
         </h1>
-        <p style={{ marginTop: "14px", color: "var(--muted-foreground)", fontSize: "18px" }}>
+        <p style={{ marginTop: "12px", color: "var(--muted-foreground)", fontSize: "15px" }}>
           Ranked by Cortex score · XP + Streak + Level
         </p>
       </div>
@@ -260,7 +255,7 @@ export default function LeaderboardPage() {
         <div
           style={{
             marginBottom: "22px",
-            background: "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(99,102,241,0.04))",
+            background: "var(--primary-glow)",
             border: "1px solid rgba(99,102,241,0.2)",
             borderRadius: "24px",
             padding: "22px",
@@ -281,7 +276,7 @@ export default function LeaderboardPage() {
                 #{currentUserRank}
               </h2>
             </div>
-            <Orbit size={46} color="var(--primary)" />
+            <ShadecodeFeatureIcon feature="leaderboard" size="md" />
           </div>
         </div>
       )}

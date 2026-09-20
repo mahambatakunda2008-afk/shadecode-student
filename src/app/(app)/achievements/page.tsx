@@ -9,6 +9,7 @@ import {
   ListChecks, FileCheck2, GraduationCap, Search, Languages, BadgeCheck,
   Timer, BookOpen, CalendarCheck, type LucideIcon,
 } from "lucide-react";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
   common: { bg: "bg-[var(--surface-2)]", border: "border-[var(--card-border)]", text: "text-[var(--muted-foreground)]", glow: "shadow-slate-500/20" },
@@ -46,7 +47,7 @@ export default function AchievementsPage() {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)] flex items-center gap-2"><Trophy className="w-6 h-6 text-amber-400" />{copy.title}</h1>
+        <div className="flex items-center gap-3"><ShadecodeFeatureIcon feature="leaderboard" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Progress system</p><h1 className="text-2xl font-bold text-[var(--foreground)]">{copy.title}</h1></div></div>
         <p className="text-[var(--muted-foreground)] text-sm mt-1">{copy.subtitle}</p>
       </div>
 
