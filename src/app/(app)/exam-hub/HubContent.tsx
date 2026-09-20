@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users, ListChecks } from "lucide-react";
+import { ShadecodeFeatureIcon, type ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
 
 interface HubCard {
   href: string;
@@ -10,6 +11,7 @@ interface HubCard {
   description: string;
   accent: string;
   comingSoon?: boolean;
+  feature?: ShadecodeFeatureName;
 }
 
 const CARDS: HubCard[] = [
@@ -19,6 +21,7 @@ const CARDS: HubCard[] = [
     title: "Past Papers",
     description: "Browse real past papers by board, subject, session, and year.",
     accent: "var(--primary)",
+    feature: "past-papers",
   },
   {
     href: "/exam-hub/questions",
@@ -26,6 +29,7 @@ const CARDS: HubCard[] = [
     title: "Question Bank",
     description: "Search extracted questions and practice from the paper library.",
     accent: "var(--primary)",
+    feature: "exam-sim",
   },
   {
     href: "/exam-sim",
@@ -33,6 +37,7 @@ const CARDS: HubCard[] = [
     title: "Generated Exams",
     description: "AI-generated practice exams, marked instantly.",
     accent: "var(--accent)",
+    feature: "exam-sim",
   },
   {
     href: "/exam-hub/saved",
@@ -40,6 +45,7 @@ const CARDS: HubCard[] = [
     title: "Saved Papers & Questions",
     description: "Everything you've bookmarked, in one place.",
     accent: "var(--warning)",
+    feature: "past-papers",
   },
   {
     href: "/analytics",
@@ -47,6 +53,7 @@ const CARDS: HubCard[] = [
     title: "Performance",
     description: "Your scores, time spent, and progress over time.",
     accent: "var(--primary)",
+    feature: "leaderboard",
   },
   {
     href: "/exam-hub/weak-topics",
@@ -54,6 +61,7 @@ const CARDS: HubCard[] = [
     title: "Weak Topics",
     description: "Topics to focus on based on your completed papers.",
     accent: "var(--danger)",
+    feature: "focus",
   },
   {
     href: "/exam-hub/recommendations",
@@ -61,6 +69,7 @@ const CARDS: HubCard[] = [
     title: "AI Recommendations",
     description: "Papers picked for you based on your recent performance.",
     accent: "var(--accent)",
+    feature: "insights",
     comingSoon: true,
   },
   {
@@ -69,6 +78,7 @@ const CARDS: HubCard[] = [
     title: "Contribute a Paper",
     description: "Share a paper others are missing and earn XP once approved.",
     accent: "var(--warning)",
+    feature: "profile",
   },
 ];
 
@@ -86,27 +96,22 @@ export default function HubContent({ isAdmin }: Props) {
           title: "Upload Papers",
           description: "Admin only — add past papers to the catalog.",
           accent: "var(--warning)",
+          feature: "settings",
         },
       ]
     : CARDS;
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)", marginBottom: 6 }}>
+    <div className="ssc-page-full">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-2 flex items-center gap-3"><ShadecodeFeatureIcon feature="past-papers" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Exam preparation</p><h1 className="text-2xl font-bold text-[var(--foreground)]">
           Exam Hub
-        </h1>
-        <p style={{ fontSize: 14, color: "var(--muted-foreground)", marginBottom: 28 }}>
+        </h1></div></div>
+        <p className="mb-7 text-sm text-[var(--muted-foreground)]">
           Everything for exam prep, in one place.
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => {
             const Icon = card.icon;
             const content = (
@@ -135,7 +140,7 @@ export default function HubContent({ isAdmin }: Props) {
                     marginBottom: 14,
                   }}
                 >
-                  <Icon size={20} color={card.accent} />
+                  <ShadecodeFeatureIcon icon={Icon} feature={card.feature} size="md" />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>
@@ -166,7 +171,7 @@ export default function HubContent({ isAdmin }: Props) {
             return card.comingSoon ? (
               <div key={card.href}>{content}</div>
             ) : (
-              <Link key={card.href} href={card.href} style={{ textDecoration: "none" }}>
+              <Link key={card.href} href={card.href} className="block">
                 {content}
               </Link>
             );
