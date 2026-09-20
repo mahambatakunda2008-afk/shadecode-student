@@ -4,6 +4,18 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 (2) — Leaderboard integrity hole closed (DB migration); curriculum coverage measured
+
+**Found by** running the Supabase security advisor. Any signed-in student could rewrite their own `profiles.xp/level/streak/season_xp/weekly_xp/rank/division/movement` directly from the browser (own-row RLS + column `UPDATE` grant + no trigger), or call `increment_xp` with any amount. `/leaderboard` ranks by `profiles.xp`. No premium/plan/role columns exist on `profiles`, so no paid-feature or privilege exposure.
+
+**Fixed:** migration `20260920092654_protect_profiles_competitive_columns` (applied to production, file committed) adds a trigger that pins those columns for `authenticated`/`anon` by ignoring the write, and revokes `EXECUTE` on `increment_xp` from `authenticated`. A column `REVOKE` was rejected: the signup page upserts `level/xp/streak` from the browser and cached PWA bundles would keep doing so. Server-side awards use the service role and are unaffected. Removed the unused `awardXPClient`.
+
+**Verified:** 7-check test on a throwaway table and a rolled-back test on the real table (own-row update executed, stats unchanged; RPC denied), catalog re-check, advisor re-run (finding cleared). Tamper scan of existing data found nothing (62 profiles, max XP 1,074 at level 11, zero level/XP mismatches). Full audit write-up: `docs/audits/2026-08-24-security-audit.md` §7. `npm run verify` clean (668 tests).
+
+**Also measured (no change):** objective-level curriculum exists for Computer Science only (5 versions, 249 objectives); see `.cortex/active-queue.md`. Earlier "only 3 subject/level combinations" referred to the legacy file catalogs.
+
+---
+
 ## 2026-09-20 — `main` head red on CI/Vercel (settings icon collision); `ADMIN_SECRET` exposure assessed
 
 **Fix:** upstream's brand PR (#329, `8a93b37`) made `main` fail Typecheck (CI) and the Vercel build. `src/app/(app)/settings/page.tsx` imports Lucide's `Settings` icon while the page itself is `export default function Settings()`; `icon={Settings}` therefore pointed at the page component (TS2440 + TS2741). Aliased the import (`Settings as SettingsIcon`); nothing else changed. Same recurring pattern as the 09-19 Playwright and the earlier BottomNav parse break (`34be6f4`, deployment `dpl_7PhCw…` ERROR, since repaired by #329): a UI commit pushed without running `npm run verify`. Production was never down; it kept serving the last READY build (`a1bc851`).

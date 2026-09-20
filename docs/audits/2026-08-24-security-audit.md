@@ -254,3 +254,26 @@ on both code changes made in this pass.
 
 Regression coverage: `src/lib/auth/__tests__/secret-compare.test.ts`, `src/tests/server/api/admin-secrets.test.ts` (the `Bearer undefined` and oversize-upload cases fail against the pre-fix routes).
 
+---
+
+## 7. Follow-up (2026-09-20): leaderboard integrity hole on `profiles`, found via the Supabase advisor
+
+The advisor flagged two SECURITY DEFINER functions callable by signed-in users (`increment_xp`, `upsert_revision_item`). Reading their bodies showed both already had ownership guards (so no cross-user tampering), but `increment_xp` accepted any `amount`, and following that thread found the larger problem:
+
+| Finding | Detail |
+|---|---|
+| **Any signed-in student could set their own `xp`, `level`, `streak`, `weekly_xp`, `season_xp`, `current_season`, ranks, `division`, `movement`** | The policies "Users can manage own profile" (ALL) and "Users can update own profile" allow updating your own row, the `authenticated` role had column `UPDATE` on those fields, and no trigger guarded them. One `supabase.from('profiles').update({ xp: 999999999 })` from the browser console would top the public leaderboard (`/leaderboard` ranks by `profiles.xp`). Delete-and-reinsert of the own row (policy is ALL) was a second route. |
+| `increment_xp` callable by `authenticated` with any amount | Second route to the same result (ownership check limited it to your own row, not the amount). Every real caller is server-side (`awardXP*` uses the service-role client); the browser-side `awardXPClient` had no callers. |
+| No premium/plan/credit/role columns on `profiles` | Checked all 34 columns; the hole is limited to competitive integrity, not paid features or privilege escalation. |
+
+**Fix (migration `20260920092654_protect_profiles_competitive_columns`, applied to production and committed):** a `BEFORE INSERT OR UPDATE` trigger pins the ten competitive columns for browser roles (`authenticated`, `anon`) by *ignoring* the write rather than raising, so the signup upsert (which sends `level/xp/streak`) and stale cached PWA bundles keep working. `service_role`, SECURITY DEFINER functions (`increment_xp`, `handle_new_user`) and cron/migrations run as other roles and pass through. `EXECUTE` on `increment_xp` revoked from `authenticated`. Dead `awardXPClient` removed. A column-level `REVOKE` was rejected because it would have broken new signups (the browser upsert includes those columns) and any cached client. Rollback SQL is in the migration header.
+
+**Verification:**
+- Trigger logic tested in a throwaway table inside a transaction forced to roll back: 7 checks (privileged insert untouched; `authenticated` update cannot change any competitive column but can still change `username`; inflated insert forced to defaults; upsert cannot inflate or reset; a SECURITY DEFINER award still works when called by a browser user; `anon` blocked; `service_role` passes).
+- Then against the **real** `profiles` table, also rolled back by design: an own-row update of xp/level/streak/season_xp/weekly_xp/division executed (1 row) but changed nothing, and `increment_xp` was denied to `authenticated`.
+- Catalog re-check after applying; advisor re-run: the `increment_xp` finding is gone (2 findings → 1).
+
+**Was it exploited?** No sign. 62 profiles; max XP 1,074 at level 11 (exactly `floor(1074/100)+1`); zero level/XP mismatches (`increment_xp` always keeps them consistent, so direct writes would show as mismatches); zero extreme values (xp > 20000, streak > 400, level > 200); season/weekly XP and rank fields all still defaults. A cheater who set small consistent values would not be detectable this way.
+
+**Left as is, deliberately:** `upsert_revision_item` (client-callable by design, correct ownership guard; worst case a student inflates their own revision priority) and the Supabase leaked-password-protection toggle (dashboard setting, not code). Note `weekly_xp`, `season_xp`, `division`, `movement` and rank columns are not written by anything in this repo today; if a job outside the repo maintains them it must use the service role, which the trigger allows.
+

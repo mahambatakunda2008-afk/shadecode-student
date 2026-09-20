@@ -5,6 +5,7 @@ This is the executable queue for Cortex Engineering. `.cortex/tasks.md` remains 
 ## 🔴 Security audit completion
 - Finish auth/API/file-upload/service-role/AI-boundary review.
 - [x] 2026-09-19: audit follow-ups closed (timing-safe secret compare, legacy `/api/feedback` fail-closed, admin upload size cap) — see `docs/audits/2026-08-24-security-audit.md` §6. Legacy `/api/feedback` and the unauthenticated `/api/cortex/event|state` stubs were then retired (zero callers). Still open: unused RLS-locked tables (`exam_logs`, `insights_archive`) and the Supabase leaked-password-protection toggle.
+- [x] 2026-09-20: leaderboard integrity hole on `profiles` closed (trigger pins xp/level/streak/season/rank columns for browser roles; `increment_xp` service-role only). See audit §7.
 - Reconcile live Supabase security findings with repository migrations.
 - Add regression coverage for authorization boundaries.
 
@@ -29,6 +30,7 @@ This is the executable queue for Cortex Engineering. `.cortex/tasks.md` remains 
 
 ## 🟡 Curriculum coverage expansion
 - Populate real topic catalogs for supported Cambridge/ZIMSEC subjects before adaptive scheduling depends on them.
+- Verified 2026-09-20 with direct queries: the objective-level curriculum (`curriculum_versions` + `curriculum_objectives`) covers **Computer Science only**: ZIMSEC 4021 (141, draft), Cambridge 0478 (68, verified), 9618 (20, draft), 0984 (10, draft), 2210 (10, draft) = 249 objectives. Every other subject has none. The pipeline is `npm run ingest:curriculum`; each new subject needs its official source PDF and the existing verification protocol.
 - Never invent syllabus content.
 
 ## 🟡 Tertiary learning workflows
