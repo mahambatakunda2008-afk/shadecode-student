@@ -31,6 +31,8 @@ This is the executable queue for Cortex Engineering. `.cortex/tasks.md` remains 
 ## 🟡 Curriculum coverage expansion
 - Populate real topic catalogs for supported Cambridge/ZIMSEC subjects before adaptive scheduling depends on them.
 - Verified 2026-09-20 with direct queries: the objective-level curriculum (`curriculum_versions` + `curriculum_objectives`) covers **Computer Science only**: ZIMSEC 4021 (141, draft), Cambridge 0478 (68, verified), 9618 (20, draft), 0984 (10, draft), 2210 (10, draft) = 249 objectives. Every other subject has none. The pipeline is `npm run ingest:curriculum`; each new subject needs its official source PDF and the existing verification protocol.
+- [x] 2026-09-20: Cambridge AS & A Level Mathematics 9709 (2026-2027, version 4) loaded: 159 verified objectives (6 sections / 38 topics / 153 outcomes) + 13/29 coverage dimensions with page evidence. Not yet resolvable: 16 dimensions (4 need past papers / mark schemes / examiner reports / grade thresholds: owner policy call) and the knowledge layer (15 kinds) remain, and no learner has a stored identity. See `docs/curriculum/cambridge-mathematics-9709.md` and `docs/curriculum/identity-gap.md`.
+- Next by demand (learners who declared subjects): Physics 9702 and Chemistry 9701 (A Level), Biology 9700, then ZIMSEC Mathematics. Same method: official PDF, structure asserted against the Content overview, md5 checksum in DB and repo.
 - Never invent syllabus content.
 
 ## 🟡 Tertiary learning workflows

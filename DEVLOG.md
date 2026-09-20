@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 (3) — Cambridge 9709 Mathematics ingested from the official syllabus; curriculum loader fixed
+
+**Demand first.** Of 62 profiles, 56 have no curriculum identity; of the 6 that do, 5 are A Level (2 explicitly Cambridge International with subject codes 9709, 9702, 9618) and Mathematics is the most-selected subject (6 of 6). IGCSE 0580 would have served nobody, so the first new subject is **Cambridge International AS & A Level Mathematics 9709**.
+
+**Loaded (production):** read the official PDF (version 4, December 2025, exams 2026 and 2027) in full and created source (inactive), document, version and **159 verified objectives** (6 sections, 38 topics, 153 numbered outcomes), plus 13 of 29 coverage dimensions with page-referenced evidence (the rest left missing rather than guessed; 2 marked not applicable because every component is a written exam). Dataset and regression tests are in the repo (`src/lib/curriculum/data/cambridge-9709*`); the DB rows match the repo dataset by md5 `f1f91d6df19e5b271c23eb9850bdab3e`. Full record: `docs/curriculum/cambridge-mathematics-9709.md`.
+
+**Correction to my earlier notes:** the syllabus has **38** topics, not 33 (my miscount; the assertion against the official Content overview caught it). I also said grounding needed only verified objectives; it does not: `resolveSystemCurriculum` needs all 29 coverage dimensions and all 15 knowledge kinds, so **no subject resolves today, including Computer Science**. 9709 is at objectives + 13/29, and the knowledge layer is empty everywhere.
+
+**Bug fixed (`user-resolution.ts`, used by `/api/cortex`):** the loader filtered `curriculum_versions` by a non-existent `level` column and `curriculum_objectives` by six non-existent identity columns (PostgREST errors), so it always reported "Unable to load..."; it also never loaded `curriculum_coverage_checks`, so it could never satisfy the coverage gate. Now matches the version by identity, loads objectives and coverage by `curriculum_version_id`, takes `level` from the learner (like `ai-grounding.ts`) and passes coverage to the resolver. No behavior change today (no learner has an identity, so it returns early). 7 tests use a fake client that errors on filters against columns missing from the live schema; 5 fail on the old loader.
+
+**Finding, deliberately not changed:** `profiles.curriculum_subjects` is empty for all 62 profiles because the onboarding mapper demands a student-typed syllabus version and code that the resolver does not need (`docs/curriculum/identity-gap.md`). Relaxing it now would switch on the fail-closed gate for subjects with no curriculum. Content first, plumbing after, and decide what blocked learners see.
+
+**Not done:** 16 coverage dimensions (4 need past papers / mark schemes / examiner reports / thresholds: owner policy call), knowledge layer, source monitoring (off: watcher profiles are CS-specific), CS rows store outcome text in `paper_component` (grounding reads `description`).
+
+---
+
 ## 2026-09-20 (2) — Leaderboard integrity hole closed (DB migration); curriculum coverage measured
 
 **Found by** running the Supabase security advisor. Any signed-in student could rewrite their own `profiles.xp/level/streak/season_xp/weekly_xp/rank/division/movement` directly from the browser (own-row RLS + column `UPDATE` grant + no trigger), or call `increment_xp` with any amount. `/leaderboard` ranks by `profiles.xp`. No premium/plan/role columns exist on `profiles`, so no paid-feature or privilege exposure.
