@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type ShadecodeFeatureName =
@@ -33,7 +34,7 @@ function Glyph({ feature, Icon, active, className }: {
   const p = { fill: "none", stroke: "url(#shadecode-icon-gradient)", strokeWidth: sw,
     strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
-  const svg = (children: React.ReactNode) => (
+  const svg = (children: ReactNode) => (
     <svg viewBox="0 0 24 24" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} aria-hidden="true">{children}</svg>
   );
 
