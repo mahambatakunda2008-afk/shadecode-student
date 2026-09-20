@@ -129,3 +129,25 @@
 @media (max-width: 767px) {
   .shadecode-brand__mark { width: 34px; height: 34px; }
 }
+
+
+/* Feature icon suite: the same cyan-to-violet language as the official app icon. */
+.shadecode-feature-icon__glyph {
+  filter: drop-shadow(0 3px 8px rgba(36, 91, 255, 0.16));
+  transition: filter 180ms var(--shadecode-ease), transform 180ms var(--shadecode-ease);
+}
+
+.shadecode-feature-icon:hover .shadecode-feature-icon__glyph,
+a:hover .shadecode-feature-icon__glyph {
+  filter: drop-shadow(0 4px 11px rgba(122, 60, 255, 0.24));
+}
+
+.dark .shadecode-feature-icon {
+  border-color: color-mix(in srgb, var(--brand-blue) 52%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shadecode-feature-icon__glyph {
+    transition: none;
+  }
+}
