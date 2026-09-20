@@ -4,6 +4,19 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-19 (4) — Retired three dead endpoints; hardened the push gate
+
+**Retired (deleted), each after checking for callers in `src`, docs and dynamically built URLs:**
+- `GET /api/feedback` — legacy `ADMIN_SECRET` route, zero callers, replaced by the role-checked `/api/admin/feedback`. It was the route with the `Bearer undefined` bypass (see entry (3)).
+- `POST /api/cortex/event`, `POST /api/cortex/state` — unauthenticated stubs, zero callers, no database writes. `cortexAnalyze` (`lib/cortex/engine`) stays: the challenge generator uses it.
+Removed the now-unused `bearerToken` helper and its tests; the legacy-feedback cases were dropped from `admin-secrets.test.ts` (the bypass regression is recorded in git history and the audit). Deleting was preferred over leaving hardened dead code: less attack surface, nothing to maintain.
+
+**Process:** `docs/AGENT_COORDINATION_PROTOCOL.md` §14 gained a 2026-09-19 addendum (full suite not just touched tests; lockfile updated in the same commit and checked with `npm ci`, not `npm install`), and `npm run verify` now runs typecheck + lint + full tests in one command. Prompted by the Playwright harness landing on `main` with a stale lockfile and a spec vitest collected.
+
+**Checked and found already done (no work needed):** the viral sharing loop (`/results/[id]` and `/challenge/[id]` have per-result metadata and generated OG images; WhatsApp share for results and challenges plus native share, all with tracked events). An older planning note listing a `/share/[id]` OG route as the next build is stale.
+
+---
+
 ## 2026-09-19 (3) — Security audit follow-ups: legacy feedback endpoint bypass, timing-safe secrets, upload cap
 
 Closed the code-only items the 2026-08-24 audit had flagged and left. Full write-up in `docs/audits/2026-08-24-security-audit.md` §6.

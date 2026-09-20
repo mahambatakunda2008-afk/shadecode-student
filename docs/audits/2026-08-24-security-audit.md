@@ -240,9 +240,9 @@ on both code changes made in this pass.
 | Item | Result |
 |---|---|
 | `ADMIN_REVIEW_TOKEN` timing-unsafe comparison (`/api/admin/careers` POST) | **Fixed** — constant-time compare via `src/lib/auth/secret-compare.ts`. It already failed closed on an unset variable. |
-| `ADMIN_SECRET` check on legacy `GET /api/feedback` | **Fixed, and worse than flagged.** The guard compared against `` `Bearer ${process.env.ADMIN_SECRET}` ``: with the variable unset the expected value was the literal `Bearer undefined`, so that header returned every `feedback` row via the service-role client. Now fails closed and compares in constant time. The route has **zero callers** (feedback is submitted via `/api/feedback-email`; admins read via the RBAC route `/api/admin/feedback`), so retiring it is a reasonable follow-up product call. |
+| `ADMIN_SECRET` check on legacy `GET /api/feedback` | **Found worse than flagged, then retired (route deleted).** The guard compared against `` `Bearer ${process.env.ADMIN_SECRET}` ``: with the variable unset the expected value was the literal `Bearer undefined`, so that header returned every `feedback` row via the service-role client. It was first hardened (fail closed + constant-time), then deleted in the same session because it had **zero callers** (feedback is submitted via `/api/feedback-email`; admins read via the RBAC route `/api/admin/feedback`). If a script of yours called it, use `/api/admin/feedback` as a signed-in admin. |
 | Upload route missing file-size cap | **Fixed** for the one route lacking it (`/api/admin/exam-hub/upload`, admin-only, 25 MB / 413, same limit as community submit). The other four upload routes already capped size. |
-| `/api/cortex/event`, `/api/cortex/state` unauthenticated stubs | Unchanged — still a product call (finish or retire). |
+| `/api/cortex/event`, `/api/cortex/state` unauthenticated stubs | **Retired (routes deleted).** Verified no callers in `src` (including dynamically built URLs); neither wrote to a database. `lib/cortex/engine`'s `cortexAnalyze` is still used by the challenge generator and was kept. |
 | `exam_logs`/`insights_archive` unused RLS-locked tables | Unchanged — product call. |
 | Leaked-password-protection disabled | Unchanged — Supabase dashboard toggle, not code. |
 

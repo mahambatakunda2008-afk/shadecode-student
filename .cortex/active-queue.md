@@ -4,7 +4,7 @@ This is the executable queue for Cortex Engineering. `.cortex/tasks.md` remains 
 
 ## 🔴 Security audit completion
 - Finish auth/API/file-upload/service-role/AI-boundary review.
-- [x] 2026-09-19: audit follow-ups closed (timing-safe secret compare, legacy `/api/feedback` fail-closed, admin upload size cap) — see `docs/audits/2026-08-24-security-audit.md` §6. Still open: unauthenticated `/api/cortex/event|state` stubs and unused RLS-locked tables (product calls).
+- [x] 2026-09-19: audit follow-ups closed (timing-safe secret compare, legacy `/api/feedback` fail-closed, admin upload size cap) — see `docs/audits/2026-08-24-security-audit.md` §6. Legacy `/api/feedback` and the unauthenticated `/api/cortex/event|state` stubs were then retired (zero callers). Still open: unused RLS-locked tables (`exam_logs`, `insights_archive`) and the Supabase leaked-password-protection toggle.
 - Reconcile live Supabase security findings with repository migrations.
 - Add regression coverage for authorization boundaries.
 
