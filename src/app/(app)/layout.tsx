@@ -20,6 +20,7 @@ import ExperienceRouteGuard from "@/components/academic/ExperienceRouteGuard";
 import ExperienceContextBanner from "@/components/academic/ExperienceContextBanner";
 import OfflineStatus from "@/components/OfflineStatus";
 import { installLearningEventSync } from "@/lib/intelligence/emitLearningEvent";
+import { ShadecodeIconDefs } from "@/components/brand/ShadecodeFeatureIcon";
 import { installTractionSync, trackEvent, trackPageView } from "@/lib/traction/client";
 
 const ADMIN_CACHE_PREFIX = "shadecode:admin:";
