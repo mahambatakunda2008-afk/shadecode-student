@@ -201,18 +201,12 @@ export default function LeaderboardPage() {
 
       {/* HEADER */}
       <div style={{ marginBottom: "28px" }}>
-        <p
-          style={{
-            fontSize: "12px",
-            fontWeight: 700,
-            letterSpacing: "1px",
-            textTransform: "uppercase",
-            color: "var(--primary)",
-            marginBottom: "8px",
-          }}
-        >
-          Cortex OS
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <ShadecodeFeatureIcon feature="leaderboard" size="sm" />
+          <p style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "1.4px", textTransform: "uppercase", color: "var(--primary)", margin: 0 }}>
+            Progress & competition
+          </p>
+        </div>
         <h1 style={{ fontSize: "clamp(32px, 6vw, 56px)", lineHeight: 1, fontWeight: 900, margin: 0 }}>
           Leaderboard
         </h1>
