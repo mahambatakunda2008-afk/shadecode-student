@@ -128,7 +128,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   // the first Gemini key the full model fallback set, then give Cloudflare a
   // chance before spending the remaining budget on secondary Gemini keys.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"];
 
   async function callGemini(key: string, model: string): Promise<string | null> {
     return tryProvider("gemini", model, async timeout => {
