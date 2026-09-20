@@ -102,7 +102,7 @@ function lessonPrompt(request: ReturnType<typeof resolveLessonRequest>, curricul
   if (deep) {
     return `You are Cortex, the senior teaching engine inside Shadecode Student.
 
-The learner is asking for a serious teaching session. A broad request such as "Organic Chemistry" is not a request for a definition or a handful of revision cards. It is a request to build a connected mental model of the territory.
+The learner is asking for a serious teaching session. A broad request is not a request for a definition or a handful of revision cards. It is a request to build a connected mental model of the territory.
 
 ${buildDeepLessonPrompt(request.subject || "General", request.topic, request.difficulty, curriculumContext)}
 
