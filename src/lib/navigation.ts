@@ -32,6 +32,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
+import type { ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
 
 export interface NavItem {
   href: string;
@@ -39,6 +40,7 @@ export interface NavItem {
   icon: any;
   badge?: string;
   urgent?: boolean;
+  feature?: ShadecodeFeatureName;
 }
 
 export interface NavGroup {
@@ -47,31 +49,31 @@ export interface NavGroup {
 }
 
 export const NAV_ITEMS: Record<string, NavItem> = {
-  dashboard: { href: "/dashboard", label: "Home", icon: House },
-  focus: { href: "/focus", label: "Focus", icon: Target },
+  dashboard: { href: "/dashboard", label: "Home", icon: House, feature: "home" },
+  focus: { href: "/focus", label: "Focus", icon: Target, feature: "focus" },
   tasks: { href: "/tasks", label: "Tasks", icon: ListChecks },
   exams: { href: "/exams", label: "Assessments", icon: ClipboardCheck },
-  examHub: { href: "/exam-hub", label: "Past Papers", icon: Files },
-  examSim: { href: "/exam-sim", label: "Exam Sim", icon: ClipboardCheck },
-  mathChecker: { href: "/math-checker", label: "Math Checker", icon: Calculator },
-  learn: { href: "/learn", label: "Learn", icon: BookOpen },
-  compLab: { href: "/comp-lab", label: "Code Lab", icon: Code2 },
+  examHub: { href: "/exam-hub", label: "Past Papers", icon: Files, feature: "past-papers" },
+  examSim: { href: "/exam-sim", label: "Exam Sim", icon: ClipboardCheck, feature: "exam-sim" },
+  mathChecker: { href: "/math-checker", label: "Math Checker", icon: Calculator, feature: "math-checker" },
+  learn: { href: "/learn", label: "Learn", icon: BookOpen, feature: "learn" },
+  compLab: { href: "/comp-lab", label: "Code Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen },
   workmate: { href: "/workmate", label: "Workmate", icon: BriefcaseBusiness },
   projects: { href: "/projects", label: "Projects", icon: FolderKanban },
   studyspace: { href: "/studyspace", label: "StudySpace", icon: LibraryBig },
-  timetable: { href: "/timetable", label: "Timetable", icon: CalendarDays },
+  timetable: { href: "/timetable", label: "Timetable", icon: CalendarDays, feature: "timetable" },
   studyPlan: { href: "/study-plan", label: "Study Plan", icon: Route },
   analytics: { href: "/analytics", label: "Progress", icon: BarChart3 },
-  leaderboard: { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-  cortex: { href: "/insights/history", label: "Insights", icon: Lightbulb },
+  leaderboard: { href: "/leaderboard", label: "Leaderboard", icon: Trophy, feature: "leaderboard" },
+  cortex: { href: "/insights/history", label: "Insights", icon: Lightbulb, feature: "insights" },
   study: { href: "/study", label: "Study Session", icon: GraduationCap },
   achievements: { href: "/achievements", label: "Achievements", icon: Award },
   share: { href: "/share", label: "Share", icon: Share2 },
   whatsapp: { href: "/whatsapp", label: "WhatsApp", icon: Smartphone },
-  profile: { href: "/settings", label: "Profile", icon: UserRound },
+  profile: { href: "/settings", label: "Profile", icon: UserRound, feature: "profile" },
   virtualLab: { href: "/virtual-lab", label: "Virtual Lab", icon: FlaskConical },
-  settings: { href: "/settings", label: "Settings", icon: Settings },
+  settings: { href: "/settings", label: "Settings", icon: Settings, feature: "settings" },
 
   adminDashboard: { href: "/admin", label: "Overview", icon: LayoutDashboard },
   adminAnalytics: { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
