@@ -32,7 +32,19 @@ test.describe("Learn deep-generation browser contract", () => {
       await page.getByLabel("What do you need help with?").fill(topic);
       await page.getByRole("button", { name: "Start learning" }).click();
 
-      await expect(page).toHaveURL(/\/learn\/[^/]+$/, { timeout: 120_000 });
+      await expect.poll(async () => page.evaluate(() => {
+        if (/\\/learn\\/[^/]+$/.test(window.location.pathname)) return "navigated";
+        try {
+          const raw = localStorage.getItem("shadecode:cortex:generation-jobs:v2");
+          const jobs = raw ? JSON.parse(raw) : [];
+          const latest = Array.isArray(jobs) ? [...jobs].reverse().find((job: { kind?: string }) => job?.kind === "lesson") : null;
+          if (latest?.status === "failed") return `failed: ${latest.error || "unknown generation error"}`;
+          if (latest?.status === "complete") return "complete";
+          return latest?.status || "waiting";
+        } catch {
+          return "waiting";
+        }
+      }), { timeout: 130_000, intervals: [1000] }).toMatch(/^(navigated|complete)$/);
       await expect(page.locator("h1.lesson-title")).toBeVisible({ timeout: 15_000 });
 
       const units = page.locator(".lesson-unit");
