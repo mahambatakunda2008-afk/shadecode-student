@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 interface TimetableSlot {
   id?: string;
@@ -300,7 +301,7 @@ export default function Timetable() {
             <button key={p.value} onClick={() => setStartTime(p.value)} style={{
               padding: "6px 12px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
               background: startTime === p.value ? "rgba(99,102,241,0.15)" : "var(--muted)",
-              border: startTime === p.value ? "1px solid rgba(99,102,241,0.4)" : "1px solid transparent",
+              border: startTime === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
               color: startTime === p.value ? "var(--primary)" : "var(--muted-foreground)",
               fontWeight: startTime === p.value ? 700 : 400,
             }}>
@@ -317,8 +318,8 @@ export default function Timetable() {
           {DURATION_PRESETS.map(p => (
             <button key={p.value} onClick={() => setDuration(p.value)} style={{
               padding: "8px 14px", borderRadius: "8px", fontSize: "13px", cursor: "pointer",
-              background: duration === p.value ? "rgba(99,102,241,0.15)" : "var(--muted)",
-              border: duration === p.value ? "1px solid rgba(99,102,241,0.4)" : "1px solid transparent",
+              background: duration === p.value ? "var(--primary-glow)" : "var(--muted)",
+              border: duration === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
               color: duration === p.value ? "var(--primary)" : "var(--muted-foreground)",
               fontWeight: duration === p.value ? 700 : 400,
             }}>
