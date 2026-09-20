@@ -16,10 +16,3 @@ export function secretsMatch(presented: string | null | undefined, expected: str
   const b = createHash("sha256").update(expected, "utf8").digest();
   return timingSafeEqual(a, b);
 }
-
-/** Extracts the token from an `Authorization: Bearer <token>` header, or null. */
-export function bearerToken(header: string | null | undefined): string | null {
-  if (!header) return null;
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match ? match[1] : null;
-}

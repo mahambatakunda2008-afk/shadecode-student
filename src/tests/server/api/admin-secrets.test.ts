@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Authorization-boundary regression coverage for routes guarded by shared secrets
-// or admin RBAC + input caps (security audit 2026-08-24 follow-ups).
+// Authorization-boundary regression coverage for the admin-token careers route and the
+// admin RBAC upload route + its size cap (security audit 2026-08-24 follow-ups).
+// (The legacy ADMIN_SECRET /api/feedback route was retired; see DEVLOG 2026-09-19 (4).)
 
-const selectRows = vi.fn();
 const insertSingle = vi.fn();
 const storageUpload = vi.fn();
 
@@ -12,7 +12,6 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
     from: () => ({
       select: () => ({
-        order: () => selectRows(),
         eq: () => ({ maybeSingle: async () => ({ data: null }) }),
       }),
       insert: () => ({ select: () => ({ single: () => insertSingle() }) }),
@@ -32,42 +31,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
-  selectRows.mockResolvedValue({ data: [{ id: "f1", message: "hi" }], error: null });
   insertSingle.mockResolvedValue({ data: { id: "c1" }, error: null });
 });
 afterEach(() => vi.unstubAllEnvs());
-
-describe("GET /api/feedback (legacy ADMIN_SECRET route)", () => {
-  const call = async (authorization?: string) => {
-    const { GET } = await import("@/app/api/feedback/route");
-    return GET(new Request("http://localhost/api/feedback", { headers: authorization ? { authorization } : {} }));
-  };
-
-  it("rejects the literal 'Bearer undefined' when ADMIN_SECRET is unset (fails closed)", async () => {
-    vi.stubEnv("ADMIN_SECRET", "");
-    delete process.env.ADMIN_SECRET;
-    const res = await call("Bearer undefined");
-    expect(res.status).toBe(401);
-    expect(selectRows).not.toHaveBeenCalled();
-  });
-
-  it("rejects when ADMIN_SECRET is empty, missing header, or wrong secret", async () => {
-    vi.stubEnv("ADMIN_SECRET", "");
-    expect((await call("Bearer ")).status).toBe(401);
-    vi.stubEnv("ADMIN_SECRET", "right-secret");
-    expect((await call()).status).toBe(401);
-    expect((await call("Bearer wrong-secret")).status).toBe(401);
-    expect((await call("right-secret")).status).toBe(401); // scheme required
-    expect(selectRows).not.toHaveBeenCalled();
-  });
-
-  it("returns feedback for the correct secret", async () => {
-    vi.stubEnv("ADMIN_SECRET", "right-secret");
-    const res = await call("Bearer right-secret");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ data: [{ id: "f1", message: "hi" }] });
-  });
-});
 
 describe("POST /api/admin/careers (ADMIN_REVIEW_TOKEN)", () => {
   const call = async (token?: string) => {
