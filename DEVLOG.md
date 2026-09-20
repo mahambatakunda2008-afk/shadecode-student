@@ -12,6 +12,8 @@ Autonomous improvement log maintained by Cortex Engine.
 
 **Verified:** 7-check test on a throwaway table and a rolled-back test on the real table (own-row update executed, stats unchanged; RPC denied), catalog re-check, advisor re-run (finding cleared). Tamper scan of existing data found nothing (62 profiles, max XP 1,074 at level 11, zero level/XP mismatches). Full audit write-up: `docs/audits/2026-08-24-security-audit.md` §7. `npm run verify` clean (668 tests).
 
+**Also repaired:** upstream `08d6769` ("enforce profile subjects in legacy Learn API") used `normalizeSubjectNames`, `normalizeSubjectKey` and `resolveLearnerSubject` in `api/learn/route.ts` without importing them (typecheck failed on `main`). Added the two missing import lines; the helpers already existed in `lib/academic/subjectContract.ts` and `subjectAccess.ts`. Third time this week a push reached `main` without `npm run verify`.
+
 **Also measured (no change):** objective-level curriculum exists for Computer Science only (5 versions, 249 objectives); see `.cortex/active-queue.md`. Earlier "only 3 subject/level combinations" referred to the legacy file catalogs.
 
 ---
