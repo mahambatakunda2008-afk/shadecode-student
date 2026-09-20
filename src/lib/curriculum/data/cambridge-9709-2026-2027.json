@@ -1,0 +1,498 @@
+{
+ "meta": {
+  "authority": "Cambridge International",
+  "boardId": "cambridge",
+  "qualificationId": "cambridge-as-a-level",
+  "syllabusId": "cambridge-9709",
+  "syllabusVersion": "2026-2027",
+  "subjectId": "mathematics",
+  "sourceUrl": "https://www.cambridgeinternational.org/Images/697427-2026-2027-syllabus.pdf",
+  "sourceDocument": "Cambridge International AS & A Level Mathematics 9709 syllabus for 2026 and 2027 (version 4, December 2025)",
+  "edition": "Version 4, published December 2025",
+  "validFor": "Exams in 2026 and 2027 (June and November series)",
+  "retrievedAt": "2026-09-20",
+  "effectiveFrom": "2026-01-01",
+  "effectiveTo": "2027-12-31"
+ },
+ "sections": [
+  {
+   "key": "1",
+   "title": "Pure Mathematics 1",
+   "paper": "Paper 1",
+   "availability": "AS and A Level",
+   "level": "as_level",
+   "summary": "Foundation pure mathematics for Paper 1: quadratics, functions, coordinate geometry, circular measure, trigonometry, series, differentiation and integration.",
+   "topics": [
+    {
+     "key": "1.1",
+     "title": "Quadratics",
+     "page": 19,
+     "outcomes": [
+      "Complete the square for ax² + bx + c and use the completed-square form, e.g. to find the vertex or sketch the graph.",
+      "Find and use the discriminant of a quadratic, e.g. to determine the number of real roots (including the idea of a repeated root).",
+      "Solve quadratic equations and quadratic inequalities in one unknown by factorising, completing the square or using the formula.",
+      "Solve by substitution a pair of simultaneous equations where one is linear and one is quadratic.",
+      "Recognise and solve equations that are quadratic in some function of x, e.g. x⁴ − 5x² + 4 = 0."
+     ]
+    },
+    {
+     "key": "1.2",
+     "title": "Functions",
+     "page": 19,
+     "outcomes": [
+      "Understand and use the terms function, domain, range, one-one function, inverse function and composition of functions.",
+      "Identify the range of a function in simple cases and find the composition of two functions, noting that gf can only be formed when the range of f lies within the domain of g.",
+      "Determine whether a function is one-one and find the inverse of a one-one function in simple cases.",
+      "Illustrate the relationship between a one-one function and its inverse graphically, showing the mirror line y = x.",
+      "Understand and use the transformations y = f(x) + a, y = f(x + a), y = af(x), y = f(ax) and simple combinations, describing them as translations, reflections and stretches."
+     ]
+    },
+    {
+     "key": "1.3",
+     "title": "Coordinate geometry",
+     "page": 20,
+     "outcomes": [
+      "Find the equation of a straight line given sufficient information, e.g. two points, or a point and the gradient.",
+      "Use the forms y = mx + c, y − y₁ = m(x − x₁) and ax + by + c = 0 to solve problems on distances, gradients, midpoints, points of intersection and parallel and perpendicular lines.",
+      "Understand that (x − a)² + (y − b)² = r² is the circle with centre (a, b) and radius r, including the expanded form x² + y² + 2gx + 2fy + c = 0.",
+      "Use algebraic methods to solve problems involving lines and circles, including elementary circle properties (tangent perpendicular to radius, angle in a semicircle, symmetry). Implicit differentiation is not included.",
+      "Relate a graph to its algebraic equation and relate points of intersection of graphs to solutions of equations, e.g. the values of k for which a line meets, touches or misses a quadratic curve."
+     ]
+    },
+    {
+     "key": "1.4",
+     "title": "Circular measure",
+     "page": 20,
+     "outcomes": [
+      "Understand the definition of a radian and convert between radians and degrees.",
+      "Use s = rθ and A = ½r²θ to solve problems on arc length and sector area, including lengths, angles and areas in triangles."
+     ]
+    },
+    {
+     "key": "1.5",
+     "title": "Trigonometry",
+     "page": 21,
+     "outcomes": [
+      "Sketch and use the graphs of sine, cosine and tangent for angles of any size, in degrees or radians, including transformed forms.",
+      "Use the exact values of the sine, cosine and tangent of 30°, 45°, 60° and related angles.",
+      "Use the notations sin⁻¹x, cos⁻¹x and tan⁻¹x for the principal values of the inverse trigonometric relations (understood as examples of inverse functions).",
+      "Use the identities tanθ ≡ sinθ/cosθ and sin²θ + cos²θ ≡ 1 to prove identities, simplify expressions and solve equations.",
+      "Find all solutions of simple trigonometric equations in a specified interval (general forms of solution are not included)."
+     ]
+    },
+    {
+     "key": "1.6",
+     "title": "Series",
+     "page": 21,
+     "outcomes": [
+      "Use the expansion of (a + b)ⁿ where n is a positive integer, including the notations for binomial coefficients and n!.",
+      "Recognise arithmetic and geometric progressions, including the conditions for three numbers to be in arithmetic or geometric progression.",
+      "Use the formulae for the nth term and the sum of the first n terms to solve problems involving arithmetic or geometric progressions (questions may involve more than one progression).",
+      "Use the condition for convergence of a geometric progression and the formula for the sum to infinity of a convergent geometric progression."
+     ]
+    },
+    {
+     "key": "1.7",
+     "title": "Differentiation",
+     "page": 22,
+     "outcomes": [
+      "Understand the gradient of a curve at a point as the limit of the gradients of chords (informal treatment) and use the notations f′(x), f″(x), dy/dx and d²y/dx².",
+      "Differentiate xⁿ for any rational n, with constant multiples, sums and differences, and composite functions using the chain rule.",
+      "Apply differentiation to gradients, tangents and normals, increasing and decreasing functions and rates of change, including connected rates of change.",
+      "Locate stationary points and determine their nature (e.g. with the second derivative), and use them in sketching graphs. Points of inflexion are not included."
+     ]
+    },
+    {
+     "key": "1.8",
+     "title": "Integration",
+     "page": 22,
+     "outcomes": [
+      "Understand integration as the reverse process of differentiation and integrate (ax + b)ⁿ for any rational n except −1, together with constant multiples, sums and differences.",
+      "Solve problems involving the evaluation of a constant of integration, e.g. finding the equation of a curve through a given point.",
+      "Evaluate definite integrals, including simple cases of improper integrals.",
+      "Use definite integration to find the area of a region bounded by a curve and lines parallel to the axes, or between a curve and a line or between two curves, and a volume of revolution about either axis."
+     ]
+    }
+   ]
+  },
+  {
+   "key": "2",
+   "title": "Pure Mathematics 2",
+   "paper": "Paper 2",
+   "availability": "AS Level only",
+   "level": "as_level",
+   "summary": "Extends Pure Mathematics 1 for Paper 2: modulus, polynomial division, logarithms and exponentials, further trigonometry and calculus, and numerical solution of equations. Paper 1 knowledge is assumed.",
+   "topics": [
+    {
+     "key": "2.1",
+     "title": "Algebra",
+     "page": 23,
+     "outcomes": [
+      "Understand the meaning of |x|, sketch y = |ax + b| and use relations such as |a| = |b| ⇔ a² = b² and |x − a| < b ⇔ a − b < x < a + b to solve equations and inequalities. Graphs of y = |f(x)| and y = f(|x|) for non-linear f are not included.",
+      "Divide a polynomial of degree not exceeding 4 by a linear or quadratic polynomial and identify the quotient and remainder (which may be zero).",
+      "Use the factor theorem and the remainder theorem, e.g. to find factors, solve polynomial equations or evaluate unknown coefficients."
+     ]
+    },
+    {
+     "key": "2.2",
+     "title": "Logarithmic and exponential functions",
+     "page": 23,
+     "outcomes": [
+      "Understand the relationship between logarithms and indices and use the laws of logarithms (change of base is excluded).",
+      "Understand the definition and properties of eˣ and ln x, including their relationship as inverse functions and their graphs (including y = e^(kx) for positive and negative k).",
+      "Use logarithms to solve equations and inequalities in which the unknown appears in indices.",
+      "Use logarithms to transform a given relationship to linear form and determine unknown constants from the gradient and/or intercept."
+     ]
+    },
+    {
+     "key": "2.3",
+     "title": "Trigonometry",
+     "page": 24,
+     "outcomes": [
+      "Understand the relationship of the secant, cosecant and cotangent functions to cosine, sine and tangent, and use the properties and graphs of all six trigonometric functions for angles of any magnitude.",
+      "Use trigonometric identities to simplify and exactly evaluate expressions and to solve equations, selecting appropriate identities, including sec²θ ≡ 1 + tan²θ, cosec²θ ≡ 1 + cot²θ, the expansions of sin(A ± B), cos(A ± B) and tan(A ± B), the double-angle formulae, and the expression of a sinθ + b cosθ in the forms R sin(θ ± α) or R cos(θ ± α)."
+     ]
+    },
+    {
+     "key": "2.4",
+     "title": "Differentiation",
+     "page": 24,
+     "outcomes": [
+      "Use the derivatives of eˣ, ln x, sin x, cos x and tan x, together with constant multiples, sums, differences and composites.",
+      "Differentiate products and quotients.",
+      "Find and use the first derivative of a function defined parametrically or implicitly, including problems on tangents and normals."
+     ]
+    },
+    {
+     "key": "2.5",
+     "title": "Integration",
+     "page": 25,
+     "outcomes": [
+      "Extend reverse differentiation to integrate e^(ax+b), 1/(ax + b), sin(ax + b), cos(ax + b) and sec²(ax + b). The general method of integration by substitution is not required.",
+      "Use trigonometric relationships in integration, e.g. double-angle formulae to integrate sin²x or cos²(2x).",
+      "Understand and use the trapezium rule to estimate a definite integral, including using sketches to decide whether it gives an over-estimate or an under-estimate."
+     ]
+    },
+    {
+     "key": "2.6",
+     "title": "Numerical solution of equations",
+     "page": 25,
+     "outcomes": [
+      "Locate approximately a root of an equation using graphical considerations and/or a search for a sign change.",
+      "Understand the idea of, and use the notation for, a sequence of approximations which converges to a root of an equation.",
+      "Understand how a given iterative formula xₙ₊₁ = F(xₙ) relates to the equation being solved, and use a given iteration (or one from a given rearrangement) to find a root to a prescribed accuracy. The condition for convergence is not included, but an iteration may fail to converge."
+     ]
+    }
+   ]
+  },
+  {
+   "key": "3",
+   "title": "Pure Mathematics 3",
+   "paper": "Paper 3",
+   "availability": "A Level only",
+   "level": "a_level",
+   "summary": "Full A Level pure mathematics for Paper 3, building on Pure Mathematics 1: algebra with partial fractions and binomial series, logarithms and exponentials, trigonometry, calculus techniques, numerical methods, vectors, differential equations and complex numbers.",
+   "topics": [
+    {
+     "key": "3.1",
+     "title": "Algebra",
+     "page": 26,
+     "outcomes": [
+      "Understand the meaning of |x|, sketch y = |ax + b| and use relations such as |a| = |b| ⇔ a² = b² and |x − a| < b ⇔ a − b < x < a + b to solve equations and inequalities. Graphs of y = |f(x)| and y = f(|x|) for non-linear f are not included.",
+      "Divide a polynomial of degree not exceeding 4 by a linear or quadratic polynomial and identify the quotient and remainder (which may be zero).",
+      "Use the factor theorem and the remainder theorem, e.g. to find factors, solve polynomial equations or evaluate unknown coefficients.",
+      "Express rational functions in partial fractions and carry out the decomposition where the denominator is (ax + b)(cx + d)(ex + f), (ax + b)(cx + d)² or (ax + b)(cx² + d), excluding cases where the degree of the numerator exceeds that of the denominator.",
+      "Use the expansion of (1 + x)ⁿ where n is rational and |x| < 1, including adapted forms and the set of values of x for which the expansion is valid. Finding the general term is not included."
+     ]
+    },
+    {
+     "key": "3.2",
+     "title": "Logarithmic and exponential functions",
+     "page": 27,
+     "outcomes": [
+      "Understand the relationship between logarithms and indices and use the laws of logarithms (change of base is excluded).",
+      "Understand the definition and properties of eˣ and ln x, including their relationship as inverse functions and their graphs (including y = e^(kx) for positive and negative k).",
+      "Use logarithms to solve equations and inequalities in which the unknown appears in indices.",
+      "Use logarithms to transform a given relationship to linear form and determine unknown constants from the gradient and/or intercept."
+     ]
+    },
+    {
+     "key": "3.3",
+     "title": "Trigonometry",
+     "page": 27,
+     "outcomes": [
+      "Understand the relationship of the secant, cosecant and cotangent functions to cosine, sine and tangent, and use the properties and graphs of all six trigonometric functions for angles of any magnitude.",
+      "Use trigonometric identities to simplify and exactly evaluate expressions and to solve equations, selecting appropriate identities, including sec²θ ≡ 1 + tan²θ, cosec²θ ≡ 1 + cot²θ, the expansions of sin(A ± B), cos(A ± B) and tan(A ± B), the double-angle formulae, and the expression of a sinθ + b cosθ in the forms R sin(θ ± α) or R cos(θ ± α)."
+     ]
+    },
+    {
+     "key": "3.4",
+     "title": "Differentiation",
+     "page": 28,
+     "outcomes": [
+      "Use the derivatives of eˣ, ln x, sin x, cos x, tan x and tan⁻¹x, together with constant multiples, sums, differences and composites. Derivatives of sin⁻¹x and cos⁻¹x are not required.",
+      "Differentiate products and quotients.",
+      "Find and use the first derivative of a function defined parametrically or implicitly, including problems on tangents and normals."
+     ]
+    },
+    {
+     "key": "3.5",
+     "title": "Integration",
+     "page": 28,
+     "outcomes": [
+      "Extend reverse differentiation to integrate e^(ax+b), 1/(ax + b), sin(ax + b), cos(ax + b), sec²(ax + b) and 1/(x² + a²).",
+      "Use trigonometric relationships in integration, e.g. double-angle formulae to integrate sin²x or cos²(2x).",
+      "Integrate rational functions by decomposition into partial fractions (of the types specified in topic 3.1).",
+      "Recognise an integrand of the form k·f′(x)/f(x) and integrate such functions, e.g. x/(x² + 1) or tan x.",
+      "Recognise when an integrand can usefully be regarded as a product and use integration by parts, e.g. x sin 2x, x²e^(−x), ln x, x tan⁻¹x.",
+      "Use a given substitution to simplify and evaluate a definite or an indefinite integral."
+     ]
+    },
+    {
+     "key": "3.6",
+     "title": "Numerical solution of equations",
+     "page": 29,
+     "outcomes": [
+      "Locate approximately a root of an equation using graphical considerations and/or a search for a sign change.",
+      "Understand the idea of, and use the notation for, a sequence of approximations which converges to a root of an equation.",
+      "Understand how a given iterative formula xₙ₊₁ = F(xₙ) relates to the equation being solved, and use a given iteration (or one from a given rearrangement) to find a root to a prescribed accuracy. The condition for convergence is not included, but an iteration may fail to converge."
+     ]
+    },
+    {
+     "key": "3.7",
+     "title": "Vectors",
+     "page": 29,
+     "outcomes": [
+      "Use the standard notations for vectors in two and three dimensions: column vectors, xi + yj (+ zk), displacement vectors such as AB, and a.",
+      "Add and subtract vectors and multiply a vector by a scalar, interpreting these operations geometrically. The general ratio theorem is not included, but the position vector of the midpoint of AB is expected.",
+      "Calculate the magnitude of a vector and use unit vectors, displacement vectors and position vectors, in two or three dimensions.",
+      "Understand the significance of the symbols in the vector equation of a line r = a + tb and find the equation of a line given sufficient information.",
+      "Determine whether two lines are parallel, intersect or are skew, and find the point of intersection when it exists. The shortest distance between skew lines and the common perpendicular are not required.",
+      "Calculate and use the scalar product of two vectors in problems involving lines and points, e.g. the angle between two lines or the foot of a perpendicular; questions may involve 3D objects such as cuboids and tetrahedra. The vector product is not required."
+     ]
+    },
+    {
+     "key": "3.8",
+     "title": "Differential equations",
+     "page": 30,
+     "outcomes": [
+      "Formulate a simple statement involving a rate of change as a differential equation, including introducing and evaluating a constant of proportionality where necessary.",
+      "Find by integration a general solution of a first-order differential equation in which the variables are separable, including any of the integration techniques in topic 3.5.",
+      "Use an initial condition to find a particular solution.",
+      "Interpret the solution of a differential equation in the context of the problem being modelled."
+     ]
+    },
+    {
+     "key": "3.9",
+     "title": "Complex numbers",
+     "page": 30,
+     "outcomes": [
+      "Understand the idea of a complex number and the terms real part, imaginary part, modulus, argument and conjugate (notations Re z, Im z, |z|, arg z, z*), and use the fact that two complex numbers are equal if and only if their real and imaginary parts are equal.",
+      "Add, subtract, multiply and divide two complex numbers in Cartesian form x + iy, showing full working for multiplication and division.",
+      "Use the result that, for a polynomial equation with real coefficients, non-real roots occur in conjugate pairs, e.g. when solving a cubic or quartic with one complex root given.",
+      "Represent complex numbers geometrically on an Argand diagram.",
+      "Multiply and divide two complex numbers in polar form r(cosθ + i sinθ) or re^(iθ), including |z₁z₂| = |z₁||z₂| and arg(z₁z₂) = arg z₁ + arg z₂ and the corresponding results for division.",
+      "Find the two square roots of a complex number in exact Cartesian form, showing full working.",
+      "Understand in simple terms the geometrical effects of conjugating a complex number and of adding, subtracting, multiplying and dividing two complex numbers.",
+      "Illustrate simple equations and inequalities involving complex numbers by loci on an Argand diagram, e.g. |z − a| < k, |z − a| = |z − b|, arg(z − a) = α."
+     ]
+    }
+   ]
+  },
+  {
+   "key": "4",
+   "title": "Mechanics",
+   "paper": "Paper 4",
+   "availability": "AS and A Level",
+   "level": "as_level",
+   "summary": "Particle mechanics for Paper 4: forces and equilibrium, kinematics in a straight line, momentum, Newton's laws of motion, and energy, work and power. Questions are mainly numerical, bodies are treated as particles and vector notation is not used in question papers.",
+   "topics": [
+    {
+     "key": "4.1",
+     "title": "Forces and equilibrium",
+     "page": 31,
+     "outcomes": [
+      "Identify the forces acting in a given situation, e.g. by drawing a force diagram.",
+      "Understand the vector nature of force and find and use components and resultants (calculation is required, not scale drawing).",
+      "Use the principle that a particle in equilibrium has zero vector sum of forces, equivalently zero sum of components in any direction.",
+      "Understand that a contact force between two surfaces can be represented by a normal component and a frictional component.",
+      "Use the model of a smooth contact and understand the limitations of this model.",
+      "Understand limiting friction and limiting equilibrium, recall the definition of the coefficient of friction and use F = μR or F ≤ μR as appropriate.",
+      "Use Newton's third law."
+     ]
+    },
+    {
+     "key": "4.2",
+     "title": "Kinematics of motion in a straight line",
+     "page": 32,
+     "outcomes": [
+      "Understand distance and speed as scalar quantities and displacement, velocity and acceleration as vector quantities (one dimension only).",
+      "Sketch and interpret displacement–time and velocity–time graphs, including that the area under a velocity–time graph is displacement, the gradient of a displacement–time graph is velocity and the gradient of a velocity–time graph is acceleration.",
+      "Use differentiation and integration with respect to time to solve simple problems on displacement, velocity and acceleration (calculus restricted to Pure Mathematics 1 techniques).",
+      "Use the formulae for motion with constant acceleration in a straight line, including setting up more than one equation and using information about different particles."
+     ]
+    },
+    {
+     "key": "4.3",
+     "title": "Momentum",
+     "page": 32,
+     "outcomes": [
+      "Use the definition of linear momentum and show understanding of its vector nature (one dimension only).",
+      "Use conservation of linear momentum to solve problems that may be modelled as the direct impact of two bodies, including bodies that coalesce on impact. Impulse and the coefficient of restitution are not required."
+     ]
+    },
+    {
+     "key": "4.4",
+     "title": "Newton's laws of motion",
+     "page": 33,
+     "outcomes": [
+      "Apply Newton's laws of motion to the linear motion of a particle of constant mass under constant forces, which may include friction, tension in an inextensible string and thrust in a connecting rod.",
+      "Use the relationship between mass and weight, W = mg, taking g as approximately 10 m s⁻².",
+      "Solve simple problems modelled as a particle moving vertically or on an inclined plane with constant acceleration, including rough planes where the acceleration up the plane differs from that down the plane.",
+      "Solve simple problems modelled as the motion of connected particles, e.g. particles joined by a light inextensible string over a smooth pulley, or a car towing a trailer."
+     ]
+    },
+    {
+     "key": "4.5",
+     "title": "Energy, work and power",
+     "page": 33,
+     "outcomes": [
+      "Understand the work done by a force and calculate the work done by a constant force when its point of application undergoes a displacement not necessarily parallel to the force (W = Fd cosθ).",
+      "Understand gravitational potential energy and kinetic energy and use the appropriate formulae.",
+      "Use the relationship between the change in energy of a system and the work done by external forces, and the principle of conservation of energy where appropriate, including non-linear motion where only overall energy changes matter.",
+      "Use the definition of power as the rate at which a force does work and the relationship P = Fv for a force acting in the direction of motion, including average power as work done divided by time taken.",
+      "Solve problems such as the instantaneous acceleration of a car moving on a hill against a resistance."
+     ]
+    }
+   ]
+  },
+  {
+   "key": "5",
+   "title": "Probability & Statistics 1",
+   "paper": "Paper 5",
+   "availability": "AS and A Level",
+   "level": "as_level",
+   "summary": "Statistics and probability for Paper 5: representing and summarising data, permutations and combinations, probability, discrete random variables (including the binomial and geometric distributions) and the normal distribution. Questions are mainly numerical.",
+   "topics": [
+    {
+     "key": "5.1",
+     "title": "Representation of data",
+     "page": 34,
+     "outcomes": [
+      "Select a suitable way of presenting raw statistical data and discuss the advantages and disadvantages of particular representations.",
+      "Draw and interpret stem-and-leaf diagrams (including back-to-back), box-and-whisker plots, histograms and cumulative frequency graphs.",
+      "Understand and use measures of central tendency (mean, median, mode) and variation (range, interquartile range, standard deviation), e.g. to compare and contrast data sets.",
+      "Use a cumulative frequency graph, e.g. to estimate medians, quartiles, percentiles and the proportion of a distribution above, below or between given values.",
+      "Calculate and use the mean and standard deviation of a set of data (including grouped data) from the data itself or from given totals Σx and Σx², or coded totals, in problems that may involve up to two data sets."
+     ]
+    },
+    {
+     "key": "5.2",
+     "title": "Permutations and combinations",
+     "page": 34,
+     "outcomes": [
+      "Understand the terms permutation and combination and solve simple problems involving selections.",
+      "Solve problems about arrangements of objects in a line, including those involving repetition (e.g. arranging the letters of NEEDLESS) and restriction (e.g. two particular people who must, or must not, stand together). Arrangements in a circle are not included."
+     ]
+    },
+    {
+     "key": "5.3",
+     "title": "Probability",
+     "page": 35,
+     "outcomes": [
+      "Evaluate probabilities in simple cases by enumeration of equiprobable elementary events, or by calculation using permutations or combinations.",
+      "Use addition and multiplication of probabilities, as appropriate, in simple cases.",
+      "Understand exclusive and independent events, including determining whether events A and B are independent by comparing P(A ∩ B) with P(A) × P(B).",
+      "Calculate and use conditional probabilities in simple cases, e.g. using a sample space of equiprobable events or a tree diagram."
+     ]
+    },
+    {
+     "key": "5.4",
+     "title": "Discrete random variables",
+     "page": 35,
+     "outcomes": [
+      "Draw up a probability distribution table for a discrete random variable X and calculate E(X) and Var(X).",
+      "Use the probability formulae for the binomial distribution B(n, p) and the geometric distribution Geo(p), and recognise practical situations where they are suitable models.",
+      "Use the formulae for the expectation and variance of the binomial distribution and for the expectation of the geometric distribution (proofs are not required)."
+     ]
+    },
+    {
+     "key": "5.5",
+     "title": "The normal distribution",
+     "page": 36,
+     "outcomes": [
+      "Understand the use of a normal distribution to model a continuous random variable and use normal distribution tables; sketches of normal curves may be required.",
+      "Solve problems concerning X ~ N(μ, σ²), including finding P(X > x₁) or a related probability from x₁, μ and σ, and finding a relationship between x₁, μ and σ given such a probability, showing full working for standardisation.",
+      "Recall the conditions under which the normal distribution can approximate the binomial distribution (np > 5 and nq > 5) and use this approximation with a continuity correction."
+     ]
+    }
+   ]
+  },
+  {
+   "key": "6",
+   "title": "Probability & Statistics 2",
+   "paper": "Paper 6",
+   "availability": "A Level only",
+   "level": "a_level",
+   "summary": "Further statistics for Paper 6: the Poisson distribution, linear combinations of random variables, continuous random variables, sampling and estimation, and hypothesis tests. Knowledge of Probability & Statistics 1 and of Pure Mathematics 3 calculus is assumed.",
+   "topics": [
+    {
+     "key": "6.1",
+     "title": "The Poisson distribution",
+     "page": 37,
+     "outcomes": [
+      "Use the formula to calculate probabilities for the Poisson distribution Po(λ).",
+      "Use the fact that if X ~ Po(λ) then the mean and variance of X are each equal to λ (proofs are not required).",
+      "Understand the relevance of the Poisson distribution to the distribution of random events and use it as a model.",
+      "Use the Poisson distribution as an approximation to the binomial distribution where appropriate (n large and p small; approximately n > 50 and np < 5).",
+      "Use the normal distribution, with continuity correction, as an approximation to the Poisson distribution where appropriate (λ large; approximately λ > 15)."
+     ]
+    },
+    {
+     "key": "6.2",
+     "title": "Linear combinations of random variables",
+     "page": 37,
+     "outcomes": [
+      "Use, when solving problems, the results E(aX + b) = aE(X) + b, Var(aX + b) = a²Var(X), E(aX + bY) = aE(X) + bE(Y), Var(aX + bY) = a²Var(X) + b²Var(Y) for independent X and Y, that aX + b is normal if X is normal, that aX + bY is normal for independent normal X and Y, and that X + Y is Poisson for independent Poisson X and Y (proofs are not required)."
+     ]
+    },
+    {
+     "key": "6.3",
+     "title": "Continuous random variables",
+     "page": 38,
+     "outcomes": [
+      "Understand the concept of a continuous random variable and recall and use the properties of a probability density function, for density functions defined over a single interval (the domain may be infinite).",
+      "Use a probability density function to solve problems involving probabilities and to calculate the mean and variance of a distribution, including locating the median or other percentiles from an area under the density function. Explicit knowledge of the cumulative distribution function is not included."
+     ]
+    },
+    {
+     "key": "6.4",
+     "title": "Sampling and estimation",
+     "page": 38,
+     "outcomes": [
+      "Understand the distinction between a sample and a population and appreciate the necessity for randomness in choosing samples.",
+      "Explain in simple terms why a given sampling method may be unsatisfactory. Knowledge of particular methods such as quota or stratified sampling is not required.",
+      "Recognise that a sample mean can be regarded as a random variable and use the facts that E(X̄) = μ and Var(X̄) = σ²/n.",
+      "Use the fact that X̄ has a normal distribution if X has a normal distribution.",
+      "Use the Central Limit Theorem where appropriate (an informal understanding is required).",
+      "Calculate unbiased estimates of the population mean and variance from a sample, using raw or summarised data.",
+      "Determine and interpret a confidence interval for a population mean where the population is normally distributed with known variance or where a large sample is used.",
+      "Determine, from a large sample, an approximate confidence interval for a population proportion."
+     ]
+    },
+    {
+     "key": "6.5",
+     "title": "Hypothesis tests",
+     "page": 39,
+     "outcomes": [
+      "Understand the nature of a hypothesis test, the difference between one-tailed and two-tailed tests, and the terms null hypothesis, alternative hypothesis, significance level, rejection (critical) region, acceptance region and test statistic; interpret outcomes in context.",
+      "Formulate hypotheses and carry out a hypothesis test for a single observation from a binomial or Poisson population, using direct evaluation of probabilities or a normal approximation where appropriate.",
+      "Formulate hypotheses and carry out a hypothesis test for a population mean where the population is normally distributed with known variance or where a large sample is used.",
+      "Understand the terms Type I error and Type II error in relation to hypothesis tests.",
+      "Calculate the probabilities of Type I and Type II errors in specific situations involving tests based on a normal distribution or direct evaluation of binomial or Poisson probabilities."
+     ]
+    }
+   ]
+  }
+ ]
+}
