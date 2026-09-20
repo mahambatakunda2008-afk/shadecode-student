@@ -7,9 +7,8 @@ on:
         description: "Comma-separated Learn topics"
         required: true
       subject:
-        description: "Optional exact subject; leave blank to use the first available subject"
-        required: false
-        default: ""
+        description: "Exact subject configured on the E2E account"
+        required: true
 
 jobs:
   learn-browser:
