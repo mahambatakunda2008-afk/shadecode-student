@@ -214,6 +214,22 @@ despite the gate's "as appropriate" existing on paper:
   live. Treat a push to `main` as incomplete until the corresponding GitHub Actions run
   and Vercel deployment are both confirmed green -- not merely triggered.
 
+**Addendum, 2026-09-19 (Playwright harness broke CI on `main`):** a direct push added
+`@playwright/test` to `package.json` without updating `package-lock.json`, and put a
+Playwright spec where vitest collected it. `ci.yml` runs `npm ci`, so both failed CI on
+`main` while typecheck and the changed-file tests were green. Two more items are mandatory
+for direct pushes:
+
+- **Run the full suite, not just the tests you touched.** Test-collection problems (a new
+  runner, spec naming, config globs) only appear in a full `npm test`. New test tooling must
+  also update the vitest `include`/`exclude` so the two runners never collect each other's files.
+- **Anything that changes `package.json` dependencies must update `package-lock.json` in the
+  same commit and be checked with `npm ci`, not `npm install`.** `npm install` silently
+  repairs a stale lockfile locally, which is exactly why the mismatch goes unnoticed until CI.
+
+`npm run verify` runs typecheck, lint and the full test suite in one command; run it (after a
+clean `npm ci` whenever dependencies changed) before every direct push to `main`.
+
 ## 15. Security
 
 Agents must never commit secrets, API keys, PATs, service-role keys, or private credentials.

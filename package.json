@@ -10,6 +10,7 @@
     "start": "next start",
     "test": "vitest run",
     "lint": "eslint",
+    "verify": "tsc --noEmit && npm run lint && npm test",
     "postbuild": "next-sitemap",
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts",
