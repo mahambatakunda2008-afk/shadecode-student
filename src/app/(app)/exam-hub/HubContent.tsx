@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users, ListChecks } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ShadecodeFeatureIcon, type ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
 
 interface HubCard {
   href: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   title: string;
   description: string;
   accent: string;
