@@ -115,12 +115,16 @@ export async function GET(req: Request) {
   try {
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const url = new URL(req.url); const subjectId = url.searchParams.get("subjectId") ?? "all"; const lessonId = url.searchParams.get("lessonId"); const { supabase, user } = auth;
-    const [{ data: profileData }, { data: subjectsData, error: subjectsError }] = await Promise.all([
-      supabase.from("profiles").select("xp, streak, level").eq("id", user.id).maybeSingle(),
+    const [{ data: profileData }, { data: subjectRows, error: subjectsError }] = await Promise.all([
+      supabase.from("profiles").select("xp, streak, level, subjects").eq("id", user.id).maybeSingle(),
       supabase.from("subjects").select("id, name").eq("user_id", user.id).order("name", { ascending: true }),
     ]);
     if (subjectsError) console.error("Subjects query error:", subjectsError);
-    const subjects = (subjectsData ?? []) as SubjectRow[]; const subjectById = new Map(subjects.map(s => [s.id, s.name])); const profile = profileData as ProfileRow | null; const level = profile?.level ?? 1;
+    const profile = profileData as (ProfileRow & { subjects?: unknown }) | null;
+    const allowedSubjectNames = normalizeSubjectNames(profile?.subjects);
+    const allowedKeys = new Set(allowedSubjectNames.map(name => normalizeSubjectKey(name)));
+    const subjects = ((subjectRows ?? []) as SubjectRow[]).filter(s => allowedKeys.has(normalizeSubjectKey(s.name)));
+    const subjectById = new Map(subjects.map(s => [s.id, s.name])); const level = profile?.level ?? 1;
     const summary = { currentXP: profile?.xp ?? 0, currentStreak: profile?.streak ?? 0, level, xpGoal: Math.max(100, level * 100) };
     if (lessonId) {
       const { data: lessonData, error: lessonError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).eq("id", lessonId).maybeSingle();
@@ -175,8 +179,10 @@ export async function POST(req: Request) {
     if (!topic) return NextResponse.json({ error: "Missing topic" }, { status: 400 });
 
     const requestedSubject = typeof subject === "string" ? subject.trim() : "";
-    const resolvedSubject = await resolveLessonSubject(supabase, user.id, requestedSubject, topic);
-    const effectiveSubject = resolvedSubject?.name ?? (requestedSubject && requestedSubject.toLowerCase() !== "general" ? requestedSubject : "General");
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, requestedSubject);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
+    const effectiveSubject = subjectAccess.subject;
+    const resolvedSubject = { id: subjectAccess.subjectId, name: subjectAccess.subject };
     const validDifficulty: LessonDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
     const prompt = buildDeepLessonPrompt(effectiveSubject, topic.trim(), validDifficulty);
 
@@ -220,7 +226,7 @@ export async function POST(req: Request) {
     const finalScore = lessonQualityScore(parsed.blocks);
     if (finalScore < 45) return NextResponse.json({ error: "The lesson did not meet the depth standard. Please try again." }, { status: 422 });
 
-    let subjectId = resolvedSubject?.id ?? null;
+    let subjectId = resolvedSubject.id;
     if (!subjectId && effectiveSubject) {
       const { data: existingSubject } = await supabase.from("subjects").select("id").eq("user_id", user.id).eq("name", effectiveSubject).maybeSingle();
       if (existingSubject?.id) subjectId = existingSubject.id;
