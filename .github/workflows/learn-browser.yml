@@ -5,7 +5,7 @@ on:
     inputs:
       topics:
         description: "Comma-separated Learn topics"
-        required: false
+        required: true
         default: ""
       subject:
         description: "Optional exact subject; leave blank to use the first available subject"
