@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { signIn } from "./auth";
 
-const requestedTopics = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topic) => topic.trim()).filter(Boolean);
 const requestedSubject = (process.env.E2E_LEARN_SUBJECT || "").trim();
 const requestedTopic = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topic) => topic.trim()).filter(Boolean)[0] || "";
 
@@ -33,7 +32,7 @@ test.describe("Learn deep-generation browser contract", () => {
       await page.getByRole("button", { name: "Start learning" }).click();
 
       await expect.poll(async () => page.evaluate(() => {
-        if (/\\/learn\\/[^/]+$/.test(window.location.pathname)) return "navigated";
+        if (/\/learn\/[^/]+$/.test(window.location.pathname)) return "navigated";
         try {
           const raw = localStorage.getItem("shadecode:cortex:generation-jobs:v2");
           const jobs = raw ? JSON.parse(raw) : [];
