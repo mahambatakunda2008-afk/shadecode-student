@@ -28,10 +28,12 @@ export function BottomNav() {
   const availablePrimary = primaryCandidates.filter(item => allItems.some(available => available.href === item.href));
   const dashboardItem = availablePrimary.find(item => item.href === "/dashboard") ?? NAV_ITEMS.dashboard;
   const sideItems = availablePrimary.filter(item => item.href !== "/dashboard").slice(0, 3);
-  const visibleSideItems = sideItems.slice(0, 2);
-  const deferredPrimaryItems = sideItems.slice(2);
-  const moreItems = [...deferredPrimaryItems, ...allItems, NAV_ITEMS.settings].filter(
-    (item, index, items) => item.href !== "/dashboard" && items.findIndex(candidate => candidate.href === item.href) === index,
+  const visibleSideItems = sideItems;
+  const moreItems = [...allItems, NAV_ITEMS.settings].filter(
+    (item, index, items) =>
+      item.href !== "/dashboard" &&
+      !visibleSideItems.some(visible => visible.href === item.href) &&
+      items.findIndex(candidate => candidate.href === item.href) === index,
   );
   const primaryLabel = (href: string, fallback: string) => {
     if (href === "/dashboard") return "Home";
@@ -63,7 +65,7 @@ export function BottomNav() {
   return (
     <>
       <nav aria-label={`${experience.label} primary navigation`} className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        {[...visibleSideItems, dashboardItem, ...(moreItems.length > 0 ? [null] : deferredPrimaryItems)].slice(0, 5).map((item, index) => {
+        {[...visibleSideItems, dashboardItem, ...(moreItems.length > 0 ? [null] : [])].slice(0, 5).map((item) => {
           if (!item) {
             return (
               <button key="more" type="button" aria-label={`Open ${moreTitle}`} aria-expanded={open} onClick={() => setOpen(true)} className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset">
@@ -91,6 +93,12 @@ export function BottomNav() {
             <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset">
               <div className={cn("relative flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200", active ? "bg-[var(--primary-glow)]" : "bg-transparent")}>
                 <Icon className={cn("h-5 w-5 transition-all duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")} strokeWidth={active ? 2.2 : 1.8} />
+                {(() => {
+                  const resolved = resolveBadge(item.href, item.badge, item.urgent);
+                  return resolved.badge ? (
+                    <span aria-label={`${resolved.badge} notification`} className={cn("absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none", resolved.urgent ? "bg-[var(--danger)] text-white" : "bg-[var(--primary)] text-white")}>{resolved.badge}</span>
+                  ) : null;
+                })()}
               </div>
               <span className={cn("truncate text-[12px] font-medium leading-tight transition-colors duration-200", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{primaryLabel(item.href, item.label)}</span>
             </Link>
