@@ -12,7 +12,7 @@ import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 45_000;
+const CLOUD_GENERATION_TIMEOUT_MS = 70_000;
 const LOCAL_MODEL_TIMEOUT_MS = 30_000;
 const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL?.trim()) || "";
 const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
@@ -121,9 +121,20 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined }); if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result); return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } catch (error) {
     const message = errorMessage(error); const context = localContext(job);
-    if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) return saveLocalResult(job);
-    if (isBrowser() && !navigator.onLine) { updateGenerationJob(job.id, { status: "queued", progress: 20, error: "Waiting for a connection." }); saveActiveId(job.id); }
-    else { updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: message }); if (getActiveId() === job.id) saveActiveId(null); }
+    if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
+      try {
+        return await saveLocalResult(job);
+      } catch (fallbackError) {
+        console.warn("[LEARN] local fallback was available but failed its quality gate", fallbackError instanceof Error ? fallbackError.message : String(fallbackError));
+      }
+    }
+    if (isBrowser() && !navigator.onLine) {
+      updateGenerationJob(job.id, { status: "queued", progress: 20, error: "Waiting for a connection." });
+      saveActiveId(job.id);
+    } else {
+      updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: message });
+      if (getActiveId() === job.id) saveActiveId(null);
+    }
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
   } finally { if (runningJobId === job.id) runningJobId = null; }
 }
