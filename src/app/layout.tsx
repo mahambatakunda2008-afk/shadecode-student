@@ -34,10 +34,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/icons/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/brand/shadecode-app-icon.svg", type: "image/svg+xml", sizes: "1024x1024" },
       { url: "/icons/shadecode-student-192.png", type: "image/png", sizes: "192x192" },
       { url: "/icons/shadecode-student-512.png", type: "image/png", sizes: "512x512" }
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" },
+      { url: "/apple-icon.svg", type: "image/svg+xml", sizes: "1024x1024" }
+    ],
     other: [{ rel: "mask-icon", url: "/brand/shadecode-mark-white.svg", color: "#245BFF" }],
   },
 };
@@ -67,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icons/favicon.png" type="image/png" sizes="32x32" />
+        <link rel="alternate icon" href="/brand/shadecode-app-icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
         <meta name="theme-color" content="#06111C" />
         <meta name="mobile-web-app-capable" content="yes" />

@@ -17,7 +17,8 @@
     { "src": "/icons/shadecode-student-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/shadecode-student-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/shadecode-student-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/shadecode-student-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/shadecode-student-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/brand/shadecode-app-icon.svg", "sizes": "1024x1024", "type": "image/svg+xml", "purpose": "any" }
   ],
   "screenshots": [
     { "src": "/screenshots/login.png", "sizes": "800x1378", "type": "image/png" },
