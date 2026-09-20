@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { ADMIN_NAV_GROUPS, isRouteActive } from "@/lib/navigation";
 
 export function AdminBottomNav() {
@@ -28,12 +29,15 @@ export function AdminBottomNav() {
                 active ? "bg-[var(--primary-glow)]" : "bg-transparent"
               )}
             >
-              <Icon
+              <ShadecodeFeatureIcon
+                icon={Icon}
+                size="sm"
+                tile={false}
+                active={active}
                 className={cn(
                   "w-[20px] h-[20px] transition-all duration-200",
                   active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
                 )}
-                strokeWidth={active ? 2.2 : 1.8}
               />
             </div>
             <span
