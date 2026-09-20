@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { BrandMark } from "@/components/brand/BrandMark";
-import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -62,7 +61,10 @@ export default function PWAInstallPrompt() {
     <div role="dialog" aria-label="Install Shadecode Student" style={{ position: "fixed", bottom: 20, left: 20, right: 20, maxWidth: 400, margin: "0 auto", background: "#0B1724", border: "1px solid rgba(34,211,238,0.22)", borderRadius: 16, padding: 20, boxShadow: "0 18px 60px rgba(0,0,0,0.45)", zIndex: 1000, animation: "slideUp 0.3s ease-out" }}>
       <button onClick={handleDismiss} aria-label="Dismiss install prompt" style={{ position: "absolute", top: 12, right: 12, background: "transparent", border: "none", color: "#9fb2bc", cursor: "pointer", padding: 4, borderRadius: 4 }}><X size={16} /></button>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        <ShadecodeFeatureIcon icon={() => <BrandMark width={27} height={27} aria-hidden="true" />} size="md" />
+        <div style={{ position: "relative", width: 48, height: 48, borderRadius: 14, background: "#06111C", border: "1px solid rgba(36,91,255,0.48)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 28px rgba(36,91,255,0.16)", overflow: "hidden" }}>
+          <span aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, #00E5FF 0%, #00A8FF 28%, #245BFF 58%, #7A3CFF 82%, #C135FF 100%)", opacity: 0.12 }} />
+          <BrandMark width={27} height={27} aria-hidden="true" style={{ position: "relative" }} />
+        </div>
         <div><h3 style={{ fontSize: 16, fontWeight: 400, color: "#fff", margin: "0 0 4px", fontFamily: "var(--font-brand), sans-serif" }}>Install Shadecode Student</h3><p style={{ fontSize: 12, color: "#9fb2bc", margin: 0 }}>Put your learning workspace on your phone. Reopen it like an app and keep saved study work available when your connection drops.</p></div>
       </div>
       <button onClick={handleInstall} style={{ width: "100%", padding: "12px", borderRadius: 10, background: "#22D3EE", border: "none", color: "#06111C", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-brand), sans-serif" }}>Install App</button>
