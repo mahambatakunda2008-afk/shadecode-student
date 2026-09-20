@@ -9,9 +9,12 @@ import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 const ICONS = { home: House, discovery: House, stories: BookOpen, numbers: Calculator, world: Lightbulb, learn: BookOpen, practice: ClipboardCheck, challenge: ClipboardCheck, plan: CalendarDays, progress: Trophy, papers: Files, simulation: ClipboardCheck, syllabus: Files, programme: BookOpen, studyspace: Target, workmate: BriefcaseBusiness, careers: UserRound, training: BookOpen, practical: FlaskConical, assessment: ClipboardCheck, career: UserRound, develop: Code2, work: BriefcaseBusiness, projects: BriefcaseBusiness, settings: Settings } as const;
 
+const MODULE_FEATURES = { home: "home", learn: "learn", practice: "math-checker", challenge: "exam-sim", plan: "timetable", progress: "leaderboard", papers: "past-papers", simulation: "exam-sim", studyspace: "focus", practical: "focus", develop: "code-lab", projects: "code-lab", settings: "settings" } as const;
+
 function ModuleCard({ id, href, label, description }: { id: string; href: string; label: string; description: string }) {
   const Icon = ICONS[id as keyof typeof ICONS] ?? BookOpen;
-  return <Link href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)]/45 hover:shadow-md"><div className="flex items-center justify-between gap-3"><ShadecodeFeatureIcon icon={Icon} size="sm" /><ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition group-hover:translate-x-1 group-hover:text-[var(--primary)]" /></div><h3 className="mt-4 text-sm font-bold text-[var(--foreground)]">{label}</h3><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p></Link>;
+  const feature = MODULE_FEATURES[id as keyof typeof MODULE_FEATURES];
+  return <Link href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)]/45 hover:shadow-md"><div className="flex items-center justify-between gap-3"><ShadecodeFeatureIcon icon={Icon} feature={feature} size="md" /><ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition group-hover:translate-x-1 group-hover:text-[var(--primary)]" /></div><h3 className="mt-4 text-sm font-bold text-[var(--foreground)]">{label}</h3><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p></Link>;
 }
 
 function FoundationDashboard() {
