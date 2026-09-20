@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, ChevronRight, LogOut, MessageSquare, Monitor, Moon, Save, Settings, Shield, Sparkles, Sun, UserRound } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, LogOut, MessageSquare, Monitor, Moon, Save, Settings, Shield, Sun, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUser } from "@/contexts/UserContext";
