@@ -123,28 +123,34 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
+  // Gemini can return transient 503s under load. Keep a second stable Flash
+  // variant in the same key before abandoning the key entirely. This makes the
+  // free production path resilient without lowering the teaching contract.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
+  const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash-lite"];
   for (const key of geminiKeys) {
-    if (!canTry()) break;
-    const text = await tryProvider("gemini", "gemini-3.6-flash", async timeout => {
-      const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: groundedPrompt },
-              ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
-            ],
-          }],
-          generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
-        }),
-      }, Math.min(timeout, 12000));
-      if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-      const data = await res.json() as any;
-      return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
-    });
-    if (text) return text;
+    for (const model of geminiModels) {
+      if (!canTry()) break;
+      const text = await tryProvider("gemini", model, async timeout => {
+        const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: groundedPrompt },
+                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+              ],
+            }],
+            generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
+          }),
+        }, Math.min(timeout, 3500));
+        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+        const data = await res.json() as any;
+        return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
+      });
+      if (text) return text;
+    }
   }
 
 
