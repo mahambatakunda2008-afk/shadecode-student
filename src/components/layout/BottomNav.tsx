@@ -262,7 +262,7 @@ export function BottomNav() {
                         : "border-[var(--card-border)] bg-[var(--surface-2)]",
                     )}
                   >
-                    <ShadecodeFeatureIcon icon={item.icon} size="sm" active={active} />
+                    <ShadecodeFeatureIcon icon={item.icon} feature={item.feature} size="sm" active={active} />
                     <span
                       className={cn(
                         "text-[11px] font-medium leading-tight",
