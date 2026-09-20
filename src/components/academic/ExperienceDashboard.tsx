@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, GraduationCap, Layers3, PenLine, Sparkles, Wrench } from "lucide-react";
+import { ArrowRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, GraduationCap, Layers3, PenLine, Sparkles, Wrench, House, ClipboardCheck, Target, CalendarDays, Trophy, Code2, Files, Lightbulb, UserRound, Settings, FlaskConical } from "lucide-react";
 import DashboardReimagined from "@/components/dashboard/DashboardReimagined";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
-const ICONS = { discovery: Compass, stories: BookOpen, numbers: Layers3, world: Sparkles, learn: BookOpen, practice: CheckCircle2, challenge: Sparkles, plan: Compass, progress: CheckCircle2, papers: GraduationCap, simulation: CheckCircle2, syllabus: GraduationCap, programme: GraduationCap, studyspace: PenLine, workmate: BriefcaseBusiness, careers: GraduationCap, training: BookOpen, practical: Wrench, assessment: CheckCircle2, career: GraduationCap, develop: Sparkles, work: BriefcaseBusiness, projects: BriefcaseBusiness } as const;
+const ICONS = { home: House, discovery: House, stories: BookOpen, numbers: Calculator, world: Lightbulb, learn: BookOpen, practice: ClipboardCheck, challenge: ClipboardCheck, plan: CalendarDays, progress: Trophy, papers: Files, simulation: ClipboardCheck, syllabus: Files, programme: BookOpen, studyspace: Target, workmate: BriefcaseBusiness, careers: UserRound, training: BookOpen, practical: FlaskConical, assessment: ClipboardCheck, career: UserRound, develop: Code2, work: BriefcaseBusiness, projects: BriefcaseBusiness, settings: Settings } as const;
 
 function ModuleCard({ id, href, label, description }: { id: string; href: string; label: string; description: string }) {
   const Icon = ICONS[id as keyof typeof ICONS] ?? BookOpen;
-  return <Link href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)]/45 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Icon className="h-5 w-5" /></span><ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition group-hover:translate-x-1 group-hover:text-[var(--primary)]" /></div><h3 className="mt-4 text-sm font-bold text-[var(--foreground)]">{label}</h3><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p></Link>;
+  return <Link href={href} className="group rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)]/45 hover:shadow-md"><div className="flex items-center justify-between gap-3"><ShadecodeFeatureIcon icon={Icon} size="sm" /><ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition group-hover:translate-x-1 group-hover:text-[var(--primary)]" /></div><h3 className="mt-4 text-sm font-bold text-[var(--foreground)]">{label}</h3><p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p></Link>;
 }
 
 function FoundationDashboard() {
