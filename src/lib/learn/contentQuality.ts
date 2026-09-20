@@ -92,7 +92,7 @@ QUALITY BAR
 Before returning the JSON, silently check: Is this genuinely teachable without another AI response? Could a student explain the core ideas after reading it? Are the connections visible? Are there worked examples, traps, checks, and a path forward? Does the lesson respect the curriculum map? If not, deepen it before returning it.`;
 }
 
-export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium") {
+export function buildLessonRepairPrompt(subject: string, topic: string, raw: string, curriculumContext = "", difficulty: LessonDifficulty = "medium", qualityFailures: string[] = []) {
   return `You are repairing a weak educational lesson for Shadecode Student.
 
 SUBJECT: ${subject}
@@ -102,7 +102,7 @@ ${formatTeachingProfile(subject)}
 
 ${formatCurriculumPlan(topic)}
 
-The draft below may be shallow, repetitive, incomplete, or structurally invalid. Rewrite it into a genuinely teachable lesson. Preserve correct useful material, but replace generic filler and expand missing reasoning. If the topic is broad, use the curriculum map as the spine and cover its major branches rather than treating the request as one tiny definition.
+The draft below may be shallow, repetitive, incomplete, or structurally invalid. Rewrite it into a genuinely teachable lesson. The quality gate failures found in the draft are listed below. Treat them as concrete defects to repair, not suggestions.\n\nQUALITY GATE FAILURES:\n${qualityFailures.length ? qualityFailures.map((failure) => `- ${failure}`).join("\n") : "- No failure codes were provided; perform the full quality review yourself."} Preserve correct useful material, but replace generic filler and expand missing reasoning. If the topic is broad, use the curriculum map as the spine and cover its major branches rather than treating the request as one tiny definition.
 
 Requirements:
 - Return ONLY valid JSON.
