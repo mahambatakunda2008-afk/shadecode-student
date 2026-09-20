@@ -123,36 +123,41 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Gemini can return transient 503s under load. Keep a second stable Flash
-  // variant in the same key before abandoning the key entirely. This makes the
-  // free production path resilient without lowering the teaching contract.
+  // Gemini can return transient 503s under load. Try multiple stable Flash
+  // variants, but do not burn the entire chain on one provider family. Give
+  // the first Gemini key the full model fallback set, then give Cloudflare a
+  // chance before spending the remaining budget on secondary Gemini keys.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash-lite"];
-  for (const key of geminiKeys) {
+  const geminiModels = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+
+  async function callGemini(key: string, model: string): Promise<string | null> {
+    return tryProvider("gemini", model, async timeout => {
+      const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: groundedPrompt },
+              ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+            ],
+          }],
+          generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
+        }),
+      }, Math.min(timeout, 3500));
+      if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+      const data = await res.json() as any;
+      return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
+    });
+  }
+
+  if (geminiKeys[0]) {
     for (const model of geminiModels) {
       if (!canTry()) break;
-      const text = await tryProvider("gemini", model, async timeout => {
-        const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: groundedPrompt },
-                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
-              ],
-            }],
-            generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
-          }),
-        }, Math.min(timeout, 3500));
-        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-        const data = await res.json() as any;
-        return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
-      });
+      const text = await callGemini(geminiKeys[0], model);
       if (text) return text;
     }
   }
-
 
   if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
     const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
@@ -165,6 +170,15 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       return typeof data?.result?.response === "string" ? data.result.response : null;
     });
     if (text) return text;
+  }
+
+  // Secondary Gemini keys cover rate limits and quota buckets on the primary key.
+  for (const key of geminiKeys.slice(1)) {
+    for (const model of geminiModels) {
+      if (!canTry()) break;
+      const text = await callGemini(key, model);
+      if (text) return text;
+    }
   }
 
   if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
