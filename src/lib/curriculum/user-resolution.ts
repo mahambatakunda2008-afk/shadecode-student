@@ -3,7 +3,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CurriculumKnowledgeItem } from "./knowledge";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
-import type { CurriculumVersionRecord } from "./resolver";
+import type { CurriculumCoverageRecord, CurriculumVersionRecord } from "./resolver";
 import { resolveSystemCurriculum, type SystemCurriculumResolution } from "./system-resolver";
 import {
   normalizeStoredCurriculumIdentities,
@@ -15,13 +15,14 @@ export interface UserSystemCurriculumResolution extends SystemCurriculumResoluti
   identity?: StoredCurriculumIdentity;
 }
 
-function asVersion(row: Record<string, unknown>): CurriculumVersionRecord {
+/** curriculum_versions has no `level` column; the level is the learner's (as in ai-grounding.ts). */
+function asVersion(row: Record<string, unknown>, level: StoredCurriculumIdentity["level"]): CurriculumVersionRecord {
   return {
     id: String(row.id),
     identity: {
       boardId: String(row.board_id ?? ""),
       qualificationId: String(row.qualification_id ?? ""),
-      level: String(row.level ?? "") as StoredCurriculumIdentity["level"],
+      level,
       syllabusId: String(row.syllabus_id ?? ""),
       syllabusVersion: String(row.syllabus_version ?? ""),
       subjectId: String(row.subject_id ?? ""),
@@ -129,7 +130,10 @@ export async function resolveUserSystemCurriculum(userId: string, subjectId?: st
     syllabusVersion: identity.syllabusVersion,
   };
   const learner = toLearnerCurriculumContext(resolvedIdentity);
-  const baseFilter = (query: any) => query
+  // Live schema: curriculum_versions has no `level`; curriculum_objectives and curriculum_coverage_checks
+  // carry only `curriculum_version_id` (not the identity columns); only curriculum_knowledge carries the
+  // full identity. Match the version by identity first, then load the rest by version id.
+  const knowledgeFilter = (query: any) => query
     .eq("board_id", resolvedIdentity.boardId)
     .eq("qualification_id", resolvedIdentity.qualificationId)
     .eq("level", resolvedIdentity.level)
@@ -137,22 +141,44 @@ export async function resolveUserSystemCurriculum(userId: string, subjectId?: st
     .eq("syllabus_version", resolvedIdentity.syllabusVersion)
     .eq("subject_id", resolvedIdentity.subjectId);
 
-  const [versionsResult, objectivesResult, mappingsResult, knowledgeResult] = await Promise.all([
-    baseFilter(supabase.from("curriculum_versions").select("*")),
-    baseFilter(supabase.from("curriculum_objectives").select("*")),
+  const loadFailure = () => {
+    const reason = "Unable to load the verified curriculum knowledge required for this learner.";
+    return { identity, blocked: true as const, reason, resolved: { status: "unverified" as const, reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
+  };
+
+  const versionsResult = await supabase.from("curriculum_versions").select("*")
+    .eq("board_id", resolvedIdentity.boardId)
+    .eq("qualification_id", resolvedIdentity.qualificationId)
+    .eq("syllabus_id", resolvedIdentity.syllabusId)
+    .eq("syllabus_version", resolvedIdentity.syllabusVersion)
+    .eq("subject_id", resolvedIdentity.subjectId);
+  if (versionsResult.error) return loadFailure();
+
+  const versions = (versionsResult.data ?? []).map((row: Record<string, unknown>) => asVersion(row, resolvedIdentity.level));
+  const versionIds = versions.map((version: CurriculumVersionRecord) => version.id);
+  const byVersion = (table: string, columns: string): PromiseLike<{ data: any[] | null; error: unknown }> =>
+    versionIds.length
+      ? supabase.from(table).select(columns).in("curriculum_version_id", versionIds)
+      : Promise.resolve({ data: [], error: null });
+
+  const [objectivesResult, mappingsResult, knowledgeResult, coverageResult] = await Promise.all([
+    byVersion("curriculum_objectives", "*"),
     supabase.from("objective_skill_mappings").select("*"),
-    baseFilter(supabase.from("curriculum_knowledge").select("*")),
+    knowledgeFilter(supabase.from("curriculum_knowledge").select("*")),
+    byVersion("curriculum_coverage_checks", "dimension,status,evidence,notes"),
   ]);
 
-  if (versionsResult.error || objectivesResult.error || mappingsResult.error || knowledgeResult.error) {
-    const reason = "Unable to load the verified curriculum knowledge required for this learner.";
-    return { identity, blocked: true, reason, resolved: { status: "unverified", reason, objectives: [], mappings: [], knowledge: [], knowledgeByKind: {} } };
-  }
+  if (objectivesResult.error || mappingsResult.error || knowledgeResult.error || coverageResult.error) return loadFailure();
 
   const objectives = (objectivesResult.data ?? []).map((row: Record<string, unknown>) => asObjective(row, resolvedIdentity));
   const mappings = (mappingsResult.data ?? []).map((row: Record<string, unknown>) => asMapping(row));
   const knowledge = (knowledgeResult.data ?? []).map((row: Record<string, unknown>) => asKnowledge(row));
-  const versions = (versionsResult.data ?? []).map((row: Record<string, unknown>) => asVersion(row));
+  const coverageChecks = (coverageResult.data ?? []).map((check: Record<string, unknown>) => ({
+    dimension: check.dimension,
+    status: check.status,
+    evidence: check.evidence,
+    notes: check.notes,
+  })) as CurriculumCoverageRecord[];
 
-  return { identity, ...resolveSystemCurriculum({ learner, versions, objectives, mappings, knowledge }) };
+  return { identity, ...resolveSystemCurriculum({ learner, versions, objectives, mappings, knowledge, coverageChecks }) };
 }
