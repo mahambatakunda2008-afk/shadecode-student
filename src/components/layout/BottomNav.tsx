@@ -24,7 +24,7 @@ export function BottomNav() {
 
   const primaryCandidates =
     family === "foundation"
-      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.achievements]
+      ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.tasks, NAV_ITEMS.achievements]
       : family === "school"
         ? [NAV_ITEMS.dashboard, NAV_ITEMS.learn, NAV_ITEMS.compLab, NAV_ITEMS.examSim]
         : [NAV_ITEMS.dashboard, NAV_ITEMS.curriculum, NAV_ITEMS.compLab, NAV_ITEMS.projects];
