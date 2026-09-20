@@ -1,10 +1,9 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { createClient as createBrowserClient } from "@/lib/supabase/client";
 
 // awardXP is called from server-side API routes on behalf of an explicit
 // userId -- it never relied on a browser session in the first place, so it
 // needs a service-role client, not the browser client. The browser client
-// (createBrowserClient) has no cookies/session in a server route context,
+// (the browser client) has no cookies/session in a server route context,
 // meaning every RPC call ran unauthenticated and was almost certainly being
 // silently blocked by RLS on `increment_xp` -- awardXP swallowed the error
 // and returned {success:false}, which no caller checked. XP was very likely
@@ -63,23 +62,9 @@ export async function awardXPBySource(userId: string, source: XPSource, metadata
   return awardXP(userId, { amount });
 }
 
-// 3. awardXPClient: for genuine client-side ("use client") callers, e.g.
-//    tasks/page.tsx -- uses the browser client so it runs as the logged-in
-//    user's own session, which is what RLS on increment_xp expects here.
-export async function awardXPClient(userId: string, award: { amount: number }) {
-  const supabase = createBrowserClient();
-  const { data, error } = await supabase.rpc("increment_xp", {
-    user_id: userId,
-    amount: award.amount,
-  });
-  if (error) console.error("[XP] increment_xp failed (client):", error.message, { userId, amount: award.amount });
-  return {
-    success: !error,
-    xp: data?.[0]?.xp ?? 0,
-    level: data?.[0]?.level ?? 1,
-    streak: data?.[0]?.streak ?? 0,
-  };
-}
+// Note: there is deliberately no browser-side award function. Since 2026-09-20 increment_xp is
+// executable by service_role only, and profiles.xp/level/streak/season_xp/weekly_xp/rank fields are
+// pinned against browser writes (migration 20260920092654), so XP can only be granted by server code.
 
 export function calculateLevel(xp: number) { return Math.floor(xp / 100) + 1; }
 export function xpForLevel(level: number) { return (level - 1) * 100; }
