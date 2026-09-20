@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, GraduationCap, Layers3, PenLine, Sparkles, Wrench, House, ClipboardCheck, Target, CalendarDays, Trophy, Code2, Files, Lightbulb, UserRound, Settings, FlaskConical } from "lucide-react";
+import { ArrowRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, GraduationCap, Layers3, PenLine, Sparkles, Wrench, House, ClipboardCheck, Calculator, Target, CalendarDays, Trophy, Code2, Files, Lightbulb, UserRound, Settings, FlaskConical } from "lucide-react";
 import DashboardReimagined from "@/components/dashboard/DashboardReimagined";
 import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
