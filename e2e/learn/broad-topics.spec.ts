@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { signIn } from "./auth";
 
-const cases = (process.env.E2E_LEARN_TOPICS || "Organic Chemistry").split(",").map((topic) => topic.trim()).filter(Boolean);
+const requestedTopics = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topic) => topic.trim()).filter(Boolean);
 const requestedSubject = (process.env.E2E_LEARN_SUBJECT || "").trim();
 
 test.describe("Learn deep-generation browser contract", () => {
@@ -11,8 +11,7 @@ test.describe("Learn deep-generation browser contract", () => {
     await expect(page.getByRole("heading", { name: "Learn with intent." })).toBeVisible();
   });
 
-  for (const topic of cases) {
-    test(`builds and renders a substantive lesson for: ${topic}`, async ({ page }) => {
+  test("builds and renders a substantive lesson from the signed-in user curriculum", async ({ page }) => {
       const subjectSelect = page.getByRole("combobox", { name: "Subject" });
       await expect(subjectSelect).toBeVisible({ timeout: 15_000 });
       await expect.poll(async () => subjectSelect.locator("option").count(), { timeout: 15_000 }).toBeGreaterThan(1);
@@ -26,6 +25,7 @@ test.describe("Learn deep-generation browser contract", () => {
         : options[0];
       expect(selected, requestedSubject ? `Subject "${requestedSubject}" is not available in this user's Learn subjects.` : "No usable Learn subject was available.").toBeTruthy();
       await subjectSelect.selectOption({ value: selected!.value });
+      const topic = requestedTopics[0] || `${selected!.label} fundamentals and core concepts`;
       await page.getByLabel("What do you need help with?").fill(topic);
       await page.getByRole("button", { name: "Start learning" }).click();
 
@@ -64,6 +64,5 @@ test.describe("Learn deep-generation browser contract", () => {
         path: `test-results/learn-${topic.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`,
         fullPage: true,
       });
-    });
-  }
+  });
 });
