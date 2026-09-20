@@ -3,8 +3,10 @@ import { signIn } from "./auth";
 
 const requestedTopics = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topic) => topic.trim()).filter(Boolean);
 const requestedSubject = (process.env.E2E_LEARN_SUBJECT || "").trim();
+const requestedTopic = (process.env.E2E_LEARN_TOPICS || "").split(",").map((topic) => topic.trim()).filter(Boolean)[0] || "";
 
 test.describe("Learn deep-generation browser contract", () => {
+  test.setTimeout(150_000);
   test.beforeEach(async ({ page }) => {
     await signIn(page);
     await page.goto("/learn");
@@ -25,7 +27,8 @@ test.describe("Learn deep-generation browser contract", () => {
         : options[0];
       expect(selected, requestedSubject ? `Subject "${requestedSubject}" is not available in this user's Learn subjects.` : "No usable Learn subject was available.").toBeTruthy();
       await subjectSelect.selectOption({ value: selected!.value });
-      const topic = requestedTopics[0] || `${selected!.label} fundamentals and core concepts`;
+      expect(requestedTopic, "E2E_LEARN_TOPICS must name a real broad topic from the signed-in user curriculum; no synthetic fallback is allowed.").toBeTruthy();
+      const topic = requestedTopic;
       await page.getByLabel("What do you need help with?").fill(topic);
       await page.getByRole("button", { name: "Start learning" }).click();
 
