@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getLessonCache, saveLessonCache, type LocalLessonList } from "@/lib/local-first/lesson-cache";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import { AlertCircle, BookOpen, CheckCircle2, Clock3, RefreshCw, Sparkles, WifiOff, Zap } from "lucide-react";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 const REQUEST_TIMEOUT_MS = 12000;
 const GENERATE_TIMEOUT_MS = 65000;
@@ -143,7 +144,7 @@ export default function LearnPageClientV2() {
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary)]"><Sparkles className="h-4 w-4" /> Learn</div>
+            <div className="flex items-center gap-3"><ShadecodeFeatureIcon feature="learn" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Learning system</p><div className="mt-0.5 text-sm font-semibold text-[var(--foreground)]">Learn</div></div></div>
             <h1 className="mt-1 text-3xl font-black tracking-tight">Turn a topic into a lesson.</h1>
             <p className="mt-1 max-w-2xl text-sm text-[var(--muted-foreground)]">Generate curriculum-aware lessons, continue where you left off, and keep your workspace available offline.</p>
           </div>
@@ -153,7 +154,7 @@ export default function LearnPageClientV2() {
         {(offline || error) && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><div className="rounded-lg bg-[var(--primary-glow)] p-2">{offline ? <WifiOff className="h-4 w-4 text-[var(--primary)]" /> : <AlertCircle className="h-4 w-4 text-[var(--primary)]" />}</div><div><p className="text-sm font-semibold">{offline ? "You're offline" : "Learn couldn't refresh"}</p><p className="mt-1 text-xs text-[var(--muted-foreground)]">{error || "Your cached lessons are still available."}</p></div></div>}
 
         <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-sm sm:p-6">
-          <div className="flex items-center gap-2"><Zap className="h-5 w-5 text-[var(--primary)]" /><h2 className="font-bold">Generate a lesson</h2></div>
+          <div className="flex items-center gap-2"><ShadecodeFeatureIcon feature="learn" size="sm" /><h2 className="font-bold">Generate a lesson</h2></div>
           <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1.5fr_auto]">
             <select value={subject} onChange={(e) => setSubject(e.target.value)} className="min-h-12 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm outline-none focus:border-[var(--primary)]"><option value="">Choose a subject</option>{data.subjects.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}</select>
             <input value={topic} onChange={(e) => setTopic(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void generate(); }} placeholder="e.g. Deformation of solids" className="min-h-12 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 text-sm outline-none focus:border-[var(--primary)]" />
@@ -167,7 +168,7 @@ export default function LearnPageClientV2() {
 
         <section>
           <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">Subjects</h2><span className="text-xs text-[var(--muted-foreground)]">{data.subjects.length} available</span></div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.subjects.map((item) => <button key={item.id} type="button" onClick={() => setSubject(item.name)} className={`rounded-2xl border p-4 text-left transition ${subject === item.name ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--card)] hover:border-[var(--primary)]"}`}><div className="flex items-center justify-between"><BookOpen className="h-5 w-5 text-[var(--primary)]" /><span className="text-xs text-[var(--muted-foreground)]">{item.lessonCount} lessons</span></div><p className="mt-4 font-bold">{item.name}</p></button>)}</div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.subjects.map((item) => <button key={item.id} type="button" onClick={() => setSubject(item.name)} className={`rounded-2xl border p-4 text-left transition ${subject === item.name ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--card)] hover:border-[var(--primary)]"}`}><div className="flex items-center justify-between"><ShadecodeFeatureIcon feature="learn" size="sm" /> <span className="text-xs text-[var(--muted-foreground)]">{item.lessonCount} lessons</span></div><p className="mt-4 font-bold">{item.name}</p></button>)}</div>
         </section>
 
         <section>
