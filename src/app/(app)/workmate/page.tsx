@@ -33,7 +33,7 @@ export default function WorkmatePage() {
           </div>
           <div className="mt-7 grid gap-2 sm:grid-cols-3">
             {modes.map(({ icon: Icon, label, description }, index) => (
-              <div key={label} className={`rounded-2xl border p-4 ${index === 0 ? "border-[var(--primary)]/25 bg-[var(--primary-glow)]/30" : "border-[var(--card-border)] bg-[var(--surface)]"}`}>
+              <div key={label} className={`rounded-2xl border p-4 ${index === 0 ? "border-[var(--primary)]/25 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="grid size-8 place-items-center rounded-xl bg-[var(--muted)] text-[var(--primary)]"><Icon size={16} /></span>
