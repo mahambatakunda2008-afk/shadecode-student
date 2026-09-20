@@ -158,7 +158,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 24000, perProviderMaxMs: 4500, curriculumContext });
+    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 18000, perProviderMaxMs: 3200, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -174,7 +174,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   if (parsed && initialFailures.length === 0) return parsed;
 
   try {
-    const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 22000, perProviderMaxMs: 4500, curriculumContext });
+    const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 18000, perProviderMaxMs: 3200, curriculumContext });
     if (repair) {
       parsed = parseLesson(repair);
       if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
