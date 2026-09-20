@@ -300,7 +300,7 @@ export default function Timetable() {
           {TIME_PRESETS.map(p => (
             <button key={p.value} onClick={() => setStartTime(p.value)} style={{
               padding: "6px 12px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
-              background: startTime === p.value ? "rgba(99,102,241,0.15)" : "var(--muted)",
+              background: startTime === p.value ? "color-mix(in srgb, var(--primary) 15%, transparent)" : "var(--muted)",
               border: startTime === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
               color: startTime === p.value ? "var(--primary)" : "var(--muted-foreground)",
               fontWeight: startTime === p.value ? 700 : 400,
