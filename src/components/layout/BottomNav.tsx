@@ -109,7 +109,7 @@ export function BottomNav() {
             active ? "bg-[var(--primary-glow)]" : "bg-transparent",
           )}
         >
-          <ShadecodeFeatureIcon icon={Icon} size="sm" tile={false} active={active} />
+          <ShadecodeFeatureIcon icon={Icon} feature={item.feature} size="sm" tile={false} active={active} />
           {(() => {
             const resolved = resolveBadge(item.href, item.badge, item.urgent);
             return resolved.badge ? (
@@ -262,7 +262,7 @@ export function BottomNav() {
                         : "border-[var(--card-border)] bg-[var(--surface-2)]",
                     )}
                   >
-                    <ShadecodeFeatureIcon icon={item.icon} size="sm" active={active} />
+                    <ShadecodeFeatureIcon icon={item.icon} feature={item.feature} size="sm" active={active} />
                     <span
                       className={cn(
                         "text-[11px] font-medium leading-tight",
