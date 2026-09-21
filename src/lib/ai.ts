@@ -4,7 +4,7 @@ import { logAIUsage } from "@/lib/ai/tracker";
 import { getVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
-const DEFAULT_MAX_CHAIN_MS = 24000;
+const DEFAULT_MAX_CHAIN_MS = 28000;
 const DEFAULT_PER_PROVIDER_MAX_MS = 6500;
 const TELEMETRY_BUDGET_MS = 500;
 const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
@@ -133,6 +133,19 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
+  if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
+    const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
+      const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
+        method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+      }, timeout);
+      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.result?.response === "string" ? data.result.response : null;
+    });
+    if (text) return text;
+  }
+
   // Direct Google fallback remains deliberately small and stable. Do not add
   // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
@@ -152,7 +165,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           }],
           generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
         }),
-      }, Math.min(timeout, 12000));
+      }, Math.min(timeout, 6500));
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
@@ -168,19 +181,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       if (text) return text;
     }
     if (!canTry()) break;
-  }
-
-  if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
-    const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
-      const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
-        method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
-      }, timeout);
-      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
-      const data = await res.json() as any;
-      return typeof data?.result?.response === "string" ? data.result.response : null;
-    });
-    if (text) return text;
   }
 
   if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
