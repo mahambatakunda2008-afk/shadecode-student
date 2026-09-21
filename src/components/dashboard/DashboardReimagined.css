@@ -153,3 +153,6 @@
   .dashboard-hero-orb,.dashboard-live-dot::after { animation:none; }
   .dashboard-progress-ring { transition:none; }
 }
+
+/* Brand mark inside dashboard identity stays crisp at micro sizes. */
+.dashboard-kicker svg { flex:none; filter:drop-shadow(0 0 8px color-mix(in srgb, var(--brand-cyan) 22%, transparent)); }
