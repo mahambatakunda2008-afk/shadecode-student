@@ -96,15 +96,21 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
     examSession: resolvedIdentity.examSession,
   };
 
-  const [objectivesResult, mappingsResult, knowledgeResult, coverageResult] = await Promise.all([
+  // Scope every curriculum read to the selected verified syllabus. In particular, do not
+  // load the entire objective_skill_mappings table for every Learn request.
+  const [objectivesResult, knowledgeResult, coverageResult] = await Promise.all([
     supabase.from("curriculum_objectives").select("*").eq("curriculum_version_id", matchingVersion.id),
-    supabase.from("objective_skill_mappings").select("*"),
     supabase.from("curriculum_knowledge").select("*").eq("curriculum_version_id", matchingVersion.id),
     supabase.from("curriculum_coverage_checks").select("dimension,status,evidence,notes").eq("curriculum_version_id", matchingVersion.id),
   ]);
-  if (objectivesResult.error || mappingsResult.error || knowledgeResult.error || coverageResult.error) {
+  if (objectivesResult.error || knowledgeResult.error || coverageResult.error) {
     return { status: "blocked", promptContext: "", reason: "Verified curriculum data could not be loaded, so syllabus-aligned teaching is temporarily blocked." };
   }
+
+  const objectiveIds = (objectivesResult.data ?? []).map((objective) => objective.id).filter(Boolean);
+  const mappingsResult = objectiveIds.length
+    ? await supabase.from("objective_skill_mappings").select("*").in("objective_id", objectiveIds)
+    : { data: [], error: null };
 
   const result = resolveSystemCurriculum({
     learner,
