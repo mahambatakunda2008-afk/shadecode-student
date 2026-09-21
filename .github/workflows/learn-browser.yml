@@ -1,6 +1,9 @@
 name: Learn browser verification
 
 on:
+  push:
+    paths:
+      - ".github/learn-browser-trigger"
   workflow_dispatch:
     inputs:
       topics:
@@ -35,8 +38,8 @@ jobs:
           BASE_URL: https://shadecodestudent.vercel.app
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-          E2E_LEARN_SUBJECT: ${{ inputs.subject }}
-          E2E_LEARN_TOPICS: ${{ inputs.topics }}
+          E2E_LEARN_SUBJECT: ${{ inputs.subject || 'Physics' }}
+          E2E_LEARN_TOPICS: ${{ inputs.topics || 'Waves' }}
         run: npm run test:learn:e2e
 
       - name: Upload browser artifacts
