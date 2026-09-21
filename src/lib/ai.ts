@@ -172,8 +172,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     });
   }
 
-  // Text fallback order after Gateway: stable Gemini models, then the existing
-  // Cloudflare path, then paid OpenAI only when explicitly enabled.
+  // Text fallback order after Gateway: Cloudflare first, then stable Gemini models,
+  // then paid OpenAI only when explicitly enabled.
   for (const key of geminiKeys) {
     for (const model of geminiModels) {
       if (!canTry()) break;
