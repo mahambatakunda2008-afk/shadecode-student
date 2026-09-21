@@ -106,7 +106,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   try {
-    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 12 });
+    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 0 });
     const localModel = await tryLocalModel(job); if (localModel) return saveLocalResult(job, localModel);
     if (isBrowser() && !navigator.onLine) return saveLocalResult(job);
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
