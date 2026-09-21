@@ -180,5 +180,5 @@ export async function resolveUserSystemCurriculum(userId: string, subjectId?: st
     notes: check.notes,
   })) as CurriculumCoverageRecord[];
 
-  return { identity, ...resolveSystemCurriculum({ learner, versions, objectives, mappings, knowledge, coverageChecks }) };
+  return { identity, ...resolveSystemCurriculum({ tier: "syllabus", learner, versions, objectives, mappings, knowledge, coverageChecks }) };
 }

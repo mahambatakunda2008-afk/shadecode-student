@@ -8,6 +8,32 @@ export const CURRICULUM_COMPLETENESS_DIMENSIONS = [
 ] as const;
 
 export type CurriculumCompletenessDimension = (typeof CURRICULUM_COMPLETENESS_DIMENSIONS)[number];
+
+/**
+ * Dimensions about exam HISTORY (real past papers, mark schemes, examiner reports, grade thresholds), as opposed to
+ * what the syllabus itself says. A syllabus PDF cannot evidence them; see docs/curriculum/coverage-evidence-policy.md.
+ */
+export const EXAM_HISTORY_DIMENSIONS = [
+  "past_paper_coverage", "mark_scheme_coverage", "examiner_report_coverage", "grade_threshold_coverage",
+] as const satisfies readonly CurriculumCompletenessDimension[];
+
+/** The dimensions that describe the syllabus itself (everything except exam history). */
+export const SYLLABUS_DIMENSIONS: readonly CurriculumCompletenessDimension[] = CURRICULUM_COMPLETENESS_DIMENSIONS.filter(
+  (dimension) => !(EXAM_HISTORY_DIMENSIONS as readonly string[]).includes(dimension),
+);
+
+/**
+ * Which coverage a resolution must have.
+ * - "exam" (default everywhere): all 29 dimensions. Required for anything that makes exam-history claims
+ *   (past-paper practice, mark-scheme conventions, grade boundaries).
+ * - "syllabus": the 25 syllabus dimensions. Sufficient to ground teaching in the verified syllabus, provided the
+ *   consumer does NOT make exam-history claims (the resolved context reports `examHistoryVerified`).
+ */
+export type CurriculumGateTier = "syllabus" | "exam";
+
+export function requiredDimensionsForTier(tier: CurriculumGateTier): readonly CurriculumCompletenessDimension[] {
+  return tier === "exam" ? CURRICULUM_COMPLETENESS_DIMENSIONS : SYLLABUS_DIMENSIONS;
+}
 export type CurriculumCoverageStatus = "missing" | "partial" | "verified" | "blocked" | "not_applicable";
 
 export interface CurriculumCoverageCheck {

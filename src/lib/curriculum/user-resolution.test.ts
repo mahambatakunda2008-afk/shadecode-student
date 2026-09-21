@@ -87,6 +87,25 @@ describe("resolveUserSystemCurriculum", () => {
     ]);
   });
 
+  it("resolves when only the four exam-history dimensions are missing, and forbids exam-history claims", async () => {
+    const examHistory = ["past_paper_coverage", "mark_scheme_coverage", "examiner_report_coverage", "grade_threshold_coverage"];
+    tables.curriculum_coverage_checks = tables.curriculum_coverage_checks.filter((row) => !examHistory.includes(String(row.dimension)));
+    const { resolveUserSystemCurriculum } = await import("./user-resolution");
+    const result = await resolveUserSystemCurriculum("user-1", "mathematics");
+    expect(result.blocked).toBe(false);
+    expect(result.context?.examHistoryVerified).toBe(false);
+    const { curriculumSystemPromptContext } = await import("./system-curriculum-context");
+    expect(curriculumSystemPromptContext(result.context!)).toContain("Do not cite specific past papers");
+  });
+
+  it("still blocks when a syllabus (non exam-history) dimension is missing", async () => {
+    tables.curriculum_coverage_checks = tables.curriculum_coverage_checks.filter((row) => row.dimension !== "terminology");
+    const { resolveUserSystemCurriculum } = await import("./user-resolution");
+    const result = await resolveUserSystemCurriculum("user-1", "mathematics");
+    expect(result.blocked).toBe(true);
+    expect(result.reason).toContain("terminology");
+  });
+
   it("stays blocked when coverage evidence is missing (coverage is actually loaded and enforced)", async () => {
     tables.curriculum_coverage_checks = [];
     const { resolveUserSystemCurriculum } = await import("./user-resolution");

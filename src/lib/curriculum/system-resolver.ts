@@ -1,6 +1,7 @@
 import type { CurriculumKnowledgeIdentity, CurriculumKnowledgeItem } from "./knowledge";
 import { buildSystemCurriculumContext, type SystemCurriculumContext } from "./system-curriculum-context";
 import type { CurriculumObjective, CurriculumIdentity, ObjectiveSkillMapping } from "./objective-first";
+import type { CurriculumGateTier } from "./completeness";
 import { resolveCurriculumContext, type CurriculumCoverageRecord, type CurriculumVersionRecord, type LearnerCurriculumContext, type ResolvedCurriculumContext } from "./resolver";
 
 export interface SystemCurriculumResolutionInput {
@@ -11,6 +12,8 @@ export interface SystemCurriculumResolutionInput {
   knowledge: CurriculumKnowledgeItem[];
   coverageChecks?: CurriculumCoverageRecord[];
   asOf?: string;
+  /** "exam" (default) requires all 29 coverage dimensions; "syllabus" excludes the four exam-history ones. */
+  tier?: CurriculumGateTier;
 }
 
 export interface SystemCurriculumResolution {
@@ -48,7 +51,7 @@ export function resolveSystemCurriculum(input: SystemCurriculumResolutionInput):
   }
 
   const identity = toKnowledgeIdentity(resolved.curriculum);
-  const context = buildSystemCurriculumContext(identity, resolved.knowledge, true, resolved.objectives);
+  const context = buildSystemCurriculumContext(identity, resolved.knowledge, true, resolved.objectives, resolved.examHistoryVerified);
   return { resolved, context, blocked: false, reason: "Verified objective-first curriculum context resolved with verified whole-syllabus knowledge." };
 }
 

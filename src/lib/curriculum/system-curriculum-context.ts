@@ -16,6 +16,11 @@ export interface SystemCurriculumContext {
   practical: CurriculumKnowledgeItem[];
   terminology: CurriculumKnowledgeItem[];
   provenanceWarnings: string[];
+  /**
+   * Set by the resolver. When explicitly `false`, past papers, mark schemes, examiner reports and grade thresholds for
+   * this syllabus are NOT verified, and consumers must not make claims about them. `undefined` = not asserted.
+   */
+  examHistoryVerified?: boolean;
 }
 
 export function buildSystemCurriculumContext(
@@ -23,6 +28,7 @@ export function buildSystemCurriculumContext(
   items: CurriculumKnowledgeItem[],
   verifiedOnly = true,
   objectives: CurriculumObjective[] = [],
+  examHistoryVerified?: boolean,
 ): SystemCurriculumContext {
   const usable = items.filter((item) => {
     if (item.status === "archived") return false;
@@ -44,6 +50,7 @@ export function buildSystemCurriculumContext(
     practical: usable.filter((item) => ["practical_activity", "project_requirement"].includes(item.kind)),
     terminology: usable.filter((item) => item.kind === "terminology"),
     provenanceWarnings: [...new Set(provenanceWarnings)],
+    ...(examHistoryVerified === undefined ? {} : { examHistoryVerified }),
   };
 }
 
@@ -67,5 +74,10 @@ export function curriculumSystemPromptContext(context: SystemCurriculumContext):
     `Verified curriculum knowledge items: ${context.knowledge.items.length}`,
     "Rule: objectives are the first scope gate. Use knowledge only to teach, explain or assess against the verified objectives. Do not turn supporting knowledge into a new syllabus requirement.",
     "Rule: do not present unverified or unmapped curriculum claims as required content.",
+    ...(context.examHistoryVerified === false
+      ? [
+          "Rule: past papers, mark schemes, examiner reports and grade thresholds for this syllabus are NOT verified. Do not cite specific past papers, question numbers, mark-scheme wording, examiner comments, grade boundaries or pass rates, and do not claim what typically appears in past exams. Describe assessment only from the verified syllabus knowledge above (papers, weightings, format, command words).",
+        ]
+      : []),
   ].join("\n");
 }

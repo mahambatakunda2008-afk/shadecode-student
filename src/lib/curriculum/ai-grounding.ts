@@ -113,6 +113,8 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
     : { data: [], error: null };
 
   const result = resolveSystemCurriculum({
+    // Lesson generation is grounded in the verified syllabus; exam-history claims stay blocked unless verified.
+    tier: "syllabus",
     learner,
     versions,
     coverageChecks: (coverageResult.data ?? []).map((check) => ({ dimension: check.dimension, status: check.status, evidence: check.evidence, notes: check.notes })) as CurriculumCoverageRecord[],
