@@ -32,3 +32,21 @@ Completion evidence is bridged at the database boundary into `public.cortex_even
 ## Product rule
 
 A lesson is successful only when it helps the learner **understand, apply, check, correct, practise, connect, and continue**. Visual polish is not a substitute for instructional density.
+
+
+## AI provider reliability
+
+Production generation must not depend on a rotating list of preview, experimental, or `latest` provider aliases.
+
+The preferred text path is Vercel AI Gateway when `AI_GATEWAY_API_KEY` is configured. The application sends a stable model identifier through the Gateway, allowing provider-level failover without application code maintaining a provider roulette.
+
+The current default Gateway model is `google/gemini-3.8-flash`. Google documents Gemini 3.8 Flash as a stable, generally available production model. Direct Gemini fallback is restricted to stable model IDs:
+
+- `gemini-3.8-flash`
+- `gemini-3.7-flash`
+- `gemini-3.6-flash`
+- `gemini-2.5-flash`
+
+Do not add `preview`, `experimental`, or `latest` aliases to the production fallback chain without verifying their lifecycle and production suitability first.
+
+Provider reliability is separate from lesson quality. A provider outage or timeout must cause bounded fallback/retry behavior, not a weaker lesson-quality gate.
