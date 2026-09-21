@@ -91,7 +91,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   }
   // These phrases are style warnings, not grounds to discard an otherwise valid lesson.
   // Rejecting an otherwise sound lesson forces an unnecessary second generation cycle.
-  const genericLanguage = ["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p));
+  // Intentionally not a hard failure.
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
   const wallOfText = normalized.some(block => {
@@ -111,7 +111,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   }).length;
   // Structure is primarily a rendering concern. Do not reject a lesson merely because
   // the model used prose instead of the preferred Given/Method/Step layout.
-  const weakStructure = structuredBlocks.length >= 4 && lineStructuredCount < Math.min(3, structuredBlocks.length);
+  // Intentionally not a hard failure.
 
   if (!has("objective") && !/learning objective|by the end|you will be able to|student will be able to/i.test(searchableText)) failures.push("objective");
   if (!has("concept", "definition") && !/explains?|means|refers to|concept|understand|why it works/i.test(searchableText)) failures.push("concept");
