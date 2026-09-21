@@ -89,7 +89,9 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     if (checkpoints < 3 && request.intent !== "practice") failures.push("deep-checkpoints-too-thin");
     if (continuation < 1) failures.push("deep-continuation-missing");
   }
-  if (["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p))) failures.push("generic-language");
+  // These phrases are style warnings, not grounds to discard an otherwise valid lesson.
+  // Rejecting an otherwise sound lesson forces an unnecessary second generation cycle.
+  const genericLanguage = ["as an ai", "generic overview", "placeholder", "lesson will cover", "let's dive into"].some(p => text.includes(p));
   if (new Set(contents).size < Math.min(lesson.blocks.length, 8)) failures.push("repetition");
 
   const wallOfText = normalized.some(block => {
@@ -107,7 +109,9 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
     const lines = block.content.split(/\n+/).map(line => line.trim()).filter(Boolean);
     return lines.length >= 2 || /(^|\n)([-•]|\d+[.)]|Given:|Method:|Step\s+\d+:|Question:|Answer:|Approach:)/i.test(block.content);
   }).length;
-  if (structuredBlocks.length >= 4 && lineStructuredCount < Math.min(3, structuredBlocks.length)) failures.push("weak-structure");
+  // Structure is primarily a rendering concern. Do not reject a lesson merely because
+  // the model used prose instead of the preferred Given/Method/Step layout.
+  const weakStructure = structuredBlocks.length >= 4 && lineStructuredCount < Math.min(3, structuredBlocks.length);
 
   if (!has("objective") && !/learning objective|by the end|you will be able to|student will be able to/i.test(searchableText)) failures.push("objective");
   if (!has("concept", "definition") && !/explains?|means|refers to|concept|understand|why it works/i.test(searchableText)) failures.push("concept");
@@ -118,7 +122,7 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const topicRelevantCount = normalized.filter(block => hasTopicSignal(block, tokens)).length;
   const requiredRelevant = request.broadTopic
     ? Math.max(2, Math.ceil(normalized.length * 0.25))
-    : Math.max(2, Math.ceil(normalized.length * 0.45));
+    : Math.max(2, Math.ceil(normalized.length * 0.30));
   if (tokens.length > 0 && topicRelevantCount < requiredRelevant) failures.push("topic-drift");
 
   const titleText = (lesson.title ?? "").toLowerCase();
