@@ -4,6 +4,20 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 (4) — Cambridge 9702 Physics ingested; corrections to entry (3); coverage-evidence policy decided
+
+**Loaded (production):** Physics 9702 (version 1, September 2022, exams 2025-2027) from the official PDF: **325 verified objectives** (25 topics, 76 subsections, 300 outcomes keyed by Cambridge's own numbering, e.g. `3.3.3`), 14/29 coverage dimensions with page evidence (including `practical_requirements`, since section 5 documents Papers 3 and 5; project/coursework not applicable). Version `a90d1b2c-4a7e-4122-8509-881ab7561b9e`; rows md5 `9fe5528df59f72e795dcbd6fb7fe2ff8` identical in the database and the repo dataset. The Content overview lists 25 topics (I had recalled 27; reading the source first avoided a wrong structure). Record: `docs/curriculum/cambridge-physics-9702.md`.
+
+**Refactor:** row builder extracted to `src/lib/curriculum/data/syllabus-dataset.ts` and shared by 9709 and 9702 (9709 tests unchanged and green). A defect caught before loading: the generated section summaries lowercased proper nouns ("si units", "kirchhoff's laws"); fixed and the checksum updated before any row was written.
+
+**Corrections to entry (3), verified against live data:** I wrote that no subject resolves today, that the knowledge layer is empty everywhere, and that Computer Science 0478 is at 2/29. All wrong (I relied on the stale `0478-verification-status.md`, now bannered). Live: `cambridge-0478` 2026-2028 has **29/29 coverage and 75 verified knowledge items across all 15 required kinds**; replaying the loader's queries for its identity gives 1 verified, currently effective version, 68 verified objectives, 0 missing kinds. It fully satisfies the gate but matches no current learner (they declared A Level and ZIMSEC syllabi), so 9709/9702 (~15 dimensions plus knowledge each) and CS 9618 / ZIMSEC 4021 (2/29) are the packages that matter.
+
+**Decision (delegated):** `docs/curriculum/coverage-evidence-policy.md`. Each exam-history dimension needs its own artifact type; specimen papers and mark schemes are `draft` evidence only; examiner reports and grade thresholds are `not_applicable` only if none exist yet. Recommends (not implemented) splitting exam-history dimensions out of the syllabus-grounding gate.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 690 tests; 8 new for 9702).
+
+---
+
 ## 2026-09-20 (3) — Cambridge 9709 Mathematics ingested from the official syllabus; curriculum loader fixed
 
 **Demand first.** Of 62 profiles, 56 have no curriculum identity; of the 6 that do, 5 are A Level (2 explicitly Cambridge International with subject codes 9709, 9702, 9618) and Mathematics is the most-selected subject (6 of 6). IGCSE 0580 would have served nobody, so the first new subject is **Cambridge International AS & A Level Mathematics 9709**.

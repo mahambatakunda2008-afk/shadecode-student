@@ -1,3 +1,5 @@
+> **Status note (2026-09-20, SUPERSEDED-BY-LIVE-DATA):** the counts below are out of date. Live database: `cambridge-0478` 2026-2028 has **29/29** coverage dimensions satisfied and **75 verified knowledge items across all 15 required kinds**, so it satisfies the strict resolver gate. Re-verify with the queries in `docs/curriculum/cambridge-mathematics-9709.md` before relying on this file.
+
 # Cambridge IGCSE Computer Science 0478 — verification status (2026-09-12)
 
 This documents a concrete, evidenced check against Cambridge 0478 done this session, for

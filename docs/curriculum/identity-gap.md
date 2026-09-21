@@ -21,6 +21,9 @@ nothing in the resolver reads, and `qualification` / `syllabusVersion` null.
 
 ## Do not "just fix the mapper" first
 Relaxing the mapper would store identities for real students and switch on the fail-closed gate
-("blocked when no verified objectives exist") for every subject that has no curriculum, and only Computer Science
-(and now 9709 at the objective layer) has any. Order of work: **content and knowledge first, identity plumbing after**,
+("blocked when no verified objectives exist") for every subject that is not fully resolvable. Only **Cambridge IGCSE
+Computer Science 0478 is fully resolvable today** (29/29 coverage, 75 verified knowledge items; verified 2026-09-20 by
+replaying the loader's queries against live data), and it matches **none of the current learners**: their declared
+syllabi are A Level (Mathematics 9709, Physics 9702, Computer Science 9618, all but 9618 now with verified objectives
+but not yet complete) and ZIMSEC (4021 at 2/29). Order of work: **content and knowledge first, identity plumbing after**,
 and decide what a blocked learner sees (fall back to generic teaching versus a blocking message) before flipping it on.
