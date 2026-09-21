@@ -158,7 +158,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 12000, perProviderMaxMs: 2500, curriculumContext });
+    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 20000, perProviderMaxMs: 9000, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
