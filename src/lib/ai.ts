@@ -107,28 +107,36 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Text requests use the normal data-driven fallback order. Multimodal requests
-  // must start with a provider that can actually consume the supplied media.
-  // Never silently discard the visual source and pretend a text-only provider saw it.
-  if (!media.length && process.env.OPENROUTER_API_KEY && canTry()) {
-    const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
-      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST", headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": "https://shadecodestudent.vercel.app", "X-Title": "Shadecode Student" },
-        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+  // Production text generation goes through Vercel AI Gateway first. This removes
+  // provider-specific roulette from the application and lets the gateway fail over
+  // when an inference provider is degraded. The model ID is a stable Google Gemini
+  // endpoint, not a preview/latest alias.
+  if (!media.length && process.env.AI_GATEWAY_API_KEY && canTry()) {
+    const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "google/gemini-3.8-flash";
+    const text = await tryProvider("vercel-ai-gateway", gatewayModel, async timeout => {
+      const res = await fetchWithTimeout("https://ai-gateway.vercel.sh/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.AI_GATEWAY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: gatewayModel,
+          messages: [{ role: "user", content: groundedPrompt }],
+          max_tokens: maxTokens,
+        }),
       }, timeout);
-      if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`AI Gateway HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
       return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
     });
     if (text) return text;
   }
 
-  // Gemini can return transient 503s under load. Try multiple stable Flash
-  // variants, but do not burn the entire chain on one provider family. Give
-  // the first Gemini key the full model fallback set, then give Cloudflare a
-  // chance before spending the remaining budget on secondary Gemini keys.
+  // Direct Google fallback remains deliberately small and stable. Do not add
+  // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"];
+  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"];
 
   async function callGemini(key: string, model: string): Promise<string | null> {
     return tryProvider("gemini", model, async timeout => {
@@ -142,21 +150,24 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
               ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
             ],
           }],
-          generationConfig: { maxOutputTokens: maxTokens, responseMimeType: "application/json", temperature: 0.35 },
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
         }),
-      }, Math.min(timeout, 3500));
+      }, Math.min(timeout, 5000));
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
     });
   }
 
-  if (geminiKeys[0]) {
+  // Text fallback order after Gateway: stable Gemini models, then the existing
+  // Cloudflare path, then paid OpenAI only when explicitly enabled.
+  for (const key of geminiKeys) {
     for (const model of geminiModels) {
       if (!canTry()) break;
-      const text = await callGemini(geminiKeys[0], model);
+      const text = await callGemini(key, model);
       if (text) return text;
     }
+    if (!canTry()) break;
   }
 
   if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
@@ -172,20 +183,11 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Secondary Gemini keys cover rate limits and quota buckets on the primary key.
-  for (const key of geminiKeys.slice(1)) {
-    for (const model of geminiModels) {
-      if (!canTry()) break;
-      const text = await callGemini(key, model);
-      if (text) return text;
-    }
-  }
-
   if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
-    const text = await tryProvider("openai", "gpt-4o-mini", async timeout => {
+    const text = await tryProvider("openai", "gpt-5.5", async timeout => {
       const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST", headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens, response_format: { type: "json_object" } }),
+        body: JSON.stringify({ model: "gpt-5.5", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
       }, timeout);
       if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
       const data = await res.json() as any;
