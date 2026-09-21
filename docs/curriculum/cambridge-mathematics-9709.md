@@ -64,11 +64,12 @@ Live data (checked 2026-09-20): **Computer Science 0478 satisfies this** (29/29 
 items across all 15 kinds); every other syllabus, including 9709, does not. (An earlier version of this note said
 no subject resolves and that 0478 was at 2/29; both were wrong, taken from the stale
 `0478-verification-status.md`.) For 9709:
-1. **16 coverage dimensions remain.** Several are evidenced by the same PDF and can be added the same way
-   (document, structure, scope, content_scope, competencies, skills, terminology from the command words p. 42,
-   constraints from the calculator rules p. 41, guidance, resources, provenance, practical_requirements as not
-   applicable). Four need other artifacts: `past_paper_coverage`, `mark_scheme_coverage`,
-   `examiner_report_coverage`, `grade_threshold_coverage`; see `coverage-evidence-policy.md`.
+1. **12 syllabus coverage dimensions remain** for the `syllabus` tier (which is what teaching now needs): document,
+   structure, scope, content_scope, competencies, skills, practical_requirements (as not applicable), terminology (command
+   words p. 42), constraints (calculator rules p. 41), guidance, resources, provenance. All are evidenced by the same PDF.
+   The four exam-history dimensions (`past_paper_coverage`, `mark_scheme_coverage`, `examiner_report_coverage`,
+   `grade_threshold_coverage`) are no longer required for teaching; they gate only exam-history claims
+   (`coverage-evidence-policy.md`).
 2. **No knowledge layer yet.** The 0478 package (75 items, 16 kinds) is the template for what complete looks like.
 3. **Source monitoring is off** (`active = false`). The watcher's extraction profiles are Computer-Science-specific
    and a first run against the placeholder hash could create junk draft objectives. Enable it once a

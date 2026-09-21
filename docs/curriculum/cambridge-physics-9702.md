@@ -41,6 +41,8 @@ Cambridge International with code 9702).
 
 ## Not done
 - The **practical assessment** (Papers 3 and 5) is documented as a coverage dimension but not modelled as objectives.
-- 15 coverage dimensions and the whole knowledge layer (see the 0478 package for the target shape), plus
-  past-paper / mark-scheme / examiner-report / grade-threshold artifacts (`coverage-evidence-policy.md`).
+- **11 syllabus coverage dimensions** for the `syllabus` tier (document, structure, scope, content_scope, competencies,
+  skills, terminology, constraints, guidance, resources, provenance; all evidenced by the same PDF) and the whole
+  knowledge layer (see the 0478 package for the target shape). The four exam-history dimensions are not needed for
+  teaching (`coverage-evidence-policy.md`).
 - Source monitoring is off, and no learner has a stored identity (`identity-gap.md`).

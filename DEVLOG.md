@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 (5) — Two-tier curriculum gate: exam-history dimensions no longer block teaching
+
+**Why:** every consumer needed all 29 coverage dimensions, including four about exam *history* (past papers, mark schemes, examiner reports, grade thresholds) that a syllabus PDF cannot evidence and that don't affect what a lesson may teach. That made Mathematics and Physics unresolvable until we ingest real past-paper artifacts. Decision delegated by the owner ("do what's best"); policy in `docs/curriculum/coverage-evidence-policy.md`.
+
+**Implemented (opt-in, default unchanged):** `CurriculumGateTier` (`"exam"` default = all 29; `"syllabus"` = the 25 non-exam-history dimensions) in `completeness.ts`, `resolver.ts`, `system-resolver.ts`. Only the two consumers that generate teaching text opt in: Learn (`ai-grounding.ts`) and Cortex (`user-resolution.ts`). `verification.ts` "production complete" reporting stays strict. Each resolution now reports `tier`, `examHistoryVerified`, `examHistoryMissing`; when `examHistoryVerified` is false the system prompt adds a rule forbidding citations of past papers, question numbers, mark-scheme wording, examiner comments, grade boundaries and pass rates (only when explicitly false, so other contexts produce identical prompts).
+
+**Unchanged in both tiers:** identity, a verified and currently effective version, verified objectives, verified knowledge covering all 15 kinds, and all 25 syllabus dimensions (any single missing one blocks; tested per dimension). CS 0478 (29/29) unaffected. No learner has a stored identity, so no user-visible change yet.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 705 tests; 15 new: `gate-tiers.test.ts` 13, `user-resolution.test.ts` +2). Mutation-checked: relaxing the tier too far fails 2 tests, not relaxing it fails 3. All 87 pre-existing curriculum tests pass unchanged.
+
+**Effect on remaining work:** 9709 needs 12 more syllabus dimensions and a knowledge layer; 9702 needs 11 and a knowledge layer (all dimensions evidenced by the PDFs already read). The four exam-history dimensions are no longer on the critical path.
+
+**Process note:** during this change I truncated `resolver.ts` with a mistaken `open(p, "w").write(open(p).read())` (the write handle truncates before the read). Caught immediately by the next command's byte count and restored from git before anything else ran; nothing committed or deployed was affected.
+
+---
+
 ## 2026-09-20 (4) — Cambridge 9702 Physics ingested; corrections to entry (3); coverage-evidence policy decided
 
 **Loaded (production):** Physics 9702 (version 1, September 2022, exams 2025-2027) from the official PDF: **325 verified objectives** (25 topics, 76 subsections, 300 outcomes keyed by Cambridge's own numbering, e.g. `3.3.3`), 14/29 coverage dimensions with page evidence (including `practical_requirements`, since section 5 documents Papers 3 and 5; project/coursework not applicable). Version `a90d1b2c-4a7e-4122-8509-881ab7561b9e`; rows md5 `9fe5528df59f72e795dcbd6fb7fe2ff8` identical in the database and the repo dataset. The Content overview lists 25 topics (I had recalled 27; reading the source first avoided a wrong structure). Record: `docs/curriculum/cambridge-physics-9702.md`.
