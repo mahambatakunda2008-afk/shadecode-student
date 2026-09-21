@@ -152,7 +152,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           }],
           generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
         }),
-      }, Math.min(timeout, 8000));
+      }, Math.min(timeout, 12000));
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
