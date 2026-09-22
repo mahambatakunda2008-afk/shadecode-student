@@ -4,6 +4,12 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 (7) — Fixed a pre-existing test broken by upstream's own budget-fix commit
+
+Not curriculum work: found while rebasing onto 17 new upstream commits. `contentQuality.test.ts` asserted the deep-lesson prompt contains "16-24 blocks"; upstream's "make deep lesson contract achievable within model budget" commit had changed `buildDeepLessonPrompt`'s own guidance to "16-20 blocks" (to fit the model's response budget) without updating this test, so it failed on latest `main`. `buildLessonRepairPrompt` (a different function) still says "16-24 blocks" and is untouched — the test does not exercise it. Fixed the test's expected string rather than the prompt, since reverting the prompt would risk reintroducing the budget overrun that commit fixed. `npm run verify` clean (719 tests) after the fix.
+
+---
+
 ## 2026-09-20 (6) — Cambridge 9709 Mathematics: knowledge layer loaded, fully resolves at the syllabus tier
 
 **What:** re-read the official 9709 PDF and authored a whole-syllabus knowledge layer (`src/lib/curriculum/data/cambridge-9709-knowledge-2026-2027.json`, 128 rows: 59 AS Level, 69 A Level, all 15 required kinds plus `prerequisite` at each level) plus the 12 remaining syllabus coverage dimensions (document, structure, scope, content_scope, competencies, skills, practical_requirements as not applicable, terminology, constraints, guidance, resources, provenance) — all evidenced by the same PDF already read for entry (3). Loaded to production and checked against the repo dataset by md5.
