@@ -1,0 +1,1570 @@
+{
+ "meta": {
+  "authority": "Cambridge International",
+  "boardId": "cambridge",
+  "qualificationId": "cambridge-as-a-level",
+  "syllabusId": "cambridge-9709",
+  "syllabusVersion": "2026-2027",
+  "subjectId": "mathematics",
+  "sourceUrl": "https://www.cambridgeinternational.org/Images/697427-2026-2027-syllabus.pdf",
+  "sourceDocument": "Cambridge International AS & A Level Mathematics 9709 syllabus for 2026 and 2027 (version 4, December 2025)",
+  "retrievedAt": "2026-09-20"
+ },
+ "items": [
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "topic",
+   "key": "9709.topic.1",
+   "title": "Pure Mathematics 1",
+   "content": "Quadratics, functions, coordinate geometry, circular measure, trigonometry, series, differentiation and integration. Paper 1 is the foundation for every other component: its content is assumed in Papers 2 to 6. (Paper 1)",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePageRange": "19-22",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.1",
+   "title": "Quadratics",
+   "content": "Completing the square (vertex and sketching), the discriminant and the number of real roots (including repeated roots), solving quadratic equations and inequalities by factorising, completing the square or the formula, simultaneous equations with one linear and one quadratic equation, and equations quadratic in a function of x (e.g. x⁴ − 5x² + 4 = 0, tan²x = 1 + tan x).",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.1.1",
+    "1.1.2",
+    "1.1.3",
+    "1.1.4",
+    "1.1.5"
+   ],
+   "metadata": {
+    "sourcePage": 19,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.2",
+   "title": "Functions",
+   "content": "Function, domain, range, one-one function, inverse and composite functions (gf can only be formed when the range of f lies within the domain of g); graphs of a function and its inverse with the mirror line y = x; transformations y = f(x) + a, f(x + a), af(x), f(ax) and simple combinations described as translations, reflections and stretches, possibly with algebraic or trigonometric functions.",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.2.1",
+    "1.2.2",
+    "1.2.3",
+    "1.2.4",
+    "1.2.5"
+   ],
+   "metadata": {
+    "sourcePage": 19,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.3",
+   "title": "Coordinate geometry",
+   "content": "The equation of a line from two points or a point and the gradient; the forms y = mx + c, y − y₁ = m(x − x₁) and ax + by + c = 0; distances, gradients, midpoints, intersections and parallel and perpendicular lines; circles (x − a)² + (y − b)² = r² and the expanded form with elementary circle properties; relating graphs to equations (e.g. values of k for which a line meets a curve). Implicit differentiation is not included.",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.3.1",
+    "1.3.2",
+    "1.3.3",
+    "1.3.4",
+    "1.3.5"
+   ],
+   "metadata": {
+    "sourcePage": 20,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.4",
+   "title": "Circular measure",
+   "content": "The radian and conversion between radians and degrees; arc length s = rθ and sector area A = ½r²θ, including lengths, angles and areas in triangles.",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.4.1",
+    "1.4.2"
+   ],
+   "metadata": {
+    "sourcePage": 20,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.5",
+   "title": "Trigonometry",
+   "content": "Graphs of sine, cosine and tangent for any angle in degrees or radians (including transformed forms); exact values for 30°, 45°, 60° and related angles; sin⁻¹, cos⁻¹ and tan⁻¹ as principal values and as examples of inverse functions; the identities tanθ ≡ sinθ/cosθ and sin²θ + cos²θ ≡ 1; solving simple equations in a specified interval (general solutions are not included).",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.5.1",
+    "1.5.2",
+    "1.5.3",
+    "1.5.4",
+    "1.5.5"
+   ],
+   "metadata": {
+    "sourcePage": 21,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.6",
+   "title": "Series",
+   "content": "Binomial expansion of (a + b)ⁿ for positive integer n with binomial coefficients and n!; arithmetic and geometric progressions (a, b, c are in AP if 2b = a + c and in GP if b² = ac), nth term and sum, with questions that may involve more than one progression; convergence and the sum to infinity of a GP. The greatest term and properties of the coefficients are not required.",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.6.1",
+    "1.6.2",
+    "1.6.3",
+    "1.6.4"
+   ],
+   "metadata": {
+    "sourcePage": 21,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.7",
+   "title": "Differentiation",
+   "content": "The gradient as the limit of chord gradients (informal), notations f′(x), f″(x), dy/dx and d²y/dx²; the derivative of xⁿ for rational n with sums, differences, constant multiples and the chain rule; tangents, normals, increasing and decreasing functions and rates of change including connected rates; stationary points, their nature and graph sketching. Differentiation from first principles and points of inflexion are not required.",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.7.1",
+    "1.7.2",
+    "1.7.3",
+    "1.7.4"
+   ],
+   "metadata": {
+    "sourcePage": 22,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.1.8",
+   "title": "Integration",
+   "content": "Integration as the reverse of differentiation for (ax + b)ⁿ (n rational, n ≠ −1) with sums, differences and constant multiples; finding a constant of integration; definite integrals including simple improper integrals; areas bounded by curves and lines, and volumes of revolution about either axis (the region need not touch the axis of rotation).",
+   "topicKey": "pure-mathematics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "1.8.1",
+    "1.8.2",
+    "1.8.3",
+    "1.8.4"
+   ],
+   "metadata": {
+    "sourcePage": 22,
+    "section": "Pure Mathematics 1",
+    "paper": "Paper 1"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "topic",
+   "key": "9709.topic.2",
+   "title": "Pure Mathematics 2",
+   "content": "Extends Pure Mathematics 1: modulus, polynomial division and the factor and remainder theorems, logarithmic and exponential functions, further trigonometry, differentiation and integration, and numerical solution of equations. Offered at AS Level only; largely a subset of Pure Mathematics 3. (Paper 2)",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePageRange": "23-25",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.2.1",
+   "title": "Algebra",
+   "content": "Modulus |x|, the graph of y = |ax + b| and relations such as |a| = |b| ⇔ a² = b² and |x − a| < b ⇔ a − b < x < a + b for equations and inequalities; polynomial division (degree up to 4 by a linear or quadratic polynomial) with quotient and remainder; the factor and remainder theorems, including factors (ax + b). Graphs of y = |f(x)| and y = f(|x|) for non-linear f are not included.",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "2.1.1",
+    "2.1.2",
+    "2.1.3"
+   ],
+   "metadata": {
+    "sourcePage": 23,
+    "section": "Pure Mathematics 2",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.2.2",
+   "title": "Logarithmic and exponential functions",
+   "content": "Logarithms and indices and the laws of logarithms (change of base is excluded); eˣ and ln x as inverse functions with their graphs (including y = e^(kx) for positive and negative k); solving equations and inequalities with the unknown in an index; reducing y = kxⁿ and y = k·aˣ to linear form to find constants from a gradient or intercept.",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "2.2.1",
+    "2.2.2",
+    "2.2.3",
+    "2.2.4"
+   ],
+   "metadata": {
+    "sourcePage": 23,
+    "section": "Pure Mathematics 2",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.2.3",
+   "title": "Trigonometry",
+   "content": "Secant, cosecant and cotangent, and the properties and graphs of all six trigonometric functions for any angle; identities sec²θ ≡ 1 + tan²θ and cosec²θ ≡ 1 + cot²θ; expansions of sin(A ± B), cos(A ± B) and tan(A ± B); double-angle formulae; expressing a sinθ + b cosθ as R sin(θ ± α) or R cos(θ ± α); simplifying, evaluating exactly and solving equations.",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "2.3.1",
+    "2.3.2"
+   ],
+   "metadata": {
+    "sourcePage": 24,
+    "section": "Pure Mathematics 2",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.2.4",
+   "title": "Differentiation",
+   "content": "Derivatives of eˣ, ln x, sin x, cos x and tan x with sums, multiples and composites; products and quotients; first derivatives of functions defined parametrically or implicitly, including tangents and normals.",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "2.4.1",
+    "2.4.2",
+    "2.4.3"
+   ],
+   "metadata": {
+    "sourcePage": 24,
+    "section": "Pure Mathematics 2",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.2.5",
+   "title": "Integration",
+   "content": "Integrating e^(ax+b), 1/(ax + b), sin(ax + b), cos(ax + b) and sec²(ax + b); using trigonometric relationships such as double-angle formulae; the trapezium rule for a definite integral, including deciding from a sketch whether it over- or under-estimates. The general method of integration by substitution is not required.",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "2.5.1",
+    "2.5.2",
+    "2.5.3"
+   ],
+   "metadata": {
+    "sourcePage": 25,
+    "section": "Pure Mathematics 2",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.2.6",
+   "title": "Numerical solution of equations",
+   "content": "Locating a root by graphs or a sign change (e.g. a pair of consecutive integers); sequences of approximations converging to a root and the notation xₙ₊₁ = F(xₙ); using a given iterative formula, or one from a given rearrangement, to reach a prescribed accuracy. The condition for convergence is not included, but an iteration may fail to converge.",
+   "topicKey": "pure-mathematics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "2.6.1",
+    "2.6.2",
+    "2.6.3"
+   ],
+   "metadata": {
+    "sourcePage": 25,
+    "section": "Pure Mathematics 2",
+    "paper": "Paper 2"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "topic",
+   "key": "9709.topic.3",
+   "title": "Pure Mathematics 3",
+   "content": "The full A Level pure content: algebra with partial fractions and binomial series, logarithms and exponentials, trigonometry, differentiation and integration techniques, numerical methods, vectors, differential equations and complex numbers. Assumes Paper 1 content. (Paper 3)",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePageRange": "26-30",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.1",
+   "title": "Algebra",
+   "content": "As Pure Mathematics 2 algebra (modulus, polynomial division, factor and remainder theorems), plus partial fractions for denominators no more complicated than (ax + b)(cx + d)(ex + f), (ax + b)(cx + d)² or (ax + b)(cx² + d) (numerator degree lower than the denominator), and the expansion of (1 + x)ⁿ for rational n and |x| < 1, including adapted forms and the range of validity. Finding the general term is not included.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.1.1",
+    "3.1.2",
+    "3.1.3",
+    "3.1.4",
+    "3.1.5"
+   ],
+   "metadata": {
+    "sourcePage": 26,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.2",
+   "title": "Logarithmic and exponential functions",
+   "content": "Logarithms and indices and the laws of logarithms (change of base is excluded); eˣ and ln x as inverse functions with their graphs (including y = e^(kx) for positive and negative k); solving equations and inequalities with the unknown in an index; reducing y = kxⁿ and y = k·aˣ to linear form to find constants from a gradient or intercept.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.2.1",
+    "3.2.2",
+    "3.2.3",
+    "3.2.4"
+   ],
+   "metadata": {
+    "sourcePage": 27,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.3",
+   "title": "Trigonometry",
+   "content": "Secant, cosecant and cotangent, and the properties and graphs of all six trigonometric functions for any angle; identities sec²θ ≡ 1 + tan²θ and cosec²θ ≡ 1 + cot²θ; expansions of sin(A ± B), cos(A ± B) and tan(A ± B); double-angle formulae; expressing a sinθ + b cosθ as R sin(θ ± α) or R cos(θ ± α); simplifying, evaluating exactly and solving equations.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.3.1",
+    "3.3.2"
+   ],
+   "metadata": {
+    "sourcePage": 27,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.4",
+   "title": "Differentiation",
+   "content": "Derivatives of eˣ, ln x, sin x, cos x, tan x and tan⁻¹x with sums, multiples and composites; products and quotients; parametric and implicit differentiation with tangents and normals. Derivatives of sin⁻¹x and cos⁻¹x are not required.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.4.1",
+    "3.4.2",
+    "3.4.3"
+   ],
+   "metadata": {
+    "sourcePage": 28,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.5",
+   "title": "Integration",
+   "content": "Reverse differentiation for e^(ax+b), 1/(ax + b), sin(ax + b), cos(ax + b), sec²(ax + b) and 1/(x² + a²); trigonometric relationships in integration; partial fractions; integrands of the form k·f′(x)/f(x) (e.g. x/(x² + 1), tan x); integration by parts (e.g. x sin 2x, x²e^(−x), ln x, x tan⁻¹x); and a given substitution for a definite or indefinite integral.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.5.1",
+    "3.5.2",
+    "3.5.3",
+    "3.5.4",
+    "3.5.5",
+    "3.5.6"
+   ],
+   "metadata": {
+    "sourcePage": 28,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.6",
+   "title": "Numerical solution of equations",
+   "content": "Locating a root by graphs or a sign change (e.g. a pair of consecutive integers); sequences of approximations converging to a root and the notation xₙ₊₁ = F(xₙ); using a given iterative formula, or one from a given rearrangement, to reach a prescribed accuracy. The condition for convergence is not included, but an iteration may fail to converge.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.6.1",
+    "3.6.2",
+    "3.6.3"
+   ],
+   "metadata": {
+    "sourcePage": 29,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.7",
+   "title": "Vectors",
+   "content": "Vector notation in two and three dimensions (column vectors, xi + yj + zk, AB, a); addition, subtraction and scalar multiples interpreted geometrically (the midpoint position vector is expected; the general ratio theorem is not included); magnitude, unit, displacement and position vectors; the line r = a + tb; parallel, intersecting and skew lines and the point of intersection; scalar products for angles and perpendicular feet, including 3D solids. The shortest distance between skew lines, the common perpendicular and the vector product are not required.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.7.1",
+    "3.7.2",
+    "3.7.3",
+    "3.7.4",
+    "3.7.5",
+    "3.7.6"
+   ],
+   "metadata": {
+    "sourcePage": 29,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.8",
+   "title": "Differential equations",
+   "content": "Forming a differential equation from a rate of change (including a constant of proportionality), separating variables and integrating (any technique from topic 3.5), using an initial condition for a particular solution, and interpreting the solution in context; no specialised knowledge of the context is required.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.8.1",
+    "3.8.2",
+    "3.8.3",
+    "3.8.4"
+   ],
+   "metadata": {
+    "sourcePage": 30,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.3.9",
+   "title": "Complex numbers",
+   "content": "Real part, imaginary part, modulus, argument and conjugate (notations Re z, Im z, |z|, arg z, z*); arithmetic in Cartesian form with full working for multiplication and division; non-real roots of real polynomials in conjugate pairs; the Argand diagram; multiplication and division in polar form including |z₁z₂| = |z₁||z₂| and arg(z₁z₂) = arg z₁ + arg z₂; square roots of a complex number in exact Cartesian form; geometrical effects of the operations; loci such as |z − a| < k, |z − a| = |z − b| and arg(z − a) = α. The argument usually lies in −π < θ ≤ π, but 0 ≤ θ < 2π is acceptable unless a question specifies otherwise.",
+   "topicKey": "pure-mathematics-3",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "3.9.1",
+    "3.9.2",
+    "3.9.3",
+    "3.9.4",
+    "3.9.5",
+    "3.9.6",
+    "3.9.7",
+    "3.9.8"
+   ],
+   "metadata": {
+    "sourcePage": 30,
+    "section": "Pure Mathematics 3",
+    "paper": "Paper 3"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "topic",
+   "key": "9709.topic.4",
+   "title": "Mechanics",
+   "content": "Particle mechanics: forces and equilibrium, kinematics in a straight line, momentum, Newton's laws of motion, and energy, work and power. Questions are mainly numerical and bodies are treated as particles. Assumes the algebra of Paper 1. (Paper 4)",
+   "topicKey": "mechanics",
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePageRange": "31-33",
+    "paper": "Paper 4"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.4.1",
+   "title": "Forces and equilibrium",
+   "content": "Force diagrams; components and resultants by calculation (not scale drawing); equilibrium as a zero vector sum of forces; the normal and frictional components of a contact force; the smooth-contact model and its limits; limiting friction with F = μR or F ≤ μR ('about to slip' means limiting equilibrium); Newton's third law. Bodies are treated as particles and vector notation is not used in the papers.",
+   "topicKey": "mechanics",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "4.1.1",
+    "4.1.2",
+    "4.1.3",
+    "4.1.4",
+    "4.1.5",
+    "4.1.6",
+    "4.1.7"
+   ],
+   "metadata": {
+    "sourcePage": 31,
+    "section": "Mechanics",
+    "paper": "Paper 4"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.4.2",
+   "title": "Kinematics of motion in a straight line",
+   "content": "Distance and speed as scalars and displacement, velocity and acceleration as vectors (one dimension only); displacement–time and velocity–time graphs (area and gradient); differentiation and integration with respect to time using Pure Mathematics 1 techniques; constant-acceleration formulae, possibly with several equations or several particles.",
+   "topicKey": "mechanics",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "4.2.1",
+    "4.2.2",
+    "4.2.3",
+    "4.2.4"
+   ],
+   "metadata": {
+    "sourcePage": 32,
+    "section": "Mechanics",
+    "paper": "Paper 4"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.4.3",
+   "title": "Momentum",
+   "content": "Linear momentum and its vector nature in one dimension; conservation of momentum for the direct impact of two bodies, including bodies that coalesce. Impulse and the coefficient of restitution are not required.",
+   "topicKey": "mechanics",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "4.3.1",
+    "4.3.2"
+   ],
+   "metadata": {
+    "sourcePage": 32,
+    "section": "Mechanics",
+    "paper": "Paper 4"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.4.4",
+   "title": "Newton's laws of motion",
+   "content": "Newton's laws for a particle of constant mass under constant forces (friction, tension in an inextensible string, thrust in a connecting rod); W = mg with g taken as about 10 m s⁻²; motion vertically or on an inclined plane, including rough planes with different accelerations up and down; connected particles (e.g. over a smooth pulley, a car towing a trailer). Other resistances such as air resistance are only considered if the question says so.",
+   "topicKey": "mechanics",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "4.4.1",
+    "4.4.2",
+    "4.4.3",
+    "4.4.4"
+   ],
+   "metadata": {
+    "sourcePage": 33,
+    "section": "Mechanics",
+    "paper": "Paper 4"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.4.5",
+   "title": "Energy, work and power",
+   "content": "Work done by a constant force, W = Fd cosθ (the scalar product is not required); gravitational potential energy and kinetic energy; the work–energy relationship and conservation of energy, including non-linear motion (e.g. a smooth curved slide); power as the rate of doing work, P = Fv and average power; problems such as the instantaneous acceleration of a car on a hill against a resistance.",
+   "topicKey": "mechanics",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "4.5.1",
+    "4.5.2",
+    "4.5.3",
+    "4.5.4",
+    "4.5.5"
+   ],
+   "metadata": {
+    "sourcePage": 33,
+    "section": "Mechanics",
+    "paper": "Paper 4"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "topic",
+   "key": "9709.topic.5",
+   "title": "Probability & Statistics 1",
+   "content": "Representation of data, permutations and combinations, probability, discrete random variables (binomial and geometric) and the normal distribution. Questions are mainly numerical and need no algebra beyond Paper 1. (Paper 5)",
+   "topicKey": "probability-and-statistics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePageRange": "34-36",
+    "paper": "Paper 5"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.5.1",
+   "title": "Representation of data",
+   "content": "Choosing and critiquing data presentations; stem-and-leaf (including back-to-back), box-and-whisker, histograms and cumulative frequency graphs; mean, median, mode, range, interquartile range and standard deviation; using cumulative frequency graphs for medians, quartiles and percentiles; mean and standard deviation for grouped data and from totals Σx and Σx² or coded totals, with up to two data sets.",
+   "topicKey": "probability-and-statistics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "5.1.1",
+    "5.1.2",
+    "5.1.3",
+    "5.1.4",
+    "5.1.5"
+   ],
+   "metadata": {
+    "sourcePage": 34,
+    "section": "Probability & Statistics 1",
+    "paper": "Paper 5"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.5.2",
+   "title": "Permutations and combinations",
+   "content": "Permutations, combinations and selections; arrangements in a line with repetition (e.g. NEEDLESS) or restrictions (people who must or must not stand together), including people sitting in rows. Arrangements in a circle are not included.",
+   "topicKey": "probability-and-statistics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "5.2.1",
+    "5.2.2"
+   ],
+   "metadata": {
+    "sourcePage": 34,
+    "section": "Probability & Statistics 1",
+    "paper": "Paper 5"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.5.3",
+   "title": "Probability",
+   "content": "Probabilities by enumeration of equiprobable outcomes or by permutations and combinations; addition and multiplication of probabilities (the general addition formula need not be used explicitly); exclusive and independent events, including testing P(A ∩ B) = P(A) × P(B); conditional probability from sample spaces or tree diagrams, using P(A | B) = P(A ∩ B)/P(B) in simple cases. The notation P(A), P(A ∪ B), P(A ∩ B), P(A | B) and A′ is assumed.",
+   "topicKey": "probability-and-statistics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "5.3.1",
+    "5.3.2",
+    "5.3.3",
+    "5.3.4"
+   ],
+   "metadata": {
+    "sourcePage": 35,
+    "section": "Probability & Statistics 1",
+    "paper": "Paper 5"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.5.4",
+   "title": "Discrete random variables",
+   "content": "Probability distribution tables with E(X) and Var(X); binomial B(n, p) and geometric Geo(p) probabilities (for Geo(p), p_r = p(1 − p)^(r−1) for r = 1, 2, 3, …); expectation and variance of the binomial and expectation of the geometric distribution. Proofs are not required.",
+   "topicKey": "probability-and-statistics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "5.4.1",
+    "5.4.2",
+    "5.4.3"
+   ],
+   "metadata": {
+    "sourcePage": 35,
+    "section": "Probability & Statistics 1",
+    "paper": "Paper 5"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.5.5",
+   "title": "The normal distribution",
+   "content": "The normal distribution as a model for a continuous variable and the use of normal tables; sketches of normal curves; problems with X ~ N(μ, σ²) including finding P(X > x₁) and relationships between x₁, μ and σ, with full standardisation working; the normal approximation to the binomial (np > 5 and nq > 5) with a continuity correction.",
+   "topicKey": "probability-and-statistics-1",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "5.5.1",
+    "5.5.2",
+    "5.5.3"
+   ],
+   "metadata": {
+    "sourcePage": 36,
+    "section": "Probability & Statistics 1",
+    "paper": "Paper 5"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "topic",
+   "key": "9709.topic.6",
+   "title": "Probability & Statistics 2",
+   "content": "The Poisson distribution, linear combinations of random variables, continuous random variables, sampling and estimation, and hypothesis tests. Assumes Paper 5 content and the calculus of Paper 3. (Paper 6)",
+   "topicKey": "probability-and-statistics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePageRange": "37-39",
+    "paper": "Paper 6"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.6.1",
+   "title": "The Poisson distribution",
+   "content": "Po(λ) probabilities; mean and variance both equal to λ (no proofs); the Poisson distribution as a model for random events; the Poisson as an approximation to the binomial (n large and p small, about n > 50 and np < 5); the normal approximation to the Poisson with continuity correction (λ large, about λ > 15).",
+   "topicKey": "probability-and-statistics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "6.1.1",
+    "6.1.2",
+    "6.1.3",
+    "6.1.4",
+    "6.1.5"
+   ],
+   "metadata": {
+    "sourcePage": 37,
+    "section": "Probability & Statistics 2",
+    "paper": "Paper 6"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.6.2",
+   "title": "Linear combinations of random variables",
+   "content": "E(aX + b), Var(aX + b), E(aX + bY) and Var(aX + bY) for independent X and Y; linear combinations of independent normal variables are normal; the sum of independent Poisson variables is Poisson. Proofs are not required.",
+   "topicKey": "probability-and-statistics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "6.2.1"
+   ],
+   "metadata": {
+    "sourcePage": 37,
+    "section": "Probability & Statistics 2",
+    "paper": "Paper 6"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.6.3",
+   "title": "Continuous random variables",
+   "content": "Probability density functions defined over a single interval (which may be infinite); probabilities, mean and variance; medians and other percentiles found from areas under the density function. Explicit knowledge of the cumulative distribution function is not included.",
+   "topicKey": "probability-and-statistics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "6.3.1",
+    "6.3.2"
+   ],
+   "metadata": {
+    "sourcePage": 38,
+    "section": "Probability & Statistics 2",
+    "paper": "Paper 6"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.6.4",
+   "title": "Sampling and estimation",
+   "content": "Samples versus populations and the need for randomness (random numbers for simple random samples); why a sampling method may be unsatisfactory (quota and stratified sampling are not required); the sample mean as a random variable with E(X̄) = μ and Var(X̄) = σ²/n, normal when X is normal; an informal Central Limit Theorem; unbiased estimates of the population mean and variance; confidence intervals for a population mean (normal with known variance, or a large sample) and an approximate interval for a population proportion.",
+   "topicKey": "probability-and-statistics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "6.4.1",
+    "6.4.2",
+    "6.4.3",
+    "6.4.4",
+    "6.4.5",
+    "6.4.6",
+    "6.4.7",
+    "6.4.8"
+   ],
+   "metadata": {
+    "sourcePage": 38,
+    "section": "Probability & Statistics 2",
+    "paper": "Paper 6"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "content_scope",
+   "key": "9709.scope.6.5",
+   "title": "Hypothesis tests",
+   "content": "One- and two-tailed tests and the terms null and alternative hypothesis, significance level, rejection (critical) region, acceptance region and test statistic, with outcomes interpreted in context; tests for a single binomial or Poisson observation (direct probabilities or a normal approximation); tests for a population mean (normal with known variance, or a large sample); Type I and Type II errors and their probabilities for normal-based tests and direct binomial or Poisson probabilities.",
+   "topicKey": "probability-and-statistics-2",
+   "paperComponentId": null,
+   "objectiveKeys": [
+    "6.5.1",
+    "6.5.2",
+    "6.5.3",
+    "6.5.4",
+    "6.5.5"
+   ],
+   "metadata": {
+    "sourcePage": 39,
+    "section": "Probability & Statistics 2",
+    "paper": "Paper 6"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "paper_component",
+   "key": "9709.paper.1",
+   "title": "Paper 1: Pure Mathematics 1",
+   "content": "1 hour 50 minutes, 75 marks, 10 to 12 structured questions on the Pure Mathematics 1 content. Written examination, externally assessed. 60% of AS Level and 30% of A Level. Compulsory for AS Level and A Level.",
+   "topicKey": null,
+   "paperComponentId": "paper-1",
+   "objectiveKeys": [],
+   "metadata": {
+    "marks": 75,
+    "durationMinutes": 110,
+    "weightingPercentAS": 60,
+    "weightingPercentA": 30,
+    "questions": "10 to 12",
+    "externallyAssessed": true
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "paper_component",
+   "key": "9709.paper.2",
+   "title": "Paper 2: Pure Mathematics 2",
+   "content": "1 hour 15 minutes, 50 marks, 6 to 8 structured questions on the Pure Mathematics 2 content. Written examination, externally assessed. 40% of AS Level. Offered only as part of AS Level; the Paper 1 and Paper 2 route cannot count towards A Level.",
+   "topicKey": null,
+   "paperComponentId": "paper-2",
+   "objectiveKeys": [],
+   "metadata": {
+    "marks": 50,
+    "durationMinutes": 75,
+    "weightingPercentAS": 40,
+    "questions": "6 to 8",
+    "externallyAssessed": true
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "paper_component",
+   "key": "9709.paper.3",
+   "title": "Paper 3: Pure Mathematics 3",
+   "content": "1 hour 50 minutes, 75 marks, 9 to 11 structured questions on the Pure Mathematics 3 content. Written examination, externally assessed. 30% of the A Level only. Compulsory for A Level.",
+   "topicKey": null,
+   "paperComponentId": "paper-3",
+   "objectiveKeys": [],
+   "metadata": {
+    "marks": 75,
+    "durationMinutes": 110,
+    "weightingPercentA": 30,
+    "questions": "9 to 11",
+    "externallyAssessed": true
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "paper_component",
+   "key": "9709.paper.4",
+   "title": "Paper 4: Mechanics",
+   "content": "1 hour 15 minutes, 50 marks, 6 to 8 structured questions on the Mechanics content. Written examination, externally assessed. 40% of AS Level and 20% of A Level. Offered as part of AS Level and A Level.",
+   "topicKey": null,
+   "paperComponentId": "paper-4",
+   "objectiveKeys": [],
+   "metadata": {
+    "marks": 50,
+    "durationMinutes": 75,
+    "weightingPercentAS": 40,
+    "weightingPercentA": 20,
+    "questions": "6 to 8",
+    "externallyAssessed": true
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "paper_component",
+   "key": "9709.paper.5",
+   "title": "Paper 5: Probability & Statistics 1",
+   "content": "1 hour 15 minutes, 50 marks, 6 to 8 structured questions on the Probability & Statistics 1 content. Written examination, externally assessed. 40% of AS Level and 20% of A Level. Compulsory for A Level.",
+   "topicKey": null,
+   "paperComponentId": "paper-5",
+   "objectiveKeys": [],
+   "metadata": {
+    "marks": 50,
+    "durationMinutes": 75,
+    "weightingPercentAS": 40,
+    "weightingPercentA": 20,
+    "questions": "6 to 8",
+    "externallyAssessed": true
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "paper_component",
+   "key": "9709.paper.6",
+   "title": "Paper 6: Probability & Statistics 2",
+   "content": "1 hour 15 minutes, 50 marks, 6 to 8 structured questions on the Probability & Statistics 2 content. Written examination, externally assessed. 20% of the A Level only. Offered only as part of A Level; it cannot be combined with Paper 4.",
+   "topicKey": null,
+   "paperComponentId": "paper-6",
+   "objectiveKeys": [],
+   "metadata": {
+    "marks": 50,
+    "durationMinutes": 75,
+    "weightingPercentA": 20,
+    "questions": "6 to 8",
+    "externallyAssessed": true
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.ao1",
+   "title": "AO1 Knowledge and understanding",
+   "content": "Show understanding of relevant mathematical concepts, terminology and notation; recall accurately and use appropriate mathematical manipulative techniques.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 17
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.ao2",
+   "title": "AO2 Application and communication",
+   "content": "Recognise the appropriate mathematical procedure for a given situation; apply appropriate combinations of mathematical skills and techniques in solving problems; present relevant mathematical work and communicate conclusions in a clear and logical way.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 17
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.structure",
+   "title": "Assessment structure",
+   "content": "Six components are available: Pure Mathematics (Papers 1, 2, 3), Mechanics (Paper 4) and Probability & Statistics (Papers 5, 6). Candidates take two components for AS Level and four for A Level. Every question in every paper is compulsory.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "10, 40"
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.routes",
+   "title": "AS Level routes",
+   "content": "AS Level candidates take two components in the same series: Paper 1 with Paper 2 (Pure Mathematics only; this route cannot count towards A Level), or Paper 1 with Paper 4 (Pure Mathematics and Mechanics), or Paper 1 with Paper 5 (Pure Mathematics and Probability & Statistics). AS Level grades are a to e.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "11-13"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.routes",
+   "title": "A Level routes",
+   "content": "All A Level candidates take Paper 1 and Paper 3, then either Paper 4 and Paper 5, or Paper 5 and Paper 6 (Paper 4 and Paper 6 cannot be combined because Paper 6 depends on Paper 5). The route can be linear (all four in one series) or staged (an AS Level in year 1, carrying forward the result, then two components to complete the A Level). A Level grades are A* to E.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "11-13"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.relationships",
+   "title": "Relationships between components",
+   "content": "Paper 1 is the foundation for all other components. Papers 2 and 3 build on Paper 1; Papers 4 and 5 assume Paper 1 content; Paper 5 is the foundation for Paper 6. Paper 2 and Paper 3 cannot be taken in the same series, and Paper 2 content is largely a subset of Paper 3 content.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 40
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.application",
+   "title": "Application of mathematical techniques",
+   "content": "Individual questions may draw on ideas and methods from more than one section of the content for a component. The main focus is the AS & A Level Mathematics content, but candidates may also need prior knowledge and techniques from the previous study listed in section 3.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 40
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_requirement",
+   "key": "9709.assessment.changes",
+   "title": "Changes to syllabus",
+   "content": "Version 4 (December 2025) updated a weblink on page 56; version 3 (February 2025) corrected typographical errors on pages 21, 26 and 28; version 2 (November 2024) updated headers on page 14. Track as version evidence and reconcile on future updates.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 61
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "assessment_weighting",
+   "key": "9709.weighting.ao",
+   "title": "Assessment objective weighting",
+   "content": "AO1 and AO2 by qualification: AS Level 55 and 45 percent; A Level 52 and 48 percent. By component: Papers 1, 2, 4, 5 and 6 are 55 and 45 percent; Paper 3 is 45 and 55 percent.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 17
+   },
+   "contentByLevel": {
+    "as_level": "AO1 55 percent and AO2 45 percent of AS Level. By component: Papers 1, 2, 4 and 5 are AO1 55 and AO2 45 percent.",
+    "a_level": "AO1 52 percent and AO2 48 percent of A Level. By component: Papers 1, 4, 5 and 6 are AO1 55 and AO2 45 percent; Paper 3 is AO1 45 and AO2 55 percent."
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "examination_format",
+   "key": "9709.examination-format",
+   "title": "Examination format",
+   "content": "All components are written examinations, externally marked. All questions are compulsory and vary in length, often with parts (a), (b), (c) and sub-parts (i), (ii), (iii); some require sketches or accurate graphs. Candidates answer on the question paper and show all working. A list of formulae and statistical tables (MF19) is supplied. Specimen materials show the question style and level.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "externallyAssessed": true,
+    "allQuestionsCompulsory": true,
+    "formulaeList": "MF19",
+    "calculator": "scientific only",
+    "sourcePages": "40-42"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "constraint",
+   "key": "9709.constraints.calculators",
+   "title": "Calculators and equipment",
+   "content": "Candidates need a ruler and a scientific calculator. Computers, graphical calculators and calculators capable of symbolic algebraic manipulation or symbolic differentiation or integration are not permitted. All necessary working must be shown: no marks are given for unsupported answers from a calculator. A protractor and compasses are not required.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 41
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "constraint",
+   "key": "9709.constraints.accuracy",
+   "title": "Degrees of accuracy",
+   "content": "Give non-exact numerical answers to three significant figures (one decimal place for angles in degrees) unless the question specifies otherwise, and avoid rounding until the final answer to protect accuracy marks.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 41
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "constraint",
+   "key": "9709.constraints.notation",
+   "title": "Mathematical notation and formulae",
+   "content": "The list of mathematical notation that may be used in examinations is published on the Cambridge website for 9709. MF19 combines formulae for AS & A Level Mathematics (9709) and Further Mathematics (9231); sections labelled Further Pure Mathematics, Further Mechanics and Further Probability & Statistics are not needed for 9709.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "41, 43-55"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "constraint",
+   "key": "9709.constraints.papers",
+   "title": "Style of Mechanics and Statistics papers",
+   "content": "Mechanics (Paper 4) questions are mainly numerical, treat bodies as particles, do not use vector notation, and expect g to be taken as about 10 m s⁻². Probability & Statistics 1 (Paper 5) questions are mainly numerical and need no algebraic methods beyond Paper 1.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "31, 34"
+   },
+   "contentByLevel": {
+    "as_level": "Mechanics (Paper 4) questions are mainly numerical, treat bodies as particles, do not use vector notation, and expect g to be taken as about 10 m s⁻². Probability & Statistics 1 (Paper 5) questions are mainly numerical and need no algebraic methods beyond Paper 1.",
+    "a_level": "Mechanics (Paper 4) questions are mainly numerical, treat bodies as particles, do not use vector notation, and expect g to be taken as about 10 m s⁻². Probability & Statistics 1 (Paper 5) questions are mainly numerical and need no algebraic methods beyond Paper 1. Probability & Statistics 2 (Paper 6) assumes Paper 5 content and the calculus of Paper 3."
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "terminology",
+   "key": "9709.terminology.command-words",
+   "title": "Command words",
+   "content": "Calculate: work out from given facts, figures or information. Describe: state the points of a topic or give characteristics and main features. Determine: establish with certainty. Evaluate: judge or calculate the quality, importance, amount or value of something. Explain: set out purposes or reasons, make relationships clear, say why and/or how with relevant evidence. Identify: name, select or recognise. Justify: support a case with evidence or argument. Show (that): provide structured evidence leading to a given result. Sketch: make a simple freehand drawing showing the key features, taking care over proportions. State: express in clear terms. Verify: confirm a given statement or result is true.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "count": 11,
+    "sourcePage": 42
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "guidance",
+   "key": "9709.guidance.teaching",
+   "title": "Teaching guidance",
+   "content": "Topics can be taught in any order. Choose resources and examples suited to learners' age, cultural background and context. The notes and examples in the content are examples only; examination questions may differ from them. Good teaching reinforces the key concepts (problem solving, communication, mathematical modelling) to build depth, confidence and vocabulary.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "5, 18"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "guidance",
+   "key": "9709.guidance.dependencies",
+   "title": "Prior knowledge between components",
+   "content": "Papers 2, 3, 4 and 5 assume the content of Paper 1, and candidates may be asked to show it. Paper 4 also assumes Paper 1 algebra; Paper 5 assumes no algebra beyond Paper 1. Paper 6 assumes Paper 5 and the calculus in Paper 3.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "23, 26, 31, 34, 37"
+   },
+   "contentByLevel": {
+    "as_level": "Papers 2, 4 and 5 assume the content of Paper 1, and candidates may be asked to show it. Paper 4 also assumes the algebraic methods of Paper 1; Paper 5 needs no algebra beyond Paper 1.",
+    "a_level": "Papers 3, 4 and 5 assume the content of Paper 1, and candidates may be asked to show it. Paper 6 assumes Paper 5 and the calculus in Paper 3. Paper 4 also assumes Paper 1 algebra; Paper 5 needs no algebra beyond Paper 1."
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "competency",
+   "key": "9709.competency.problem-solving",
+   "title": "Problem solving",
+   "content": "Mathematics is fundamentally problem solving and representing systems and models in different ways: algebra as a tool to express reasoning and generalise; geometrical techniques giving a spatial view of algebraic relationships; calculus to describe change and link functions and graphs; mechanical models predicting how particles and objects move or stay stable under forces; and statistical methods to quantify and model the world, with probability theory testing whether assumptions about chance are justified.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 5
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "competency",
+   "key": "9709.competency.communication",
+   "title": "Communication",
+   "content": "Mathematical proof and reasoning are expressed with algebra and notation so that others can follow each line of reasoning and confirm its completeness and accuracy. Notation is universal; solutions are structured, but proof and problem solving also invite creative and original thinking.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 5
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "competency",
+   "key": "9709.competency.modelling",
+   "title": "Mathematical modelling",
+   "content": "Mathematical modelling can be applied to many situations and problems, leading to predictions and solutions. Several content areas and techniques may be needed to build a model; once created and applied, the results are interpreted to give predictions and information about the real world.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 5
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "skill",
+   "key": "9709.skill.transferable",
+   "title": "Transferable mathematical skills",
+   "content": "Working with mathematical information, thinking logically and independently, considering accuracy, modelling situations mathematically, analysing results and reflecting on findings; using and sharing ideas confidently, connecting branches of mathematics, and solving both familiar and unfamiliar problems by choosing among techniques.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 4
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "skill",
+   "key": "9709.skill.assessed",
+   "title": "Skills assessed",
+   "content": "Recalling and using manipulative techniques accurately; recognising the appropriate procedure for a situation; combining skills to solve problems; and presenting work and conclusions clearly and logically (assessment objectives AO1 and AO2).",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePage": 17
+   }
+  },
+  {
+   "levels": [
+    "as_level"
+   ],
+   "kind": "progression",
+   "key": "9709.progression.as-level",
+   "title": "Progression from AS Level",
+   "content": "AS Level Mathematics is the first half of the A Level course and can also be delivered as a standalone qualification; it can lead directly to some university courses. The Pure Mathematics only route (Paper 1 and Paper 2) cannot be carried forward to complete the A Level.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "6, 12, 57"
+   }
+  },
+  {
+   "levels": [
+    "a_level"
+   ],
+   "kind": "progression",
+   "key": "9709.progression.a-level",
+   "title": "Progression from A Level",
+   "content": "A Level Mathematics is a foundation for mathematics or related courses in higher education and provides good preparation for AS & A Level Further Mathematics (9231). There are recommended component combinations to support progression to 9231; see the Further Mathematics syllabus and the guide to prior learning for Paper 4 Further Probability and Statistics.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "6, 11",
+    "targetQualification": "9231"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "prerequisite",
+   "key": "9709.prerequisites.prior-knowledge",
+   "title": "Prior knowledge",
+   "content": "Knowledge of Cambridge IGCSE Mathematics 0580 (Extended) or Cambridge O Level (4024/4029) is assumed, including scientific notation for compound units (e.g. 5 m s⁻¹). Candidates should also be able to manipulate simple surds (e.g. √12 = 2√3) and know the shapes of graphs of y = kxⁿ where n is a positive or negative integer or ±½. Recommended previous study: a course equivalent to IGCSE (Extended) or O Level; about 180 guided learning hours for AS Level and 360 for A Level.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "18, 56"
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "practical_activity",
+   "key": "9709.practical.none",
+   "title": "No practical component",
+   "content": "There is no practical assessment or required practical activity: all components are written examinations.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "applicability": "not_applicable",
+    "sourcePage": 40
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "project_requirement",
+   "key": "9709.project.none",
+   "title": "No project or coursework",
+   "content": "No project or coursework is assessed: every component is an externally marked written examination.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "applicability": "not_applicable",
+    "sourcePage": 40
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "resource",
+   "key": "9709.resources.official",
+   "title": "Official resources",
+   "content": "Cambridge provides syllabuses, schemes of work, specimen question papers and mark schemes, teacher guides, endorsed resources, online forums, example candidate responses, past papers and mark schemes, specimen paper answers, the Candidate Results Service and principal examiner reports for teachers, some restricted to the School Support Hub. Syllabuses and specimen materials are the final authority on content and structure. The specimen materials were not updated for the version 2 to 4 changes.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "access": "Mixed public and School Support Hub restricted",
+    "sourcePage": 7
+   }
+  },
+  {
+   "levels": [
+    "as_level",
+    "a_level"
+   ],
+   "kind": "resource",
+   "key": "9709.resources.mf19",
+   "title": "List of formulae and statistical tables (MF19)",
+   "content": "MF19 is supplied in examinations: pure mathematics (mensuration, algebra, trigonometry, differentiation, integration, vectors), mechanics (uniformly accelerated motion), and probability & statistics (summary statistics, discrete and continuous random variables, sampling and testing), with tables for the normal distribution and its critical values, and critical values for the t and chi-squared distributions and the Wilcoxon tests. Content labelled Further is for Further Mathematics (9231) only.",
+   "topicKey": null,
+   "paperComponentId": null,
+   "objectiveKeys": [],
+   "metadata": {
+    "sourcePages": "43-55"
+   }
+  }
+ ]
+}
