@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BriefcaseBusiness, Brain, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import { BriefcaseBusiness, Brain, Hammer, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
