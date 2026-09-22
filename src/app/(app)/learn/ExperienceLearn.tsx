@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAcademicExperience, normalizeStudyLevel, type AcademicExperience } from "@/lib/academic/experience";
 import LearnPrefillGuard from "./LearnPrefillGuard";
+import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 function ExperienceLearnIntro({ experience }: { experience: AcademicExperience }) {
   const copy = experience.stage === "early-childhood"
@@ -18,9 +19,14 @@ function ExperienceLearnIntro({ experience }: { experience: AcademicExperience }
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-6 lg:px-8">
       <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] px-4 py-3 sm:px-5">
-        <p className="text-[11px] font-extrabold uppercase tracking-[.08em] text-[var(--primary)]">{copy.kicker}</p>
+        <div className="flex items-start gap-3">
+          <ShadecodeFeatureIcon feature="learn" size="sm" />
+          <div className="min-w-0">
+            <p className="text-[11px] font-extrabold uppercase tracking-[.08em] text-[var(--primary)]">{copy.kicker}</p>
         <h1 className="mt-1 text-lg font-extrabold tracking-tight text-[var(--foreground)] sm:text-xl">{copy.title}</h1>
         <p className="mt-1 max-w-3xl text-sm leading-5 text-[var(--muted-foreground)]">{copy.body}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
