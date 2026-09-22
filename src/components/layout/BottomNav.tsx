@@ -198,8 +198,8 @@ export function BottomNav() {
               )}
             >
               <MoreHorizontal
-                className="h-5 w-5"
-                stroke="url(#shadecode-icon-gradient)"
+                className="h-5 w-5 text-[var(--primary)]"
+                stroke="currentColor"
                 strokeWidth={anyMoreActive || open ? 2.1 : 1.8}
               />
             </span>
