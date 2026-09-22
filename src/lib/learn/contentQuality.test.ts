@@ -6,7 +6,7 @@ describe("Learn content quality", () => {
     const prompt = buildDeepLessonPrompt("Chemistry", "Organic Chemistry", "medium");
     expect(prompt).toContain("BROAD MASTERCLASS request");
     expect(prompt).toContain("major branches");
-    expect(prompt).toContain("16-24 blocks");
+    expect(prompt).toContain("16-20 blocks");
   });
 
   it("rewards substantive teaching structure", () => {
