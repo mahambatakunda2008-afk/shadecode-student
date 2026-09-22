@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-20 (6) — Cambridge 9709 Mathematics: knowledge layer loaded, fully resolves at the syllabus tier
+
+**What:** re-read the official 9709 PDF and authored a whole-syllabus knowledge layer (`src/lib/curriculum/data/cambridge-9709-knowledge-2026-2027.json`, 128 rows: 59 AS Level, 69 A Level, all 15 required kinds plus `prerequisite` at each level) plus the 12 remaining syllabus coverage dimensions (document, structure, scope, content_scope, competencies, skills, practical_requirements as not applicable, terminology, constraints, guidance, resources, provenance) — all evidenced by the same PDF already read for entry (3). Loaded to production and checked against the repo dataset by md5.
+
+**Level scoping (new):** AS Level and A Level share one syllabus version but see different objectives (AS: Papers 1, 2, 4, 5 = 95 objectives; A Level: all 6 papers = 159). Added `src/lib/curriculum/level-scope.ts` and wired it into both loaders (`ai-grounding.ts`, `user-resolution.ts`) so an AS Level learner is never shown A-Level-only content. Knowledge rows are similarly split per level (a `curriculum_knowledge` row is matched on the learner's exact level).
+
+**Verified against live data** (replaying `user-resolution.ts`'s exact queries with `tier: "syllabus"`): 1 verified/effective version; A Level learner sees 159 verified objectives, AS Level sees 95, **0 A-Level objectives leaked to AS**; **0 missing syllabus dimensions, 0 missing knowledge kinds**. Under the default `tier: "exam"` (used by "production complete" reporting) this version still reports unresolved, correctly, because the 4 exam-history dimensions remain missing.
+
+**9709 is now the first non-Computer-Science subject that fully resolves for teaching.** It still cannot reach a real learner: nobody has a stored curriculum identity (`identity-gap.md`, unchanged).
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 719 tests; 14 new: `cambridge-9709-knowledge.test.ts` 9, `level-scope.test.ts` 3, `user-resolution.test.ts` +2).
+
+**Next:** the same knowledge-layer pass for Physics 9702 (currently objectives + 14/29 coverage only).
+
+---
+
 ## 2026-09-20 (5) — Two-tier curriculum gate: exam-history dimensions no longer block teaching
 
 **Why:** every consumer needed all 29 coverage dimensions, including four about exam *history* (past papers, mark schemes, examiner reports, grade thresholds) that a syllabus PDF cannot evidence and that don't affect what a lesson may teach. That made Mathematics and Physics unresolvable until we ingest real past-paper artifacts. Decision delegated by the owner ("do what's best"); policy in `docs/curriculum/coverage-evidence-policy.md`.

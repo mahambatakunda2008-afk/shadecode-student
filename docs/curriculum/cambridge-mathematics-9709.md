@@ -57,6 +57,34 @@ Learner `level` is not stored on versions (see "Schema notes"); `as_level` and `
   official terminology and the syllabus's stated scope exclusions ("X is not required"), so teaching does
   not expand beyond the syllabus. Never add content that is not in the official document.
 
+## Status (updated 2026-09-20): fully resolves at the `syllabus` tier
+All 25 syllabus coverage dimensions are `verified` or `not_applicable`, and a whole-syllabus knowledge layer
+(128 rows: 59 for AS Level, 69 for A Level, 16 kinds at each level, including the 15 the resolver requires) is
+loaded. Verified by replaying `user-resolution.ts`'s exact queries against live data with `tier: "syllabus"`
+(see `docs/curriculum/coverage-evidence-policy.md`): 1 verified/effective version, 159 objectives visible to an
+A Level learner and 95 to an AS Level learner (0 A-Level-only objectives leaked), 0 missing dimensions, 0 missing
+knowledge kinds. Only the four exam-history dimensions (`past_paper_coverage`, `mark_scheme_coverage`,
+`examiner_report_coverage`, `grade_threshold_coverage`) remain missing; under `tier: "exam"` (the default, used
+by "production complete" reporting) this version still reports unresolved.
+
+Knowledge dataset: `src/lib/curriculum/data/cambridge-9709-knowledge-2026-2027.json`, authored from the same
+official PDF and pinned in `cambridge-9709-knowledge.test.ts` (structure, level scoping, weightings, exclusions,
+row checksum). Level-scoping filter (`src/lib/curriculum/level-scope.ts`) hides A-Level-only objectives from AS
+Level learners in both consumers; tested in `level-scope.test.ts` and `user-resolution.test.ts`.
+
+**Still not user-reachable:** no learner has a stored curriculum identity (`docs/curriculum/identity-gap.md`).
+
+## Verification evidence
+- The dataset (`src/lib/curriculum/data/cambridge-9709-2026-2027.json`) was built from the fetched text and
+  asserted against an independent transcription of the official Content overview (p. 9) and the per-topic
+  bullet counts in Subject content (pp. 19-39). `cambridge-9709.test.ts` re-checks this on every run.
+- The rows loaded into the database have canonical md5 **`f1f91d6df19e5b271c23eb9850bdab3e`**, identical to the
+  repository dataset (the test asserts the same constant). Compare with:
+  `select md5(string_agg(objective_key||'|'||coalesce(parent_key,'')||'|'||coalesce(topic,'')||'|'||title||'|'||description||'|'||education_level, E'\n' order by string_to_array(objective_key,'.')::int[])) from curriculum_objectives where curriculum_version_id = '1e7b2f21-da90-40f3-8200-614cb87c130f';`
+- Outcome statements are **concise restatements in our own words** of the official bullets, keeping the
+  official terminology and the syllabus's stated scope exclusions ("X is not required"), so teaching does
+  not expand beyond the syllabus. Never add content that is not in the official document.
+
 ## Not done (so this subject is NOT yet resolvable)
 `resolveCurriculumContext` / `resolveSystemCurriculum` are fully fail-closed: they need **all 29 coverage
 dimensions** verified or not applicable **and** verified `curriculum_knowledge` covering **all 15 required kinds**.
