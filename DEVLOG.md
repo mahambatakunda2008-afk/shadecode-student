@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-21 — PRODUCTION OUTAGE: lesson generation had no working fallback for ~22 hours
+
+**Reported by the owner as "failing terribly." Confirmed and root-caused from `ai_usage_logs` and Vercel runtime errors, not assumption.**
+
+**Root cause:** commit `a3dedf4` ("route production generation through stable gateway", 2026-09-21 04:01 UTC) deleted the OpenRouter fallback from `callAI` (`src/lib/ai.ts`) and replaced it with a Vercel AI Gateway call gated on `AI_GATEWAY_API_KEY`. That env var appears unset in production: `vercel-ai-gateway` has **zero** logged calls, success or failure, in the last 3 days — the branch never executes at all (it would log on every attempt if it ran). That left Cloudflare and Gemini as the only fallbacks, and both were failing almost 100% of the time in this window (Gemini: 0/37 over the last 3 days, mostly `AbortError`/`503 high demand`; Cloudflare: 0/2, `AbortError`). OpenRouter, deleted in the same commit, was the only provider with a real production success rate over the preceding two days (14/22, ~64%). Net effect: from 2026-09-20 19:58 UTC (OpenRouter's last successful call) onward, generation had no working provider.
+
+**Fix:** restored the OpenRouter branch (same code, same env var, same model) positioned after the Gateway attempt and before Cloudflare, so Gateway still gets first try whenever it's actually configured, but the chain has a proven-working fallback again. No other provider logic touched — this codebase has had ~15 "fix(learn)"/"fix(ai)" commits chasing generation reliability this week without addressing this; narrow, evidence-backed fix only.
+
+**Tests added** (`src/lib/ai.provider-chain.test.ts`, none existed before for this chain): OpenRouter is called and its response returned when it's the only configured provider; the chain order is Gateway -> OpenRouter -> Cloudflare -> Gemini -> OpenAI with correct fall-through; OpenRouter is skipped cleanly (no throw) when unconfigured; OpenRouter is skipped for multimodal requests. 2 of 4 fail against the pre-fix code (checked by stashing the fix), confirming they catch this exact regression.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 723 tests).
+
+**Not verified — needs the owner:** whether `OPENROUTER_API_KEY` is still set in Vercel production (only code was checked; my Vercel connector cannot list env vars — 403). If it was also removed, this fix is a no-op and generation stays broken. Check the Vercel dashboard, or generation logs for a new `openrouter` row after this deploys. Separately, `AI_GATEWAY_API_KEY` should be set (or the Gateway branch removed) so that path stops being a permanent no-op mid-chain.
+
+---
+
 ## 2026-09-20 (7) — Fixed a pre-existing test broken by upstream's own budget-fix commit
 
 Not curriculum work: found while rebasing onto 17 new upstream commits. `contentQuality.test.ts` asserted the deep-lesson prompt contains "16-24 blocks"; upstream's "make deep lesson contract achievable within model budget" commit had changed `buildDeepLessonPrompt`'s own guidance to "16-20 blocks" (to fit the model's response budget) without updating this test, so it failed on latest `main`. `buildLessonRepairPrompt` (a different function) still says "16-24 blocks" and is untouched — the test does not exercise it. Fixed the test's expected string rather than the prompt, since reverting the prompt would risk reintroducing the budget overrun that commit fixed. `npm run verify` clean (719 tests) after the fix.
