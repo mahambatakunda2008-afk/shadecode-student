@@ -15,7 +15,7 @@ export default function WorkmatePage() {
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 pb-24 sm:p-7 sm:pb-28">
       <header className="relative overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm sm:p-8">
         <div className="pointer-events-none absolute -right-28 -top-32 h-72 w-72 rounded-full bg-[var(--primary-glow)] blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-36 left-1/3 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-36 left-1/3 h-64 w-64 rounded-full bg-[color-mix(in_srgb,var(--brand-violet)_10%,transparent)] blur-3xl" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--primary)] shadow-sm">
             <ShadecodeFeatureIcon feature="math-checker" size="sm" /> Math Checker
