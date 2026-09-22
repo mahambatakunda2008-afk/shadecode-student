@@ -30,15 +30,26 @@ function Glyph({ feature, Icon, active, className }: {
 }) {
   if (!feature && Icon) {
     return <Icon aria-hidden="true" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)}
-      stroke="url(#shadecode-icon-gradient)" strokeWidth={active ? 2.35 : 2} />;
+      stroke="currentColor" strokeWidth={active ? 2.35 : 2} />;
   }
 
   const sw = active ? 2.9 : 2.65;
-  const p = { fill: "none", stroke: "url(#shadecode-icon-gradient)", strokeWidth: sw,
+  const p = { fill: "none", stroke: "url(#shadecode-feature-icon-gradient)", strokeWidth: sw,
     strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
   const svg = (children: ReactNode) => (
-    <svg viewBox="0 0 24 24" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} aria-hidden="true">{children}</svg>
+    <svg viewBox="0 0 24 24" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} aria-hidden="true">
+      <defs>
+        <linearGradient id="shadecode-feature-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#00E5FF" />
+          <stop offset="28%" stopColor="#00A8FF" />
+          <stop offset="58%" stopColor="#245BFF" />
+          <stop offset="82%" stopColor="#7A3CFF" />
+          <stop offset="100%" stopColor="#C135FF" />
+        </linearGradient>
+      </defs>
+      {children}
+    </svg>
   );
 
   switch (feature) {
