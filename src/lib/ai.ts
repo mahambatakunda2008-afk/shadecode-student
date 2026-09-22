@@ -133,6 +133,29 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
+  // OpenRouter's free tier is currently the only provider with a proven production success
+  // rate (see ai_usage_logs 2026-09-19/20: ~64% vs Gemini's 0% and Cloudflare's 0% over the
+  // same window). Keep it as a real fallback after the Gateway attempt, not just Cloudflare/
+  // Gemini/OpenAI, until Gateway is confirmed working end-to-end in production.
+  if (!media.length && process.env.OPENROUTER_API_KEY && canTry()) {
+    const text = await tryProvider("openrouter", "openrouter/free", async timeout => {
+      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://shadecodestudent.vercel.app",
+          "X-Title": "Shadecode Student",
+        },
+        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+      }, timeout);
+      if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
+    });
+    if (text) return text;
+  }
+
   if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
     const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
       const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
@@ -172,8 +195,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     });
   }
 
-  // Text fallback order after Gateway: Cloudflare first, then stable Gemini models,
-  // then paid OpenAI only when explicitly enabled.
+  // Text fallback order after Gateway: OpenRouter (proven reliable), then Cloudflare, then
+  // stable Gemini models, then paid OpenAI only when explicitly enabled.
   for (const key of geminiKeys) {
     for (const model of geminiModels) {
       if (!canTry()) break;
