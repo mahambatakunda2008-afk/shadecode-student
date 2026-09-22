@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BriefcaseBusiness, Brain, Clock3, Coffee, Focus, Hammer, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import { BriefcaseBusiness, Clock3, Pause, Play, RotateCcw } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -9,14 +9,14 @@ import { useUser } from "@/contexts/UserContext";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { trackEvent } from "@/lib/traction/client";
 
-type Preset = { label: string; minutes: number; icon: typeof Brain };
+type Preset = { label: string; minutes: number; };
 
 const PRESETS: Preset[] = [
-  { label: "25 min", minutes: 25, icon: Brain },
-  { label: "5 min", minutes: 5, icon: Coffee },
-  { label: "15 min", minutes: 15, icon: Sparkles },
-  { label: "45 min", minutes: 45, icon: Focus },
-  { label: "Custom", minutes: 0, icon: Clock3 },
+  { label: "25 min", minutes: 25 },
+  { label: "5 min", minutes: 5 },
+  { label: "15 min", minutes: 15 },
+  { label: "45 min", minutes: 45 },
+  { label: "Custom", minutes: 0 },
 ];
 
 function getCopy(family: "foundation" | "school" | "beyond-school", stage: string) {
@@ -220,9 +220,8 @@ export default function ExperienceFocus() {
         <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-8">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Focus duration">
             {PRESETS.map((item, index) => {
-              const ItemIcon = item.icon;
               const selected = selectedPreset === index;
-              return <button key={item.label} type="button" onClick={() => setSelectedPreset(index)} className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition" style={{ borderColor: selected ? accent : "var(--card-border)", background: selected ? "var(--primary-glow)" : "var(--card)", color: selected ? accent : "var(--muted-foreground)" }}><ItemIcon className="h-4 w-4" />{item.label}</button>;
+              return <button key={item.label} type="button" onClick={() => setSelectedPreset(index)} className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition" style={{ borderColor: selected ? accent : "var(--card-border)", background: selected ? "var(--primary-glow)" : "var(--card)", color: selected ? accent : "var(--muted-foreground)" }}>{item.label}</button>;
             })}
           </div>
 
