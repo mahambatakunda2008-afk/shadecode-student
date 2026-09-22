@@ -5,6 +5,7 @@ import type { CurriculumKnowledgeItem } from "./knowledge";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
 import type { CurriculumCoverageRecord, CurriculumVersionRecord } from "./resolver";
 import { resolveSystemCurriculum, type SystemCurriculumResolution } from "./system-resolver";
+import { objectiveVisibleAtLevel } from "./level-scope";
 import {
   normalizeStoredCurriculumIdentities,
   toLearnerCurriculumContext,
@@ -170,7 +171,9 @@ export async function resolveUserSystemCurriculum(userId: string, subjectId?: st
 
   if (objectivesResult.error || mappingsResult.error || knowledgeResult.error || coverageResult.error) return loadFailure();
 
-  const objectives = (objectivesResult.data ?? []).map((row: Record<string, unknown>) => asObjective(row, resolvedIdentity));
+  const objectives = (objectivesResult.data ?? [])
+    .filter((row: Record<string, unknown>) => objectiveVisibleAtLevel(row.education_level as string | null | undefined, resolvedIdentity.level))
+    .map((row: Record<string, unknown>) => asObjective(row, resolvedIdentity));
   const mappings = (mappingsResult.data ?? []).map((row: Record<string, unknown>) => asMapping(row));
   const knowledge = (knowledgeResult.data ?? []).map((row: Record<string, unknown>) => asKnowledge(row));
   const coverageChecks = (coverageResult.data ?? []).map((check: Record<string, unknown>) => ({

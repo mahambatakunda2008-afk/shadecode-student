@@ -87,6 +87,29 @@ describe("resolveUserSystemCurriculum", () => {
     ]);
   });
 
+  it("hides A-Level-only objectives from an AS Level learner", async () => {
+    profileRow = { curriculum_subjects: [{ ...IDENTITY, level: "as_level" }] };
+    tables.curriculum_knowledge = tables.curriculum_knowledge.map((row) => ({ ...row, level: "as_level" }));
+    tables.curriculum_objectives = [
+      { ...tables.curriculum_objectives[0], education_level: "as_level" },
+      { ...tables.curriculum_objectives[1], education_level: "a_level", description: "An A Level only outcome." },
+    ];
+    const { resolveUserSystemCurriculum } = await import("./user-resolution");
+    const result = await resolveUserSystemCurriculum("user-1", "mathematics");
+    expect(result.blocked).toBe(false);
+    expect(result.context?.objectives.map((o) => o.statement)).toEqual(["Complete the square for ax² + bx + c and use the completed-square form."]);
+  });
+
+  it("gives an A Level learner both AS and A Level objectives", async () => {
+    tables.curriculum_objectives = [
+      { ...tables.curriculum_objectives[0], education_level: "as_level" },
+      { ...tables.curriculum_objectives[1], education_level: "a_level", description: "An A Level only outcome." },
+    ];
+    const { resolveUserSystemCurriculum } = await import("./user-resolution");
+    const result = await resolveUserSystemCurriculum("user-1", "mathematics");
+    expect(result.context?.objectives).toHaveLength(2);
+  });
+
   it("resolves when only the four exam-history dimensions are missing, and forbids exam-history claims", async () => {
     const examHistory = ["past_paper_coverage", "mark_scheme_coverage", "examiner_report_coverage", "grade_threshold_coverage"];
     tables.curriculum_coverage_checks = tables.curriculum_coverage_checks.filter((row) => !examHistory.includes(String(row.dimension)));

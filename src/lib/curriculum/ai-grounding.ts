@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { normalizeStoredCurriculumIdentities } from "./user-profile";
 import { resolveSystemCurriculum } from "./system-resolver";
+import { objectiveVisibleAtLevel } from "./level-scope";
 import type { CurriculumKnowledgeItem } from "./knowledge";
 import type { CurriculumObjective, ObjectiveSkillMapping } from "./objective-first";
 import type { CurriculumCoverageRecord, CurriculumVersionRecord } from "./resolver";
@@ -118,7 +119,7 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
     learner,
     versions,
     coverageChecks: (coverageResult.data ?? []).map((check) => ({ dimension: check.dimension, status: check.status, evidence: check.evidence, notes: check.notes })) as CurriculumCoverageRecord[],
-    objectives: (objectivesResult.data ?? []).map((objective) => ({
+    objectives: (objectivesResult.data ?? []).filter((objective) => objectiveVisibleAtLevel(objective.education_level, resolvedIdentity.level)).map((objective) => ({
       id: objective.id,
       curriculum: { boardId: resolvedIdentity.boardId, qualificationId: resolvedIdentity.qualificationId, level: resolvedIdentity.level, syllabusId: resolvedIdentity.syllabusId, syllabusVersion: resolvedIdentity.syllabusVersion, subjectId: resolvedIdentity.subjectId, paperOrComponentId: objective.paper_component ?? undefined },
       code: objective.objective_key, statement: objective.description ?? objective.title, status: objective.status, provenance: objective.provenance ?? {},
