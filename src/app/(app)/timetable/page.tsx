@@ -222,11 +222,17 @@ export default function Timetable() {
   return (
     <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-      <div>
-        <h1 style={{ fontSize: "28px", fontWeight: 800 }}>Timetable</h1>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginTop: "4px" }}>
-          Build your colour-coded study plan
-        </p>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+        <ShadecodeFeatureIcon feature="timetable" size="sm" />
+        <div>
+          <p style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--primary)", margin: 0 }}>
+            Plan your study time
+          </p>
+          <h1 style={{ fontSize: "28px", fontWeight: 800, margin: "2px 0 0" }}>Timetable</h1>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginTop: "4px" }}>
+            Build your colour-coded study plan
+          </p>
+        </div>
       </div>
 
       {/* Subject selector */}
