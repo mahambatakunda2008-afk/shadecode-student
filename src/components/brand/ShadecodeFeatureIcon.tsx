@@ -4,7 +4,10 @@ import { cn } from "@/lib/utils";
 
 export type ShadecodeFeatureName =
   | "home" | "learn" | "exam-sim" | "math-checker" | "focus" | "timetable"
-  | "leaderboard" | "code-lab" | "past-papers" | "insights" | "profile" | "settings";
+  | "leaderboard" | "code-lab" | "past-papers" | "insights" | "profile" | "settings"
+  | "tasks" | "assessments" | "courses" | "study" | "study-plan" | "progress"
+  | "achievements" | "share" | "whatsapp" | "virtual-lab" | "workmate" | "projects"
+  | "studyspace";
 
 type Props = {
   icon?: LucideIcon;
