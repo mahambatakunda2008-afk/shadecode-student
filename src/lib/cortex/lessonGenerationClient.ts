@@ -78,7 +78,7 @@ function parseLocalModelLesson(raw: string): LessonGenerationResult | null {
     return { id: `local-model-${Date.now().toString(36)}`, title: value.title.trim().slice(0, 255), blocks, localModel: true };
   } catch { return null; }
 }
-async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise<LessonGenerationResult | null> {
+async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: string): Promise<LessonGenerationResult | null> {
   if (!isBrowser()) return null;
 
   const request = resolveLessonRequest({
@@ -98,9 +98,28 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise
 
   const context = localContext(job);
   const resolved = buildResolvedLessonPrompt(request);
-  const prompt = `You are Cortex, the local teaching engine inside Shadecode Student.
+  const sectionCount = request.broadTopic ? 6 : 4;
+  const sectionPlan = request.broadTopic
+    ? [
+        "Orient the learner: define the territory, prerequisites, vocabulary, and why the topic matters.",
+        "Teach the first major concepts deeply, including relationships and underlying reasoning.",
+        "Teach the next major concepts deeply, including mechanisms, structures, formulas, or processes where relevant.",
+        "Connect the ideas with worked examples, applications, comparisons, and step-by-step reasoning.",
+        "Handle misconceptions, common mistakes, exam-style thinking, and how to recognise what a question is testing.",
+        "Synthesize the whole topic, connect the pieces, add curiosity/application, and give a clear next step.",
+      ]
+    : [
+        "Build the foundation: prerequisites, vocabulary, core idea, and mental model.",
+        "Teach the main concepts deeply with explanations, relationships, and a worked example.",
+        "Extend the understanding with applications, comparisons, mechanisms/formulas, and common mistakes.",
+        "Consolidate with exam/practice thinking, synthesis, checkpoint prompts, and a useful next step.",
+      ];
 
-Generate a real teaching lesson, not a generic AI answer.
+  const allBlocks: Array<Record<string, unknown>> = [];
+  let title = request.topic || job.request.prompt;
+
+  for (let index = 0; index < sectionPlan.length; index += 1) {
+    const sectionPrompt = `You are generating section ${index + 1} of ${sectionCount} of one coherent lesson.
 
 REQUEST
 ${resolved}
@@ -108,71 +127,102 @@ ${resolved}
 VERIFIED LOCAL CURRICULUM
 ${grounding || context || "No verified curriculum data is cached. Do not invent board-specific claims."}
 
+SECTION JOB
+${sectionPlan[index]}
+
+ALREADY GENERATED SECTIONS
+${allBlocks.slice(-8).map((block) => `${String(block.type)}: ${String(block.content)}`).join("\n") || "None"}
+
 TEACHING CONTRACT
-- Stay on the requested subject and topic.
-- Teach the topic substantively and coherently.
-- For broad topics, map the territory and teach the major branches rather than summarising them.
-- Use learner context only to adapt sequencing and emphasis, never as curriculum authority.
-- Explain ideas before testing them.
-- Include worked reasoning where appropriate.
-- Checkpoints must not reveal their answers.
-- Do not invent syllabus claims, fake exam questions, or unexplained numerical results.
-- Avoid wall-of-text paragraphs.
+- This is one section of a larger lesson. Do not repeat earlier material unless a short bridge is genuinely useful.
+- Stay strictly inside the requested subject and topic.
+- Teach rather than summarise. Explain why, how, and when the ideas matter.
+- Use student-facing language, concrete examples, and step-by-step reasoning.
+- Do not invent syllabus requirements, facts, numerical answers, or citations.
+- Checkpoints must ask the learner to think. Do not put the answer in the checkpoint itself.
+- Avoid giant paragraphs.
 
 OUTPUT
 Return ONLY valid JSON:
 {
-  "title": "specific lesson title",
+  "title": "specific overall lesson title",
   "blocks": [
     {
-      "type": "objective|map|prior|concept|definition|structure|mechanism|formula|example|checkpoint|comparison|misconception|exam|application|mistake|synthesis|curiosity|practice|summary|next|tip",
+      "type": "map|prior|concept|definition|structure|mechanism|formula|example|checkpoint|comparison|misconception|exam|application|mistake|synthesis|curiosity|practice|summary|next|tip",
       "title": "short heading",
-      "content": "student-facing content"
+      "content": "substantive student-facing content"
     }
   ]
 }
 
-Use 8-14 substantive blocks for a standard request and 14-20 for a broad/deep request. A normal teaching lesson should contain an objective, explanation, worked example, checkpoint, synthesis/summary, and useful next step where appropriate.
+Generate 3-5 substantive blocks for this section. Make the blocks useful on their own while clearly fitting into the whole lesson.
 
 MATH
 Every mathematical expression uses single-dollar LaTeX delimiters. Never use caret exponents or ASCII fractions.`;
 
-  try {
-    if (!(await isBrowserLocalModelAvailable())) return null;
+    try {
+      const raw = await generateBrowserLocal(sectionPrompt, undefined, {
+        maxTokens: request.broadTopic ? 1400 : 1200,
+        json: true,
+      });
+      const parsed = parseLocalModelLesson(raw);
+      if (!parsed || parsed.blocks.length < 3) return null;
 
-    const raw = await generateBrowserLocal(prompt, undefined, {
-      maxTokens: request.broadTopic ? 3000 : 2200,
-      json: true,
-    });
+      if (index === 0 && parsed.title) title = parsed.title;
+      const usable = parsed.blocks
+        .filter((block) => !allBlocks.some((existing) =>
+          String(existing.type) === String(block.type) &&
+          String(existing.content).trim() === String(block.content).trim()
+        ))
+        .slice(0, 6);
 
-    const parsed = parseLocalModelLesson(raw);
-    if (!parsed) return null;
+      if (usable.length < 3) return null;
+      allBlocks.push(...usable);
 
-    const quality = lessonQualityFailures({
-      title: parsed.title,
-      blocks: parsed.blocks.map((block) => ({
-        type: String(block.type),
-        title: typeof block.title === "string" ? block.title : undefined,
-        content: String(block.content),
-      })),
-    }, request);
-
-    if (quality.failures.length) {
-      console.info("[LEARN] browser-local lesson rejected by quality gate", {
-        failures: quality.failures,
-        topic: request.topic,
+      const progress = Math.min(75, 20 + Math.round(((index + 1) / sectionCount) * 55));
+      updateGenerationJob(job.id, {
+        status: "partial",
+        progress,
+        partial: { title, blocks: allBlocks, completedUnits: index + 1, totalUnits: sectionCount },
+      });
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
+    } catch (error) {
+      console.info("[LEARN] browser-local section failed", {
+        section: index + 1,
+        error: error instanceof Error ? error.message : String(error),
       });
       return null;
     }
+  }
 
-    return parsed;
-  } catch (error) {
-    console.info(
-      "[LEARN] browser-local model unavailable",
-      error instanceof Error ? error.message : String(error),
-    );
+  const minimumBlocks = request.broadTopic ? 14 : 10;
+  if (allBlocks.length < minimumBlocks) return null;
+
+  const candidate: LessonGenerationResult = {
+    id: `local-model-${Date.now().toString(36)}`,
+    title: title.trim().slice(0, 255),
+    blocks: allBlocks,
+    localModel: true,
+  };
+
+  const quality = lessonQualityFailures({
+    title: candidate.title,
+    blocks: candidate.blocks.map((block) => ({
+      type: String(block.type),
+      title: typeof block.title === "string" ? block.title : undefined,
+      content: String(block.content),
+    })),
+  }, request);
+
+  if (quality.failures.length) {
+    console.info("[LEARN] browser-local assembled lesson rejected by quality gate", {
+      failures: quality.failures,
+      topic: request.topic,
+    });
     return null;
   }
+
+  return candidate;
 }
 async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
   // One browser job owns one durable identity. Retries and refreshes reuse it.
