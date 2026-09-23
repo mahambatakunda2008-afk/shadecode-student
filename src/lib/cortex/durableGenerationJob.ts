@@ -53,3 +53,19 @@ export async function getDurableGenerationJob(token: string, id: string) {
     return null;
   }
 }
+
+
+export async function listDurableGenerationJobs(token: string) {
+  if (!isBrowser() || !token) return [];
+  try {
+    const response = await fetch("/api/cortex/generation", {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!response.ok) return [];
+    const data = await response.json() as { jobs?: unknown };
+    return Array.isArray(data.jobs) ? data.jobs : [];
+  } catch {
+    return [];
+  }
+}
