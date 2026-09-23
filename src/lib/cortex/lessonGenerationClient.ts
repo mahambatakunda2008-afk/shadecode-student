@@ -108,12 +108,13 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   try {
-    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 0 });
+    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 15 });
     const localModel = await tryLocalModel(job); if (localModel) return saveLocalResult(job, localModel);
     if (isBrowser() && !navigator.onLine) return saveLocalResult(job);
     let data: any = null;
     let lastError: unknown = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < MAX_CLOUD_ATTEMPTS; attempt++) {
+      updateGenerationJob(job.id, { status: "generating", progress: Math.min(70, 20 + attempt * 10) });
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
       try {
@@ -134,6 +135,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
           signal: controller.signal,
         });
         data = await response.json().catch(() => ({}));
+        if (response.ok && !data?.error) updateGenerationJob(job.id, { status: "partial", progress: 75 });
         if (response.ok && !data?.error) break;
         const retryable = response.status === 408 || response.status === 409 || response.status === 422 || response.status === 429 || response.status >= 500;
         lastError = new Error(data?.error || `Generation failed (${response.status})`);
@@ -147,9 +149,11 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
     }
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
+    updateGenerationJob(job.id, { status: "partial", progress: 82 });
     const request = resolvedRequest(job);
     const result = validateResult({ id: data.id, title: data.title || request.topic || job.request.prompt, blocks: data.blocks }, request);
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
+    updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: result.title, blocks: result.blocks } });
     const now = new Date().toISOString();
     await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `A complete ${job.request.difficulty} lesson on ${request.topic}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
     updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined }); if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result); return getGenerationJobs().find(item => item.id === job.id) ?? job;
