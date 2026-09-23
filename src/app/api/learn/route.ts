@@ -148,7 +148,7 @@ export async function POST(req: Request) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter); if (rateLimitCheck) return rateLimitCheck;
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { supabase, user } = auth; const body = await req.json(); const { type, subject, topic, difficulty, goal, level } = body;
+    const { supabase, user } = auth; const body = await req.json(); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
     if (type === "course_preview") {
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
@@ -197,7 +197,17 @@ export async function POST(req: Request) {
       maxChainMs: 18000,
       perProviderMaxMs: 5000,
     });
-    if (!raw) return NextResponse.json({ error: "Lesson generation is temporarily unavailable. Please check your connection and try again." }, { status: 503 });
+    if (!raw) {
+      const recoveryPrompt = prompt + "\n\nRECOVERY MODE\nThe first generation attempt was unavailable. Produce a complete but compact lesson now. Preserve the requested topic, subject, learner level, and teaching intent. Return ONLY valid JSON in the same schema. Prioritize accurate core teaching, two worked examples, checkpoints, misconceptions, synthesis, and next steps. Do not mention this recovery instruction.";
+      raw = await callAI(recoveryPrompt, 3800, {
+        userId: user.id,
+        feature: "lesson_assistant",
+        subfeature: "generate_recovery_lesson",
+        maxChainMs: 16000,
+        perProviderMaxMs: 5000,
+      });
+    }
+    if (!raw) return NextResponse.json({ error: "Lesson generation is temporarily unavailable. Cortex will retry this request automatically." }, { status: 503 });
     let parsed = safeParseJSON(raw);
 
     const initialScore = parsed ? lessonQualityScore(parsed.blocks) : 0;
@@ -236,8 +246,16 @@ export async function POST(req: Request) {
     }
     if (!subjectId) return NextResponse.json({ error: "Unable to resolve the lesson subject." }, { status: 500 });
 
-    const { data: inserted, error: insertError } = await supabase.from("learn_lessons").insert({ user_id: user.id, subject_id: subjectId, topic: topic.trim().slice(0,500), title: parsed.title, description: `A deep ${validDifficulty} lesson on ${topic.trim()}`, difficulty: validDifficulty, progress: 0, blocks: parsed.blocks }).select("id").single();
-    if (insertError) { log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${insertError.message}` }); return NextResponse.json({ error: "The lesson was generated but couldn't be saved. Please try again." }, { status: 500 }); }
+    const lessonRow = { ...(generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? { id: String(generationJobId) } : {}), user_id: user.id, subject_id: subjectId, topic: topic.trim().slice(0,500), title: parsed.title, description: `A deep ${validDifficulty} lesson on ${topic.trim()}`, difficulty: validDifficulty, progress: 0, blocks: parsed.blocks };
+    const { data: inserted, error: insertError } = await supabase.from("learn_lessons").insert(lessonRow).select("id").single();
+    if (insertError) {
+      if (generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) && /duplicate|unique/i.test(insertError.message)) {
+        const { data: existingLesson } = await supabase.from("learn_lessons").select("id,title,blocks").eq("id", String(generationJobId)).eq("user_id", user.id).maybeSingle();
+        if (existingLesson?.id) return NextResponse.json({ id: existingLesson.id, title: existingLesson.title, blocks: existingLesson.blocks ?? [], qualityScore: finalScore, subject: effectiveSubject, recovered: true });
+      }
+      log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${insertError.message}` });
+      return NextResponse.json({ error: "The lesson was generated but couldn't be saved. Cortex will retry safely." }, { status: 500 });
+    }
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
     return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
   } catch (err: any) {
