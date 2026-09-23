@@ -34,20 +34,11 @@ function Glyph({ feature, Icon, active, className }: {
   }
 
   const sw = active ? 2.9 : 2.65;
-  const p = { fill: "none", stroke: "url(#shadecode-feature-icon-gradient)", strokeWidth: sw,
+  const p = { fill: "none", stroke: "currentColor", strokeWidth: sw,
     strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
   const svg = (children: ReactNode) => (
     <svg viewBox="0 0 24 24" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} aria-hidden="true">
-      <defs>
-        <linearGradient id="shadecode-feature-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#00E5FF" />
-          <stop offset="28%" stopColor="#00A8FF" />
-          <stop offset="58%" stopColor="#245BFF" />
-          <stop offset="82%" stopColor="#7A3CFF" />
-          <stop offset="100%" stopColor="#C135FF" />
-        </linearGradient>
-      </defs>
       {children}
     </svg>
   );
@@ -65,7 +56,7 @@ function Glyph({ feature, Icon, active, className }: {
     case "insights": return svg(<><path {...p} d="M8.5 15.5c-1.5-1.1-2.4-2.9-2.4-4.8A5.9 5.9 0 0 1 12 4.8a5.9 5.9 0 0 1 5.9 5.9c0 1.9-.9 3.7-2.4 4.8-.9.7-1.4 1.4-1.5 2.3h-4c-.1-.9-.6-1.6-1.5-2.3z" /><path {...p} d="M9.8 20h4.4M10.3 17.8h3.4" /></>);
     case "profile": return svg(<><circle {...p} cx="12" cy="8" r="3.2" /><path {...p} d="M5.5 20c.8-3.5 3-5.2 6.5-5.2s5.7 1.7 6.5 5.2" /></>);
     case "settings": return svg(<><circle {...p} cx="12" cy="12" r="3.2" /><path {...p} d="m19.2 13.3 1.1 1-.9 1.6-1.5-.4a7 7 0 0 1-1.6 1.6l.4 1.5-1.6.9-1-1.1a7.5 7.5 0 0 1-2.1.3l-.6 1.4h-1.9l-.6-1.4a7.5 7.5 0 0 1-2.1-.3l-1 1.1-1.6-.9.4-1.5a7 7 0 0 1-1.6-1.6l-1.5.4-.9-1.6 1.1-1a7.4 7.4 0 0 1-.3-2.1l-1.4-.6V8.7l1.4-.6a7.4 7.4 0 0 1 .3-2.1l-1.1-1 .9-1.6 1.5.4a7 7 0 0 1 1.6-1.6l-.4-1.5 1.6-.9 1 1.1a7.5 7.5 0 0 1 2.1-.3L11.1.2H13l.6 1.4a7.5 7.5 0 0 1 2.1.3l1-1.1 1.6.9-.4 1.5a7 7 0 0 1 1.6 1.6l1.5-.4.9 1.6-1.1 1a7.4 7.4 0 0 1 .3 2.1l1.4.6v1.9l-1.4.6a7.4 7.4 0 0 1-.3 2.1z" transform="translate(-1.1 2.8) scale(.92)" /></>);
-    default: return Icon ? <Icon aria-hidden="true" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} stroke="url(#shadecode-icon-gradient)" strokeWidth={active ? 2.35 : 2} /> : null;
+    default: return Icon ? <Icon aria-hidden="true" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} stroke="currentColor" strokeWidth={active ? 2.35 : 2} /> : null;
   }
 }
 

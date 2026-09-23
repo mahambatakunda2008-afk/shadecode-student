@@ -106,7 +106,7 @@ export function BottomNav() {
         <span
           className={cn(
             "relative flex h-8 w-11 items-center justify-center rounded-full transition-all duration-200",
-            active ? "bg-[var(--primary-glow)]" : "bg-transparent",
+            active ? "bg-[var(--primary-glow)] text-[var(--primary)]" : "bg-transparent text-[var(--muted-foreground)]",
           )}
         >
           <ShadecodeFeatureIcon icon={Icon} feature={item.feature} size="sm" tile={false} active={active} />
