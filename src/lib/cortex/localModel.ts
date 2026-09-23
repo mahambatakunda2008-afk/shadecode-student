@@ -152,6 +152,15 @@ function contextText(context?: CortexContext) {
   ].filter(Boolean).join("\n");
 }
 
+export async function warmBrowserLocalModel(): Promise<boolean> {
+  try {
+    await loadEngine();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function generateBrowserLocal(
   prompt: string,
   context?: CortexContext,
