@@ -4,6 +4,28 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-22 — Generation still failing after the OpenRouter restore: found and fixed the real root cause
+
+**Reported by the owner: still failing after the previous fix.** Investigated with fresh production data rather than patching again on assumption.
+
+**What the data showed:** two real generation attempts right after the OpenRouter restore deployed. OpenRouter *did* respond, successfully, with real content — but after **48.6 seconds** and **33.5 seconds** respectively, against a declared budget of 6.5s (primary) and 9s (repair). Cloudflare and Gemini, in the same window, aborted cleanly and exactly on their own schedules (`AbortError` at ~6501-9002ms). Historical data confirmed this isn't new: OpenRouter's logged latency has ranged up to 76 seconds even in its "healthy" period.
+
+**Root cause:** `fetchWithTimeout`'s `AbortController` covers the initial `fetch()` call, but for at least one provider (OpenRouter) the abort does not reliably cut off the response-body-read phase — `res.json()` kept waiting long past the timeout. `tryProvider` had no independent enforcement; it just `await`ed whatever `request()` returned. So a single slow provider could (and did) run 5-8x its declared budget, and the *route's own two declared budgets* (28000ms primary + 20000ms repair = 48000ms, sequential) had no real margin against that — pushing total wall-clock time past the route's `maxDuration = 60`, at which point Vercel kills the function with no response reaching the user at all. That is what "failing terribly" looked like: not a clean error, a hang followed by nothing.
+
+**Fixed, two layers (`src/lib/ai.ts`, `src/app/api/learn/generate/route.ts`):**
+1. **Hard race in `tryProvider`**, independent of any provider's own timeout/abort behavior: every provider attempt now races against its own `setTimeout`, so `tryProvider` always returns within `timeout + 250ms` regardless of what the underlying request does. This is in the shared `callAI` used by every caller (Learn, Cortex, the legacy `/api/learn` route), so the fix applies uniformly, not just to OpenRouter.
+2. **Shared deadline for primary + repair** (`src/lib/learn/generationBudget.ts`, `computeRepairBudget`): the repair call's budget is now computed from real time remaining under a 50000ms combined ceiling, not a fixed 20000ms stacked on top of whatever primary took. If too little time is left, repair is skipped in favor of the deterministic fallback rather than risking another near-60s run.
+
+**Verified:** the new hard-timeout test, run against the pre-fix `tryProvider`, hung for the full 10-second test timeout and had to be force-killed — a direct reproduction of the production hang, not a synthetic scenario. Against the fix it completes in ~1.3s real time and correctly falls through to the next provider. `npm run verify` clean (tsc 0 errors, lint 0 errors, 730 tests; 7 new: `generationBudget.test.ts` 6, the hard-timeout case in `ai.provider-chain.test.ts`).
+
+**Scope note on "never fail":** I did not build a system that fabricates a full lesson for every topic when every provider genuinely fails. `buildDeterministicLessonFallback` still only covers 3 hardcoded topics; the anti-hallucination principle this session's curriculum work is built on ("never invent syllabus content") argues against silently generating plausible-looking-but-ungrounded lessons as a fallback. What "robust" means here: the request can no longer hang and die silently against the platform's timeout — a genuine provider-chain failure now returns a fast, clean response well within the route's time budget. Expanding the deterministic/grounded fallback to more topics (using the curriculum objectives already resolved for the request) is a real option for a later pass, flagged but not done here.
+
+**Also checked, no change needed:** the legacy `/api/learn` route's own budgets (18000+10000=28000ms) already had real margin under 60s and automatically inherits the `tryProvider` hard-race fix, since it shares the same `callAI`.
+
+**Still needs the owner:** confirm `OPENROUTER_API_KEY` is genuinely set in Vercel production (still unverifiable from here — 403 on listing env vars), and try a real generation once this deploys to confirm end to end.
+
+---
+
 ## 2026-09-21 — PRODUCTION OUTAGE: lesson generation had no working fallback for ~22 hours
 
 **Reported by the owner as "failing terribly." Confirmed and root-caused from `ai_usage_logs` and Vercel runtime errors, not assumption.**
