@@ -109,10 +109,42 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 0 });
     const localModel = await tryLocalModel(job); if (localModel) return saveLocalResult(job, localModel);
     if (isBrowser() && !navigator.onLine) return saveLocalResult(job);
-    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
-    const response = await fetch("/api/learn", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }), cache: "no-store", signal: controller.signal }).finally(() => clearTimeout(timeout));
-    const data = await response.json().catch(() => ({})); if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
-    if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
+    let data: any = null;
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
+      try {
+        const response = await fetch("/api/learn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            type: "lesson",
+            subject: job.request.subject,
+            topic: job.request.prompt,
+            difficulty: job.request.difficulty,
+            goal: job.request.goal,
+            level: job.request.level,
+            examBoard: job.request.examBoard,
+            generationJobId: job.id,
+          }),
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        data = await response.json().catch(() => ({}));
+        if (response.ok && !data?.error) break;
+        const retryable = response.status === 408 || response.status === 409 || response.status === 422 || response.status === 429 || response.status >= 500;
+        lastError = new Error(data?.error || `Generation failed (${response.status})`);
+        if (!retryable || attempt === 2) throw lastError;
+      } catch (error) {
+        lastError = error;
+        if (attempt === 2) throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+      await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
+    }
+    if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
     const request = resolvedRequest(job);
     const result = validateResult({ id: data.id, title: data.title || request.topic || job.request.prompt, blocks: data.blocks }, request);
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
