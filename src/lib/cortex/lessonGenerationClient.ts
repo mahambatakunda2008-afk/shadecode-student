@@ -163,8 +163,15 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (isBrowser() && !navigator.onLine) {
       updateGenerationJob(job.id, { status: "queued", progress: 20, error: "Waiting for a connection." });
       saveActiveId(job.id);
+    } else if (job.retryCount < 5) {
+      const retryCount = job.retryCount + 1;
+      updateGenerationJob(job.id, { status: "queued", progress: Math.min(90, Math.max(20, job.progress)), retryCount, error: `Cortex hit a temporary generation failure. Retrying automatically (attempt ${retryCount + 1}/6)…` });
+      saveActiveId(job.id);
+      setTimeout(() => {
+        if (getGenerationJob(job.id)?.status === "queued") void runJob(getGenerationJob(job.id) as GenerationJob<LessonGenerationInput>, token);
+      }, Math.min(8000, 1500 * retryCount));
     } else {
-      updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: message });
+      updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: `${message} Cortex exhausted its automatic recovery attempts. Your request is still safe to retry.` });
       if (getActiveId() === job.id) saveActiveId(null);
     }
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
