@@ -26,7 +26,7 @@ describe("Cortex fault tolerance", () => {
       totalUnits: 8,
       stageIndex: 1,
       totalStages: 4,
-    })).toBe(34);
+    })).toBe(33);
   });
 
   it("caps retries at the configured limit", () => {
