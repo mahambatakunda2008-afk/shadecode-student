@@ -12,7 +12,7 @@ import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 70_000;
+const CLOUD_GENERATION_TIMEOUT_MS = 55_000;
 const LOCAL_MODEL_TIMEOUT_MS = 30_000;
 const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL?.trim()) || "";
 const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
@@ -110,7 +110,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     const localModel = await tryLocalModel(job); if (localModel) return saveLocalResult(job, localModel);
     if (isBrowser() && !navigator.onLine) return saveLocalResult(job);
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
-    const response = await fetch("/api/learn/generate", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject: job.request.subject, prompt: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }), cache: "no-store", signal: controller.signal }).finally(() => clearTimeout(timeout));
+    const response = await fetch("/api/learn", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ type: "lesson", subject: job.request.subject, topic: job.request.prompt, difficulty: job.request.difficulty, goal: job.request.goal, level: job.request.level, examBoard: job.request.examBoard }), cache: "no-store", signal: controller.signal }).finally(() => clearTimeout(timeout));
     const data = await response.json().catch(() => ({})); if (!response.ok || data?.error) throw new Error(data?.error || `Generation failed (${response.status})`);
     if (!data?.id || !Array.isArray(data?.blocks)) throw new Error("The lesson service returned an incomplete lesson.");
     const request = resolvedRequest(job);
