@@ -33,17 +33,21 @@ export async function GET(req: Request) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const id = new URL(req.url).searchParams.get("id");
-    if (!validId(id)) return NextResponse.json({ error: "Invalid generation id." }, { status: 400 });
-
-    const { data, error } = await auth.client
+    let query = auth.client
       .from("cortex_generation_jobs")
       .select("id,kind,status,stage,request,partial,result,error,progress,completed_units,total_units,retry_count,heartbeat_at,created_at,updated_at")
-      .eq("id", id)
       .eq("user_id", auth.user.id)
-      .maybeSingle();
-
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (id) {
+      if (!validId(id)) return NextResponse.json({ error: "Invalid generation id." }, { status: 400 });
+      query = query.eq("id", id);
+    } else {
+      query = query.in("status", ["queued", "warming", "generating", "partial"]);
+    }
+    const { data, error } = id ? await query.maybeSingle() : await query;
     if (error) return NextResponse.json({ error: "Unable to load generation state." }, { status: 500 });
-    return NextResponse.json({ job: data ?? null });
+    return NextResponse.json({ job: id ? (data ?? null) : null, jobs: id ? undefined : (data ?? []) });
   } catch {
     return NextResponse.json({ error: "Generation state unavailable." }, { status: 500 });
   }
