@@ -242,7 +242,7 @@ export async function POST(req: Request) {
         `SECTION JOB: ${sectionJob}`,
         `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
         "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
-        "Return ONLY JSON with {"title":"...","blocks":[{"type":"...","title":"...","content":"..."}]}",
+        "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
         "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
       ].join("\n\n");
       const rawSection = await callAI(sectionPrompt, 2200, {
