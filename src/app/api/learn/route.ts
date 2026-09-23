@@ -333,7 +333,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
-    return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
+    return NextResponse.json({ id: savedId, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
   } catch (err: any) {
     log.apiFailure({ route: "/api/learn", method: "POST", error: err.message || String(err), userId: auth?.user?.id }); return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
