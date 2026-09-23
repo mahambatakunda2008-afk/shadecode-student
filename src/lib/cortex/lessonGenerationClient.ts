@@ -11,6 +11,7 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
+import { generateBrowserLocal, isBrowserLocalModelAvailable } from "@/lib/cortex/localModel";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
@@ -78,33 +79,100 @@ function parseLocalModelLesson(raw: string): LessonGenerationResult | null {
   } catch { return null; }
 }
 async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise<LessonGenerationResult | null> {
-  // Never probe localhost in production. Ollama is an explicit opt-in local runtime.
-  if (!isBrowser() || !LOCAL_MODEL_BASE_URL) return null;
-  const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), LOCAL_MODEL_TIMEOUT_MS);
+  if (!isBrowser()) return null;
+
+  const request = resolveLessonRequest({
+    prompt: job.request.prompt,
+    subject: job.request.subject,
+    level: job.request.level,
+    difficulty: job.request.difficulty,
+    goal: job.request.goal,
+    examBoard: job.request.examBoard,
+  });
+
+  const grounding = await getLocalCurriculumGrounding(job.request.subject, request.topic);
+  const groundingData = readLocalCurriculumGroundingData(job.request.subject, request.topic);
+  if (groundingData?.resolvedTopic) request.topic = groundingData.resolvedTopic;
+  request.broadTopic = request.broadTopic || isBroadTopic(request.topic);
+  if (request.broadTopic) request.depth = "deep";
+
+  const context = localContext(job);
+  const resolved = buildResolvedLessonPrompt(request);
+  const prompt = `You are Cortex, the local teaching engine inside Shadecode Student.
+
+Generate a real teaching lesson, not a generic AI answer.
+
+REQUEST
+${resolved}
+
+VERIFIED LOCAL CURRICULUM
+${grounding || context || "No verified curriculum data is cached. Do not invent board-specific claims."}
+
+TEACHING CONTRACT
+- Stay on the requested subject and topic.
+- Teach the topic substantively and coherently.
+- For broad topics, map the territory and teach the major branches rather than summarising them.
+- Use learner context only to adapt sequencing and emphasis, never as curriculum authority.
+- Explain ideas before testing them.
+- Include worked reasoning where appropriate.
+- Checkpoints must not reveal their answers.
+- Do not invent syllabus claims, fake exam questions, or unexplained numerical results.
+- Avoid wall-of-text paragraphs.
+
+OUTPUT
+Return ONLY valid JSON:
+{
+  "title": "specific lesson title",
+  "blocks": [
+    {
+      "type": "objective|map|prior|concept|definition|structure|mechanism|formula|example|checkpoint|comparison|misconception|exam|application|mistake|synthesis|curiosity|practice|summary|next|tip",
+      "title": "short heading",
+      "content": "student-facing content"
+    }
+  ]
+}
+
+Use 8-14 substantive blocks for a standard request and 14-20 for a broad/deep request. A normal teaching lesson should contain an objective, explanation, worked example, checkpoint, synthesis/summary, and useful next step where appropriate.
+
+MATH
+Every mathematical expression uses single-dollar LaTeX delimiters. Never use caret exponents or ASCII fractions.`;
+
   try {
-    const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
-    const grounding = await getLocalCurriculumGrounding(job.request.subject, request.topic);
-    const groundingData = readLocalCurriculumGroundingData(job.request.subject, request.topic);
-    if (groundingData?.resolvedTopic) request.topic = groundingData.resolvedTopic;
-    request.broadTopic = request.broadTopic || isBroadTopic(request.topic);
-    if (request.broadTopic) request.depth = "deep";
-    const cachedContext = localContext(job);
-    const resolved = buildResolvedLessonPrompt(request);
-    const curriculum = grounding || cachedContext;
-    const prompt = `You are the local Cortex teaching engine for Shadecode Student. Return ONLY JSON.\n\n${resolved}\n\nLOCAL CURRICULUM DATA\n${curriculum || "No verified curriculum data is cached. Do not claim board-specific alignment or invent syllabus content."}\n\nLOCAL GENERATION RULES\n- Follow the interpreted intent exactly. Do not substitute your own lesson goal.\n- Teach the requested topic, not the entire surrounding subject.\n- Use only the supplied curriculum/knowledge data for curriculum-specific claims.\n- Learner memory may change sequencing or practice emphasis, but it is not curriculum authority.\n- Do not add arbitrary application, exam, proof, misconception or formula sections when they are not useful for this request.\n- Never invent an unexplained numerical result or a fake past-paper question.\n- If the supplied data does not support a factual claim, omit the claim rather than guessing.\n- Make the lesson feel like a coherent tutor session, not a data dump.\n\nFORMAT\nCreate 16-24 substantive blocks for broad/deep requests and 8-14 for standard requests. Use objective, map, prior, concept, definition, structure, mechanism, formula, example, checkpoint, comparison, misconception, exam, application, mistake, synthesis, curiosity, practice, summary, next or tip as appropriate. For broad/deep topics, map the territory first, teach major branches substantively, connect mechanisms and structures, then end with synthesis, curiosity or next steps. For broad/deep topics, the map, structure/mechanism, synthesis/curiosity and next blocks are first-class teaching content. Teach the major branches instead of summarising them. A teach request normally needs an objective, explanation, one worked example, a checkpoint and a concise summary. A practice request needs questions. A comparison needs an explicit comparison. A remedial request needs diagnosis and correction. Do not force unused block types.\n\nPRESENTATION\nNo wall-of-text paragraphs. Use short lines. One distinct idea per line. Use '- ' for lists and numbered lines for reasoning. Worked examples use Given:, Method:, Step 1:, Step 2:, Answer: on separate lines. Checkpoints use Question: and Think: on separate lines and do not reveal the answer in the checkpoint. Formulas get their own lines. Avoid internal-template headings.\n\nMATH NOTATION\nEvery mathematical expression must use single-dollar LaTeX delimiters. Examples: $x^{2}$, $e^{x}$, $\\frac{a}{b}$, $\\int x\\,dx$. Never emit caret exponents, ASCII fractions, or bare differential notation in student-facing content.\n\nJSON SCHEMA\n{"title":"specific topic-and-outcome title","blocks":[{"type":"objective|map|prior|concept|definition|structure|mechanism|formula|example|checkpoint|comparison|misconception|exam|application|mistake|synthesis|curiosity|practice|summary|next|tip","title":"short content-specific heading","content":"student-facing content"}]}`;
-    const response = await fetch(`${LOCAL_MODEL_BASE_URL.replace(/\/$/, "")}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: LOCAL_MODEL_NAME, messages: [{ role: "user", content: prompt }], stream: false, format: "json", options: { temperature: 0.2, num_predict: 4200 } }), signal: controller.signal });
-    if (!response.ok) throw new Error(`Local model HTTP ${response.status}`);
-    const data = await response.json() as { message?: { content?: unknown } };
-    const parsed = typeof data?.message?.content === "string" ? parseLocalModelLesson(data.message.content) : null;
+    if (!(await isBrowserLocalModelAvailable())) return null;
+
+    const raw = await generateBrowserLocal(prompt, undefined, {
+      maxTokens: request.broadTopic ? 3000 : 2200,
+      json: true,
+    });
+
+    const parsed = parseLocalModelLesson(raw);
     if (!parsed) return null;
-    const quality = lessonQualityFailures({ title: parsed.title, blocks: parsed.blocks.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content) })) }, request);
+
+    const quality = lessonQualityFailures({
+      title: parsed.title,
+      blocks: parsed.blocks.map((block) => ({
+        type: String(block.type),
+        title: typeof block.title === "string" ? block.title : undefined,
+        content: String(block.content),
+      })),
+    }, request);
+
     if (quality.failures.length) {
-      console.info("[LEARN] local model lesson rejected by quality gate", { failures: quality.failures, topic: request.topic });
+      console.info("[LEARN] browser-local lesson rejected by quality gate", {
+        failures: quality.failures,
+        topic: request.topic,
+      });
       return null;
     }
+
     return parsed;
-  } catch (error) { console.info("[LEARN] local model unavailable", error instanceof Error ? error.message : String(error)); return null; }
-  finally { clearTimeout(timer); }
+  } catch (error) {
+    console.info(
+      "[LEARN] browser-local model unavailable",
+      error instanceof Error ? error.message : String(error),
+    );
+    return null;
+  }
 }
 async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
   // One browser job owns one durable identity. Retries and refreshes reuse it.
