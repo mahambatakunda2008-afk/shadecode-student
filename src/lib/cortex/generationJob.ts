@@ -75,3 +75,19 @@ export function retryGenerationJob(id: string) {
   const job = getGenerationJob(id); if (!job || job.status === "complete" || job.status === "cancelled") return null;
   return updateGenerationJob(id, { status: "queued", progress: 0, error: undefined, retryCount: job.retryCount + 1 });
 }
+
+
+export function restoreGenerationJob<TRequest = Record<string, unknown>, TResult = unknown>(
+  job: GenerationJob<TRequest, TResult>
+) {
+  const existing = getGenerationJob(job.id);
+  if (existing) return existing as GenerationJob<TRequest, TResult>;
+  const restored: GenerationJob<TRequest, TResult> = {
+    ...job,
+    progress: Math.max(0, Math.min(100, Math.round(job.progress))),
+    updatedAt: job.updatedAt || Date.now(),
+  };
+  write([...read(), restored as GenerationJob<unknown, unknown>]);
+  notifyStorageChange();
+  return restored;
+}
