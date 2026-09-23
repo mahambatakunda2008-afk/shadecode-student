@@ -76,6 +76,19 @@ function Glyph({ feature, Icon, active, gradient, className }: {
     case "past-papers": return svg(<><path {...p} d="M7 4h11v14H7z" /><path {...p} d="M7 7H5v14h11v-3M10 8h5M10 11h5M10 14h3" /></>);
     case "insights": return svg(<><path {...p} d="M8.5 15.5c-1.5-1.1-2.4-2.9-2.4-4.8A5.9 5.9 0 0 1 12 4.8a5.9 5.9 0 0 1 5.9 5.9c0 1.9-.9 3.7-2.4 4.8-.9.7-1.4 1.4-1.5 2.3h-4c-.1-.9-.6-1.6-1.5-2.3z" /><path {...p} d="M9.8 20h4.4M10.3 17.8h3.4" /></>);
     case "profile": return svg(<><circle {...p} cx="12" cy="8" r="3.2" /><path {...p} d="M5.5 20c.8-3.5 3-5.2 6.5-5.2s5.7 1.7 6.5 5.2" /></>);
+    case "tasks": return svg(<><rect {...p} x="4.5" y="4" width="15" height="16" rx="2.2" /><path {...p} d="M8 8.2h.1M11 8.2h5.5M8 12h.1M11 12h5.5M8 15.8h.1M11 15.8h5.5" /></>);
+    case "assessments": return svg(<><path {...p} d="M7 3.8h10v16.4H7z" /><path {...p} d="M9.5 7.5h5M9.5 11h5M9.5 14.5h2.4M13.7 14.5h.1" /><path {...p} d="m8.8 14.4.8.8 1.5-1.7" /></>);
+    case "courses": return svg(<><path {...p} d="M4 6.2 12 3l8 3.2-8 3.2z" /><path {...p} d="M6 8.3v5.4c3.5 2.1 8.5 2.1 12 0V8.3M20 7v6.2" /><path {...p} d="M12 10.4v7.8" /></>);
+    case "study": return svg(<><path {...p} d="M4 5.2h16v13.6H4z" /><path {...p} d="M7 8.5h10M7 12h6M7 15.5h8" /><path {...p} d="M16.5 18.8v2M7.5 18.8v2" /></>);
+    case "study-plan": return svg(<><circle {...p} cx="12" cy="12" r="8" /><path {...p} d="M12 7.5v4.8l3.2 2M12 4v2M20 12h-2M12 20v-2M4 12h2" /></>);
+    case "progress": return svg(<><path {...p} d="M5 19.5V13M10 19.5V9M15 19.5V5M20 19.5V11" /><path {...p} d="M4 19.5h17" /></>);
+    case "achievements": return svg(<><path {...p} d="M7 4.5h10v6.2a5 5 0 0 1-10 0z" /><path {...p} d="M7 7H4.8v1.8A3.2 3.2 0 0 0 8 12M17 7h2.2v1.8A3.2 3.2 0 0 1 16 12M12 15.8v3.2M8.5 20h7" /><path {...p} d="m12 7.3.7 1.4 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z" /></>);
+    case "share": return svg(<><circle {...p} cx="18" cy="5.5" r="2.3" /><circle {...p} cx="6" cy="12" r="2.3" /><circle {...p} cx="18" cy="18.5" r="2.3" /><path {...p} d="m8.1 10.9 7.8-4.3M8.1 13.1l7.8 4.3" /></>);
+    case "whatsapp": return svg(<><path {...p} d="M12 4a7.8 7.8 0 0 0-6.8 11.6L4 20l4.6-1.2A7.8 7.8 0 1 0 12 4z" /><path {...p} d="M9.2 8.7c.3-.4.6-.4.9-.1l1 1.2c.2.2.2.5 0 .8l-.5.6c.7 1.2 1.5 1.9 2.7 2.5l.5-.5c.2-.2.5-.2.8-.1l1.2.7c.3.2.4.5.2.8-.4.8-1 1.1-1.8 1-3.6-.7-6.1-3.2-6.8-6.7-.1-.8.2-1.4.8-2z" /></>);
+    case "virtual-lab": return svg(<><path {...p} d="M9 4v6l-4.2 7.1A2 2 0 0 0 6.5 20h11a2 2 0 0 0 1.7-2.9L15 10V4" /><path {...p} d="M8.2 13h7.6M9.5 4h5" /><circle {...p} cx="10" cy="16.3" r=".7" /><circle {...p} cx="14" cy="17.4" r=".7" /></>);
+    case "workmate": return svg(<><rect {...p} x="4" y="6.5" width="16" height="13" rx="2" /><path {...p} d="M9 6.5V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v1.5M4 11.5h16M10 11.5v2h4v-2" /></>);
+    case "projects": return svg(<><path {...p} d="M4 6.5h6l1.7 2H20v10.7H4z" /><path {...p} d="M8 13h8M8 16h5" /></>);
+    case "studyspace": return svg(<><path {...p} d="M4 5.5h16v13H4z" /><path {...p} d="M8 5.5v13M4 9.5h4M4 13h4M4 16.5h4M12 9h5M12 12.5h5M12 16h3" /></>);
     case "settings": return svg(<><circle {...p} cx="12" cy="12" r="3.2" /><path {...p} d="m19.2 13.3 1.1 1-.9 1.6-1.5-.4a7 7 0 0 1-1.6 1.6l.4 1.5-1.6.9-1-1.1a7.5 7.5 0 0 1-2.1.3l-.6 1.4h-1.9l-.6-1.4a7.5 7.5 0 0 1-2.1-.3l-1 1.1-1.6-.9.4-1.5a7 7 0 0 1-1.6-1.6l-1.5.4-.9-1.6 1.1-1a7.4 7.4 0 0 1-.3-2.1l-1.4-.6V8.7l1.4-.6a7.4 7.4 0 0 1 .3-2.1l-1.1-1 .9-1.6 1.5.4a7 7 0 0 1 1.6-1.6l-.4-1.5 1.6-.9 1 1.1a7.5 7.5 0 0 1 2.1-.3L11.1.2H13l.6 1.4a7.5 7.5 0 0 1 2.1.3l1-1.1 1.6.9-.4 1.5a7 7 0 0 1 1.6 1.6l1.5-.4.9 1.6-1.1 1a7.4 7.4 0 0 1 .3 2.1l1.4.6v1.9l-1.4.6a7.4 7.4 0 0 1-.3 2.1z" transform="translate(-1.1 2.8) scale(.92)" /></>);
     default: return Icon ? <Icon aria-hidden="true" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} stroke="currentColor" strokeWidth={active ? 2.35 : 2} /> : null;
   }
