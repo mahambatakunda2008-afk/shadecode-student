@@ -78,11 +78,29 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const remaining = () => Math.max(0, maxChainMs - (Date.now() - startedAt));
   const providerTimeout = () => Math.min(perProviderMaxMs, remaining());
   const canTry = () => remaining() >= 1000;
+  // Grace period on top of the provider's declared budget before the hard race below gives up on it.
+  const HARD_TIMEOUT_GRACE_MS = 250;
   async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
     if (!canTry()) return null;
     const startTime = Date.now();
+    const timeout = providerTimeout();
+    // Hard race, independent of the request's own timeout/AbortController: some providers do not
+    // reliably honor an AbortSignal once the response body starts streaming (observed in production
+    // with OpenRouter: calls completed successfully after 30-49 seconds against a declared 6.5-9s
+    // budget, pushing the whole chain past the route's maxDuration and getting the request killed by
+    // the platform with no response to the user at all). This guarantees tryProvider itself always
+    // settles within `timeout` plus a small grace period, whatever the underlying request does; an
+    // abandoned request's eventual result, if any, is simply discarded.
+    let hardTimedOut = false;
+    const hardTimeout = new Promise<null>(resolve => {
+      setTimeout(() => { hardTimedOut = true; resolve(null); }, timeout + HARD_TIMEOUT_GRACE_MS);
+    });
     try {
-      const text = await request(providerTimeout());
+      const text = await Promise.race([request(timeout), hardTimeout]);
+      if (hardTimedOut) {
+        logResult({ provider, model, startTime, success: false, err: new Error(`Hard timeout: provider did not respond within its ${timeout}ms budget`) });
+        return null;
+      }
       if (text && text.trim().length > 20) { logResult({ provider, model, startTime, success: true, text }); return text; }
       logResult({ provider, model, startTime, success: false, err: "Empty or unusable AI response" });
     } catch (err) {

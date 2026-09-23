@@ -72,6 +72,38 @@ describe("callAI provider fallback chain", () => {
     ]);
   });
 
+  it("abandons a provider that hangs past its budget instead of waiting forever (hard timeout)", async () => {
+    // Regression for the 2026-09-21 outage: OpenRouter's fetch() sometimes resolved successfully only
+    // after 30-49 real seconds despite a 6.5-9s declared budget (AbortSignal not honored for the
+    // response-body phase), so the whole chain blew past the route's maxDuration and got killed by the
+    // platform with no response to the user. tryProvider must now abandon a hung request and move on
+    // within its declared timeout, whatever the request itself does.
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    let openRouterCalls = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes("openrouter.ai")) {
+        openRouterCalls++;
+        return new Promise<Response>(() => {}); // never resolves, never rejects
+      }
+      if (url.includes("cloudflare.com")) return jsonResponse({ result: { response: "a lesson from cloudflare" } });
+      throw new Error(`unexpected url: ${url}`);
+    });
+    const { callAI } = await import("./ai");
+    const startedAt = Date.now();
+    const result = await callAI("teach me quadratics", 500, {
+      skipCurriculumGrounding: true,
+      curriculumContext: "",
+      maxChainMs: 5000,
+      perProviderMaxMs: 200,
+    });
+    const elapsedMs = Date.now() - startedAt;
+    expect(result).toBe("a lesson from cloudflare");
+    expect(openRouterCalls).toBe(1);
+    // Should move on well within (budget + grace + a generous test margin), never hang until maxChainMs.
+    expect(elapsedMs, `took ${elapsedMs}ms`).toBeLessThan(2000);
+  }, 10000);
+
   it("skips OpenRouter for multimodal requests (media-aware providers only)", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "or-key");
     vi.stubEnv("GEMINI_API_KEY", "g-key");
