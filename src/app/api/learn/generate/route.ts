@@ -14,6 +14,7 @@ import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grou
 import { log } from "@/lib/observability";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
+import { computeRepairBudget } from "@/lib/learn/generationBudget";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -154,7 +155,12 @@ Return ONLY JSON:
 {"title":"specific title that names the actual topic and learning outcome","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|comparison|misconception|exam|application|mistake|practice|summary|tip","title":"short content-specific heading","content":"substantive student-facing content"}]}`;
 }
 
+// Combined ceiling for primary + repair, leaving margin under the route's maxDuration (60s) for
+// auth, curriculum lookup, DB insert, and network overhead outside the AI calls themselves.
+const MAX_TOTAL_GENERATION_MS = 50_000;
+
 async function generateAndValidate(request: ReturnType<typeof resolveLessonRequest>, curriculumContext: string, userId: string) {
+  const generationStartedAt = Date.now();
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
@@ -173,14 +179,21 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const initialFailures = parsed ? qualityCheck(parsed, request) : ["invalid-json-or-lesson-shape"];
   if (parsed && initialFailures.length === 0) return parsed;
 
-  try {
-    const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: 20000, perProviderMaxMs: 9000, curriculumContext });
-    if (repair) {
-      parsed = parseLesson(repair);
-      if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
+  // Bound the repair call by time actually remaining, not a fixed budget, so primary + repair
+  // together can never exceed MAX_TOTAL_GENERATION_MS regardless of how long primary took.
+  const repairBudget = computeRepairBudget({ elapsedMs: Date.now() - generationStartedAt, maxTotalMs: MAX_TOTAL_GENERATION_MS, preferredMaxChainMs: 20000, preferredPerProviderMaxMs: 9000 });
+  if (!repairBudget) {
+    console.warn("[LEARN] skipping repair: insufficient time remaining in the generation budget");
+  } else {
+    try {
+      const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
+      if (repair) {
+        parsed = parseLesson(repair);
+        if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
+      }
+    } catch (error) {
+      console.warn("[LEARN] repair failed", error instanceof Error ? error.message : String(error));
     }
-  } catch (error) {
-    console.warn("[LEARN] repair failed", error instanceof Error ? error.message : String(error));
   }
 
   const local = fallback();
