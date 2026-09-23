@@ -19,7 +19,7 @@ const STORAGE_KEY = "shadecode:cortex:generation-jobs:v2";
 const listeners = new Set<() => void>();
 const ACTIVE_STATUSES = new Set<GenerationJobStatus>(["queued", "warming", "generating", "partial"]);
 const INTERRUPTIBLE_STATUSES = new Set<GenerationJobStatus>(["warming", "generating", "partial"]);
-const DEFAULT_STALE_AFTER_MS = 45_000;
+const DEFAULT_STALE_AFTER_MS = 180_000;
 const MAX_JOBS = 30;
 
 function isBrowser() { return typeof window !== "undefined"; }
