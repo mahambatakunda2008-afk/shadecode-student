@@ -80,7 +80,7 @@ function parseLocalModelLesson(raw: string): LessonGenerationResult | null {
 }
 function parseLocalModelSection(raw: string): { title?: string; blocks: Array<Record<string, unknown>> } | null {
   try {
-    const stripped = raw.replace(/^\s*\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`\s*$/i, "").trim();
+    const stripped = raw.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     const start = stripped.indexOf("{");
     const end = stripped.lastIndexOf("}");
     if (start < 0 || end <= start) return null;
