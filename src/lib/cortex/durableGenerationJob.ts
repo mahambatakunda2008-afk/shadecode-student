@@ -6,9 +6,9 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
-export async function syncDurableGenerationJob(
+export async function syncDurableGenerationJob<TRequest, TResult>(
   token: string,
-  job: GenerationJob,
+  job: GenerationJob<TRequest, TResult>,
   event: DurableEvent,
 ) {
   if (!isBrowser() || !token || !job?.id) return;
