@@ -213,6 +213,7 @@ export async function POST(req: Request) {
       goal: typeof goal === "string" ? goal : undefined,
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
+    const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     const generationMode = body.generationMode === "section" ? "section" : "complete";
     const generationSectionIndex = Number.isInteger(body.generationSectionIndex) ? Number(body.generationSectionIndex) : 0;
     const generationSectionCount = Number.isInteger(body.generationSectionCount) ? Number(body.generationSectionCount) : (request.broadTopic ? 6 : 4);
@@ -286,7 +287,6 @@ export async function POST(req: Request) {
 
     // Persist the generation identity before model work begins. A timeout, browser refresh,
     // or provider outage can now resume the same lesson instead of creating a new one.
-    const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     if (durableJobId && resolvedSubject.id) {
       const { data: existingJob } = await supabase.from("learn_lessons")
         .select("id,title,blocks,topic,subject_id")
