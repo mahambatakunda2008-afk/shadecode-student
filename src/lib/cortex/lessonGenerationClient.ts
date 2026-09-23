@@ -142,10 +142,19 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: s
         "Consolidate with exam/practice thinking, synthesis, checkpoint prompts, and a useful next step.",
       ];
 
-  const allBlocks: Array<Record<string, unknown>> = [];
-  let title = request.topic || job.request.prompt;
+  const persistedPartial = job.partial && typeof job.partial === "object" ? job.partial : null;
+  const persistedBlocks = persistedPartial && Array.isArray((persistedPartial as Record<string, unknown>).blocks)
+    ? ((persistedPartial as Record<string, unknown>).blocks as Array<Record<string, unknown>>)
+    : [];
+  const persistedCompletedUnits = persistedPartial && typeof (persistedPartial as Record<string, unknown>).completedUnits === "number"
+    ? Math.max(0, Math.min(sectionPlan.length, Math.floor((persistedPartial as Record<string, unknown>).completedUnits as number)))
+    : 0;
+  const allBlocks: Array<Record<string, unknown>> = [...persistedBlocks];
+  let title = persistedPartial && typeof (persistedPartial as Record<string, unknown>).title === "string"
+    ? String((persistedPartial as Record<string, unknown>).title)
+    : request.topic || job.request.prompt;
 
-  for (let index = 0; index < sectionPlan.length; index += 1) {
+  for (let index = persistedCompletedUnits; index < sectionPlan.length; index += 1) {
     const sectionPrompt = `You are generating section ${index + 1} of ${sectionCount} of one coherent lesson.
 
 REQUEST
@@ -263,10 +272,18 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     let lastError: unknown = null;
     const request = resolvedRequest(job);
     const sectionCount = request.broadTopic ? 6 : 4;
-    let assembledBlocks: Array<Record<string, unknown>> = Array.isArray(job.partial?.blocks) ? [...job.partial.blocks] : [];
-    let assembledTitle = request.topic || job.request.prompt;
+    const persistedPartial = job.partial && typeof job.partial === "object" ? job.partial : null;
+    let assembledBlocks: Array<Record<string, unknown>> = persistedPartial && Array.isArray((persistedPartial as Record<string, unknown>).blocks)
+      ? [...((persistedPartial as Record<string, unknown>).blocks as Array<Record<string, unknown>>)]
+      : [];
+    const persistedCompletedUnits = persistedPartial && typeof (persistedPartial as Record<string, unknown>).completedUnits === "number"
+      ? Math.max(0, Math.min(sectionCount, Math.floor((persistedPartial as Record<string, unknown>).completedUnits as number)))
+      : 0;
+    let assembledTitle = persistedPartial && typeof (persistedPartial as Record<string, unknown>).title === "string"
+      ? String((persistedPartial as Record<string, unknown>).title)
+      : request.topic || job.request.prompt;
 
-    for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex += 1) {
+    for (let sectionIndex = persistedCompletedUnits; sectionIndex < sectionCount; sectionIndex += 1) {
       let sectionData: any = null;
       for (let attempt = 0; attempt < MAX_CLOUD_ATTEMPTS; attempt += 1) {
         const progress = Math.min(88, 20 + Math.round((sectionIndex / sectionCount) * 68) + Math.min(5, attempt));
