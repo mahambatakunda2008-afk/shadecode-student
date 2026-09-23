@@ -25,20 +25,41 @@ const sizes = {
   lg: { tile: "h-16 w-16 rounded-[18px]", icon: "h-8 w-8" },
 } as const;
 
-function Glyph({ feature, Icon, active, className }: {
-  feature?: ShadecodeFeatureName; Icon?: LucideIcon; active: boolean; className?: string;
+function Glyph({ feature, Icon, active, gradient, className }: {
+  feature?: ShadecodeFeatureName;
+  Icon?: LucideIcon;
+  active: boolean;
+  gradient: boolean;
+  className?: string;
 }) {
   if (!feature && Icon) {
     return <Icon aria-hidden="true" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)}
-      stroke="currentColor" strokeWidth={active ? 2.35 : 2} />;
+      stroke={gradient ? "url(#shadecode-icon-gradient)" : "currentColor"}
+      strokeWidth={active ? 2.35 : 2} />;
   }
 
   const sw = active ? 2.9 : 2.65;
-  const p = { fill: "none", stroke: "currentColor", strokeWidth: sw,
-    strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const p = {
+    fill: "none",
+    stroke: gradient ? "url(#shadecode-feature-icon-gradient)" : "currentColor",
+    strokeWidth: sw,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
 
   const svg = (children: ReactNode) => (
     <svg viewBox="0 0 24 24" className={cn("relative z-[1] shadecode-feature-icon__glyph", className)} aria-hidden="true">
+      {gradient && (
+        <defs>
+          <linearGradient id="shadecode-feature-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00E5FF" />
+            <stop offset="28%" stopColor="#00A8FF" />
+            <stop offset="58%" stopColor="#245BFF" />
+            <stop offset="82%" stopColor="#7A3CFF" />
+            <stop offset="100%" stopColor="#C135FF" />
+          </linearGradient>
+        </defs>
+      )}
       {children}
     </svg>
   );
@@ -62,7 +83,17 @@ function Glyph({ feature, Icon, active, className }: {
 
 export function ShadecodeFeatureIcon({ icon: Icon, feature, label, active = false, size = "md", tile = true, className }: Props) {
   const s = sizes[size];
-  if (!tile) return <Glyph feature={feature} Icon={Icon} active={active} className={cn(s.icon, className)} />;
+  if (!tile) {
+    return (
+      <Glyph
+        feature={feature}
+        Icon={Icon}
+        active={active}
+        gradient={false}
+        className={cn(s.icon, className)}
+      />
+    );
+  }
   return (
     <span aria-label={label} role={label ? "img" : undefined}
       className={cn("shadecode-feature-icon relative inline-flex shrink-0 items-center justify-center overflow-hidden border",
@@ -70,7 +101,7 @@ export function ShadecodeFeatureIcon({ icon: Icon, feature, label, active = fals
         active && "scale-[1.03] shadow-[0_12px_34px_rgba(122,60,255,0.20)]", s.tile, className)}>
       <span className="absolute inset-0 opacity-[0.12]" style={{ background: "var(--brand-gradient)" }} aria-hidden="true" />
       <span className="absolute inset-[1px] rounded-[inherit] border border-white/[0.04]" aria-hidden="true" />
-      <Glyph feature={feature} Icon={Icon} active={active} />
+      <Glyph feature={feature} Icon={Icon} active={active} gradient />
     </span>
   );
 }
