@@ -4,6 +4,20 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-22 (2) — Fixed a build-breaking type error in the concurrent durable-generation work
+
+Not related to the generation outage fix above; found while rebasing onto 30 new upstream commits that landed a local-first, durably-recoverable generation job system (`docs/architecture/CORTEX_DURABLE_GENERATION.md`, `CORTEX_FAULT_TOLERANCE.md`, `CORTEX_LOCAL_FIRST.md`).
+
+**Bug:** `syncDurableGenerationJob(token, job: GenerationJob, event)` in `durableGenerationJob.ts` left `GenerationJob` un-parameterized, so it defaulted to `GenerationJob<Record<string, unknown>, unknown>`. Its caller in `lessonGenerationClient.ts` passes a `GenerationJob<LessonGenerationInput, unknown>`, which TypeScript correctly refuses to narrow to the default — failing `tsc --noEmit` on `main`.
+
+**Fix:** made the function generic over `<TRequest, TResult>`. `job.request` is only ever JSON-serialized inside the function, never narrowed to a specific shape, so this is a pure type-signature fix with no behavior change.
+
+**Routing note, checked while investigating:** this refactor moved `lessonGenerationClient.ts` to POST `/api/learn` (the legacy route) instead of `/api/learn/generate`. Both routes are still live: `LearnPageClientV2.tsx` calls `/api/learn/generate` directly, so today's earlier generation-outage fix (hard-timeout + shared repair deadline) still applies where it matters. The legacy route's own budgets (24000+14000=38000ms declared, `maxDuration=90`) already have real margin and now also benefit from the `tryProvider` hard-race fix, since both routes share `callAI`.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 738 tests).
+
+---
+
 ## 2026-09-22 — Generation still failing after the OpenRouter restore: found and fixed the real root cause
 
 **Reported by the owner: still failing after the previous fix.** Investigated with fresh production data rather than patching again on assumption.
