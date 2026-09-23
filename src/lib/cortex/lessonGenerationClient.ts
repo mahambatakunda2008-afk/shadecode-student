@@ -261,41 +261,92 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (isBrowser() && !navigator.onLine) { const finished = await saveLocalResult(job); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
     let data: any = null;
     let lastError: unknown = null;
-    for (let attempt = 0; attempt < MAX_CLOUD_ATTEMPTS; attempt++) {
-      updateGenerationJob(job.id, { status: "generating", progress: Math.min(70, 20 + attempt * 10) });
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
-      try {
-        const response = await fetch("/api/learn", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            type: "lesson",
-            subject: job.request.subject,
-            topic: job.request.prompt,
-            difficulty: job.request.difficulty,
-            goal: job.request.goal,
-            level: job.request.level,
-            examBoard: job.request.examBoard,
-            generationJobId: job.id,
-          }),
-          cache: "no-store",
-          signal: controller.signal,
+    const request = resolvedRequest(job);
+    const sectionCount = request.broadTopic ? 6 : 4;
+    let assembledBlocks: Array<Record<string, unknown>> = Array.isArray(job.partial?.blocks) ? [...job.partial.blocks] : [];
+    let assembledTitle = request.topic || job.request.prompt;
+
+    for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex += 1) {
+      let sectionData: any = null;
+      for (let attempt = 0; attempt < MAX_CLOUD_ATTEMPTS; attempt += 1) {
+        const progress = Math.min(88, 20 + Math.round((sectionIndex / sectionCount) * 68) + Math.min(5, attempt));
+        updateGenerationJob(job.id, {
+          status: "generating",
+          progress,
+          partial: {
+            title: assembledTitle,
+            blocks: assembledBlocks,
+            completedUnits: sectionIndex,
+            totalUnits: sectionCount,
+          },
         });
-        data = await response.json().catch(() => ({}));
-        if (response.ok && !data?.error) updateGenerationJob(job.id, { status: "partial", progress: 75 });
-        if (response.ok && !data?.error) break;
-        const retryable = response.status === 408 || response.status === 409 || response.status === 422 || response.status === 429 || response.status >= 500;
-        lastError = new Error(data?.error || `Generation failed (${response.status})`);
-        if (!retryable || attempt === MAX_CLOUD_ATTEMPTS - 1) throw lastError;
-      } catch (error) {
-        lastError = error;
-        if (!shouldRetry(attempt + 1, MAX_CLOUD_ATTEMPTS)) throw error;
-      } finally {
-        clearTimeout(timeout);
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
+        try {
+          const response = await fetch("/api/learn", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              type: "lesson",
+              generationMode: "section",
+              generationSectionIndex: sectionIndex,
+              generationSectionCount: sectionCount,
+              priorBlocks: assembledBlocks.slice(-12),
+              subject: job.request.subject,
+              topic: job.request.prompt,
+              difficulty: job.request.difficulty,
+              goal: job.request.goal,
+              level: job.request.level,
+              examBoard: job.request.examBoard,
+              generationJobId: job.id,
+            }),
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          sectionData = await response.json().catch(() => ({}));
+          if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
+
+          lastError = new Error(sectionData?.error || `Section generation failed (${response.status})`);
+          const retryable = response.status === 408 || response.status === 409 || response.status === 422 ||
+            response.status === 429 || response.status >= 500;
+          if (!retryable || attempt === MAX_CLOUD_ATTEMPTS - 1) throw lastError;
+        } catch (error) {
+          lastError = error;
+          if (!shouldRetry(attempt + 1, MAX_CLOUD_ATTEMPTS)) throw error;
+        } finally {
+          clearTimeout(timeout);
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelay(attempt)));
       }
-      await new Promise(resolve => setTimeout(resolve, retryDelay(attempt)));
+
+      if (!sectionData?.blocks?.length) {
+        throw lastError instanceof Error ? lastError : new Error("The lesson section service returned no usable section.");
+      }
+
+      if (typeof sectionData.title === "string" && sectionIndex === 0) assembledTitle = sectionData.title;
+      assembledBlocks = Array.isArray(sectionData.partialBlocks)
+        ? sectionData.partialBlocks
+        : [...assembledBlocks, ...sectionData.blocks];
+
+      updateGenerationJob(job.id, {
+        status: "partial",
+        progress: Math.min(90, 20 + Math.round(((sectionIndex + 1) / sectionCount) * 70)),
+        partial: {
+          title: assembledTitle,
+          blocks: assembledBlocks,
+          completedUnits: sectionIndex + 1,
+          totalUnits: sectionCount,
+        },
+      });
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
     }
+
+    data = {
+      id: job.id,
+      title: assembledTitle,
+      blocks: assembledBlocks,
+    };
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
     updateGenerationJob(job.id, { status: "partial", progress: 82 });
     const request = resolvedRequest(job);
