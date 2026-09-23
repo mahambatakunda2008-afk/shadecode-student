@@ -78,6 +78,33 @@ function parseLocalModelLesson(raw: string): LessonGenerationResult | null {
     return { id: `local-model-${Date.now().toString(36)}`, title: value.title.trim().slice(0, 255), blocks, localModel: true };
   } catch { return null; }
 }
+function parseLocalModelSection(raw: string): { title?: string; blocks: Array<Record<string, unknown>> } | null {
+  try {
+    const stripped = raw.replace(/^\s*\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`\s*$/i, "").trim();
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    const value = JSON.parse(stripped.slice(start, end + 1)) as { title?: unknown; blocks?: unknown };
+    if (!Array.isArray(value.blocks)) return null;
+    const blocks = value.blocks
+      .filter((item): item is Record<string, unknown> =>
+        !!item &&
+        typeof item === "object" &&
+        typeof (item as Record<string, unknown>).type === "string" &&
+        typeof (item as Record<string, unknown>).content === "string" &&
+        String((item as Record<string, unknown>).content).trim().length >= 30
+      )
+      .slice(0, 6);
+    if (blocks.length < 3) return null;
+    return {
+      title: typeof value.title === "string" ? value.title.trim().slice(0, 255) : undefined,
+      blocks,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: string): Promise<LessonGenerationResult | null> {
   if (!isBrowser()) return null;
 
@@ -165,7 +192,7 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
         maxTokens: request.broadTopic ? 1400 : 1200,
         json: true,
       });
-      const parsed = parseLocalModelLesson(raw);
+      const parsed = parseLocalModelSection(raw);
       if (!parsed || parsed.blocks.length < 3) return null;
 
       if (index === 0 && parsed.title) title = parsed.title;
