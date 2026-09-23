@@ -348,8 +348,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       blocks: assembledBlocks,
     };
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
-    updateGenerationJob(job.id, { status: "partial", progress: 82 });
-    const request = resolvedRequest(job);
+    updateGenerationJob(job.id, { status: "partial", progress: 92 });
     const result = validateResult({ id: data.id, title: data.title || request.topic || job.request.prompt, blocks: data.blocks }, request);
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
     updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: result.title, blocks: result.blocks } });
