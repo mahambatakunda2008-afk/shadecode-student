@@ -139,7 +139,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
         if (response.ok && !data?.error) break;
         const retryable = response.status === 408 || response.status === 409 || response.status === 422 || response.status === 429 || response.status >= 500;
         lastError = new Error(data?.error || `Generation failed (${response.status})`);
-        if (!retryable || attempt === 2) throw lastError;
+        if (!retryable || attempt === MAX_CLOUD_ATTEMPTS - 1) throw lastError;
       } catch (error) {
         lastError = error;
         if (attempt === 2) throw error;
