@@ -11,6 +11,9 @@ import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subje
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
+import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
+import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
+import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -186,58 +189,119 @@ export async function POST(req: Request) {
     const effectiveSubject = subjectAccess.subject;
     const resolvedSubject = { id: subjectAccess.subjectId, name: subjectAccess.subject };
     const validDifficulty: LessonDifficulty = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "medium";
-    const prompt = buildDeepLessonPrompt(effectiveSubject, topic.trim(), validDifficulty);
-
-    // Keep the rich lesson structure, but cap generation to the amount the schema can actually use.
-    // The previous 11k token ceiling allowed long, repetitive JSON and increased provider latency.
-    let raw = await callAI(prompt, 5200, {
-      userId: user.id,
-      feature: "lesson_assistant",
-      subfeature: "generate_deep_lesson",
-      maxChainMs: 18000,
-      perProviderMaxMs: 5000,
+    const request = resolveLessonRequest({
+      prompt: topic.trim(),
+      subject: effectiveSubject,
+      topic: topic.trim(),
+      level: typeof level === "string" ? level : undefined,
+      difficulty: validDifficulty,
+      goal: typeof goal === "string" ? goal : undefined,
+      examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
-    if (!raw) {
-      const recoveryPrompt = prompt + "\n\nRECOVERY MODE\nThe first generation attempt was unavailable. Produce a complete but compact lesson now. Preserve the requested topic, subject, learner level, and teaching intent. Return ONLY valid JSON in the same schema. Prioritize accurate core teaching, two worked examples, checkpoints, misconceptions, synthesis, and next steps. Do not mention this recovery instruction.";
-      raw = await callAI(recoveryPrompt, 3800, {
-        userId: user.id,
-        feature: "lesson_assistant",
-        subfeature: "generate_recovery_lesson",
-        maxChainMs: 16000,
-        perProviderMaxMs: 5000,
-      });
-    }
-    if (!raw) return NextResponse.json({ error: "Lesson generation is temporarily unavailable. Cortex will retry this request automatically." }, { status: 503 });
-    let parsed = safeParseJSON(raw);
+    const prompt = [
+      buildResolvedLessonPrompt(request),
+      buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      "\nRESUMABLE GENERATION CONTRACT",
+      "This request may be resumed after an interrupted generation run. Return a complete lesson for the exact request. Do not rely on hidden prior output.",
+      "For broad topics, follow the curriculum map and give every major branch substantive treatment. Do not spend the whole lesson on the first branch.",
+    ].join("\n\n");
 
-    const initialScore = parsed ? lessonQualityScore(parsed.blocks) : 0;
-    // A repair is worthwhile only after we have a real AI draft. Avoid spending a second full
-    // generation call when the provider returned nothing, and keep repair targeted and bounded.
-    if (parsed && (initialScore < 58 || parsed.blocks.length < 14)) {
-      const repairPrompt = buildLessonRepairPrompt(effectiveSubject, topic.trim(), raw);
-      const repaired = await callAI(repairPrompt, 4200, {
-        userId: user.id,
-        feature: "lesson_assistant",
-        subfeature: "deepen_lesson",
-        maxChainMs: 10000,
-        perProviderMaxMs: 4500,
+    // Persist the generation identity before model work begins. A timeout, browser refresh,
+    // or provider outage can now resume the same lesson instead of creating a new one.
+    const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
+    if (durableJobId && resolvedSubject.id) {
+      const { data: existingJob } = await supabase.from("learn_lessons")
+        .select("id,title,blocks,topic,subject_id")
+        .eq("id", durableJobId).eq("user_id", user.id).maybeSingle();
+      if (existingJob?.id && Array.isArray(existingJob.blocks) && existingJob.blocks.length > 0) {
+        return NextResponse.json({
+          id: existingJob.id, title: existingJob.title, blocks: existingJob.blocks,
+          qualityScore: lessonQualityScore(existingJob.blocks as LessonBlock[]),
+          subject: effectiveSubject, recovered: true,
+        });
+      }
+      if (!existingJob?.id) {
+        await supabase.from("learn_lessons").insert({
+          id: durableJobId, user_id: user.id, subject_id: resolvedSubject.id,
+          topic: request.topic.slice(0, 500),
+          title: `Cortex is building ${request.topic}`.slice(0, 255),
+          description: "Generation is resumable. This draft is not yet complete.",
+          difficulty: validDifficulty, progress: 0, blocks: [],
+        });
+      }
+    }
+
+    // One bounded primary pass, followed by targeted repair. Repair is driven by concrete
+    // quality failures instead of blindly regenerating an already-good lesson.
+    let raw: string | null = null;
+    try {
+      raw = await callAI(prompt, 5000, {
+        userId: user.id, feature: "lesson_assistant", subfeature: "generate_deep_lesson",
+        maxChainMs: 24000, perProviderMaxMs: 6500,
       });
-      if (repaired) {
-        const repairedParsed = safeParseJSON(repaired);
-        if (repairedParsed && lessonQualityScore(repairedParsed.blocks) >= initialScore) {
-          parsed = repairedParsed;
-          raw = repaired;
+    } catch (error) {
+      console.warn("[LEARN] primary lesson generation failed", error instanceof Error ? error.message : String(error));
+    }
+
+    let parsed = raw ? safeParseJSON(raw) : null;
+    let failures = parsed ? lessonQualityFailures(parsed, request).failures : ["generation-unavailable-or-invalid-json"];
+
+    if (!parsed || failures.length > 0) {
+      if (raw) {
+        try {
+          const repairPrompt = buildLessonRepairPrompt(
+            effectiveSubject, request.topic, raw, "", validDifficulty, failures,
+          ) + "\n\nREPAIR CONTRACT\nRepair the identified defects. Preserve correct material. If one branch is weak, deepen that branch specifically. Return only valid JSON.";
+          const repaired = await callAI(repairPrompt, 4200, {
+            userId: user.id, feature: "lesson_assistant", subfeature: "targeted_lesson_repair",
+            maxChainMs: 14000, perProviderMaxMs: 6000,
+          });
+          const repairedParsed = repaired ? safeParseJSON(repaired) : null;
+          if (repairedParsed) {
+            const repairedFailures = lessonQualityFailures(repairedParsed, request).failures;
+            if (repairedFailures.length === 0 || repairedFailures.length < failures.length) {
+              parsed = repairedParsed;
+              failures = repairedFailures;
+            }
+          }
+        } catch (error) {
+          console.warn("[LEARN] targeted lesson repair failed", error instanceof Error ? error.message : String(error));
         }
       }
     }
+
+    // Curated recovery is the final safety net for known high-traffic topics. It is never
+    // represented as AI output and never pretends to cover unsupported curriculum.
     if (!parsed?.blocks.length) {
-      log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `AI returned invalid/deeply incomplete lesson JSON: ${raw.slice(0, 300)}` });
-      return NextResponse.json({ error: "Couldn't generate a complete lesson on that topic. Please try again or rephrase it." }, { status: 422 });
+      const fallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
+      if (fallback) { parsed = fallback; failures = lessonQualityFailures(parsed, request).failures; }
+    }
+
+    if (!parsed?.blocks.length || failures.length > 0) {
+      log.lessonGenerationFailed({
+        userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
+        error: `Lesson pipeline exhausted: ${failures.join(" | ")}`,
+      });
+      if (durableJobId) {
+        await supabase.from("learn_lessons").update({
+          title: `Cortex is retrying ${request.topic}`.slice(0, 255),
+          description: "Generation did not finish this pass. The same request can resume safely.",
+          updated_at: new Date().toISOString(),
+        }).eq("id", durableJobId).eq("user_id", user.id);
+      }
+      return NextResponse.json({
+        error: "Cortex could not finish this lesson in this run. The request is preserved and can resume safely.",
+        retryable: true,
+      }, { status: 503 });
     }
 
     const finalScore = lessonQualityScore(parsed.blocks);
-    if (finalScore < 45) return NextResponse.json({ error: "The lesson did not meet the depth standard. Please try again." }, { status: 422 });
-
+    if (finalScore < 45) {
+      return NextResponse.json({
+        error: "The lesson did not meet the depth standard yet. Cortex preserved the request for another recovery pass.",
+        retryable: true,
+      }, { status: 503 });
+    }
     let subjectId = resolvedSubject.id;
     if (!subjectId && effectiveSubject) {
       const { data: existingSubject } = await supabase.from("subjects").select("id").eq("user_id", user.id).eq("name", effectiveSubject).maybeSingle();
@@ -246,15 +310,27 @@ export async function POST(req: Request) {
     }
     if (!subjectId) return NextResponse.json({ error: "Unable to resolve the lesson subject." }, { status: 500 });
 
-    const lessonRow = { ...(generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? { id: String(generationJobId) } : {}), user_id: user.id, subject_id: subjectId, topic: topic.trim().slice(0,500), title: parsed.title, description: `A deep ${validDifficulty} lesson on ${topic.trim()}`, difficulty: validDifficulty, progress: 0, blocks: parsed.blocks };
-    const { data: inserted, error: insertError } = await supabase.from("learn_lessons").insert(lessonRow).select("id").single();
-    if (insertError) {
-      if (generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) && /duplicate|unique/i.test(insertError.message)) {
-        const { data: existingLesson } = await supabase.from("learn_lessons").select("id,title,blocks").eq("id", String(generationJobId)).eq("user_id", user.id).maybeSingle();
-        if (existingLesson?.id) return NextResponse.json({ id: existingLesson.id, title: existingLesson.title, blocks: existingLesson.blocks ?? [], qualityScore: finalScore, subject: effectiveSubject, recovered: true });
-      }
-      log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${insertError.message}` });
-      return NextResponse.json({ error: "The lesson was generated but couldn't be saved. Cortex will retry safely." }, { status: 500 });
+    const lessonRow = {
+      user_id: user.id, subject_id: subjectId, topic: request.topic.slice(0, 500),
+      title: parsed.title, description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+      difficulty: validDifficulty, progress: 0, blocks: parsed.blocks,
+      updated_at: new Date().toISOString(),
+    };
+    let savedId = durableJobId;
+    let saveError: any = null;
+    if (durableJobId) {
+      const { data: updated, error } = await supabase.from("learn_lessons")
+        .update(lessonRow).eq("id", durableJobId).eq("user_id", user.id).select("id").maybeSingle();
+      savedId = updated?.id ?? durableJobId;
+      saveError = error;
+    } else {
+      const { data: inserted, error } = await supabase.from("learn_lessons").insert(lessonRow).select("id").single();
+      savedId = inserted?.id ?? null;
+      saveError = error;
+    }
+    if (saveError || !savedId) {
+      log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
+      return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
     return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
