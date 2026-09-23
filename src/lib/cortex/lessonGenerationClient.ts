@@ -13,6 +13,7 @@ export interface LessonGenerationInput { prompt: string; subject: string; diffic
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
 const CLOUD_GENERATION_TIMEOUT_MS = 55_000;
+const MAX_CLOUD_ATTEMPTS = 3;
 const LOCAL_MODEL_TIMEOUT_MS = 30_000;
 const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL?.trim()) || "";
 const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
@@ -103,6 +104,7 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>): Promise
   finally { clearTimeout(timer); }
 }
 async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
+  // One browser job owns one durable identity. Retries and refreshes reuse it.
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   try {
