@@ -5,6 +5,13 @@ import type { CortexContext } from "./types";
 export const LOCAL_MODEL_ID = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
 export const LOCAL_MODEL_VRAM_MB = 1129;
 
+export type LocalModelStatus =
+  | "unsupported"
+  | "available"
+  | "loading"
+  | "ready"
+  | "error";
+
 type WebLLMEngine = {
   chat: {
     completions: {
@@ -18,18 +25,68 @@ type WebLLMEngine = {
   };
 };
 
+type WebLLMModule = {
+  CreateMLCEngine: (
+    modelId: string,
+    config?: { initProgressCallback?: (report: { progress?: number; text?: string }) => void },
+  ) => Promise<WebLLMEngine>;
+  CreateWebWorkerMLCEngine: (
+    worker: Worker,
+    modelId: string,
+    config?: { initProgressCallback?: (report: { progress?: number; text?: string }) => void },
+  ) => Promise<WebLLMEngine>;
+};
+
 let enginePromise: Promise<WebLLMEngine> | null = null;
+let worker: Worker | null = null;
+let status: LocalModelStatus = "available";
+let loadProgress = 0;
+const listeners = new Set<(status: LocalModelStatus, progress: number) => void>();
 
 function browser() {
   return typeof window !== "undefined";
 }
 
+function publish(nextStatus: LocalModelStatus, progress = loadProgress) {
+  status = nextStatus;
+  loadProgress = Math.max(0, Math.min(100, progress));
+  for (const listener of listeners) listener(status, loadProgress);
+}
+
+export function getBrowserLocalModelStatus() {
+  return { status, progress: loadProgress, modelId: LOCAL_MODEL_ID };
+}
+
+export function subscribeBrowserLocalModelStatus(
+  listener: (status: LocalModelStatus, progress: number) => void,
+) {
+  listeners.add(listener);
+  listener(status, loadProgress);
+  return () => listeners.delete(listener);
+}
+
 export async function isBrowserLocalModelAvailable(): Promise<boolean> {
-  if (!browser() || !("gpu" in navigator)) return false;
+  if (!browser() || !("gpu" in navigator)) {
+    publish("unsupported", 0);
+    return false;
+  }
+
   try {
-    const adapter = await (navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu?.requestAdapter();
-    return Boolean(adapter);
+    const adapter = await (
+      navigator as Navigator & {
+        gpu?: { requestAdapter(): Promise<unknown> };
+      }
+    ).gpu?.requestAdapter();
+
+    if (!adapter) {
+      publish("unsupported", 0);
+      return false;
+    }
+
+    if (status === "unsupported" || status === "error") publish("available", 0);
+    return true;
   } catch {
+    publish("unsupported", 0);
     return false;
   }
 }
@@ -39,17 +96,46 @@ async function loadEngine(): Promise<WebLLMEngine> {
   if (!(await isBrowserLocalModelAvailable())) throw new Error("WebGPU is unavailable.");
 
   if (!enginePromise) {
+    publish("loading", 0);
+
     enginePromise = import("@mlc-ai/web-llm")
-      .then(async ({ CreateMLCEngine }) => {
-        const engine = await CreateMLCEngine(LOCAL_MODEL_ID, {
-          initProgressCallback: () => {
-            // Runtime/model loading progress is separate from teaching progress.
-          },
-        });
-        return engine as unknown as WebLLMEngine;
+      .then(async (webllm) => {
+        const module = webllm as unknown as WebLLMModule;
+        const initProgressCallback = (report: { progress?: number; text?: string }) => {
+          const progress = typeof report.progress === "number" ? report.progress * 100 : loadProgress;
+          publish("loading", progress);
+        };
+
+        try {
+          worker = new Worker(new URL("./webllm.worker.ts", import.meta.url), {
+            type: "module",
+          });
+
+          const engine = await module.CreateWebWorkerMLCEngine(
+            worker,
+            LOCAL_MODEL_ID,
+            { initProgressCallback },
+          );
+
+          publish("ready", 100);
+          return engine;
+        } catch (workerError) {
+          worker?.terminate();
+          worker = null;
+
+          // Keep local inference available on browsers where the bundler/worker
+          // path is unavailable. This fallback is still browser-local, never cloud.
+          const engine = await module.CreateMLCEngine(LOCAL_MODEL_ID, {
+            initProgressCallback,
+          });
+
+          publish("ready", 100);
+          return engine;
+        }
       })
       .catch((error) => {
         enginePromise = null;
+        publish("error", 0);
         throw error;
       });
   }
@@ -69,7 +155,7 @@ function contextText(context?: CortexContext) {
 export async function generateBrowserLocal(
   prompt: string,
   context?: CortexContext,
-  options?: { maxTokens?: number; json?: boolean }
+  options?: { maxTokens?: number; json?: boolean },
 ) {
   const engine = await loadEngine();
   const result = await engine.chat.completions.create({
