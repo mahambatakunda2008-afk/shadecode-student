@@ -1,4 +1,4 @@
-import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
+import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, restoreGenerationJob, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { classifyCortexFailure, retryDelay, shouldRetry } from "@/lib/cortex/faultTolerance";
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
@@ -9,7 +9,8 @@ import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/le
 import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
-import { syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
+import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
+import { listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
@@ -187,5 +188,5 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   } finally { if (runningJobId === job.id) runningJobId = null; }
 }
 export function queueLessonGeneration(input: LessonGenerationInput) { return createGenerationJob("lesson", input); }
-export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; const active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); const job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) return null; markInterruptedJobsForRetry(); return runJob(job, token); }
+export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => { const row = item as Record<string, unknown>; return row.kind === "lesson" && row.request && typeof row.request === "object"; }) as Record<string, unknown> | undefined; if (remote) { const restored: GenerationJob<LessonGenerationInput> = { id: String(remote.id), kind: "lesson", status: String(remote.status) as GenerationJobStatus, request: remote.request as LessonGenerationInput, result: remote.result, partial: remote.partial, progress: typeof remote.progress === "number" ? remote.progress : 0, createdAt: Date.parse(String(remote.created_at ?? "")) || Date.now(), updatedAt: Date.parse(String(remote.updated_at ?? "")) || Date.now(), error: remote.error && typeof remote.error === "object" ? String((remote.error as Record<string, unknown>).message ?? "") : undefined, retryCount: typeof remote.retry_count === "number" ? remote.retry_count : 0 }; job = restoreGenerationJob(restored); } } if (!job) return null; markInterruptedJobsForRetry(); return runJob(job, token); }
 export async function startLessonGeneration(input: LessonGenerationInput, token: string | null) { const job = queueLessonGeneration(input); if (token && isBrowser()) { void syncDurableGenerationJob(token, job, "created"); void runJob(job, token); return getGenerationJobs().find(item => item.id === job.id) ?? job; } if (isBrowser()) return saveLocalResult(job); return job; }
