@@ -90,6 +90,21 @@ function validateLesson(value: unknown): { title: string; blocks: LessonBlock[] 
   if (blocks.length < 14 || ![...required].every(type => types.has(type))) return null;
   return { title: p.title.trim().slice(0, 255), blocks };
 }
+function safeParseSectionJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
+  const json = extractJSONObject(raw);
+  if (!json) return null;
+  try {
+    const value = JSON.parse(json) as { title?: unknown; blocks?: unknown };
+    if (typeof value.title !== "string" || !Array.isArray(value.blocks)) return null;
+    const blocks = value.blocks.filter((b): b is LessonBlock =>
+      !!b && typeof b === "object" &&
+      typeof (b as LessonBlock).type === "string" &&
+      typeof (b as LessonBlock).content === "string" &&
+      (b as LessonBlock).content.trim().length >= 40
+    ).slice(0, 6);
+    return blocks.length >= 3 ? { title: value.title.trim().slice(0,255), blocks } : null;
+  } catch { return null; }
+}
 function safeParseJSON(raw: string): { title: string; blocks: LessonBlock[] } | null {
   const candidates = [extractJSONObject(raw), extractJSONObject(cleanJsonText(raw)), extractJSONObject(raw.replace(/\\/g, ""))].filter((v): v is string => Boolean(v));
   for (const candidate of candidates) { try { const parsed = validateLesson(JSON.parse(candidate)); if (parsed) return parsed; } catch {} }
@@ -198,6 +213,69 @@ export async function POST(req: Request) {
       goal: typeof goal === "string" ? goal : undefined,
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
+    const generationMode = body.generationMode === "section" ? "section" : "complete";
+    const generationSectionIndex = Number.isInteger(body.generationSectionIndex) ? Number(body.generationSectionIndex) : 0;
+    const generationSectionCount = Number.isInteger(body.generationSectionCount) ? Number(body.generationSectionCount) : (request.broadTopic ? 6 : 4);
+    const priorBlocks = Array.isArray(body.priorBlocks) ? body.priorBlocks.slice(-12) : [];
+
+    if (generationMode === "section") {
+      const sectionJobs = request.broadTopic
+        ? [
+            "Orient the learner: define the territory, prerequisites, vocabulary, and why the topic matters.",
+            "Teach the first major concepts deeply, including relationships and underlying reasoning.",
+            "Teach the next major concepts deeply, including mechanisms, structures, formulas, or processes where relevant.",
+            "Connect the ideas with worked examples, applications, comparisons, and step-by-step reasoning.",
+            "Handle misconceptions, common mistakes, exam-style thinking, and how to recognise what a question is testing.",
+            "Synthesize the whole topic, connect the pieces, add curiosity/application, and give a clear next step.",
+          ]
+        : [
+            "Build the foundation: prerequisites, vocabulary, core idea, and mental model.",
+            "Teach the main concepts deeply with explanations, relationships, and a worked example.",
+            "Extend the understanding with applications, comparisons, mechanisms/formulas, and common mistakes.",
+            "Consolidate with exam/practice thinking, synthesis, checkpoint prompts, and a useful next step.",
+          ];
+      const sectionJob = sectionJobs[generationSectionIndex] ?? sectionJobs[sectionJobs.length - 1];
+      const sectionPrompt = [
+        `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
+        buildResolvedLessonPrompt(request),
+        buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+        `SECTION JOB: ${sectionJob}`,
+        `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
+        "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
+        "Return ONLY JSON with {"title":"...","blocks":[{"type":"...","title":"...","content":"..."}]}",
+        "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
+      ].join("\n\n");
+      const rawSection = await callAI(sectionPrompt, 2200, {
+        userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_section",
+        maxChainMs: 22000, perProviderMaxMs: 6000,
+      });
+      const section = rawSection ? safeParseSectionJSON(rawSection) : null;
+      if (!section) {
+        return NextResponse.json({ error: "Cloud lesson section was invalid or incomplete.", retryable: true }, { status: 503 });
+      }
+      const currentBlocks = [...priorBlocks, ...section.blocks].slice(-28);
+      if (durableJobId) {
+        const update = await supabase.from("learn_lessons").update({
+          title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0,255),
+          topic: request.topic.slice(0,500),
+          description: "Generation is resumable. Partial sections are saved as they complete.",
+          difficulty: validDifficulty,
+          progress: Math.min(99, Math.round(((generationSectionIndex + 1) / generationSectionCount) * 90)),
+          blocks: currentBlocks,
+          updated_at: new Date().toISOString(),
+        }).eq("id", durableJobId).eq("user_id", user.id).select("id").maybeSingle();
+        if (update.error) return NextResponse.json({ error: "The section was generated but could not be persisted.", retryable: true }, { status: 500 });
+      }
+      return NextResponse.json({
+        sectionIndex: generationSectionIndex,
+        sectionCount: generationSectionCount,
+        title: section.title,
+        blocks: section.blocks,
+        partialBlocks: currentBlocks,
+        complete: generationSectionIndex + 1 >= generationSectionCount,
+      });
+    }
+
     const prompt = [
       buildResolvedLessonPrompt(request),
       buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
