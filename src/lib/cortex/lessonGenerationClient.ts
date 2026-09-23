@@ -1,4 +1,5 @@
-import { createGenerationJob, getActiveGenerationJobs, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
+import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
+import { classifyCortexFailure, retryDelay, shouldRetry } from "@/lib/cortex/faultTolerance";
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
@@ -142,11 +143,11 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
         if (!retryable || attempt === MAX_CLOUD_ATTEMPTS - 1) throw lastError;
       } catch (error) {
         lastError = error;
-        if (attempt === 2) throw error;
+        if (!shouldRetry(attempt + 1, MAX_CLOUD_ATTEMPTS)) throw error;
       } finally {
         clearTimeout(timeout);
       }
-      await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
+      await new Promise(resolve => setTimeout(resolve, retryDelay(attempt)));
     }
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
     updateGenerationJob(job.id, { status: "partial", progress: 82 });
@@ -169,13 +170,14 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (isBrowser() && !navigator.onLine) {
       updateGenerationJob(job.id, { status: "queued", progress: 20, error: "Waiting for a connection." });
       saveActiveId(job.id);
-    } else if (job.retryCount < 5) {
+    } else if (shouldRetry(job.retryCount, 5)) {
       const retryCount = job.retryCount + 1;
-      updateGenerationJob(job.id, { status: "queued", progress: Math.min(90, Math.max(20, job.progress)), retryCount, error: `Cortex hit a temporary generation failure. Retrying automatically (attempt ${retryCount + 1}/6)…` });
+      const failureClass = classifyCortexFailure(error);
+      updateGenerationJob(job.id, { status: "queued", progress: Math.min(90, Math.max(20, job.progress)), retryCount, error: `Cortex hit a ${failureClass} generation failure. Retrying automatically (attempt ${retryCount + 1}/6)…` });
       saveActiveId(job.id);
       setTimeout(() => {
         if (getGenerationJob(job.id)?.status === "queued") void runJob(getGenerationJob(job.id) as GenerationJob<LessonGenerationInput>, token);
-      }, Math.min(8000, 1500 * retryCount));
+      }, retryDelay(retryCount));
     } else {
       updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: `${message} Cortex exhausted its automatic recovery attempts. Your request is still safe to retry.` });
       if (getActiveId() === job.id) saveActiveId(null);
