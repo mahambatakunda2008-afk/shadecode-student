@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
+import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -27,12 +28,32 @@ const CHECK_SCHEMA = `Return ONLY valid JSON with this shape:
 }`;
 
 function extractJson(text: string) {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  return JSON.parse(fenced ? fenced[1] : text);
+  const parsed = parseCortexJson(text);
+  const validation = validateCortexObject(parsed, { minTextLength: 3, maxTextLength: 20000 });
+  if (!validation.ok) throw new Error("Cortex Verify output failed shared QA.");
+  return parsed;
 }
 
 function validCheck(value: any) {
-  return value && typeof value.score === "number" && typeof value.correct === "boolean" && typeof value.cortexInsight === "string" && Array.isArray(value.steps);
+  return value &&
+    typeof value === "object" &&
+    typeof value.problem === "string" &&
+    typeof value.score === "number" &&
+    value.score >= 0 &&
+    typeof value.correct === "boolean" &&
+    typeof value.cortexInsight === "string" && value.cortexInsight.trim().length >= 20 &&
+    typeof value.feedback === "string" && value.feedback.trim().length >= 20 &&
+    Array.isArray(value.steps) && value.steps.length > 0 &&
+    value.steps.every((step: any) => step && typeof step.description === "string" && step.description.trim().length >= 3 && ["correct","incorrect","partial"].includes(step.status) && typeof step.note === "string") &&
+    Array.isArray(value.marksBreakdown) &&
+    value.marksBreakdown.every((item: any) => item && typeof item.criterion === "string" && item.criterion.trim().length >= 3 && Number.isFinite(item.marksLost) && item.marksLost >= 0 && typeof item.note === "string") &&
+    (value.confidence === undefined || (typeof value.confidence === "number" && value.confidence >= 0 && value.confidence <= 1));
+}
+
+function validHelp(value: any) {
+  return value && typeof value === "object" &&
+    (typeof value.content === "string" || typeof value.hint === "string" || typeof value.method === "string") &&
+    Object.values(value).some((v) => typeof v === "string" && v.trim().length >= 20);
 }
 
 function checkPrompt(subject: string, question: string, studentAnswer: string) {
@@ -132,7 +153,7 @@ export async function POST(req: Request) {
       if (!question && !studentAnswer && !image) return NextResponse.json({ error: "Add a question, your working, or a photo first." }, { status: 400 });
       const result = await runStructured(checkPrompt(subject, question, studentAnswer), image);
       if (result.needsRetake) return NextResponse.json({ needsRetake: true, retakeReason: result.retakeReason || "I could not read the work clearly enough." }, { status: 422 });
-      if (!validCheck(result)) return NextResponse.json({ error: "Cortex returned an incomplete assessment. Please try again." }, { status: 502 });
+      if (!validCheck(result)) return NextResponse.json({ error: "Cortex returned an unverified assessment. No score was recorded. Please try again." }, { status: 502 });
       return NextResponse.json(result);
     }
 
@@ -141,7 +162,7 @@ export async function POST(req: Request) {
       if (!question && !image) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
       const instruction = level === "hint" ? "Give a short hint that nudges the student without revealing the answer." : level === "method" ? "Explain the method and steps without giving the final answer." : "Give a complete worked solution because the student explicitly requested it.";
       const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Help level: ${level}. ${instruction} Return ONLY JSON with keys level, hint, method, solution, finalAnswer, content as appropriate. Keep explanations student-friendly.`;
-      return NextResponse.json(await runStructured(prompt, image));
+      const result = await runStructured(prompt, image);\n      if (!validHelp(result)) return NextResponse.json({ error: "Cortex returned an incomplete explanation. Please try again." }, { status: 502 });\n      return NextResponse.json(result);
     }
 
     return NextResponse.json({ error: "Unknown Cortex mode." }, { status: 400 });
