@@ -5,6 +5,7 @@ import { trackExamResult } from "@/lib/cortex/memoryTracker";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { checkAndUnlockAchievements } from "@/lib/cortex/achievements";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -42,9 +43,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => null);
-    const subject = body?.subject;
+    const requestedSubject = body?.subject;
     const questions = body?.questions;
     const answers = body?.answers;
+
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, requestedSubject, body?.subjectId);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
+    const subject = subjectAccess.subject;
 
     if (
       typeof subject !== "string" ||
