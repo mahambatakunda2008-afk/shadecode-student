@@ -11,16 +11,14 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
-import { generateBrowserLocal, isBrowserLocalModelAvailable } from "@/lib/cortex/localModel";
+import { generateBrowserLocal, getBrowserLocalModelStatus, isBrowserLocalModelAvailable } from "@/lib/cortex/localModel";
+import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
 const CLOUD_GENERATION_TIMEOUT_MS = 55_000;
 const MAX_CLOUD_ATTEMPTS = 3;
-const LOCAL_MODEL_TIMEOUT_MS = 30_000;
-const LOCAL_MODEL_BASE_URL = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL?.trim()) || "";
-const LOCAL_MODEL_NAME = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_MODEL) || "qwen2.5:7b";
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
@@ -105,7 +103,7 @@ function parseLocalModelSection(raw: string): { title?: string; blocks: Array<Re
   }
 }
 
-async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: string): Promise<LessonGenerationResult | null> {
+async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: string, persistProgress = true): Promise<LessonGenerationResult | null> {
   if (!isBrowser()) return null;
 
   const request = resolveLessonRequest({
@@ -216,12 +214,14 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
       allBlocks.push(...usable);
 
       const progress = Math.min(75, 20 + Math.round(((index + 1) / sectionCount) * 55));
-      updateGenerationJob(job.id, {
-        status: "partial",
-        progress,
-        partial: { title, blocks: allBlocks, completedUnits: index + 1, totalUnits: sectionCount },
-      });
-      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
+      if (persistProgress) {
+        updateGenerationJob(job.id, {
+          status: "partial",
+          progress,
+          partial: { title, blocks: allBlocks, completedUnits: index + 1, totalUnits: sectionCount },
+        });
+        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
+      }
     } catch (error) {
       console.info("[LEARN] browser-local section failed", {
         section: index + 1,
@@ -267,7 +267,46 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   try {
     rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 15 });
     const localModel = await tryLocalModel(job, token); if (localModel) { const finished = await saveLocalResult(job, localModel); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
+    const online = isBrowser() ? navigator.onLine : false;
+    const localStatus = isBrowser() ? getBrowserLocalModelStatus().status : "unsupported";
+    const localReady = localStatus === "ready";
+    const hybrid = chooseHybridExecutionMode({
+      online,
+      browserModelReady: localReady,
+      browserModelAvailable: localStatus !== "unsupported",
+      cloudAvailable: online,
+      peerAvailable: false,
+    }, "deep");
+
+    // Only a warm local model may enter the speculative race. We never trigger
+    // a large first-load model download merely to duplicate a cloud request.
+    if (hybrid.mode === "parallel") {
+      const localLane = tryLocalModel(job, token, false).then((result) => {
+        if (!result) throw new Error("Browser-local Cortex lane produced no valid lesson.");
+        return result;
+      });
+      const cloudLane = tryCloudLesson(job, token).then((result) => {
+        if (!result) throw new Error("Cloud Cortex lane produced no valid lesson.");
+        return result;
+      });
+
+      const winner = await firstSuccessful([localLane, cloudLane]);
+      const finished = await saveLocalResult(job, winner);
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+      return finished;
+    }
+
+    if (hybrid.mode === "local") {
+      const localModel = await tryLocalModel(job, token);
+      if (localModel) {
+        const finished = await saveLocalResult(job, localModel);
+        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+        return finished;
+      }
+    }
+
     if (isBrowser() && !navigator.onLine) { const finished = await saveLocalResult(job); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
+async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: string): Promise<LessonGenerationResult | null> {
     let data: any = null;
     let lastError: unknown = null;
     const request = resolvedRequest(job);
@@ -369,9 +408,11 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     const result = validateResult({ id: data.id, title: data.title || request.topic || job.request.prompt, blocks: data.blocks }, request);
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
     updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: result.title, blocks: result.blocks } });
-    const now = new Date().toISOString();
-    await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: `A complete ${job.request.difficulty} lesson on ${request.topic}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
-    updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined }); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "complete"); if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result); return getGenerationJobs().find(item => item.id === job.id) ?? job;
+
+    return result;
+}
+
+
   } catch (error) {
     const message = errorMessage(error); const context = localContext(job);
     if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
