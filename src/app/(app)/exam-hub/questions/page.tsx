@@ -95,6 +95,7 @@ Use only evidence present in the question. Explain the key concept, likely metho
             body: JSON.stringify({
               mode: "question-help",
               subject,
+              paperId: question.past_papers?.id,
               question: question.question_text,
             }),
           });
