@@ -230,8 +230,22 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
 
     if (mode === "question-help") {
       const question = safeString(body?.question);
+      const questionPaperId = safeString(body?.paperId, 100);
       if (question.length < 3) return NextResponse.json({ error: "A question is required." }, { status: 400 });
-      const response = await generate(questionPrompt(subject, question));
+
+      let resolvedQuestionSubject = subject;
+      if (questionPaperId) {
+        const { data: sourcePaper, error: sourcePaperError } = await supabase
+          .from("past_papers")
+          .select("id,syllabus_id,level,session,year,paper_number,variant")
+          .eq("id", questionPaperId)
+          .maybeSingle();
+        if (sourcePaperError) throw sourcePaperError;
+        if (!sourcePaper) return NextResponse.json({ error: "Past paper not found." }, { status: 404 });
+        resolvedQuestionSubject = String(sourcePaper.syllabus_id || subject || "").trim();
+      }
+
+      const response = await generate(questionPrompt(resolvedQuestionSubject, question));
       const payload = extractJson(response.text);
       if (!validQuestionHelp(payload)) {
         return NextResponse.json({ error: "Cortex question help did not pass its teaching-quality gate. Please retry." }, { status: 502 });
