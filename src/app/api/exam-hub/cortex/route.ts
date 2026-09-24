@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     if (rateLimitResponse) return rateLimitResponse;
 
     const body = await request.json();
-    const mode = body?.mode === "paper-analysis" ? "paper-analysis" : "question-help";
+    const mode = body?.mode === "paper-analysis" ? "paper-analysis" : body?.mode === "tutor" ? "tutor" : "question-help";
     const subject = safeString(body?.subject);
     if (mode === "tutor") {
       const question = safeString(body?.question);
