@@ -103,3 +103,26 @@ The same runtime should become the shared execution layer for:
 - future virtual lab and coding assistance
 
 Peer-assisted execution remains a future lane. It must not receive learner data until consent, authentication, encryption, task isolation, cancellation, quotas, and integrity validation are implemented.
+
+## Current integrations
+
+The shared hybrid JSON executor is now used by:
+
+- **Learn:** warm local and cloud lesson lanes.
+- **Exam generation:** local/cloud validated exam generation.
+- **Exam marking:** local/cloud marking candidates with the normal cached-report recovery path.
+- **Workmate / Cortex Verify:** text-only verification can use local/cloud; image verification remains cloud because the browser-local text model is not an image-understanding path.
+- **Socratic Tutor:** deterministic tutoring remains the immediate safety net while warm local/cloud Cortex can produce a richer tutor response.
+- **Past-paper Question Bank:** question help can use the warm local/cloud race.
+
+The executor also propagates cancellation to cloud fetches where the losing lane can still be stopped. This prevents a successful local result from needlessly waiting for or continuing a response stream.
+
+## Deliberate limits
+
+Not every task should be duplicated.
+
+- PDF/image-heavy work stays on the capable server path until a suitable local multimodal model exists.
+- First-load browser model downloads are not silently triggered by normal learning actions.
+- Deterministic curriculum and learner-state logic remains outside the model race.
+- Cloud responses still pass through module-specific validation.
+- Offline queues and durable generation jobs remain recovery mechanisms, not model providers.
