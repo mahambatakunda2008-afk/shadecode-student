@@ -124,6 +124,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const mode = body?.mode === "paper-analysis" ? "paper-analysis" : "question-help";
     const subject = safeString(body?.subject);
+    if (mode === "tutor") {
+      const question = safeString(body?.question);
+      const topic = safeString(body?.topic, 300);
+      const context = Array.isArray(body?.previousContext) ? body.previousContext.slice(-10) : [];
+      const style = safeString(body?.explanationStyle, 80);
+      if (question.length < 2) return NextResponse.json({ error: "A tutoring question is required." }, { status: 400 });
+
+      const prompt = `You are Cortex, a rigorous Socratic tutor inside Shadecode Student.
+Subject: ${subject || "General"}
+Topic: ${topic || "unspecified"}
+Explanation style: ${style || "guided"}
+Conversation context: ${JSON.stringify(context)}
+
+Respond as a tutor, not a generic chatbot. Make the student think, but give enough explanation to move them forward. Never invent syllabus facts. If the student asks for an explanation, explain the concept clearly. If they are solving a problem, identify the next useful reasoning step and explain why. Return ONLY JSON:
+{"content":"the tutor response","type":"question|guidance|feedback|explanation|reinforcement","confidence":0.0}`;
+      const response = await generate(prompt);
+      return NextResponse.json({ ...extractJson(response.text), _source: { provider: response.provider, model: response.model } });
+    }
 
     if (mode === "question-help") {
       const question = safeString(body?.question);
