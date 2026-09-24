@@ -374,7 +374,6 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   try {
     rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 15 });
-    const localModel = await tryLocalModel(job, token); if (localModel) { const finished = await saveLocalResult(job, localModel); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
     const online = isBrowser() ? navigator.onLine : false;
     const localStatus = isBrowser() ? getBrowserLocalModelStatus().status : "unsupported";
     const localReady = localStatus === "ready";
