@@ -193,7 +193,7 @@ Return ONLY JSON:
         preferParallel: true,
       });
       setReport(generatedReport); writeCache(reportKey, generatedReport);
-      return { report: data.report, newAchievements: data.newAchievements ?? [] };
+      return { report: generatedReport, newAchievements: [] };
     } catch (err) {
       if (cachedReport) { setReport(cachedReport); setError("Showing the saved marking report. Fresh marking is unavailable right now."); return { report: cachedReport, newAchievements: [] }; }
       setError(err instanceof Error ? err.message : "Unable to mark exam"); return null;
