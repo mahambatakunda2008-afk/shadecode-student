@@ -242,7 +242,16 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
           .maybeSingle();
         if (sourcePaperError) throw sourcePaperError;
         if (!sourcePaper) return NextResponse.json({ error: "Past paper not found." }, { status: 404 });
-        resolvedQuestionSubject = String(sourcePaper.syllabus_id || subject || "").trim();
+        const { data: syllabus, error: syllabusError } = await supabase
+          .from("syllabi")
+          .select("id,subject,board")
+          .eq("id", sourcePaper.syllabus_id)
+          .maybeSingle();
+        if (syllabusError) throw syllabusError;
+        resolvedQuestionSubject = String(syllabus?.subject || subject || "").trim();
+        if (!resolvedQuestionSubject) {
+          return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
+        }
       }
 
       const response = await generate(questionPrompt(resolvedQuestionSubject, question));
@@ -274,7 +283,18 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
     if (questionsError) throw questionsError;
     if (!questions?.length) return NextResponse.json({ error: "This paper has not been indexed into individual questions yet." }, { status: 409 });
 
-    const response = await generate(paperPrompt(subject || paper.syllabus_id, questions));
+    const { data: paperSyllabus, error: paperSyllabusError } = await supabase
+      .from("syllabi")
+      .select("id,subject,board")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+    if (paperSyllabusError) throw paperSyllabusError;
+    const analysisSubject = String(paperSyllabus?.subject || subject || "").trim();
+    if (!analysisSubject) {
+      return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
+    }
+
+    const response = await generate(paperPrompt(analysisSubject, questions));
     const analysis = extractJson(response.text);
     if (!validPaperAnalysis(analysis)) {
       return NextResponse.json({ error: "Cortex paper analysis did not pass its evidence-quality gate. Please retry." }, { status: 502 });
