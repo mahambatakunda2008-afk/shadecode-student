@@ -100,7 +100,7 @@ async function loadEngine(): Promise<WebLLMEngine> {
 
     enginePromise = import("@mlc-ai/web-llm")
       .then(async (webllm) => {
-        const module = webllm as unknown as WebLLMModule;
+        const webllmModule = webllm as unknown as WebLLMModule;
         const initProgressCallback = (report: { progress?: number; text?: string }) => {
           const progress = typeof report.progress === "number" ? report.progress * 100 : loadProgress;
           publish("loading", progress);
@@ -111,7 +111,7 @@ async function loadEngine(): Promise<WebLLMEngine> {
             type: "module",
           });
 
-          const engine = await module.CreateWebWorkerMLCEngine(
+          const engine = await webllmModule.CreateWebWorkerMLCEngine(
             worker,
             LOCAL_MODEL_ID,
             { initProgressCallback },
@@ -125,7 +125,7 @@ async function loadEngine(): Promise<WebLLMEngine> {
 
           // Keep local inference available on browsers where the bundler/worker
           // path is unavailable. This fallback is still browser-local, never cloud.
-          const engine = await module.CreateMLCEngine(LOCAL_MODEL_ID, {
+          const engine = await webllmModule.CreateMLCEngine(LOCAL_MODEL_ID, {
             initProgressCallback,
           });
 

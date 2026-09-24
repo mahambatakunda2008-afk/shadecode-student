@@ -4,6 +4,16 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-22 (3) — Fixed a lint error the Vercel build didn't catch, on the fast-moving browser-local model work
+
+Another agent landed ~18 commits in quick succession building browser-local WebLLM inference, section-resumable generation, and hybrid local/cloud execution. Deploys were showing READY on Vercel, but `npm run verify` on the exact same head found a real lint error Vercel's `next build` alone doesn't run: `src/lib/cortex/localModel.ts` assigned to a local variable named `module`, which Next.js's `no-assign-module-variable` rule flags (it shadows the CommonJS `module` global in a way that can break bundling). Purely a naming collision in dynamically-imported browser code, unrelated to Node's module system. Renamed to `webllmModule` (3 uses); the unrelated `type: "module"` string literal for the Worker constructor is untouched.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 738 tests). This confirms, again, that a READY Vercel deployment is not sufficient evidence of a healthy `main` — only the full gate (`npm run verify`) is.
+
+**Scope note:** I have not reviewed the substance of the browser-local/hybrid-execution architecture landed in this wave of commits, only fixed the one build-blocking issue found while confirming the tree was green. My two generation-outage fixes from earlier today (`tryProvider` hard-timeout, `computeRepairBudget`) are confirmed still intact at this head, unmodified by the new work.
+
+---
+
 ## 2026-09-22 (2) — Fixed a build-breaking type error in the concurrent durable-generation work
 
 Not related to the generation outage fix above; found while rebasing onto 30 new upstream commits that landed a local-first, durably-recoverable generation job system (`docs/architecture/CORTEX_DURABLE_GENERATION.md`, `CORTEX_FAULT_TOLERANCE.md`, `CORTEX_LOCAL_FIRST.md`).
