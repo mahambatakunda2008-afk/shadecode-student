@@ -260,52 +260,6 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
 
   return candidate;
 }
-async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
-  // One browser job owns one durable identity. Retries and refreshes reuse it.
-  if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
-  runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
-  try {
-    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 15 });
-    const localModel = await tryLocalModel(job, token); if (localModel) { const finished = await saveLocalResult(job, localModel); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
-    const online = isBrowser() ? navigator.onLine : false;
-    const localStatus = isBrowser() ? getBrowserLocalModelStatus().status : "unsupported";
-    const localReady = localStatus === "ready";
-    const hybrid = chooseHybridExecutionMode({
-      online,
-      browserModelReady: localReady,
-      browserModelAvailable: localStatus !== "unsupported",
-      cloudAvailable: online,
-      peerAvailable: false,
-    }, "deep");
-
-    // Only a warm local model may enter the speculative race. We never trigger
-    // a large first-load model download merely to duplicate a cloud request.
-    if (hybrid.mode === "parallel") {
-      const localLane = tryLocalModel(job, token, false).then((result) => {
-        if (!result) throw new Error("Browser-local Cortex lane produced no valid lesson.");
-        return result;
-      });
-      const cloudLane = tryCloudLesson(job, token).then((result) => {
-        if (!result) throw new Error("Cloud Cortex lane produced no valid lesson.");
-        return result;
-      });
-
-      const winner = await firstSuccessful([localLane, cloudLane]);
-      const finished = await saveLocalResult(job, winner);
-      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
-      return finished;
-    }
-
-    if (hybrid.mode === "local") {
-      const localModel = await tryLocalModel(job, token);
-      if (localModel) {
-        const finished = await saveLocalResult(job, localModel);
-        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
-        return finished;
-      }
-    }
-
-    if (isBrowser() && !navigator.onLine) { const finished = await saveLocalResult(job); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
 async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: string): Promise<LessonGenerationResult | null> {
     let data: any = null;
     let lastError: unknown = null;
@@ -414,6 +368,53 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
 
     return result;
 }
+async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
+  // One browser job owns one durable identity. Retries and refreshes reuse it.
+  if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
+  runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
+  try {
+    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 15 });
+    const localModel = await tryLocalModel(job, token); if (localModel) { const finished = await saveLocalResult(job, localModel); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
+    const online = isBrowser() ? navigator.onLine : false;
+    const localStatus = isBrowser() ? getBrowserLocalModelStatus().status : "unsupported";
+    const localReady = localStatus === "ready";
+    const hybrid = chooseHybridExecutionMode({
+      online,
+      browserModelReady: localReady,
+      browserModelAvailable: localStatus !== "unsupported",
+      cloudAvailable: online,
+      peerAvailable: false,
+    }, "deep");
+
+    // Only a warm local model may enter the speculative race. We never trigger
+    // a large first-load model download merely to duplicate a cloud request.
+    if (hybrid.mode === "parallel") {
+      const localLane = tryLocalModel(job, token, false).then((result) => {
+        if (!result) throw new Error("Browser-local Cortex lane produced no valid lesson.");
+        return result;
+      });
+      const cloudLane = tryCloudLesson(job, token).then((result) => {
+        if (!result) throw new Error("Cloud Cortex lane produced no valid lesson.");
+        return result;
+      });
+
+      const winner = await firstSuccessful([localLane, cloudLane]);
+      const finished = await saveLocalResult(job, winner);
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+      return finished;
+    }
+
+    if (hybrid.mode === "local") {
+      const localModel = await tryLocalModel(job, token);
+      if (localModel) {
+        const finished = await saveLocalResult(job, localModel);
+        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+        return finished;
+      }
+    }
+
+    if (isBrowser() && !navigator.onLine) { const finished = await saveLocalResult(job); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
+
 
 
   } catch (error) {
