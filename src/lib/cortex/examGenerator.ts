@@ -157,8 +157,14 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
 
   if (requestedType === "multiple_choice") {
     const unique = new Set((options || []).map(normalizedText));
-    if (unique.size !== 4) return null;
+    if ((options || []).length !== 4 || unique.size !== 4) return null;
   }
+
+  const modelAnswer = typeof q.modelAnswer === "string" ? q.modelAnswer.trim() : "";
+  if (modelAnswer.length < 10) return null;
+
+  const markingCriteria = typeof q.markingCriteria === "string" ? q.markingCriteria.trim() : "";
+  if (markingCriteria.length < 10) return null;
 
   const normalizedDifficulty: "easy" | "medium" | "hard" = q.difficulty === "hard" || q.difficulty === "medium" ? q.difficulty : difficulty === "hard" ? "hard" : difficulty === "easy" ? "easy" : "medium";
   const marks = Math.max(1, Math.min(20, Math.round(Number(q.marks))));
@@ -172,8 +178,8 @@ function normalizeQuestion(q: Partial<ExamQuestion>, index: number, difficulty: 
     marks,
     topic: questionTopic.slice(0, 255) || cleanTopic(requestedTopic).slice(0, 255) || "General",
     difficulty: normalizedDifficulty,
-    modelAnswer: typeof q.modelAnswer === "string" && q.modelAnswer.trim() ? q.modelAnswer.trim().slice(0, 5000) : undefined,
-    markingCriteria: typeof q.markingCriteria === "string" && q.markingCriteria.trim() ? q.markingCriteria.trim().slice(0, 2500) : undefined,
+    modelAnswer: modelAnswer.slice(0, 5000),
+    markingCriteria: markingCriteria.slice(0, 2500),
   };
 }
 
