@@ -45,8 +45,14 @@ function fileToDataUrl(file: File) {
 async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const external = init?.signal;
+  const abortFromExternal = () => controller.abort();
+  external?.addEventListener("abort", abortFromExternal, { once: true });
   try { return await fetch(input, { ...init, signal: controller.signal }); }
-  finally { window.clearTimeout(timeout); }
+  finally {
+    window.clearTimeout(timeout);
+    external?.removeEventListener("abort", abortFromExternal);
+  }
 }
 
 async function currentUserId() {
