@@ -102,7 +102,7 @@ Teach rather than dump an answer. Make the student think, but provide enough exp
       ...fallbackMessage,
       content: generated.content,
       type: generated.type,
-      metadata: { ...(fallbackMessage.metadata || {}), confidence: generated.confidence ?? fallbackMessage.metadata?.confidence, hybrid: true },
+      metadata: { ...(fallbackMessage.metadata || {}), confidence: generated.confidence ?? fallbackMessage.metadata?.confidence },
     };
   } catch {
     // Deterministic Socratic fallback remains the safety net.
