@@ -8,6 +8,7 @@
 
 import { TutoringRequest, TutoringResponse, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "./types";
 import { getMemory } from "@/lib/cortex/memory";
+import { runHybridJson } from "@/lib/cortex/hybridJson";
 
 export type { TutoringRequest, TutoringResponse };
 
@@ -32,36 +33,79 @@ export async function generateSocraticResponse(request: TutoringRequest): Promis
 
   const errorAnalysis = lastStudentMessage ? analyzeStudentResponse(lastStudentMessage.content, topic) : undefined;
 
-  // Generate the main tutoring message
-  const message = explanationStyle
+  // Build a deterministic response immediately, then let a warm local model
+  // and cloud Cortex improve it in parallel when available.
+  const fallbackMessage = explanationStyle
     ? generateStyledExplanation({
-        question,
-        topic,
-        subject,
-        studentLevel,
-        explanationStyle,
-        previousContext,
-        lessonContext,
+        question, topic, subject, studentLevel, explanationStyle, previousContext, lessonContext,
       })
     : lessonContext
     ? generateLessonAwareMessage({
-        question,
-        topic,
-        subject,
-        studentLevel,
-        lessonContext,
-        previousContext,
-        isWeakArea,
+        question, topic, subject, studentLevel, lessonContext, previousContext, isWeakArea,
       })
     : generateGuidedMessage({
-        question,
-        topic,
-        subject,
-        studentLevel,
-        isWeakArea,
-        previousContext,
-        errorAnalysis,
+        question, topic, subject, studentLevel, isWeakArea, previousContext, errorAnalysis,
       });
+
+  let message = fallbackMessage;
+  try {
+    const generated = await runHybridJson<{
+      content: string;
+      type: TutoringMessage["type"];
+      confidence?: number;
+    }>({
+      localPrompt: `Act as Cortex, a rigorous Socratic tutor.
+Subject: ${subject}
+Topic: ${topic}
+Level: ${studentLevel}
+Style: ${explanationStyle || "guided"}
+Student question: ${question}
+Recent conversation: ${JSON.stringify(previousContext.slice(-8))}
+Lesson context: ${lessonContext ? JSON.stringify(lessonContext) : "none"}
+
+Teach rather than dump an answer. Make the student think, but provide enough explanation to progress. Return ONLY JSON:
+{"content":"tutor response","type":"question|guidance|feedback|explanation|reinforcement","confidence":0.0}`,
+      validate: (value): value is { content: string; type: TutoringMessage["type"]; confidence?: number } => {
+        const v = value as { content?: unknown; type?: unknown };
+        return typeof v?.content === "string" && v.content.trim().length >= 20 &&
+          ["question","guidance","feedback","explanation","reinforcement"].includes(String(v.type));
+      },
+      cloud: async () => {
+        const response = await fetch("/api/exam-hub/cortex", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "tutor",
+            subject,
+            topic,
+            question,
+            previousContext: previousContext.slice(-8),
+            explanationStyle,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || typeof data?.content !== "string") {
+          throw new Error(data?.error || "Tutor generation failed.");
+        }
+        return {
+          content: data.content,
+          type: data.type as TutoringMessage["type"],
+          confidence: typeof data.confidence === "number" ? data.confidence : undefined,
+        };
+      },
+      localMaxTokens: 900,
+      preferParallel: true,
+    });
+
+    message = {
+      ...fallbackMessage,
+      content: generated.content,
+      type: generated.type,
+      metadata: { ...(fallbackMessage.metadata || {}), confidence: generated.confidence ?? fallbackMessage.metadata?.confidence, hybrid: true },
+    };
+  } catch {
+    // Deterministic Socratic fallback remains the safety net.
+  }
 
   // Generate progressive hints
   const hints = generateHints(question, topic, studentLevel);
