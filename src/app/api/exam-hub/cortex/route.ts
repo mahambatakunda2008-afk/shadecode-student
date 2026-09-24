@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -27,21 +28,11 @@ async function withTimeout<T>(promise: Promise<T>, ms = PROVIDER_TIMEOUT_MS): Pr
 }
 
 function extractJson(text: string): unknown {
-  const cleaned = text.trim();
-  const fenced = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = (fenced ? fenced[1] : cleaned).trim();
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    const start = candidate.indexOf("{");
-    const end = candidate.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      try { return JSON.parse(candidate.slice(start, end + 1)); } catch {}
-    }
-    throw new Error("Cortex returned malformed structured output.");
-  }
+  const parsed = parseCortexJson(text);
+  const shared = validateCortexObject(parsed, { minTextLength: 3 });
+  if (!shared.ok) throw new Error("Cortex output failed shared QA.");
+  return parsed;
 }
-
 function validTutorPayload(value: unknown): value is {
   content: string;
   type: "question" | "guidance" | "feedback" | "explanation" | "reinforcement";
