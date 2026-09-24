@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -111,7 +112,11 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const mode = String(formData.get("mode") || "check");
-    const subject = String(formData.get("subject") || "General").trim();
+    const requestedSubject = String(formData.get("subject") || "").trim();
+    const requestedSubjectId = String(formData.get("subjectId") || "").trim();
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, requestedSubject, requestedSubjectId || undefined);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
+    const subject = subjectAccess.subject;
     const question = String(formData.get("question") || "").trim();
     const studentAnswer = String(formData.get("studentAnswer") || "").trim();
     const imageFile = formData.get("image");
