@@ -11,7 +11,7 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
-import { generateBrowserLocal, getBrowserLocalModelStatus, isBrowserLocalModelAvailable } from "@/lib/cortex/localModel";
+import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
@@ -323,9 +323,11 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       : request.topic || job.request.prompt;
 
     for (let sectionIndex = persistedCompletedUnits; sectionIndex < sectionCount; sectionIndex += 1) {
+      if (getGenerationJob(job.id)?.status === "complete") return null;
       let sectionData: any = null;
       for (let attempt = 0; attempt < MAX_CLOUD_ATTEMPTS; attempt += 1) {
         const progress = Math.min(88, 20 + Math.round((sectionIndex / sectionCount) * 68) + Math.min(5, attempt));
+        if (getGenerationJob(job.id)?.status === "complete") return null;
         updateGenerationJob(job.id, {
           status: "generating",
           progress,
@@ -385,6 +387,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
         ? sectionData.partialBlocks
         : [...assembledBlocks, ...sectionData.blocks];
 
+      if (getGenerationJob(job.id)?.status === "complete") return null;
       updateGenerationJob(job.id, {
         status: "partial",
         progress: Math.min(90, 20 + Math.round(((sectionIndex + 1) / sectionCount) * 70)),
