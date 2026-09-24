@@ -5,7 +5,7 @@ import { firstSuccessful } from "@/lib/cortex/hybridRuntime";
 
 export interface HybridJsonRequest<T> {
   localPrompt: string;
-  cloud: () => Promise<T>;
+  cloud: (signal: AbortSignal) => Promise<T>;
   validate: (value: unknown) => value is T;
   localMaxTokens?: number;
   preferParallel?: boolean;
@@ -48,10 +48,17 @@ export async function runHybridJson<T>(request: HybridJsonRequest<T>): Promise<T
     return parsed;
   };
 
-  if (canParallel) return firstSuccessful([local(), request.cloud()]);
+  if (canParallel) {
+    const controller = new AbortController();
+    try {
+      return await firstSuccessful([local(), request.cloud(controller.signal)]);
+    } finally {
+      controller.abort();
+    }
+  }
 
   try {
-    return await request.cloud();
+    return await request.cloud(new AbortController().signal);
   } catch (cloudError) {
     if (localReady) return local();
     throw cloudError;
