@@ -3,7 +3,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
-import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
