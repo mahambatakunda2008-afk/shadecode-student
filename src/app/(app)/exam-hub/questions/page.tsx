@@ -20,6 +20,8 @@ interface Question {
     year: number;
     paper_number: number | null;
     variant: number | null;
+    subject: string | null;
+    board: string | null;
   } | null;
 }
 
@@ -71,7 +73,7 @@ export default function QuestionBankPage() {
     setCortexError(null);
     setCortexLoading(true);
     try {
-      const subject = question.past_papers?.syllabus_id ?? "General";
+      const subject = question.past_papers?.subject ?? "General";
       const localPrompt = `You are Cortex, helping a student with an extracted past-paper question.
 Subject: ${subject}
 Question: ${question.question_text}
