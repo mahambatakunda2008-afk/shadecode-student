@@ -70,8 +70,14 @@ function writeCache<T>(key: string, value: T) {
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit) {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const external = init.signal;
+  const abortFromExternal = () => controller.abort();
+  external?.addEventListener("abort", abortFromExternal, { once: true });
   try { return await fetch(input, { ...init, signal: controller.signal }); }
-  finally { window.clearTimeout(timer); }
+  finally {
+    window.clearTimeout(timer);
+    external?.removeEventListener("abort", abortFromExternal);
+  }
 }
 
 function validateExam(exam: unknown, requestedCount: number): exam is GeneratedExam {
