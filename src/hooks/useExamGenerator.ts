@@ -134,8 +134,9 @@ Every question must be substantive, distinct, answerable, and aligned to the req
       const generated = await runHybridJson<GeneratedExam>({
         localPrompt,
         validate: (value): value is GeneratedExam => validateExam(value, safeCount),
-        cloud: async () => {
+        cloud: async (signal) => {
           const res = await fetchWithTimeout("/api/cortex/generate-exam", {
+            signal,
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ subject: safeSubject, topics: safeTopics, difficulty, questionCount: safeCount }),
           });
@@ -181,6 +182,7 @@ Return ONLY JSON:
         },
         cloud: async () => {
           const res = await fetchWithTimeout("/api/cortex/mark-exam", {
+            signal,
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ subject, questions, answers }),
           });
