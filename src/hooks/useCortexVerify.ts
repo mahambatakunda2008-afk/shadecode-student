@@ -88,8 +88,8 @@ async function sendAttemptNow(attempt: CortexAttempt) {
     if (attempt.studentAnswer) fd.append("studentAnswer", attempt.studentAnswer);
     if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
 
-    const requestCloud = async () => {
-      const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd });
+    const requestCloud = async (signal?: AbortSignal) => {
+      const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd, signal });
       let data: VerifyResult & { error?: string };
       try { data = await response.json(); } catch { throw new Error("Cortex returned an invalid response."); }
       if (!response.ok) throw new Error(data.error || "Cortex provider error.");
