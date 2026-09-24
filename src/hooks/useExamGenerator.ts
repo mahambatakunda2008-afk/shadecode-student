@@ -183,7 +183,8 @@ Every question must be substantive, distinct, answerable, and aligned to the req
           return data.exam as GeneratedExam;
         },
         localMaxTokens: Math.max(1800, safeCount * 450),
-        preferParallel: true,
+        // Exam generation is assessment-critical: prefer the server examiner and use local only as a validated fallback.
+        preferParallel: false,
       });
 
       setExam(generated); writeCache(cacheKey, generated); return generated;
@@ -229,7 +230,8 @@ Return ONLY JSON:
           return data.report as MarkingReport;
         },
         localMaxTokens: Math.max(1600, questions.length * 300),
-        preferParallel: true,
+        // Marking is assessment-critical: prefer the server examiner and use local only as a validated fallback.
+        preferParallel: false,
       });
       setReport(generatedReport); writeCache(reportKey, generatedReport);
       return { report: generatedReport, newAchievements: [] };
