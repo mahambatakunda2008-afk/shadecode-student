@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { runHybridJson } from "@/lib/cortex/hybridJson";
 
 export interface ExamQuestion {
   id: string;
@@ -121,35 +122,33 @@ export function useExamGenerator() {
         setExam(null); setError("This exam has not been downloaded yet. Connect once to generate it, then it will work offline."); return null;
       }
 
-      let res: Response;
-      try {
-        res = await fetchWithTimeout("/api/cortex/generate-exam", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subject: safeSubject, topics: safeTopics, difficulty, questionCount: safeCount }),
-        });
-      } catch (err) {
-        if (cachedExam && validateExam(cachedExam, safeCount)) {
-          setExam(cachedExam); setError("Fresh generation timed out. Showing your saved verified exam."); return cachedExam;
-        }
-        throw new Error(err instanceof DOMException && err.name === "AbortError" ? "Exam generation is taking longer than expected. Please try again." : "Unable to reach exam generation.");
-      }
+      const localPrompt = `Create a rigorous exam for Shadecode Student.
+Subject: ${safeSubject}
+Topics: ${safeTopics.join(", ")}
+Difficulty: ${difficulty}
+Question count: ${safeCount}
+Return ONLY JSON with this exact shape:
+{"subject":"...","title":"...","questions":[{"id":"...","type":"multiple_choice|short_answer|structured|essay","question":"...","options":[],"marks":1,"topic":"...","difficulty":"easy|medium|hard","modelAnswer":"..."}],"totalMarks":0,"durationMinutes":60,"difficulty":"...","topics":[]}
+Every question must be substantive, distinct, answerable, and aligned to the requested subject/topics.`;
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (cachedExam && validateExam(cachedExam, safeCount)) {
-          setExam(cachedExam); setError("Fresh generation is unavailable right now. Showing your saved verified exam."); return cachedExam;
-        }
-        throw new Error(getError(data, `Exam generation failed (${res.status}).`));
-      }
+      const generated = await runHybridJson<GeneratedExam>({
+        localPrompt,
+        validate: (value): value is GeneratedExam => validateExam(value, safeCount),
+        cloud: async () => {
+          const res = await fetchWithTimeout("/api/cortex/generate-exam", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subject: safeSubject, topics: safeTopics, difficulty, questionCount: safeCount }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(getError(data, `Exam generation failed (${res.status}).`));
+          if (!validateExam(data?.exam, safeCount)) throw new Error("The generated exam did not pass validation.");
+          return data.exam as GeneratedExam;
+        },
+        localMaxTokens: Math.max(1800, safeCount * 450),
+        preferParallel: true,
+      });
 
-      if (!validateExam(data?.exam, safeCount)) {
-        if (cachedExam && validateExam(cachedExam, safeCount)) {
-          setExam(cachedExam); setError("The generated response failed validation. Showing your saved verified exam."); return cachedExam;
-        }
-        throw new Error("The generated exam did not pass validation. No incomplete paper was shown.");
-      }
-
-      setExam(data.exam); writeCache(cacheKey, data.exam); return data.exam;
+      setExam(generated); writeCache(cacheKey, generated); return generated;
     } catch (err) {
       if (cachedExam && validateExam(cachedExam, safeCount)) {
         setExam(cachedExam); setError("Showing the saved verified exam because fresh generation failed."); return cachedExam;
@@ -167,17 +166,33 @@ export function useExamGenerator() {
         if (cachedReport) { setReport(cachedReport); return { report: cachedReport, newAchievements: [] }; }
         throw new Error("Exam marking needs a connection unless this result was already saved.");
       }
-      const res = await fetchWithTimeout("/api/cortex/mark-exam", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, questions, answers }),
+      const localPrompt = `Mark this student exam rigorously.
+Subject: ${subject}
+Questions: ${JSON.stringify(questions)}
+Answers: ${JSON.stringify(answers)}
+Return ONLY JSON:
+{"results":[{"questionId":"...","score":0,"maxMarks":1,"feedback":"...","strengths":[],"improvements":[]}],"totalScore":0,"totalMaxMarks":0,"percentage":0,"overallFeedback":"...","weakTopics":[],"strongTopics":[],"recommendedActions":[]}`;
+      const generatedReport = await runHybridJson<MarkingReport>({
+        localPrompt,
+        validate: (value): value is MarkingReport => {
+          const v = value as MarkingReport;
+          return !!v && Array.isArray(v.results) && Number.isFinite(v.totalScore) && Number.isFinite(v.totalMaxMarks) &&
+            Number.isFinite(v.percentage) && typeof v.overallFeedback === "string";
+        },
+        cloud: async () => {
+          const res = await fetchWithTimeout("/api/cortex/mark-exam", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subject, questions, answers }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(getError(data, `Exam marking failed (${res.status}).`));
+          if (!data?.report || !Array.isArray(data.report.results)) throw new Error("The marking response could not be validated.");
+          return data.report as MarkingReport;
+        },
+        localMaxTokens: Math.max(1600, questions.length * 300),
+        preferParallel: true,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (cachedReport) { setReport(cachedReport); setError("Showing the saved marking report. Fresh marking is unavailable right now."); return { report: cachedReport, newAchievements: [] }; }
-        throw new Error(getError(data, `Exam marking failed (${res.status}).`));
-      }
-      if (!data?.report || !Array.isArray(data.report.results)) throw new Error("The marking response could not be validated.");
-      setReport(data.report); writeCache(reportKey, data.report);
+      setReport(generatedReport); writeCache(reportKey, generatedReport);
       return { report: data.report, newAchievements: data.newAchievements ?? [] };
     } catch (err) {
       if (cachedReport) { setReport(cachedReport); setError("Showing the saved marking report. Fresh marking is unavailable right now."); return { report: cachedReport, newAchievements: [] }; }
