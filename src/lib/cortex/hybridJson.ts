@@ -40,7 +40,7 @@ export async function runHybridJson<T>(request: HybridJsonRequest<T>): Promise<T
     if (!localReady) throw new Error("Browser-local Cortex is not warm.");
     const raw = await generateBrowserLocal(request.localPrompt, undefined, {
       maxTokens: request.localMaxTokens ?? 1800,
-      jsonMode: true,
+      json: true,
     });
     const parsed = parseJson(raw);
     if (!request.validate(parsed)) throw new Error("Browser-local Cortex output failed validation.");
