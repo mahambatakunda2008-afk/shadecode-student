@@ -70,8 +70,9 @@ Teach rather than dump an answer. Make the student think, but provide enough exp
         return typeof v?.content === "string" && v.content.trim().length >= 20 &&
           ["question","guidance","feedback","explanation","reinforcement"].includes(String(v.type));
       },
-      cloud: async () => {
+      cloud: async (signal) => {
         const response = await fetch("/api/exam-hub/cortex", {
+          signal,
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
