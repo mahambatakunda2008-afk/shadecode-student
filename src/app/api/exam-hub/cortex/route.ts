@@ -168,14 +168,14 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
       if (!validTutorPayload(payload)) {
         return NextResponse.json({ error: "Cortex tutor output did not pass its teaching-quality gate. Please retry." }, { status: 502 });
       }
-      return NextResponse.json({ ...payload, _source: { provider: response.provider, model: response.model } });
+      return NextResponse.json({ ...(payload as Record<string, unknown>), _source: { provider: response.provider, model: response.model } });
     }
 
     if (mode === "question-help") {
       const question = safeString(body?.question);
       if (question.length < 3) return NextResponse.json({ error: "A question is required." }, { status: 400 });
       const response = await generate(questionPrompt(subject, question));
-      return NextResponse.json({ ...extractJson(response.text), _source: { provider: response.provider, model: response.model } });
+      const payload = extractJson(response.text);\n      if (!payload || typeof payload !== "object") return NextResponse.json({ error: "Cortex returned invalid structured output." }, { status: 502 });\n      return NextResponse.json({ ...(payload as Record<string, unknown>), _source: { provider: response.provider, model: response.model } });
     }
 
     const paperId = safeString(body?.paperId, 100);
