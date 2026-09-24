@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { enqueue, getAll, remove, CortexAttempt } from "../lib/offline/cortex-queue";
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { createClient } from "@/lib/supabase/client";
+import { runHybridJson } from "@/lib/cortex/hybridJson";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -87,11 +88,44 @@ async function sendAttemptNow(attempt: CortexAttempt) {
     if (attempt.studentAnswer) fd.append("studentAnswer", attempt.studentAnswer);
     if (attempt.mode === "help" && attempt.level) fd.append("level", attempt.level);
 
-    const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd });
-    let data: VerifyResult & { error?: string };
-    try { data = await response.json(); } catch { throw new Error("Cortex returned an invalid response."); }
-    if (!response.ok) throw new Error(data.error || "Cortex provider error.");
-    if (!data || typeof data !== "object") throw new Error("Invalid Cortex response.");
+    const requestCloud = async () => {
+      const response = await fetchWithTimeout("/api/cortex/verify", { method: "POST", body: fd });
+      let data: VerifyResult & { error?: string };
+      try { data = await response.json(); } catch { throw new Error("Cortex returned an invalid response."); }
+      if (!response.ok) throw new Error(data.error || "Cortex provider error.");
+      if (!data || typeof data !== "object") throw new Error("Invalid Cortex response.");
+      return data as VerifyResult;
+    };
+
+    let data: VerifyResult;
+    if (!attempt.imageDataUrl) {
+      const localPrompt = `You are Cortex Verify.
+Mode: ${attempt.mode}
+Subject: ${attempt.subject || "General"}
+Question: ${attempt.question || ""}
+Student working/answer: ${attempt.studentAnswer || ""}
+Help level: ${attempt.level || "hint"}
+
+Check the student's reasoning rather than blindly giving an answer. Return ONLY JSON.
+For check mode include: problem, confidence, score, correct, needsRetake, retakeReason, cortexInsight, steps, feedback, marksBreakdown, finalAnswer.
+For help mode include: problem, confidence, level, hint, method, solution, finalAnswer, content.
+Be accurate and explicit about uncertainty.`;
+      data = await runHybridJson<VerifyResult>({
+        localPrompt,
+        validate: (value): value is VerifyResult => {
+          const v = value as VerifyResult;
+          return !!v && typeof v === "object" &&
+            (attempt.mode === "help"
+              ? typeof v.content === "string" || typeof v.hint === "string" || typeof v.method === "string"
+              : typeof v.feedback === "string" || Array.isArray(v.steps));
+        },
+        cloud: requestCloud,
+        localMaxTokens: 1400,
+        preferParallel: true,
+      });
+    } else {
+      data = await requestCloud();
+    }
     recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
     return data as VerifyResult;
