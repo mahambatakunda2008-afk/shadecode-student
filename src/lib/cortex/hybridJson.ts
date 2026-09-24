@@ -2,6 +2,21 @@
 
 import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { firstSuccessful } from "@/lib/cortex/hybridRuntime";
+import { assertCortexObject, parseCortexJson } from "@/lib/cortex/outputContract";
+
+export interface HybridJsonRequest<T> {
+  localPrompt: string;
+  cloud: (signal: AbortSignal) => Promise<T>;
+  validate: (value: unknown) => value is T;
+  localMaxTokens?: number;
+  preferParallel?: boolean;
+}
+
+use client";
+
+import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
+import { firstSuccessful } from "@/lib/cortex/hybridRuntime";
+import { assertCortexObject, parseCortexJson } from "@/lib/cortex/outputContract";
 
 export interface HybridJsonRequest<T> {
   localPrompt: string;
@@ -42,7 +57,8 @@ export async function runHybridJson<T>(request: HybridJsonRequest<T>): Promise<T
       maxTokens: request.localMaxTokens ?? 1800,
       json: true,
     });
-    const parsed = parseJson(raw);
+    const parsed = parseCortexJson(raw);
+    assertCortexObject(parsed);
     if (!request.validate(parsed)) throw new Error("Browser-local Cortex output failed validation.");
     return parsed;
   };
