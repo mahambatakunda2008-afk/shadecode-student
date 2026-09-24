@@ -36,7 +36,36 @@ export async function GET(request: Request) {
     const { data, error } = await dbQuery.order("created_at", { ascending: false });
     if (error) throw error;
 
-    return NextResponse.json({ questions: data ?? [], count: data?.length ?? 0 });
+    const rows = data ?? [];
+    const syllabusIds = [...new Set(rows.map((row) => {
+      const paper = Array.isArray(row.past_papers) ? row.past_papers[0] : row.past_papers;
+      return paper?.syllabus_id;
+    }).filter((id): id is string => typeof id === "string" && id.length > 0))];
+
+    const syllabusMap = new Map<string, { subject: string; board: string }>();
+    if (syllabusIds.length) {
+      const { data: syllabi, error: syllabusError } = await supabase
+        .from("syllabi")
+        .select("id,subject,board")
+        .in("id", syllabusIds);
+      if (syllabusError) throw syllabusError;
+      for (const syllabus of syllabi ?? []) {
+        syllabusMap.set(syllabus.id, { subject: syllabus.subject, board: syllabus.board });
+      }
+    }
+
+    const questions = rows.map((row) => {
+      const paper = Array.isArray(row.past_papers) ? row.past_papers[0] : row.past_papers;
+      const syllabus = paper?.syllabus_id ? syllabusMap.get(paper.syllabus_id) : undefined;
+      return {
+        ...row,
+        past_papers: paper
+          ? { ...paper, subject: syllabus?.subject ?? null, board: syllabus?.board ?? null }
+          : null,
+      };
+    });
+
+    return NextResponse.json({ questions, count: questions.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Question search failed";
     const status = message.includes("required") || message.includes("difficulty") ? 400 : 500;
