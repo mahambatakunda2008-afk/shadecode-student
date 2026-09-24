@@ -83,13 +83,44 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit) {
 function validateExam(exam: unknown, requestedCount: number): exam is GeneratedExam {
   if (!exam || typeof exam !== "object") return false;
   const candidate = exam as GeneratedExam;
-  if (!Array.isArray(candidate.questions) || candidate.questions.length !== requestedCount) return false;
-  return candidate.questions.every((q) =>
-    typeof q?.id === "string" && q.id.length > 0 &&
-    typeof q?.question === "string" && q.question.trim().length > 10 &&
-    Number.isFinite(q?.marks) && q.marks > 0 &&
-    typeof q?.topic === "string" && q.topic.trim().length > 0
-  );
+  if (
+    typeof candidate.subject !== "string" ||
+    typeof candidate.title !== "string" ||
+    !Array.isArray(candidate.questions) ||
+    candidate.questions.length !== requestedCount ||
+    !Number.isFinite(candidate.totalMarks) ||
+    candidate.totalMarks <= 0 ||
+    !Number.isFinite(candidate.durationMinutes) ||
+    candidate.durationMinutes <= 0
+  ) return false;
+
+  const ids = new Set<string>();
+  const seenQuestionTexts = new Set<string>();
+  let calculatedMarks = 0;
+
+  for (const q of candidate.questions) {
+    if (
+      typeof q?.id !== "string" || q.id.trim().length < 2 || ids.has(q.id) ||
+      typeof q.question !== "string" || q.question.trim().length < 20 ||
+      seenQuestionTexts.has(q.question.trim().toLowerCase()) ||
+      !["multiple_choice", "short_answer", "structured", "essay"].includes(q.type) ||
+      !Number.isFinite(q.marks) || q.marks <= 0 ||
+      typeof q.topic !== "string" || q.topic.trim().length < 2 ||
+      !["easy", "medium", "hard"].includes(q.difficulty)
+    ) return false;
+
+    if (q.type === "multiple_choice") {
+      if (!Array.isArray(q.options) || q.options.length < 2 || q.options.some((o) => typeof o !== "string" || o.trim().length < 1)) return false;
+    }
+
+    if (typeof q.modelAnswer !== "string" || q.modelAnswer.trim().length < 10) return false;
+
+    ids.add(q.id);
+    seenQuestionTexts.add(q.question.trim().toLowerCase());
+    calculatedMarks += q.marks;
+  }
+
+  return Math.abs(calculatedMarks - candidate.totalMarks) < 0.001;
 }
 
 function getError(data: unknown, fallback: string) {
@@ -186,7 +217,7 @@ Return ONLY JSON:
           return !!v && Array.isArray(v.results) && Number.isFinite(v.totalScore) && Number.isFinite(v.totalMaxMarks) &&
             Number.isFinite(v.percentage) && typeof v.overallFeedback === "string";
         },
-        cloud: async () => {
+        cloud: async (signal) => {
           const res = await fetchWithTimeout("/api/cortex/mark-exam", {
             signal,
             method: "POST", headers: { "Content-Type": "application/json" },
