@@ -55,6 +55,63 @@ function validTutorPayload(value: unknown): value is {
     (v.confidence === undefined || (typeof v.confidence === "number" && Number.isFinite(v.confidence) && v.confidence >= 0 && v.confidence <= 1));
 }
 
+function isNonEmptyString(value: unknown, min = 1, max = 12_000): value is string {
+  return typeof value === "string" && value.trim().length >= min && value.trim().length <= max;
+}
+
+function validQuestionHelp(value: unknown): value is {
+  concept: string;
+  hint: string;
+  method: string[];
+  solution: string;
+  finalAnswer: string;
+  examTip: string;
+} {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return isNonEmptyString(v.concept, 3, 500) &&
+    isNonEmptyString(v.hint, 10, 2_000) &&
+    Array.isArray(v.method) &&
+    v.method.length >= 2 &&
+    v.method.length <= 12 &&
+    v.method.every((step) => isNonEmptyString(step, 5, 2_000)) &&
+    isNonEmptyString(v.solution, 20, 8_000) &&
+    isNonEmptyString(v.finalAnswer, 1, 2_000) &&
+    isNonEmptyString(v.examTip, 10, 1_000);
+}
+
+function validPaperAnalysis(value: unknown): value is {
+  overview: string;
+  topics: Array<{ name: string; evidence: string; questionNumbers: string[]; frequency: number }>;
+  highYieldAreas: string[];
+  questionPatterns: string[];
+  revisionPlan: string[];
+  predictionCaveat: string;
+} {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  const topics = Array.isArray(v.topics) ? v.topics : [];
+  const lists = [v.highYieldAreas, v.questionPatterns, v.revisionPlan];
+  return isNonEmptyString(v.overview, 30, 3_000) &&
+    topics.length >= 1 &&
+    topics.length <= 30 &&
+    topics.every((topic) => {
+      if (!topic || typeof topic !== "object") return false;
+      const t = topic as Record<string, unknown>;
+      return isNonEmptyString(t.name, 2, 300) &&
+        isNonEmptyString(t.evidence, 5, 1_000) &&
+        Array.isArray(t.questionNumbers) &&
+        t.questionNumbers.length >= 1 &&
+        t.questionNumbers.length <= 20 &&
+        t.questionNumbers.every((n) => isNonEmptyString(n, 1, 30)) &&
+        typeof t.frequency === "number" &&
+        Number.isInteger(t.frequency) &&
+        t.frequency >= 1;
+    }) &&
+    lists.every((list) => Array.isArray(list) && list.length >= 1 && list.length <= 20 && list.every((item) => isNonEmptyString(item, 5, 1_000))) &&
+    isNonEmptyString(v.predictionCaveat, 20, 1_000);
+}
+
 async function generate(prompt: string) {
   let lastError: unknown;
   for (const key of GEMINI_KEYS) {
@@ -175,7 +232,11 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
       const question = safeString(body?.question);
       if (question.length < 3) return NextResponse.json({ error: "A question is required." }, { status: 400 });
       const response = await generate(questionPrompt(subject, question));
-      const payload = extractJson(response.text);\n      if (!payload || typeof payload !== "object") return NextResponse.json({ error: "Cortex returned invalid structured output." }, { status: 502 });\n      return NextResponse.json({ ...(payload as Record<string, unknown>), _source: { provider: response.provider, model: response.model } });
+      const payload = extractJson(response.text);
+      if (!validQuestionHelp(payload)) {
+        return NextResponse.json({ error: "Cortex question help did not pass its teaching-quality gate. Please retry." }, { status: 502 });
+      }
+      return NextResponse.json({ ...(payload as Record<string, unknown>), _source: { provider: response.provider, model: response.model } });
     }
 
     const paperId = safeString(body?.paperId, 100);
@@ -200,10 +261,14 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
     if (!questions?.length) return NextResponse.json({ error: "This paper has not been indexed into individual questions yet." }, { status: 409 });
 
     const response = await generate(paperPrompt(subject || paper.syllabus_id, questions));
+    const analysis = extractJson(response.text);
+    if (!validPaperAnalysis(analysis)) {
+      return NextResponse.json({ error: "Cortex paper analysis did not pass its evidence-quality gate. Please retry." }, { status: 502 });
+    }
     return NextResponse.json({
       paper,
       indexedQuestionCount: questions.length,
-      ...extractJson(response.text),
+      ...analysis,
       _source: { provider: response.provider, model: response.model },
     });
   } catch (error) {
