@@ -26,9 +26,33 @@ async function withTimeout<T>(promise: Promise<T>, ms = PROVIDER_TIMEOUT_MS): Pr
   }
 }
 
-function extractJson(text: string) {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  return JSON.parse(fenced ? fenced[1] : text);
+function extractJson(text: string): unknown {
+  const cleaned = text.trim();
+  const fenced = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced ? fenced[1] : cleaned).trim();
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    const start = candidate.indexOf("{");
+    const end = candidate.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try { return JSON.parse(candidate.slice(start, end + 1)); } catch {}
+    }
+    throw new Error("Cortex returned malformed structured output.");
+  }
+}
+
+function validTutorPayload(value: unknown): value is {
+  content: string;
+  type: "question" | "guidance" | "feedback" | "explanation" | "reinforcement";
+  confidence?: number;
+} {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.content === "string" &&
+    v.content.trim().length >= 20 &&
+    ["question", "guidance", "feedback", "explanation", "reinforcement"].includes(String(v.type)) &&
+    (v.confidence === undefined || (typeof v.confidence === "number" && Number.isFinite(v.confidence) && v.confidence >= 0 && v.confidence <= 1));
 }
 
 async function generate(prompt: string) {
@@ -140,7 +164,11 @@ Conversation context: ${JSON.stringify(context)}
 Respond as a tutor, not a generic chatbot. Make the student think, but give enough explanation to move them forward. Never invent syllabus facts. If the student asks for an explanation, explain the concept clearly. If they are solving a problem, identify the next useful reasoning step and explain why. Return ONLY JSON:
 {"content":"the tutor response","type":"question|guidance|feedback|explanation|reinforcement","confidence":0.0}`;
       const response = await generate(prompt);
-      return NextResponse.json({ ...extractJson(response.text), _source: { provider: response.provider, model: response.model } });
+      const payload = extractJson(response.text);
+      if (!validTutorPayload(payload)) {
+        return NextResponse.json({ error: "Cortex tutor output did not pass its teaching-quality gate. Please retry." }, { status: 502 });
+      }
+      return NextResponse.json({ ...payload, _source: { provider: response.provider, model: response.model } });
     }
 
     if (mode === "question-help") {
