@@ -12,7 +12,7 @@ import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } from "@/lib/learn/contentQuality";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
-import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
+import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 
 export const dynamic = "force-dynamic";
@@ -86,7 +86,7 @@ function validateLesson(value: unknown): { title: string; blocks: LessonBlock[] 
   if (typeof p.title !== "string" || !p.title.trim() || !Array.isArray(p.blocks)) return null;
   const blocks = p.blocks.filter((b): b is LessonBlock => !!b && typeof b === "object" && typeof (b as LessonBlock).type === "string" && typeof (b as LessonBlock).content === "string" && (b as LessonBlock).content.trim().length >= 40).slice(0, 28);
   const required = new Set(["objective", "concept", "example", "checkpoint", "exam", "mistake", "summary"]);
-  const types = new Set(blocks.map(b => b.type));
+  const types = new Set(blocks.map(b => normalizeLessonBlockType(b.type)));
   if (blocks.length < 14 || ![...required].every(type => types.has(type))) return null;
   return { title: p.title.trim().slice(0, 255), blocks };
 }
@@ -246,13 +246,58 @@ export async function POST(req: Request) {
         "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
         "Use 3-5 substantive blocks. Content must be at least 40 characters per block.",
       ].join("\n\n");
-      const rawSection = await callAI(sectionPrompt, 2200, {
-        userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_section",
-        maxChainMs: 22000, perProviderMaxMs: 6000,
-      });
-      const section = rawSection ? safeParseSectionJSON(rawSection) : null;
+      let rawSection: string | null = null;
+      let section: { title: string; blocks: LessonBlock[] } | null = null;
+      let sectionFailures: string[] = [];
+
+      for (let attempt = 0; attempt < 3 && !section; attempt += 1) {
+        const sectionRequestPrompt = attempt === 0
+          ? sectionPrompt
+          : `${sectionPrompt}
+
+REPAIR PASS ${attempt}
+The previous section failed these checks:
+${sectionFailures.map((failure) => `- ${failure}`).join("\n") || "- malformed or unusable structured output"}
+
+Previous candidate:
+${rawSection?.slice(0, 14000) || "No usable candidate was returned."}
+
+Repair only the defective section. Preserve correct material where possible. Do not shorten the teaching merely to satisfy the schema. Return ONLY valid JSON.`;
+        rawSection = await callAI(sectionRequestPrompt, 2200, {
+          userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
+          maxChainMs: attempt === 0 ? 22000 : 16000, perProviderMaxMs: 6000,
+        }).catch((error) => {
+          console.warn("[LEARN] section generation attempt failed", { attempt, error: error instanceof Error ? error.message : String(error) });
+          return null;
+        });
+
+        section = rawSection ? safeParseSectionJSON(rawSection) : null;
+        if (!section) {
+          sectionFailures = ["invalid-section-json-or-structure"];
+          continue;
+        }
+
+        const sectionQuality = lessonQualityFailures({
+          title: section.title,
+          blocks: section.blocks.map((block) => ({
+            type: block.type,
+            title: block.title,
+            content: block.content,
+          })),
+        }, request);
+
+        sectionFailures = sectionQuality.failures.filter((failure) =>
+          !["insufficient-structure", "deep-session-too-thin", "broad-topic-too-thin", "deep-content-too-thin", "deep-examples-too-thin", "deep-checkpoints-too-thin", "deep-continuation-missing", "objective", "summary", "teach-example", "exam"].includes(failure)
+        );
+
+        if (sectionFailures.length > 0) section = null;
+      }
+
       if (!section) {
-        return NextResponse.json({ error: "Cloud lesson section was invalid or incomplete.", retryable: true }, { status: 503 });
+        return NextResponse.json({
+          error: "This lesson section could not be made reliable yet. The generation state is preserved for resume/retry.",
+          retryable: true,
+        }, { status: 503 });
       }
       const currentBlocks = [...priorBlocks, ...section.blocks].slice(-28);
       if (durableJobId) {
@@ -325,22 +370,39 @@ export async function POST(req: Request) {
     let failures = parsed ? lessonQualityFailures(parsed, request).failures : ["generation-unavailable-or-invalid-json"];
 
     if (!parsed || failures.length > 0) {
-      if (raw) {
+      for (let repairAttempt = 0; repairAttempt < 2 && failures.length > 0; repairAttempt += 1) {
+        if (!raw) break;
         try {
           const repairPrompt = buildLessonRepairPrompt(
-            effectiveSubject, request.topic, raw, "", validDifficulty, failures,
-          ) + "\n\nREPAIR CONTRACT\nRepair the identified defects. Preserve correct material. If one branch is weak, deepen that branch specifically. Return only valid JSON.";
-          const repaired = await callAI(repairPrompt, 4200, {
+            effectiveSubject,
+            request.topic,
+            raw,
+            `Learner level: ${level || "unspecified"}\nExam board: ${body.examBoard || "unspecified"}\nResolved request: ${buildResolvedLessonPrompt(request)}`,
+            validDifficulty,
+            failures,
+          ) + `
+REPAIR PASS: ${repairAttempt + 1}
+Do not rewrite good material just for variety. Fix the named defects. Preserve accurate explanations, examples and reasoning. The repaired lesson must be internally coherent and must pass the quality gate, not merely contain more blocks.
+Return only valid JSON.`;
+          const repaired = await callAI(repairPrompt, 4600, {
             userId: user.id, feature: "lesson_assistant", subfeature: "targeted_lesson_repair",
-            maxChainMs: 14000, perProviderMaxMs: 6000,
+            maxChainMs: 16000, perProviderMaxMs: 6000,
           });
           const repairedParsed = repaired ? safeParseJSON(repaired) : null;
-          if (repairedParsed) {
-            const repairedFailures = lessonQualityFailures(repairedParsed, request).failures;
-            if (repairedFailures.length === 0 || repairedFailures.length < failures.length) {
-              parsed = repairedParsed;
-              failures = repairedFailures;
-            }
+          if (!repairedParsed) {
+            failures = ["repair-returned-invalid-json"];
+            continue;
+          }
+          const repairedFailures = lessonQualityFailures(repairedParsed, request).failures;
+          if (repairedFailures.length === 0) {
+            parsed = repairedParsed;
+            failures = [];
+            break;
+          }
+          if (repairedFailures.length < failures.length) {
+            parsed = repairedParsed;
+            failures = repairedFailures;
+            raw = repaired;
           }
         } catch (error) {
           console.warn("[LEARN] targeted lesson repair failed", error instanceof Error ? error.message : String(error));
