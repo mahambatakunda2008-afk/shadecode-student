@@ -34,8 +34,6 @@ export async function runHybridJson<T>(request: HybridJsonRequest<T>): Promise<T
   const canParallel = localReady && (request.preferParallel ?? true);
 
   const local = () => runLocal(request, request.validate);
-  const cloud = () => request.cloud(new AbortController().signal);
-
   if (canParallel) {
     const controller = new AbortController();
     try {
