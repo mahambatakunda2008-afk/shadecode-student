@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { runHybridJson } from "@/lib/cortex/hybridJson";
 
 interface Question {
   id: string;
@@ -70,19 +71,41 @@ export default function QuestionBankPage() {
     setCortexError(null);
     setCortexLoading(true);
     try {
-      const response = await fetch("/api/exam-hub/cortex", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          mode: "question-help",
-          subject: question.past_papers?.syllabus_id ?? "General",
-          question: question.question_text,
-        }),
+      const subject = question.past_papers?.syllabus_id ?? "General";
+      const localPrompt = `You are Cortex, helping a student with an extracted past-paper question.
+Subject: ${subject}
+Question: ${question.question_text}
+Marks: ${question.marks ?? "unknown"}
+
+Use only evidence present in the question. Explain the key concept, likely method, one useful hint, a worked solution, final answer if determinable, and one exam tip. Return ONLY JSON:
+{"concept":"...","hint":"...","method":["step 1","step 2"],"solution":"...","finalAnswer":"...","examTip":"..."}`;
+      const result = await runHybridJson<CortexResult>({
+        localPrompt,
+        validate: (value): value is CortexResult => {
+          const v = value as CortexResult;
+          return !!v && typeof v === "object" &&
+            (typeof v.solution === "string" || typeof v.hint === "string" || typeof v.concept === "string");
+        },
+        cloud: async (signal) => {
+          const response = await fetch("/api/exam-hub/cortex", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            signal,
+            body: JSON.stringify({
+              mode: "question-help",
+              subject,
+              question: question.question_text,
+            }),
+          });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.error ?? "Cortex could not answer right now");
+          return payload as CortexResult;
+        },
+        localMaxTokens: 1200,
+        preferParallel: true,
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Cortex could not answer right now");
-      setCortexResult(payload);
+      setCortexResult(result);
     } catch (err) {
       setCortexError(err instanceof Error ? err.message : "Cortex could not answer right now");
     } finally {
