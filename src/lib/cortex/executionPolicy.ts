@@ -1,7 +1,8 @@
 /**
  * Cortex execution policy.
  *
- * Local-first: Vercel is delivery/control-plane infrastructure, not the brain.
+ * Local and cloud are peers. The router chooses whether to run one lane,
+ * prepare both, or race both when the local model is already warm.
  */
 export type CortexExecutionPath = "deterministic-local" | "browser-local-model" | "peer-assisted" | "cloud-fallback";
 export interface CortexExecutionCapabilities { online: boolean; browserModelReady: boolean; peerAvailable: boolean; cloudAvailable: boolean; }
@@ -11,13 +12,16 @@ export function chooseCortexExecutionPath(capabilities: CortexExecutionCapabilit
   const fallbacks: CortexExecutionPath[] = [];
   if (capabilities.browserModelReady) {
     if (capabilities.peerAvailable) fallbacks.push("peer-assisted");
-    if (capabilities.cloudAvailable && capabilities.online) fallbacks.push("cloud-fallback");
-    return { primary: "browser-local-model", fallbacks, reason: "Run generative work on-device when a real local model is ready." };
+    if (capabilities.cloudAvailable && capabilities.online && complexity !== "simple") fallbacks.push("cloud-fallback");
+    if (capabilities.cloudAvailable && capabilities.online && complexity !== "simple") {
+      return { primary: "browser-local-model", fallbacks, reason: "Local and cloud may execute in parallel; the quality gate arbitrates the first valid result." };
+    }
+    return { primary: "browser-local-model", fallbacks, reason: "Use the warm browser-local model when no parallel cloud lane is useful." };
   }
   if (capabilities.peerAvailable) {
     if (capabilities.cloudAvailable && capabilities.online) fallbacks.push("cloud-fallback");
     return { primary: "peer-assisted", fallbacks, reason: "Use distributed execution before cloud generation." };
   }
-  if (capabilities.cloudAvailable && capabilities.online) return { primary: "cloud-fallback", fallbacks: [], reason: "Cloud is fallback because no local execution path is ready." };
+  if (capabilities.cloudAvailable && capabilities.online) return { primary: "cloud-fallback", fallbacks: [], reason: "Cloud runs while local execution warms or remains unavailable." };
   return { primary: "deterministic-local", fallbacks: [], reason: "Remain useful offline with deterministic Cortex intelligence." };
 }
