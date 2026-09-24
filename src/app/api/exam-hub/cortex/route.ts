@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
+import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -33,6 +34,26 @@ function extractJson(text: string): unknown {
   if (!shared.ok) throw new Error("Cortex output failed shared QA.");
   return parsed;
 }
+
+async function repairStructuredOutput(
+  original: string,
+  requirements: string,
+): Promise<unknown> {
+  const repairPrompt = `You are Cortex's output-repair stage.
+The previous model output did not satisfy the required structured-output contract.
+Do not invent facts. Preserve correct information where possible, remove meta/failure text, and fill missing structure only when it is directly supported by the source context.
+
+REQUIRED OUTPUT:
+${requirements}
+
+PREVIOUS OUTPUT:
+${original.slice(0, 16000)}
+
+Return ONLY valid JSON matching the required structure.`;
+  const repaired = await generate(repairPrompt);
+  return extractJson(repaired.text);
+}
+
 function validTutorPayload(value: unknown): value is {
   content: string;
   type: "question" | "guidance" | "feedback" | "explanation" | "reinforcement";
