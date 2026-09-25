@@ -162,7 +162,9 @@ export async function POST(req: Request) {
       if (!question && !image) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
       const instruction = level === "hint" ? "Give a short hint that nudges the student without revealing the answer." : level === "method" ? "Explain the method and steps without giving the final answer." : "Give a complete worked solution because the student explicitly requested it.";
       const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Help level: ${level}. ${instruction} Return ONLY JSON with keys level, hint, method, solution, finalAnswer, content as appropriate. Keep explanations student-friendly.`;
-      const result = await runStructured(prompt, image);\n      if (!validHelp(result)) return NextResponse.json({ error: "Cortex returned an incomplete explanation. Please try again." }, { status: 502 });\n      return NextResponse.json(result);
+      const result = await runStructured(prompt, image);
+      if (!validHelp(result)) return NextResponse.json({ error: "Cortex returned an incomplete explanation. Please try again." }, { status: 502 });
+      return NextResponse.json(result);
     }
 
     return NextResponse.json({ error: "Unknown Cortex mode." }, { status: 400 });
