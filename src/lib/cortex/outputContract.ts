@@ -48,9 +48,10 @@ export function parseCortexJson(value: string): unknown {
   throw new Error("Cortex returned malformed structured output.");
 }
 
-function validateString(path: string, text: string, minTextLength: number, maxTextLength: number, failures: CortexOutputFailure[]) {
+function validateString(path: string, text: string, minTextLength: number, maxTextLength: number, failures: CortexOutputFailure[], allowEmptyStringPaths: Set<string>) {
   const value = text.trim();
   if (!value) {
+    if (allowEmptyStringPaths.has(path)) return;
     failures.push({ code: "empty", path, message: `Field ${path} is empty.` });
     return;
   }
@@ -65,30 +66,31 @@ function validateString(path: string, text: string, minTextLength: number, maxTe
   }
 }
 
-function walk(value: unknown, path: string, minTextLength: number, maxTextLength: number, failures: CortexOutputFailure[], depth = 0) {
+function walk(value: unknown, path: string, minTextLength: number, maxTextLength: number, failures: CortexOutputFailure[], allowEmptyStringPaths: Set<string>, depth = 0) {
   if (depth > 5 || value === null || value === undefined) return;
   if (typeof value === "string") {
-    validateString(path, value, minTextLength, maxTextLength, failures);
+    validateString(path, value, minTextLength, maxTextLength, failures, allowEmptyStringPaths);
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((item, index) => walk(item, `${path}[${index}]`, minTextLength, maxTextLength, failures, depth + 1));
+    value.forEach((item, index) => walk(item, `${path}[${index}]`, minTextLength, maxTextLength, failures, allowEmptyStringPaths, depth + 1));
     return;
   }
   if (typeof value === "object") {
     for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      walk(child, path ? `${path}.${key}` : key, minTextLength, maxTextLength, failures, depth + 1);
+      walk(child, path ? `${path}.${key}` : key, minTextLength, maxTextLength, failures, allowEmptyStringPaths, depth + 1);
     }
   }
 }
 
 export function validateCortexObject(
   value: unknown,
-  options: { minTextLength?: number; maxTextLength?: number } = {},
+  options: { minTextLength?: number; maxTextLength?: number; allowEmptyStringPaths?: string[] } = {},
 ): CortexOutputValidation {
   const failures: CortexOutputFailure[] = [];
   const minTextLength = options.minTextLength ?? 1;
   const maxTextLength = options.maxTextLength ?? 20000;
+  const allowEmptyStringPaths = new Set(options.allowEmptyStringPaths ?? []);
 
   if (value === null || value === undefined) {
     return { ok: false, failures: [{ code: "empty", message: "Cortex returned no output." }] };
@@ -97,13 +99,13 @@ export function validateCortexObject(
     return { ok: false, failures: [{ code: "not_object", message: "Cortex structured output must be an object." }] };
   }
 
-  walk(value, "", minTextLength, maxTextLength, failures);
+  walk(value, "", minTextLength, maxTextLength, failures, allowEmptyStringPaths);
   return { ok: failures.length === 0, failures };
 }
 
 export function assertCortexObject(
   value: unknown,
-  options?: { minTextLength?: number; maxTextLength?: number },
+  options?: { minTextLength?: number; maxTextLength?: number; allowEmptyStringPaths?: string[] },
 ): void {
   const result = validateCortexObject(value, options);
   if (!result.ok) {
