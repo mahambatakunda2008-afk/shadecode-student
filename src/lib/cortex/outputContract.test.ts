@@ -4,9 +4,7 @@ import { parseCortexJson, validateCortexObject } from "./outputContract";
 describe("Cortex output contract", () => {
   it("parses fenced JSON and embedded objects", () => {
     expect(parseCortexJson('hello {"content":"A useful explanation."}')).toEqual({ content: "A useful explanation." });
-    expect(parseCortexJson('```json
-{"content":"A useful explanation."}
-```')).toEqual({ content: "A useful explanation." });
+    expect(parseCortexJson("```json\n{\"content\":\"A useful explanation.\"}\n```")).toEqual({ content: "A useful explanation." });
   });
 
   it("rejects empty and placeholder output", () => {
