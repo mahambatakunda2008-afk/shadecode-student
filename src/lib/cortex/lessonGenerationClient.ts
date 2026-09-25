@@ -484,7 +484,27 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     const message = errorMessage(error); const context = localContext(job);
     if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
       try {
-        return await saveLocalResult(job);
+        // An online provider failure is not an offline-storage success.
+        // Build from the verified local curriculum lane, then use the same
+        // server persistence path so the lesson is not stranded on one device.
+        const localFallback = await (async () => {
+          const request = resolvedRequest(job);
+          const local = generateLocalLesson(job.request.subject, job.request.prompt, context);
+          const validated = validateResult(
+            { id: local.id, title: local.title, blocks: local.blocks },
+            request,
+          );
+          if (!validated) throw new Error("Local curriculum fallback failed the learning-quality checks.");
+          return { ...validated, offlineFallback: false, localModel: false };
+        })();
+
+        if (token && navigator.onLine) {
+          const finished = await persistGeneratedLesson(job, localFallback, token);
+          await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+        }
+
+        return await saveLocalResult(job, localFallback);
       } catch (fallbackError) {
         console.warn("[LEARN] local fallback was available but failed its quality gate", fallbackError instanceof Error ? fallbackError.message : String(fallbackError));
       }
