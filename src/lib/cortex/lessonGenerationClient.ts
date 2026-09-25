@@ -359,8 +359,11 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
 
           lastError = new Error(sectionData?.error || `Section generation failed (${response.status})`);
-          const retryable = response.status === 408 || response.status === 409 || response.status === 422 ||
-            response.status === 429 || response.status >= 500;
+          const providerUnavailable = sectionData?.providerUnavailable === true || sectionData?.retryable === false;
+          const retryable = !providerUnavailable && (
+            response.status === 408 || response.status === 409 || response.status === 422 ||
+            response.status === 429
+          );
           if (!retryable || attempt === MAX_CLOUD_ATTEMPTS - 1) throw lastError;
         } catch (error) {
           lastError = error;
@@ -554,7 +557,11 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (isBrowser() && !navigator.onLine) {
       updateGenerationJob(job.id, { status: "queued", progress: 20, error: "Waiting for a connection." });
       saveActiveId(job.id);
-    } else if (shouldRetry(job.retryCount, 5)) {
+    } else if (
+      !message.toLowerCase().includes("provider unavailable") &&
+      !message.toLowerCase().includes("provider chain exhausted") &&
+      shouldRetry(job.retryCount, 5)
+    ) {
       const retryCount = job.retryCount + 1;
       const failureClass = classifyCortexFailure(error);
       updateGenerationJob(job.id, { status: "queued", progress: Math.min(90, Math.max(20, job.progress)), retryCount, error: `Cortex hit a ${failureClass} generation failure. Retrying automatically (attempt ${retryCount + 1}/6)…` });
