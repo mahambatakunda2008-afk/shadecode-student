@@ -29,7 +29,7 @@ const CHECK_SCHEMA = `Return ONLY valid JSON with this shape:
 
 function extractJson(text: string) {
   const parsed = parseCortexJson(text);
-  const validation = validateCortexObject(parsed, { minTextLength: 3, maxTextLength: 20000 });
+  const validation = validateCortexObject(parsed, {\n    minTextLength: 3,\n    maxTextLength: 20000,\n    allowEmptyStringPaths: [\n      "retakeReason",\n      "problem",\n      /^steps\\[\\d+\\]\\.note$/,\n      /^marksBreakdown\\[\\d+\\]\\.note$/,\n      "level",\n      "hint",\n      "method",\n      "solution",\n      "finalAnswer",\n      "content",\n    ],\n  });
   if (!validation.ok) throw new Error("Cortex Verify output failed shared QA.");
   return parsed;
 }
