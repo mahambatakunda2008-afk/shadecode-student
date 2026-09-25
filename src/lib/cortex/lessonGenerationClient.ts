@@ -437,8 +437,23 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       });
 
       const winner = await firstSuccessful([localLane, cloudLane]);
-      const finished = await saveLocalResult(job, winner);
-      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+
+      // A browser-local winner is still a real generated lesson. When the
+      // learner is online and authenticated, never strand it in IndexedDB.
+      // The parallel lane used to call saveLocalResult() unconditionally,
+      // which is exactly how valid local Cortex lessons ended up as
+      // "saving on this device" even though the user was online.
+      const finished = token && online
+        ? await persistGeneratedLesson(job, winner, token)
+        : await saveLocalResult(job, winner);
+
+      if (token && online) {
+        await syncDurableGenerationJob(
+          token,
+          (getGenerationJob(job.id) ?? finished) as GenerationJob,
+          "complete",
+        );
+      }
       return finished;
     }
 
