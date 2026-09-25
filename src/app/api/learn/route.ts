@@ -359,7 +359,18 @@ Repair only the defective section. Preserve correct material where possible. Do 
           return null;
         });
 
-        section = rawSection ? safeParseSectionJSON(rawSection) : null;
+        // A null AI response means the provider chain was exhausted, not that the
+        // section merely needs another schema repair. Do not burn another 16-22s
+        // retrying the same dead provider chain.
+        if (!rawSection) {
+          return NextResponse.json({
+            error: "Cortex providers are currently unavailable. Switch to a local recovery lane or retry later.",
+            retryable: false,
+            providerUnavailable: true,
+          }, { status: 503 });
+        }
+
+        section = safeParseSectionJSON(rawSection);
         if (!section) {
           sectionFailures = ["invalid-section-json-or-structure"];
           continue;
