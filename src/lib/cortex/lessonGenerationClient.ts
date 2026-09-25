@@ -358,15 +358,21 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           sectionData = await response.json().catch(() => ({}));
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
 
-          lastError = new Error(sectionData?.error || `Section generation failed (${response.status})`);
           const providerUnavailable = sectionData?.providerUnavailable === true || sectionData?.retryable === false;
-          const retryable = !providerUnavailable && (
-            response.status === 408 || response.status === 409 || response.status === 422 ||
-            response.status === 429
+          lastError = new Error(
+            providerUnavailable
+              ? `Cortex provider unavailable: ${sectionData?.error || "No online AI provider is currently available."}`
+              : (sectionData?.error || `Section generation failed (${response.status})`)
           );
+          if (providerUnavailable) throw lastError;
+          const retryable = response.status === 408 || response.status === 409 || response.status === 422 ||
+            response.status === 429;
           if (!retryable || attempt === MAX_CLOUD_ATTEMPTS - 1) throw lastError;
         } catch (error) {
           lastError = error;
+          if (String(error instanceof Error ? error.message : error).toLowerCase().includes("provider unavailable")) {
+            throw error;
+          }
           if (!shouldRetry(attempt + 1, MAX_CLOUD_ATTEMPTS)) throw error;
         } finally {
           clearTimeout(timeout);
