@@ -251,7 +251,7 @@ export async function POST(req: Request) {
       let sectionFailures: string[] = [];
 
       for (let attempt = 0; attempt < 3 && !section; attempt += 1) {
-        const sectionRequestPrompt = attempt === 0
+        const sectionRequestPrompt: string = attempt === 0
           ? sectionPrompt
           : `${sectionPrompt}
 
