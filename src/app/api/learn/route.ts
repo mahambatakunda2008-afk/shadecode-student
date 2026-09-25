@@ -256,7 +256,7 @@ export async function POST(req: Request) {
         }, { status: 422 });
       }
 
-      const finalScore = lessonQualityScore(candidate.blocks);
+      const finalScore = lessonQualityScore(persistableCandidate.blocks);
       if (finalScore < 45) {
         return NextResponse.json({ error: "Generated lesson did not meet the depth standard.", retryable: true }, { status: 422 });
       }
