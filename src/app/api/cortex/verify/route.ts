@@ -35,8 +35,8 @@ function extractJson(text: string) {
     allowEmptyStringPaths: [
       "retakeReason",
       "problem",
-      /^steps[\\d+].note$/,
-      /^marksBreakdown[\\d+].note$/,
+      /^steps\\[\\d+\\]\\.note$/,
+      /^marksBreakdown\\[\\d+\\]\\.note$/,
       "level",
       "hint",
       "method",
