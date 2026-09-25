@@ -110,7 +110,12 @@ async function openAI(prompt: string, image?: { data: string; mimeType: string }
   return { text: data.choices?.[0]?.message?.content || "", provider: "openai", model: "gpt-4o-mini" };
 }
 
-async function runStructured(prompt: string, image?: { data: string; mimeType: string }) {
+type StructuredVerifyResult = Record<string, unknown> & {
+  needsRetake?: boolean;
+  retakeReason?: string;
+};
+
+async function runStructured(prompt: string, image?: { data: string; mimeType: string }): Promise<StructuredVerifyResult> {
   const providers = [() => gemini(prompt, image), () => openAI(prompt, image)];
   let lastError: unknown;
   for (const provider of providers) {
@@ -118,7 +123,10 @@ async function runStructured(prompt: string, image?: { data: string; mimeType: s
       const response = await provider();
       const parsed = extractJson(response.text);
       if (!parsed || typeof parsed !== "object") throw new Error("Cortex Verify returned a non-object result.");
-      return { parsed, _source: { provider: response.provider, model: response.model } };
+      return {
+        ...(parsed as Record<string, unknown>),
+        _source: { provider: response.provider, model: response.model },
+      };
     } catch (error) { lastError = error; }
   }
   throw lastError instanceof Error ? lastError : new Error("All Cortex providers failed");
