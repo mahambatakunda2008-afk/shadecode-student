@@ -260,6 +260,45 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
 
   return candidate;
 }
+async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>, generated: LessonGenerationResult, token: string): Promise<LessonGenerationResult> {
+  const request = resolvedRequest(job);
+  const response = await fetch("/api/learn", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      type: "lesson",
+      generationMode: "persist",
+      generationJobId: job.id,
+      subject: job.request.subject,
+      topic: job.request.prompt,
+      difficulty: job.request.difficulty,
+      goal: job.request.goal,
+      level: job.request.level,
+      examBoard: job.request.examBoard,
+      generatedLesson: {
+        title: generated.title,
+        blocks: generated.blocks,
+      },
+    }),
+    cache: "no-store",
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data?.id || !Array.isArray(data?.blocks)) {
+    throw new Error(data?.error || `Lesson persistence failed (${response.status})`);
+  }
+  const persisted: LessonGenerationResult = {
+    id: String(data.id),
+    title: String(data.title || generated.title),
+    blocks: data.blocks as Array<Record<string, unknown>>,
+    localModel: generated.localModel,
+    offlineFallback: generated.offlineFallback,
+  };
+  updateGenerationJob(job.id, { status: "complete", progress: 100, result: persisted, partial: undefined, error: undefined });
+  if (getActiveId() === job.id) saveActiveId(null);
+  openCompletedLesson(persisted);
+  return persisted;
+}
+
 async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: string): Promise<LessonGenerationResult | null> {
     let data: any = null;
     let lastError: unknown = null;
@@ -406,16 +445,41 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (hybrid.mode === "local") {
       const localModel = await tryLocalModel(job, token);
       if (localModel) {
-        const finished = await saveLocalResult(job, localModel);
-        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
-        return finished;
+        if (token) {
+          const finished = await persistGeneratedLesson(job, localModel, token);
+          await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+        }
+        return saveLocalResult(job, localModel);
       }
     }
 
-    if (isBrowser() && !navigator.onLine) { const finished = await saveLocalResult(job); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete"); return finished; }
+    // Cloud is the normal online lane. "parallel-prep" means the local model is
+    // available but cold, so cloud work must not wait for a model download.
+    if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep") {
+      const cloudModel = await tryCloudLesson(job, token);
+      if (cloudModel) {
+        const finished = await persistGeneratedLesson(job, cloudModel, token);
+        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+        return getGenerationJobs().find(item => item.id === job.id) ?? job;
+      }
+      if (hybrid.mode === "parallel-prep" && localStatus === "available") {
+        const localModel = await tryLocalModel(job, token);
+        if (localModel) {
+          const finished = await persistGeneratedLesson(job, localModel, token);
+          await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+        }
+      }
+    }
 
+    if (isBrowser() && !navigator.onLine) {
+      const finished = await saveLocalResult(job);
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+      return finished;
+    }
 
-
+    throw new Error("All online lesson generation lanes failed.");
   } catch (error) {
     const message = errorMessage(error); const context = localContext(job);
     if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
