@@ -214,10 +214,81 @@ export async function POST(req: Request) {
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
     const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
-    const generationMode = body.generationMode === "section" ? "section" : "complete";
+    const generationMode = body.generationMode === "section" || body.generationMode === "persist" ? body.generationMode : "complete";
     const generationSectionIndex = Number.isInteger(body.generationSectionIndex) ? Number(body.generationSectionIndex) : 0;
     const generationSectionCount = Number.isInteger(body.generationSectionCount) ? Number(body.generationSectionCount) : (request.broadTopic ? 6 : 4);
     const priorBlocks = Array.isArray(body.priorBlocks) ? body.priorBlocks.slice(-12) : [];
+
+    if (generationMode === "persist") {
+      const generated = body.generatedLesson;
+      if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
+        return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
+      }
+
+      const candidate = validateLesson(generated);
+      if (!candidate) {
+        return NextResponse.json({ error: "Generated lesson failed the server lesson contract.", retryable: true }, { status: 422 });
+      }
+
+      const quality = lessonQualityFailures(candidate, request).failures;
+      if (quality.length > 0) {
+        return NextResponse.json({
+          error: "Generated lesson failed the learning-quality checks.",
+          failures: quality,
+          retryable: true,
+        }, { status: 422 });
+      }
+
+      const finalScore = lessonQualityScore(candidate.blocks);
+      if (finalScore < 45) {
+        return NextResponse.json({ error: "Generated lesson did not meet the depth standard.", retryable: true }, { status: 422 });
+      }
+
+      const lessonRow = {
+        user_id: user.id,
+        subject_id: resolvedSubject.id,
+        topic: request.topic.slice(0, 500),
+        title: candidate.title,
+        description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+        difficulty: validDifficulty,
+        progress: 0,
+        blocks: candidate.blocks,
+        updated_at: new Date().toISOString(),
+      };
+
+      let savedId = durableJobId;
+      let saveError: any = null;
+      if (durableJobId) {
+        const { data: updated, error } = await supabase.from("learn_lessons")
+          .update(lessonRow)
+          .eq("id", durableJobId)
+          .eq("user_id", user.id)
+          .select("id")
+          .maybeSingle();
+        savedId = updated?.id ?? durableJobId;
+        saveError = error;
+      } else {
+        const { data: inserted, error } = await supabase.from("learn_lessons")
+          .insert(lessonRow)
+          .select("id")
+          .single();
+        savedId = inserted?.id ?? null;
+        saveError = error;
+      }
+
+      if (saveError || !savedId) {
+        return NextResponse.json({ error: "The lesson was generated but could not be saved.", retryable: true }, { status: 500 });
+      }
+
+      await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+      return NextResponse.json({
+        id: savedId,
+        title: candidate.title,
+        blocks: candidate.blocks,
+        qualityScore: finalScore,
+        subject: effectiveSubject,
+      });
+    }
 
     if (generationMode === "section") {
       const sectionJobs = request.broadTopic
