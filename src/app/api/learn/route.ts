@@ -226,11 +226,28 @@ export async function POST(req: Request) {
       }
 
       const candidate = validateLesson(generated);
-      if (!candidate) {
+      const normalizedGeneratedBlocks = Array.isArray(generated.blocks)
+        ? generated.blocks.filter((block: unknown): block is LessonBlock =>
+            !!block &&
+            typeof block === "object" &&
+            typeof (block as LessonBlock).type === "string" &&
+            typeof (block as LessonBlock).content === "string" &&
+            (block as LessonBlock).content.trim().length >= 40
+          ).slice(0, 28)
+        : [];
+      const minimumPersistBlocks = request.broadTopic ? 16 : 10;
+      const persistableCandidate = candidate ?? (
+        typeof generated.title === "string" &&
+        generated.title.trim().length > 0 &&
+        normalizedGeneratedBlocks.length >= minimumPersistBlocks
+          ? { title: generated.title.trim().slice(0, 255), blocks: normalizedGeneratedBlocks }
+          : null
+      );
+      if (!persistableCandidate) {
         return NextResponse.json({ error: "Generated lesson failed the server lesson contract.", retryable: true }, { status: 422 });
       }
 
-      const quality = lessonQualityFailures(candidate, request).failures;
+      const quality = lessonQualityFailures(persistableCandidate, request).failures;
       if (quality.length > 0) {
         return NextResponse.json({
           error: "Generated lesson failed the learning-quality checks.",
@@ -248,11 +265,11 @@ export async function POST(req: Request) {
         user_id: user.id,
         subject_id: resolvedSubject.id,
         topic: request.topic.slice(0, 500),
-        title: candidate.title,
+        title: persistableCandidate.title,
         description: `A deep ${validDifficulty} lesson on ${request.topic}`,
         difficulty: validDifficulty,
         progress: 0,
-        blocks: candidate.blocks,
+        blocks: persistableCandidate.blocks,
         updated_at: new Date().toISOString(),
       };
 
@@ -283,8 +300,8 @@ export async function POST(req: Request) {
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
       return NextResponse.json({
         id: savedId,
-        title: candidate.title,
-        blocks: candidate.blocks,
+        title: persistableCandidate.title,
+        blocks: persistableCandidate.blocks,
         qualityScore: finalScore,
         subject: effectiveSubject,
       });
