@@ -190,7 +190,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   // Direct Google fallback remains deliberately small and stable. Do not add
   // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
   const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"];
+  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
 
   async function callGemini(key: string, model: string): Promise<string | null> {
     return tryProvider("gemini", model, async timeout => {
