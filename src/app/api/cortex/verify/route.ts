@@ -118,7 +118,7 @@ async function runStructured(prompt: string, image?: { data: string; mimeType: s
       const response = await provider();
       const parsed = extractJson(response.text);
       if (!parsed || typeof parsed !== "object") throw new Error("Cortex Verify returned a non-object result.");
-      return { ...(parsed as Record<string, unknown>), _source: { provider: response.provider, model: response.model } };
+      return { parsed, _source: { provider: response.provider, model: response.model } };
     } catch (error) { lastError = error; }
   }
   throw lastError instanceof Error ? lastError : new Error("All Cortex providers failed");
