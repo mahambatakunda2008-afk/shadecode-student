@@ -4,6 +4,22 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-23 — Added Groq as a free-tier provider; fixed two unrelated typecheck breaks blocking main
+
+**Context: the owner cannot pay for AI providers.** Since `ALLOW_PAID_AI`/OpenAI is off the table, the useful lever left is genuine free-tier redundancy, not more budget tuning.
+
+**Added Groq** (`src/lib/ai.ts`): a no-card-required, independent-vendor free tier (30 RPM / 14,400 requests per day on `llama-3.3-70b-versatile`, typically sub-2s responses), gated on `GROQ_API_KEY`. Placed first among the text fallbacks (fastest, and a genuinely different vendor from Gemini/Cloudflare/OpenRouter, reducing the chance of every provider being down at once, as happened 2026-09-21/22). It is a no-op until the owner signs up for a free key at console.groq.com and sets it in Vercel — no other action needed; it goes through the same `tryProvider` hard-race and budget machinery as every other provider. Tests: calls Groq when it's the only configured provider, falls through to OpenRouter on failure, is skipped for multimodal requests (media-aware providers only) alongside OpenRouter.
+
+**Fixed two unrelated typecheck errors found while doing this**, both present on `main` before my change (confirmed by stashing my edit and re-running `tsc`), from the fast-moving concurrent work of the last two days:
+- `src/app/api/cortex/verify/route.ts`: `extractJson`'s inferred return type was `unknown` (from `parseCortexJson`), so `{ ...extractJson(...), _source: {...} }` failed "spread types may only be created from object types." Typed it as `Record<string, unknown>` post-validation (the validation call already confirms it's a valid object at runtime). That then surfaced a second, previously-masked error: the spread's inferred type had dropped the index signature once merged with `_source`, so `result.needsRetake`/`result.retakeReason` (accessed by the caller) no longer type-checked. Annotated `runStructured`'s return type explicitly to keep both.
+- `src/app/api/learn/route.ts`: `sectionRequestPrompt` (an accumulator built across repair attempts) hit TS7022 (implicitly-any via circular initializer inference). Added an explicit `: string` annotation; value is unambiguously a string in both ternary branches.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 745 tests; 2 new Groq tests plus the multimodal skip test updated).
+
+**Still true from yesterday:** the underlying free providers (Gemini, OpenRouter, Cloudflare) were all failing simultaneously in production. Groq adds a genuinely independent option for exactly that scenario; it cannot fix an external provider being down, but gives the chain another real chance when the others are.
+
+---
+
 ## 2026-09-22 (3) — Fixed a lint error the Vercel build didn't catch, on the fast-moving browser-local model work
 
 Another agent landed ~18 commits in quick succession building browser-local WebLLM inference, section-resumable generation, and hybrid local/cloud execution. Deploys were showing READY on Vercel, but `npm run verify` on the exact same head found a real lint error Vercel's `next build` alone doesn't run: `src/lib/cortex/localModel.ts` assigned to a local variable named `module`, which Next.js's `no-assign-module-variable` rule flags (it shadows the CommonJS `module` global in a way that can break bundling). Purely a naming collision in dynamically-imported browser code, unrelated to Node's module system. Renamed to `webllmModule` (3 uses); the unrelated `type: "module"` string literal for the Worker constructor is untouched.
