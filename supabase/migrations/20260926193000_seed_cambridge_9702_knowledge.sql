@@ -1,3 +1,9 @@
+-- Reconcile the already-registered official source before seeding the knowledge layer.
+insert into public.curriculum_sources (id,board_id,qualification_id,subject_id,level,authority,kind,url,allowed_domains,frequency,discover_linked_documents,extract_text,auto_promote,active,last_status,syllabus_id,syllabus_version)
+values ('cambridge-9702-2025-2027','cambridge','cambridge-as-a-level','physics','as_level','Cambridge International Education','pdf','https://www.cambridgeinternational.org/Images/664565-2025-2027-syllabus.pdf',ARRAY['www.cambridgeinternational.org','cambridgeinternational.org'],'weekly',false,true,false,true,'ok','cambridge-9702','2025-2027')
+on conflict (url) do update set active=true,authority=excluded.authority,kind='pdf',frequency='weekly',discover_linked_documents=false,extract_text=true,auto_promote=false,syllabus_id='cambridge-9702',syllabus_version='2025-2027',last_status='ok';
+update public.curriculum_documents set source_id='cambridge-9702-2025-2027' where id='a7d04097-c119-4039-8375-73cfad98ca24';
+
 -- Cambridge International AS & A Level Physics 9702 (2025-2027) verified knowledge seed
 -- Source: https://www.cambridgeinternational.org/Images/664565-2025-2027-syllabus.pdf
 -- Dataset checksum: 9fe5528df59f72e795dcbd6fb7fe2ff8c
