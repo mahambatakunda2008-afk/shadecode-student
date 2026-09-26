@@ -151,6 +151,29 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
+  // Groq: a genuinely free (no card required), independent-vendor provider with typically sub-2s
+  // inference, added 2026-09-23 after Gemini, OpenRouter and Cloudflare were all found failing
+  // simultaneously in production. Diversifying vendors reduces the chance every provider is down at
+  // once; placed first among the text fallbacks since it's the fastest and, being free-tier stable
+  // (unlike OpenRouter's free router, which recently returned empty responses), the most likely to
+  // succeed. No-op until GROQ_API_KEY is set (free sign-up at console.groq.com, no card required).
+  if (!media.length && process.env.GROQ_API_KEY && canTry()) {
+    const text = await tryProvider("groq", "llama-3.3-70b-versatile", async timeout => {
+      const res = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+      }, timeout);
+      if (!res.ok) throw new Error(`Groq HTTP ${res.status}`);
+      const data = await res.json() as any;
+      return typeof data?.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : null;
+    });
+    if (text) return text;
+  }
+
   // OpenRouter's free tier is currently the only provider with a proven production success
   // rate (see ai_usage_logs 2026-09-19/20: ~64% vs Gemini's 0% and Cloudflare's 0% over the
   // same window). Keep it as a real fallback after the Gateway attempt, not just Cloudflare/
@@ -213,8 +236,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     });
   }
 
-  // Text fallback order after Gateway: OpenRouter (proven reliable), then Cloudflare, then
-  // stable Gemini models, then paid OpenAI only when explicitly enabled.
+  // Text fallback order after Gateway: Groq (fast, free, independent vendor), then OpenRouter,
+  // then Cloudflare, then stable Gemini models, then paid OpenAI only when explicitly enabled.
   for (const key of geminiKeys) {
     for (const model of geminiModels) {
       if (!canTry()) break;

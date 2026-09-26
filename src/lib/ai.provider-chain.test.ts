@@ -33,6 +33,35 @@ describe("callAI provider fallback chain", () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
+  it("calls Groq and returns its text when it is the only configured provider", async () => {
+    vi.stubEnv("GROQ_API_KEY", "test-key");
+    fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a full lesson from groq" } }] }));
+    const { callAI } = await import("./ai");
+    const result = await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+    expect(result).toBe("a full lesson from groq");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.groq.com/openai/v1/chat/completions");
+    expect(JSON.parse((init as RequestInit).body as string).model).toBe("llama-3.3-70b-versatile");
+  });
+
+  it("tries Groq before OpenRouter, falling through to OpenRouter on failure", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq-key");
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes("groq.com")) return jsonResponse(null, false, 503);
+      if (url.includes("openrouter.ai")) return jsonResponse({ choices: [{ message: { content: "a lesson from openrouter" } }] });
+      throw new Error(`unexpected url: ${url}`);
+    });
+    const { callAI } = await import("./ai");
+    const result = await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+    expect(result).toBe("a lesson from openrouter");
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
+      "https://api.groq.com/openai/v1/chat/completions",
+      "https://openrouter.ai/api/v1/chat/completions",
+    ]);
+  });
+
   it("calls OpenRouter and returns its text when it is the only configured provider", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
     fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a lesson from openrouter" } }] }));
@@ -104,7 +133,8 @@ describe("callAI provider fallback chain", () => {
     expect(elapsedMs, `took ${elapsedMs}ms`).toBeLessThan(2000);
   }, 10000);
 
-  it("skips OpenRouter for multimodal requests (media-aware providers only)", async () => {
+  it("skips Groq and OpenRouter for multimodal requests (media-aware providers only)", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq-key");
     vi.stubEnv("OPENROUTER_API_KEY", "or-key");
     vi.stubEnv("GEMINI_API_KEY", "g-key");
     fetchMock.mockImplementation(async (url: string) => {
@@ -118,6 +148,8 @@ describe("callAI provider fallback chain", () => {
       media: [{ mimeType: "image/png", data: "AAAA" }],
     });
     expect(result).toBe("a lesson from gemini with the image");
-    expect(fetchMock.mock.calls.map(([url]) => String(url))).not.toContain("https://openrouter.ai/api/v1/chat/completions");
+    const calledUrls = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(calledUrls).not.toContain("https://api.groq.com/openai/v1/chat/completions");
+    expect(calledUrls).not.toContain("https://openrouter.ai/api/v1/chat/completions");
   });
 });
