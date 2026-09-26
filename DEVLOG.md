@@ -343,7 +343,7 @@ Completed the security audit task by adding regression coverage for authorizatio
 
 ## 2026-09-26 — Cambridge Physics 9702 knowledge layer completed, plus self-audit fixes
 
-The next real curriculum blocker after Mathematics 9709 was Physics 9702. The official Cambridge 2025–2027 syllabus was rechecked before implementation. Cambridge's syllabus confirms 25 topics, AS topics 1–11, A Level topics 1–25, and three assessment objectives covering knowledge/understanding, information handling/application/evaluation, and experimental skills. citeturn3search12turn3search0
+The next real curriculum blocker after Mathematics 9709 was Physics 9702. The official Cambridge 2025–2027 syllabus was rechecked before implementation. Cambridge's syllabus confirms 25 topics, AS topics 1–11, A Level topics 1–25, and three assessment objectives covering knowledge/understanding, information handling/application/evaluation, and experimental skills. Source: Cambridge International 9702 syllabus PDF and official programme page.
 
 ### Implemented
 - Seeded **514 verified `curriculum_knowledge` rows** for Physics 9702:
