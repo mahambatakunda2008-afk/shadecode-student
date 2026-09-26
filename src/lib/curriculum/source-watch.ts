@@ -30,6 +30,23 @@ export interface CurriculumSourceWatch {
  */
 export const CURRICULUM_SOURCE_WATCHES: CurriculumSourceWatch[] = [
   {
+    id: "cambridge-as-a-level-physics-9702-2025-2027",
+    boardId: "cambridge",
+    qualificationId: "cambridge-as-a-level",
+    subjectId: "physics",
+    level: "as_level",
+    syllabusId: "cambridge-9702",
+    syllabusVersion: "2025-2027",
+    authority: "Cambridge International Education",
+    kind: "pdf",
+    url: "https://www.cambridgeinternational.org/Images/664565-2025-2027-syllabus.pdf",
+    allowedDomains: ["www.cambridgeinternational.org", "cambridgeinternational.org"],
+    frequency: "weekly",
+    discoverLinkedDocuments: false,
+    extractText: true,
+    autoPromote: false,
+  },
+  {
     id: "zimsec-syllabi",
     boardId: "zimsec",
     qualificationId: "zimsec-o-level",
