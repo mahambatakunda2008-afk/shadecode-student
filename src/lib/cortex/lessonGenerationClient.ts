@@ -373,11 +373,11 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           if (String(error instanceof Error ? error.message : error).toLowerCase().includes("provider unavailable")) {
             throw error;
           }
-          if (!shouldRetry(attempt + 1, MAX_CLOUD_ATTEMPTS)) throw error;
+          throw error;
         } finally {
           clearTimeout(timeout);
         }
-        await new Promise(resolve => setTimeout(resolve, retryDelay(attempt)));
+        // Server-side repair is the only retry allowed for a section.
       }
 
       if (!sectionData?.blocks?.length) {
