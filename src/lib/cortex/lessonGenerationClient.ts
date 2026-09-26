@@ -17,8 +17,9 @@ import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridR
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 55_000;
-const MAX_CLOUD_ATTEMPTS = 3;
+const CLOUD_GENERATION_TIMEOUT_MS = 28_000;
+// The server owns section repair. The browser must not duplicate that retry loop.
+const MAX_CLOUD_ATTEMPTS = 1;
 let runningJobId: string | null = null;
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
