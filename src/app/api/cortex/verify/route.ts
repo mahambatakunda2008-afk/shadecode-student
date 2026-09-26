@@ -27,7 +27,7 @@ const CHECK_SCHEMA = `Return ONLY valid JSON with this shape:
   "marksBreakdown": [{"criterion":"","marksLost":0,"note":""}]
 }`;
 
-function extractJson(text: string) {
+function extractJson(text: string): Record<string, unknown> {
   const parsed = parseCortexJson(text);
   const validation = validateCortexObject(parsed, {
     minTextLength: 3,
@@ -46,7 +46,7 @@ function extractJson(text: string) {
     ],
   });
   if (!validation.ok) throw new Error("Cortex Verify output failed shared QA.");
-  return parsed;
+  return parsed as Record<string, unknown>;
 }
 
 function validCheck(value: any) {
