@@ -71,6 +71,29 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
     paperPatterns: COMMON_PAPER_PATTERNS,
   },
 
+
+  "cambridge-as-a-level-physics-9702": {
+    topicHeadings: [
+      "physical quantities and units", "kinematics", "dynamics", "forces, density and pressure",
+      "work, energy and power", "deformation of solids", "waves", "superposition", "electricity",
+      "d.c. circuits", "particle physics", "motion in a circle", "gravitational fields", "temperature",
+      "ideal gases", "thermodynamics", "oscillations", "electric fields", "capacitance", "magnetic fields",
+      "alternating currents", "quantum physics", "nuclear physics", "medical physics", "astronomy and cosmology",
+      ...COMMON_HEADINGS,
+    ],
+    sectionKinds: {
+      "assessment objectives": "assessment_requirement",
+      assessment: "assessment_requirement",
+      "examination format": "examination_format",
+      "paper structure": "paper_component",
+      "practical assessment": "practical_activity",
+      guidance: "guidance",
+      "additional information": "resource",
+    },
+    assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
+    paperPatterns: COMMON_PAPER_PATTERNS,
+  },
+
   // Cambridge syllabus documents are intentionally conservative here. Their
   // numbered content sections are not automatically objectives. A future
   // board-specific profile can add verified objective/learning-outcome codes.
