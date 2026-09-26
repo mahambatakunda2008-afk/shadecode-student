@@ -422,7 +422,12 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   try {
-    rememberLocalTopic(job.request.prompt); updateGenerationJob(job.id, { status: "generating", progress: 15 });
+    rememberLocalTopic(job.request.prompt);
+    updateGenerationJob(job.id, {
+      status: "generating",
+      progress: 15,
+      error: "Cortex is selecting the best available generation lane…",
+    });
     const online = isBrowser() ? navigator.onLine : false;
     const localStatus = isBrowser() ? getBrowserLocalModelStatus().status : "unsupported";
     const localReady = localStatus === "ready";
@@ -564,20 +569,17 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (isBrowser() && !navigator.onLine) {
       updateGenerationJob(job.id, { status: "queued", progress: 20, error: "Waiting for a connection." });
       saveActiveId(job.id);
-    } else if (
-      !message.toLowerCase().includes("provider unavailable") &&
-      !message.toLowerCase().includes("provider chain exhausted") &&
-      shouldRetry(job.retryCount, 5)
-    ) {
-      const retryCount = job.retryCount + 1;
-      const failureClass = classifyCortexFailure(error);
-      updateGenerationJob(job.id, { status: "queued", progress: Math.min(90, Math.max(20, job.progress)), retryCount, error: `Cortex hit a ${failureClass} generation failure. Retrying automatically (attempt ${retryCount + 1}/6)…` });
-      saveActiveId(job.id);
-      setTimeout(() => {
-        if (getGenerationJob(job.id)?.status === "queued") void runJob(getGenerationJob(job.id) as GenerationJob<LessonGenerationInput>, token);
-      }, retryDelay(retryCount));
     } else {
-      updateGenerationJob(job.id, { status: "failed", progress: job.progress, error: `${message} Cortex exhausted its automatic recovery attempts. Your request is still safe to retry.` }); await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "failed");
+      // Lesson generation is user-triggered and already has bounded provider and
+      // local recovery lanes. Never re-run the entire lesson automatically after
+      // an abort, timeout, quota error, malformed response, or provider outage.
+      // Automatic whole-job retries were the source of the persistent 20% loop.
+      updateGenerationJob(job.id, {
+        status: "failed",
+        progress: job.progress,
+        error: `${message} Cortex stopped this generation cleanly. Your request is safe to retry manually.`,
+      });
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "failed");
       if (getActiveId() === job.id) saveActiveId(null);
     }
     return getGenerationJobs().find(item => item.id === job.id) ?? job;
