@@ -339,3 +339,33 @@ Completed the security audit task by adding regression coverage for authorizatio
 **Change:** Created `src/lib/auth_utils.ts` with an `UnauthorizedError` class and a `getAuthorizedTask` function. This function fetches a task by ID and explicitly verifies its ownership against the authenticated user's ID. This provides a robust application-level authorization boundary check, acting as a safeguard against potential RLS misconfigurations and ensuring that sensitive data is only accessed by authorized users. API endpoints handling tasks should use this utility to ensure proper authorization.
 
 ---
+
+
+## 2026-09-26 — Cambridge Physics 9702 knowledge layer completed, plus self-audit fixes
+
+The next real curriculum blocker after Mathematics 9709 was Physics 9702. The official Cambridge 2025–2027 syllabus was rechecked before implementation. Cambridge's syllabus confirms 25 topics, AS topics 1–11, A Level topics 1–25, and three assessment objectives covering knowledge/understanding, information handling/application/evaluation, and experimental skills. Source: Cambridge International 9702 syllabus PDF and official programme page.
+
+### Implemented
+- Seeded **514 verified `curriculum_knowledge` rows** for Physics 9702:
+  - 101 topic nodes: 25 top-level topics + 76 subsections
+  - 76 content-scope nodes
+  - 300 numbered learning outcomes
+  - assessment, competency, skill, progression, practical, paper, terminology, constraint, guidance, resource, prerequisite, project and note layers
+- Mapped the 300 learning-outcome knowledge rows back to canonical `curriculum_objectives` IDs using the syllabus's subsection/outcome numbering. This fixes a real offline fallback weakness: selected verified knowledge can now carry its actual objective links instead of forcing the local lesson engine to guess.
+- Completed the **25 syllabus-tier coverage dimensions**. The four exam-history dimensions remain unverified by design because the syllabus PDF cannot prove past-paper, mark-scheme, examiner-report or grade-threshold coverage.
+- Activated the existing official Physics PDF source record and added a repository source-watch entry for weekly monitoring. Automatic promotion remains disabled.
+- Added a Physics-specific extraction profile so future official-source ingestion recognises the 25 syllabus topic headings instead of treating the PDF as an unstructured blob.
+- Added a reproducible migration seed for the verified Physics knowledge layer.
+
+### Self-audit findings
+- An attempted global uniqueness index exposed an existing Mathematics 9709 data-quality issue: `constraint|9709.constraints.notation` is duplicated. The index was **not** applied globally, avoiding an unrelated destructive cleanup during the Physics task.
+- The Physics source URL already had a registered source ID (`cambridge-9702-2025-2027`), so the first activation attempt correctly hit the URL uniqueness constraint. It was reconciled by updating the existing source rather than creating a duplicate.
+- Verified the Physics knowledge layer contains 513 rows after the first seed, then added the required `project_requirement` layer, bringing the final count to **514**.
+- Verified all 15 strict resolver knowledge kinds are present.
+- Verified all 513 original knowledge rows carry `mappingStatus=verified`; the added project layer is also marked verified.
+- Verified no A-Level-only Physics topic rows are marked `as_level`.
+- Verified the 25 syllabus-tier coverage checks are all satisfied (23 verified + 2 not applicable).
+- No hardcoded lesson content was added to `lessonFallback.ts`. The lesson path remains curriculum-driven.
+
+### Result
+Physics 9702 is no longer blocked at the "objectives exist but whole-syllabus knowledge is missing" layer. Cortex can now resolve the verified Physics syllabus at the teaching tier once a learner has an exact stored Physics curriculum identity.
