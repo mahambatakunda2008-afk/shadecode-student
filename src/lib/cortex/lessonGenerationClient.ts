@@ -1,5 +1,4 @@
 import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, restoreGenerationJob, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
-import { classifyCortexFailure, retryDelay, shouldRetry } from "@/lib/cortex/faultTolerance";
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
