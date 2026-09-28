@@ -1,6 +1,6 @@
 # Cambridge International AS & A Level Physics 9702 (2025-2027): ingestion record
 
-Loaded 2026-09-20, after Mathematics 9709 (same method; see `cambridge-mathematics-9709.md`). Chosen because
+Loaded 2026-09-20, then completed the whole-syllabus knowledge layer on 2026-09-26 (same method as Mathematics 9709; see `cambridge-mathematics-9709.md`). Chosen because
 Physics is the second most-selected subject among learners who declared subjects (4 learners; two explicitly
 Cambridge International with code 9702).
 
@@ -15,14 +15,13 @@ Cambridge International with code 9702).
 `cambridge` / `cambridge-as-a-level` / `cambridge-9702` / `2025-2027` / `physics`, effective 2025-01-01 to 2027-12-31.
 
 ## What is loaded (production, project `zczdtffwzkctkxwmvalb`)
-- `curriculum_sources` `cambridge-9702-2025-2027` (**inactive**), `curriculum_documents` (draft, 67 pages, structure with
-  the five assessment papers), `curriculum_versions` `a90d1b2c-4a7e-4122-8509-881ab7561b9e` (`verified`,
-  `wholeSyllabusVerified: false`).
+- `curriculum_sources `cambridge-9702-2025-2027` (**active; weekly official-PDF monitoring**), `curriculum_documents` (draft, 67 pages, structure with
+  the five assessment papers), `curriculum_versions` `a90d1b2c-4a7e-4122-8509-881ab7561b9e` (`verified`, `wholeSyllabusVerified: true` at the syllabus teaching tier).
 - `curriculum_objectives`: **325 rows, all `verified`**: 25 topic rows (`1`..`25`), 76 numbered subsections and
   300 numbered learning outcomes keyed by **Cambridge's own numbering** (`3.3.3`, `7.5.2`, ...). Topics 1-11 are AS Level
   (`as_level`), topics 12-25 are A Level only (`a_level`). Outcome sentence in `description`; subsection title in
   `title`; subsection number in `topic`; `paper_component` empty, paper in `provenance.paper`.
-- `curriculum_coverage_checks`: 14 of 29 satisfied with page-referenced evidence: identity, source, objectives,
+- `curriculum_coverage_checks`: **25 of 29 satisfied for the syllabus tier** with page-referenced evidence: identity, source, objectives,
   prerequisites, progression, assessment_objectives, assessment_structure, paper_components, assessment_weightings,
   examination_format, change_history, **practical_requirements** (section 5: Papers 3 and 5), and `not_applicable` for
   project_requirements and coursework_requirements (timetabled papers only).
