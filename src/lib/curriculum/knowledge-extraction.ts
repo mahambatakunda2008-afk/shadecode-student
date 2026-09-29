@@ -112,16 +112,17 @@ function extractSectionBlocks(
 
   const flush = (endLine: number) => {
     if (!currentHeading) return;
+    const heading = currentHeading;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
     if (!content) return;
     const isProfileTopic = (profile.topicHeadings ?? []).some(
-      (title) => normalizeHeading(title) === currentHeading.normalized,
+      (title) => normalizeHeading(title) === heading.normalized,
     );
     const kind = isProfileTopic
       ? "topic"
-      : profile.sectionKinds?.[currentHeading.normalized]
-        ?? DEFAULT_SECTION_KINDS[currentHeading.normalized]
-        ?? (currentHeading.level >= 2 ? profile.numberedSectionKind : undefined);
+      : profile.sectionKinds?.[heading.normalized]
+        ?? DEFAULT_SECTION_KINDS[heading.normalized]
+        ?? (heading.level >= 2 ? profile.numberedSectionKind : undefined);
     if (!kind) return;
     // Biology numbered outcomes are emitted by the dedicated subsection-aware
     // extractor. Do not also emit the generic "Learning outcomes" heading as a
