@@ -265,14 +265,22 @@ function extractNumberedLearningOutcomes(
     if (subsection) {
       flush(index);
       subsectionCode = subsection[1];
-      subsectionTitle = subsection[2].trim();
-      inLearningOutcomes = false;
+      subsectionTitle = subsection[2].replace(/\s+learning outcomes\s*$/i, "").trim();
+      inLearningOutcomes = /\blearning outcomes\b/i.test(subsection[2]);
       continue;
     }
 
     if (/^learning outcomes$/i.test(raw)) {
       flush(index);
       inLearningOutcomes = true;
+      continue;
+    }
+
+    if (/^(?:--\s*)?\d+\s+of\s+\d+\s*--?$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = false;
+      subsectionCode = null;
+      subsectionTitle = "";
       continue;
     }
 
