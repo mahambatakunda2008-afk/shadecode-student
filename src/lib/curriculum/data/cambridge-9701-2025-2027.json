@@ -13,7 +13,8 @@
     "retrievedAt": "2026-09-29",
     "effectiveFrom": "2025-01-01",
     "effectiveTo": "2027-12-31",
-    "representation": "Official subsection hierarchy plus normalized, source-checked numbered learning-outcome anchors for AS Topics 1–12. Topic 6 is corrected to the single official AS subsection 6.1; electrolysis appears in A Level Topic 24. Remaining topics retain their scope-only boundary."
+    "representation": "Official 2025-2027 syllabus hierarchy with normalized, source-checked numbered learning outcomes for Topics 1-37.",
+    "sourceVerification": "Whole subject-content layer cross-checked against the official Cambridge 9701 2025-2027 syllabus PDF; normalized wording is intentionally not a verbatim copy."
   },
   "sections": [
     {
@@ -550,26 +551,52 @@
         {
           "key": "13.1",
           "title": "Formulas, functional groups and the naming of organic compounds",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define hydrocarbons as compounds containing carbon and hydrogen only.",
+            "Recognise alkanes as simple hydrocarbons without a functional group.",
+            "Understand that functional groups largely determine the physical and chemical properties of the listed organic classes.",
+            "Interpret general, structural, displayed and skeletal formulae for the specified organic classes.",
+            "Use systematic nomenclature for simple aliphatic compounds with the stated carbon-number limits.",
+            "Deduce molecular and/or empirical formulae from structural, displayed or skeletal formulae."
+          ]
         },
         {
           "key": "13.2",
           "title": "Characteristic organic reactions",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use terminology for homologous series, saturated/unsaturated compounds, homolytic/heterolytic fission, radicals, nucleophiles, electrophiles, addition, substitution, elimination, hydrolysis, condensation, oxidation and reduction.",
+            "Use terminology for free-radical substitution, electrophilic addition, nucleophilic substitution and nucleophilic addition mechanisms, including curly-arrow electron-pair notation."
+          ]
         },
         {
           "key": "13.3",
           "title": "Shapes of organic molecules; σ and π bonds",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Classify organic molecules as straight-chain, branched or cyclic.",
+            "Explain molecular shapes and bond angles for sp, sp² and sp³ hybridised atoms.",
+            "Describe σ and π bond arrangements for sp, sp² and sp³ hybridisation.",
+            "Use planar correctly for appropriate organic molecules such as ethene."
+          ]
         },
         {
           "key": "13.4",
           "title": "Isomerism: structural isomerism and stereoisomerism",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Distinguish chain, positional and functional-group structural isomerism.",
+            "Distinguish geometrical and optical stereoisomerism.",
+            "Explain cis/trans isomerism in alkenes through restricted rotation about π bonds.",
+            "Explain chiral centres and enantiomers.",
+            "Identify chiral centres and cis/trans isomerism from structural formulae, including cyclic compounds.",
+            "Deduce possible isomers from a known molecular formula."
+          ]
         }
       ]
     },
@@ -584,14 +611,29 @@
         {
           "key": "14.1",
           "title": "Alkanes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall alkane preparation by alkene hydrogenation and cracking.",
+            "Describe complete/incomplete combustion and free-radical substitution with chlorine/bromine under UV light.",
+            "Explain initiation, propagation and termination in free-radical substitution.",
+            "Explain cracking as a route to useful lower-relative-mass alkanes and alkenes.",
+            "Explain low alkane reactivity using strong, relatively non-polar C–H bonds.",
+            "Recognise combustion pollutants and catalytic removal."
+          ]
         },
         {
           "key": "14.2",
           "title": "Alkenes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall alkene preparation by elimination, dehydration and cracking.",
+            "Describe alkene additions with H₂, steam, HX and X₂, specified oxidations and addition polymerisation.",
+            "Use aqueous bromine to test for C=C.",
+            "Explain electrophilic-addition mechanisms using bromine/ethene and HBr/propene.",
+            "Explain alkyl inductive effects on carbocation stability and Markovnikov addition."
+          ]
         }
       ]
     },
@@ -606,8 +648,17 @@
         {
           "key": "15.1",
           "title": "Halogenoalkanes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall halogenoalkane preparation by radical substitution, alkene addition and alcohol substitution.",
+            "Classify halogenoalkanes as primary, secondary or tertiary.",
+            "Describe nucleophilic substitution with OH⁻, CN⁻, NH₃ and aqueous silver nitrate.",
+            "Describe ethanolic-OH elimination to form alkenes.",
+            "Explain SN1 and SN2 mechanisms and alkyl inductive effects.",
+            "Relate halogenoalkane class to predominant SN1/SN2 pathway.",
+            "Explain reactivity differences using C–X bond strength and silver-nitrate reactions."
+          ]
         }
       ]
     },
@@ -622,8 +673,15 @@
         {
           "key": "16.1",
           "title": "Alcohols",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall routes to alcohols from alkenes, halogenoalkanes, carbonyl compounds, carboxylic acids and esters.",
+            "Describe alcohol combustion, substitution, reaction with sodium, oxidation, dehydration and ester formation.",
+            "Classify primary, secondary and tertiary alcohols and use oxidation behaviour to distinguish them.",
+            "Identify a CH3CH(OH)– group with the alkaline iodine test.",
+            "Explain alcohol acidity relative to water."
+          ]
         }
       ]
     },
@@ -638,8 +696,16 @@
         {
           "key": "17.1",
           "title": "Aldehydes and ketones",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall aldehyde/ketone preparation by oxidation of primary/secondary alcohols.",
+            "Describe carbonyl reduction and hydroxynitrile formation with HCN.",
+            "Explain nucleophilic addition of HCN to carbonyl compounds.",
+            "Use 2,4-DNPH to detect carbonyl compounds.",
+            "Distinguish aldehydes and ketones using Fehling's/Tollens' tests and oxidation.",
+            "Identify CH3CO– groups using the alkaline iodine test."
+          ]
         }
       ]
     },
@@ -654,14 +720,22 @@
         {
           "key": "18.1",
           "title": "Carboxylic acids",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall carboxylic-acid preparation by oxidation and nitrile/ester hydrolysis.",
+            "Describe reactions with reactive metals, alkalis, carbonates, alcohols and LiAlH4."
+          ]
         },
         {
           "key": "18.2",
           "title": "Esters",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall ester formation from alcohol and carboxylic acid with concentrated H2SO4 catalyst.",
+            "Describe acid- and alkali-catalysed ester hydrolysis on heating."
+          ]
         }
       ]
     },
@@ -676,14 +750,22 @@
         {
           "key": "19.1",
           "title": "Primary amines",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall primary-amine preparation from halogenoalkanes using ammonia under pressure."
+          ]
         },
         {
           "key": "19.2",
           "title": "Nitriles and hydroxynitriles",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall nitrile formation from halogenoalkanes using ethanolic cyanide.",
+            "Recall hydroxynitrile formation from carbonyl compounds with HCN/cyanide catalyst.",
+            "Describe nitrile hydrolysis to carboxylic acids."
+          ]
         }
       ]
     },
@@ -698,8 +780,14 @@
         {
           "key": "20.1",
           "title": "Addition polymerisation",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe addition polymerisation using poly(ethene) and PVC.",
+            "Deduce an addition-polymer repeat unit from a monomer.",
+            "Identify monomers from a polymer section.",
+            "Explain disposal difficulties of poly(alkene)s."
+          ]
         }
       ]
     },
@@ -714,8 +802,13 @@
         {
           "key": "21.1",
           "title": "Organic synthesis",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "For multi-functional molecules, identify functional groups and predict properties/reactions.",
+            "Devise multi-step synthetic routes using syllabus reactions.",
+            "Analyse a synthesis by reaction type, reagents and possible by-products."
+          ]
         }
       ]
     },
@@ -730,14 +823,25 @@
         {
           "key": "22.1",
           "title": "Infrared spectroscopy",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Analyse a simple IR spectrum to identify required functional groups."
+          ]
         },
         {
           "key": "22.2",
           "title": "Mass spectrometry",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Interpret mass spectra using m/e and isotope abundance.",
+            "Calculate relative atomic mass from isotope data or a mass spectrum.",
+            "Deduce organic molecular mass from the molecular-ion peak.",
+            "Suggest simple fragment identities.",
+            "Use the [M+1]+ peak to estimate carbon number.",
+            "Use [M+2]+ patterns to detect bromine/chlorine."
+          ]
         }
       ]
     },
@@ -752,26 +856,50 @@
         {
           "key": "23.1",
           "title": "Lattice energy and Born–Haber cycles",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define atomisation enthalpy and lattice energy.",
+            "Define first electron affinity and explain its factors and Group 16/17 trends.",
+            "Construct and use Born–Haber cycles.",
+            "Perform Born–Haber calculations.",
+            "Explain ionic-charge and ionic-radius effects on lattice-energy magnitude."
+          ]
         },
         {
           "key": "23.2",
           "title": "Enthalpies of solution and hydration",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define hydration and solution enthalpy changes.",
+            "Construct/use cycles linking solution enthalpy, lattice energy and hydration enthalpy.",
+            "Calculate using these cycles.",
+            "Explain ionic-charge and ionic-radius effects on hydration enthalpy."
+          ]
         },
         {
           "key": "23.3",
           "title": "Entropy change, ΔS",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define entropy as possible arrangements of particles and their energy.",
+            "Predict/explain entropy-change signs for state changes, temperature changes and changes in gaseous-molecule number.",
+            "Calculate reaction entropy from standard entropy data."
+          ]
         },
         {
           "key": "23.4",
           "title": "Gibbs free energy change, ΔG",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use ΔG° = ΔH° − TΔS°.",
+            "Calculate Gibbs free-energy changes.",
+            "Use the sign of ΔG to assess feasibility.",
+            "Predict temperature effects on feasibility."
+          ]
         }
       ]
     },
@@ -786,14 +914,32 @@
         {
           "key": "24.1",
           "title": "Electrolysis",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Predict electrolysis products from electrolyte state, electrode potential/redox position and concentration.",
+            "Use F = Le.",
+            "Calculate charge using Q = It and calculate mass/volume liberated.",
+            "Describe an electrolytic determination of Avogadro's constant."
+          ]
         },
         {
           "key": "24.2",
           "title": "Standard electrode potentials E°; standard cell potentials E°cell and the Nernst equation",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define standard electrode-reduction and standard cell potentials.",
+            "Describe the standard hydrogen electrode.",
+            "Describe measurement of standard electrode potentials.",
+            "Calculate standard cell potentials.",
+            "Use cell potentials for polarity, electron flow and feasibility.",
+            "Compare oxidising/reducing strengths using E°.",
+            "Construct redox equations from half-equations.",
+            "Predict concentration effects on electrode potential.",
+            "Use the Nernst equation quantitatively.",
+            "Use ΔG° = −nFE°cell."
+          ]
         }
       ]
     },
@@ -808,14 +954,30 @@
         {
           "key": "25.1",
           "title": "Acids and bases",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use conjugate-acid/base terminology and identify pairs.",
+            "Use pH, Ka, pKa and Kw mathematically within syllabus limits.",
+            "Calculate [H+] and pH for strong acids, strong alkalis and weak acids.",
+            "Define, prepare and explain buffer solutions.",
+            "Describe buffer uses including bicarbonate in blood.",
+            "Calculate buffer pH.",
+            "Define and write Ksp expressions.",
+            "Calculate Ksp or concentrations.",
+            "Use the common-ion effect and perform related Ksp calculations."
+          ]
         },
         {
           "key": "25.2",
           "title": "Partition coefficients",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define Kpc.",
+            "Calculate/use Kpc when the solute remains in the same physical state in both solvents.",
+            "Explain Kpc in terms of solute/solvent polarity."
+          ]
         }
       ]
     },
@@ -830,14 +992,29 @@
         {
           "key": "26.1",
           "title": "Simple rate equations, orders of reaction and rate constants",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use rate-equation terminology including order, overall order, k, half-life, rate-determining step and intermediate.",
+            "Use rate = k[A]^m[B]^n for orders 0,1,2 and deduce order from graphs/data.",
+            "Interpret concentration-time and rate-concentration graphs and calculate initial rates.",
+            "Construct rate equations.",
+            "Use first-order half-life.",
+            "Calculate k from initial rates or k = 0.693/t½.",
+            "Relate multi-step mechanisms to rate equations and identify intermediates/catalysts/rate-determining steps.",
+            "Explain temperature effects on k and rate."
+          ]
         },
         {
           "key": "26.2",
           "title": "Homogeneous and heterogeneous catalysts",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Distinguish homogeneous and heterogeneous catalysis.",
+            "Explain heterogeneous catalysis through adsorption, bond weakening and desorption.",
+            "Explain homogeneous catalysis through catalyst use and regeneration."
+          ]
         }
       ]
     },
@@ -852,8 +1029,12 @@
         {
           "key": "27.1",
           "title": "Similarities and trends in the properties of the Group 2 metals, magnesium to barium, and their compounds",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain Group 2 thermal-stability trends for nitrates/carbonates using ionic-radius polarisation.",
+            "Explain hydroxide/sulfate solubility and solution-enthalpy trends using hydration enthalpy and lattice energy."
+          ]
         }
       ]
     },
@@ -868,32 +1049,67 @@
         {
           "key": "28.1",
           "title": "General physical and chemical properties of the first row of transition elements, titanium to copper",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define transition elements using incomplete d orbitals in stable ions.",
+            "Sketch 3dxy and 3dz² orbitals.",
+            "Describe variable oxidation states, catalysis, complex ions and coloured compounds.",
+            "Explain variable oxidation states using 3d/4s energy similarity.",
+            "Explain catalysis using multiple oxidation states and accessible d orbitals.",
+            "Explain complex formation using accessible d orbitals."
+          ]
         },
         {
           "key": "28.2",
           "title": "General characteristic chemical properties of the first set of transition elements, titanium to copper",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe specified transition-metal ligand complexes.",
+            "Define ligands and distinguish monodentate, bidentate and polydentate ligands.",
+            "Define complexes and describe linear, square-planar, tetrahedral and octahedral geometries.",
+            "Use coordination number to predict complex formula/charge.",
+            "Explain ligand exchange using specified Cu(II)/Co(II) systems.",
+            "Use E° to assess transition-metal redox feasibility.",
+            "Describe/calculate specified permanganate/ethanedioate, permanganate/Fe²⁺ and Cu²⁺/I⁻ systems.",
+            "Perform other supplied redox calculations."
+          ]
         },
         {
           "key": "28.3",
           "title": "Colour of complexes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use degenerate/non-degenerate d-orbital terminology.",
+            "Explain d-orbital splitting in octahedral/tetrahedral complexes.",
+            "Explain colours via d-electron promotion and light absorption.",
+            "Explain ligand effects on ΔE and complementary colour.",
+            "Use Cu(II)/Co(II) ligand exchange to explain colour changes."
+          ]
         },
         {
           "key": "28.4",
           "title": "Stereoisomerism in transition element complexes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe geometrical and optical stereoisomerism in complexes, including bidentate examples.",
+            "Deduce overall polarity of specified stereoisomers."
+          ]
         },
         {
           "key": "28.5",
           "title": "Stability constants, Kstab",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define Kstab for complex formation.",
+            "Write Kstab expressions excluding water where appropriate.",
+            "Use Kstab expressions in calculations.",
+            "Explain ligand exchange using Kstab and relate large Kstab to complex stability."
+          ]
         }
       ]
     },
@@ -908,26 +1124,42 @@
         {
           "key": "29.1",
           "title": "Formulas, functional groups and the naming of organic compounds",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Understand functional-group effects on listed organic classes.",
+            "Interpret general, structural, displayed and skeletal formulae.",
+            "Use systematic nomenclature for permitted simple aliphatic/cyclic compounds.",
+            "Use systematic nomenclature for simple aromatic compounds with one benzene ring."
+          ]
         },
         {
           "key": "29.2",
           "title": "Characteristic organic reactions",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use electrophilic-substitution and addition–elimination terminology."
+          ]
         },
         {
           "key": "29.3",
           "title": "Shapes of aromatic organic molecules; σ and π bonds",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain benzene/aromatic molecular shape using sp² hybridisation, σ bonds and a delocalised π system."
+          ]
         },
         {
           "key": "29.4",
           "title": "Isomerism: optical",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain shared physical/chemical properties of enantiomers apart from optical rotation and possible biological activity.",
+            "Use optically active and racemic mixture terminology."
+          ]
         }
       ]
     },
@@ -942,8 +1174,14 @@
         {
           "key": "30.1",
           "title": "Arenes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe specified benzene/methylbenzene reactions including halogenation, nitration, Friedel–Crafts reactions, side-chain oxidation and hydrogenation.",
+            "Explain electrophilic substitution and aromatic stabilisation.",
+            "Predict side-chain versus ring halogenation from conditions.",
+            "Explain substituent directing effects for the specified groups."
+          ]
         }
       ]
     },
@@ -958,8 +1196,12 @@
         {
           "key": "31.1",
           "title": "Halogenoarenes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall halogenoarene formation by chlorine/bromine substitution with AlCl3/AlBr3.",
+            "Explain lower halogenoarene reactivity compared with halogenoalkanes."
+          ]
         }
       ]
     },
@@ -973,9 +1215,33 @@
       "topics": [
         {
           "key": "32.1",
-          "title": "Phenols",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "title": "Alcohols",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Alcohols.",
+          "outcomes": [
+            "Describe alcohol reaction with acyl chlorides to form esters."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
+        },
+        {
+          "key": "32.2",
+          "title": "Phenol",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Phenol.",
+          "outcomes": [
+            "Recall phenol preparation by diazotisation of phenylamine followed by hydrolysis.",
+            "Describe phenol reactions with bases, sodium, diazonium salts, nitric acid and bromine.",
+            "Explain phenol acidity.",
+            "Compare water, phenol and ethanol acidity.",
+            "Explain differing nitration/bromination conditions for phenol and benzene.",
+            "Recall 2-,4-,6-directing behaviour of the phenolic OH group.",
+            "Apply phenol chemistry to related phenolic compounds."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
         }
       ]
     },
@@ -990,20 +1256,36 @@
         {
           "key": "33.1",
           "title": "Carboxylic acids",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall benzoic-acid preparation by alkylbenzene side-chain oxidation.",
+            "Describe conversion of carboxylic acids to acyl chlorides.",
+            "Describe further oxidation of methanoic and ethanedioic acids.",
+            "Compare carboxylic-acid, phenol and alcohol acidities.",
+            "Explain chlorine-substituted carboxylic-acid acidity."
+          ]
         },
         {
           "key": "33.2",
           "title": "Esters",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall ester formation from alcohols and acyl chlorides."
+          ]
         },
         {
           "key": "33.3",
           "title": "Acyl chlorides",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Recall acyl-chloride preparation from carboxylic acids.",
+            "Describe acyl-chloride reactions with water, alcohols, phenols, ammonia and primary/secondary amines.",
+            "Explain addition–elimination.",
+            "Compare hydrolysis rates of acyl chlorides, alkyl chlorides and halogenoarenes."
+          ]
         }
       ]
     },
@@ -1017,21 +1299,60 @@
       "topics": [
         {
           "key": "34.1",
-          "title": "Amines",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "title": "Primary and secondary amines",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Primary and secondary amines.",
+          "outcomes": [
+            "Recall primary/secondary amine preparation from halogenoalkanes, amides and nitriles.",
+            "Describe amide formation from ammonia/amine and an acyl chloride.",
+            "Explain aqueous amine basicity."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
         },
         {
           "key": "34.2",
-          "title": "Amides",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "title": "Phenylamine and azo compounds",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Phenylamine and azo compounds.",
+          "outcomes": [
+            "Describe phenylamine preparation via nitration/reduction.",
+            "Describe phenylamine reactions with bromine and nitrous acid/nitrite, including diazonium formation and hydrolysis to phenol.",
+            "Compare ammonia, ethylamine and phenylamine basicity.",
+            "Describe azo coupling, identify the azo group and recognise azo dyes."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
         },
         {
           "key": "34.3",
-          "title": "Amino acids and proteins",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "title": "Amides",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Amides.",
+          "outcomes": [
+            "Recall amide formation from ammonia or primary amines and acyl chlorides.",
+            "Describe amide hydrolysis and LiAlH4 reduction.",
+            "Explain why amides are weaker bases than amines."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
+        },
+        {
+          "key": "34.4",
+          "title": "Amino acids",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Amino acids.",
+          "outcomes": [
+            "Explain amino-acid acid/base behaviour and zwitterions, including isoelectric point.",
+            "Describe peptide-bond formation to di- and tripeptides.",
+            "Interpret/predict electrophoresis of amino acids and dipeptides at varying pH."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
         }
       ]
     },
@@ -1046,8 +1367,44 @@
         {
           "key": "35.1",
           "title": "Condensation polymerisation",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Condensation polymerisation.",
+          "outcomes": [
+            "Describe polyester formation from diols with dicarboxylic acids/dioyl chlorides and from hydroxycarboxylic acids.",
+            "Describe polyamide formation from diamines with dicarboxylic acids/dioyl chlorides, aminocarboxylic acids and amino acids.",
+            "Deduce condensation-polymer repeat units.",
+            "Identify monomers from condensation-polymer sections."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
+        },
+        {
+          "key": "35.2",
+          "title": "Predicting the type of polymerisation",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Predicting the type of polymerisation.",
+          "outcomes": [
+            "Predict polymerisation type from monomer(s).",
+            "Deduce polymerisation type from a polymer segment."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
+        },
+        {
+          "key": "35.3",
+          "title": "Degradable polymers",
+          "paper": "Papers 1, 2, 3, 4 and 5",
+          "availability": "A Level",
+          "level": "a_level",
+          "summary": "Degradable polymers.",
+          "outcomes": [
+            "Recognise why poly(alkene)s are difficult to biodegrade.",
+            "Recognise light-driven polymer degradation.",
+            "Recognise biodegradation of polyesters/polyamides by acidic or alkaline hydrolysis."
+          ],
+          "representation": "official_numbered_outcomes_normalized"
         }
       ]
     },
@@ -1062,8 +1419,13 @@
         {
           "key": "36.1",
           "title": "Organic synthesis",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "For multi-functional molecules, identify functional groups and predict properties/reactions.",
+            "Devise multi-step synthetic routes.",
+            "Analyse synthesis routes by reaction type, reagents and possible by-products."
+          ]
         }
       ]
     },
@@ -1078,32 +1440,56 @@
         {
           "key": "37.1",
           "title": "Thin-layer chromatography",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define TLC stationary/mobile phases, Rf, solvent front and baseline.",
+            "Interpret Rf values.",
+            "Explain Rf differences using stationary-phase interactions and mobile-phase solubility."
+          ]
         },
         {
           "key": "37.2",
           "title": "Gas / liquid chromatography",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define GC stationary/mobile phases and retention time.",
+            "Interpret chromatograms for mixture composition.",
+            "Explain retention times using stationary-phase interaction."
+          ]
         },
         {
           "key": "37.3",
           "title": "Carbon-13 NMR spectroscopy",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Interpret carbon-13 NMR for carbon environments and possible structures.",
+            "Predict/explain the number of carbon-13 NMR peaks."
+          ]
         },
         {
           "key": "37.4",
           "title": "Proton NMR spectroscopy",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Interpret proton NMR using chemical shifts, peak areas, splitting and possible structures.",
+            "Predict proton shifts and splitting.",
+            "Describe TMS as chemical-shift standard.",
+            "Explain use of deuterated solvents.",
+            "Identify O–H/N–H protons by D2O exchange."
+          ]
         },
         {
           "key": "37.5",
           "title": "Combined analytical techniques",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use combined chromatography, IR, mass-spectrometry and NMR evidence to identify or distinguish simple organic structures."
+          ]
         }
       ]
     }
