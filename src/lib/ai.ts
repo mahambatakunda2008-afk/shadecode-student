@@ -130,7 +130,10 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   // when an inference provider is degraded. The model ID is a stable Google Gemini
   // endpoint, not a preview/latest alias.
   if (!media.length && process.env.AI_GATEWAY_API_KEY && canTry()) {
-    const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "google/gemini-3.8-flash";
+    // openai/gpt-oss-120b is on the AI Gateway free tier (unlike Gemini 3.8, whose free-tier status
+    // is unconfirmed) and is a genuinely different vendor from the Gemini calls elsewhere in this
+    // chain, so a Gateway attempt doesn't just retry the same infrastructure that's already failing.
+    const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-oss-120b";
     const text = await tryProvider("vercel-ai-gateway", gatewayModel, async timeout => {
       const res = await fetchWithTimeout("https://ai-gateway.vercel.sh/v1/chat/completions", {
         method: "POST",

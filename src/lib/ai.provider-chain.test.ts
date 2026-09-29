@@ -80,6 +80,21 @@ describe("callAI provider fallback chain", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("defaults the Gateway model to a confirmed free-tier, non-Gemini model", async () => {
+    // Regression: the previous default (google/gemini-3.8-flash) was both unconfirmed as free-tier
+    // and the same vendor as the Gemini calls later in the chain, so a Gateway attempt didn't add
+    // real redundancy when Gemini itself was the thing failing. openai/gpt-oss-120b is confirmed on
+    // AI Gateway's free tier and is a different vendor.
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a lesson from the gateway" } }] }));
+    const { callAI } = await import("./ai");
+    await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse((init as RequestInit).body as string);
+    expect(body.model).toBe("openai/gpt-oss-120b");
+    expect(body.model).not.toMatch(/gemini/i);
+  });
+
   it("tries OpenRouter after the Gateway and before Cloudflare, falling through on failure", async () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
     vi.stubEnv("OPENROUTER_API_KEY", "or-key");
