@@ -13,7 +13,7 @@
     "retrievedAt": "2026-09-29",
     "effectiveFrom": "2025-01-01",
     "effectiveTo": "2027-12-31",
-    "representation": "Official subsection hierarchy plus normalized, source-checked numbered learning-outcome anchors for AS Topics 1–12. Remaining topics retain their scope-only boundary until extracted and cross-checked."
+    "representation": "Official subsection hierarchy plus normalized, source-checked numbered learning-outcome anchors for AS Topics 1–12. Topic 6 is corrected to the single official AS subsection 6.1; electrolysis appears in A Level Topic 24. Remaining topics retain their scope-only boundary."
   },
   "sections": [
     {
@@ -294,7 +294,7 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Electrochemistry. 2 official syllabus subsections.",
+      "summary": "Electrochemistry. 1 official syllabus subsection.",
       "topics": [
         {
           "key": "6.1",
@@ -307,17 +307,6 @@
             "Explain and use redox, oxidation, reduction and disproportionation in terms of electron transfer and oxidation-number changes.",
             "Explain and use oxidising agent and reducing agent.",
             "Use Roman numerals to indicate oxidation-number magnitude."
-          ]
-        },
-        {
-          "key": "6.2",
-          "title": "Electrolysis",
-          "representation": "official_numbered_outcomes_normalized",
-          "outcomeAnchors": [],
-          "outcomes": [
-            "Describe electrolysis in terms of electron transfer and electrode reactions.",
-            "Predict products at electrodes using electrolyte state, ion position in the redox series and concentration.",
-            "Use half-equations and overall equations to describe electrolysis."
           ]
         }
       ]
