@@ -1,3 +1,24 @@
+## 2026-09-29 — Completed Cambridge Chemistry 9701 2025–2027 knowledge layer
+
+The Chemistry curriculum expansion is now teaching-source ready.
+
+- Official Cambridge 9701 2025–2027 syllabus cross-checked through Topics 1–37.
+- Repository dataset: `src/lib/curriculum/data/cambridge-9701-2025-2027.json`
+- 37 topics / 91 official subsections / 351 normalized numbered learning outcomes.
+- Live Supabase: 606 verified knowledge rows and 388 verified curriculum objectives.
+- All resolver knowledge kinds used by the existing curriculum layer are populated.
+- Every learning outcome has a canonical objective mapping.
+- AS/A Level leakage check: 0 invalid rows.
+- Corrected draft hierarchy errors in Topics 32, 34 and 35 before promotion.
+- Reproducible migration: `supabase/migrations/20260929152000_seed_cambridge_9701_knowledge.sql`
+- Curriculum document and version are marked verified.
+
+The outcome text is normalized/paraphrased from the official syllabus rather than stored as a verbatim copy. Exam-history evidence remains separate and is not claimed by this syllabus-only package.
+
+Source: https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf
+
+---
+
 ## 2026-09-29 — Chemistry 9701 AS Topics 1–12 outcome layer extracted
 
 The Chemistry 9701 2025–2027 outcome pass now covers AS Topics 1–12 with **131 normalized learning-outcome records**. The source wording was cross-checked against the official Cambridge syllabus PDF before being stored as normalized paraphrase anchors.
