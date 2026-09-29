@@ -423,7 +423,10 @@ export function extractCurriculumKnowledge(
   const seen = new Set<string>();
   return allItems.filter((item) => {
     if (item.kind === "topic") {
-      const topicKey = item.code ?? normalizeHeading(item.title);
+      const canonical = (profile.topicHeadings ?? []).find((title) =>
+        normalizeHeading(item.title).startsWith(normalizeHeading(title)),
+      );
+      const topicKey = canonical ? normalizeHeading(canonical) : item.code ?? normalizeHeading(item.title);
       if (bestTopicByKey.get(topicKey) !== item) return false;
     }
     const key = `${item.kind}:${item.code ?? ""}:${item.content.toLowerCase().replace(/\s+/g, " ")}`;
