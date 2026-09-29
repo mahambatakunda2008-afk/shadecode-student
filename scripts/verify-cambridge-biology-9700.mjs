@@ -54,7 +54,7 @@ try {
     contents: outcomes.filter((item) => item.code === code).map((item) => item.content.slice(0, 220)),
   }));
   const invalidCodes = outcomeCodes.filter((code) => !/^\d+\.\d+\.\d+$/.test(code));
-  const topicNumbers = topics.map((item) => Number(item.title.match(/^(\d+)/)?.[1])).filter(Number.isFinite);
+  const topicNumbers = topics.map((item) => Number(item.code ?? item.title.match(/^(\d+)/)?.[1])).filter(Number.isFinite);
   const topicSet = new Set(topicNumbers);
 
   const byTopic = Object.fromEntries(
