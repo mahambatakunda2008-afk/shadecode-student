@@ -139,7 +139,11 @@ function extractSectionBlocks(
         ...provenance,
         sectionOrPage: provenance.sectionOrPage ?? `${headingTitle} (lines ${currentHeadingLine}-${endLine})`,
       }, index, {
-        code: kind === "topic" ? heading.raw.match(/^(\d+)/)?.[1] : undefined,
+        code: kind === "topic"
+          ? String((profile.topicHeadings ?? []).findIndex((title) => normalizeHeading(title) === normalizeHeading(profileTopic ?? "")) + 1)
+          : kind === "content_scope" && heading.level >= 2
+            ? heading.raw.match(/^(\d+(?:\.\d+)+)/)?.[1]
+            : undefined,
         parentId: parent?.id,
         metadata: {
           extraction: "section",
@@ -365,14 +369,51 @@ export function extractCurriculumKnowledge(
   const objectives = profile.numberedLearningOutcomes
     ? extractNumberedLearningOutcomes(text, identity, provenance, profile)
     : extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
+
+  const subsectionItems = profile.numberedLearningOutcomes
+    ? [...new Map(
+        objectives
+          .filter((item) => item.kind === "learning_outcome" && item.metadata?.subsectionCode)
+          .map((item) => {
+            const code = String(item.metadata?.subsectionCode);
+            const title = String(item.metadata?.subsectionTitle ?? code);
+            return [code, makeItem(
+              "content_scope",
+              code + " " + title,
+              "",
+              identity,
+              item.provenance,
+              0,
+              {
+                code,
+                metadata: {
+                  extraction: "numbered-learning-subsection",
+                  subsectionCode: code,
+                  subsectionTitle: title,
+                },
+              },
+            )];
+          }),
+      ).values()]
+    : [];
+
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
-  const allItems = [...sectionItems, ...objectives, ...assessments, ...papers];
+  const allItems = [
+    ...sectionItems.filter((item) => !(profile.numberedLearningOutcomes && item.kind === "content_scope")),
+    ...subsectionItems,
+    ...objectives,
+    ...assessments,
+    ...papers,
+  ];
   const bestTopicByKey = new Map<string, CurriculumKnowledgeItem>();
   for (const item of allItems) {
     if (item.kind !== "topic") continue;
-    const key = item.code ?? normalizeHeading(item.title);
+    const canonical = (profile.topicHeadings ?? []).find((title) =>
+      normalizeHeading(item.title).startsWith(normalizeHeading(title)),
+    );
+    const key = canonical ? normalizeHeading(canonical) : item.code ?? normalizeHeading(item.title);
     const existing = bestTopicByKey.get(key);
     if (!existing || item.content.length > existing.content.length) {
       bestTopicByKey.set(key, item);
