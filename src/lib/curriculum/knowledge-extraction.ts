@@ -217,6 +217,7 @@ function extractNumberedLearningOutcomes(
   text: string,
   identity: CurriculumKnowledgeIdentity,
   provenance: CurriculumKnowledgeProvenance,
+  profile: CurriculumExtractionProfile,
 ): CurriculumKnowledgeItem[] {
   const lines = text.split(/\r?\n/);
   const items: CurriculumKnowledgeItem[] = [];
@@ -268,7 +269,11 @@ function extractNumberedLearningOutcomes(
     // A top-level topic heading terminates the current subsection/outcome run.
     // Check this before the single-number outcome matcher so "12 Energy and respiration"
     // cannot become outcome 12 of the previous subsection.
-    if (/^\d+\s+[A-Za-z]/.test(raw) || /^(?:AS|A) Level subject content$/i.test(raw)) {
+    const topLevelTopic = raw.match(/^(\d+)\s+(.+)$/);
+    const isKnownTopLevelTopic =
+      Boolean(topLevelTopic) &&
+      (profile.topicHeadings ?? []).some((title) => normalizeHeading(title) === normalizeHeading(topLevelTopic?.[2] ?? ""));
+    if (isKnownTopLevelTopic || /^(?:AS|A) Level subject content$/i.test(raw)) {
       flush(index);
       inLearningOutcomes = false;
       subsectionCode = null;
@@ -336,7 +341,7 @@ export function extractCurriculumKnowledge(
 ): CurriculumKnowledgeItem[] {
   const sectionItems = extractSectionBlocks(text, identity, provenance, profile);
   const objectives = profile.numberedLearningOutcomes
-    ? extractNumberedLearningOutcomes(text, identity, provenance)
+    ? extractNumberedLearningOutcomes(text, identity, provenance, profile)
     : extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
