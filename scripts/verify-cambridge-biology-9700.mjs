@@ -5,6 +5,7 @@ import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extr
 const SOURCE = "https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf";
 const EXPECTED_TOPICS = 19;
 const EXPECTED_AS_TOPICS = 11;
+const EXPECTED_SUBSECTIONS = 44;
 const profile = getCurriculumExtractionProfile("cambridge-9700-2025-2027");
 
 const response = await fetch(SOURCE, { headers: { Accept: "application/pdf" }, cache: "no-store" });
@@ -36,7 +37,13 @@ try {
 
   const items = extractCurriculumKnowledge(text, identity, provenance, profile);
   const topics = items.filter((item) => item.kind === "topic");
-  const subsections = items.filter((item) => item.kind === "content_scope" && /^\d+\.\d+\s+/.test(item.title));
+  const subsectionCodes = [...new Set(
+    items
+      .filter((item) => item.kind === "content_scope" && /^\d+\.\d+(?:\s|$)/.test(item.title))
+      .map((item) => item.code ?? item.metadata?.subsectionCode)
+      .filter(Boolean),
+  )];
+  const subsections = subsectionCodes;
   const outcomes = items.filter((item) => item.kind === "learning_outcome");
 
   const outcomeCodes = outcomes.map((item) => item.code).filter(Boolean);
@@ -71,6 +78,7 @@ try {
     duplicateLearningOutcomeDetails: duplicateDetails,
     invalidLearningOutcomeCodes: invalidCodes.length,
     topicOutcomeCounts: byTopic,
+    subsectionCodes,
   };
 
   console.log(JSON.stringify(report, null, 2));
@@ -79,7 +87,7 @@ try {
   if (topics.length !== EXPECTED_TOPICS) failures.push(`expected ${EXPECTED_TOPICS} topics, got ${topics.length}`);
   if (report.asTopics !== EXPECTED_AS_TOPICS) failures.push(`expected ${EXPECTED_AS_TOPICS} AS topics, got ${report.asTopics}`);
   if (report.aLevelTopics !== EXPECTED_TOPICS) failures.push(`expected ${EXPECTED_TOPICS} A Level topics, got ${report.aLevelTopics}`);
-  if (subsections.length === 0) failures.push("no numbered subsections extracted");
+  if (subsections.length !== EXPECTED_SUBSECTIONS) failures.push(`expected ${EXPECTED_SUBSECTIONS} numbered subsections, got ${subsections.length}`);
   if (outcomes.length === 0) failures.push("no numbered learning outcomes extracted");
   if (uniqueCodes.size !== outcomeCodes.length) failures.push("duplicate learning outcome codes detected");
   if (invalidCodes.length) failures.push(`invalid outcome codes: ${invalidCodes.slice(0, 10).join(", ")}`);
