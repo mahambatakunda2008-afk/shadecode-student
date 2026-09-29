@@ -1,3 +1,24 @@
+## 2026-09-29 — Cambridge Chemistry 9701 scope foundation started
+
+Loaded the official Cambridge International AS & A Level Chemistry 9701 syllabus for 2025–2027 as the next curriculum expansion.
+
+**Verified from the official syllabus PDF:**
+- 37 numbered topics.
+- AS Level covers topics 1–22.
+- A Level covers topics 1–37.
+- Five assessment components: Papers 1–5.
+- Official assessment marks, durations and AS/A Level weighting were checked.
+- Official source registered for weekly monitoring.
+- Repository dataset added at `src/lib/curriculum/data/cambridge-9701-2025-2027.json`.
+- Reproducible Supabase scope seed added at `supabase/migrations/20260929123000_seed_cambridge_9701_scope.sql`.
+- Live draft curriculum version created and verified with 74 scope rows.
+
+**Important boundary:** the Chemistry syllabus contains a dense hierarchy of numbered subsection learning outcomes. I deliberately did not manufacture learning-outcome rows from topic names. The curriculum version remains `draft` until the official subsection hierarchy and numbered outcomes are fully extracted and cross-checked, after which the full 15-kind knowledge layer and syllabus coverage evidence can be completed.
+
+Source: https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf
+
+---
+
 # Shadecode Student — Cortex Devlog
 
 Autonomous improvement log maintained by Cortex Engine.

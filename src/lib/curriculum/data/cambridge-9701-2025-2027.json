@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "authority": "Cambridge International",
+    "boardId": "cambridge",
+    "qualificationId": "cambridge-as-a-level",
+    "syllabusId": "cambridge-9701",
+    "syllabusVersion": "2025-2027",
+    "subjectId": "chemistry",
+    "sourceUrl": "https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf",
+    "sourceDocument": "Cambridge International AS & A Level Chemistry 9701 syllabus for 2025, 2026 and 2027 (version 1, September 2022)",
+    "edition": "Version 1, published September 2022",
+    "validFor": "Exams in 2025, 2026 and 2027 (June and November series; March series in India)",
+    "retrievedAt": "2026-09-29",
+    "effectiveFrom": "2025-01-01",
+    "effectiveTo": "2027-12-31"
+  },
+  "sections": [
+    {
+      "key": "1",
+      "title": "Atomic structure",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 1: Atomic structure.",
+      "topics": []
+    },
+    {
+      "key": "2",
+      "title": "Atoms, molecules and stoichiometry",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 2: Atoms, molecules and stoichiometry.",
+      "topics": []
+    },
+    {
+      "key": "3",
+      "title": "Chemical bonding",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 3: Chemical bonding.",
+      "topics": []
+    },
+    {
+      "key": "4",
+      "title": "States of matter",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 4: States of matter.",
+      "topics": []
+    },
+    {
+      "key": "5",
+      "title": "Chemical energetics",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 5: Chemical energetics.",
+      "topics": []
+    },
+    {
+      "key": "6",
+      "title": "Electrochemistry",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 6: Electrochemistry.",
+      "topics": []
+    },
+    {
+      "key": "7",
+      "title": "Equilibria",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 7: Equilibria.",
+      "topics": []
+    },
+    {
+      "key": "8",
+      "title": "Reaction kinetics",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 8: Reaction kinetics.",
+      "topics": []
+    },
+    {
+      "key": "9",
+      "title": "The Periodic Table: chemical periodicity",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 9: The Periodic Table: chemical periodicity.",
+      "topics": []
+    },
+    {
+      "key": "10",
+      "title": "Group 2",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 10: Group 2.",
+      "topics": []
+    },
+    {
+      "key": "11",
+      "title": "Group 17",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 11: Group 17.",
+      "topics": []
+    },
+    {
+      "key": "12",
+      "title": "Nitrogen and sulfur",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 12: Nitrogen and sulfur.",
+      "topics": []
+    },
+    {
+      "key": "13",
+      "title": "An introduction to AS Level organic chemistry",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 13: An introduction to AS Level organic chemistry.",
+      "topics": []
+    },
+    {
+      "key": "14",
+      "title": "Hydrocarbons",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 14: Hydrocarbons.",
+      "topics": []
+    },
+    {
+      "key": "15",
+      "title": "Halogen compounds",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 15: Halogen compounds.",
+      "topics": []
+    },
+    {
+      "key": "16",
+      "title": "Hydroxy compounds",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 16: Hydroxy compounds.",
+      "topics": []
+    },
+    {
+      "key": "17",
+      "title": "Carbonyl compounds",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 17: Carbonyl compounds.",
+      "topics": []
+    },
+    {
+      "key": "18",
+      "title": "Carboxylic acids and derivatives",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 18: Carboxylic acids and derivatives.",
+      "topics": []
+    },
+    {
+      "key": "19",
+      "title": "Nitrogen compounds",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 19: Nitrogen compounds.",
+      "topics": []
+    },
+    {
+      "key": "20",
+      "title": "Polymerisation",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 20: Polymerisation.",
+      "topics": []
+    },
+    {
+      "key": "21",
+      "title": "Organic synthesis",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 21: Organic synthesis.",
+      "topics": []
+    },
+    {
+      "key": "22",
+      "title": "Analytical techniques",
+      "paper": "Papers 1, 2 and 3",
+      "availability": "AS Level",
+      "level": "as_level",
+      "summary": "Topic 22: Analytical techniques.",
+      "topics": []
+    },
+    {
+      "key": "23",
+      "title": "Chemical energetics",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 23: Chemical energetics.",
+      "topics": []
+    },
+    {
+      "key": "24",
+      "title": "Electrochemistry",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 24: Electrochemistry.",
+      "topics": []
+    },
+    {
+      "key": "25",
+      "title": "Equilibria",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 25: Equilibria.",
+      "topics": []
+    },
+    {
+      "key": "26",
+      "title": "Reaction kinetics",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 26: Reaction kinetics.",
+      "topics": []
+    },
+    {
+      "key": "27",
+      "title": "Group 2",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 27: Group 2.",
+      "topics": []
+    },
+    {
+      "key": "28",
+      "title": "Chemistry of transition elements",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 28: Chemistry of transition elements.",
+      "topics": []
+    },
+    {
+      "key": "29",
+      "title": "An introduction to A Level organic chemistry",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 29: An introduction to A Level organic chemistry.",
+      "topics": []
+    },
+    {
+      "key": "30",
+      "title": "Hydrocarbons",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 30: Hydrocarbons.",
+      "topics": []
+    },
+    {
+      "key": "31",
+      "title": "Halogen compounds",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 31: Halogen compounds.",
+      "topics": []
+    },
+    {
+      "key": "32",
+      "title": "Hydroxy compounds",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 32: Hydroxy compounds.",
+      "topics": []
+    },
+    {
+      "key": "33",
+      "title": "Carboxylic acids and derivatives",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 33: Carboxylic acids and derivatives.",
+      "topics": []
+    },
+    {
+      "key": "34",
+      "title": "Nitrogen compounds",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 34: Nitrogen compounds.",
+      "topics": []
+    },
+    {
+      "key": "35",
+      "title": "Polymerisation",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 35: Polymerisation.",
+      "topics": []
+    },
+    {
+      "key": "36",
+      "title": "Organic synthesis",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 36: Organic synthesis.",
+      "topics": []
+    },
+    {
+      "key": "37",
+      "title": "Analytical techniques",
+      "paper": "Papers 1, 2, 3, 4 and 5",
+      "availability": "A Level",
+      "level": "a_level",
+      "summary": "Topic 37: Analytical techniques.",
+      "topics": []
+    }
+  ]
+}

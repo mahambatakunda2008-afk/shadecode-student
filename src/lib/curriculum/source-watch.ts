@@ -30,6 +30,23 @@ export interface CurriculumSourceWatch {
  */
 export const CURRICULUM_SOURCE_WATCHES: CurriculumSourceWatch[] = [
   {
+    id: "cambridge-as-a-level-chemistry-9701-2025-2027",
+    boardId: "cambridge",
+    qualificationId: "cambridge-as-a-level",
+    subjectId: "chemistry",
+    level: "a_level",
+    syllabusId: "cambridge-9701",
+    syllabusVersion: "2025-2027",
+    authority: "Cambridge International Education",
+    kind: "pdf",
+    url: "https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf",
+    allowedDomains: ["www.cambridgeinternational.org", "cambridgeinternational.org"],
+    frequency: "weekly",
+    discoverLinkedDocuments: false,
+    extractText: true,
+    autoPromote: false,
+  },
+  {
     id: "cambridge-as-a-level-physics-9702-2025-2027",
     boardId: "cambridge",
     qualificationId: "cambridge-as-a-level",
