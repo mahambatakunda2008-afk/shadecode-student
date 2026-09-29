@@ -12,6 +12,12 @@ export interface CurriculumExtractionProfile {
   assessmentPatterns?: RegExp[];
   paperPatterns?: RegExp[];
   terminologyHeadings?: string[];
+  /** Recognise numbered subsection headings such as 6.1 even when the exact title is unknown. */
+  numberedSectionHeadings?: boolean;
+  /** Knowledge kind assigned to dynamically recognised numbered subsections. */
+  numberedSectionKind?: CurriculumKnowledgeKind;
+  /** Extract single-number learning outcomes beneath numbered subsections. */
+  numberedLearningOutcomes?: boolean;
 }
 
 const DEFAULT_SECTION_KINDS: Record<string, CurriculumKnowledgeKind> = {
@@ -64,7 +70,9 @@ function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingI
     ...(profile.topicHeadings ?? []).map(normalizeHeading),
     ...(profile.terminologyHeadings ?? []).map(normalizeHeading),
   ]);
-  return allowed.has(info.normalized) ? info : null;
+  if (allowed.has(info.normalized)) return info;
+  if (profile.numberedSectionHeadings && info.level >= 2 && /^\\d+(?:\\.\\d+)+\\s+/.test(info.raw)) return info;
+  return null;
 }
 
 function makeItem(
@@ -106,7 +114,9 @@ function extractSectionBlocks(
     if (!currentHeading) return;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
     if (!content) return;
-    const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
+    const kind = profile.sectionKinds?.[currentHeading.normalized]
+      ?? DEFAULT_SECTION_KINDS[currentHeading.normalized]
+      ?? (currentHeading.level >= 2 ? profile.numberedSectionKind : undefined);
     if (!kind) return;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
     const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
@@ -203,6 +213,94 @@ function extractNumberedObjectives(
   return items;
 }
 
+function extractNumberedLearningOutcomes(
+  text: string,
+  identity: CurriculumKnowledgeIdentity,
+  provenance: CurriculumKnowledgeProvenance,
+): CurriculumKnowledgeItem[] {
+  const lines = text.split(/\r?\n/);
+  const items: CurriculumKnowledgeItem[] = [];
+  let subsectionCode: string | null = null;
+  let subsectionTitle = "";
+  let inLearningOutcomes = false;
+  let current: CurriculumKnowledgeItem | null = null;
+  let startLine = 0;
+
+  const flush = (endLine: number) => {
+    if (!current) return;
+    current.content = current.content.replace(/\s+/g, " ").trim();
+    current.title = current.content;
+    current.provenance = {
+      ...current.provenance,
+      sectionOrPage: current.provenance.sectionOrPage ?? `lines ${startLine}-${endLine}`,
+    };
+    current.metadata = {
+      ...(current.metadata ?? {}),
+      lineStart: startLine,
+      lineEnd: endLine,
+      subsectionCode,
+      subsectionTitle,
+      stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "learning_outcome", current.code ?? current.title].join("|"),
+    };
+    items.push(current);
+    current = null;
+  };
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const raw = lines[index].trim();
+    if (!raw) continue;
+
+    const subsection = raw.match(/^(\d+(?:\.\d+)+)\s+(.+)$/);
+    if (subsection) {
+      flush(index);
+      subsectionCode = subsection[1];
+      subsectionTitle = subsection[2].trim();
+      inLearningOutcomes = false;
+      continue;
+    }
+
+    if (/^learning outcomes$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = true;
+      continue;
+    }
+
+    if (inLearningOutcomes) {
+      const outcome = raw.match(/^(\d+)\s+(.+)$/);
+      if (outcome && subsectionCode) {
+        flush(index);
+        startLine = index + 1;
+        current = makeItem("learning_outcome", `${subsectionTitle}: outcome ${outcome[1]}`, outcome[2], identity, provenance, items.length, {
+          code: `${subsectionCode}.${outcome[1]}`,
+          metadata: {
+            extraction: "numbered-learning-outcome",
+            subsectionCode,
+            subsectionTitle,
+            outcomeIndex: Number(outcome[1]),
+            lineStart: startLine,
+          },
+        });
+        continue;
+      }
+
+      if (current) {
+        current.content += ` ${raw}`;
+        continue;
+      }
+    }
+
+    if (/^\d+\s+[A-Za-z]/.test(raw) || /^(?:AS|A) Level subject content$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = false;
+      subsectionCode = null;
+      subsectionTitle = "";
+    } else if (current) {
+      current.content += ` ${raw}`;
+    }
+  }
+  flush(lines.length);
+  return items;
+}
 function extractPatternLines(
   text: string,
   identity: CurriculumKnowledgeIdentity,
@@ -231,7 +329,9 @@ export function extractCurriculumKnowledge(
   profile: CurriculumExtractionProfile = {},
 ): CurriculumKnowledgeItem[] {
   const sectionItems = extractSectionBlocks(text, identity, provenance, profile);
-  const objectives = extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
+  const objectives = profile.numberedLearningOutcomes
+    ? extractNumberedLearningOutcomes(text, identity, provenance)
+    : extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
