@@ -13,7 +13,7 @@
     "retrievedAt": "2026-09-29",
     "effectiveFrom": "2025-01-01",
     "effectiveTo": "2027-12-31",
-    "representation": "Official subsection hierarchy loaded from the Cambridge 9701 2025–2027 syllabus. Numbered learning outcomes will be added as normalized paraphrase anchors in the next extraction boundary."
+    "representation": "Official subsection hierarchy plus normalized, source-checked numbered learning-outcome anchors for AS Topics 1–12. Topic 6 is corrected to the single official AS subsection 6.1; electrolysis appears in A Level Topic 24. Remaining topics retain their scope-only boundary."
   },
   "sections": [
     {
@@ -27,26 +27,62 @@
         {
           "key": "1.1",
           "title": "Particles in the atom and atomic radius",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Understand that atoms are mostly empty space surrounding a very small, dense nucleus containing protons and neutrons, with electrons in shells around the nucleus.",
+            "Identify and describe protons, neutrons and electrons by their relative charges and masses.",
+            "Understand atomic number, proton number, mass number and nucleon number.",
+            "Describe the distribution of mass and charge within an atom.",
+            "Describe the behaviour of proton, neutron and electron beams moving at the same velocity in an electric field.",
+            "Determine the numbers of protons, neutrons and electrons in atoms and ions from atomic/proton number, mass/nucleon number and charge.",
+            "State and explain qualitatively the variations in atomic and ionic radii across a period and down a group."
+          ]
         },
         {
           "key": "1.2",
           "title": "Isotopes",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define an isotope in terms of its numbers of protons and neutrons.",
+            "Understand isotope notation using mass/nucleon number and atomic/proton number.",
+            "Explain why isotopes of the same element have the same chemical properties.",
+            "Explain why isotopes of the same element have different physical properties, limited to mass and density."
+          ]
         },
         {
           "key": "1.3",
           "title": "Electrons, energy levels and atomic orbitals",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Understand shells, sub-shells, orbitals, principal quantum number n and ground state as applied to electronic configuration.",
+            "Describe the number of orbitals and maximum electrons in s, p and d sub-shells.",
+            "Describe the order of increasing sub-shell energy within the first three shells and the 4s and 4p sub-shells.",
+            "Describe electronic configurations by shell, sub-shell and orbital.",
+            "Explain electronic configurations in terms of electron energy and inter-electron repulsion.",
+            "Determine electronic configurations of atoms and ions from proton number and charge using full or shorthand notation.",
+            "Understand and use electrons-in-boxes notation.",
+            "Describe and sketch the shapes of s and p orbitals.",
+            "Describe a free radical as a species with one or more unpaired electrons."
+          ]
         },
         {
           "key": "1.4",
           "title": "Ionisation energy",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define and use first ionisation energy, IE.",
+            "Construct equations representing first, second and subsequent ionisation energies.",
+            "Identify and explain trends in ionisation energies across periods and down groups.",
+            "Identify and explain variation in successive ionisation energies of an element.",
+            "Understand ionisation energies as arising from attraction between the nucleus and the outer electron.",
+            "Explain ionisation-energy factors using nuclear charge, atomic/ionic radius, shielding and spin-pair repulsion.",
+            "Deduce electronic configurations from successive ionisation-energy data.",
+            "Deduce an element's position in the Periodic Table from successive ionisation-energy data."
+          ]
         }
       ]
     },
@@ -61,26 +97,44 @@
         {
           "key": "2.1",
           "title": "Relative masses of atoms and molecules",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define the unified atomic mass unit as one twelfth of the mass of a carbon-12 atom.",
+            "Define relative atomic mass, relative isotopic mass, relative molecular mass and relative formula mass in terms of the unified atomic mass unit."
+          ]
         },
         {
           "key": "2.2",
           "title": "The mole and the Avogadro constant",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define and use the mole in terms of the Avogadro constant."
+          ]
         },
         {
           "key": "2.3",
           "title": "Formulas",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Write ionic-compound formulas from ionic charges and oxidation numbers, including predicting ionic charge from Periodic Table position and recalling the specified common ions.",
+            "Write and construct balanced equations, including ionic equations without spectator ions, and use appropriate state symbols.",
+            "Define and use empirical and molecular formula.",
+            "Understand and use anhydrous, hydrated and water of crystallisation.",
+            "Calculate empirical and molecular formulas from given data."
+          ]
         },
         {
           "key": "2.4",
           "title": "Reacting masses and volumes (of solutions and gases)",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Perform mole calculations involving reacting masses and percentage yield, gas volumes, solution volumes and concentrations, and limiting and excess reagents.",
+            "Deduce stoichiometric relationships from mole calculations."
+          ]
         }
       ]
     },
@@ -95,44 +149,75 @@
         {
           "key": "3.1",
           "title": "Electronegativity and bonding",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define electronegativity as the power of an atom to attract electrons to itself.",
+            "Explain factors influencing electronegativity using nuclear charge, atomic radius and shielding by inner shells and sub-shells.",
+            "State and explain electronegativity trends across a period and down a group.",
+            "Use Pauling electronegativity differences to predict ionic or covalent bonding."
+          ]
         },
         {
           "key": "3.2",
           "title": "Ionic bonding",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define ionic bonding as electrostatic attraction between oppositely charged ions.",
+            "Describe ionic bonding using sodium chloride, magnesium oxide and calcium fluoride as examples."
+          ]
         },
         {
           "key": "3.3",
           "title": "Metallic bonding",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define metallic bonding as electrostatic attraction between positive metal ions and delocalised electrons."
+          ]
         },
         {
           "key": "3.4",
           "title": "Covalent bonding and coordinate (dative covalent) bonding",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define covalent bonding as electrostatic attraction between two nuclei and a shared pair of electrons, and describe covalent bonding in the specified molecules and expanded-octet examples.",
+            "Describe coordinate (dative covalent) bonding, including formation of NH4+ from ammonia and hydrogen chloride and bonding in Al2Cl6.",
+            "Describe sigma and pi bonds using orbital overlap, apply them to H2, C2H6, C2H4, HCN and N2, use sp/sp2/sp3 hybridisation, and relate bond energy and bond length to covalent reactivity."
+          ]
         },
         {
           "key": "3.5",
           "title": "Shapes of molecules",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "State and explain molecular shapes and bond angles using VSEPR theory for the specified examples.",
+            "Predict shapes and bond angles in molecules and ions analogous to the specified VSEPR examples."
+          ]
         },
         {
           "key": "3.6",
           "title": "Intermolecular forces, electronegativity and bond properties",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe hydrogen bonding in molecules containing N-H and O-H groups and use it to explain anomalous properties of water.",
+            "Use electronegativity to explain bond polarity and molecular dipole moments.",
+            "Describe van der Waals' forces, including instantaneous dipole-induced dipole and permanent dipole-permanent dipole forces, including hydrogen bonding.",
+            "State that ionic, covalent and metallic bonding are generally stronger than intermolecular forces."
+          ]
         },
         {
           "key": "3.7",
           "title": "Dot-and-cross diagrams",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Use dot-and-cross diagrams to illustrate ionic, covalent and coordinate bonding, including species with expanded octets or odd numbers of electrons."
+          ]
         }
       ]
     },
@@ -147,14 +232,24 @@
         {
           "key": "4.1",
           "title": "The gaseous state: ideal and real gases and pV = nRT",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain the origin of gas pressure in terms of collisions between gas molecules and container walls.",
+            "Understand that an ideal gas has negligible particle volume and no intermolecular attractions.",
+            "Use pV = nRT in calculations, including determination of relative molecular mass."
+          ]
         },
         {
           "key": "4.2",
           "title": "Bonding and structure",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe the lattice structures of giant ionic, simple molecular, giant molecular and giant metallic crystalline solids, using the specified examples.",
+            "Describe, interpret and predict how structure and bonding affect melting point, boiling point, electrical conductivity and solubility.",
+            "Deduce the structure and bonding of a substance from given information."
+          ]
         }
       ]
     },
@@ -169,14 +264,27 @@
         {
           "key": "5.1",
           "title": "Enthalpy change, ΔH",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Understand that chemical reactions involve enthalpy changes and can be exothermic or endothermic.",
+            "Construct and interpret reaction pathway diagrams showing reaction enthalpy change and activation energy.",
+            "Define and use standard conditions and the specified enthalpy-change terms: reaction, formation, combustion and neutralisation.",
+            "Understand energy transfer during reactions as arising from breaking and making chemical bonds.",
+            "Use bond energies to calculate enthalpy changes of reaction.",
+            "Understand that some bond energies are exact while others are average values.",
+            "Calculate enthalpy changes from experimental results using q = mcΔT and ΔH = -mcΔT/n."
+          ]
         },
         {
           "key": "5.2",
           "title": "Hess’s law",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Apply Hess's law to construct simple energy cycles.",
+            "Use energy cycles and relevant energy terms to calculate enthalpy changes that cannot be measured directly and to use bond-energy data."
+          ]
         }
       ]
     },
@@ -186,19 +294,20 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Electrochemistry. 2 official syllabus subsections.",
+      "summary": "Electrochemistry. 1 official syllabus subsection.",
       "topics": [
         {
           "key": "6.1",
           "title": "Redox processes: electron transfer and changes in oxidation number (oxidation state)",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
-        },
-        {
-          "key": "6.2",
-          "title": "Electrolysis",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Calculate oxidation numbers of elements in compounds and ions.",
+            "Use changes in oxidation numbers to help balance chemical equations.",
+            "Explain and use redox, oxidation, reduction and disproportionation in terms of electron transfer and oxidation-number changes.",
+            "Explain and use oxidising agent and reducing agent.",
+            "Use Roman numerals to indicate oxidation-number magnitude."
+          ]
         }
       ]
     },
@@ -213,14 +322,36 @@
         {
           "key": "7.1",
           "title": "Chemical equilibria: reversible reactions, dynamic equilibrium",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Understand reversible reactions, dynamic equilibrium as equal forward and reverse rates with constant concentrations, and the need for a closed system.",
+            "Define Le Chatelier's principle and use it to deduce qualitative equilibrium shifts caused by temperature, concentration, pressure or catalysts.",
+            "Deduce Kc expressions and carry out Kc calculations.",
+            "Use mole fraction and partial pressure and deduce Kp expressions.",
+            "Use Kc and Kp expressions for calculations without requiring quadratic equations.",
+            "Calculate equilibrium quantities from appropriate data.",
+            "State whether temperature, concentration, pressure or a catalyst changes the equilibrium constant.",
+            "Describe and explain Haber-process and Contact-process conditions as applications of dynamic equilibrium and Le Chatelier's principle."
+          ]
         },
         {
           "key": "7.2",
           "title": "Brønsted–Lowry theory of acids and bases",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "State the specified common acids and their formulas.",
+            "State the specified common alkalis and their formulas.",
+            "Describe the Brønsted-Lowry theory of acids and bases.",
+            "Describe strong acids/bases as fully dissociated and weak acids/bases as partially dissociated in aqueous solution.",
+            "Relate pH 7 to neutral water and distinguish acidic and alkaline solution pH ranges.",
+            "Explain qualitative differences between strong and weak acids, including reaction with a reactive metal and differences in pH measured by pH meter, universal indicator or conductivity.",
+            "Understand neutralisation as H+(aq) and OH-(aq) forming H2O(l).",
+            "Understand that salts are formed in neutralisation reactions.",
+            "Sketch pH titration curves for combinations of strong and weak acids with strong and weak alkalis.",
+            "Select suitable indicators for acid-alkali titrations from given data."
+          ]
         }
       ]
     },
@@ -235,20 +366,33 @@
         {
           "key": "8.1",
           "title": "Rate of reaction",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain and use rate of reaction, collision frequency, effective collisions and non-effective collisions.",
+            "Explain qualitatively how concentration and pressure affect reaction rate through the frequency of effective collisions.",
+            "Use experimental data to calculate reaction rate."
+          ]
         },
         {
           "key": "8.2",
           "title": "Effect of temperature on reaction rates and the concept of activation energy",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Define activation energy, EA, as the minimum energy required for an effective collision.",
+            "Sketch and use the Boltzmann distribution to explain the significance of activation energy.",
+            "Explain qualitatively how temperature changes reaction rate using the Boltzmann distribution and frequency of effective collisions."
+          ]
         },
         {
           "key": "8.3",
           "title": "Homogeneous and heterogeneous catalysts",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain catalyst and catalysis, including that a catalyst provides a different mechanism with lower activation energy, the Boltzmann-distribution explanation, and reaction-pathway diagrams with and without an effective catalyst."
+          ]
         }
       ]
     },
@@ -263,20 +407,37 @@
         {
           "key": "9.1",
           "title": "Periodicity of physical properties of the elements in Period 3",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe qualitative periodic variations in atomic radius, ionic radius, melting point and electrical conductivity across Period 3.",
+            "Explain melting-point and electrical-conductivity variation in terms of structure and bonding."
+          ]
         },
         {
           "key": "9.2",
           "title": "Periodicity of chemical properties of the elements in Period 3",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe and write equations for Period 3 element reactions with oxygen, chlorine and water where specified.",
+            "State and explain oxidation-number variation in specified Period 3 oxides and chlorides using outer-shell electrons.",
+            "Describe and write equations for reactions of specified Period 3 oxides with water and identify likely solution pH.",
+            "Describe, explain and write equations for acid-base behaviour of specified Period 3 oxides and hydroxides, including relevant amphoteric behaviour.",
+            "Describe, explain and write equations for reactions of specified Period 3 chlorides with water and identify likely solution pH.",
+            "Explain trends in Period 3 chemical properties using bonding and electronegativity.",
+            "Suggest bonding types in specified chlorides and oxides from chemical and physical properties."
+          ]
         },
         {
           "key": "9.3",
           "title": "Chemical periodicity of other elements",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Predict characteristic properties of an element in a given group using chemical periodicity.",
+            "Deduce the nature, possible Periodic Table position and identity of unknown elements from physical and chemical property data."
+          ]
         }
       ]
     },
@@ -291,8 +452,15 @@
         {
           "key": "10.1",
           "title": "Similarities and trends in the properties of the Group 2 metals, magnesium to barium, and their compounds",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe and write equations for Group 2 elements reacting with oxygen, water and dilute hydrochloric and sulfuric acids.",
+            "Describe and write equations for Group 2 oxides, hydroxides and carbonates reacting with water and dilute hydrochloric and sulfuric acids.",
+            "Describe and write equations for thermal decomposition of Group 2 nitrates and carbonates, including the trend in thermal stability.",
+            "Describe and predict trends in physical and chemical properties of the Group 2 elements and their compounds.",
+            "State the variation in solubilities of Group 2 hydroxides and sulfates."
+          ]
         }
       ]
     },
@@ -307,26 +475,44 @@
         {
           "key": "11.1",
           "title": "Physical properties of the Group 17 elements",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe the colours and volatility trend of chlorine, bromine and iodine.",
+            "Describe and explain the trend in bond strength of halogen molecules.",
+            "Interpret volatility in terms of instantaneous dipole-induced dipole forces."
+          ]
         },
         {
           "key": "11.2",
           "title": "The chemical properties of the halogen elements and the hydrogen halides",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe relative reactivity of halogen elements as oxidising agents.",
+            "Describe reactions of halogen elements with hydrogen and explain their relative reactivity.",
+            "Describe relative thermal stabilities of hydrogen halides and explain them using bond strengths."
+          ]
         },
         {
           "key": "11.3",
           "title": "Some reactions of the halide ions",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe relative reactivity of halide ions as reducing agents.",
+            "Describe and explain halide-ion reactions with aqueous silver ions followed by aqueous ammonia and with concentrated sulfuric acid, including balanced equations."
+          ]
         },
         {
           "key": "11.4",
           "title": "The reactions of chlorine",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Describe and interpret chlorine reactions with cold and hot aqueous sodium hydroxide in terms of oxidation-number changes and identify them as disproportionation.",
+            "Explain, including with an equation, the use of chlorine in water purification, including formation of HOCl and ClO- active species."
+          ]
         }
       ]
     },
@@ -341,8 +527,15 @@
         {
           "key": "12.1",
           "title": "Nitrogen and sulfur",
-          "representation": "official_subsection_heading",
-          "outcomeAnchors": []
+          "representation": "official_numbered_outcomes_normalized",
+          "outcomeAnchors": [],
+          "outcomes": [
+            "Explain nitrogen's low reactivity using triple-bond strength and lack of polarity.",
+            "Describe and explain ammonia basicity, ammonium-ion structure and formation, and displacement of ammonia from ammonium salts using acid-base reactions.",
+            "State and explain natural and man-made occurrences of nitrogen oxides and their catalytic removal from internal-combustion-engine exhaust.",
+            "Understand that NO and NO2 can react with unburned hydrocarbons to form PAN, a component of photochemical smog.",
+            "Describe the role of NO and NO2 in acid-rain formation, including catalytic oxidation of atmospheric sulfur dioxide."
+          ]
         }
       ]
     },
