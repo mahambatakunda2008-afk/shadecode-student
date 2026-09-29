@@ -71,7 +71,7 @@ function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingI
     ...(profile.terminologyHeadings ?? []).map(normalizeHeading),
   ]);
   if (allowed.has(info.normalized)) return info;
-  if (profile.numberedSectionHeadings && info.level >= 2 && /^\d+(?:\.\d+)+\\s+/.test(info.raw)) return info;
+  if (profile.numberedSectionHeadings && info.level >= 2 && /^\d+(?:\.\d+)+\s+/.test(info.raw)) return info;
   return null;
 }
 
