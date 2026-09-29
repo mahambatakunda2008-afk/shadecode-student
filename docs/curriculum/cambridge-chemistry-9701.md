@@ -2,7 +2,7 @@
 
 ## Status
 
-**Scope layer loaded. Detailed learning-outcome layer pending.**
+**Official subsection hierarchy loaded. Numbered learning-outcome mapping is the remaining boundary.**
 
 Official source:
 
@@ -16,7 +16,8 @@ The official syllabus is Version 1, published September 2022, for examinations i
 - Source watch: `cambridge-as-a-level-chemistry-9701-2025-2027`
 - Curriculum version: `3d7f2e44-0e2d-4b66-9f7a-0c4d1c5b8a11`
 - Scope knowledge rows: 74
-- Detailed numbered learning outcomes: intentionally not represented yet
+- Official subsection headings: 88
+- Detailed numbered learning outcomes: pending normalized one-to-one extraction
 
 ## Why the outcome layer is pending
 
