@@ -56,14 +56,18 @@ export interface CurriculumCompletenessResult {
   notApplicable: CurriculumCompletenessDimension[];
 }
 
-export function evaluateCurriculumCompleteness(checks: CurriculumCoverageCheck[]): CurriculumCompletenessResult {
+export function evaluateCurriculumCompleteness(
+  checks: CurriculumCoverageCheck[],
+  tier: CurriculumGateTier = "exam",
+): CurriculumCompletenessResult {
   const byDimension = new Map(checks.map((check) => [check.dimension, check]));
+  const requiredDimensions = requiredDimensionsForTier(tier);
   const missing: CurriculumCompletenessDimension[] = [];
   const partial: CurriculumCompletenessDimension[] = [];
   const blocked: CurriculumCompletenessDimension[] = [];
   const notApplicable: CurriculumCompletenessDimension[] = [];
 
-  for (const dimension of CURRICULUM_COMPLETENESS_DIMENSIONS) {
+  for (const dimension of requiredDimensions) {
     const check = byDimension.get(dimension);
     if (!check || check.status === "missing") missing.push(dimension);
     else if (check.status === "partial") partial.push(dimension);
@@ -71,10 +75,13 @@ export function evaluateCurriculumCompleteness(checks: CurriculumCoverageCheck[]
     else if (check.status === "not_applicable") notApplicable.push(dimension);
   }
 
-  const verifiedCount = CURRICULUM_COMPLETENESS_DIMENSIONS.length - missing.length - partial.length - blocked.length - notApplicable.length;
+  const verifiedCount = requiredDimensions.length - missing.length - partial.length - blocked.length - notApplicable.length;
   return { complete: missing.length === 0 && partial.length === 0 && blocked.length === 0, verifiedCount, partialCount: partial.length, missingCount: missing.length, blockedCount: blocked.length, notApplicableCount: notApplicable.length, missing, partial, blocked, notApplicable };
 }
 
-export function isProductionCompleteCurriculum(checks: CurriculumCoverageCheck[]): boolean {
-  return evaluateCurriculumCompleteness(checks).complete;
+export function isProductionCompleteCurriculum(
+  checks: CurriculumCoverageCheck[],
+  tier: CurriculumGateTier = "exam",
+): boolean {
+  return evaluateCurriculumCompleteness(checks, tier).complete;
 }
