@@ -298,6 +298,38 @@ export async function POST(req: Request) {
       }
 
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+
+      if (durableJobId) {
+        const durableComplete = await supabase
+          .from("cortex_generation_jobs")
+          .update({
+            status: "complete",
+            stage: "complete",
+            partial: null,
+            result: {
+              id: savedId,
+              title: parsed.title,
+              blocks: parsed.blocks,
+              subject: effectiveSubject,
+            },
+            progress: 100,
+            completed_units: generationSectionCount,
+            total_units: generationSectionCount,
+            error: null,
+            heartbeat_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", durableJobId)
+          .eq("user_id", user.id);
+
+        if (durableComplete.error) {
+          console.warn("[LEARN] durable completion checkpoint failed", {
+            generationJobId: durableJobId,
+            error: durableComplete.error.message,
+          });
+        }
+      }
+
       return NextResponse.json({
         id: savedId,
         title: persistableCandidate.title,
