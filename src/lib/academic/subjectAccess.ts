@@ -78,9 +78,25 @@ export async function resolveLearnerSubject(
     .select("id")
     .single();
 
-  if (createError || !created?.id) {
-    return { ok: false, status: 500, error: "The selected subject could not be registered." };
+  if (created?.id) {
+    return { ok: true, subject, subjectId: created.id };
   }
 
-  return { ok: true, subject, subjectId: created.id };
+  // The canonical subject index makes case/spacing variants a single identity.
+  // If two requests race between the lookup and insert, the second insert can
+  // lose the unique-index race. Re-read the canonical row instead of surfacing
+  // a false "could not be registered" failure.
+  if (createError) {
+    const { data: racedRows, error: racedLookupError } = await supabase
+      .from("subjects")
+      .select("id,name")
+      .eq("user_id", userId);
+
+    if (!racedLookupError) {
+      const raced = (racedRows ?? []).find((row) => matchAllowedSubject(row.name, allowed) === subject);
+      if (raced?.id) return { ok: true, subject, subjectId: raced.id };
+    }
+  }
+
+  return { ok: false, status: 500, error: "The selected subject could not be registered." };
 }
