@@ -72,6 +72,18 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-23 (2) — Switched the AI Gateway default to a confirmed-free, non-Gemini model
+
+**Context:** the owner cannot sign up for new third-party providers right now (Groq's console was not accessible to them). Since they already have a Vercel account for hosting this project, Vercel's own AI Gateway needs no new signup at all — just enabling it in their existing dashboard and generating a key there.
+
+**Found while preparing that recommendation:** the Gateway's default model, `google/gemini-3.8-flash`, was both unconfirmed as being on AI Gateway's free tier and the same vendor as the Gemini calls later in the chain — so even once enabled, a Gateway attempt would not have added real redundancy against the exact failure mode from 2026-09-21/22 (Gemini itself being down). Changed the default to `openai/gpt-oss-120b`, confirmed on AI Gateway's free tier (Vercel's own changelog: "no other provider accounts required") and a genuinely different vendor.
+
+**Verified:** new test pins the model string and asserts it isn't a Gemini model, so this can't silently regress. `npm run verify` clean (tsc 0 errors, lint 0 errors, 746 tests).
+
+**Still needs the owner:** enable AI Gateway in the Vercel dashboard for this project (Team settings → AI Gateway → Enable, then API Keys → Create) and set `AI_GATEWAY_API_KEY` in the project's environment variables. No sign-up, no card, $5/month recurring free credit. This is a no-op in code until that key is set.
+
+---
+
 ## 2026-09-23 — Added Groq as a free-tier provider; fixed two unrelated typecheck breaks blocking main
 
 **Context: the owner cannot pay for AI providers.** Since `ALLOW_PAID_AI`/OpenAI is off the table, the useful lever left is genuine free-tier redundancy, not more budget tuning.
