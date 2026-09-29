@@ -12,7 +12,8 @@
     "validFor": "Exams in 2025, 2026 and 2027 (June and November series; March series in India)",
     "retrievedAt": "2026-09-29",
     "effectiveFrom": "2025-01-01",
-    "effectiveTo": "2027-12-31"
+    "effectiveTo": "2027-12-31",
+    "representation": "Official subsection hierarchy loaded from the Cambridge 9701 2025–2027 syllabus. Numbered learning outcomes will be added as normalized paraphrase anchors in the next extraction boundary."
   },
   "sections": [
     {
@@ -21,8 +22,33 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 1: Atomic structure.",
-      "topics": []
+      "summary": "Atomic structure. 4 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "1.1",
+          "title": "Particles in the atom and atomic radius",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "1.2",
+          "title": "Isotopes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "1.3",
+          "title": "Electrons, energy levels and atomic orbitals",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "1.4",
+          "title": "Ionisation energy",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "2",
@@ -30,8 +56,33 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 2: Atoms, molecules and stoichiometry.",
-      "topics": []
+      "summary": "Atoms, molecules and stoichiometry. 4 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "2.1",
+          "title": "Relative masses of atoms and molecules",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "2.2",
+          "title": "The mole and the Avogadro constant",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "2.3",
+          "title": "Formulas",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "2.4",
+          "title": "Reacting masses and volumes (of solutions and gases)",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "3",
@@ -39,8 +90,51 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 3: Chemical bonding.",
-      "topics": []
+      "summary": "Chemical bonding. 7 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "3.1",
+          "title": "Electronegativity and bonding",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "3.2",
+          "title": "Ionic bonding",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "3.3",
+          "title": "Metallic bonding",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "3.4",
+          "title": "Covalent bonding and coordinate (dative covalent) bonding",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "3.5",
+          "title": "Shapes of molecules",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "3.6",
+          "title": "Intermolecular forces, electronegativity and bond properties",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "3.7",
+          "title": "Dot-and-cross diagrams",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "4",
@@ -48,8 +142,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 4: States of matter.",
-      "topics": []
+      "summary": "States of matter. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "4.1",
+          "title": "The gaseous state: ideal and real gases and pV = nRT",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "4.2",
+          "title": "Bonding and structure",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "5",
@@ -57,8 +164,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 5: Chemical energetics.",
-      "topics": []
+      "summary": "Chemical energetics. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "5.1",
+          "title": "Enthalpy change, ΔH",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "5.2",
+          "title": "Hess’s law",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "6",
@@ -66,8 +186,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 6: Electrochemistry.",
-      "topics": []
+      "summary": "Electrochemistry. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "6.1",
+          "title": "Redox processes: electron transfer and changes in oxidation number (oxidation state)",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "6.2",
+          "title": "Electrolysis",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "7",
@@ -75,8 +208,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 7: Equilibria.",
-      "topics": []
+      "summary": "Equilibria. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "7.1",
+          "title": "Chemical equilibria: reversible reactions, dynamic equilibrium",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "7.2",
+          "title": "Brønsted–Lowry theory of acids and bases",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "8",
@@ -84,8 +230,27 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 8: Reaction kinetics.",
-      "topics": []
+      "summary": "Reaction kinetics. 3 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "8.1",
+          "title": "Rate of reaction",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "8.2",
+          "title": "Effect of temperature on reaction rates and the concept of activation energy",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "8.3",
+          "title": "Homogeneous and heterogeneous catalysts",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "9",
@@ -93,8 +258,27 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 9: The Periodic Table: chemical periodicity.",
-      "topics": []
+      "summary": "The Periodic Table: chemical periodicity. 3 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "9.1",
+          "title": "Periodicity of physical properties of the elements in Period 3",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "9.2",
+          "title": "Periodicity of chemical properties of the elements in Period 3",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "9.3",
+          "title": "Chemical periodicity of other elements",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "10",
@@ -102,8 +286,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 10: Group 2.",
-      "topics": []
+      "summary": "Group 2. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "10.1",
+          "title": "Similarities and trends in the properties of the Group 2 metals, magnesium to barium, and their compounds",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "11",
@@ -111,8 +302,33 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 11: Group 17.",
-      "topics": []
+      "summary": "Group 17. 4 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "11.1",
+          "title": "Physical properties of the Group 17 elements",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "11.2",
+          "title": "The chemical properties of the halogen elements and the hydrogen halides",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "11.3",
+          "title": "Some reactions of the halide ions",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "11.4",
+          "title": "The reactions of chlorine",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "12",
@@ -120,8 +336,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 12: Nitrogen and sulfur.",
-      "topics": []
+      "summary": "Nitrogen and sulfur. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "12.1",
+          "title": "Nitrogen and sulfur",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "13",
@@ -129,8 +352,33 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 13: An introduction to AS Level organic chemistry.",
-      "topics": []
+      "summary": "An introduction to AS Level organic chemistry. 4 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "13.1",
+          "title": "Formulas, functional groups and the naming of organic compounds",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "13.2",
+          "title": "Characteristic organic reactions",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "13.3",
+          "title": "Shapes of organic molecules; σ and π bonds",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "13.4",
+          "title": "Isomerism: structural isomerism and stereoisomerism",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "14",
@@ -138,8 +386,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 14: Hydrocarbons.",
-      "topics": []
+      "summary": "Hydrocarbons. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "14.1",
+          "title": "Alkanes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "14.2",
+          "title": "Alkenes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "15",
@@ -147,8 +408,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 15: Halogen compounds.",
-      "topics": []
+      "summary": "Halogen compounds. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "15.1",
+          "title": "Halogenoalkanes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "16",
@@ -156,8 +424,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 16: Hydroxy compounds.",
-      "topics": []
+      "summary": "Hydroxy compounds. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "16.1",
+          "title": "Alcohols",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "17",
@@ -165,8 +440,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 17: Carbonyl compounds.",
-      "topics": []
+      "summary": "Carbonyl compounds. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "17.1",
+          "title": "Aldehydes and ketones",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "18",
@@ -174,8 +456,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 18: Carboxylic acids and derivatives.",
-      "topics": []
+      "summary": "Carboxylic acids and derivatives. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "18.1",
+          "title": "Carboxylic acids",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "18.2",
+          "title": "Esters",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "19",
@@ -183,8 +478,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 19: Nitrogen compounds.",
-      "topics": []
+      "summary": "Nitrogen compounds. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "19.1",
+          "title": "Primary amines",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "19.2",
+          "title": "Nitriles and hydroxynitriles",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "20",
@@ -192,8 +500,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 20: Polymerisation.",
-      "topics": []
+      "summary": "Polymerisation. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "20.1",
+          "title": "Addition polymerisation",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "21",
@@ -201,8 +516,15 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 21: Organic synthesis.",
-      "topics": []
+      "summary": "Organic synthesis. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "21.1",
+          "title": "Organic synthesis",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "22",
@@ -210,8 +532,21 @@
       "paper": "Papers 1, 2 and 3",
       "availability": "AS Level",
       "level": "as_level",
-      "summary": "Topic 22: Analytical techniques.",
-      "topics": []
+      "summary": "Analytical techniques. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "22.1",
+          "title": "Infrared spectroscopy",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "22.2",
+          "title": "Mass spectrometry",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "23",
@@ -219,8 +554,33 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 23: Chemical energetics.",
-      "topics": []
+      "summary": "Chemical energetics. 4 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "23.1",
+          "title": "Lattice energy and Born–Haber cycles",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "23.2",
+          "title": "Enthalpies of solution and hydration",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "23.3",
+          "title": "Entropy change, ΔS",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "23.4",
+          "title": "Gibbs free energy change, ΔG",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "24",
@@ -228,8 +588,21 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 24: Electrochemistry.",
-      "topics": []
+      "summary": "Electrochemistry. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "24.1",
+          "title": "Electrolysis",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "24.2",
+          "title": "Standard electrode potentials E°; standard cell potentials E°cell and the Nernst equation",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "25",
@@ -237,8 +610,21 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 25: Equilibria.",
-      "topics": []
+      "summary": "Equilibria. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "25.1",
+          "title": "Acids and bases",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "25.2",
+          "title": "Partition coefficients",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "26",
@@ -246,8 +632,21 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 26: Reaction kinetics.",
-      "topics": []
+      "summary": "Reaction kinetics. 2 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "26.1",
+          "title": "Simple rate equations, orders of reaction and rate constants",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "26.2",
+          "title": "Homogeneous and heterogeneous catalysts",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "27",
@@ -255,8 +654,15 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 27: Group 2.",
-      "topics": []
+      "summary": "Group 2. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "27.1",
+          "title": "Similarities and trends in the properties of the Group 2 metals, magnesium to barium, and their compounds",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "28",
@@ -264,8 +670,39 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 28: Chemistry of transition elements.",
-      "topics": []
+      "summary": "Chemistry of transition elements. 5 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "28.1",
+          "title": "General physical and chemical properties of the first row of transition elements, titanium to copper",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "28.2",
+          "title": "General characteristic chemical properties of the first set of transition elements, titanium to copper",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "28.3",
+          "title": "Colour of complexes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "28.4",
+          "title": "Stereoisomerism in transition element complexes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "28.5",
+          "title": "Stability constants, Kstab",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "29",
@@ -273,8 +710,33 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 29: An introduction to A Level organic chemistry.",
-      "topics": []
+      "summary": "An introduction to A Level organic chemistry. 4 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "29.1",
+          "title": "Formulas, functional groups and the naming of organic compounds",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "29.2",
+          "title": "Characteristic organic reactions",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "29.3",
+          "title": "Shapes of aromatic organic molecules; σ and π bonds",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "29.4",
+          "title": "Isomerism: optical",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "30",
@@ -282,8 +744,15 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 30: Hydrocarbons.",
-      "topics": []
+      "summary": "Hydrocarbons. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "30.1",
+          "title": "Arenes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "31",
@@ -291,8 +760,15 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 31: Halogen compounds.",
-      "topics": []
+      "summary": "Halogen compounds. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "31.1",
+          "title": "Halogenoarenes",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "32",
@@ -300,8 +776,15 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 32: Hydroxy compounds.",
-      "topics": []
+      "summary": "Hydroxy compounds. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "32.1",
+          "title": "Phenols",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "33",
@@ -309,8 +792,27 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 33: Carboxylic acids and derivatives.",
-      "topics": []
+      "summary": "Carboxylic acids and derivatives. 3 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "33.1",
+          "title": "Carboxylic acids",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "33.2",
+          "title": "Esters",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "33.3",
+          "title": "Acyl chlorides",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "34",
@@ -318,8 +820,27 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 34: Nitrogen compounds.",
-      "topics": []
+      "summary": "Nitrogen compounds. 3 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "34.1",
+          "title": "Amines",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "34.2",
+          "title": "Amides",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "34.3",
+          "title": "Amino acids and proteins",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "35",
@@ -327,8 +848,15 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 35: Polymerisation.",
-      "topics": []
+      "summary": "Polymerisation. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "35.1",
+          "title": "Condensation polymerisation",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "36",
@@ -336,8 +864,15 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 36: Organic synthesis.",
-      "topics": []
+      "summary": "Organic synthesis. 1 official syllabus subsection.",
+      "topics": [
+        {
+          "key": "36.1",
+          "title": "Organic synthesis",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     },
     {
       "key": "37",
@@ -345,8 +880,39 @@
       "paper": "Papers 1, 2, 3, 4 and 5",
       "availability": "A Level",
       "level": "a_level",
-      "summary": "Topic 37: Analytical techniques.",
-      "topics": []
+      "summary": "Analytical techniques. 5 official syllabus subsections.",
+      "topics": [
+        {
+          "key": "37.1",
+          "title": "Thin-layer chromatography",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "37.2",
+          "title": "Gas / liquid chromatography",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "37.3",
+          "title": "Carbon-13 NMR spectroscopy",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "37.4",
+          "title": "Proton NMR spectroscopy",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        },
+        {
+          "key": "37.5",
+          "title": "Combined analytical techniques",
+          "representation": "official_subsection_heading",
+          "outcomeAnchors": []
+        }
+      ]
     }
   ]
 }
