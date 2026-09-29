@@ -45,4 +45,27 @@ Learning outcomes
     expect(outcomes[0]?.content).toContain("recognise organelles");
     expect(outcomes[2]?.content).toContain("virus structure");
   });
+
+  it("recognises inline Learning outcomes headings and stops at PDF page footers", () => {
+    const items = extractCurriculumKnowledge(
+      `7.1 Structure of transport tissues Learning outcomes
+Candidates should be able to:
+1 draw plan diagrams of stems, roots and leaves
+2 describe xylem and phloem
+-- 22 of 73 --
+Assessment objectives
+1 identify knowledge and understanding`,
+      identity,
+      provenance,
+      {
+        topicHeadings: ["transport in plants"],
+        numberedSectionHeadings: true,
+        numberedSectionKind: "content_scope",
+        numberedLearningOutcomes: true,
+      },
+    );
+
+    const outcomes = items.filter((item) => item.kind === "learning_outcome");
+    expect(outcomes.map((item) => item.code)).toEqual(["7.1.1", "7.1.2"]);
+  });
 });
