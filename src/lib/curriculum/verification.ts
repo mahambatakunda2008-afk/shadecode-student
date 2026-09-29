@@ -1,5 +1,4 @@
 import {
-  CURRICULUM_COMPLETENESS_DIMENSIONS,
   evaluateCurriculumCompleteness,
   requiredDimensionsForTier,
   type CurriculumCompletenessDimension,
