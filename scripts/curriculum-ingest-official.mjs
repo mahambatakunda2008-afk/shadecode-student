@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
 import { fetchAndExtractCurriculumDocument } from "../src/lib/curriculum/document-fetcher.ts";
 import { ingestExtractedCurriculum } from "../src/lib/curriculum/ingestion.ts";
+import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
 
 const sourceId = process.argv[2];
 if (!sourceId) throw new Error("Usage: npm run ingest:official -- <curriculum-source-id>");
@@ -17,7 +18,7 @@ if (versionError || !version) throw new Error(`Curriculum version not found: ${v
 const domains = Array.isArray(source.allowed_domains) && source.allowed_domains.length ? source.allowed_domains : [new URL(source.url).hostname];
 const fetched = await fetchAndExtractCurriculumDocument(source.url, domains);
 const { count } = await db.from("curriculum_objectives").select("id", { count: "exact", head: true }).eq("curriculum_version_id", version.id).eq("status", "verified");
-const result = ingestExtractedCurriculum({ authority: source.authority, sourceUrl: source.url, sourceDocument: source.id }, fetched.text, { pageCount: fetched.pageCount, verifiedObjectiveCount: count ?? 0 });
+const result = ingestExtractedCurriculum({ authority: source.authority, sourceUrl: source.url, sourceDocument: source.id }, fetched.text, { pageCount: fetched.pageCount, verifiedObjectiveCount: count ?? 0, profile: getCurriculumExtractionProfile(source.id) });
 const now = new Date().toISOString();
 const { data: document, error: documentError } = await db.from("curriculum_documents").upsert({ source_id: source.id, url: source.url, title: `${source.authority} ${source.syllabus_id} ${source.syllabus_version}`, content_hash: fetched.contentHash, content_characters: fetched.text.length, extracted_text: fetched.text, status: "draft", first_seen_at: now, last_seen_at: now, updated_at: now, page_count: fetched.pageCount ?? null, structure: { sections: result.extraction.sections }, extraction_engine: fetched.extractionEngine, extraction_version: fetched.extractionVersion, extraction_status: "text_only" }, { onConflict: "url" }).select("id").single();
 if (documentError || !document) throw new Error(`Document persistence failed: ${documentError?.message}`);
