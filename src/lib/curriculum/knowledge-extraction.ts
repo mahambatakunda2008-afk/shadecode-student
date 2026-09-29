@@ -265,6 +265,17 @@ function extractNumberedLearningOutcomes(
       continue;
     }
 
+    // A top-level topic heading terminates the current subsection/outcome run.
+    // Check this before the single-number outcome matcher so "12 Energy and respiration"
+    // cannot become outcome 12 of the previous subsection.
+    if (/^\d+\s+[A-Za-z]/.test(raw) || /^(?:AS|A) Level subject content$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = false;
+      subsectionCode = null;
+      subsectionTitle = "";
+      continue;
+    }
+
     if (inLearningOutcomes) {
       const outcome = raw.match(/^(\d+)\s+(.+)$/);
       if (outcome && subsectionCode) {
@@ -289,12 +300,9 @@ function extractNumberedLearningOutcomes(
       }
     }
 
-    if (/^\d+\s+[A-Za-z]/.test(raw) || /^(?:AS|A) Level subject content$/i.test(raw)) {
-      flush(index);
-      inLearningOutcomes = false;
-      subsectionCode = null;
-      subsectionTitle = "";
-    } else if (current) {
+    if (current) {
+      current.content += ` ${raw}`;
+    }
       current.content += ` ${raw}`;
     }
   }
