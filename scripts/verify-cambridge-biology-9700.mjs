@@ -41,6 +41,7 @@ try {
 
   const outcomeCodes = outcomes.map((item) => item.code).filter(Boolean);
   const uniqueCodes = new Set(outcomeCodes);
+  const duplicateCodes = [...new Set(outcomeCodes.filter((code, index) => outcomeCodes.indexOf(code) !== index))];
   const invalidCodes = outcomeCodes.filter((code) => !/^\d+\.\d+\.\d+$/.test(code));
   const topicNumbers = topics.map((item) => Number(item.title.match(/^(\d+)/)?.[1])).filter(Number.isFinite);
   const topicSet = new Set(topicNumbers);
@@ -62,6 +63,7 @@ try {
     subsections: subsections.length,
     learningOutcomes: outcomes.length,
     uniqueLearningOutcomeCodes: uniqueCodes.size,
+    duplicateLearningOutcomeCodes: duplicateCodes,
     invalidLearningOutcomeCodes: invalidCodes.length,
     topicOutcomeCounts: byTopic,
   };
