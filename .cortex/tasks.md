@@ -5,6 +5,13 @@
 
 ---
 
+
+
+### 2026-09-29 curriculum execution checkpoint
+- Chemistry 9701 AS Topics 1–12: 131 normalized learning outcomes extracted and stored as draft knowledge.
+- Self-audit corrected AS Topic 6 to its single official subsection 6.1; electrolysis belongs to A Level Topic 24.
+- Chemistry remains incomplete until Topics 13–37, remaining knowledge kinds, objective mappings and coverage evidence are finished.
+
 ## 🚀 Shadecode 2.0 Strategic Gap Roadmap
 
 This section is the strategic layer above the feature backlog. It prevents Cortex from treating Shadecode as a collection of isolated UI features when the product is evolving toward a full academic intelligence platform.
