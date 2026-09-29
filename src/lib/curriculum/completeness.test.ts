@@ -10,7 +10,7 @@ describe("curriculum gate tiers", () => {
   it("allows syllabus verification without exam-history evidence", () => {
     const checks: CurriculumCoverageCheck[] = CURRICULUM_COMPLETENESS_DIMENSIONS.map((dimension) => ({
       dimension,
-      status: (EXAM_HISTORY_DIMENSIONS as readonly string[]).includes(dimension) ? "missing" : "verified",
+      status: ((EXAM_HISTORY_DIMENSIONS as readonly string[]).includes(dimension) ? "missing" : "verified") as CurriculumCoverageCheck["status"],
     }));
 
     expect(evaluateCurriculumCompleteness(checks, "syllabus").complete).toBe(true);
