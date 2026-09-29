@@ -54,6 +54,21 @@ try {
     contents: outcomes.filter((item) => item.code === code).map((item) => item.content.slice(0, 220)),
   }));
   const invalidCodes = outcomeCodes.filter((code) => !/^\d+\.\d+\.\d+$/.test(code));
+  const sequenceGaps = [];
+  for (const subsection of subsections) {
+    const numbers = outcomes
+      .filter((item) => item.metadata?.subsectionCode === subsection)
+      .map((item) => Number(item.code?.split(".")[2]))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+    for (let index = 0; index < numbers.length; index += 1) {
+      const expected = index + 1;
+      if (numbers[index] !== expected) {
+        sequenceGaps.push(subsection + ": expected outcome " + expected + ", found " + numbers[index]);
+        break;
+      }
+    }
+  }
   const topicNumbers = topics.map((item) => Number(item.code ?? item.title.match(/^(\d+)/)?.[1])).filter(Number.isFinite);
   const topicSet = new Set(topicNumbers);
 
@@ -77,6 +92,7 @@ try {
     duplicateLearningOutcomeCodes: duplicateCodes,
     duplicateLearningOutcomeDetails: duplicateDetails,
     invalidLearningOutcomeCodes: invalidCodes.length,
+    sequenceGaps,
     topicOutcomeCounts: byTopic,
     subsectionCodes,
   };
@@ -97,6 +113,7 @@ try {
   if (outcomes.length === 0) failures.push("no numbered learning outcomes extracted");
   if (uniqueCodes.size !== outcomeCodes.length) failures.push("duplicate learning outcome codes detected");
   if (invalidCodes.length) failures.push(`invalid outcome codes: ${invalidCodes.slice(0, 10).join(", ")}`);
+  if (sequenceGaps.length) failures.push(`learning outcome sequence gaps: ${sequenceGaps.slice(0, 10).join("; ")}`);
   if (outcomes.some((item) => !item.metadata?.subsectionCode)) failures.push("outcome missing subsection binding");
 
   if (failures.length) {
