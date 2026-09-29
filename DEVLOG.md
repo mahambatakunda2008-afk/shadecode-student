@@ -1,3 +1,17 @@
+## 2026-09-29 — Chemistry 9701 AS Topics 1–12 outcome layer extracted
+
+The Chemistry 9701 2025–2027 outcome pass now covers AS Topics 1–12 with **131 normalized learning-outcome records**. The source wording was cross-checked against the official Cambridge syllabus PDF before being stored as normalized paraphrase anchors.
+
+- Repository dataset: `src/lib/curriculum/data/cambridge-9701-2025-2027.json`
+- Draft knowledge seed: `supabase/migrations/20260929150000_seed_cambridge_9701_as_outcomes_1_12.sql`
+- Live draft knowledge: 37 topic rows + 37 content-scope rows + 131 draft learning-outcome rows.
+- The learning-outcome rows remain **draft** deliberately. Chemistry 9701 is not yet a complete teaching source because Topics 13–37, the remaining knowledge kinds, objective mappings and syllabus coverage checks are still pending.
+- Self-audit correction: the earlier scope draft incorrectly represented AS Topic 6 as having a second subsection. The official 2025–2027 syllabus has only **6.1 Redox processes** under AS Topic 6. Electrolysis is covered under A Level Topic 24.
+
+Source: https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf
+
+---
+
 ## 2026-09-29 — Chemistry 9701 subsection hierarchy mapped
 
 The Chemistry 9701 2025–2027 curriculum foundation was extended using the official Cambridge syllabus. The repository now maps **37 topics and 88 official subsection headings** across AS and A Level.
