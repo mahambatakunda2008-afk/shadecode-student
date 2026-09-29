@@ -407,6 +407,34 @@ export function extractCurriculumKnowledge(
     ...assessments,
     ...papers,
   ];
+
+  if (profile.topicHeadings?.length) {
+    const presentTopicKeys = new Set(
+      allItems
+        .filter((item) => item.kind === "topic")
+        .map((item) => normalizeHeading(item.title).replace(/^\d+\s+/, "")),
+    );
+    profile.topicHeadings.forEach((title, index) => {
+      const key = normalizeHeading(title);
+      if (presentTopicKeys.has(key)) return;
+      allItems.push(makeItem(
+        "topic",
+        `${index + 1} ${title}`,
+        "",
+        identity,
+        provenance,
+        0,
+        {
+          code: String(index + 1),
+          metadata: {
+            extraction: "profile-topic-scope",
+            topicNumber: index + 1,
+            topicTitle: title,
+          },
+        },
+      ));
+    });
+  }
   const bestTopicByKey = new Map<string, CurriculumKnowledgeItem>();
   for (const item of allItems) {
     if (item.kind !== "topic") continue;
