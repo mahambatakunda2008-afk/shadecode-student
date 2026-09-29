@@ -364,8 +364,23 @@ export function extractCurriculumKnowledge(
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
+  const allItems = [...sectionItems, ...objectives, ...assessments, ...papers];
+  const bestTopicByKey = new Map<string, CurriculumKnowledgeItem>();
+  for (const item of allItems) {
+    if (item.kind !== "topic") continue;
+    const key = item.code ?? normalizeHeading(item.title);
+    const existing = bestTopicByKey.get(key);
+    if (!existing || item.content.length > existing.content.length) {
+      bestTopicByKey.set(key, item);
+    }
+  }
+
   const seen = new Set<string>();
-  return [...sectionItems, ...objectives, ...assessments, ...papers].filter((item) => {
+  return allItems.filter((item) => {
+    if (item.kind === "topic") {
+      const topicKey = item.code ?? normalizeHeading(item.title);
+      if (bestTopicByKey.get(topicKey) !== item) return false;
+    }
     const key = `${item.kind}:${item.code ?? ""}:${item.content.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
