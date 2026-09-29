@@ -99,7 +99,7 @@ try {
 
   console.log(JSON.stringify(report, null, 2));
 
-  // Emit a compact, machine-readable checkpoint so CI can preserve the exact
+  // Emit a compact, machine-readable checkpoint for the verified official outcome layer so CI can preserve the exact
   // official outcome dataset without trusting a hand-transcribed syllabus.
   for (const item of outcomes) {
     console.log("BIOLOGY_OUTCOME\t" + item.code + "\t" + item.content.replace(/\s+/g, " ").trim());
