@@ -303,8 +303,7 @@ function extractNumberedLearningOutcomes(
     if (current) {
       current.content += ` ${raw}`;
     }
-      current.content += ` ${raw}`;
-    }
+  }
   }
   flush(lines.length);
   return items;
