@@ -4,6 +4,8 @@ import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction
 import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extraction.ts";
 
 const SOURCE = "https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf";
+const OUTPUT = "src/lib/curriculum/data/cambridge-9700-2025-2027.json";
+const PUBLIC_OUTPUT = "public/generated/cambridge-9700-2025-2027.json";
 const profile = getCurriculumExtractionProfile("cambridge-9700-2025-2027");
 if (!profile) throw new Error("Biology 9700 extraction profile is not registered.");
 
@@ -90,8 +92,11 @@ try {
     }),
   };
 
+  const serialized = JSON.stringify(dataset, null, 2) + "\n";
   await fs.mkdir("src/lib/curriculum/data", { recursive: true });
-  await fs.writeFile("src/lib/curriculum/data/cambridge-9700-2025-2027.json", JSON.stringify(dataset, null, 2) + "\n");
+  await fs.mkdir("public/generated", { recursive: true });
+  await fs.writeFile(OUTPUT, serialized);
+  await fs.writeFile(PUBLIC_OUTPUT, serialized);
   console.log(`Generated Biology 9700 dataset: ${outcomes.length} outcomes across ${subsections.length} subsections.`);
 } finally {
   await parser.destroy();
