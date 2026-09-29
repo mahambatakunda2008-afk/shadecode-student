@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "curriculum/biology-9700-foundation-and-verifier"]
   pull_request:
     branches: [main]
 
