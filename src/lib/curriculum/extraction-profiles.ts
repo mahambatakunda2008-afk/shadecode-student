@@ -72,6 +72,28 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
   },
 
 
+  "cambridge-as-a-level-chemistry-9701": {
+    topicHeadings: [
+      "atomic structure", "atoms, molecules and stoichiometry", "chemical bonding", "states of matter",
+      "chemical energetics", "electrochemistry", "equilibria", "reaction kinetics",
+      "the periodic table: chemical periodicity", "group 2", "group 17", "nitrogen and sulfur",
+      "an introduction to AS Level organic chemistry", "hydrocarbons", "halogen compounds", "hydroxy compounds",
+      "carbonyl compounds", "carboxylic acids and derivatives", "nitrogen compounds", "polymerisation",
+      "organic synthesis", "analytical techniques", "chemistry of transition elements",
+      ...COMMON_HEADINGS,
+    ],
+    sectionKinds: {
+      "assessment objectives": "assessment_requirement",
+      assessment: "assessment_requirement",
+      "examination format": "examination_format",
+      "paper structure": "paper_component",
+      "practical assessment": "practical_activity",
+      "additional information": "resource",
+    },
+    assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
+    paperPatterns: COMMON_PAPER_PATTERNS,
+  },
+
   "cambridge-as-a-level-physics-9702": {
     topicHeadings: [
       "physical quantities and units", "kinematics", "dynamics", "forces, density and pressure",
