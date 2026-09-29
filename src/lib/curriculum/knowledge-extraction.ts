@@ -118,6 +118,10 @@ function extractSectionBlocks(
       ?? DEFAULT_SECTION_KINDS[currentHeading.normalized]
       ?? (currentHeading.level >= 2 ? profile.numberedSectionKind : undefined);
     if (!kind) return;
+    // Biology numbered outcomes are emitted by the dedicated subsection-aware
+    // extractor. Do not also emit the generic "Learning outcomes" heading as a
+    // code-less learning_outcome item.
+    if (profile.numberedLearningOutcomes && currentHeading.normalized === "learning outcomes") return;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
     const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
     chunks.forEach((chunk, index) => {
