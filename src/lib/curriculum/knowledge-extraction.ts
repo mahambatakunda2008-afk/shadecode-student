@@ -71,6 +71,7 @@ function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingI
     ...(profile.terminologyHeadings ?? []).map(normalizeHeading),
   ]);
   if (allowed.has(info.normalized)) return info;
+  if ((profile.topicHeadings ?? []).some((title) => info.normalized.startsWith(normalizeHeading(title) + " "))) return info;
   if (profile.numberedSectionHeadings && info.level >= 2 && /^\d+(?:\.\d+)+\s+/.test(info.raw)) return info;
   return null;
 }
@@ -115,9 +116,11 @@ function extractSectionBlocks(
     const heading = currentHeading;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
     if (!content) return;
-    const isProfileTopic = (profile.topicHeadings ?? []).some(
-      (title) => normalizeHeading(title) === heading.normalized,
+    const profileTopic = (profile.topicHeadings ?? []).find((title) =>
+      heading.normalized === normalizeHeading(title)
+      || heading.normalized.startsWith(normalizeHeading(title) + " "),
     );
+    const isProfileTopic = Boolean(profileTopic);
     const kind = isProfileTopic
       ? "topic"
       : profile.sectionKinds?.[heading.normalized]
@@ -136,6 +139,7 @@ function extractSectionBlocks(
         ...provenance,
         sectionOrPage: provenance.sectionOrPage ?? `${headingTitle} (lines ${currentHeadingLine}-${endLine})`,
       }, index, {
+        code: kind === "topic" ? heading.raw.match(/^(\d+)/)?.[1] : undefined,
         parentId: parent?.id,
         metadata: {
           extraction: "section",
