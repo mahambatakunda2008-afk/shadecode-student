@@ -8,7 +8,7 @@ Official source:
 
 https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf
 
-The official syllabus is Version 1, published September 2022, for examinations in 2025, 2026 and 2027. Cambridge describes the syllabus as emphasizing conceptual understanding, application in novel contexts and advanced practical skills. citeturn15view0
+The official syllabus is Version 1, published September 2022, for examinations in 2025, 2026 and 2027. Cambridge describes the syllabus as emphasizing conceptual understanding, application in novel contexts and advanced practical skills.
 
 ## Verified repository dataset
 
