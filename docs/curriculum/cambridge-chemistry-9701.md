@@ -2,7 +2,7 @@
 
 ## Status
 
-**Official subsection hierarchy loaded. Numbered learning-outcome mapping is the remaining boundary.**
+**AS Topics 1–12 numbered outcomes extracted. Full 1–37 outcome layer remains pending.**
 
 Official source:
 
@@ -16,14 +16,17 @@ The official syllabus is Version 1, published September 2022, for examinations i
 - Source watch: `cambridge-as-a-level-chemistry-9701-2025-2027`
 - Curriculum version: `3d7f2e44-0e2d-4b66-9f7a-0c4d1c5b8a11`
 - Scope knowledge rows: 74
-- Official subsection headings: 88
-- Detailed numbered learning outcomes: pending normalized one-to-one extraction
+- Official subsection headings: 87 after a source-audit correction to AS Topic 6
+- Draft normalized learning outcomes: 131 for AS Topics 1–12
+- Remaining numbered learning outcomes: Topics 13–37
 
-## Why the outcome layer is pending
+## Current extraction boundary
 
-The Chemistry PDF contains a dense hierarchy of numbered subsection outcomes. The current pass has verified the official topic structure, level boundaries and assessment architecture from the official PDF, but has not yet completed the full subsection/outcome extraction and cross-check.
+The official numbered outcomes for AS Topics 1–12 have now been source-checked and stored as normalized paraphrase anchors. The rows remain draft while the rest of the syllabus is extracted.
 
-Shadecode Student must not turn topic names into invented learning outcomes. Until the official numbered outcomes are loaded and checked, this curriculum version remains draft and must not be treated as a complete teaching source.
+A source audit also corrected the original scope foundation: AS Topic 6 contains only subsection 6.1 in the 2025–2027 syllabus. Electrolysis appears in A Level Topic 24.
+
+Shadecode Student must not turn topic names into invented learning outcomes. Until Topics 13–37, the remaining knowledge kinds, objective mappings and coverage evidence are complete, this curriculum version remains draft and must not be treated as a complete teaching source.
 
 ## Assessment structure
 
@@ -37,4 +40,4 @@ AS Level candidates take Papers 1–3. A Level candidates use all five component
 
 ## Next boundary
 
-Complete the official subsection hierarchy and numbered learning outcomes, then add the remaining knowledge kinds and coverage evidence. Do not mark the version verified until those checks pass.
+Complete Topics 13–37 numbered outcomes, then add the remaining knowledge kinds, objective mappings and coverage evidence. Do not mark the version verified until those checks pass.
