@@ -185,7 +185,7 @@ function extractNumberedObjectives(
   const flush = (endLine: number) => {
     if (!current) return;
     current.content = current.content.replace(/\s+/g, " ").trim();
-    current.title = current.content;
+    if (current.kind !== "learning_outcome") current.title = current.content;
     current.provenance = {
       ...current.provenance,
       sectionOrPage: current.provenance.sectionOrPage ?? `lines ${startLine}-${endLine}`,
