@@ -2,6 +2,15 @@ import type { SyllabusSource } from './syllabus';
 
 export const OFFICIAL_CAMBRIDGE_SOURCES: SyllabusSource[] = [
   {
+    id: 'cambridge-9700-2025-2027',
+    title: 'Cambridge International AS & A Level Biology 9700 syllabus 2025-2027',
+    url: 'https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf',
+    examYears: '2025-2027',
+    retrievedAt: '2026-09-29',
+    publisher: 'Cambridge International Education',
+  },
+
+  {
     id: 'cambridge-9702-2025-2027',
     title: 'Cambridge International AS & A Level Physics 9702 syllabus 2025-2027',
     url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/',
