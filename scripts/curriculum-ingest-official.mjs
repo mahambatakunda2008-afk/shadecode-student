@@ -15,6 +15,7 @@ if (sourceError || !source) throw new Error(`Curriculum source not found: ${sour
 if (!source.active || source.kind !== "pdf" || !source.extract_text) throw new Error("Source is not an active extractable PDF source.");
 const { data: version, error: versionError } = await db.from("curriculum_versions").select("id, board_id, qualification_id, syllabus_id, syllabus_version, subject_id, status").eq("board_id", source.board_id).eq("syllabus_id", source.syllabus_id).eq("syllabus_version", source.syllabus_version).eq("subject_id", source.subject_id).maybeSingle();
 if (versionError || !version) throw new Error(`Curriculum version not found: ${versionError?.message ?? source.syllabus_id}`);
+if (version.status !== "draft") throw new Error(`Official ingestion is draft-only. Refusing to overwrite curriculum version with status: ${version.status}`);
 const domains = Array.isArray(source.allowed_domains) && source.allowed_domains.length ? source.allowed_domains : [new URL(source.url).hostname];
 const fetched = await fetchAndExtractCurriculumDocument(source.url, domains);
 const { count } = await db.from("curriculum_objectives").select("id", { count: "exact", head: true }).eq("curriculum_version_id", version.id).eq("status", "verified");
@@ -26,6 +27,8 @@ const { error: versionUpdateError } = await db.from("curriculum_versions").updat
 if (versionUpdateError) throw new Error(`Curriculum version update failed: ${versionUpdateError.message}`);
 const { error: sourceUpdateError } = await db.from("curriculum_sources").update({ last_checked_at: now, last_status: "ok", updated_at: now }).eq("id", source.id);
 if (sourceUpdateError) throw new Error(`Curriculum source update failed: ${sourceUpdateError.message}`);
+const { error: existingKnowledgeError } = await db.from("curriculum_knowledge").delete().eq("curriculum_version_id", version.id).eq("source_document_id", document.id).eq("status", "draft");
+if (existingKnowledgeError) throw new Error(`Existing draft knowledge cleanup failed: ${existingKnowledgeError.message}`);
 const knowledge = result.knowledge.map((item) => ({ curriculum_version_id: version.id, source_document_id: document.id, board_id: version.board_id, qualification_id: version.qualification_id, level: source.level ?? "unknown", syllabus_id: version.syllabus_id, syllabus_version: version.syllabus_version, subject_id: version.subject_id, kind: item.kind, knowledge_key: item.knowledgeKey, title: item.title, content: item.content, objective_keys: item.objectiveKeys, status: "draft", provenance: { ...item.provenance, documentHash: result.extraction.documentHash }, metadata: item.metadata }));
 if (knowledge.length) { const { error } = await db.from("curriculum_knowledge").insert(knowledge); if (error) throw new Error(`Knowledge persistence failed: ${error.message}`); }
 const coverage = result.coverage.map((check) => ({ curriculum_version_id: version.id, dimension: check.dimension, status: check.status, evidence: check.evidence ?? {}, notes: check.notes ?? null, checked_at: now }));
