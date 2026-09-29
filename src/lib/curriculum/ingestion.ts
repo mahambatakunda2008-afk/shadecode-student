@@ -157,7 +157,7 @@ export function buildKnowledgeDrafts(
     authority: extraction.source.authority,
     sourceDocument: extraction.source.sourceDocument ?? extraction.source.sourceUrl,
     sourceUrl: extraction.source.sourceUrl,
-    retrievedAt: extraction.source.retrievedAt,
+    retrievedAt: extraction.source.retrievedAt ?? new Date().toISOString(),
     mappingStatus: "pending",
   };
   const parsed = extractCurriculumKnowledge(extraction.rawText, identity, provenance, profile);
@@ -171,7 +171,7 @@ export function buildKnowledgeDrafts(
       topicKey: item.metadata?.topicKey as string | undefined,
       objectiveKeys: item.code ? [item.code] : [],
       metadata: item.metadata ?? {},
-      provenance: item.provenance as Record<string, unknown>,
+      provenance: { ...item.provenance },
     }));
   }
   return extraction.sections.map((section) => {
