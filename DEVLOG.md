@@ -1,3 +1,15 @@
+## 2026-09-29 — Chemistry 9701 subsection hierarchy mapped
+
+The Chemistry 9701 2025–2027 curriculum foundation was extended using the official Cambridge syllabus. The repository now maps **37 topics and 88 official subsection headings** across AS and A Level.
+
+The live draft curriculum document metadata was updated to record the verified subsection layer.
+
+**Boundary:** the syllabus explicitly uses numbered learning outcomes. The next extraction step must map those numbered outcomes one-to-one into normalized `learning_outcome` knowledge records. Topic names or subsection titles must not be promoted as fake outcomes.
+
+Source: https://www.cambridgeinternational.org/Images/664563-2025-2027-syllabus.pdf
+
+---
+
 ## 2026-09-29 — Cambridge Chemistry 9701 scope foundation started
 
 Loaded the official Cambridge International AS & A Level Chemistry 9701 syllabus for 2025–2027 as the next curriculum expansion.
