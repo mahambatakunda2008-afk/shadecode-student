@@ -5,7 +5,8 @@ import {
   type CurriculumCompletenessDimension,
   type CurriculumCoverageCheck,
 } from "./completeness";
-import type { CurriculumKnowledgeKind } from "./knowledge";
+import type { CurriculumKnowledgeKind, CurriculumKnowledgeIdentity, CurriculumKnowledgeProvenance } from "./knowledge";
+import { extractCurriculumKnowledge, type CurriculumExtractionProfile } from "./knowledge-extraction";
 
 export type CurriculumSourceInput = {
   authority: string;
@@ -140,12 +141,44 @@ function inferKind(section: CurriculumSection): CurriculumKnowledgeKind {
   return "topic";
 }
 
-export function buildKnowledgeDrafts(extraction: CurriculumExtraction): CurriculumKnowledgeDraft[] {
+export function buildKnowledgeDrafts(
+  extraction: CurriculumExtraction,
+  profile: CurriculumExtractionProfile = {},
+): CurriculumKnowledgeDraft[] {
+  const identity: CurriculumKnowledgeIdentity = {
+    boardId: extraction.source.authority.toLowerCase().includes("cambridge") ? "cambridge" : extraction.source.authority.toLowerCase(),
+    qualificationId: "curriculum",
+    level: "unknown",
+    syllabusId: extraction.source.sourceDocument ?? extraction.source.sourceUrl,
+    syllabusVersion: "unknown",
+    subjectId: "unknown",
+  };
+  const provenance: CurriculumKnowledgeProvenance = {
+    authority: extraction.source.authority,
+    sourceDocument: extraction.source.sourceDocument ?? extraction.source.sourceUrl,
+    sourceUrl: extraction.source.sourceUrl,
+    retrievedAt: extraction.source.retrievedAt,
+    mappingStatus: "pending",
+  };
+  const parsed = extractCurriculumKnowledge(extraction.rawText, identity, provenance, profile);
+  if (parsed.length) {
+    return parsed.map((item) => ({
+      kind: item.kind,
+      knowledgeKey: item.code ? item.kind + ":" + item.code : item.kind + ":" + item.id,
+      title: item.title,
+      content: item.content,
+      parentKey: item.metadata?.parentKnowledgeKey as string | undefined,
+      topicKey: item.metadata?.topicKey as string | undefined,
+      objectiveKeys: item.code ? [item.code] : [],
+      metadata: item.metadata ?? {},
+      provenance: item.provenance as Record<string, unknown>,
+    }));
+  }
   return extraction.sections.map((section) => {
     const kind = inferKind(section);
     return {
       kind,
-      knowledgeKey: `${kind}:${section.id}`,
+      knowledgeKey: kind + ":" + section.id,
       title: section.title,
       content: section.text,
       objectiveKeys: [],
@@ -155,7 +188,7 @@ export function buildKnowledgeDrafts(extraction: CurriculumExtraction): Curricul
         sourceDocument: extraction.source.sourceDocument ?? extraction.source.sourceUrl,
         sourceUrl: extraction.source.sourceUrl,
         retrievedAt: extraction.source.retrievedAt,
-        sectionOrPage: section.page ? `page ${section.page}` : section.title,
+        sectionOrPage: section.page ? "page " + section.page : section.title,
         mappingStatus: "pending",
         versionSource: "document",
       },
@@ -214,10 +247,10 @@ export function buildCoverageChecks(
 export function ingestExtractedCurriculum(
   source: CurriculumSourceInput,
   rawText: string,
-  options: { pageCount?: number; verifiedObjectiveCount?: number } = {},
+  options: { pageCount?: number; verifiedObjectiveCount?: number; profile?: CurriculumExtractionProfile } = {},
 ): CurriculumIngestionResult {
   const extraction = extractCurriculumText(source, rawText, options.pageCount);
-  const knowledge = buildKnowledgeDrafts(extraction);
+  const knowledge = buildKnowledgeDrafts(extraction, options.profile);
   const coverage = buildCoverageChecks(extraction, knowledge, options.verifiedObjectiveCount ?? 0);
   return { extraction, knowledge, coverage };
 }
