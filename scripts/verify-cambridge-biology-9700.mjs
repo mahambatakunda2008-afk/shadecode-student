@@ -83,6 +83,12 @@ try {
 
   console.log(JSON.stringify(report, null, 2));
 
+  // Emit a compact, machine-readable checkpoint so CI can preserve the exact
+  // official outcome dataset without trusting a hand-transcribed syllabus.
+  for (const item of outcomes) {
+    console.log("BIOLOGY_OUTCOME\t" + item.code + "\t" + item.content.replace(/\s+/g, " ").trim());
+  }
+
   const failures = [];
   if (topics.length !== EXPECTED_TOPICS) failures.push(`expected ${EXPECTED_TOPICS} topics, got ${topics.length}`);
   if (report.asTopics !== EXPECTED_AS_TOPICS) failures.push(`expected ${EXPECTED_AS_TOPICS} AS topics, got ${report.asTopics}`);
