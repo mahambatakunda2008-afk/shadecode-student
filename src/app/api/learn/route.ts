@@ -298,6 +298,38 @@ export async function POST(req: Request) {
       }
 
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+
+      if (durableJobId) {
+        const durableComplete = await supabase
+          .from("cortex_generation_jobs")
+          .update({
+            status: "complete",
+            stage: "complete",
+            partial: null,
+            result: {
+              id: savedId,
+              title: persistableCandidate.title,
+              blocks: persistableCandidate.blocks,
+              subject: effectiveSubject,
+            },
+            progress: 100,
+            completed_units: generationSectionCount,
+            total_units: generationSectionCount,
+            error: null,
+            heartbeat_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", durableJobId)
+          .eq("user_id", user.id);
+
+        if (durableComplete.error) {
+          console.warn("[LEARN] durable completion checkpoint failed", {
+            generationJobId: durableJobId,
+            error: durableComplete.error.message,
+          });
+        }
+      }
+
       return NextResponse.json({
         id: savedId,
         title: persistableCandidate.title,
@@ -399,6 +431,47 @@ Repair only the defective section. Preserve correct material where possible. Do 
         }, { status: 503 });
       }
       const currentBlocks = [...priorBlocks, ...section.blocks].slice(-28);
+
+      // Checkpoint the durable Cortex job on the server before returning the section.
+      // This closes the small window where generation succeeds but the browser dies
+      // before its client-side PATCH arrives.
+      if (durableJobId) {
+        const durableProgress = Math.min(
+          90,
+          Math.round(((generationSectionIndex + 1) / Math.max(1, generationSectionCount)) * 90),
+        );
+        const durableUpdate = await supabase
+          .from("cortex_generation_jobs")
+          .update({
+            status: "partial",
+            stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
+            partial: {
+              title: section.title,
+              blocks: currentBlocks,
+              completedUnits: generationSectionIndex + 1,
+              totalUnits: generationSectionCount,
+            },
+            progress: durableProgress,
+            completed_units: generationSectionIndex + 1,
+            total_units: generationSectionCount,
+            heartbeat_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", durableJobId)
+          .eq("user_id", user.id);
+
+        if (durableUpdate.error) {
+          console.warn("[LEARN] durable generation checkpoint failed", {
+            generationJobId: durableJobId,
+            sectionIndex: generationSectionIndex,
+            error: durableUpdate.error.message,
+          });
+          // The learn_lessons draft below is a second recovery record. Do not turn
+          // a successful generated section into a user-visible failure because this
+          // auxiliary checkpoint failed.
+        }
+      }
+
       if (durableJobId) {
         const update = await supabase.from("learn_lessons").update({
           title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0,255),
