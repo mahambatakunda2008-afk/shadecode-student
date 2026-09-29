@@ -304,7 +304,6 @@ function extractNumberedLearningOutcomes(
       current.content += ` ${raw}`;
     }
   }
-  }
   flush(lines.length);
   return items;
 }
