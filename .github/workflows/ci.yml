@@ -39,7 +39,7 @@ jobs:
           VITE_CONFIG_NATIVE_IGNORE_WARNING: "true"
 
       - name: Verify Cambridge Biology 9700 curriculum extraction
-        run: npx tsx scripts/verify-cambridge-biology-9700.ts
+        run: npx tsx scripts/verify-cambridge-biology-9700.mjs
 
       - name: Build
         run: npm run build
