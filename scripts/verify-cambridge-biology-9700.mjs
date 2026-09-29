@@ -31,7 +31,7 @@ try {
     sourceDocument: SOURCE,
     sourceUrl: SOURCE,
     retrievedAt: new Date().toISOString(),
-    mappingStatus: "reviewed" as const,
+    mappingStatus: "reviewed",
   };
 
   const items = extractCurriculumKnowledge(text, identity, provenance, profile);
@@ -39,7 +39,7 @@ try {
   const subsections = items.filter((item) => item.kind === "content_scope" && /^\d+\.\d+\s+/.test(item.title));
   const outcomes = items.filter((item) => item.kind === "learning_outcome");
 
-  const outcomeCodes = outcomes.map((item) => item.code).filter((code): code is string => Boolean(code));
+  const outcomeCodes = outcomes.map((item) => item.code).filter(Boolean);
   const uniqueCodes = new Set(outcomeCodes);
   const invalidCodes = outcomeCodes.filter((code) => !/^\d+\.\d+\.\d+$/.test(code));
   const topicNumbers = topics.map((item) => Number(item.title.match(/^(\d+)/)?.[1])).filter(Number.isFinite);
