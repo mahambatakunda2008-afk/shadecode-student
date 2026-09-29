@@ -308,8 +308,8 @@ export async function POST(req: Request) {
             partial: null,
             result: {
               id: savedId,
-              title: parsed.title,
-              blocks: parsed.blocks,
+              title: persistableCandidate.title,
+              blocks: persistableCandidate.blocks,
               subject: effectiveSubject,
             },
             progress: 100,
