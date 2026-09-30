@@ -65,16 +65,16 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
 
     if (/^IF\b/.test(current)) {
       const elseIndex = lines.findIndex((line, j) => j > i && /^ELSE$/.test(line.text.toUpperCase()));
-      const endIndex = lines.findIndex((line, j) => j > i && /^END IF\b/.test(line.text.toUpperCase()));
+      const endIndex = lines.findIndex((line, j) => j > i && /^END ?IF\b/.test(line.text.toUpperCase()));
       add(nodes[i], nodes[i + 1], "TRUE");
       if (elseIndex >= 0) add(nodes[i], nodes[elseIndex + 1], "FALSE");
       if (endIndex >= 0 && nodes[endIndex + 1]) add(nodes[endIndex], nodes[endIndex + 1]);
       continue;
     }
 
-    if (/^ELSE$/.test(current) || /^END IF\b/.test(current)) continue;
+    if (/^ELSE$/.test(current) || /^END ?IF\b/.test(current)) continue;
     if (/^END\b/.test(current)) continue;
-    if (/^ELSE$/.test(next) || /^END IF\b/.test(next)) continue;
+    if (/^ELSE$/.test(next) || /^END ?IF\b/.test(next)) continue;
 
     add(nodes[i], nodes[i + 1]);
   }
