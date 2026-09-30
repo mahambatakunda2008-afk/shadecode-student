@@ -32,7 +32,7 @@ export default function Login() {
     if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
     if (!password) { setError("Password is required"); setLoading(false); return; }
     const normalizedEmail = email.trim();
-    const { error: loginError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
     if (loginError) {
       const message = loginError.message || "Unable to sign in.";
       const needsVerification = /email not confirmed|email.*confirm/i.test(message);
@@ -41,11 +41,33 @@ export default function Login() {
       setLoading(false);
       return;
     }
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) void trackEvent("user_logged_in", { authMethod: "password" });
-    const { data: profile } = await supabase.from("user_profiles").select("onboarding_completed").eq("user_id", user?.id).maybeSingle();
-    if (profile?.onboarding_completed === true) { setOnboardingComplete(); router.push("/dashboard"); }
-    else router.push("/onboarding");
+    const user = loginData.user;
+    if (!user) {
+      setError("Sign-in completed without an active session. Please try again.");
+      setLoading(false);
+      return;
+    }
+    void trackEvent("user_logged_in", { authMethod: "password" });
+
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("onboarding_completed")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("[login] profile lookup failed:", profileError);
+      setError("Signed in, but we could not load your account setup. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    if (profile?.onboarding_completed === true) {
+      setOnboardingComplete();
+      router.replace("/dashboard");
+    } else {
+      router.replace("/onboarding");
+    }
     setLoading(false);
   };
 
