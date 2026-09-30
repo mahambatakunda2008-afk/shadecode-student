@@ -15,6 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [verificationNeeded, setVerificationNeeded] = useState(false);
+  const [redirectTo, setRedirectTo] = useState("/dashboard");
   const router = useRouter();
   const supabase = createClient();
 
@@ -22,6 +23,10 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "verification_failed") {
       setError("That verification link is invalid or has expired. Sign in if you can, or request a new reset/verification email.");
+    }
+    const requested = params.get("redirect");
+    if (requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.startsWith("/auth")) {
+      setRedirectTo(requested);
     }
   }, []);
 
@@ -64,7 +69,7 @@ export default function Login() {
 
     if (profile?.onboarding_completed === true) {
       setOnboardingComplete();
-      router.replace("/dashboard");
+      router.replace(redirectTo);
     } else {
       router.replace("/onboarding");
     }
