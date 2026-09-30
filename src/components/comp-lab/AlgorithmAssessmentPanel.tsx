@@ -39,8 +39,8 @@ export default function AlgorithmAssessmentPanel() {
     if (!answer.trim() || busy) return;
     setBusy(true);
     let correct = false;
-    if (question.kind === "choice") {
-      correct = answer === question.answer;
+    if (question.kind === "choice" || question.kind === "trace") {
+      correct = normalise(answer) === normalise(question.kind === "choice" ? question.answer : question.expected);
     } else {
       const result = await executeCode({
         id: "algorithm-assessment-" + question.id,
@@ -103,7 +103,7 @@ export default function AlgorithmAssessmentPanel() {
             {question.options.map(option => <button key={option} type="button" onClick={() => setAnswer(option)} className={`rounded-xl border p-3 text-left text-xs transition ${answer === option ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)] hover:bg-[var(--surface)]"}`}>{option}</button>)}
           </div>
         ) : (
-          <textarea value={answer} onChange={event => setAnswer(event.target.value)} spellCheck={false} placeholder="Write the corrected pseudocode here..." className="mt-4 min-h-36 w-full rounded-xl border border-[var(--card-border)] bg-[#070a10] p-3 font-mono text-[11px] leading-5 text-slate-200 outline-none focus:ring-2 focus:ring-[var(--primary)]" />
+          <textarea value={answer} onChange={event => setAnswer(event.target.value)} spellCheck={false} placeholder={question.kind === "trace" ? "Enter the final output/value..." : "Write the corrected pseudocode here..."} className="mt-4 min-h-36 w-full rounded-xl border border-[var(--card-border)] bg-[#070a10] p-3 font-mono text-[11px] leading-5 text-slate-200 outline-none focus:ring-2 focus:ring-[var(--primary)]" />
         )}
 
         {feedback && (
