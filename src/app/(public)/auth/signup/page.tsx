@@ -30,20 +30,15 @@ export default function SignUp() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: name.trim() } },
+      options: {
+        data: { full_name: name.trim(), username: name.trim() },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
     if (signUpError) { setError(signUpError.message); setLoading(false); return; }
 
     if (data.user) {
       void trackEvent("user_signed_up", { authMethod: "password" });
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: data.user.id,
-        username: name.trim(),
-        level: 1,
-        xp: 0,
-        streak: 0,
-      }, { onConflict: "id" });
-      if (profileError) { setError(profileError.message); setLoading(false); return; }
 
       try {
         const referral = sessionStorage.getItem("shadecode_referral");
