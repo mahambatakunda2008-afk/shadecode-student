@@ -31,20 +31,26 @@ export async function POST(req) {
     const { subject, topic, difficulty, questionCount } = validation.data;
     const userId = user.id;
     const supabase = await createSupabaseServerClient();
-    const learnerSubjects = await resolveLearnerSubjects(supabase, userId);
-    const canonicalSubject = assertRequestedLearnerSubject(learnerSubjects, subject);
+
+    // resolveLearnerSubjects returns an object, not the raw subject array.
+    // Passing the object into assertRequestedLearnerSubject caused the production
+    // "e.find is not a function" crash. Keep the contract explicit here.
+    const learnerSubjectState = await resolveLearnerSubjects(supabase, userId);
+    const canonicalSubject = assertRequestedLearnerSubject(learnerSubjectState.subjects, subject);
 
     if (!canonicalSubject) {
       return NextResponse.json({
-        error: learnerSubjects.length
+        error: learnerSubjectState.subjects.length
           ? "That subject is not in your selected subjects. Choose one of your subjects and try again."
           : "Choose your subjects in onboarding before generating an exam.",
         code: "SUBJECT_NOT_ALLOWED",
-        subjects: learnerSubjects,
+        subjects: learnerSubjectState.subjects,
       }, { status: 400 });
     }
 
-    const cleanTopic = typeof topic === "string" ? topic.replace(/\s*\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\)\s*$/i, "").trim() : "";
+    const cleanTopic = typeof topic === "string"
+      ? topic.replace(/\s*\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\)\s*$/i, "").trim()
+      : "";
 
     let exam = await generateExam(canonicalSubject.name, cleanTopic ? [cleanTopic] : [canonicalSubject.name], difficulty, questionCount, userId);
     let source = "cortex";
