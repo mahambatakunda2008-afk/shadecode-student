@@ -14,6 +14,10 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
+function safeRedirectTarget(req: NextRequest): string {
+  return `${req.nextUrl.pathname}${req.nextUrl.search}`;
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
@@ -42,7 +46,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     if (!user) {
       const url = req.nextUrl.clone();
       url.pathname = '/auth/login';
-      url.searchParams.set('redirect', pathname);
+      url.searchParams.set('redirect', safeRedirectTarget(req));
       const redirect = NextResponse.redirect(url);
       response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
       return redirect;
@@ -52,9 +56,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     console.error('[proxy] protected auth check failed:', error);
     const url = req.nextUrl.clone();
     url.pathname = '/auth/login';
-    url.searchParams.set('redirect', pathname);
+    url.searchParams.set('redirect', safeRedirectTarget(req));
     url.searchParams.set('error', 'session_check');
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
   }
 }
 
