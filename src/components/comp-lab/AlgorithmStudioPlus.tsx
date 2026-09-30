@@ -42,7 +42,39 @@ const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2,
 function cleanLines(code: string) { return code.split(/\r?\n/).map((raw, index) => ({ raw, text: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 })).filter(x => x.text).slice(0, 80); }
 function inferKind(text: string, index: number, total: number): Kind { const s = text.toUpperCase(); if (index === 0) return "start"; if (index === total - 1 || /^(END|RETURN)\b/.test(s)) return "end"; if (/^(IF|WHILE|FOR|REPEAT|CASE)\b/.test(s)) return "decision"; if (/^INPUT\b/.test(s)) return "input"; if (/^(OUTPUT|PRINT)\b/.test(s)) return "output"; return "process"; }
 function buildNodes(code: string): Node[] { const lines = cleanLines(code); if (!lines.length) return [{ id: uid("node"), kind: "start", text: "START", x: 380, y: 60, line: 1 }, { id: uid("node"), kind: "end", text: "END", x: 380, y: 180, line: 2 }]; return lines.map((x, i) => ({ id: uid("node"), kind: inferKind(x.text, i, lines.length), text: x.text, x: 380, y: 55 + i * 82, line: x.line })); }
-function buildEdges(code: string, nodes: Node[]): Edge[] { const lines = cleanLines(code); const edges: Edge[] = []; for (let i = 0; i < nodes.length - 1; i++) edges.push({ id: uid("edge"), from: nodes[i].id, to: nodes[i + 1].id }); for (const node of nodes.filter(n => n.kind === "decision")) { const lineIndex = nodes.findIndex(n => n.id === node.id); const source = lines[lineIndex]?.text.toUpperCase() ?? ""; if (/^IF\b/.test(source)) { const elseIndex = lines.findIndex((x, i) => i > lineIndex && /^ELSE$/.test(x.text.toUpperCase())); if (nodes[lineIndex + 1]) edges.push({ id: uid("edge"), from: node.id, to: nodes[lineIndex + 1].id, label: "TRUE" }); if (elseIndex > lineIndex && nodes[elseIndex + 1]) edges.push({ id: uid("edge"), from: node.id, to: nodes[elseIndex + 1].id, label: "FALSE" }); } } return edges.filter((edge, index, all) => all.findIndex(x => x.from === edge.from && x.to === edge.to && x.label === edge.label) === index); }
+function buildEdges(code: string, nodes: Node[]): Edge[] {
+  const lines = cleanLines(code);
+  const edges: Edge[] = [];
+  const add = (from: Node | undefined, to: Node | undefined, label?: string) => {
+    if (!from || !to) return;
+    if (!edges.some(edge => edge.from === from.id && edge.to === to.id && edge.label === label)) {
+      edges.push({ id: uid("edge"), from: from.id, to: to.id, label });
+    }
+  };
+
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const current = lines[i]?.text.toUpperCase() ?? "";
+    const next = lines[i + 1]?.text.toUpperCase() ?? "";
+
+    if (/^IF\b/.test(current)) {
+      const elseIndex = lines.findIndex((line, j) => j > i && /^ELSE$/.test(line.text.toUpperCase()));
+      const endIndex = lines.findIndex((line, j) => j > i && /^END IF\b/.test(line.text.toUpperCase()));
+      add(nodes[i], nodes[i + 1], "TRUE");
+      if (elseIndex >= 0) add(nodes[i], nodes[elseIndex + 1], "FALSE");
+      if (endIndex >= 0 && nodes[endIndex + 1]) add(nodes[endIndex], nodes[endIndex + 1]);
+      continue;
+    }
+
+    if (/^ELSE$/.test(current) || /^END IF\b/.test(current)) continue;
+    if (/^END\b/.test(current)) continue;
+    if (/^ELSE$/.test(next) || /^END IF\b/.test(next)) continue;
+
+    add(nodes[i], nodes[i + 1]);
+  }
+
+  return edges;
+}
+
 function shape(kind: Kind) { if (kind === "decision") return "M 0 -36 L 108 0 L 0 36 L -108 0 Z"; if (kind === "input" || kind === "output") return "M -100 -28 L 100 -28 L 78 28 L -122 28 Z"; if (kind === "start" || kind === "end") return "M -92 0 A 92 28 0 1 0 92 0 A 92 28 0 1 0 -92 0"; return "M -96 -30 Q -96 -38 -86 -38 L 86 -38 Q 96 -38 96 -30 L 96 30 Q 96 38 86 38 L -86 38 Q -96 38 -96 30 Z"; }
 function shortText(text: string) { return text.length > 26 ? `${text.slice(0, 25)}…` : text; }
 
@@ -79,8 +111,56 @@ export default function AlgorithmStudioPlus() {
 
   const save = () => { const project: Project = { version: 4, code, nodes, edges, tests }; localStorage.setItem("shadecode.comp-lab.algorithm-studio", JSON.stringify(project)); setSaved(true); window.setTimeout(() => setSaved(false), 1400); };
   const regenerate = () => { const nextNodes = buildNodes(code); setNodes(nextNodes); setEdges(buildEdges(code, nextNodes)); setTab("flow"); };
-  const run = async () => { setRunning(true); setDiagnostics([]); setOutput(""); try { const result = await executeCode({ id: uid("run"), language: "pseudocode", code, entryFile: "main.pseudo", inputs: inputs.split(/\r?\n/).filter(Boolean), timeoutMs: 5000 }); const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n"); setOutput(stdout || (result.exitCode === 0 ? "Algorithm completed with no output." : "Algorithm failed.")); setDiagnostics(result.diagnostics.map(diagnostic => `Line ${diagnostic.line ?? "?"}: ${diagnostic.message}`)); setTab(result.diagnostics.length ? "write" : "trace"); } finally { setRunning(false); } };
-  const runTests = async () => { setRunning(true); const results: string[] = []; try { for (const test of tests) { const result = await executeCode({ id: uid("test-run"), language: "pseudocode", code, entryFile: "main.pseudo", inputs: test.input.split(/\r?\n/), timeoutMs: 5000 }); const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").replace(/\nTRACE TABLE[\s\S]*$/i, "").trim(); results.push(`${actual === test.expected.trim() ? "PASS" : "FAIL"} | input: ${test.input.replace(/\n/g, " / ")} | expected: ${test.expected} | actual: ${actual}`); } setOutput(results.join("\n")); setTab("tests"); } finally { setRunning(false); } };
+  const run = async () => {
+    setRunning(true);
+    setDiagnostics([]);
+    setOutput("");
+    try {
+      const result = await executeCode({
+        id: uid("run"),
+        language: "pseudocode",
+        code,
+        entryFile: "main.pseudo",
+        inputs: inputs.split(/\r?\n/).filter(Boolean),
+        timeoutMs: 5000,
+      });
+      const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n");
+      setOutput(stdout || (result.exitCode === 0 ? "Algorithm completed with no output." : "Algorithm failed."));
+      setDiagnostics(result.diagnostics.map(diagnostic => `Line ${diagnostic.line ?? "?"}: ${diagnostic.message}`));
+      setTab(result.diagnostics.length ? "write" : "trace");
+    } catch (error) {
+      setDiagnostics([error instanceof Error ? error.message : "The pseudocode runtime could not execute this algorithm."]);
+      setTab("write");
+    } finally {
+      setRunning(false);
+    }
+  };
+  const runTests = async () => {
+    setRunning(true);
+    setDiagnostics([]);
+    const results: string[] = [];
+    try {
+      for (const test of tests) {
+        const result = await executeCode({
+          id: uid("test-run"),
+          language: "pseudocode",
+          code,
+          entryFile: "main.pseudo",
+          inputs: test.input.split(/\r?\n/),
+          timeoutMs: 5000,
+        });
+        const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").replace(/\nTRACE TABLE[\s\S]*$/i, "").trim();
+        results.push(`${actual === test.expected.trim() ? "PASS" : "FAIL"} | input: ${test.input.replace(/\n/g, " / ")} | expected: ${test.expected} | actual: ${actual}`);
+      }
+      setOutput(results.join("\n"));
+      setTab("tests");
+    } catch (error) {
+      setDiagnostics([error instanceof Error ? error.message : "The test runner could not complete."]);
+      setTab("tests");
+    } finally {
+      setRunning(false);
+    }
+  };
   const startDrag = (event: ReactPointerEvent<SVGGElement>, node: Node) => { const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return; const x = ((event.clientX - rect.left) / rect.width) * 760; const y = ((event.clientY - rect.top) / rect.height) * 620; setDrag({ id: node.id, dx: node.x - x, dy: node.y - y }); setSelected(node.id); event.currentTarget.setPointerCapture(event.pointerId); };
   const moveDrag = (event: ReactPointerEvent<SVGSVGElement>) => { if (!drag) return; const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return; const x = Math.max(115, Math.min(645, ((event.clientX - rect.left) / rect.width) * 760 + drag.dx)); const y = Math.max(45, Math.min(590, ((event.clientY - rect.top) / rect.height) * 620 + drag.dy)); setNodes(current => current.map(node => node.id === drag.id ? { ...node, x, y } : node)); };
   const addNode = (kind: Kind) => { const node: Node = { id: uid("node"), kind, text: labels[kind], x: 380, y: Math.min(570, 70 + nodes.length * 80), line: nodes.length + 1 }; setNodes(current => [...current, node]); setSelected(node.id); };
