@@ -25,7 +25,7 @@ export default function Login() {
       setError("That verification link is invalid or has expired. Sign in if you can, or request a new reset/verification email.");
     }
     const requested = params.get("redirect");
-    if (requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.startsWith("/auth")) {
+    if (requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.startsWith("/auth") && !requested.startsWith("/api") && !requested.startsWith("/_next")) {
       setRedirectTo(requested);
     }
   }, []);
