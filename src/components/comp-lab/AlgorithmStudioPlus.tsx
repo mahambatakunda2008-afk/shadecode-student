@@ -84,11 +84,12 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
 
 function shape(kind: Kind) { if (kind === "decision") return "M 0 -36 L 108 0 L 0 36 L -108 0 Z"; if (kind === "input" || kind === "output") return "M -100 -28 L 100 -28 L 78 28 L -122 28 Z"; if (kind === "start" || kind === "end") return "M -92 0 A 92 28 0 1 0 92 0 A 92 28 0 1 0 -92 0"; return "M -96 -30 Q -96 -38 -86 -38 L 86 -38 Q 96 -38 96 -30 L 96 30 Q 96 38 86 38 L -86 38 Q -96 38 -96 30 Z"; }
 function shortText(text: string) { return text.length > 26 ? `${text.slice(0, 25)}…` : text; }
+const initialAlgorithmNodes = buildNodes(starter);
 
 export default function AlgorithmStudioPlus() {
   const [code, setCode] = useState(starter);
-  const [nodes, setNodes] = useState<Node[]>(() => buildNodes(starter));
-  const [edges, setEdges] = useState<Edge[]>(() => buildEdges(starter, buildNodes(starter)));
+  const [nodes, setNodes] = useState<Node[]>(initialAlgorithmNodes);
+  const [edges, setEdges] = useState<Edge[]>(() => buildEdges(starter, initialAlgorithmNodes));
   const [tests, setTests] = useState<Test[]>([{ id: uid("test"), input: "8", expected: "Even" }, { id: uid("test"), input: "7", expected: "Odd" }]);
   const [inputs, setInputs] = useState("8");
   const [output, setOutput] = useState("");
@@ -115,7 +116,7 @@ export default function AlgorithmStudioPlus() {
 
   useEffect(() => { try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (!raw) return; const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { /* ignore invalid local draft */ } }, []);
 
-  const trace = useMemo(() => { const marker = traceText.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = traceText.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [output]);
+  const trace = useMemo(() => { const marker = traceText.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = traceText.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [traceText]);
 
   const save = () => { const project: Project = { version: 4, code, nodes, edges, tests }; localStorage.setItem("shadecode.comp-lab.algorithm-studio", JSON.stringify(project)); setSaved(true); window.setTimeout(() => setSaved(false), 1400); };
   const regenerate = () => { const nextNodes = buildNodes(code); setNodes(nextNodes); setEdges(buildEdges(code, nextNodes)); setTab("flow"); };
