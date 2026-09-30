@@ -66,8 +66,8 @@ export default function AlgorithmStudioPlus() {
   const challenge = challenges.find(item => item.id === challengeId) ?? challenges[0];
   const complexity = useMemo(() => {
     const lines = cleanLines(code).map(x => x.text.toUpperCase());
-    const loops = lines.filter(x => /^(FOR|WHILE|REPEAT)\\b/.test(x)).length;
-    if (/\\bMID\\b|LOWER|UPPER/.test(lines.join(" "))) return { time: "O(log n) candidate", reason: "The code contains signals commonly associated with repeatedly reducing a search range." };
+    const loops = lines.filter(x => /^(FOR|WHILE|REPEAT)\b/.test(x)).length;
+    if (/\bMID\b|LOWER|UPPER/.test(lines.join(" "))) return { time: "O(log n) candidate", reason: "The code contains signals commonly associated with repeatedly reducing a search range." };
     if (loops >= 2) return { time: "O(n²) candidate", reason: "Multiple loop levels are visible. Confirm whether the loops actually depend on the same input size." };
     if (loops === 1) return { time: "O(n) candidate", reason: "One dominant loop is visible." };
     return { time: "O(1) candidate", reason: "No dominant loop is visible in the current editor. Check whether called procedures change this." };
