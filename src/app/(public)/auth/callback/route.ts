@@ -12,11 +12,31 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
+  if (error || !sessionData.user) {
     return NextResponse.redirect(new URL('/auth/login?error=verification_failed', requestUrl.origin));
   }
 
-  return NextResponse.redirect(new URL(safeNext, requestUrl.origin));
+  // Email verification creates the session, but the user may already have
+  // completed onboarding. Resolve that state server-side instead of always
+  // forcing returning users through setup again.
+  const { data: profile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('onboarding_completed')
+    .eq('user_id', sessionData.user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error('[auth/callback] profile lookup failed:', profileError);
+    return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
+  }
+
+  const destination = safeNext !== '/onboarding'
+    ? safeNext
+    : profile?.onboarding_completed === true
+      ? '/dashboard'
+      : '/onboarding';
+
+  return NextResponse.redirect(new URL(destination, requestUrl.origin));
 }
