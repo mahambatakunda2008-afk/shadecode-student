@@ -1,30 +1,52 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+
+const RESEND_COOLDOWN_SECONDS = 6;
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldown]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const normalized = email.trim();
     setError("");
     setMessage("");
+
     if (!normalized) {
       setError("Enter your email address.");
       return;
     }
+    if (cooldown > 0) {
+      setError(`Please wait ${cooldown}s before requesting another reset link.`);
+      return;
+    }
+
     setLoading(true);
     const { error: resetError } = await createClient().auth.resetPasswordForEmail(normalized, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
-    if (resetError) setError(resetError.message);
-    else setMessage("If an account exists for that email, we sent a password reset link. Check your inbox.");
+
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setMessage("If an account exists for that email, we sent a password reset link. Check your inbox.");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    }
     setLoading(false);
   };
 
@@ -52,7 +74,9 @@ export default function ForgotPasswordPage() {
           <input id="reset-email" aria-label="Email" placeholder="you@example.com" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
           {error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
           {message && <p role="status" style={{ color: "var(--muted-foreground)", fontSize: 13, lineHeight: 1.4 }}>{message}</p>}
-          <button type="submit" disabled={loading} style={{ marginTop: 7, padding: "14px 16px", borderRadius: 11, border: "none", background: "var(--primary)", color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "wait" : "pointer", opacity: loading ? 0.7 : 1 }}>{loading ? "Sending…" : "Send reset link"}</button>
+          <button type="submit" disabled={loading || cooldown > 0} style={{ marginTop: 7, padding: "14px 16px", borderRadius: 11, border: "none", background: "var(--primary)", color: "white", fontWeight: 700, fontSize: 15, cursor: loading || cooldown > 0 ? "wait" : "pointer", opacity: loading || cooldown > 0 ? 0.7 : 1 }}>
+            {loading ? "Sending…" : cooldown > 0 ? `Try again in ${cooldown}s` : "Send reset link"}
+          </button>
         </form>
 
         <p style={{ color: "var(--muted-foreground)", textAlign: "center", fontSize: 14, marginTop: 22 }}><Link href="/auth/login" style={{ color: "var(--primary)", fontWeight: 700, textDecoration: "none" }}>Back to sign in</Link></p>
