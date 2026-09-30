@@ -92,6 +92,7 @@ export default function AlgorithmStudioPlus() {
   const [tests, setTests] = useState<Test[]>([{ id: uid("test"), input: "8", expected: "Even" }, { id: uid("test"), input: "7", expected: "Odd" }]);
   const [inputs, setInputs] = useState("8");
   const [output, setOutput] = useState("");
+  const [traceText, setTraceText] = useState("");
   const [diagnostics, setDiagnostics] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [tab, setTab] = useState<Tab>("learn");
@@ -114,7 +115,7 @@ export default function AlgorithmStudioPlus() {
 
   useEffect(() => { try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (!raw) return; const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { /* ignore invalid local draft */ } }, []);
 
-  const trace = useMemo(() => { const marker = output.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = output.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [output]);
+  const trace = useMemo(() => { const marker = traceText.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = traceText.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [output]);
 
   const save = () => { const project: Project = { version: 4, code, nodes, edges, tests }; localStorage.setItem("shadecode.comp-lab.algorithm-studio", JSON.stringify(project)); setSaved(true); window.setTimeout(() => setSaved(false), 1400); };
   const regenerate = () => { const nextNodes = buildNodes(code); setNodes(nextNodes); setEdges(buildEdges(code, nextNodes)); setTab("flow"); };
@@ -122,6 +123,7 @@ export default function AlgorithmStudioPlus() {
     setRunning(true);
     setDiagnostics([]);
     setOutput("");
+    setTraceText("");
     try {
       const result = await executeCode({
         id: uid("run"),
@@ -131,8 +133,10 @@ export default function AlgorithmStudioPlus() {
         inputs: inputs.split(/\r?\n/).filter(Boolean),
         timeoutMs: 5000,
       });
-      const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n");
+      const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
+      const trace = result.events.filter(event => event.type === "trace").map(event => event.text).join("\n");
       setOutput(stdout || (result.exitCode === 0 ? "Algorithm completed with no output." : "Algorithm failed."));
+      setTraceText(trace);
       setDiagnostics(result.diagnostics.map(diagnostic => `Line ${diagnostic.line ?? "?"}: ${diagnostic.message}`));
       setTab(result.diagnostics.length ? "write" : "trace");
     } catch (error) {
@@ -145,6 +149,7 @@ export default function AlgorithmStudioPlus() {
   const runTests = async () => {
     setRunning(true);
     setDiagnostics([]);
+    setTraceText("");
     const results: string[] = [];
     try {
       for (const test of tests) {
@@ -156,8 +161,9 @@ export default function AlgorithmStudioPlus() {
           inputs: test.input.split(/\r?\n/),
           timeoutMs: 5000,
         });
-        const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").replace(/\nTRACE TABLE[\s\S]*$/i, "").trim();
-        results.push(`${actual === test.expected.trim() ? "PASS" : "FAIL"} | input: ${test.input.replace(/\n/g, " / ")} | expected: ${test.expected} | actual: ${actual}`);
+        const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
+        const passed = result.exitCode === 0 && actual === test.expected.trim();
+        results.push(`${passed ? "PASS" : "FAIL"} | input: ${test.input.replace(/\n/g, " / ")} | expected: ${test.expected} | actual: ${actual}`);
       }
       setOutput(results.join("\n"));
       setTab("tests");
@@ -179,6 +185,7 @@ export default function AlgorithmStudioPlus() {
     setTests(item.tests.map(test => ({ ...test, id: uid("test") })));
     setInputs(item.tests[0]?.input ?? "");
     setOutput("");
+    setTraceText("");
     setDiagnostics([]);
     setTab("write");
   };
