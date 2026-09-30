@@ -98,8 +98,18 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
 
       const inputMatch = line.match(/^INPUT\s+(.+)$/i);
       if (inputMatch) {
-        const parts = inputMatch[1].split(/\s*,\s*/); const name = parts[0].trim();
-        state.vars[name] = readInput(parts.slice(1).join(",").trim());
+        const parts = inputMatch[1].split(/\s*,\s*/); const target = parts[0].trim();
+        const rawValue = readInput(parts.slice(1).join(",").trim());
+        const indexed = target.match(/^([A-Za-z_]\w*)\[(.+)\]$/);
+        if (indexed) {
+          const array = state.vars[indexed[1]];
+          if (!Array.isArray(array)) { error(`Variable ${indexed[1]} is not an array.`, i + 1); return; }
+          const index = Math.trunc(numeric(valueOf(indexed[2], state))) - 1;
+          if (index < 0 || index >= array.length) { error("Array index out of bounds.", i + 1); return; }
+          array[index] = rawValue;
+        } else {
+          state.vars[target] = rawValue;
+        }
       } else if (/^(OUTPUT|PRINT)\s+/i.test(line)) {
         state.output.push(display(evalExpr(line.replace(/^(OUTPUT|PRINT)\s+/i, ""), state)));
       } else if (/^RETURN(?:\s+(.+))?$/i.test(line)) {
@@ -170,9 +180,22 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
           i = end;
         } else if (/^DECLARE\s+/i.test(line)) {
           for (const declaration of line.replace(/^DECLARE\s+/i, "").split(/\s*,\s*/)) {
-            const match = declaration.trim().match(/^([A-Za-z_]\w*)\s*(?:AS\s+(.+))?$/i);
+            const match = declaration.trim().match(/^([A-Za-z_]\w*)\s*(?::|AS\s+)?\s*(.+)?$/i);
             if (!match) continue;
-            state.vars[match[1]] = /\bARRAY\b/i.test(match[2] ?? "") ? [] : 0;
+            const type = (match[2] ?? "").trim();
+            const arrayMatch = type.match(/ARRAY\s*\[\s*(-?\d+)\s*:\s*(-?\d+)\s*\]/i);
+            if (arrayMatch) {
+              const lower = Number(arrayMatch[1]);
+              const upper = Number(arrayMatch[2]);
+              const size = upper >= lower ? upper - lower + 1 : 0;
+              state.vars[match[1]] = Array.from({ length: size }, () => 0);
+            } else if (/\bBOOLEAN\b/i.test(type)) {
+              state.vars[match[1]] = false;
+            } else if (/\bSTRING\b|\bCHAR\b/i.test(type)) {
+              state.vars[match[1]] = "";
+            } else {
+              state.vars[match[1]] = 0;
+            }
           }
         } else if (!/^BEGIN$/i.test(line)) {
           error(`Unsupported pseudocode statement: ${line}`, i + 1); return;
