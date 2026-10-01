@@ -87,6 +87,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
     const prompt = `You are the senior teacher and exam writer for Shadecode Student.
 Create a rigorous ${level}-level ${format} lesson on "${topic}" in ${subject}.
 
+OUTPUT CONTRACT:
+Return ONLY one valid JSON object. No markdown fences, no commentary. Use exactly these top-level fields:
+title, summary, sections, examples, keyPoints, practice, assessment, estimatedMinutes, concepts, objectives.
+Each section must contain heading and content. Each example must contain title, description and solution when useful. Each practice item must contain question, type, correctAnswer, explanation, difficulty. Each assessment item must contain question, type, correctAnswer, maxPoints and rubric.
+If the topic is broad, cover its major sub-concepts rather than writing a single overview.
+
 The student should finish able to DEFINE the key terms, EXPLAIN the mechanisms, CONNECT related ideas, APPLY them to unfamiliar situations, SOLVE representative problems, avoid common misconceptions, and recognise how the topic appears in examinations.
 
 Required structure/content:
@@ -103,14 +109,50 @@ Required structure/content:
 
 Do not pad the lesson with generic motivational text. Do not invent syllabus facts. Use the authorized subject and topic consistently. Return detailed educational content that a student can actually study from.`;
 
-    const aiResponse = await callAI(prompt, 5000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_v2" });
+    const aiResponse = await callAI(prompt, 6500, {
+      userId: user.id,
+      feature: "lesson_assistant",
+      subfeature: "generate_lesson_v2",
+      maxChainMs: 26000,
+      perProviderMaxMs: 6000,
+    });
     if (!aiResponse) return NextResponse.json({ success: false, error: "Cortex could not generate the lesson right now. Please try again." }, { status: 503 });
 
-    const buildResult = await buildLessonContent(aiResponse, {
-      template, topic, level, maxTokens: 5000, includeExamples: true, includePractice: true,
+    let buildResult = await buildLessonContent(aiResponse, {
+      template, topic, level, maxTokens: 6500, includeExamples: true, includePractice: true,
     });
+
+    // A provider can return syntactically valid content in an unexpected shape.
+    // Repair that response once through the same Cortex gateway instead of exposing
+    // a brittle 422 to the learner.
     if (!buildResult.success || !buildResult.lesson) {
-      return NextResponse.json({ success: false, error: buildResult.error || "Cortex produced content that could not be structured safely." }, { status: 422 });
+      const repairPrompt = `Repair the following attempted lesson for Shadecode Student.
+Keep the requested subject "${subject}" and topic "${topic}" exactly. Preserve useful correct teaching content, but fill missing structure.
+Return ONLY valid JSON with: title, summary, sections, examples, keyPoints, practice, assessment, estimatedMinutes, concepts, objectives.
+Need at least 5 substantial sections, 2 worked examples, 5 practice questions, and 3 assessment questions.
+Do not invent board-specific facts.
+
+ATTEMPTED LESSON:
+${aiResponse.slice(0, 30000)}`;
+      const repaired = await callAI(repairPrompt, 6500, {
+        userId: user.id,
+        feature: "lesson_assistant",
+        subfeature: "repair_lesson_v2",
+        maxChainMs: 26000,
+        perProviderMaxMs: 6000,
+      });
+      if (repaired) {
+        buildResult = await buildLessonContent(repaired, {
+          template, topic, level, maxTokens: 6500, includeExamples: true, includePractice: true,
+        });
+      }
+    }
+
+    if (!buildResult.success || !buildResult.lesson) {
+      return NextResponse.json({
+        success: false,
+        error: "Cortex could not construct a safe lesson from the available inference responses. No partial lesson was shown.",
+      }, { status: 503 });
     }
 
     const lesson = buildResult.lesson;
