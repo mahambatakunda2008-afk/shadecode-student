@@ -118,7 +118,7 @@ const MINTERMS = [0, 1, 3, 2];
 function literalFor(minterm: number) {
   const a = (minterm >> 1) & 1;
   const b2 = minterm & 1;
-  return \`\${a ? "A" : "NOT A"} AND \${b2 ? "B" : "NOT B"}\`;
+  return `${a ? "A" : "NOT A"} AND ${b2 ? "B" : "NOT B"}`;
 }
 
 function simplifyKMap(cells: Bit[]) {
