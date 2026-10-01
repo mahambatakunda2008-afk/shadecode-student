@@ -46,7 +46,7 @@ function CircuitBuilder({ nodes, setNodes }: { nodes: GateNode[]; setNodes: Reac
   const [a, setA] = useState(0); const [b, setB] = useState(0);
   const add = (gate: Gate) => setNodes(current => [...current, { id: Date.now() + current.length, gate, x: 70 + current.length * 135, y: 105 }]);
   const reset = () => setNodes([]);
-  const outputs = nodes.map(node => truth(node.gate, a, b));
+  const outputs = nodes.reduce<number[]>((values, node, index) => { const inputA = index === 0 ? a : values[index - 1]; return [...values, truth(node.gate, inputA, b)]; }, []);
   return <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
     <div className="flex flex-wrap items-center gap-2"><div className="mr-auto"><div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Circuit builder</div><div className="mt-1 text-sm font-semibold text-[var(--foreground)]">Build and simulate a gate chain</div></div><button type="button" onClick={reset} className="inline-flex items-center gap-1 rounded-lg border border-[var(--card-border)] px-2 py-1 text-[9px]"><Trash2 className="h-3 w-3" />Clear</button></div>
     <div className="mt-3 flex flex-wrap gap-2">{GATES.map(gate => <button key={gate} type="button" onClick={() => add(gate)} className="rounded-lg border border-[var(--card-border)] px-2.5 py-1.5 text-[9px] font-semibold hover:border-[var(--primary)]">{gate} +</button>)}</div>
