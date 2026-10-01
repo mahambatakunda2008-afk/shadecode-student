@@ -94,10 +94,10 @@ function CircuitBuilder({ nodes, setNodes }: { nodes: GateNode[]; setNodes: Disp
     <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_250px]">
       <div className="min-h-[220px] rounded-xl border border-[var(--card-border)] bg-[#070a10] p-3">{nodes.length ? <div className="space-y-2">{nodes.map((node, index) => {
         const ca = connections[node.id + ":a"]; const cb = connections[node.id + ":b"];
-        return <button key={node.id} type="button" onClick={() => setSelected(node.id)} className={"block w-full rounded-xl border p-3 text-left " + (selected === node.id ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-white/10")}>
+        return <div key={node.id} role="button" tabIndex={0} onClick={() => setSelected(node.id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(node.id); } }} className={"block w-full rounded-xl border p-3 text-left " + (selected === node.id ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-white/10")}>
           <div className="flex items-center gap-2"><span className="rounded-md border border-white/10 px-2 py-1 font-mono text-[9px]">G{index + 1}</span><span className="text-xs font-semibold">{node.gate}</span><button type="button" onClick={event => { event.stopPropagation(); remove(node.id); }} className="ml-auto text-slate-600 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button></div>
           <div className="mt-2 grid grid-cols-2 gap-2 text-[9px]"><span className="rounded-lg bg-black/20 p-2">A ← {ca?.kind === "node" ? "G" + (nodes.findIndex(item => item.id === ca.id) + 1) : ca?.name ?? "A"}</span>{node.gate !== "NOT" && <span className="rounded-lg bg-black/20 p-2">B ← {cb?.kind === "node" ? "G" + (nodes.findIndex(item => item.id === cb.id) + 1) : cb?.name ?? "B"}</span>}</div>
-        </button>;
+        </div>;
       })}</div> : <div className="grid h-48 place-items-center text-[10px] text-slate-600">Add a gate to begin.</div>}</div>
       <div className="rounded-xl border border-[var(--card-border)] p-3">
         <div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Connection tool</div>
