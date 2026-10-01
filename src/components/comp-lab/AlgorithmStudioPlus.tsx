@@ -98,6 +98,7 @@ export default function AlgorithmStudioPlus() {
   const [output, setOutput] = useState("");
   const [traceText, setTraceText] = useState("");
   const [diagnostics, setDiagnostics] = useState<string[]>([]);
+  const [testResults, setTestResults] = useState<Array<{ id: string; passed: boolean; input: string; expected: string; actual: string; error?: string }>>([]);
   const [running, setRunning] = useState(false);
   const [tab, setTab] = useState<Tab>("learn");
   const [lessonId, setLessonId] = useState(lessons[0].id);
@@ -154,25 +155,28 @@ export default function AlgorithmStudioPlus() {
     setRunning(true);
     setDiagnostics([]);
     setTraceText("");
-    const results: string[] = [];
+    setTestResults([]);
     try {
+      const results: Array<{ id: string; passed: boolean; input: string; expected: string; actual: string; error?: string }> = [];
       for (const test of tests) {
-        const result = await executeCode({
-          id: uid("test-run"),
-          language: "pseudocode",
-          code,
-          entryFile: "main.pseudo",
-          inputs: test.input.split(/\r?\n/),
-          timeoutMs: 5000,
-        });
-        const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
-        const passed = result.exitCode === 0 && actual === test.expected.trim();
-        results.push(`${passed ? "PASS" : "FAIL"} | input: ${test.input.replace(/\n/g, " / ")} | expected: ${test.expected} | actual: ${actual}`);
+        try {
+          const result = await executeCode({
+            id: uid("test-run"),
+            language: "pseudocode",
+            code,
+            entryFile: "main.pseudo",
+            inputs: test.input.split(/\r?\n/),
+            timeoutMs: 5000,
+          });
+          const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
+          const error = result.diagnostics.map(diagnostic => diagnostic.message).join("; ") || undefined;
+          results.push({ id: test.id, passed: result.exitCode === 0 && actual === test.expected.trim(), input: test.input, expected: test.expected.trim(), actual, error });
+        } catch (error) {
+          results.push({ id: test.id, passed: false, input: test.input, expected: test.expected.trim(), actual: "", error: error instanceof Error ? error.message : "Runtime error" });
+        }
       }
-      setOutput(results.join("\n"));
-      setTab("tests");
-    } catch (error) {
-      setDiagnostics([error instanceof Error ? error.message : "The test runner could not complete."]);
+      setTestResults(results);
+      setOutput(results.map(item => `${item.passed ? "PASS" : "FAIL"} | expected: ${item.expected} | actual: ${item.actual}`).join("\n"));
       setTab("tests");
     } finally {
       setRunning(false);
@@ -289,7 +293,7 @@ export default function AlgorithmStudioPlus() {
 
     {tab === "trace" && <div className="p-4"><div className="mb-3 flex items-center justify-between"><div><div className="text-xs font-semibold">Execution trace</div><div className="text-[10px] text-slate-500">Evidence emitted by the pseudocode runtime.</div></div><button onClick={run} disabled={running} className="flex items-center gap-1 rounded-lg bg-[var(--primary)] px-3 py-2 text-[10px] text-white"><Play className="h-3 w-3" />Run again</button></div>{trace.length ? <div className="overflow-auto rounded-xl border border-white/10"><table className="w-full min-w-[620px] text-left text-[10px]"><thead><tr className="border-b border-white/10 bg-white/[.03]">{trace[0].map(([header]) => <th key={header} className="px-3 py-2 font-semibold text-slate-500">{header}</th>)}</tr></thead><tbody>{trace.map((row, index) => <tr key={index} className="border-b border-white/5">{row.map(([header, value]) => <td key={header} className="px-3 py-2 font-mono text-slate-400">{value}</td>)}</tr>)}</tbody></table></div> : <div className="rounded-xl border border-dashed border-white/10 p-10 text-center text-xs text-slate-600">Run an algorithm to generate a trace table.</div>}</div>}
 
-    {tab === "tests" && <div className="p-4"><div className="mb-3 flex items-center gap-2"><div className="mr-auto"><div className="text-xs font-semibold">Student test cases</div><div className="text-[10px] text-slate-500">Build your own normal, boundary and invalid cases.</div></div><button onClick={() => setTests(current => [...current, { id: uid("test"), input: "", expected: "" }])} className="flex items-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-[10px]"><Plus className="h-3 w-3" />Add case</button><button onClick={runTests} disabled={running} className="flex items-center gap-1 rounded-lg bg-[var(--primary)] px-3 py-2 text-[10px] text-white"><Play className="h-3 w-3" />Run tests</button></div><div className="space-y-2">{tests.map((test, index) => <div key={test.id} className="grid gap-2 rounded-xl border border-white/10 p-3 md:grid-cols-[90px_1fr_1fr_auto]"><span className="pt-2 text-[10px] text-slate-600">CASE {index + 1}</span><textarea value={test.input} onChange={event => setTests(current => current.map(item => item.id === test.id ? { ...item, input: event.target.value } : item))} placeholder="Input" className="min-h-14 rounded-lg bg-black/20 p-2 font-mono text-xs outline-none" /><textarea value={test.expected} onChange={event => setTests(current => current.map(item => item.id === test.id ? { ...item, expected: event.target.value } : item))} placeholder="Expected output" className="min-h-14 rounded-lg bg-black/20 p-2 font-mono text-xs outline-none" /><button onClick={() => setTests(current => current.filter(item => item.id !== test.id))} className="self-start rounded-lg p-2 text-slate-600 hover:text-red-300"><X className="h-4 w-4" /></button></div>)}</div>{output && <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-white/10 p-3 font-mono text-[10px] text-slate-400">{output}</pre>}</div>}
+    {tab === "tests" && <div className="p-4"><div className="mb-3 flex items-center gap-2"><div className="mr-auto"><div className="text-xs font-semibold">Student test cases</div><div className="text-[10px] text-slate-500">Build normal, boundary and invalid cases, then inspect exactly where the solution fails.</div></div><button onClick={() => { setTests(current => [...current, { id: uid("test"), input: "", expected: "" }]); setTestResults([]); }} className="flex items-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-[10px]"><Plus className="h-3 w-3" />Add case</button><button onClick={runTests} disabled={running} className="flex items-center gap-1 rounded-lg bg-[var(--primary)] px-3 py-2 text-[10px] text-white"><Play className="h-3 w-3" />Run tests</button></div><div className="space-y-2">{tests.map((test, index) => <div key={test.id} className="grid gap-2 rounded-xl border border-white/10 p-3 md:grid-cols-[90px_1fr_1fr_auto]"><span className="pt-2 text-[10px] text-slate-600">CASE {index + 1}</span><textarea value={test.input} onChange={event => { setTestResults([]); setTests(current => current.map(item => item.id === test.id ? { ...item, input: event.target.value } : item)); }} placeholder="Input" className="min-h-14 rounded-lg bg-black/20 p-2 font-mono text-xs outline-none" /><textarea value={test.expected} onChange={event => { setTestResults([]); setTests(current => current.map(item => item.id === test.id ? { ...item, expected: event.target.value } : item)); }} placeholder="Expected output" className="min-h-14 rounded-lg bg-black/20 p-2 font-mono text-xs outline-none" /><button onClick={() => { setTestResults([]); setTests(current => current.filter(item => item.id !== test.id)); }} className="self-start rounded-lg p-2 text-slate-600 hover:text-red-300"><X className="h-4 w-4" /></button></div>)}</div>{testResults.length > 0 && <div className="mt-4 rounded-2xl border border-white/10 p-3"><div className="flex items-center gap-2"><div className="text-xs font-semibold">Test report</div><span className="text-[9px] text-slate-500">{testResults.filter(item => item.passed).length}/{testResults.length} passed</span></div><div className="mt-3 space-y-2">{testResults.map((item, index) => <div key={item.id} className={`rounded-xl border p-3 ${item.passed ? "border-emerald-500/20 bg-emerald-500/5" : "border-red-500/20 bg-red-500/5"}`}><div className="flex items-center gap-2 text-[10px] font-semibold"><span>{item.passed ? "✓ PASS" : "✕ FAIL"}</span><span className="text-slate-500">CASE {index + 1}</span></div><div className="mt-2 grid gap-2 text-[9px] sm:grid-cols-3"><div><div className="text-slate-600">Input</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.input}</pre></div><div><div className="text-slate-600">Expected</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.expected || "∅"}</pre></div><div><div className="text-slate-600">Actual</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.actual || item.error || "∅"}</pre></div></div>{!item.passed && <div className="mt-2 text-[9px] text-amber-200/80">{item.error ? "Runtime/diagnostic: " + item.error : "The program ran, but its output did not match the expected result. Check boundaries, branches, loop bounds and output formatting."}</div>}</div>)}</div></div>}{output && <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-white/10 p-3 font-mono text-[10px] text-slate-400">{output}</pre>}</div>
 
     <footer className="border-t border-white/10 px-4 py-3 text-[9px] text-slate-600">Pseudocode ↔ flowchart · Execute · Trace · Test · Analyse · Assess. Exports include editable JSON and publication-ready SVG/PNG flowcharts.</footer>
   </div>;
