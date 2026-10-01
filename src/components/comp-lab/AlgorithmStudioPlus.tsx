@@ -4,6 +4,7 @@ import { type ChangeEvent, type PointerEvent as ReactPointerEvent, useEffect, us
 import { BarChart3, BookOpen, Check, Download, FileImage, GitBranch, Lightbulb, Play, Plus, Save, Target, TestTube2, Trash2, Upload, Workflow, X, Zap } from "lucide-react";
 import AlgorithmAssessmentPanel from "./AlgorithmAssessmentPanel";
 import LogicCircuitsPanel from "./LogicCircuitsPanel";
+import BooleanLogicLab from "./BooleanLogicLab";
 import { executeCode } from "@/lib/code-lab/runtime";
 
 type Kind = "start" | "end" | "process" | "input" | "output" | "decision";
@@ -265,7 +266,7 @@ export default function AlgorithmStudioPlus() {
 
     {tab === "assess" && <div className="p-4 sm:p-6"><AlgorithmAssessmentPanel /></div>}
 
-    {tab === "logic" && <LogicCircuitsPanel />}
+    {tab === "logic" && <div className="space-y-4"><LogicCircuitsPanel /><div className="border-t border-white/10 pt-4"><BooleanLogicLab /></div></div>}
 
     {tab === "analyse" && <div className="p-4 sm:p-6">
       <div className="flex items-start gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]"><BarChart3 className="h-5 w-5" /></div><div><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Algorithm analysis</div><h2 className="mt-1 text-lg font-semibold text-white">Understand the solution, not just the output</h2><p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">These are learning heuristics, not proofs. Use them to ask better complexity and correctness questions.</p></div></div>
