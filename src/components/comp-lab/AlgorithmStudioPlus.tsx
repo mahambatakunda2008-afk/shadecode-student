@@ -3,6 +3,7 @@
 import { type ChangeEvent, type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, BookOpen, Check, Download, FileImage, GitBranch, Lightbulb, Play, Plus, Save, Target, TestTube2, Trash2, Upload, Workflow, X, Zap } from "lucide-react";
 import AlgorithmAssessmentPanel from "./AlgorithmAssessmentPanel";
+import LogicCircuitsPanel from "./LogicCircuitsPanel";
 import { executeCode } from "@/lib/code-lab/runtime";
 
 type Kind = "start" | "end" | "process" | "input" | "output" | "decision";
@@ -10,7 +11,7 @@ type Node = { id: string; kind: Kind; text: string; x: number; y: number; line: 
 type Edge = { id: string; from: string; to: string; label?: string };
 type Test = { id: string; input: string; expected: string };
 type Project = { version: 4; code: string; nodes: Node[]; edges: Edge[]; tests: Test[] };
-type Tab = "learn" | "practice" | "write" | "flow" | "trace" | "tests" | "analyse" | "assess";
+type Tab = "learn" | "practice" | "write" | "flow" | "trace" | "tests" | "analyse" | "assess" | "logic";
 type Lesson = { id: string; title: string; level: "AS" | "A Level"; summary: string; rule: string; example: string; examTip: string };
 type Challenge = { id: string; title: string; level: "AS" | "A Level"; skill: string; prompt: string; hint: string; starter: string; tests: Test[] };
 
@@ -236,7 +237,7 @@ export default function AlgorithmStudioPlus() {
   const importProject = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const project = JSON.parse(String(reader.result)) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { setDiagnostics(["Could not import this algorithm project."]); } }; reader.readAsText(file); event.target.value = ""; };
 
   return <div className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[#090d14] text-slate-200 shadow-xl">
-    <header className="flex flex-wrap items-center gap-1 border-b border-white/10 bg-[#0d121b] p-2"><div className="mr-2 px-2"><div className="text-xs font-semibold">Algorithm Studio</div><div className="text-[9px] text-slate-500">Learn · Design · Execute · Trace · Test · Analyse</div></div>{([["learn", "Learn", BookOpen], ["practice", "Practice", Target], ["write", "Pseudocode", Zap], ["flow", "Flowchart", Workflow], ["trace", "Trace", GitBranch], ["tests", "Tests", TestTube2], ["analyse", "Analyse", BarChart3], ["assess", "Assess", Target]] as const).map(([id, label, Icon]) => <button key={id} type="button" onClick={() => setTab(id as Tab)} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[10px] ${tab === id ? "bg-white/10 text-white" : "text-slate-500 hover:bg-white/5"}`}><Icon className="h-3.5 w-3.5" />{label}</button>)}<div className="ml-auto flex gap-1"><button onClick={save} title="Save locally" className="rounded-lg p-2 text-slate-500 hover:bg-white/5">{saved ? <Check className="h-4 w-4 text-emerald-400" /> : <Save className="h-4 w-4" />}</button><button onClick={exportProject} title="Export project JSON" className="rounded-lg p-2 text-slate-500 hover:bg-white/5"><Download className="h-4 w-4" /></button><button onClick={() => { setTab("flow"); window.setTimeout(() => exportFlowchartImage("png"), 80); }} title="Export flowchart PNG" className="rounded-lg p-2 text-slate-500 hover:bg-white/5"><FileImage className="h-4 w-4" /></button><label title="Import" className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-white/5"><Upload className="h-4 w-4" /><input className="hidden" type="file" accept=".json,application/json" onChange={importProject} /></label></div></header>
+    <header className="flex flex-wrap items-center gap-1 border-b border-white/10 bg-[#0d121b] p-2"><div className="mr-2 px-2"><div className="text-xs font-semibold">Algorithm Studio</div><div className="text-[9px] text-slate-500">Learn · Design · Execute · Trace · Test · Analyse</div></div>{([["learn", "Learn", BookOpen], ["practice", "Practice", Target], ["write", "Pseudocode", Zap], ["flow", "Flowchart", Workflow], ["trace", "Trace", GitBranch], ["tests", "Tests", TestTube2], ["analyse", "Analyse", BarChart3], ["assess", "Assess", Target], ["logic", "Logic", Zap]] as const).map(([id, label, Icon]) => <button key={id} type="button" onClick={() => setTab(id as Tab)} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[10px] ${tab === id ? "bg-white/10 text-white" : "text-slate-500 hover:bg-white/5"}`}><Icon className="h-3.5 w-3.5" />{label}</button>)}<div className="ml-auto flex gap-1"><button onClick={save} title="Save locally" className="rounded-lg p-2 text-slate-500 hover:bg-white/5">{saved ? <Check className="h-4 w-4 text-emerald-400" /> : <Save className="h-4 w-4" />}</button><button onClick={exportProject} title="Export project JSON" className="rounded-lg p-2 text-slate-500 hover:bg-white/5"><Download className="h-4 w-4" /></button><button onClick={() => { setTab("flow"); window.setTimeout(() => exportFlowchartImage("png"), 80); }} title="Export flowchart PNG" className="rounded-lg p-2 text-slate-500 hover:bg-white/5"><FileImage className="h-4 w-4" /></button><label title="Import" className="cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-white/5"><Upload className="h-4 w-4" /><input className="hidden" type="file" accept=".json,application/json" onChange={importProject} /></label></div></header>
 
     {tab === "learn" && <div className="grid lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="border-b border-white/10 p-3 lg:border-b-0 lg:border-r">
@@ -263,6 +264,8 @@ export default function AlgorithmStudioPlus() {
     </div>}
 
     {tab === "assess" && <div className="p-4 sm:p-6"><AlgorithmAssessmentPanel /></div>}
+
+    {tab === "logic" && <LogicCircuitsPanel />}
 
     {tab === "analyse" && <div className="p-4 sm:p-6">
       <div className="flex items-start gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]"><BarChart3 className="h-5 w-5" /></div><div><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Algorithm analysis</div><h2 className="mt-1 text-lg font-semibold text-white">Understand the solution, not just the output</h2><p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">These are learning heuristics, not proofs. Use them to ask better complexity and correctness questions.</p></div></div>
