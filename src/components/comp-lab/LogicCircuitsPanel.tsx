@@ -54,18 +54,63 @@ function GateDiagram({ gate }: { gate: Gate }) {
 }
 
 function CircuitBuilder({ nodes, setNodes }: { nodes: GateNode[]; setNodes: Dispatch<SetStateAction<GateNode[]>> }) {
-  const [a, setA] = useState(0); const [b, setB] = useState(0);
-  const add = (gate: Gate) => setNodes(current => [...current, { id: Date.now() + current.length, gate, x: 70 + current.length * 135, y: 105 }]);
-  const outputs = nodes.reduce<number[]>((values, node, index) => {
-    const inputA = index === 0 ? a : values[index - 1];
-    return [...values, truth(node.gate, inputA, b)];
-  }, []);
+  const [connections, setConnections] = useState<Record<string, { kind: "input" | "node"; name?: "A" | "B"; id?: number }>>({});
+  const [selected, setSelected] = useState<number | null>(null);
+  const [pin, setPin] = useState<"a" | "b">("a");
+  const [a, setA] = useState(0);
+  const [b, setB] = useState(0);
+  const add = (gate: Gate) => setNodes(current => [...current, { id: Date.now() + current.length, gate, x: 80 + current.length * 135, y: 105 }]);
+  const remove = (id: number) => {
+    setNodes(current => current.filter(node => node.id !== id));
+    setConnections(current => Object.fromEntries(Object.entries(current).filter(([key, source]) => !key.startsWith(id + ":") && !(source.kind === "node" && source.id === id))));
+    if (selected === id) setSelected(null);
+  };
+  const connect = (source: { kind: "input" | "node"; name?: "A" | "B"; id?: number }) => {
+    if (selected === null) return;
+    if (source.kind === "node" && source.id === selected) return;
+    setConnections(current => ({ ...current, [selected + ":" + pin]: source }));
+  };
+  const read = (source: { kind: "input" | "node"; name?: "A" | "B"; id?: number }, values: Record<number, number>) =>
+    source.kind === "input" ? (source.name === "A" ? a : b) : (values[source.id ?? -1] ?? 0);
+  const evaluate = (av: number, bv: number) => {
+    const values: Record<number, number> = {};
+    for (const node of nodes) {
+      const sourceA = connections[node.id + ":a"] ?? { kind: "input" as const, name: "A" as const };
+      const sourceB = connections[node.id + ":b"] ?? { kind: "input" as const, name: "B" as const };
+      const ra = sourceA.kind === "input" ? (sourceA.name === "A" ? av : bv) : (values[sourceA.id ?? -1] ?? 0);
+      const rb = sourceB.kind === "input" ? (sourceB.name === "A" ? av : bv) : (values[sourceB.id ?? -1] ?? 0);
+      values[node.id] = truth(node.gate, ra, rb);
+    }
+    return nodes.length ? values[nodes[nodes.length - 1].id] : 0;
+  };
+  const output = evaluate(a, b);
+  const verify = () => {
+    const rows = [0, 1].flatMap(av => [0, 1].map(bv => ({ av, bv, out: evaluate(av, bv) })));
+    return rows.every(row => row.out === evaluate(row.av, row.bv));
+  };
   return <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
-    <div className="flex flex-wrap items-center gap-2"><div className="mr-auto"><div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Circuit builder</div><div className="mt-1 text-sm font-semibold text-[var(--foreground)]">Build and simulate a gate chain</div></div><button type="button" onClick={() => setNodes([])} className="inline-flex items-center gap-1 rounded-lg border border-[var(--card-border)] px-2 py-1 text-[9px]"><Trash2 className="h-3 w-3" />Clear</button></div>
-    <div className="mt-3 flex flex-wrap gap-2">{GATES.map(gate => <button key={gate} type="button" onClick={() => add(gate)} className="rounded-lg border border-[var(--card-border)] px-2.5 py-1.5 text-[9px] font-semibold hover:border-[var(--primary)]">{gate} +</button>)}</div>
-    <div className="mt-3 grid max-w-xs grid-cols-2 gap-2"><label className="text-[9px] text-[var(--muted-foreground)]">A<select value={a} onChange={e => setA(+e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface-2)] p-2"><option value={0}>0</option><option value={1}>1</option></select></label><label className="text-[9px] text-[var(--muted-foreground)]">B<select value={b} onChange={e => setB(+e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--card-border)] bg-[var(--surface-2)] p-2"><option value={0}>0</option><option value={1}>1</option></select></label></div>
-    <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[#070a10] p-4"><svg viewBox="0 0 760 210" className="h-52 min-w-[650px] w-full" role="img" aria-label="Digital logic gate chain"><text x="14" y="70" fill="currentColor" opacity=".55" fontSize="11">A/B</text>{nodes.map((node, index) => <g key={node.id}><rect x={node.x} y={node.y} width="100" height="52" rx="12" fill="none" stroke="currentColor" opacity=".35"/><text x={node.x + 50} y={node.y + 22} textAnchor="middle" fill="currentColor" fontSize="11">{node.gate}</text><text x={node.x + 50} y={node.y + 39} textAnchor="middle" fill="currentColor" opacity=".55" fontSize="9">out {outputs[index]}</text>{index > 0 && <line x1={node.x - 20} y1={node.y + 26} x2={node.x} y2={node.y + 26} stroke="currentColor" opacity=".5" strokeWidth="2"/>}</g>)}<text x="14" y="185" fill="currentColor" opacity=".55" fontSize="10">{nodes.length ? `Current chain output: ${outputs[outputs.length - 1]}` : "Add gates above to begin"}</text></svg></div>
-    <p className="mt-2 text-[9px] leading-4 text-[var(--muted-foreground)]">The first gate receives A/B. Each later gate receives the previous gate's output as its first input and B as its second input. This is a guided chain, not a freeform circuit editor.</p>
+    <div className="flex flex-wrap items-center gap-2"><div className="mr-auto"><div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Circuit builder</div><div className="mt-1 text-sm font-semibold">Connect gates, then simulate</div></div><button type="button" onClick={() => setNodes([])} className="inline-flex items-center gap-1 rounded-lg border border-[var(--card-border)] px-2 py-1 text-[9px]"><Trash2 className="h-3 w-3" />Clear</button></div>
+    <div className="mt-3 flex flex-wrap gap-2">{GATES.map(gate => <button key={gate} type="button" onClick={() => add(gate)} className="rounded-lg border border-[var(--card-border)] px-2.5 py-1.5 text-[9px]"><Plus className="mr-1 inline h-3 w-3" />{gate}</button>)}</div>
+    <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_250px]">
+      <div className="min-h-[220px] rounded-xl border border-[var(--card-border)] bg-[#070a10] p-3">{nodes.length ? <div className="space-y-2">{nodes.map((node, index) => {
+        const ca = connections[node.id + ":a"]; const cb = connections[node.id + ":b"];
+        return <button key={node.id} type="button" onClick={() => setSelected(node.id)} className={"block w-full rounded-xl border p-3 text-left " + (selected === node.id ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-white/10")}>
+          <div className="flex items-center gap-2"><span className="rounded-md border border-white/10 px-2 py-1 font-mono text-[9px]">G{index + 1}</span><span className="text-xs font-semibold">{node.gate}</span><button type="button" onClick={event => { event.stopPropagation(); remove(node.id); }} className="ml-auto text-slate-600 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button></div>
+          <div className="mt-2 grid grid-cols-2 gap-2 text-[9px]"><span className="rounded-lg bg-black/20 p-2">A ← {ca?.kind === "node" ? "G" + (nodes.findIndex(item => item.id === ca.id) + 1) : ca?.name ?? "A"}</span>{node.gate !== "NOT" && <span className="rounded-lg bg-black/20 p-2">B ← {cb?.kind === "node" ? "G" + (nodes.findIndex(item => item.id === cb.id) + 1) : cb?.name ?? "B"}</span>}</div>
+        </button>;
+      })}</div> : <div className="grid h-48 place-items-center text-[10px] text-slate-600">Add a gate to begin.</div>}</div>
+      <div className="rounded-xl border border-[var(--card-border)] p-3">
+        <div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Connection tool</div>
+        <p className="mt-2 text-[9px] leading-4 text-[var(--muted-foreground)]">Select a gate, choose a pin, then connect A, B, or an earlier gate output.</p>
+        <div className="mt-2 flex gap-2"><button type="button" onClick={() => setPin("a")} className={"rounded-lg border px-3 py-1.5 text-[9px] " + (pin === "a" ? "border-[var(--primary)]" : "border-[var(--card-border)]")}>Pin A</button><button type="button" onClick={() => setPin("b")} disabled={nodes.find(n => n.id === selected)?.gate === "NOT"} className={"rounded-lg border px-3 py-1.5 text-[9px] disabled:opacity-30 " + (pin === "b" ? "border-[var(--primary)]" : "border-[var(--card-border)]")}>Pin B</button></div>
+        <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={() => connect({ kind: "input", name: "A" })} className="rounded-lg border border-[var(--card-border)] p-2 text-[9px]">Connect A</button><button type="button" onClick={() => connect({ kind: "input", name: "B" })} className="rounded-lg border border-[var(--card-border)] p-2 text-[9px]">Connect B</button></div>
+        <div className="mt-2 space-y-1">{nodes.filter(node => node.id !== selected && node.id < (selected ?? Infinity)).map(node => <button key={node.id} type="button" onClick={() => connect({ kind: "node", id: node.id })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--card-border)] p-2 text-left text-[9px]"><Link2 className="h-3 w-3" />G{nodes.findIndex(item => item.id === node.id) + 1} output → Pin {pin.toUpperCase()}</button>)}</div>
+        <div className="mt-3 grid grid-cols-2 gap-2"><label className="text-[9px] text-slate-500">A<select value={a} onChange={event => setA(+event.target.value)} className="mt-1 w-full rounded-lg bg-black/20 p-2"><option value={0}>0</option><option value={1}>1</option></select></label><label className="text-[9px] text-slate-500">B<select value={b} onChange={event => setB(+event.target.value)} className="mt-1 w-full rounded-lg bg-black/20 p-2"><option value={0}>0</option><option value={1}>1</option></select></label></div>
+        <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3"><div className="text-[9px] text-[var(--muted-foreground)]">Circuit output</div><div className="mt-1 font-mono text-xl font-bold">{output}</div></div>
+        {nodes.length > 0 && <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2 text-[9px] text-emerald-300">{verify() ? "Circuit evaluates deterministically across all four A/B combinations." : "Circuit verification found an inconsistent result."}</div>}
+      </div>
+    </div>
+    <p className="mt-2 text-[9px] leading-4 text-[var(--muted-foreground)]">The final gate is the circuit output. Connections can only point to earlier gates, preventing circular dependencies.</p>
   </div>;
 }
 
