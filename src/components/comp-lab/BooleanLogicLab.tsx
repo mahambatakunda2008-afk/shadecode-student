@@ -19,6 +19,7 @@ const evalExpr = (expr: string, values: Record<string, Bit>): Bit | null => {
   let s = expr.toUpperCase().replace(/\s+/g, "");
   if (!s || !/^[ABC01()NOTANDORNANDNORXOR]+$/.test(s)) return null;
   Object.entries(values).forEach(([key, value]) => { s = s.replaceAll(key, String(value)); });
+  s = s.replace(/NOT\\(([^()]+)\\)/g, "NOT$1");
   let guard = 0;
   while (/[()]/.test(s) && guard++ < 20) {
     const before = s;
