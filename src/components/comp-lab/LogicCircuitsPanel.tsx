@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { Check, RotateCcw, Sparkles, Trash2, Zap } from "lucide-react";
+import { Check, Link2, Plus, RotateCcw, Sparkles, Trash2, Zap } from "lucide-react";
 
 type Gate = "NOT" | "AND" | "OR" | "NAND" | "NOR" | "XOR";
 type GateNode = { id: number; gate: Gate; x: number; y: number };
