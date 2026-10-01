@@ -1,8 +1,9 @@
 import {
-  CURRICULUM_COMPLETENESS_DIMENSIONS,
   evaluateCurriculumCompleteness,
+  requiredDimensionsForTier,
   type CurriculumCompletenessDimension,
   type CurriculumCoverageCheck,
+  type CurriculumGateTier,
 } from "./completeness";
 import type { CurriculumExtraction, CurriculumKnowledgeDraft } from "./ingestion";
 import type { CurriculumKnowledgeKind } from "./knowledge";
@@ -157,7 +158,7 @@ export function verifyCurriculumManifest(
     if (!observedTopicKeys.includes(topicKey)) {
       issues.push({
         code: "missing-topic-key",
-        message: `Required 0478 topic key is missing from the extracted knowledge: ${topicKey}.`,
+        message: `Required curriculum topic key is missing from the extracted knowledge: ${topicKey}.`,
       });
     }
   }
@@ -197,8 +198,10 @@ export function verifyCurriculumBundle(
   knowledge: CurriculumKnowledgeDraft[],
   checks: CurriculumCoverageCheck[],
   manifest?: CurriculumVerificationManifest,
+  tier: CurriculumGateTier = "syllabus",
 ): CurriculumVerificationResult {
-  const result = evaluateCurriculumCompleteness(checks);
+  const result = evaluateCurriculumCompleteness(checks, tier);
+  const requiredDimensions = requiredDimensionsForTier(tier);
   const unresolved = [...result.missing, ...result.partial, ...result.blocked];
   const manifestResult = manifest
     ? verifyCurriculumManifest(extraction, knowledge, manifest)
@@ -208,7 +211,7 @@ export function verifyCurriculumBundle(
     complete: result.complete,
     verified:
       result.complete &&
-      checks.length === CURRICULUM_COMPLETENESS_DIMENSIONS.length &&
+      requiredDimensions.every((dimension) => checks.some((check) => check.dimension === dimension)) &&
       (manifestResult?.verified ?? true),
     checks,
     unresolved,

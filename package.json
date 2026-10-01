@@ -19,7 +19,8 @@
     "extract:questions": "tsx bin/exam-hub-ingest/extract-questions.ts",
     "discover:paper-sources": "tsx bin/exam-hub-ingest/discover-paper-sources.ts",
     "test:e2e": "playwright test",
-    "test:learn:e2e": "playwright test e2e/learn"
+    "test:learn:e2e": "playwright test e2e/learn",
+    "curriculum:biology:generate": "tsx scripts/generate-cambridge-biology-9700-dataset.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "curriculum/biology-9700-foundation-and-verifier"]
   pull_request:
     branches: [main]
 
@@ -37,6 +37,19 @@ jobs:
         run: npm test
         env:
           VITE_CONFIG_NATIVE_IGNORE_WARNING: "true"
+
+      - name: Verify Cambridge Biology 9700 curriculum extraction
+        run: npx tsx scripts/verify-cambridge-biology-9700.mjs
+
+      - name: Generate Cambridge Biology 9700 dataset
+        run: npm run curriculum:biology:generate
+
+      - name: Upload Cambridge Biology 9700 dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: cambridge-9700-2025-2027-dataset
+          path: src/lib/curriculum/data/cambridge-9700-2025-2027.json
+          if-no-files-found: error
 
       - name: Build
         run: npm run build

@@ -72,6 +72,57 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
   },
 
 
+
+  "cambridge-9700-2025-2027": {
+    topicHeadings: [
+      "cell structure", "biological molecules", "enzymes", "cell membranes and transport",
+      "the mitotic cell cycle", "nucleic acids and protein synthesis", "transport in plants",
+      "transport in mammals", "gas exchange", "infectious diseases", "immunity",
+      "energy and respiration", "photosynthesis", "homeostasis", "control and coordination",
+      "inheritance", "selection and evolution", "classification, biodiversity and conservation",
+      "genetic technology",
+    ],
+    numberedSectionHeadings: true,
+    numberedSectionKind: "content_scope",
+    numberedLearningOutcomes: true,
+    sectionKinds: {
+      "assessment objectives": "assessment_requirement",
+      assessment: "assessment_requirement",
+      "examination format": "examination_format",
+      "paper structure": "paper_component",
+      "practical assessment": "practical_activity",
+      guidance: "guidance",
+      "additional information": "resource",
+    },
+    assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
+    paperPatterns: COMMON_PAPER_PATTERNS,
+  },
+
+  "cambridge-as-a-level-biology-9700": {
+    topicHeadings: [
+      "cell structure", "biological molecules", "enzymes", "cell membranes and transport",
+      "the mitotic cell cycle", "nucleic acids and protein synthesis", "transport in plants",
+      "transport in mammals", "gas exchange", "infectious diseases", "immunity",
+      "energy and respiration", "photosynthesis", "homeostasis", "control and coordination",
+      "inheritance", "selection and evolution", "classification, biodiversity and conservation",
+      "genetic technology",
+    ],
+    numberedSectionHeadings: true,
+    numberedSectionKind: "content_scope",
+    numberedLearningOutcomes: true,
+    sectionKinds: {
+      "assessment objectives": "assessment_requirement",
+      assessment: "assessment_requirement",
+      "examination format": "examination_format",
+      "paper structure": "paper_component",
+      "practical assessment": "practical_activity",
+      guidance: "guidance",
+      "additional information": "resource",
+    },
+    assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
+    paperPatterns: COMMON_PAPER_PATTERNS,
+  },
+
   "cambridge-as-a-level-chemistry-9701": {
     topicHeadings: [
       "atomic structure", "atoms, molecules and stoichiometry", "chemical bonding", "states of matter",

@@ -12,6 +12,12 @@ export interface CurriculumExtractionProfile {
   assessmentPatterns?: RegExp[];
   paperPatterns?: RegExp[];
   terminologyHeadings?: string[];
+  /** Recognise numbered subsection headings such as 6.1 even when the exact title is unknown. */
+  numberedSectionHeadings?: boolean;
+  /** Knowledge kind assigned to dynamically recognised numbered subsections. */
+  numberedSectionKind?: CurriculumKnowledgeKind;
+  /** Extract single-number learning outcomes beneath numbered subsections. */
+  numberedLearningOutcomes?: boolean;
 }
 
 const DEFAULT_SECTION_KINDS: Record<string, CurriculumKnowledgeKind> = {
@@ -64,7 +70,10 @@ function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingI
     ...(profile.topicHeadings ?? []).map(normalizeHeading),
     ...(profile.terminologyHeadings ?? []).map(normalizeHeading),
   ]);
-  return allowed.has(info.normalized) ? info : null;
+  if (allowed.has(info.normalized)) return info;
+  if ((profile.topicHeadings ?? []).some((title) => info.normalized.startsWith(normalizeHeading(title) + " "))) return info;
+  if (profile.numberedSectionHeadings && info.level >= 2 && /^\d+(?:\.\d+)+\s+/.test(info.raw)) return info;
+  return null;
 }
 
 function makeItem(
@@ -104,10 +113,24 @@ function extractSectionBlocks(
 
   const flush = (endLine: number) => {
     if (!currentHeading) return;
+    const heading = currentHeading;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
     if (!content) return;
-    const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
+    const profileTopic = (profile.topicHeadings ?? []).find((title) =>
+      heading.normalized === normalizeHeading(title)
+      || heading.normalized.startsWith(normalizeHeading(title) + " "),
+    );
+    const isProfileTopic = Boolean(profileTopic);
+    const kind = isProfileTopic
+      ? "topic"
+      : profile.sectionKinds?.[heading.normalized]
+        ?? DEFAULT_SECTION_KINDS[heading.normalized]
+        ?? (heading.level >= 2 ? profile.numberedSectionKind : undefined);
     if (!kind) return;
+    // Biology numbered outcomes are emitted by the dedicated subsection-aware
+    // extractor. Do not also emit the generic "Learning outcomes" heading as a
+    // code-less learning_outcome item.
+    if (profile.numberedLearningOutcomes && currentHeading.normalized === "learning outcomes") return;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
     const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
     chunks.forEach((chunk, index) => {
@@ -116,6 +139,11 @@ function extractSectionBlocks(
         ...provenance,
         sectionOrPage: provenance.sectionOrPage ?? `${headingTitle} (lines ${currentHeadingLine}-${endLine})`,
       }, index, {
+        code: kind === "topic"
+          ? String((profile.topicHeadings ?? []).findIndex((title) => normalizeHeading(title) === normalizeHeading(profileTopic ?? "")) + 1)
+          : kind === "content_scope" && heading.level >= 2
+            ? heading.raw.match(/^(\d+(?:\.\d+)+)/)?.[1]
+            : undefined,
         parentId: parent?.id,
         metadata: {
           extraction: "section",
@@ -171,7 +199,7 @@ function extractNumberedObjectives(
   const flush = (endLine: number) => {
     if (!current) return;
     current.content = current.content.replace(/\s+/g, " ").trim();
-    current.title = current.content;
+    if (current.kind !== "learning_outcome") current.title = current.content;
     current.provenance = {
       ...current.provenance,
       sectionOrPage: current.provenance.sectionOrPage ?? `lines ${startLine}-${endLine}`,
@@ -203,6 +231,113 @@ function extractNumberedObjectives(
   return items;
 }
 
+function extractNumberedLearningOutcomes(
+  text: string,
+  identity: CurriculumKnowledgeIdentity,
+  provenance: CurriculumKnowledgeProvenance,
+  profile: CurriculumExtractionProfile,
+): CurriculumKnowledgeItem[] {
+  const lines = text.split(/\r?\n/);
+  const items: CurriculumKnowledgeItem[] = [];
+  let subsectionCode: string | null = null;
+  let subsectionTitle = "";
+  let inLearningOutcomes = false;
+  let current: CurriculumKnowledgeItem | null = null;
+  let startLine = 0;
+
+  const flush = (endLine: number) => {
+    if (!current) return;
+    current.content = current.content.replace(/\s+/g, " ").trim();
+    if (current.kind !== "learning_outcome") current.title = current.content;
+    current.provenance = {
+      ...current.provenance,
+      sectionOrPage: current.provenance.sectionOrPage ?? `lines ${startLine}-${endLine}`,
+    };
+    current.metadata = {
+      ...(current.metadata ?? {}),
+      lineStart: startLine,
+      lineEnd: endLine,
+      subsectionCode,
+      subsectionTitle,
+      stableKey: [identity.boardId, identity.qualificationId, identity.syllabusId, identity.syllabusVersion, identity.subjectId, "learning_outcome", current.code ?? current.title].join("|"),
+    };
+    items.push(current);
+    current = null;
+  };
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const raw = lines[index].trim();
+    if (!raw) continue;
+
+    const subsection = raw.match(/^(\d+(?:\.\d+)+)\s+(.+)$/);
+    if (subsection) {
+      flush(index);
+      subsectionCode = subsection[1];
+      subsectionTitle = subsection[2].replace(/\s+learning outcomes\s*$/i, "").trim();
+      inLearningOutcomes = /\blearning outcomes\b/i.test(subsection[2]);
+      continue;
+    }
+
+    if (/^learning outcomes$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = true;
+      continue;
+    }
+
+    if (/^(?:--\s*)?\d+\s+of\s+\d+\s*--?$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = false;
+      subsectionCode = null;
+      subsectionTitle = "";
+      continue;
+    }
+
+    // A top-level topic heading terminates the current subsection/outcome run.
+    // Check this before the single-number outcome matcher so "12 Energy and respiration"
+    // cannot become outcome 12 of the previous subsection.
+    const topLevelTopic = raw.match(/^(\d+)\s+(.+)$/);
+    const isKnownTopLevelTopic =
+      Boolean(topLevelTopic) &&
+      (profile.topicHeadings ?? []).some((title) => normalizeHeading(title) === normalizeHeading(topLevelTopic?.[2] ?? ""));
+    if (isKnownTopLevelTopic || /^(?:AS|A) Level subject content$/i.test(raw)) {
+      flush(index);
+      inLearningOutcomes = false;
+      subsectionCode = null;
+      subsectionTitle = "";
+      continue;
+    }
+
+    if (inLearningOutcomes) {
+      const outcome = raw.match(/^(\d+)\s+(.+)$/);
+      if (outcome && subsectionCode) {
+        flush(index);
+        startLine = index + 1;
+        current = makeItem("learning_outcome", `${subsectionTitle}: outcome ${outcome[1]}`, outcome[2], identity, provenance, items.length, {
+          code: `${subsectionCode}.${outcome[1]}`,
+          metadata: {
+            extraction: "numbered-learning-outcome",
+            subsectionCode,
+            subsectionTitle,
+            outcomeIndex: Number(outcome[1]),
+            lineStart: startLine,
+          },
+        });
+        continue;
+      }
+
+      if (current) {
+        current.content += ` ${raw}`;
+        continue;
+      }
+    }
+
+    if (current) {
+      current.content += ` ${raw}`;
+    }
+  }
+  flush(lines.length);
+  return items;
+}
 function extractPatternLines(
   text: string,
   identity: CurriculumKnowledgeIdentity,
@@ -231,12 +366,97 @@ export function extractCurriculumKnowledge(
   profile: CurriculumExtractionProfile = {},
 ): CurriculumKnowledgeItem[] {
   const sectionItems = extractSectionBlocks(text, identity, provenance, profile);
-  const objectives = extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
+  const objectives = profile.numberedLearningOutcomes
+    ? extractNumberedLearningOutcomes(text, identity, provenance, profile)
+    : extractNumberedObjectives(text, identity, provenance, profile.objectiveCodePattern);
+
+  const subsectionItems = profile.numberedLearningOutcomes
+    ? [...new Map(
+        objectives
+          .filter((item) => item.kind === "learning_outcome" && item.metadata?.subsectionCode)
+          .map((item) => {
+            const code = String(item.metadata?.subsectionCode);
+            const title = String(item.metadata?.subsectionTitle ?? code);
+            return [code, makeItem(
+              "content_scope",
+              code + " " + title,
+              "",
+              identity,
+              item.provenance,
+              0,
+              {
+                code,
+                metadata: {
+                  extraction: "numbered-learning-subsection",
+                  subsectionCode: code,
+                  subsectionTitle: title,
+                },
+              },
+            )];
+          }),
+      ).values()]
+    : [];
+
   const assessments = extractPatternLines(text, identity, provenance, profile.assessmentPatterns, "assessment_requirement");
   const papers = extractPatternLines(text, identity, provenance, profile.paperPatterns, "paper_component");
 
+  const allItems = [
+    ...sectionItems.filter((item) => !(profile.numberedLearningOutcomes && item.kind === "content_scope")),
+    ...subsectionItems,
+    ...objectives,
+    ...assessments,
+    ...papers,
+  ];
+
+  if (profile.topicHeadings?.length) {
+    const presentTopicKeys = new Set(
+      allItems
+        .filter((item) => item.kind === "topic")
+        .map((item) => normalizeHeading(item.title).replace(/^\d+\s+/, "")),
+    );
+    profile.topicHeadings.forEach((title, index) => {
+      const key = normalizeHeading(title);
+      if (presentTopicKeys.has(key)) return;
+      allItems.push(makeItem(
+        "topic",
+        `${index + 1} ${title}`,
+        "",
+        identity,
+        provenance,
+        0,
+        {
+          code: String(index + 1),
+          metadata: {
+            extraction: "profile-topic-scope",
+            topicNumber: index + 1,
+            topicTitle: title,
+          },
+        },
+      ));
+    });
+  }
+  const bestTopicByKey = new Map<string, CurriculumKnowledgeItem>();
+  for (const item of allItems) {
+    if (item.kind !== "topic") continue;
+    const canonical = (profile.topicHeadings ?? []).find((title) =>
+      normalizeHeading(item.title).startsWith(normalizeHeading(title)),
+    );
+    const key = canonical ? normalizeHeading(canonical) : item.code ?? normalizeHeading(item.title);
+    const existing = bestTopicByKey.get(key);
+    if (!existing || item.content.length > existing.content.length) {
+      bestTopicByKey.set(key, item);
+    }
+  }
+
   const seen = new Set<string>();
-  return [...sectionItems, ...objectives, ...assessments, ...papers].filter((item) => {
+  return allItems.filter((item) => {
+    if (item.kind === "topic") {
+      const canonical = (profile.topicHeadings ?? []).find((title) =>
+        normalizeHeading(item.title).startsWith(normalizeHeading(title)),
+      );
+      const topicKey = canonical ? normalizeHeading(canonical) : item.code ?? normalizeHeading(item.title);
+      if (bestTopicByKey.get(topicKey) !== item) return false;
+    }
     const key = `${item.kind}:${item.code ?? ""}:${item.content.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
