@@ -11,10 +11,10 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
   job: GenerationJob<TRequest, TResult>,
   event: DurableEvent,
 ) {
-  if (!isBrowser() || !token || !job?.id) return;
+  if (!isBrowser() || !token || !job?.id) return false;
 
   try {
-    await fetch("/api/cortex/generation", {
+    const response = await fetch("/api/cortex/generation", {
       method: event === "created" ? "POST" : "PATCH",
       headers: {
         "content-type": "application/json",
@@ -35,8 +35,10 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
       }),
       keepalive: event !== "progress",
     });
+    return response.ok;
   } catch {
     // Browser-local generation must never become dependent on the durability endpoint.
+    return false;
   }
 }
 
