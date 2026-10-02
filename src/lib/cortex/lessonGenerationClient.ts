@@ -30,6 +30,28 @@ function generationLeaseId(jobId: string) {
   generationLeaseIds.set(jobId, id);
   return id;
 }
+async function heartbeatGenerationLease(token: string, jobId: string, leaseId: string): Promise<"ok" | "lost" | "unknown"> {
+  try {
+    const response = await fetch("/api/cortex/generation", {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        id: jobId,
+        leaseId,
+        heartbeatOnly: true,
+      }),
+      cache: "no-store",
+    });
+    if (response.ok) return "ok";
+    if (response.status === 409) return "lost";
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
@@ -230,7 +252,11 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
           progress,
           partial: { title, blocks: allBlocks, completedUnits: index + 1, totalUnits: sectionCount },
         });
-        await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
+        await syncDurableGenerationJob(
+          token,
+          (getGenerationJob(job.id) ?? job) as GenerationJob,
+          "progress",
+        );
       }
     } catch (error) {
       console.info("[LEARN] browser-local section failed", {
@@ -270,7 +296,7 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
 
   return candidate;
 }
-async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>, generated: LessonGenerationResult, token: string): Promise<LessonGenerationResult> {
+async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>, generated: LessonGenerationResult, token: string, leaseId?: string): Promise<LessonGenerationResult> {
   const request = resolvedRequest(job);
   const response = await fetch("/api/learn", {
     method: "POST",
@@ -279,6 +305,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
       type: "lesson",
       generationMode: "persist",
       generationJobId: job.id,
+      generationLeaseId: leaseId,
       subject: job.request.subject,
       topic: job.request.prompt,
       difficulty: job.request.difficulty,
@@ -325,6 +352,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       ? String((persistedPartial as Record<string, unknown>).title)
       : request.topic || job.request.prompt;
 
+    const leaseId = generationLeaseId(job.id);
     for (let sectionIndex = persistedCompletedUnits; sectionIndex < sectionCount; sectionIndex += 1) {
       if (getGenerationJob(job.id)?.status === "complete") return null;
       let sectionData: any = null;
@@ -343,6 +371,20 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
         });
 
         const controller = new AbortController();
+        let leaseLost = false;
+        const heartbeatTimer = setInterval(() => {
+          void (async () => {
+            try {
+              const heartbeat = await heartbeatGenerationLease(token, job.id, leaseId);
+              if (heartbeat === "lost") {
+                leaseLost = true;
+                controller.abort();
+              }
+            } catch {
+              // A transient heartbeat failure is harmless if a later heartbeat succeeds.
+            }
+          })();
+        }, 20_000);
         const timeout = setTimeout(() => controller.abort(), CLOUD_GENERATION_TIMEOUT_MS);
         try {
           const response = await fetch("/api/learn", {
@@ -367,6 +409,9 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
             signal: controller.signal,
           });
           sectionData = await response.json().catch(() => ({}));
+          if (leaseLost) {
+            throw new Error("CORTEX_LEASE_CONFLICT");
+          }
           if (response.ok && sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
             assembledBlocks = sectionData.partialBlocks;
             if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
@@ -395,6 +440,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           throw error;
         } finally {
           clearTimeout(timeout);
+          clearInterval(heartbeatTimer);
         }
         // Server-side repair is the only retry allowed for a section.
       }
@@ -425,7 +471,12 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           totalUnits: sectionCount,
         },
       });
-      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
+      await syncDurableGenerationJob(
+        token,
+        (getGenerationJob(job.id) ?? job) as GenerationJob,
+        "progress",
+        { leaseId },
+      );
     }
 
     data = {
@@ -513,7 +564,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep") {
       const cloudModel = await tryCloudLesson(job, token);
       if (cloudModel) {
-        const finished = await persistGeneratedLesson(job, cloudModel, token);
+        const finished = await persistGeneratedLesson(job, cloudModel, token, generationLeaseId(job.id));
         await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
         return getGenerationJobs().find(item => item.id === job.id) ?? job;
       }

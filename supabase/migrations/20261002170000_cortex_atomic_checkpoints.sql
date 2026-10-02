@@ -1,0 +1,79 @@
+-- Atomically persist a lesson section and advance its durable Cortex checkpoint.
+create or replace function public.checkpoint_cortex_generation(
+  p_job_id uuid,
+  p_user_id uuid,
+  p_lease_id uuid,
+  p_status text,
+  p_stage text,
+  p_title text,
+  p_topic text,
+  p_description text,
+  p_difficulty text,
+  p_progress integer,
+  p_completed_units integer,
+  p_total_units integer,
+  p_blocks jsonb,
+  p_result jsonb default null
+)
+returns table(checkpointed boolean)
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_now timestamptz := now();
+begin
+  if current_user <> 'service_role' then
+    raise exception 'checkpoint_cortex_generation: service role required';
+  end if;
+
+  update public.learn_lessons
+  set title = left(p_title, 255),
+      topic = left(p_topic, 500),
+      description = left(p_description, 1500),
+      difficulty = p_difficulty,
+      progress = greatest(0, least(100, p_progress)),
+      blocks = p_blocks,
+      updated_at = v_now
+  where id = p_job_id and user_id = p_user_id;
+
+  if not found then
+    raise exception 'checkpoint_cortex_generation: lesson draft missing';
+  end if;
+
+  update public.cortex_generation_jobs
+  set status = p_status,
+      stage = left(p_stage, 80),
+      partial = case when p_status = 'complete' then null else jsonb_build_object(
+        'title', left(p_title, 255),
+        'blocks', p_blocks,
+        'completedUnits', greatest(0, p_completed_units),
+        'totalUnits', greatest(0, p_total_units)
+      ) end,
+      result = case when p_status = 'complete' then p_result else result end,
+      progress = greatest(0, least(100, p_progress)),
+      completed_units = greatest(0, p_completed_units),
+      total_units = greatest(0, p_total_units),
+      lease_id = case when p_status = 'complete' then null else lease_id end,
+      lease_until = case when p_status = 'complete' then null else lease_until end,
+      heartbeat_at = v_now,
+      updated_at = v_now,
+      error = case when p_status = 'complete' then null else error end
+  where id = p_job_id
+    and user_id = p_user_id
+    and lease_id = p_lease_id
+    and lease_until > v_now;
+
+  if not found then
+    return query select false;
+    return;
+  end if;
+
+  return query select true;
+end;
+$$;
+
+revoke execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb)
+  from public, anon, authenticated, postgres;
+grant execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb)
+  to service_role;

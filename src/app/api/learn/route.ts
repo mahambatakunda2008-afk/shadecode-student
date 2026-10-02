@@ -242,6 +242,19 @@ export async function POST(req: Request) {
     let priorBlocks = Array.isArray(body.priorBlocks) ? body.priorBlocks.slice(-12) : [];
 
     if (generationMode === "persist") {
+      if (durableJobId && generationLeaseId) {
+        const now = new Date().toISOString();
+        const { data: leaseRow, error: leaseError } = await supabase
+          .from("cortex_generation_jobs")
+          .select("id")
+          .eq("id", durableJobId)
+          .eq("user_id", user.id)
+          .eq("lease_id", generationLeaseId)
+          .gt("lease_until", now)
+          .maybeSingle();
+        if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
+        if (!leaseRow) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+      }
       const generated = body.generatedLesson;
       if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
@@ -334,7 +347,7 @@ export async function POST(req: Request) {
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
 
       if (durableJobId) {
-        const durableComplete = await supabase
+        let durableCompletionQuery = supabase
           .from("cortex_generation_jobs")
           .update({
             status: "complete",
@@ -357,12 +370,23 @@ export async function POST(req: Request) {
           })
           .eq("id", durableJobId)
           .eq("user_id", user.id);
+        if (generationLeaseId) {
+          durableCompletionQuery = durableCompletionQuery
+            .eq("lease_id", generationLeaseId)
+            .gt("lease_until", new Date().toISOString());
+        }
+        const durableComplete = await durableCompletionQuery.select("id").maybeSingle();
 
         if (durableComplete.error) {
           console.warn("[LEARN] durable completion checkpoint failed", {
             generationJobId: durableJobId,
             error: durableComplete.error.message,
           });
+          if (generationLeaseId) {
+            return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+          }
+        } else if (generationLeaseId && !durableComplete.data) {
+          return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
         }
       }
 
@@ -553,58 +577,47 @@ Repair only the defective section. Preserve correct material where possible. Do 
       }
       const currentBlocks = [...priorBlocks, ...section.blocks].slice(-28);
 
-      // Checkpoint the durable Cortex job on the server before returning the section.
-      // This closes the small window where generation succeeds but the browser dies
-      // before its client-side PATCH arrives.
+      // Persist the lesson draft and durable Cortex checkpoint in one database transaction.
+      // The lease is part of the transaction, so a stale worker cannot advance the job
+      // without also persisting the corresponding lesson blocks.
       if (durableJobId) {
         const durableProgress = Math.min(
           90,
           Math.round(((generationSectionIndex + 1) / Math.max(1, generationSectionCount)) * 90),
         );
-        const durableUpdate = await supabase
-          .from("cortex_generation_jobs")
-          .update({
-            status: "partial",
-            stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
-            partial: {
-              title: section.title,
-              blocks: currentBlocks,
-              completedUnits: generationSectionIndex + 1,
-              totalUnits: generationSectionCount,
-            },
-            progress: durableProgress,
-            completed_units: generationSectionIndex + 1,
-            total_units: generationSectionCount,
-            heartbeat_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", durableJobId)
-          .eq("user_id", user.id);
-
-        if (durableUpdate.error) {
-          console.warn("[LEARN] durable generation checkpoint failed", {
+        const { data: checkpointResult, error: checkpointWriteError } = await supabase.rpc(
+          "checkpoint_cortex_generation",
+          {
+            p_job_id: durableJobId,
+            p_user_id: user.id,
+            p_lease_id: generationLeaseId,
+            p_status: "partial",
+            p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
+            p_title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255),
+            p_topic: request.topic.slice(0, 500),
+            p_description: "Generation is resumable. Partial sections are saved as they complete.",
+            p_difficulty: validDifficulty,
+            p_progress: durableProgress,
+            p_completed_units: generationSectionIndex + 1,
+            p_total_units: generationSectionCount,
+            p_blocks: currentBlocks,
+            p_result: null,
+          },
+        );
+        if (checkpointWriteError) {
+          console.warn("[LEARN] atomic generation checkpoint failed", {
             generationJobId: durableJobId,
             sectionIndex: generationSectionIndex,
-            error: durableUpdate.error.message,
+            error: checkpointWriteError.message,
           });
-          // The learn_lessons draft below is a second recovery record. Do not turn
-          // a successful generated section into a user-visible failure because this
-          // auxiliary checkpoint failed.
+          return NextResponse.json({ error: "The section was generated but could not be durably checkpointed.", retryable: true }, { status: 503 });
+        }
+        const checkpointed = Array.isArray(checkpointResult) ? checkpointResult[0]?.checkpointed : (checkpointResult as { checkpointed?: boolean } | null)?.checkpointed;
+        if (checkpointed !== true) {
+          return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
         }
       }
 
-      if (durableJobId) {
-        const update = await supabase.from("learn_lessons").update({
-          title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0,255),
-          topic: request.topic.slice(0,500),
-          description: "Generation is resumable. Partial sections are saved as they complete.",
-          difficulty: validDifficulty,
-          progress: Math.min(99, Math.round(((generationSectionIndex + 1) / generationSectionCount) * 90)),
-          blocks: currentBlocks,
-          updated_at: new Date().toISOString(),
-        }).eq("id", durableJobId).eq("user_id", user.id).select("id").maybeSingle();
-        if (update.error) return NextResponse.json({ error: "The section was generated but could not be persisted.", retryable: true }, { status: 500 });
-      }
       return NextResponse.json({
         sectionIndex: generationSectionIndex,
         sectionCount: generationSectionCount,
