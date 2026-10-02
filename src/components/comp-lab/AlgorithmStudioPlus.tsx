@@ -289,7 +289,7 @@ export default function AlgorithmStudioPlus() {
     const y = Math.max(45, Math.min(flowHeight - 45, ((event.clientY - rect.top) / rect.height) * flowHeight + drag.dy));
     setNodes(current => current.map(node => node.id === drag.id ? { ...node, x, y } : node));
   };
-  const addNode = (kind: Kind) => { const node: Node = { id: uid("node"), kind, text: labels[kind], x: 380, y: Math.min(570, 70 + nodes.length * 80), line: nodes.length + 1 }; setNodes(current => [...current, node]); setSelected(node.id); };
+  const addNode = (kind: Kind) => { const node: Node = { id: uid("node"), kind, text: labels[kind], x: 380, y: 70 + nodes.length * 80, line: nodes.length + 1 }; setNodes(current => [...current, node]); setSelected(node.id); };
   const editNode = (id: string, text: string) => setNodes(current => current.map(node => node.id === id ? { ...node, text } : node));
   const removeNode = () => { if (!selected) return; setNodes(current => current.filter(node => node.id !== selected)); setEdges(current => current.filter(edge => edge.from !== selected && edge.to !== selected)); setSelected(null); };
   const exportProject = () => { const blob = new Blob([JSON.stringify({ version: 4, code, nodes, edges, tests }, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "algorithm-project.json"; link.click(); URL.revokeObjectURL(url); };
