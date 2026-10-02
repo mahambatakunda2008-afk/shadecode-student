@@ -174,6 +174,7 @@ function BooleanQuestionLab() {
   const [answer, setAnswer] = useState("");
   const [score, setScore] = useState(0);
   const [checked, setChecked] = useState(false);
+  const [completed, setCompleted] = useState<string[]>([]);
   const question = BOOLEAN_QUESTIONS[index];
   const correct = answer === question.answer;
   const next = () => {
@@ -190,7 +191,7 @@ function BooleanQuestionLab() {
       <p className="mt-3 text-xs leading-5">{question.prompt}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">{question.options.map(option => <button key={option} type="button" onClick={() => { setAnswer(option); setChecked(false); }} className={"rounded-xl border p-3 text-left text-[10px] " + (answer === option ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]")}>{option}</button>)}</div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" disabled={!answer} onClick={() => { setChecked(true); if (correct) setScore(value => Math.min(value + 1, BOOLEAN_QUESTIONS.length)); }} className="rounded-xl bg-[var(--primary)] px-3 py-2 text-[10px] font-semibold text-white disabled:opacity-40">Check</button>
+        <button type="button" disabled={!answer} onClick={() => { setChecked(true); if (correct && !completed.includes(question.id)) { setCompleted(value => [...value, question.id]); setScore(value => value + 1); } }} className="rounded-xl bg-[var(--primary)] px-3 py-2 text-[10px] font-semibold text-white disabled:opacity-40">Check</button>
         <button type="button" onClick={next} className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-[10px]">Next</button>
       </div>
       {checked && <div className={"mt-3 rounded-xl border p-3 text-[10px] " + (correct ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300" : "border-red-500/20 bg-red-500/5 text-red-300")}><div className="font-semibold">{correct ? "Correct" : "Not yet"}</div><div className="mt-1">{question.explanation}</div></div>}
