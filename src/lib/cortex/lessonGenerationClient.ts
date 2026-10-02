@@ -367,6 +367,11 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
             signal: controller.signal,
           });
           sectionData = await response.json().catch(() => ({}));
+          if (response.ok && sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
+            assembledBlocks = sectionData.partialBlocks;
+            if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+            break;
+          }
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
 
           const providerUnavailable = sectionData?.providerUnavailable === true || sectionData?.retryable === false;
@@ -392,6 +397,12 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           clearTimeout(timeout);
         }
         // Server-side repair is the only retry allowed for a section.
+      }
+
+      if (sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
+        assembledBlocks = sectionData.partialBlocks;
+        if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+        break;
       }
 
       if (!sectionData?.blocks?.length) {
