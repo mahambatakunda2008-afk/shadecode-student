@@ -242,6 +242,19 @@ export async function POST(req: Request) {
     let priorBlocks = Array.isArray(body.priorBlocks) ? body.priorBlocks.slice(-12) : [];
 
     if (generationMode === "persist") {
+      if (durableJobId && generationLeaseId) {
+        const now = new Date().toISOString();
+        const { data: leaseRow, error: leaseError } = await supabase
+          .from("cortex_generation_jobs")
+          .select("id")
+          .eq("id", durableJobId)
+          .eq("user_id", user.id)
+          .eq("lease_id", generationLeaseId)
+          .gt("lease_until", now)
+          .maybeSingle();
+        if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
+        if (!leaseRow) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+      }
       const generated = body.generatedLesson;
       if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
@@ -356,7 +369,9 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", durableJobId)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .eq("lease_id", generationLeaseId ?? undefined)
+          .gt("lease_until", generationLeaseId ? new Date().toISOString() : "1900-01-01T00:00:00.000Z");
 
         if (durableComplete.error) {
           console.warn("[LEARN] durable completion checkpoint failed", {
