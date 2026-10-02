@@ -20,6 +20,16 @@ const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
 // The server owns section repair. The browser must not duplicate that retry loop.
 const MAX_CLOUD_ATTEMPTS = 1;
 let runningJobId: string | null = null;
+const generationLeaseIds = new Map<string, string>();
+function generationLeaseId(jobId: string) {
+  const existing = generationLeaseIds.get(jobId);
+  if (existing) return existing;
+  const id = isBrowser() && typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `lease-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  generationLeaseIds.set(jobId, id);
+  return id;
+}
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
@@ -351,14 +361,23 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
               level: job.request.level,
               examBoard: job.request.examBoard,
               generationJobId: job.id,
+              generationLeaseId: generationLeaseId(job.id),
             }),
             cache: "no-store",
             signal: controller.signal,
           });
           sectionData = await response.json().catch(() => ({}));
+          if (response.ok && sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
+            assembledBlocks = sectionData.partialBlocks;
+            if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+            break;
+          }
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
 
           const providerUnavailable = sectionData?.providerUnavailable === true || sectionData?.retryable === false;
+          if (sectionData?.leaseConflict === true) {
+            throw new Error("CORTEX_LEASE_CONFLICT");
+          }
           lastError = new Error(
             providerUnavailable
               ? `Cortex provider unavailable: ${sectionData?.error || "No online AI provider is currently available."}`
@@ -378,6 +397,12 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           clearTimeout(timeout);
         }
         // Server-side repair is the only retry allowed for a section.
+      }
+
+      if (sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
+        assembledBlocks = sectionData.partialBlocks;
+        if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+        break;
       }
 
       if (!sectionData?.blocks?.length) {
@@ -511,6 +536,16 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     throw new Error("All online lesson generation lanes failed.");
   } catch (error) {
     const message = errorMessage(error); const context = localContext(job);
+
+    if (message === "CORTEX_LEASE_CONFLICT") {
+      updateGenerationJob(job.id, {
+        status: "queued",
+        progress: Math.min(90, Math.max(20, job.progress)),
+        error: "Another Cortex tab is finishing this lesson. Your checkpoint is safe and will resume when that run releases the lease.",
+      });
+      saveActiveId(job.id);
+      return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    }
 
     // Cloud provider outages/quota exhaustion must not immediately collapse into
     // an IndexedDB-only result. If this browser can run WebGPU, use the local

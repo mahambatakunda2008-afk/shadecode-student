@@ -34,6 +34,24 @@ function getBearerToken(req: Request): string | null {
   const h = req.headers.get("authorization");
   return h?.startsWith("Bearer ") ? h.slice(7).trim() || null : null;
 }
+async function claimGenerationLease(supabase: SupabaseClient, userId: string, jobId: string, leaseId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(jobId) || !/^[0-9a-f-]{36}$/i.test(leaseId)) {
+    return { claimed: false, conflict: false };
+  }
+  const { data, error } = await supabase.rpc("claim_cortex_generation_job", {
+    p_job_id: jobId,
+    p_user_id: userId,
+    p_lease_id: leaseId,
+    p_lease_seconds: 90,
+  });
+  if (error) {
+    console.warn("[LEARN] generation lease claim failed", { jobId, error: error.message });
+    return { claimed: false, conflict: false, error: error.message };
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return { claimed: row?.claimed === true, conflict: row?.claimed !== true, leaseUntil: row?.lease_until ?? null };
+}
+
 async function authenticateRequest(req: Request): Promise<AuthContext | null> {
   const admin = getSupabaseAdmin();
   const token = getBearerToken(req);
@@ -215,9 +233,13 @@ export async function POST(req: Request) {
     });
     const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     const generationMode = body.generationMode === "section" || body.generationMode === "persist" ? body.generationMode : "complete";
-    const generationSectionIndex = Number.isInteger(body.generationSectionIndex) ? Number(body.generationSectionIndex) : 0;
-    const generationSectionCount = Number.isInteger(body.generationSectionCount) ? Number(body.generationSectionCount) : (request.broadTopic ? 6 : 4);
-    const priorBlocks = Array.isArray(body.priorBlocks) ? body.priorBlocks.slice(-12) : [];
+    const generationLeaseId = typeof body.generationLeaseId === "string" && /^[0-9a-f-]{36}$/i.test(body.generationLeaseId)
+      ? body.generationLeaseId
+      : null;
+    let generationSectionIndex = Number.isInteger(body.generationSectionIndex) ? Number(body.generationSectionIndex) : 0;
+    const expectedSectionCount = request.broadTopic ? 6 : 4;
+    const generationSectionCount = expectedSectionCount;
+    let priorBlocks = Array.isArray(body.priorBlocks) ? body.priorBlocks.slice(-12) : [];
 
     if (generationMode === "persist") {
       const generated = body.generatedLesson;
@@ -316,6 +338,8 @@ export async function POST(req: Request) {
           .from("cortex_generation_jobs")
           .update({
             status: "complete",
+            lease_id: null,
+            lease_until: null,
             stage: "complete",
             partial: null,
             result: {
@@ -352,6 +376,60 @@ export async function POST(req: Request) {
     }
 
     if (generationMode === "section") {
+      if (!durableJobId || !generationLeaseId) {
+        return NextResponse.json({ error: "Missing resumable generation identity.", retryable: true }, { status: 400 });
+      }
+      const lease = await claimGenerationLease(supabase, user.id, durableJobId, generationLeaseId);
+      if (!lease.claimed) {
+        if (lease.error) {
+          return NextResponse.json({ error: "Generation durability is temporarily unavailable.", retryable: true }, { status: 503 });
+        }
+        return NextResponse.json({
+          error: "Another Cortex run is currently working on this lesson. Resume will continue from the last checkpoint.",
+          retryable: false,
+          leaseConflict: true,
+        }, { status: 409 });
+      }
+
+      // The server checkpoint is authoritative. A stale browser tab may request an
+      // old section, so never trust its section index or prior blocks over the durable job.
+      const { data: checkpoint, error: checkpointError } = await supabase
+        .from("cortex_generation_jobs")
+        .select("completed_units,total_units,partial,status")
+        .eq("id", durableJobId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (checkpointError || !checkpoint) {
+        return NextResponse.json({ error: "Unable to load the resumable generation checkpoint.", retryable: true }, { status: 503 });
+      }
+      const checkpointCompleted = Math.max(
+        0,
+        Math.min(expectedSectionCount, Math.floor(Number(checkpoint.completed_units) || 0)),
+      );
+      generationSectionIndex = checkpointCompleted;
+      if (checkpoint.partial && typeof checkpoint.partial === "object") {
+        const partial = checkpoint.partial as Record<string, unknown>;
+        if (Array.isArray(partial.blocks)) priorBlocks = partial.blocks.slice(-12) as LessonBlock[];
+      }
+      if (checkpointCompleted >= expectedSectionCount) {
+        const partial = checkpoint.partial && typeof checkpoint.partial === "object"
+          ? checkpoint.partial as Record<string, unknown>
+          : {};
+        const completedBlocks = Array.isArray(partial.blocks) ? partial.blocks : [];
+        const completedTitle = typeof partial.title === "string"
+          ? partial.title
+          : `Cortex lesson: ${request.topic}`;
+        return NextResponse.json({
+          sectionIndex: expectedSectionCount - 1,
+          sectionCount: expectedSectionCount,
+          title: completedTitle,
+          blocks: completedBlocks,
+          partialBlocks: completedBlocks,
+          complete: true,
+          resumedFromCheckpoint: true,
+        });
+      }
+
       // The section lane must have a durable lesson draft before the first model
       // response arrives. This makes the initial section atomic with the job id
       // and removes the create-job/create-draft race.
