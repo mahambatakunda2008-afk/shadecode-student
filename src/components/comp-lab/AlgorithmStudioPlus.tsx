@@ -14,7 +14,7 @@ type Test = { id: string; input: string; expected: string };
 type Project = { version: 4; code: string; nodes: Node[]; edges: Edge[]; tests: Test[] };
 type Tab = "learn" | "practice" | "write" | "flow" | "trace" | "tests" | "analyse" | "assess" | "logic";
 type Lesson = { id: string; title: string; level: "AS" | "A Level"; summary: string; rule: string; example: string; examTip: string };
-type Challenge = { id: string; title: string; level: "AS" | "A Level"; skill: string; prompt: string; hint: string; starter: string; tests: Test[]; hiddenTests: Test[] };
+type Challenge = { id: string; title: string; level: "AS" | "A Level"; skill: string; prompt: string; hint: string; starter: string; tests: Test[]; hiddenTests: Test[] };\ntype ChallengeProgress = { status: "attempted" | "mastered"; visiblePassed: number; visibleTotal: number; hiddenPassed: number; hiddenTotal: number; lastAttempt: number };
 
 const lessons: Lesson[] = [
   { id: "declarations", title: "Variables, constants & assignment", level: "AS", summary: "Declare data explicitly, then change variable values with the assignment operator.", rule: "DECLARE name : TYPE\nCONSTANT Name = literal\nname ← expression", example: "DECLARE Total : INTEGER\nCONSTANT PassMark = 50\nTotal ← 0", examTip: "Use Cambridge keywords in upper-case. Identifiers are mixed case and the assignment arrow is ←." },
@@ -191,7 +191,7 @@ export default function AlgorithmStudioPlus() {
   const [running, setRunning] = useState(false);
   const [tab, setTab] = useState<Tab>("learn");
   const [lessonId, setLessonId] = useState(lessons[0].id);
-  const [challengeId, setChallengeId] = useState(challenges[0].id);
+  const [challengeId, setChallengeId] = useState(challenges[0].id);\n  const [activeChallengeId, setActiveChallengeId] = useState<string | null>(null);\n  const [challengeTestIds, setChallengeTestIds] = useState<string[]>([]);\n  const [challengeProgress, setChallengeProgress] = useState<Record<string, ChallengeProgress>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [saved, setSaved] = useState(false);
@@ -207,7 +207,7 @@ export default function AlgorithmStudioPlus() {
     return { time: "O(1) candidate", reason: "No dominant loop is visible in the current editor. Check whether called procedures change this." };
   }, [code]);
 
-  useEffect(() => { try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (!raw) return; const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { /* ignore invalid local draft */ } }, []);
+  useEffect(() => {\n    try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (raw) { const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } } catch { /* ignore invalid local draft */ }\n    try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-challenge-progress.v1"); if (!raw) return; const parsed = JSON.parse(raw) as Record<string, ChallengeProgress>; if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) setChallengeProgress(parsed); } catch { /* ignore invalid challenge progress */ }\n  }, []);\n\n  useEffect(() => { try { localStorage.setItem("shadecode.comp-lab.algorithm-challenge-progress.v1", JSON.stringify(challengeProgress)); } catch { /* localStorage may be unavailable or full */ } }, [challengeProgress]);
 
   const trace = useMemo(() => { const marker = traceText.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = traceText.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [traceText]);
 
@@ -265,7 +265,7 @@ export default function AlgorithmStudioPlus() {
           results.push({ id: test.id, passed: false, input: test.input, expected: test.expected.trim(), actual: "", error: error instanceof Error ? error.message : "Runtime error", hidden: test.id.startsWith("hidden-") });
         }
       }
-      setTestResults(results);
+      setTestResults(results);\n      if (activeChallengeId) {\n        const visibleResults = results.filter(item => !item.hidden && challengeTestIds.includes(item.id));\n        const hiddenResults = results.filter(item => item.hidden);\n        const visiblePassed = visibleResults.filter(item => item.passed).length;\n        const hiddenPassed = hiddenResults.filter(item => item.passed).length;\n        const mastered = visibleResults.length === challengeTestIds.length && visibleResults.every(item => item.passed) && hiddenResults.length === challenge.hiddenTests.length && hiddenResults.every(item => item.passed);\n        setChallengeProgress(current => ({ ...current, [activeChallengeId]: { status: mastered ? "mastered" : "attempted", visiblePassed, visibleTotal: challengeTestIds.length, hiddenPassed, hiddenTotal: challenge.hiddenTests.length, lastAttempt: Date.now() } }));\n      }
       setOutput(results.map(item => `${item.passed ? "PASS" : "FAIL"} | expected: ${item.expected} | actual: ${item.actual}`).join("\n"));
       setTab("tests");
     } finally {
@@ -389,9 +389,7 @@ export default function AlgorithmStudioPlus() {
     image.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   };
 
-  const loadChallenge = (item: Challenge) => {
-    setCode(item.starter);
-    setTests(item.tests.map(test => ({ ...test, id: uid("test") })));
+  const loadChallenge = (item: Challenge) => {\n    const loadedTests = item.tests.map(test => ({ ...test, id: uid("challenge-test") }));\n    setChallengeId(item.id);\n    setActiveChallengeId(item.id);\n    setChallengeTestIds(loadedTests.map(test => test.id));\n    setCode(item.starter);\n    setTests(loadedTests);
     setInputs(item.tests[0]?.input ?? "");
     setOutput("");
     setTraceText("");
@@ -399,7 +397,7 @@ export default function AlgorithmStudioPlus() {
     setTab("write");
   };
 
-  const importProject = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const project = JSON.parse(String(reader.result)) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { setDiagnostics(["Could not import this algorithm project."]); } }; reader.readAsText(file); event.target.value = ""; };
+  const importProject = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const project = JSON.parse(String(reader.result)) as Partial<Project>; setActiveChallengeId(null); setChallengeTestIds([]); if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { setDiagnostics(["Could not import this algorithm project."]); } }; reader.readAsText(file); event.target.value = ""; };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[#090d14] text-slate-200 shadow-xl">
