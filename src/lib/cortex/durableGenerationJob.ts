@@ -27,7 +27,7 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
       method: event === "created" ? "POST" : "PATCH",
       headers: {
         "content-type": "application/json",
-        authorization: \`Bearer \${token}\`,
+        authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         event,
@@ -55,7 +55,7 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
 export async function getDurableGenerationJob(token: string, id: string) {
   if (!isBrowser() || !token || !id) return null;
   try {
-    const response = await fetch(\`/api/cortex/generation?id=\${encodeURIComponent(id)}\`, {
+    const response = await fetch(`/api/cortex/generation?id=${encodeURIComponent(id)}`, {
       headers: { authorization: \`Bearer \${token}\` },
       cache: "no-store",
     });
