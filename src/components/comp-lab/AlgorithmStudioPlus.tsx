@@ -62,24 +62,113 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
     }
   };
 
-  for (let i = 0; i < nodes.length - 1; i++) {
+  const ifStack: number[] = [];
+  const elseForIf = new Map<number, number>();
+  const endForIf = new Map<number, number>();
+  const ifForElse = new Map<number, number>();
+  const ifForEnd = new Map<number, number>();
+  const loopStack: Array<{ kind: "FOR" | "WHILE" | "REPEAT"; start: number }> = [];
+  const loopStartForEnd = new Map<number, number>();
+
+  lines.forEach((line, index) => {
+    const text = line.text.toUpperCase();
+    if (/^IF\b/.test(text)) {
+      ifStack.push(index);
+    } else if (/^ELSE$/.test(text)) {
+      const start = ifStack[ifStack.length - 1];
+      if (start !== undefined) {
+        elseForIf.set(start, index);
+        ifForElse.set(index, start);
+      }
+    } else if (/^END ?IF\b/.test(text)) {
+      const start = ifStack.pop();
+      if (start !== undefined) {
+        endForIf.set(start, index);
+        ifForEnd.set(index, start);
+      }
+    }
+
+    if (/^FOR\b/.test(text)) loopStack.push({ kind: "FOR", start: index });
+    else if (/^WHILE\b/.test(text)) loopStack.push({ kind: "WHILE", start: index });
+    else if (/^REPEAT\b/.test(text)) loopStack.push({ kind: "REPEAT", start: index });
+    else if (/^NEXT\b|^ENDWHILE\b|^UNTIL\b/.test(text)) {
+      const loop = loopStack.pop();
+      if (loop) loopStartForEnd.set(index, loop.start);
+    }
+  });
+
+  const isControlMarker = (text: string) =>
+    /^(ELSE|END ?IF\b|ENDCASE\b|NEXT\b|ENDWHILE\b|UNTIL\b)/.test(text);
+
+  const nextReal = (index: number) => {
+    const next = index + 1;
+    return next < nodes.length ? next : undefined;
+  };
+
+  for (let i = 0; i < nodes.length; i++) {
     const current = lines[i]?.text.toUpperCase() ?? "";
-    const next = lines[i + 1]?.text.toUpperCase() ?? "";
+    const nextIndex = nextReal(i);
 
     if (/^IF\b/.test(current)) {
-      const elseIndex = lines.findIndex((line, j) => j > i && /^ELSE$/.test(line.text.toUpperCase()));
-      const endIndex = lines.findIndex((line, j) => j > i && /^END ?IF\b/.test(line.text.toUpperCase()));
-      add(nodes[i], nodes[i + 1], "TRUE");
-      if (elseIndex >= 0) add(nodes[i], nodes[elseIndex + 1], "FALSE");
-      if (endIndex >= 0 && nodes[endIndex + 1]) add(nodes[endIndex], nodes[endIndex + 1]);
+      const elseIndex = elseForIf.get(i);
+      const endIndex = endForIf.get(i);
+      const trueTarget = elseIndex ?? endIndex;
+      const falseTarget = elseIndex !== undefined ? elseIndex + 1 : endIndex !== undefined ? endIndex + 1 : nextIndex;
+      if (trueTarget !== undefined && !isControlMarker(lines[trueTarget]?.text.toUpperCase() ?? "")) add(nodes[i], nodes[trueTarget], "TRUE");
+      if (falseTarget !== undefined && falseTarget < nodes.length) add(nodes[i], nodes[falseTarget], "FALSE");
       continue;
     }
 
-    if (/^ELSE$/.test(current) || /^END ?IF\b/.test(current)) continue;
-    if (/^END\b/.test(current)) continue;
-    if (/^ELSE$/.test(next) || /^END ?IF\b/.test(next)) continue;
+    if (/^ELSE$/.test(current)) {
+      const start = ifForElse.get(i);
+      const endIndex = start === undefined ? undefined : endForIf.get(start);
+      if (endIndex !== undefined) add(nodes[i], nodes[endIndex + 1]);
+      continue;
+    }
 
-    add(nodes[i], nodes[i + 1]);
+    if (/^END ?IF\b/.test(current)) {
+      if (nextIndex !== undefined) add(nodes[i], nodes[nextIndex]);
+      continue;
+    }
+
+    if (/^CASE\b/.test(current)) {
+      let depth = 0;
+      for (let j = i + 1; j < lines.length; j++) {
+        const text = lines[j].text.toUpperCase();
+        if (/^CASE\b/.test(text)) depth++;
+        if (/^ENDCASE\b/.test(text)) {
+          if (depth === 0) break;
+          depth--;
+          continue;
+        }
+        if (depth > 0) continue;
+        const match = lines[j].text.match(/^(.+?)\s*:\s*(.+)$/);
+        if (match) add(nodes[i], nodes[j], match[1].trim());
+      }
+      continue;
+    }
+
+    if (/^ENDCASE\b/.test(current)) {
+      if (nextIndex !== undefined) add(nodes[i], nodes[nextIndex]);
+      continue;
+    }
+
+    if (/^FOR\b|^WHILE\b|^REPEAT\b/.test(current)) {
+      if (nextIndex !== undefined && !isControlMarker(lines[nextIndex]?.text.toUpperCase() ?? "")) {
+        add(nodes[i], nodes[nextIndex], /^WHILE\b/.test(current) ? "TRUE" : "BODY");
+      }
+      continue;
+    }
+
+    if (/^NEXT\b|^ENDWHILE\b|^UNTIL\b/.test(current)) {
+      const loopStart = loopStartForEnd.get(i);
+      if (loopStart !== undefined) add(nodes[i], nodes[loopStart], "LOOP");
+      if (nextIndex !== undefined) add(nodes[i], nodes[nextIndex], /^UNTIL\b/.test(current) ? "FALSE" : undefined);
+      continue;
+    }
+
+    if (/^END\b/.test(current)) continue;
+    if (nextIndex !== undefined && !isControlMarker(lines[nextIndex]?.text.toUpperCase() ?? "")) add(nodes[i], nodes[nextIndex]);
   }
 
   return edges;
