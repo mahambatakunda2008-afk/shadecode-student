@@ -282,8 +282,20 @@ export async function POST(req: Request) {
           .eq("user_id", user.id)
           .select("id")
           .maybeSingle();
-        savedId = updated?.id ?? durableJobId;
+        savedId = updated?.id ?? null;
         saveError = error;
+
+        // A browser-local winner can reach persistence before the section lane
+        // has created its draft row. In that case, create the durable lesson
+        // with the same id instead of returning a successful-looking phantom id.
+        if (!saveError && !savedId) {
+          const { data: inserted, error: insertError } = await supabase.from("learn_lessons")
+            .insert({ ...lessonRow, id: durableJobId })
+            .select("id")
+            .single();
+          savedId = inserted?.id ?? null;
+          saveError = insertError;
+        }
       } else {
         const { data: inserted, error } = await supabase.from("learn_lessons")
           .insert(lessonRow)
@@ -340,6 +352,37 @@ export async function POST(req: Request) {
     }
 
     if (generationMode === "section") {
+      // The section lane must have a durable lesson draft before the first model
+      // response arrives. This makes the initial section atomic with the job id
+      // and removes the create-job/create-draft race.
+      if (durableJobId && resolvedSubject.id) {
+        const { data: existingDraft, error: draftLookupError } = await supabase.from("learn_lessons")
+          .select("id,blocks")
+          .eq("id", durableJobId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (draftLookupError) {
+          return NextResponse.json({ error: "Unable to load the resumable lesson draft.", retryable: true }, { status: 500 });
+        }
+        if (!existingDraft) {
+          const { error: draftInsertError } = await supabase.from("learn_lessons")
+            .insert({
+              id: durableJobId,
+              user_id: user.id,
+              subject_id: resolvedSubject.id,
+              topic: request.topic.slice(0, 500),
+              title: `Cortex is building ${request.topic}`.slice(0, 255),
+              description: "Generation is resumable. Partial sections are saved as they complete.",
+              difficulty: validDifficulty,
+              progress: 0,
+              blocks: [],
+            });
+          if (draftInsertError) {
+            return NextResponse.json({ error: "Unable to create the resumable lesson draft.", retryable: true }, { status: 500 });
+          }
+        }
+      }
+
       const sectionJobs = request.broadTopic
         ? [
             "Orient the learner: define the territory, prerequisites, vocabulary, and why the topic matters.",
