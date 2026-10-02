@@ -56,7 +56,7 @@ export async function getDurableGenerationJob(token: string, id: string) {
   if (!isBrowser() || !token || !id) return null;
   try {
     const response = await fetch(`/api/cortex/generation?id=${encodeURIComponent(id)}`, {
-      headers: { authorization: \`Bearer \${token}\` },
+      headers: { authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     if (!response.ok) return null;
@@ -70,7 +70,7 @@ export async function listDurableGenerationJobs(token: string) {
   if (!isBrowser() || !token) return [];
   try {
     const response = await fetch("/api/cortex/generation", {
-      headers: { authorization: \`Bearer \${token}\` },
+      headers: { authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     if (!response.ok) return [];
