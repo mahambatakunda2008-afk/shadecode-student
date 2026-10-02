@@ -30,6 +30,28 @@ function generationLeaseId(jobId: string) {
   generationLeaseIds.set(jobId, id);
   return id;
 }
+async function heartbeatGenerationLease(token: string, jobId: string, leaseId: string): Promise<"ok" | "lost" | "unknown"> {
+  try {
+    const response = await fetch("/api/cortex/generation", {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        id: jobId,
+        leaseId,
+        heartbeatOnly: true,
+      }),
+      cache: "no-store",
+    });
+    if (response.ok) return "ok";
+    if (response.status === 409) return "lost";
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
@@ -353,13 +375,8 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
         const heartbeatTimer = setInterval(() => {
           void (async () => {
             try {
-              const ok = await syncDurableGenerationJob(
-                token,
-                (getGenerationJob(job.id) ?? job) as GenerationJob,
-                "progress",
-                { leaseId, heartbeatOnly: true },
-              );
-              if (!ok) {
+              const heartbeat = await heartbeatGenerationLease(token, job.id, leaseId);
+              if (heartbeat === "lost") {
                 leaseLost = true;
                 controller.abort();
               }
