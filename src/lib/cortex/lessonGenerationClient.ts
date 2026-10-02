@@ -231,11 +231,10 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
           partial: { title, blocks: allBlocks, completedUnits: index + 1, totalUnits: sectionCount },
         });
         await syncDurableGenerationJob(
-        token,
-        (getGenerationJob(job.id) ?? job) as GenerationJob,
-        "progress",
-        { leaseId },
-      );
+          token,
+          (getGenerationJob(job.id) ?? job) as GenerationJob,
+          "progress",
+        );
       }
     } catch (error) {
       console.info("[LEARN] browser-local section failed", {
