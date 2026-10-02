@@ -455,7 +455,12 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           totalUnits: sectionCount,
         },
       });
-      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress");
+      await syncDurableGenerationJob(
+        token,
+        (getGenerationJob(job.id) ?? job) as GenerationJob,
+        "progress",
+        { leaseId },
+      );
     }
 
     data = {
@@ -543,7 +548,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep") {
       const cloudModel = await tryCloudLesson(job, token);
       if (cloudModel) {
-        const finished = await persistGeneratedLesson(job, cloudModel, token);
+        const finished = await persistGeneratedLesson(job, cloudModel, token, generationLeaseId(job.id));
         await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
         return getGenerationJobs().find(item => item.id === job.id) ?? job;
       }
