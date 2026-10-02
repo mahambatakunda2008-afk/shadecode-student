@@ -187,7 +187,7 @@ export default function AlgorithmStudioPlus() {
   const [output, setOutput] = useState("");
   const [traceText, setTraceText] = useState("");
   const [diagnostics, setDiagnostics] = useState<string[]>([]);
-  const [testResults, setTestResults] = useState<Array<{ id: string; passed: boolean; input: string; expected: string; actual: string; error?: string }>>([]);
+  const [testResults, setTestResults] = useState<Array<{ id: string; passed: boolean; input: string; expected: string; actual: string; error?: string; hidden?: boolean }>>([]);
   const [running, setRunning] = useState(false);
   const [tab, setTab] = useState<Tab>("learn");
   const [lessonId, setLessonId] = useState(lessons[0].id);
@@ -246,7 +246,7 @@ export default function AlgorithmStudioPlus() {
     setTraceText("");
     setTestResults([]);
     try {
-      const results: Array<{ id: string; passed: boolean; input: string; expected: string; actual: string; error?: string }> = [];
+      const results: Array<{ id: string; passed: boolean; input: string; expected: string; actual: string; error?: string; hidden?: boolean }> = [];
       const hidden = challenge.hiddenTests.map(test => ({ ...test, id: "hidden-" + test.id }));
       for (const test of [...tests, ...hidden]) {
         try {
@@ -260,9 +260,9 @@ export default function AlgorithmStudioPlus() {
           });
           const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
           const error = result.diagnostics.map(diagnostic => diagnostic.message).join("; ") || undefined;
-          results.push({ id: test.id, passed: result.exitCode === 0 && actual === test.expected.trim(), input: test.input, expected: test.expected.trim(), actual, error });
+          results.push({ id: test.id, passed: result.exitCode === 0 && actual === test.expected.trim(), input: test.input, expected: test.expected.trim(), actual, error, hidden: test.id.startsWith("hidden-") });
         } catch (error) {
-          results.push({ id: test.id, passed: false, input: test.input, expected: test.expected.trim(), actual: "", error: error instanceof Error ? error.message : "Runtime error" });
+          results.push({ id: test.id, passed: false, input: test.input, expected: test.expected.trim(), actual: "", error: error instanceof Error ? error.message : "Runtime error", hidden: test.id.startsWith("hidden-") });
         }
       }
       setTestResults(results);
@@ -491,13 +491,17 @@ export default function AlgorithmStudioPlus() {
                 <div key={item.id} className={item.passed ? "rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3" : "rounded-xl border border-red-500/20 bg-red-500/5 p-3"}>
                   <div className="flex items-center gap-2 text-[10px] font-semibold">
                     <span>{item.passed ? "✓ PASS" : "✕ FAIL"}</span>
-                    <span className="text-slate-500">CASE {index + 1}</span>
+                    <span className="text-slate-500">{item.hidden ? "HIDDEN EDGE CASE" : "CASE " + (index + 1)}</span>
                   </div>
-                  <div className="mt-2 grid gap-2 text-[9px] sm:grid-cols-3">
-                    <div><div className="text-slate-600">Input</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.input}</pre></div>
-                    <div><div className="text-slate-600">Expected</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.expected || "∅"}</pre></div>
-                    <div><div className="text-slate-600">Actual</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.actual || item.error || "∅"}</pre></div>
-                  </div>
+                  {item.hidden ? (
+                    <div className="mt-2 rounded-lg bg-black/20 px-3 py-2 text-[9px] text-slate-500">Hidden input and expected output stay concealed. Only the pass/fail result is revealed.</div>
+                  ) : (
+                    <div className="mt-2 grid gap-2 text-[9px] sm:grid-cols-3">
+                      <div><div className="text-slate-600">Input</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.input}</pre></div>
+                      <div><div className="text-slate-600">Expected</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.expected || "∅"}</pre></div>
+                      <div><div className="text-slate-600">Actual</div><pre className="mt-1 whitespace-pre-wrap font-mono text-slate-400">{item.actual || item.error || "∅"}</pre></div>
+                    </div>
+                  )}
                   {!item.passed && <div className="mt-2 text-[9px] text-amber-200/80">{item.error ? "Runtime/diagnostic: " + item.error : "The program ran, but its output did not match the expected result. Check boundaries, branches, loop bounds and output formatting."}</div>}
                 </div>
               ))}
