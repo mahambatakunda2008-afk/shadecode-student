@@ -27,6 +27,10 @@ function clampProgress(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0;
 }
 
+function clampUnits(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(1000, Math.round(value))) : 0;
+}
+
 export async function GET(req: Request) {
   try {
     const auth = await authenticate(req);
@@ -35,7 +39,7 @@ export async function GET(req: Request) {
     const id = new URL(req.url).searchParams.get("id");
     let query = auth.client
       .from("cortex_generation_jobs")
-      .select("id,kind,status,stage,request,partial,result,error,progress,completed_units,total_units,retry_count,heartbeat_at,created_at,updated_at")
+      .select("id,kind,status,stage,request,partial,result,error,progress,completed_units,total_units,retry_count,heartbeat_at,lease_until,created_at,updated_at")
       .eq("user_id", auth.user.id)
       .order("updated_at", { ascending: false })
       .limit(20);
@@ -75,15 +79,19 @@ export async function POST(req: Request) {
       result: body.result ?? null,
       error: body.error ?? null,
       progress: clampProgress(body.progress),
+      completed_units: clampUnits(body.completedUnits),
+      total_units: clampUnits(body.totalUnits),
       retry_count: typeof body.retryCount === "number" ? Math.max(0, Math.round(body.retryCount)) : 0,
       heartbeat_at: now,
       updated_at: now,
+      lease_id: null,
+      lease_until: null,
     };
 
     const { data, error } = await auth.client
       .from("cortex_generation_jobs")
       .upsert(row, { onConflict: "id" })
-      .select("id,status,stage,progress,retry_count,updated_at")
+      .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
       .single();
 
     if (error) return NextResponse.json({ error: "Unable to persist generation state." }, { status: 500 });
@@ -108,17 +116,23 @@ export async function PATCH(req: Request) {
     if (typeof body.status === "string") patch.status = body.status;
     if (typeof body.stage === "string") patch.stage = body.stage.slice(0, 80);
     if (typeof body.progress === "number") patch.progress = clampProgress(body.progress);
+    if (typeof body.completedUnits === "number") patch.completed_units = clampUnits(body.completedUnits);
+    if (typeof body.totalUnits === "number") patch.total_units = clampUnits(body.totalUnits);
     if (typeof body.retryCount === "number") patch.retry_count = Math.max(0, Math.round(body.retryCount));
     if (body.partial !== undefined) patch.partial = body.partial;
     if (body.result !== undefined) patch.result = body.result;
     if (body.error !== undefined) patch.error = body.error;
+
+    const leaseId = typeof body.leaseId === "string" && /^[0-9a-f-]{36}$/i.test(body.leaseId) ? body.leaseId : null;
+    if (leaseId) patch.lease_id = leaseId;
+    if (body.releaseLease === true) patch.lease_until = null;
 
     const { data, error } = await auth.client
       .from("cortex_generation_jobs")
       .update(patch)
       .eq("id", body.id)
       .eq("user_id", auth.user.id)
-      .select("id,status,stage,progress,retry_count,updated_at")
+      .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: "Unable to update generation state." }, { status: 500 });
