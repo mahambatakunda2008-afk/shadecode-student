@@ -127,13 +127,33 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
 
   // Production text generation goes through Vercel AI Gateway first. This removes
   // provider-specific roulette from the application and lets the gateway fail over
-  // when an inference provider is degraded. The model ID is a stable Google Gemini
-  // endpoint, not a preview/latest alias.
+  // when an inference provider is degraded.
   if (!media.length && process.env.AI_GATEWAY_API_KEY && canTry()) {
-    // openai/gpt-oss-120b is on the AI Gateway free tier (unlike Gemini 3.8, whose free-tier status
-    // is unconfirmed) and is a genuinely different vendor from the Gemini calls elsewhere in this
-    // chain, so a Gateway attempt doesn't just retry the same infrastructure that's already failing.
-    const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-oss-120b";
+    // Pinning a single model ID has already broken twice in a few hours: google/gemini-3.8-flash
+    // (original default, unconfirmed free) and openai/gpt-oss-120b (first fix, since vanished from
+    // Vercel's live catalog entirely). Rather than keep guessing one name, use Gateway's own native
+    // model-fallback feature (providerOptions.gateway.models), confirmed in Vercel's docs to work on
+    // this exact Chat Completions REST endpoint: Gateway itself tries each model in order and only
+    // the final one needs to fail for this whole attempt to fail. The fallback list is
+    // env-overridable (comma-separated) so a future catalog shift needs an env var, not a deploy.
+    //
+    // Primary: inclusionai/ling-3.0-flash-free. Verified 2026-09-30 against vercel.com/ai-gateway/
+    // models as genuinely $0/$0 priced (not just "covered by the monthly credit"), general-purpose
+    // (unlike its similarly-named sibling ling-3.0-flash-sante-free, which is healthcare-specialized
+    // and whose free period Vercel's changelog says ends 2026-10-04), and carrying the "-free" suffix
+    // Vercel's own docs describe as a stable naming convention for a durable listing. Different
+    // vendor from the Gemini calls later in this chain.
+    //
+    // Fallback: stealth/pixel-canary, the only other model confirmed $0/$0 on the live catalog at
+    // verification time. Note: "stealth" models are unlabeled/anonymized (the underlying model can
+    // change without notice) -- not ideal for student-facing content, so it is deliberately only a
+    // last resort here, used by Gateway solely if the general-purpose primary above fails outright.
+    // (Rejected: poolside/laguna-s-2.1-free -- a coding/agentic-terminal specialist model, a poor
+    // fit for lesson generation across non-CS subjects, and per Vercel's own launch announcement
+    // only "free for a limited time," not a durable listing like ling-3.0-flash-free.)
+    const gatewayModel = process.env.AI_GATEWAY_MODEL?.trim() || "inclusionai/ling-3.0-flash-free";
+    const gatewayFallbackModels = (process.env.AI_GATEWAY_FALLBACK_MODELS?.trim() || "stealth/pixel-canary")
+      .split(",").map(model => model.trim()).filter(Boolean);
     const text = await tryProvider("vercel-ai-gateway", gatewayModel, async timeout => {
       const res = await fetchWithTimeout("https://ai-gateway.vercel.sh/v1/chat/completions", {
         method: "POST",
@@ -145,6 +165,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           model: gatewayModel,
           messages: [{ role: "user", content: groundedPrompt }],
           max_tokens: maxTokens,
+          ...(gatewayFallbackModels.length ? { providerOptions: { gateway: { models: gatewayFallbackModels } } } : {}),
         }),
       }, timeout);
       if (!res.ok) throw new Error(`AI Gateway HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);

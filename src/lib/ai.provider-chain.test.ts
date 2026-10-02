@@ -80,20 +80,48 @@ describe("callAI provider fallback chain", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("defaults the Gateway model to a confirmed free-tier, non-Gemini model", async () => {
-    // Regression: the previous default (google/gemini-3.8-flash) was both unconfirmed as free-tier
-    // and the same vendor as the Gemini calls later in the chain, so a Gateway attempt didn't add
-    // real redundancy when Gemini itself was the thing failing. openai/gpt-oss-120b is confirmed on
-    // AI Gateway's free tier and is a different vendor.
+  it("sends Gateway's native model-fallback list, not just a single pinned model", async () => {
+    // Regression, corrected multiple times: pinning one model ID broke twice within hours
+    // (google/gemini-3.8-flash was unconfirmed free and the same vendor as the Gemini calls later
+    // in the chain; the replacement, openai/gpt-oss-120b, vanished from Vercel's live catalog
+    // entirely). A third candidate, poolside/laguna-s-2.1-free, was rejected before shipping: it's a
+    // coding/agentic-terminal specialist model (poor fit for non-CS lesson generation) and, per
+    // Vercel's own launch announcement, only "free for a limited time," not a durable listing. Rather
+    // than keep guessing one name, use Gateway's own providerOptions.gateway.models fallback
+    // (confirmed in Vercel's docs to work on this REST endpoint) so Gateway's own infrastructure
+    // absorbs a model being retired. Primary verified 2026-09-30 against vercel.com/ai-gateway/
+    // models as genuinely $0/$0 priced, general-purpose, and carrying the "-free" suffix Vercel's
+    // docs describe as a durable-listing convention -- unlike the similarly-named
+    // ling-3.0-flash-sante-free, a healthcare-specialized model whose free period ends 2026-10-04.
     vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
     fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a lesson from the gateway" } }] }));
     const { callAI } = await import("./ai");
     await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
     const [, init] = fetchMock.mock.calls[0];
     const body = JSON.parse((init as RequestInit).body as string);
-    expect(body.model).toBe("openai/gpt-oss-120b");
+    expect(body.model).toBe("inclusionai/ling-3.0-flash-free");
     expect(body.model).not.toMatch(/gemini/i);
+    expect(body.model).not.toContain("sante");
+    expect(body.providerOptions.gateway.models).toEqual(["stealth/pixel-canary"]);
+    expect(body.providerOptions.gateway.models).not.toContain("poolside/laguna-s-2.1-free");
+    // Each listed model is independently not a Gemini/time-limited/coding-specialist listing.
+    for (const model of body.providerOptions.gateway.models) {
+      expect(model).not.toMatch(/gemini/i);
+      expect(model).not.toContain("sante");
+      expect(model).not.toContain("laguna");
+    }
   });
+
+  it("lets AI_GATEWAY_FALLBACK_MODELS override the default fallback list (comma-separated)", async () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    vi.stubEnv("AI_GATEWAY_FALLBACK_MODELS", "vendor-a/model-one, vendor-b/model-two");
+    fetchMock.mockResolvedValue(jsonResponse({ choices: [{ message: { content: "a lesson from the gateway" } }] }));
+    const { callAI } = await import("./ai");
+    await callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.providerOptions.gateway.models).toEqual(["vendor-a/model-one", "vendor-b/model-two"]);
+  });
+
 
   it("tries OpenRouter after the Gateway and before Cloudflare, falling through on failure", async () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
