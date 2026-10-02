@@ -112,7 +112,7 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
     if (/^IF\b/.test(current)) {
       const elseIndex = elseForIf.get(i);
       const endIndex = endForIf.get(i);
-      const trueTarget = elseIndex ?? endIndex;
+      const trueTarget = nextIndex !== undefined && elseIndex === undefined ? nextIndex : elseIndex !== undefined ? elseIndex + 1 : endIndex !== undefined ? endIndex + 1 : nextIndex;
       const falseTarget = elseIndex !== undefined ? elseIndex + 1 : endIndex !== undefined ? endIndex + 1 : nextIndex;
       if (trueTarget !== undefined && !isControlMarker(lines[trueTarget]?.text.toUpperCase() ?? "")) add(nodes[i], nodes[trueTarget], "TRUE");
       if (falseTarget !== undefined && falseTarget < nodes.length) add(nodes[i], nodes[falseTarget], "FALSE");
