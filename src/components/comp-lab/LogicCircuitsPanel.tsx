@@ -5,6 +5,7 @@ import { Check, Link2, Plus, RotateCcw, Sparkles, Trash2, Zap } from "lucide-rea
 
 type Gate = "NOT" | "AND" | "OR" | "NAND" | "NOR" | "XOR";
 type GateNode = { id: number; gate: Gate; x: number; y: number };
+type TruthRow = { a: number; b?: number; out: number };
 const GATES: Gate[] = ["NOT", "AND", "OR", "NAND", "NOR", "XOR"];
 
 const truth = (gate: Gate, a: number, b = 0) => {
@@ -16,7 +17,7 @@ const truth = (gate: Gate, a: number, b = 0) => {
   return a !== b ? 1 : 0;
 };
 
-const rowsFor = (gate: Gate) => gate === "NOT"
+const rowsFor = (gate: Gate): TruthRow[] => gate === "NOT"
   ? [0, 1].map(a => ({ a, out: truth(gate, a) }))
   : [0, 0, 1, 1].map((a, i) => ({ a, b: i % 2, out: truth(gate, a, i % 2) }));
 
