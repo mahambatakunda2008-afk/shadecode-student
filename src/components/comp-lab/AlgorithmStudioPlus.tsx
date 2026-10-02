@@ -238,7 +238,7 @@ export default function AlgorithmStudioPlus() {
     const sheetHeight = 1480;
     const flow = svgRef.current;
     const flowMarkup = flow ? new XMLSerializer().serializeToString(flow.cloneNode(true) as SVGSVGElement) : "";
-    const flowInner = flowMarkup.match(/<svg[^>]*>([\\s\\S]*)<\\/svg>/i)?.[1] ?? "";
+    const flowInner = flowMarkup.match(/<svg[^>]*>([\s\S]*)<\/svg>/i)?.[1] ?? "";
     const codeMarkup = codeLines.map((line, index) => `<text x="70" y="${250 + index * lineHeight}" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="12" fill="#334155">${String(index + 1).padStart(2, "0")}  ${escapeXml(line)}</text>`).join("");
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${sheetWidth}" height="${sheetHeight}" viewBox="0 0 ${sheetWidth} ${sheetHeight}">
       <rect width="100%" height="100%" fill="#ffffff"/>
