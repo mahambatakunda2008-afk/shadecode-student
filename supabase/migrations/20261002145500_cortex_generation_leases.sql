@@ -15,7 +15,7 @@ create or replace function public.claim_cortex_generation_job(
 )
 returns table(claimed boolean, lease_until timestamptz, current_lease_id uuid)
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 declare
