@@ -151,12 +151,25 @@ function simplifyKMap(cells: Bit[]) {
   }).join(" OR ");
 }
 
+const KMAP_QUESTIONS: Bit[][] = [
+  [1, 1, 0, 0],
+  [0, 1, 1, 0],
+  [1, 0, 0, 1],
+  [1, 1, 1, 1],
+  [0, 0, 0, 0],
+];
+
 function KMapLab() {
   const [cells, setCells] = useState<Bit[]>([0,1,0,0]);
-  const [target, setTarget] = useState<Bit[]>([1,1,0,0]);
+  const [targetIndex, setTargetIndex] = useState(0);
+  const target = KMAP_QUESTIONS[targetIndex];
   const targetExpression = useMemo(() => simplifyKMap(target), [target]);
   const solved = cells.every((v,i) => v === target[i]);
   const currentExpression = useMemo(() => simplifyKMap(cells), [cells]);
+  const loadQuestion = (index: number) => {
+    setTargetIndex(index);
+    setCells([0, 0, 0, 0]);
+  };
 
   return (
     <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
@@ -167,8 +180,12 @@ function KMapLab() {
         <div className="mt-2 grid grid-cols-4 gap-2">{cells.map((value,i)=><button key={i} type="button" onClick={()=>setCells(c=>c.map((v,j)=>j===i?(v?0:1):v))} className={"rounded-xl border p-4 font-mono text-lg " + (value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]")}>{value}</button>)}</div>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Current simplified form</div><div className="mt-1 font-mono">{currentExpression}</div></div><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Target</div><div className="mt-1 font-mono">{targetExpression}</div></div></div>
-      <div className="mt-3 flex flex-wrap gap-2">{target.map((v,i)=><button key={i} type="button" onClick={()=>setTarget(t=>t.map((x,j)=>j===i?(x?0:1):x))} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-[9px]">Target {MAP_LABELS[i]}: {v}</button>)}</div>
-      {solved && <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-[10px] text-emerald-300"><Check className="mr-1 inline h-3.5 w-3.5" />Map matches the target.</div>}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-[9px] text-[var(--muted-foreground)]">Question {targetIndex + 1}/{KMAP_QUESTIONS.length}</span>
+        {KMAP_QUESTIONS.map((_, i) => <button key={i} type="button" onClick={() => loadQuestion(i)} className={"rounded-lg border px-2 py-1 text-[9px] " + (i === targetIndex ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]")}>Load {i + 1}</button>)}
+        <button type="button" onClick={() => setCells([0,0,0,0])} className="rounded-lg border border-[var(--card-border)] px-2 py-1 text-[9px]">Clear map</button>
+      </div>
+      {solved && <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-[10px] text-emerald-300"><Check className="mr-1 inline h-3.5 w-3.5" />Map matches the target. Simplified form: <span className="font-mono">{targetExpression}</span></div>}
     </div>
   );
 }
