@@ -6,6 +6,14 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
+function checkpointUnits(job: GenerationJob) {
+  const partial = job.partial && typeof job.partial === "object" ? job.partial as Record<string, unknown> : null;
+  return {
+    completedUnits: typeof partial?.completedUnits === "number" ? partial.completedUnits : undefined,
+    totalUnits: typeof partial?.totalUnits === "number" ? partial.totalUnits : undefined,
+  };
+}
+
 export async function syncDurableGenerationJob<TRequest, TResult>(
   token: string,
   job: GenerationJob<TRequest, TResult>,
@@ -14,11 +22,12 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
   if (!isBrowser() || !token || !job?.id) return false;
 
   try {
+    const units = checkpointUnits(job);
     const response = await fetch("/api/cortex/generation", {
       method: event === "created" ? "POST" : "PATCH",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${token}`,
+        authorization: \`Bearer \${token}\`,
       },
       body: JSON.stringify({
         event,
@@ -31,13 +40,14 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
         result: job.result,
         error: job.error ? { message: job.error } : null,
         progress: job.progress,
+        completedUnits: units.completedUnits,
+        totalUnits: units.totalUnits,
         retryCount: job.retryCount,
       }),
       keepalive: event !== "progress",
     });
     return response.ok;
   } catch {
-    // Browser-local generation must never become dependent on the durability endpoint.
     return false;
   }
 }
@@ -45,8 +55,8 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
 export async function getDurableGenerationJob(token: string, id: string) {
   if (!isBrowser() || !token || !id) return null;
   try {
-    const response = await fetch(`/api/cortex/generation?id=${encodeURIComponent(id)}`, {
-      headers: { authorization: `Bearer ${token}` },
+    const response = await fetch(\`/api/cortex/generation?id=\${encodeURIComponent(id)}\`, {
+      headers: { authorization: \`Bearer \${token}\` },
       cache: "no-store",
     });
     if (!response.ok) return null;
@@ -56,12 +66,11 @@ export async function getDurableGenerationJob(token: string, id: string) {
   }
 }
 
-
 export async function listDurableGenerationJobs(token: string) {
   if (!isBrowser() || !token) return [];
   try {
     const response = await fetch("/api/cortex/generation", {
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: \`Bearer \${token}\` },
       cache: "no-store",
     });
     if (!response.ok) return [];
