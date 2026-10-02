@@ -6,7 +6,7 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
-function checkpointUnits(job: GenerationJob) {
+function checkpointUnits<TRequest, TResult>(job: GenerationJob<TRequest, TResult>) {
   const partial = job.partial && typeof job.partial === "object" ? job.partial as Record<string, unknown> : null;
   return {
     completedUnits: typeof partial?.completedUnits === "number" ? partial.completedUnits : undefined,
