@@ -18,6 +18,7 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
   token: string,
   job: GenerationJob<TRequest, TResult>,
   event: DurableEvent,
+  options: { leaseId?: string; releaseLease?: boolean; heartbeatOnly?: boolean } = {},
 ) {
   if (!isBrowser() || !token || !job?.id) return false;
 
@@ -43,6 +44,9 @@ export async function syncDurableGenerationJob<TRequest, TResult>(
         completedUnits: units.completedUnits,
         totalUnits: units.totalUnits,
         retryCount: job.retryCount,
+        leaseId: options.leaseId,
+        releaseLease: options.releaseLease === true,
+        heartbeatOnly: options.heartbeatOnly === true,
       }),
       keepalive: event !== "progress",
     });
