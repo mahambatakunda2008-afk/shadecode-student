@@ -72,6 +72,24 @@ Autonomous improvement log maintained by Cortex Engine.
 
 ---
 
+## 2026-09-30 — Gateway model: moved from a single pinned name to Vercel's own fallback mechanism
+
+**Why:** pinning one model ID had already broken twice in hours (`google/gemini-3.8-flash`, unconfirmed free and the same vendor as the Gemini calls already failing in this chain; `openai/gpt-oss-120b`, which vanished from Vercel's live catalog entirely between messages). Guessing a third name would just repeat the pattern. The owner also couldn't use Groq (console wasn't accessible to them), so this stayed scoped to infrastructure they already have: Vercel, which hosts this project.
+
+**What changed (`src/lib/ai.ts`):** the Gateway call now uses Vercel's documented native fallback feature (`providerOptions.gateway.models`, confirmed in Vercel's docs to work on the plain Chat Completions REST endpoint, not just their SDK) so Gateway's own infrastructure absorbs a model being retired, not another hardcoded guess in this codebase. Both the primary and the fallback list are env-overridable (`AI_GATEWAY_MODEL`, `AI_GATEWAY_FALLBACK_MODELS`, comma-separated).
+
+**Model selection, verified against the live catalog (vercel.com/ai-gateway/models) and Vercel's own docs/changelog, not assumed:**
+- Primary: `inclusionai/ling-3.0-flash-free`. Genuinely $0/$0 priced (not just covered by the monthly credit), general-purpose, and the `-free` suffix is documented by Vercel as a stable naming convention for a durable listing.
+- **Considered and rejected before shipping:** `poolside/laguna-s-2.1-free`. It looked right from the catalog table alone (free pricing, "-free" suffix), but checking its actual model card showed it's a coding/agentic-terminal specialist (SWE-bench-tuned), a poor fit for generating lessons in Math, English, History, etc. — and Poolside's own Vercel launch announcement calls it free "for a limited time," contradicting the naming-pattern assumption. Caught before it reached a commit that shipped.
+- **Also rejected:** the healthcare-specialized sibling `ling-3.0-flash-sante-free` — Vercel's changelog states its free period ends 2026-10-04.
+- Fallback: `stealth/pixel-canary`, the only other model confirmed $0/$0 at verification time. Flagged honestly: "stealth" models are unlabeled and can change underlying model without notice, so this is deliberately only a last resort, used by Gateway solely if the general-purpose primary fails outright.
+
+**Verified:** `npm run verify` clean (tsc 0 errors, lint 0 errors, 747 tests). Tests assert the fallback list is sent, that it excludes the rejected Laguna/Gemini/healthcare models by name, and that `AI_GATEWAY_FALLBACK_MODELS` can override the default.
+
+**Still needs the owner:** enable AI Gateway in the Vercel dashboard and set `AI_GATEWAY_API_KEY` (unchanged from the prior entry — they already have an API key per their own dashboard, so this may be as simple as copying it into the project's environment variables). No sign-up, no card, $5/month recurring free credit. No-op in code until that key is set.
+
+---
+
 ## 2026-09-23 (2) — Switched the AI Gateway default to a confirmed-free, non-Gemini model
 
 **Context:** the owner cannot sign up for new third-party providers right now (Groq's console was not accessible to them). Since they already have a Vercel account for hosting this project, Vercel's own AI Gateway needs no new signup at all — just enabling it in their existing dashboard and generating a key there.
