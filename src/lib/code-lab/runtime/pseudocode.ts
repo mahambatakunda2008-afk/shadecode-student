@@ -189,7 +189,7 @@ export async function runPseudocode(request: RuntimeRequest): Promise<RuntimeRes
               const upper = Number(arrayMatch[2]);
               const size = upper >= lower ? upper - lower + 1 : 0;
               state.vars[match[1]] = Array.from({ length: size }, () => 0);
-            } else if (/\bBOOLEAN\b/i.test(type)) {
+            } else if (/\bARRAY\b/i.test(type)) {\n              // Support dynamic arrays in the learning runtime. Indexed assignment grows them.\n              state.vars[match[1]] = [];\n            } else if (/\bBOOLEAN\b/i.test(type)) {
               state.vars[match[1]] = false;
             } else if (/\bSTRING\b|\bCHAR\b/i.test(type)) {
               state.vars[match[1]] = "";
