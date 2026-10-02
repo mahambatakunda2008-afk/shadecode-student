@@ -375,13 +375,18 @@ export async function POST(req: Request) {
             .eq("lease_id", generationLeaseId)
             .gt("lease_until", new Date().toISOString());
         }
-        const durableComplete = await durableCompletionQuery;
+        const durableComplete = await durableCompletionQuery.select("id").maybeSingle();
 
         if (durableComplete.error) {
           console.warn("[LEARN] durable completion checkpoint failed", {
             generationJobId: durableJobId,
             error: durableComplete.error.message,
           });
+          if (generationLeaseId) {
+            return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+          }
+        } else if (generationLeaseId && !durableComplete.data) {
+          return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
         }
       }
 
