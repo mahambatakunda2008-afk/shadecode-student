@@ -70,8 +70,6 @@ function CircuitBuilder({ nodes, setNodes }: { nodes: GateNode[]; setNodes: Disp
     if (source.kind === "node" && source.id === selected) return;
     setConnections(current => ({ ...current, [selected + ":" + pin]: source }));
   };
-  const read = (source: { kind: "input" | "node"; name?: "A" | "B"; id?: number }, values: Record<number, number>) =>
-    source.kind === "input" ? (source.name === "A" ? a : b) : (values[source.id ?? -1] ?? 0);
   const evaluate = (av: number, bv: number) => {
     const values: Record<number, number> = {};
     for (const node of nodes) {
@@ -84,10 +82,7 @@ function CircuitBuilder({ nodes, setNodes }: { nodes: GateNode[]; setNodes: Disp
     return nodes.length ? values[nodes[nodes.length - 1].id] : 0;
   };
   const output = evaluate(a, b);
-  const verify = () => {
-    const rows = [0, 1].flatMap(av => [0, 1].map(bv => ({ av, bv, out: evaluate(av, bv) })));
-    return rows.every(row => row.out === evaluate(row.av, row.bv));
-  };
+  const circuitRows = [0, 1].flatMap(av => [0, 1].map(bv => ({ av, bv, out: evaluate(av, bv) })));
   return <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
     <div className="flex flex-wrap items-center gap-2"><div className="mr-auto"><div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Circuit builder</div><div className="mt-1 text-sm font-semibold">Connect gates, then simulate</div></div><button type="button" onClick={() => setNodes([])} className="inline-flex items-center gap-1 rounded-lg border border-[var(--card-border)] px-2 py-1 text-[9px]"><Trash2 className="h-3 w-3" />Clear</button></div>
     <div className="mt-3 flex flex-wrap gap-2">{GATES.map(gate => <button key={gate} type="button" onClick={() => add(gate)} className="rounded-lg border border-[var(--card-border)] px-2.5 py-1.5 text-[9px]"><Plus className="mr-1 inline h-3 w-3" />{gate}</button>)}</div>
@@ -107,7 +102,7 @@ function CircuitBuilder({ nodes, setNodes }: { nodes: GateNode[]; setNodes: Disp
         <div className="mt-2 space-y-1">{nodes.filter(node => node.id !== selected && node.id < (selected ?? Infinity)).map(node => <button key={node.id} type="button" onClick={() => connect({ kind: "node", id: node.id })} className="flex w-full items-center gap-2 rounded-lg border border-[var(--card-border)] p-2 text-left text-[9px]"><Link2 className="h-3 w-3" />G{nodes.findIndex(item => item.id === node.id) + 1} output → Pin {pin.toUpperCase()}</button>)}</div>
         <div className="mt-3 grid grid-cols-2 gap-2"><label className="text-[9px] text-slate-500">A<select value={a} onChange={event => setA(+event.target.value)} className="mt-1 w-full rounded-lg bg-black/20 p-2"><option value={0}>0</option><option value={1}>1</option></select></label><label className="text-[9px] text-slate-500">B<select value={b} onChange={event => setB(+event.target.value)} className="mt-1 w-full rounded-lg bg-black/20 p-2"><option value={0}>0</option><option value={1}>1</option></select></label></div>
         <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3"><div className="text-[9px] text-[var(--muted-foreground)]">Circuit output</div><div className="mt-1 font-mono text-xl font-bold">{output}</div></div>
-        {nodes.length > 0 && <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2 text-[9px] text-emerald-300">{verify() ? "Circuit evaluates deterministically across all four A/B combinations." : "Circuit verification found an inconsistent result."}</div>}
+        {nodes.length > 0 && <div className="mt-2 overflow-auto rounded-xl border border-[var(--card-border)]"><div className="border-b border-[var(--card-border)] px-3 py-2 text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Generated truth table</div><table className="w-full text-left text-[9px]"><thead><tr className="border-b border-[var(--card-border)]"><th className="px-3 py-2">A</th><th className="px-3 py-2">B</th><th className="px-3 py-2">Output</th></tr></thead><tbody>{circuitRows.map(row => <tr key={row.av + "-" + row.bv} className="border-b border-[var(--card-border)]/60"><td className="px-3 py-1.5 font-mono">{row.av}</td><td className="px-3 py-1.5 font-mono">{row.bv}</td><td className="px-3 py-1.5 font-mono font-semibold">{row.out}</td></tr>)}</tbody></table></div>}
       </div>
     </div>
     <p className="mt-2 text-[9px] leading-4 text-[var(--muted-foreground)]">The final gate is the circuit output. Connections can only point to earlier gates, preventing circular dependencies.</p>
