@@ -124,19 +124,51 @@ export async function PATCH(req: Request) {
     if (body.error !== undefined) patch.error = body.error;
 
     const leaseId = typeof body.leaseId === "string" && /^[0-9a-f-]{36}$/i.test(body.leaseId) ? body.leaseId : null;
+    const requiresLease = body.heartbeatOnly === true || Boolean(leaseId);
+    if (requiresLease && !leaseId) {
+      return NextResponse.json({ error: "Lease id required.", leaseConflict: true }, { status: 409 });
+    }
+
+    if (body.heartbeatOnly === true) {
+      const heartbeatAt = new Date().toISOString();
+      const { data, error } = await auth.client
+        .from("cortex_generation_jobs")
+        .update({ heartbeat_at: heartbeatAt, updated_at: heartbeatAt })
+        .eq("id", body.id)
+        .eq("user_id", auth.user.id)
+        .eq("lease_id", leaseId)
+        .gt("lease_until", heartbeatAt)
+        .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
+        .maybeSingle();
+      if (error) return NextResponse.json({ error: "Unable to renew generation lease." }, { status: 500 });
+      if (!data) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
+      return NextResponse.json({ job: data });
+    }
+
     if (leaseId) patch.lease_id = leaseId;
     if (body.releaseLease === true) patch.lease_until = null;
 
-    const { data, error } = await auth.client
+    let query = auth.client
       .from("cortex_generation_jobs")
       .update(patch)
       .eq("id", body.id)
-      .eq("user_id", auth.user.id)
+      .eq("user_id", auth.user.id);
+
+    if (leaseId) {
+      query = query.eq("lease_id", leaseId).gt("lease_until", new Date().toISOString());
+    }
+
+    const { data, error } = await query
       .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: "Unable to update generation state." }, { status: 500 });
-    if (!data) return NextResponse.json({ error: "Generation job not found." }, { status: 404 });
+    if (!data) {
+      return NextResponse.json({
+        error: leaseId ? "Generation lease is no longer valid." : "Generation job not found.",
+        ...(leaseId ? { leaseConflict: true } : {}),
+      }, { status: leaseId ? 409 : 404 });
+    }
     return NextResponse.json({ job: data });
   } catch {
     return NextResponse.json({ error: "Generation state unavailable." }, { status: 500 });
