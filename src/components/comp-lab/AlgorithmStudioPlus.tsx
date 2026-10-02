@@ -246,7 +246,7 @@ export default function AlgorithmStudioPlus() {
       <text x="70" y="98" font-family="Arial, sans-serif" font-size="13" fill="#64748b">Shadecode Student · Cambridge 9618 practice workspace</text>
       <rect x="70" y="122" width="980" height="82" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
       <text x="92" y="151" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">${escapeXml(lesson.title)}</text>
-      <text x="92" y="176" font-family="Arial, sans-serif" font-size="12" fill="#475569">${escapeXml(lesson.level)} · ${escapeXml(complexity.time)} · ${escapeXml(lesson.skill ?? "Algorithms")}</text>
+      <text x="92" y="176" font-family="Arial, sans-serif" font-size="12" fill="#475569">${escapeXml(lesson.level)} · ${escapeXml(complexity.time)} · Algorithms</text>
       <rect x="70" y="224" width="980" height="${codeHeight}" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
       <text x="92" y="250" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Pseudocode</text>
       ${codeMarkup}
