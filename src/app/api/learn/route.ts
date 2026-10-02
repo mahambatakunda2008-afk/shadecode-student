@@ -411,6 +411,24 @@ export async function POST(req: Request) {
         const partial = checkpoint.partial as Record<string, unknown>;
         if (Array.isArray(partial.blocks)) priorBlocks = partial.blocks.slice(-12) as LessonBlock[];
       }
+      if (checkpointCompleted >= expectedSectionCount) {
+        const partial = checkpoint.partial && typeof checkpoint.partial === "object"
+          ? checkpoint.partial as Record<string, unknown>
+          : {};
+        const completedBlocks = Array.isArray(partial.blocks) ? partial.blocks : [];
+        const completedTitle = typeof partial.title === "string"
+          ? partial.title
+          : `Cortex lesson: ${request.topic}`;
+        return NextResponse.json({
+          sectionIndex: expectedSectionCount - 1,
+          sectionCount: expectedSectionCount,
+          title: completedTitle,
+          blocks: completedBlocks,
+          partialBlocks: completedBlocks,
+          complete: true,
+          resumedFromCheckpoint: true,
+        });
+      }
 
       // The section lane must have a durable lesson draft before the first model
       // response arrives. This makes the initial section atomic with the job id
