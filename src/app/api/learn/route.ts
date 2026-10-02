@@ -347,7 +347,7 @@ export async function POST(req: Request) {
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
 
       if (durableJobId) {
-        const durableComplete = await supabase
+        let durableCompletionQuery = supabase
           .from("cortex_generation_jobs")
           .update({
             status: "complete",
@@ -369,9 +369,13 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", durableJobId)
-          .eq("user_id", user.id)
-          .eq("lease_id", generationLeaseId ?? undefined)
-          .gt("lease_until", generationLeaseId ? new Date().toISOString() : "1900-01-01T00:00:00.000Z");
+          .eq("user_id", user.id);
+        if (generationLeaseId) {
+          durableCompletionQuery = durableCompletionQuery
+            .eq("lease_id", generationLeaseId)
+            .gt("lease_until", new Date().toISOString());
+        }
+        const durableComplete = await durableCompletionQuery;
 
         if (durableComplete.error) {
           console.warn("[LEARN] durable completion checkpoint failed", {
