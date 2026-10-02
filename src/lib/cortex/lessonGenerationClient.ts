@@ -592,9 +592,7 @@ export async function startLessonGeneration(input: LessonGenerationInput, token:
     if (token) {
       const durableCreated = await syncDurableGenerationJob(token, job, "created");
       if (!durableCreated) {
-        updateGenerationJob(job.id, { status: "failed", error: "Cortex could not save the generation checkpoint. Please retry once." });
-        saveActiveId(null);
-        return getGenerationJobs().find(item => item.id === job.id) ?? job;
+        console.warn("[LEARN] durable generation checkpoint unavailable; continuing with server-side lesson persistence");
       }
       void runJob(job, token);
       return getGenerationJobs().find(item => item.id === job.id) ?? job;
@@ -610,9 +608,7 @@ export async function startLessonGeneration(input: LessonGenerationInput, token:
       if (recoveredToken) {
         const durableCreated = await syncDurableGenerationJob(recoveredToken, job, "created");
         if (!durableCreated) {
-          updateGenerationJob(job.id, { status: "failed", error: "Cortex could not save the generation checkpoint. Please retry once." });
-          saveActiveId(null);
-          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+          console.warn("[LEARN] durable generation checkpoint unavailable after session recovery; continuing with server-side lesson persistence");
         }
         void runJob(job, recoveredToken);
         return getGenerationJobs().find(item => item.id === job.id) ?? job;
