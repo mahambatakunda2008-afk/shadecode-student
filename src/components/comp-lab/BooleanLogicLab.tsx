@@ -159,6 +159,45 @@ const KMAP_QUESTIONS: Bit[][] = [
   [0, 0, 0, 0],
 ];
 
+type BooleanQuestion = { id: string; prompt: string; options: string[]; answer: string; explanation: string };
+
+const BOOLEAN_QUESTIONS: BooleanQuestion[] = [
+  { id: "bool-1", prompt: "Which expression is equivalent to NOT(A AND B)?", options: ["(NOT A) AND (NOT B)", "(NOT A) OR (NOT B)", "A OR B", "A AND B"], answer: "(NOT A) OR (NOT B)", explanation: "De Morgan's law changes AND into OR when the whole expression is complemented." },
+  { id: "bool-2", prompt: "Which expression is equivalent to NOT(A OR B)?", options: ["(NOT A) OR (NOT B)", "(NOT A) AND (NOT B)", "A XOR B", "A AND B"], answer: "(NOT A) AND (NOT B)", explanation: "De Morgan's law changes OR into AND when the whole expression is complemented." },
+  { id: "bool-3", prompt: "What is A AND 1 equivalent to?", options: ["0", "1", "A", "NOT A"], answer: "A", explanation: "AND with 1 leaves the value unchanged." },
+  { id: "bool-4", prompt: "What is A OR 0 equivalent to?", options: ["0", "1", "A", "NOT A"], answer: "A", explanation: "OR with 0 leaves the value unchanged." },
+  { id: "bool-5", prompt: "What is A XOR A equivalent to?", options: ["A", "NOT A", "0", "1"], answer: "0", explanation: "XOR is 1 only when inputs differ, so identical inputs produce 0." },
+];
+
+function BooleanQuestionLab() {
+  const [index, setIndex] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [score, setScore] = useState(0);
+  const [checked, setChecked] = useState(false);
+  const question = BOOLEAN_QUESTIONS[index];
+  const correct = answer === question.answer;
+  const next = () => {
+    setIndex(value => (value + 1) % BOOLEAN_QUESTIONS.length);
+    setAnswer("");
+    setChecked(false);
+  };
+  return (
+    <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div><div className="text-[9px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Boolean practice</div><div className="mt-1 text-sm font-semibold">Simplify & identify laws</div></div>
+        <span className="text-[9px] text-[var(--muted-foreground)]">Score {score}/{BOOLEAN_QUESTIONS.length}</span>
+      </div>
+      <p className="mt-3 text-xs leading-5">{question.prompt}</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">{question.options.map(option => <button key={option} type="button" onClick={() => { setAnswer(option); setChecked(false); }} className={"rounded-xl border p-3 text-left text-[10px] " + (answer === option ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]")}>{option}</button>)}</div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" disabled={!answer} onClick={() => { setChecked(true); if (correct) setScore(value => Math.min(value + 1, BOOLEAN_QUESTIONS.length)); }} className="rounded-xl bg-[var(--primary)] px-3 py-2 text-[10px] font-semibold text-white disabled:opacity-40">Check</button>
+        <button type="button" onClick={next} className="rounded-xl border border-[var(--card-border)] px-3 py-2 text-[10px]">Next</button>
+      </div>
+      {checked && <div className={"mt-3 rounded-xl border p-3 text-[10px] " + (correct ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300" : "border-red-500/20 bg-red-500/5 text-red-300")}><div className="font-semibold">{correct ? "Correct" : "Not yet"}</div><div className="mt-1">{question.explanation}</div></div>}
+    </div>
+  );
+}
+
 function KMapLab() {
   const [cells, setCells] = useState<Bit[]>([0,1,0,0]);
   const [targetIndex, setTargetIndex] = useState(0);
@@ -179,7 +218,7 @@ function KMapLab() {
         <div className="grid grid-cols-4 gap-2 text-center text-[9px] text-[var(--muted-foreground)]">{MAP_LABELS.map(label => <div key={label}>{label}</div>)}</div>
         <div className="mt-2 grid grid-cols-4 gap-2">{cells.map((value,i)=><button key={i} type="button" onClick={()=>setCells(c=>c.map((v,j)=>j===i?(v?0:1):v))} className={"rounded-xl border p-4 font-mono text-lg " + (value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]")}>{value}</button>)}</div>
       </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Current simplified form</div><div className="mt-1 font-mono">{currentExpression}</div></div><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Target</div><div className="mt-1 font-mono">{targetExpression}</div></div></div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Your simplified form</div><div className="mt-1 font-mono">{currentExpression}</div></div><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Target solution</div><div className="mt-1 font-mono">{solved ? targetExpression : "Hidden until the map matches"}</div></div></div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-[9px] text-[var(--muted-foreground)]">Question {targetIndex + 1}/{KMAP_QUESTIONS.length}</span>
         {KMAP_QUESTIONS.map((_, i) => <button key={i} type="button" onClick={() => loadQuestion(i)} className={"rounded-lg border px-2 py-1 text-[9px] " + (i === targetIndex ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]")}>Load {i + 1}</button>)}
@@ -224,5 +263,5 @@ function FlipFlopLab() {
 
 export default function BooleanLogicLab() {
   const [resetKey, setResetKey] = useState(0);
-  return <section key={resetKey} className="space-y-3"><BooleanLab /><KMapLab /><FlipFlopLab /><button type="button" onClick={()=>setResetKey(k=>k+1)} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 py-2 text-[10px] text-[var(--muted-foreground)]"><RotateCcw className="h-3.5 w-3.5" />Reset advanced logic labs</button></section>;
+  return <section key={resetKey} className="space-y-3"><BooleanLab /><BooleanQuestionLab /><KMapLab /><FlipFlopLab /><button type="button" onClick={()=>setResetKey(k=>k+1)} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 py-2 text-[10px] text-[var(--muted-foreground)]"><RotateCcw className="h-3.5 w-3.5" />Reset advanced logic labs</button></section>;
 }
