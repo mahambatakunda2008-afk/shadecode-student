@@ -16,7 +16,7 @@ import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridR
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 28_000;
+const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
 // The server owns section repair. The browser must not duplicate that retry loop.
 const MAX_CLOUD_ATTEMPTS = 1;
 let runningJobId: string | null = null;
@@ -586,4 +586,41 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
 }
 export function queueLessonGeneration(input: LessonGenerationInput) { return createGenerationJob("lesson", input); }
 export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => { const row = item as Record<string, unknown>; return row.kind === "lesson" && row.request && typeof row.request === "object"; }) as Record<string, unknown> | undefined; if (remote) { const restored: GenerationJob<LessonGenerationInput> = { id: String(remote.id), kind: "lesson", status: String(remote.status) as GenerationJobStatus, request: remote.request as LessonGenerationInput, result: remote.result, partial: remote.partial, progress: typeof remote.progress === "number" ? remote.progress : 0, createdAt: Date.parse(String(remote.created_at ?? "")) || Date.now(), updatedAt: Date.parse(String(remote.updated_at ?? "")) || Date.now(), error: remote.error && typeof remote.error === "object" ? String((remote.error as Record<string, unknown>).message ?? "") : undefined, retryCount: typeof remote.retry_count === "number" ? remote.retry_count : 0 }; job = restoreGenerationJob(restored); } } if (!job) return null; markInterruptedJobsForRetry(); return runJob(job, token); }
-export async function startLessonGeneration(input: LessonGenerationInput, token: string | null) { const job = queueLessonGeneration(input); if (token && isBrowser()) { void syncDurableGenerationJob(token, job, "created"); void runJob(job, token); return getGenerationJobs().find(item => item.id === job.id) ?? job; } if (isBrowser()) return saveLocalResult(job); return job; }
+export async function startLessonGeneration(input: LessonGenerationInput, token: string | null) {
+  const job = queueLessonGeneration(input);
+  if (isBrowser()) {
+    if (token) {
+      void syncDurableGenerationJob(token, job, "created");
+      void runJob(job, token);
+      return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    }
+
+    // A transient session-read timeout must not silently turn an online request
+    // into an IndexedDB-only lesson. Re-read the browser session once before
+    // choosing the offline lane.
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const { data } = await createClient().auth.getSession();
+      const recoveredToken = data.session?.access_token ?? null;
+      if (recoveredToken) {
+        void syncDurableGenerationJob(recoveredToken, job, "created");
+        void runJob(job, recoveredToken);
+        return getGenerationJobs().find(item => item.id === job.id) ?? job;
+      }
+    } catch {
+      // If the session cannot be recovered, the caller may still be genuinely offline.
+    }
+
+    if (navigator.onLine) {
+      updateGenerationJob(job.id, {
+        status: "failed",
+        error: "Your session could not be confirmed. Refresh once and try again.",
+      });
+      saveActiveId(null);
+      return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    }
+
+    return saveLocalResult(job);
+  }
+  return job;
+}
