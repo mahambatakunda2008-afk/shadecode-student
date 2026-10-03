@@ -1,3 +1,5 @@
+drop function if exists public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb);
+
 -- Atomically persist a lesson section and advance its durable Cortex checkpoint.
 create or replace function public.checkpoint_cortex_generation(
   p_job_id uuid,
