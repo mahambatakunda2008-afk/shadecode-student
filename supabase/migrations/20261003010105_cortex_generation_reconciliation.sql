@@ -38,6 +38,13 @@ begin
     select s.id into v_subject_id from public.subjects s where s.user_id=p_user_id and lower(trim(s.name))=lower(trim(v_subject_name)) order by s.id limit 1;
     if v_subject_id is null then return query select false,'missing_subject',greatest(0,v_job.completed_units),greatest(0,v_job.total_units),jsonb_array_length(v_blocks); return; end if;
   end if;
+  if v_has_lesson and jsonb_array_length(coalesce(v_lesson.blocks,'[]'::jsonb)) > jsonb_array_length(v_blocks) then
+    -- Never destroy a lesson that is ahead of the durable checkpoint. That
+    -- state needs explicit investigation rather than silent regression.
+    return query select false,'lesson_ahead_of_checkpoint',greatest(0,v_job.completed_units),greatest(0,v_job.total_units),jsonb_array_length(v_lesson.blocks);
+    return;
+  end if;
+
   if v_has_lesson then
     v_changed:=v_lesson.subject_id is distinct from v_subject_id or v_lesson.topic is distinct from v_topic or v_lesson.title is distinct from v_title
       or v_lesson.description is distinct from v_description or v_lesson.difficulty is distinct from v_difficulty or v_lesson.progress is distinct from v_progress or v_lesson.blocks is distinct from v_blocks;
