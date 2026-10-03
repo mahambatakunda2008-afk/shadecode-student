@@ -31,7 +31,7 @@ for (const topic of dataset.sections ?? []) {
           sourceDocument: "https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
           sourceDocumentId: SOURCE_ID,
           mappingStatus: "verified",
-          representation: "normalized_paraphrase",
+          representation: "official_extraction",
         },
       });
     }
