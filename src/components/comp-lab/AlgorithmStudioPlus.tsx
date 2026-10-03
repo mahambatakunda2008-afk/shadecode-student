@@ -104,10 +104,23 @@ function validateFlowchart(code: string, nodes: Node[], edges: Edge[]): FlowIssu
   const lines = cleanLines(code);
   const issues: FlowIssue[] = [];
   const stack: Array<{ kind: string; line: number }> = [];
+  const caseStack: Array<{ line: number; otherwiseSeen: boolean }> = [];
   lines.forEach(line => {
     const text = line.text.toUpperCase();
     if (text.startsWith("IF ")) stack.push({ kind: "IF", line: line.line });
-    else if (text === "ELSE") {
+    else if (text.startsWith("CASE ")) caseStack.push({ line: line.line, otherwiseSeen: false });
+    else if (text === "ENDCASE") {
+      if (!caseStack.length) issues.push({ severity: "error", message: "ENDCASE has no matching CASE.", line: line.line });
+      else caseStack.pop();
+    } else if (/^OTHERWISE\s*:/.test(text)) {
+      const current = caseStack[caseStack.length - 1];
+      if (!current) issues.push({ severity: "error", message: "OTHERWISE is outside a CASE statement.", line: line.line });
+      else if (current.otherwiseSeen) issues.push({ severity: "error", message: "CASE contains more than one OTHERWISE clause.", line: line.line });
+      else current.otherwiseSeen = true;
+    } else if (caseStack.length && /^.+\s*:\s*.+/.test(text)) {
+      const current = caseStack[caseStack.length - 1];
+      if (current.otherwiseSeen) issues.push({ severity: "error", message: "OTHERWISE must be the final CASE clause.", line: line.line });
+    } else if (text === "ELSE") {
       if (!stack.length || stack[stack.length - 1].kind !== "IF") issues.push({ severity: "error", message: "ELSE has no matching IF.", line: line.line });
     } else if (text.startsWith("END IF")) {
       if (!stack.length || stack[stack.length - 1].kind !== "IF") issues.push({ severity: "error", message: "END IF has no matching IF.", line: line.line });
@@ -127,6 +140,7 @@ function validateFlowchart(code: string, nodes: Node[], edges: Edge[]): FlowIssu
     }
   });
   stack.forEach(item => issues.push({ severity: "error", message: item.kind + " block is not closed.", line: item.line }));
+  caseStack.forEach(item => issues.push({ severity: "error", message: "CASE block is not closed.", line: item.line }));
   if (!lines.some(line => line.text.toUpperCase().startsWith("INPUT ")) && !lines.some(line => /^(OUTPUT|PRINT)\b/i.test(line.text))) {
     issues.push({ severity: "warning", message: "No INPUT or OUTPUT statement was detected. Check that the algorithm communicates its result." });
   }
