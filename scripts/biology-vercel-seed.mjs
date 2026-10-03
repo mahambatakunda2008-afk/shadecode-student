@@ -1,5 +1,5 @@
-if (process.env.VERCEL !== "1" || process.env.VERCEL_GIT_COMMIT_REF !== "curriculum/biology-9700-foundation-and-verifier") {
-  console.log("Biology preview seed skipped outside the dedicated Biology verification branch.");
+if (process.env.VERCEL !== "1") {
+  console.log("Biology Vercel seed skipped outside Vercel.");
   process.exit(0);
 }
 
