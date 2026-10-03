@@ -45,6 +45,17 @@ export async function GET(req: Request) {
       .limit(20);
     if (id) {
       if (!validId(id)) return NextResponse.json({ error: "Invalid generation id." }, { status: 400 });
+
+      // Reconcile before returning a durable job so a refresh can repair a
+      // missing/stale lesson row from the server-authoritative checkpoint.
+      const { error: reconcileError } = await auth.client.rpc("reconcile_cortex_generation_job", {
+        p_job_id: id,
+        p_user_id: auth.user.id,
+      });
+      if (reconcileError) {
+        console.warn("[CORTEX] generation reconciliation skipped", { id, error: reconcileError.message });
+      }
+
       query = query.eq("id", id);
     } else {
       query = query.in("status", ["queued", "warming", "generating", "partial"]);
