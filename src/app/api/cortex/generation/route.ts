@@ -45,6 +45,17 @@ export async function GET(req: Request) {
       .limit(20);
     if (id) {
       if (!validId(id)) return NextResponse.json({ error: "Invalid generation id." }, { status: 400 });
+
+      // Reconcile before returning a durable job so a refresh can repair a
+      // missing/stale lesson row from the server-authoritative checkpoint.
+      const { error: reconcileError } = await auth.client.rpc("reconcile_cortex_generation_job", {
+        p_job_id: id,
+        p_user_id: auth.user.id,
+      });
+      if (reconcileError) {
+        console.warn("[CORTEX] generation reconciliation skipped", { id, error: reconcileError.message });
+      }
+
       query = query.eq("id", id);
     } else {
       query = query.in("status", ["queued", "warming", "generating", "partial"]);
@@ -88,14 +99,39 @@ export async function POST(req: Request) {
       lease_until: null,
     };
 
+    // Creation is idempotent, but an existing durable job is authoritative.
+    // Never let a refresh/retry POST reset its lease, checkpoint, or result.
+    const { data: existing, error: lookupError } = await auth.client
+      .from("cortex_generation_jobs")
+      .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
+      .eq("id", body.id)
+      .eq("user_id", auth.user.id)
+      .maybeSingle();
+
+    if (lookupError) return NextResponse.json({ error: "Unable to inspect generation state." }, { status: 500 });
+    if (existing) return NextResponse.json({ job: existing, existing: true });
+
     const { data, error } = await auth.client
       .from("cortex_generation_jobs")
-      .upsert(row, { onConflict: "id" })
+      .insert(row)
       .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
       .single();
 
-    if (error) return NextResponse.json({ error: "Unable to persist generation state." }, { status: 500 });
-    return NextResponse.json({ job: data });
+    if (error) {
+      // Another request may have created the same job between the lookup and
+      // insert. Re-read it rather than overwriting the winner.
+      if (error.code === "23505") {
+        const { data: winner } = await auth.client
+          .from("cortex_generation_jobs")
+          .select("id,status,stage,progress,completed_units,total_units,retry_count,lease_until,updated_at")
+          .eq("id", body.id)
+          .eq("user_id", auth.user.id)
+          .maybeSingle();
+        if (winner) return NextResponse.json({ job: winner, existing: true });
+      }
+      return NextResponse.json({ error: "Unable to persist generation state." }, { status: 500 });
+    }
+    return NextResponse.json({ job: data, existing: false });
   } catch {
     return NextResponse.json({ error: "Generation state unavailable." }, { status: 500 });
   }
