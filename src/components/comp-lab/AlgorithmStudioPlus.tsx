@@ -15,260 +15,42 @@ type Project = { version: 4; code: string; nodes: Node[]; edges: Edge[]; tests: 
 type Tab = "learn" | "practice" | "write" | "flow" | "trace" | "tests" | "analyse" | "assess" | "logic";
 type Lesson = { id: string; title: string; level: "AS" | "A Level"; summary: string; rule: string; example: string; examTip: string };
 type Challenge = { id: string; title: string; level: "AS" | "A Level"; skill: string; prompt: string; hint: string; starter: string; tests: Test[]; hiddenTests: Test[] };
-type ChallengeProgress = { status: "attempted" | "mastered"; visiblePassed: number; visibleTotal: number; hiddenPassed: number; hiddenTotal: number; lastAttempt: number };
+type ChallengeProgress = { status: "attempted" | "mastered"; visiblePassed: number; visibleTotal: number; hiddenPassed: number; hiddenTotal: number; lastAttempt: number; };
 
 const lessons: Lesson[] = [
-  { id: "declarations", title: "Variables, constants & assignment", level: "AS", summary: "Declare data explicitly, then change variable values with the assignment operator.", rule: "DECLARE name : TYPE
-CONSTANT Name = literal
-name ← expression", example: "DECLARE Total : INTEGER
-CONSTANT PassMark = 50
-Total ← 0", examTip: "Use Cambridge keywords in upper-case. Identifiers are mixed case and the assignment arrow is ←." },
-  { id: "selection", title: "IF, ELSE & nested decisions", level: "AS", summary: "Choose a path by evaluating a Boolean condition.", rule: "IF condition THEN
-   ...
-ELSE
-   ...
-END IF", example: "IF Mark >= 50 THEN
-    OUTPUT \"Pass\"
-ELSE
-    OUTPUT \"Fail\"
-END IF", examTip: "Indent statements belonging to the branch. Nested IF statements are allowed." },
-  { id: "case", title: "CASE selection", level: "AS", summary: "Use CASE when one expression is compared against several known alternatives.", rule: "CASE OF Choice
-   value : statement
-   OTHERWISE : statement
-ENDCASE", example: "CASE OF Grade
-    \"A\" : OUTPUT \"Excellent\"
-    \"B\" : OUTPUT \"Good\"
-    OTHERWISE : OUTPUT \"Keep working\"
-ENDCASE", examTip: "CASE is useful when several branches depend on the same value." },
-  { id: "loops", title: "Choosing the right loop", level: "AS", summary: "Count-controlled, pre-condition and post-condition loops solve different problems.", rule: "FOR ... TO ...
-WHILE condition
-   ...
-ENDWHILE
-REPEAT
-   ...
-UNTIL condition", example: "FOR Count ← 1 TO 10
-    OUTPUT Count
-NEXT Count", examTip: "Be able to justify why one loop structure is more suitable than another." },
-  { id: "arrays", title: "One- and two-dimensional arrays", level: "AS", summary: "Arrays store fixed-length collections of the same data type and are accessed by index.", rule: "DECLARE Scores : ARRAY[1:30] OF INTEGER", example: "DECLARE Scores : ARRAY[1:5] OF INTEGER
-FOR Index ← 1 TO 5
-    INPUT Scores[Index]
-NEXT Index", examTip: "Watch the declared lower and upper bounds. Off-by-one errors are classic exam traps." },
-  { id: "procedures", title: "Procedures, functions & parameters", level: "AS", summary: "Break a solution into reusable modules and pass information through parameters.", rule: "PROCEDURE Name(...)
-   ...
-ENDPROCEDURE", example: "PROCEDURE ShowDouble(Value : INTEGER)
-    OUTPUT Value * 2
-ENDPROCEDURE", examTip: "Know the difference between a procedure, which performs an action, and a function, which returns a value." },
-  { id: "search", title: "Linear & binary search", level: "AS", summary: "Search algorithms trade simplicity for speed and depend on properties of the data.", rule: "Linear search checks items in sequence.
-Binary search repeatedly halves a sorted search space.", example: "Linear: O(n) worst case
-Binary: O(log n) worst case", examTip: "Binary search requires sorted data. State that requirement when explaining the algorithm." },
-  { id: "sort", title: "Sorting & algorithm choice", level: "AS", summary: "Sorting rearranges data according to a chosen ordering and algorithm.", rule: "Bubble sort repeatedly compares adjacent items and swaps them when out of order.", example: "FOR Pass ← 1 TO N - 1
-    FOR Index ← 1 TO N - Pass
-        IF Data[Index] > Data[Index + 1] THEN
-            // swap
-        END IF
-    NEXT Index
-NEXT Pass", examTip: "Trace the array after each important pass or swap. Do not jump straight to the final answer." },
-  { id: "recursion", title: "Recursion", level: "A Level", summary: "A recursive solution calls itself on a smaller problem and must have a base case.", rule: "Base case + recursive case + progress toward the base case.", example: "FUNCTION Factorial(N : INTEGER) RETURNS INTEGER
-    IF N = 0 THEN
-        RETURN 1
-    ELSE
-        RETURN N * Factorial(N - 1)
-    END IF
-ENDFUNCTION", examTip: "Every recursive call must move toward the base case." },
-  { id: "complexity", title: "Time & space complexity", level: "A Level", summary: "Estimate how resource use grows as the input size increases.", rule: "One pass → O(n)
-Nested loops → often O(n²)
-Halving search space → O(log n)", example: "FOR i ← 1 TO N
-    OUTPUT i
-NEXT i
-→ O(n)", examTip: "Explain the dominant operation and how often it can execute. Do not just state a Big-O label." },
-  { id: "thinking", title: "Computational thinking", level: "AS", summary: "Turn a real problem into a manageable algorithm using decomposition, abstraction and pattern recognition.", rule: "Decompose → identify data → abstract the problem → design steps → test.", example: "Problem: process 100 marks
-Decompose: input → validate → process → output
-Abstract: each mark can be handled by the same rule.", examTip: "Before writing pseudocode, identify inputs, outputs, processing and any assumptions." },
-  { id: "testing", title: "Dry runs & test data", level: "AS", summary: "Use traces and deliberate test data to expose syntax, logic and run-time faults.", rule: "Normal + abnormal + boundary/extreme data.", example: "Pass mark = 50
-Normal: 72
-Boundary: 50
-Boundary: 49
-Abnormal: -5", examTip: "A good test case is chosen because it probes a particular behaviour, not because it looks random." },
-  { id: "flow-design", title: "From flowchart to pseudocode", level: "AS", summary: "Translate a design into structured pseudocode while preserving the control flow.", rule: "Input/output → statements
-Process → assignments
-Decision → IF/CASE
-Loop → FOR/WHILE/REPEAT", example: "Flowchart decision: Mark >= 50?
-→ IF Mark >= 50 THEN ... ELSE ... ENDIF", examTip: "The pseudocode should implement the design, not invent a different algorithm halfway through." },
-  { id: "adt", title: "ADT thinking", level: "AS", summary: "Choose data structures by the operations the problem needs, not just by habit.", rule: "Stack → LIFO
-Queue → FIFO
-Linked list → linked nodes
-Tree → hierarchical search", example: "Undo operations → stack
-Printer jobs → queue
-Hierarchical data → tree", examTip: "Justify the structure using the operations and access pattern required by the problem." },
-  { id: "insertion-sort", title: "Insertion sort", level: "A Level", summary: "Build a sorted section by inserting each new item into its correct position.", rule: "Take next item → shift larger items → insert the item.", example: "Sorted: [2, 5, 8]
-Next: 6
-Shift 8 → insert 6 → [2, 5, 6, 8]", examTip: "Be ready to trace the array after each insertion and compare performance with bubble sort." },
+  { id: "declarations", title: "Variables, constants & assignment", level: "AS", summary: "Declare data explicitly, then change variable values with the assignment operator.", rule: "DECLARE name : TYPE\nCONSTANT Name = literal\nname ← expression", example: "DECLARE Total : INTEGER\nCONSTANT PassMark = 50\nTotal ← 0", examTip: "Use Cambridge keywords in upper-case. Identifiers are mixed case and the assignment arrow is ←." },
+  { id: "selection", title: "IF, ELSE & nested decisions", level: "AS", summary: "Choose a path by evaluating a Boolean condition.", rule: "IF condition THEN\n   ...\nELSE\n   ...\nEND IF", example: "IF Mark >= 50 THEN\n    OUTPUT \"Pass\"\nELSE\n    OUTPUT \"Fail\"\nEND IF", examTip: "Indent statements belonging to the branch. Nested IF statements are allowed." },
+  { id: "case", title: "CASE selection", level: "AS", summary: "Use CASE when one expression is compared against several known alternatives.", rule: "CASE OF Choice\n   value : statement\n   OTHERWISE : statement\nENDCASE", example: "CASE OF Grade\n    \"A\" : OUTPUT \"Excellent\"\n    \"B\" : OUTPUT \"Good\"\n    OTHERWISE : OUTPUT \"Keep working\"\nENDCASE", examTip: "CASE is useful when several branches depend on the same value." },
+  { id: "loops", title: "Choosing the right loop", level: "AS", summary: "Count-controlled, pre-condition and post-condition loops solve different problems.", rule: "FOR ... TO ...\nWHILE condition\n   ...\nENDWHILE\nREPEAT\n   ...\nUNTIL condition", example: "FOR Count ← 1 TO 10\n    OUTPUT Count\nNEXT Count", examTip: "Be able to justify why one loop structure is more suitable than another." },
+  { id: "arrays", title: "One- and two-dimensional arrays", level: "AS", summary: "Arrays store fixed-length collections of the same data type and are accessed by index.", rule: "DECLARE Scores : ARRAY[1:30] OF INTEGER", example: "DECLARE Scores : ARRAY[1:5] OF INTEGER\nFOR Index ← 1 TO 5\n    INPUT Scores[Index]\nNEXT Index", examTip: "Watch the declared lower and upper bounds. Off-by-one errors are classic exam traps." },
+  { id: "procedures", title: "Procedures, functions & parameters", level: "AS", summary: "Break a solution into reusable modules and pass information through parameters.", rule: "PROCEDURE Name(...)\n   ...\nENDPROCEDURE", example: "PROCEDURE ShowDouble(Value : INTEGER)\n    OUTPUT Value * 2\nENDPROCEDURE", examTip: "Know the difference between a procedure, which performs an action, and a function, which returns a value." },
+  { id: "search", title: "Linear & binary search", level: "AS", summary: "Search algorithms trade simplicity for speed and depend on properties of the data.", rule: "Linear search checks items in sequence.\nBinary search repeatedly halves a sorted search space.", example: "Linear: O(n) worst case\nBinary: O(log n) worst case", examTip: "Binary search requires sorted data. State that requirement when explaining the algorithm." },
+  { id: "sort", title: "Sorting & algorithm choice", level: "AS", summary: "Sorting rearranges data according to a chosen ordering and algorithm.", rule: "Bubble sort repeatedly compares adjacent items and swaps them when out of order.", example: "FOR Pass ← 1 TO N - 1\n    FOR Index ← 1 TO N - Pass\n        IF Data[Index] > Data[Index + 1] THEN\n            // swap\n        END IF\n    NEXT Index\nNEXT Pass", examTip: "Trace the array after each important pass or swap. Do not jump straight to the final answer." },
+  { id: "recursion", title: "Recursion", level: "A Level", summary: "A recursive solution calls itself on a smaller problem and must have a base case.", rule: "Base case + recursive case + progress toward the base case.", example: "FUNCTION Factorial(N : INTEGER) RETURNS INTEGER\n    IF N = 0 THEN\n        RETURN 1\n    ELSE\n        RETURN N * Factorial(N - 1)\n    END IF\nENDFUNCTION", examTip: "Every recursive call must move toward the base case." },
+  { id: "complexity", title: "Time & space complexity", level: "A Level", summary: "Estimate how resource use grows as the input size increases.", rule: "One pass → O(n)\nNested loops → often O(n²)\nHalving search space → O(log n)", example: "FOR i ← 1 TO N\n    OUTPUT i\nNEXT i\n→ O(n)", examTip: "Explain the dominant operation and how often it can execute. Do not just state a Big-O label." },
+  { id: "thinking", title: "Computational thinking", level: "AS", summary: "Turn a real problem into a manageable algorithm using decomposition, abstraction and pattern recognition.", rule: "Decompose → identify data → abstract the problem → design steps → test.", example: "Problem: process 100 marks\nDecompose: input → validate → process → output\nAbstract: each mark can be handled by the same rule.", examTip: "Before writing pseudocode, identify inputs, outputs, processing and any assumptions." },
+  { id: "testing", title: "Dry runs & test data", level: "AS", summary: "Use traces and deliberate test data to expose syntax, logic and run-time faults.", rule: "Normal + abnormal + boundary/extreme data.", example: "Pass mark = 50\nNormal: 72\nBoundary: 50\nBoundary: 49\nAbnormal: -5", examTip: "A good test case is chosen because it probes a particular behaviour, not because it looks random." },
+  { id: "flow-design", title: "From flowchart to pseudocode", level: "AS", summary: "Translate a design into structured pseudocode while preserving the control flow.", rule: "Input/output → statements\nProcess → assignments\nDecision → IF/CASE\nLoop → FOR/WHILE/REPEAT", example: "Flowchart decision: Mark >= 50?\n→ IF Mark >= 50 THEN ... ELSE ... ENDIF", examTip: "The pseudocode should implement the design, not invent a different algorithm halfway through." },
+  { id: "adt", title: "ADT thinking", level: "AS", summary: "Choose data structures by the operations the problem needs, not just by habit.", rule: "Stack → LIFO\nQueue → FIFO\nLinked list → linked nodes\nTree → hierarchical search", example: "Undo operations → stack\nPrinter jobs → queue\nHierarchical data → tree", examTip: "Justify the structure using the operations and access pattern required by the problem." },
+  { id: "insertion-sort", title: "Insertion sort", level: "A Level", summary: "Build a sorted section by inserting each new item into its correct position.", rule: "Take next item → shift larger items → insert the item.", example: "Sorted: [2, 5, 8]\nNext: 6\nShift 8 → insert 6 → [2, 5, 6, 8]", examTip: "Be ready to trace the array after each insertion and compare performance with bubble sort." },
 ];
 
 const challenges: Challenge[] = [
-  { id: "grade", title: "Grade a mark", level: "AS", skill: "Selection", prompt: "INPUT a mark. Output Pass when the mark is at least 50, otherwise output Fail.", hint: "Use INPUT Mark, then IF Mark >= 50 THEN.", starter: "DECLARE Mark : INTEGER
-INPUT Mark
-// write your IF statement here", tests: [{ id: "t1", input: "72", expected: "Pass" }, { id: "t2", input: "49", expected: "Fail" }, { id: "t3", input: "50", expected: "Pass" }] , hiddenTests: [{ id: "h1", input: "0", expected: "Fail" }, { id: "h2", input: "51", expected: "Pass" }]},
-  { id: "largest", title: "Find the largest of three", level: "AS", skill: "Selection + variables", prompt: "INPUT three integers and OUTPUT the largest value.", hint: "Keep a Largest variable and compare each new value against it.", starter: "DECLARE A : INTEGER
-DECLARE B : INTEGER
-DECLARE C : INTEGER
-DECLARE Largest : INTEGER
-INPUT A
-INPUT B
-INPUT C
-// complete the algorithm", tests: [{ id: "t1", input: "4
-9
-2", expected: "9" }, { id: "t2", input: "12
-3
-12", expected: "12" }] , hiddenTests: [{ id: "h1", input: "-5
--2
--9", expected: "-2" }, { id: "h2", input: "7
-7
-3", expected: "7" }]},
-  { id: "count-positive", title: "Count positive values", level: "AS", skill: "Iteration + selection", prompt: "INPUT 5 integers and OUTPUT how many are greater than zero.", hint: "Initialise Count to zero. Repeat five times and increment it when the input is positive.", starter: "DECLARE Count : INTEGER
-DECLARE Number : INTEGER
-Count ← 0
-FOR Index ← 1 TO 5
-    INPUT Number
-    // decide whether to increment Count
-NEXT Index
-OUTPUT Count", tests: [{ id: "t1", input: "2
--1
-5
-0
-7", expected: "3" }, { id: "t2", input: "-2
--1
-0
-0
--7", expected: "0" }] , hiddenTests: [{ id: "h1", input: "1
-2
-3
-4
-5", expected: "5" }, { id: "h2", input: "-1
-0
--3
-0
--5", expected: "0" }]},
-  { id: "linear-search", title: "Linear search", level: "AS", skill: "Arrays + searching", prompt: "Search a five-item integer array for a target and OUTPUT the index if found, otherwise OUTPUT -1.", hint: "Start at the lower bound and stop when you find the target. Keep a position or found flag.", starter: "DECLARE Data : ARRAY[1:5] OF INTEGER
-DECLARE Target : INTEGER
-DECLARE Position : INTEGER
-DECLARE Found : BOOLEAN
-Found ← FALSE
-Position ← -1
-// INPUT the five values, then Target
-// write the search
-OUTPUT Position", tests: [{ id: "t1", input: "3
-8
-2
-9
-4
-9", expected: "4" }, { id: "t2", input: "3
-8
-2
-9
-4
-7", expected: "-1" }] , hiddenTests: [{ id: "h1", input: "7
-8
-2
-9
-4
-7", expected: "1" }, { id: "h2", input: "3
-8
-2
-9
-4
-6", expected: "-1" }]},
-  { id: "binary-search", title: "Binary search", level: "A Level", skill: "Searching + efficiency", prompt: "Write a binary search for a sorted five-item array. OUTPUT the index when found, otherwise -1.", hint: "Maintain Lower and Upper bounds. Recalculate Mid and discard half the search space after each comparison.", starter: "DECLARE Data : ARRAY[1:5] OF INTEGER
-DECLARE Target : INTEGER
-DECLARE Lower : INTEGER
-DECLARE Upper : INTEGER
-DECLARE Mid : INTEGER
-DECLARE Position : INTEGER
-Lower ← 1
-Upper ← 5
-Position ← -1
-// INPUT sorted values, then Target
-// write the search
-OUTPUT Position", tests: [{ id: "t1", input: "2
-5
-9
-14
-20
-14", expected: "4" }, { id: "t2", input: "2
-5
-9
-14
-20
-7", expected: "-1" }] , hiddenTests: [{ id: "h1", input: "2
-5
-9
-14
-20
-2", expected: "1" }, { id: "h2", input: "2
-5
-9
-14
-20
-20", expected: "5" }, { id: "h3", input: "2
-5
-9
-14
-20
-7", expected: "-1" }]},
-  { id: "bubble-sort", title: "Bubble sort", level: "A Level", skill: "Sorting + arrays", prompt: "Sort five integers into ascending order using bubble sort and output the result.", hint: "Use nested loops. Compare adjacent elements and swap when the left value is larger.", starter: "DECLARE Data : ARRAY[1:5] OF INTEGER
-DECLARE Temp : INTEGER
-// INPUT five values
-// write the bubble sort
-// OUTPUT the sorted array", tests: [{ id: "t1", input: "5
-2
-9
-1
-4", expected: "1
-2
-4
-5
-9" }, { id: "t2", input: "1
-1
-1
-1
-1", expected: "1
-1
-1
-1
-1" }] , hiddenTests: [{ id: "h1", input: "9
-1
-5
-1
-7", expected: "1
-1
-5
-7
-9" }, { id: "h2", input: "-3
-8
-0
--1
-4", expected: "-3
--1
-0
-4
-8" }]},
+  { id: "grade", title: "Grade a mark", level: "AS", skill: "Selection", prompt: "INPUT a mark. Output Pass when the mark is at least 50, otherwise output Fail.", hint: "Use INPUT Mark, then IF Mark >= 50 THEN.", starter: "DECLARE Mark : INTEGER\nINPUT Mark\n// write your IF statement here", tests: [{ id: "t1", input: "72", expected: "Pass" }, { id: "t2", input: "49", expected: "Fail" }, { id: "t3", input: "50", expected: "Pass" }] , hiddenTests: [{ id: "h1", input: "0", expected: "Fail" }, { id: "h2", input: "51", expected: "Pass" }]},
+  { id: "largest", title: "Find the largest of three", level: "AS", skill: "Selection + variables", prompt: "INPUT three integers and OUTPUT the largest value.", hint: "Keep a Largest variable and compare each new value against it.", starter: "DECLARE A : INTEGER\nDECLARE B : INTEGER\nDECLARE C : INTEGER\nDECLARE Largest : INTEGER\nINPUT A\nINPUT B\nINPUT C\n// complete the algorithm", tests: [{ id: "t1", input: "4\n9\n2", expected: "9" }, { id: "t2", input: "12\n3\n12", expected: "12" }] , hiddenTests: [{ id: "h1", input: "-5\n-2\n-9", expected: "-2" }, { id: "h2", input: "7\n7\n3", expected: "7" }]},
+  { id: "count-positive", title: "Count positive values", level: "AS", skill: "Iteration + selection", prompt: "INPUT 5 integers and OUTPUT how many are greater than zero.", hint: "Initialise Count to zero. Repeat five times and increment it when the input is positive.", starter: "DECLARE Count : INTEGER\nDECLARE Number : INTEGER\nCount ← 0\nFOR Index ← 1 TO 5\n    INPUT Number\n    // decide whether to increment Count\nNEXT Index\nOUTPUT Count", tests: [{ id: "t1", input: "2\n-1\n5\n0\n7", expected: "3" }, { id: "t2", input: "-2\n-1\n0\n0\n-7", expected: "0" }] , hiddenTests: [{ id: "h1", input: "1\n2\n3\n4\n5", expected: "5" }, { id: "h2", input: "-1\n0\n-3\n0\n-5", expected: "0" }]},
+  { id: "linear-search", title: "Linear search", level: "AS", skill: "Arrays + searching", prompt: "Search a five-item integer array for a target and OUTPUT the index if found, otherwise OUTPUT -1.", hint: "Start at the lower bound and stop when you find the target. Keep a position or found flag.", starter: "DECLARE Data : ARRAY[1:5] OF INTEGER\nDECLARE Target : INTEGER\nDECLARE Position : INTEGER\nDECLARE Found : BOOLEAN\nFound ← FALSE\nPosition ← -1\n// INPUT the five values, then Target\n// write the search\nOUTPUT Position", tests: [{ id: "t1", input: "3\n8\n2\n9\n4\n9", expected: "4" }, { id: "t2", input: "3\n8\n2\n9\n4\n7", expected: "-1" }] , hiddenTests: [{ id: "h1", input: "7\n8\n2\n9\n4\n7", expected: "1" }, { id: "h2", input: "3\n8\n2\n9\n4\n6", expected: "-1" }]},
+  { id: "binary-search", title: "Binary search", level: "A Level", skill: "Searching + efficiency", prompt: "Write a binary search for a sorted five-item array. OUTPUT the index when found, otherwise -1.", hint: "Maintain Lower and Upper bounds. Recalculate Mid and discard half the search space after each comparison.", starter: "DECLARE Data : ARRAY[1:5] OF INTEGER\nDECLARE Target : INTEGER\nDECLARE Lower : INTEGER\nDECLARE Upper : INTEGER\nDECLARE Mid : INTEGER\nDECLARE Position : INTEGER\nLower ← 1\nUpper ← 5\nPosition ← -1\n// INPUT sorted values, then Target\n// write the search\nOUTPUT Position", tests: [{ id: "t1", input: "2\n5\n9\n14\n20\n14", expected: "4" }, { id: "t2", input: "2\n5\n9\n14\n20\n7", expected: "-1" }] , hiddenTests: [{ id: "h1", input: "2\n5\n9\n14\n20\n2", expected: "1" }, { id: "h2", input: "2\n5\n9\n14\n20\n20", expected: "5" }, { id: "h3", input: "2\n5\n9\n14\n20\n7", expected: "-1" }]},
+  { id: "bubble-sort", title: "Bubble sort", level: "A Level", skill: "Sorting + arrays", prompt: "Sort five integers into ascending order using bubble sort and output the result.", hint: "Use nested loops. Compare adjacent elements and swap when the left value is larger.", starter: "DECLARE Data : ARRAY[1:5] OF INTEGER\nDECLARE Temp : INTEGER\n// INPUT five values\n// write the bubble sort\n// OUTPUT the sorted array", tests: [{ id: "t1", input: "5\n2\n9\n1\n4", expected: "1\n2\n4\n5\n9" }, { id: "t2", input: "1\n1\n1\n1\n1", expected: "1\n1\n1\n1\n1" }] , hiddenTests: [{ id: "h1", input: "9\n1\n5\n1\n7", expected: "1\n1\n5\n7\n9" }, { id: "h2", input: "-3\n8\n0\n-1\n4", expected: "-3\n-1\n0\n4\n8" }]},
 ];
 
-const starter = `// Build your algorithm here
-DECLARE Number : INTEGER
-INPUT Number
-IF Number MOD 2 = 0 THEN
-    OUTPUT "Even"
-ELSE
-    OUTPUT "Odd"
-ENDIF`;
+const starter = `// Build your algorithm here\nDECLARE Number : INTEGER\nINPUT Number\nIF Number MOD 2 = 0 THEN\n    OUTPUT "Even"\nELSE\n    OUTPUT "Odd"\nENDIF`;
 const kinds: Kind[] = ["start", "end", "process", "input", "output", "decision"];
 const labels: Record<Kind, string> = { start: "START", end: "END", process: "PROCESS", input: "INPUT", output: "OUTPUT", decision: "DECISION" };
 const colors: Record<Kind, string> = { start: "#22c55e", end: "#ef4444", process: "#60a5fa", input: "#a78bfa", output: "#a78bfa", decision: "#f59e0b" };
 const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
-function cleanLines(code: string) { return code.split(/\r?
-/).map((raw, index) => ({ raw, text: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 })).filter(x => x.text).slice(0, 80); }
+function cleanLines(code: string) { return code.split(/\r?\n/).map((raw, index) => ({ raw, text: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 })).filter(x => x.text).slice(0, 80); }
 function inferKind(text: string, index: number, total: number): Kind { const s = text.toUpperCase(); if (index === 0) return "start"; if (index === total - 1 || /^(END|RETURN)\b/.test(s)) return "end"; if (/^(IF|WHILE|FOR|REPEAT|CASE)\b/.test(s)) return "decision"; if (/^INPUT\b/.test(s)) return "input"; if (/^(OUTPUT|PRINT)\b/.test(s)) return "output"; return "process"; }
 function buildNodes(code: string): Node[] { const lines = cleanLines(code); if (!lines.length) return [{ id: uid("node"), kind: "start", text: "START", x: 380, y: 60, line: 1 }, { id: uid("node"), kind: "end", text: "END", x: 380, y: 180, line: 2 }]; return lines.map((x, i) => ({ id: uid("node"), kind: inferKind(x.text, i, lines.length), text: x.text, x: 380, y: 55 + i * 82, line: x.line })); }
 function buildEdges(code: string, nodes: Node[]): Edge[] {
@@ -429,15 +211,12 @@ export default function AlgorithmStudioPlus() {
     return { time: "O(1) candidate", reason: "No dominant loop is visible in the current editor. Check whether called procedures change this." };
   }, [code]);
 
-  useEffect(() => {
-    try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (raw) { const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } } catch { /* ignore invalid local draft */ }
-    try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-challenge-progress.v1"); if (!raw) return; const parsed = JSON.parse(raw) as Record<string, ChallengeProgress>; if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) setChallengeProgress(parsed); } catch { /* ignore invalid challenge progress */ }
-  }, []);
+  useEffect(() => { try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-challenge-progress.v1"); if (!raw) return; const parsed = JSON.parse(raw) as Record<string, ChallengeProgress>; if (parsed && typeof parsed === "object") setChallengeProgress(parsed); } catch { /* ignore invalid mastery data */ } }, []);
+  useEffect(() => { localStorage.setItem("shadecode.comp-lab.algorithm-challenge-progress.v1", JSON.stringify(challengeProgress)); }, [challengeProgress]);
 
-  useEffect(() => { try { localStorage.setItem("shadecode.comp-lab.algorithm-challenge-progress.v1", JSON.stringify(challengeProgress)); } catch { /* localStorage may be unavailable or full */ } }, [challengeProgress]);
+  useEffect(() => { try { const raw = localStorage.getItem("shadecode.comp-lab.algorithm-studio"); if (!raw) return; const project = JSON.parse(raw) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { /* ignore invalid local draft */ } }, []);
 
-  const trace = useMemo(() => { const marker = traceText.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = traceText.slice(marker).split(/\r?
-/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [traceText]);
+  const trace = useMemo(() => { const marker = traceText.indexOf("TRACE TABLE"); if (marker < 0) return []; const rows = traceText.slice(marker).split(/\r?\n/).filter(row => row.trim().startsWith("|")); if (rows.length < 3) return []; const headers = rows[0].split("|").map(x => x.trim()).filter(Boolean); return rows.slice(2).map(row => row.split("|").map(x => x.trim()).filter(Boolean)).map(cells => headers.map((header, index) => [header, cells[index] ?? ""] as const)); }, [traceText]);
 
   const save = () => { const project: Project = { version: 4, code, nodes, edges, tests }; localStorage.setItem("shadecode.comp-lab.algorithm-studio", JSON.stringify(project)); setSaved(true); window.setTimeout(() => setSaved(false), 1400); };
   const regenerate = () => { const nextNodes = buildNodes(code); setNodes(nextNodes); setEdges(buildEdges(code, nextNodes)); setTab("flow"); };
@@ -452,14 +231,11 @@ export default function AlgorithmStudioPlus() {
         language: "pseudocode",
         code,
         entryFile: "main.pseudo",
-        inputs: inputs.split(/\r?
-/).filter(Boolean),
+        inputs: inputs.split(/\r?\n/).filter(Boolean),
         timeoutMs: 5000,
       });
-      const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("
-").trim();
-      const trace = result.events.filter(event => event.type === "trace").map(event => event.text).join("
-");
+      const stdout = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
+      const trace = result.events.filter(event => event.type === "trace").map(event => event.text).join("\n");
       setOutput(stdout || (result.exitCode === 0 ? "Algorithm completed with no output." : "Algorithm failed."));
       setTraceText(trace);
       setDiagnostics(result.diagnostics.map(diagnostic => `Line ${diagnostic.line ?? "?"}: ${diagnostic.message}`));
@@ -486,12 +262,10 @@ export default function AlgorithmStudioPlus() {
             language: "pseudocode",
             code,
             entryFile: "main.pseudo",
-            inputs: test.input.split(/\r?
-/),
+            inputs: test.input.split(/\r?\n/),
             timeoutMs: 5000,
           });
-          const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("
-").trim();
+          const actual = result.events.filter(event => event.type === "stdout").map(event => event.text).join("\n").trim();
           const error = result.diagnostics.map(diagnostic => diagnostic.message).join("; ") || undefined;
           results.push({ id: test.id, passed: result.exitCode === 0 && actual === test.expected.trim(), input: test.input, expected: test.expected.trim(), actual, error, hidden: test.id.startsWith("hidden-") });
         } catch (error) {
@@ -499,16 +273,22 @@ export default function AlgorithmStudioPlus() {
         }
       }
       setTestResults(results);
-      if (activeChallengeId) {
-        const visibleResults = results.filter(item => !item.hidden && challengeTestIds.includes(item.id));
-        const hiddenResults = results.filter(item => item.hidden);
-        const visiblePassed = visibleResults.filter(item => item.passed).length;
+      const activeVisible = activeChallengeId ? results.filter(item => challengeTestIds.includes(item.id)) : [];
+      const hiddenResults = activeChallengeId ? results.filter(item => item.hidden) : [];
+      if (activeChallengeId && activeVisible.length === challengeTestIds.length && activeVisible.length > 0) {
+        const visiblePassed = activeVisible.filter(item => item.passed).length;
         const hiddenPassed = hiddenResults.filter(item => item.passed).length;
-        const mastered = visibleResults.length === challengeTestIds.length && visibleResults.every(item => item.passed) && hiddenResults.length === challenge.hiddenTests.length && hiddenResults.every(item => item.passed);
-        setChallengeProgress(current => ({ ...current, [activeChallengeId]: { status: mastered ? "mastered" : "attempted", visiblePassed, visibleTotal: challengeTestIds.length, hiddenPassed, hiddenTotal: challenge.hiddenTests.length, lastAttempt: Date.now() } }));
+        const progress: ChallengeProgress = {
+          status: visiblePassed === activeVisible.length && hiddenPassed === hiddenResults.length ? "mastered" : "attempted",
+          visiblePassed,
+          visibleTotal: activeVisible.length,
+          hiddenPassed,
+          hiddenTotal: hiddenResults.length,
+          lastAttempt: Date.now(),
+        };
+        setChallengeProgress(current => ({ ...current, [activeChallengeId]: progress }));
       }
-      setOutput(results.map(item => `${item.passed ? "PASS" : "FAIL"} | expected: ${item.expected} | actual: ${item.actual}`).join("
-"));
+      setOutput(results.map(item => `${item.passed ? "PASS" : "FAIL"} | expected: ${item.expected} | actual: ${item.actual}`).join("\n"));
       setTab("tests");
     } finally {
       setRunning(false);
@@ -581,8 +361,7 @@ export default function AlgorithmStudioPlus() {
   };
   const exportStudySheet = async (format: "svg" | "png") => {
     const escapeXml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    const codeLines = code.split(/\r?
-/);
+    const codeLines = code.split(/\r?\n/);
     const lineHeight = 18;
     const codeHeight = Math.max(120, Math.min(620, codeLines.length * lineHeight + 40));
     const sheetWidth = 1120;
@@ -633,20 +412,21 @@ export default function AlgorithmStudioPlus() {
   };
 
   const loadChallenge = (item: Challenge) => {
-    const loadedTests = item.tests.map(test => ({ ...test, id: uid("challenge-test") }));
+    const freshTests = item.tests.map(test => ({ ...test, id: uid("challenge-test") }));
     setChallengeId(item.id);
     setActiveChallengeId(item.id);
-    setChallengeTestIds(loadedTests.map(test => test.id));
+    setChallengeTestIds(freshTests.map(test => test.id));
     setCode(item.starter);
-    setTests(loadedTests);
+    setTests(freshTests);
     setInputs(item.tests[0]?.input ?? "");
     setOutput("");
     setTraceText("");
     setDiagnostics([]);
+    setTestResults([]);
     setTab("write");
   };
 
-  const importProject = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const project = JSON.parse(String(reader.result)) as Partial<Project>; setActiveChallengeId(null); setChallengeTestIds([]); if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { setDiagnostics(["Could not import this algorithm project."]); } }; reader.readAsText(file); event.target.value = ""; };
+  const importProject = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const project = JSON.parse(String(reader.result)) as Partial<Project>; if (project.code) setCode(project.code); if (Array.isArray(project.nodes)) setNodes(project.nodes); if (Array.isArray(project.edges)) setEdges(project.edges); if (Array.isArray(project.tests)) setTests(project.tests); } catch { setDiagnostics(["Could not import this algorithm project."]); } }; reader.readAsText(file); event.target.value = ""; };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[#090d14] text-slate-200 shadow-xl">
@@ -672,8 +452,30 @@ export default function AlgorithmStudioPlus() {
     </div>}
 
     {tab === "practice" && <div className="grid lg:grid-cols-[310px_minmax(0,1fr)]">
-      <aside className="border-b border-white/10 p-3 lg:border-b-0 lg:border-r"><div className="mb-2 flex items-center justify-between gap-2 px-1"><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Guided problems</div><span className="text-[9px] text-slate-500">{Object.values(challengeProgress).filter(item => item.status === "mastered").length}/{challenges.length} mastered</span></div><div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{ width: `${Math.round((Object.values(challengeProgress).filter(item => item.status === "mastered").length / challenges.length) * 100)}%` }} /></div><div className="space-y-2">{challenges.map(item => { const progress = challengeProgress[item.id]; const mastered = progress?.status === "mastered"; return <button key={item.id} type="button" onClick={() => setChallengeId(item.id)} className={`w-full rounded-xl border p-3 text-left ${item.id === challenge.id ? "border-[var(--primary)]/40 bg-[var(--primary)]/5" : "border-white/10 hover:bg-white/[.03]"}`}><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold text-slate-200">{item.title}</span><span className={`text-[8px] uppercase ${mastered ? "text-emerald-400" : progress ? "text-amber-300" : "text-slate-600"}`}>{mastered ? "Mastered" : progress ? "Attempted" : item.level}</span></div><div className="mt-1 flex items-center justify-between gap-2"><span className="text-[9px] text-slate-500">{item.skill}</span>{progress && <span className="text-[8px] text-slate-600">{progress.visiblePassed + progress.hiddenPassed}/{progress.visibleTotal + progress.hiddenTotal}</span>}</div></button>; })}</div></aside>
-      <section className="p-4 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">{challenge.level} · {challenge.skill}</div><h2 className="mt-1 text-lg font-semibold text-white">{challenge.title}</h2></div><div className="flex items-center gap-2"><span className={`rounded-full border px-2.5 py-1 text-[8px] font-semibold uppercase tracking-wider ${challengeProgress[challenge.id]?.status === "mastered" ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300" : challengeProgress[challenge.id] ? "border-amber-500/20 bg-amber-500/5 text-amber-300" : "border-white/10 text-slate-500"}`}>{challengeProgress[challenge.id]?.status === "mastered" ? "Mastered" : challengeProgress[challenge.id] ? "In progress" : "Not started"}</span><button type="button" onClick={() => setChallengeProgress({})} className="rounded-lg border border-white/10 px-2.5 py-1 text-[8px] text-slate-500 hover:bg-white/5">Reset progress</button></div></div><p className="mt-3 max-w-3xl text-xs leading-5 text-slate-400">{challenge.prompt}</p><div className="mt-4 rounded-2xl border border-white/10 bg-white/[.02] p-4"><div className="flex items-center gap-2 text-[9px] uppercase tracking-widest text-slate-600"><Lightbulb className="h-3.5 w-3.5" />Hint</div><p className="mt-2 text-xs leading-5 text-slate-400">{challenge.hint}</p></div><div className="mt-3 rounded-2xl border border-white/10 p-4"><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-600">Automatic test cases</div><p className="mt-1 text-[9px] text-slate-500">These are the cases your algorithm must satisfy after you write it. More edge cases can be added in Tests.</p><div className="mt-3 space-y-2">{challenge.tests.length ? challenge.tests.map((test, index) => <div key={test.id} className="grid gap-2 rounded-lg bg-black/20 p-2 sm:grid-cols-2"><div><div className="text-[8px] uppercase text-slate-600">Input {index + 1}</div><pre className="mt-1 whitespace-pre-wrap font-mono text-[9px] text-slate-400">{test.input}</pre></div><div><div className="text-[8px] uppercase text-slate-600">Expected output</div><pre className="mt-1 whitespace-pre-wrap font-mono text-[9px] text-slate-400">{test.expected}</pre></div></div>) : <div className="rounded-lg bg-black/20 p-2 text-[9px] text-slate-600">No fixed tests yet. Build your own normal, boundary and failure cases.</div>}</div></div><button type="button" onClick={() => loadChallenge(challenge)} className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-[10px] font-semibold text-white"><Zap className="h-4 w-4" />Start question in editor</button></section>
+      <aside className="border-b border-white/10 p-3 lg:border-b-0 lg:border-r">
+        <div className="mb-3 flex items-center justify-between px-1">
+          <div><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Guided problems</div><div className="mt-1 text-[9px] text-slate-600">{Object.values(challengeProgress).filter(item => item.status === "mastered").length}/{challenges.length} mastered</div></div>
+          <button type="button" onClick={() => setChallengeProgress({})} className="text-[8px] uppercase tracking-wider text-slate-600 hover:text-slate-400">Reset progress</button>
+        </div>
+        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${(Object.values(challengeProgress).filter(item => item.status === "mastered").length / challenges.length) * 100}%` }} /></div>
+        <div className="space-y-2">{challenges.map(item => {
+          const progress = challengeProgress[item.id];
+          const active = item.id === challenge.id;
+          return <button key={item.id} type="button" onClick={() => setChallengeId(item.id)} className={`w-full rounded-xl border p-3 text-left ${active ? "border-[var(--primary)]/40 bg-[var(--primary)]/5" : "border-white/10 hover:bg-white/[.03]"}`}>
+            <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold text-slate-200">{item.title}</span><span className={`text-[8px] uppercase ${progress?.status === "mastered" ? "text-emerald-300" : progress ? "text-amber-300" : "text-slate-600"}`}>{progress?.status === "mastered" ? "Mastered" : progress ? "Attempted" : item.level}</span></div>
+            <div className="mt-1 text-[9px] text-slate-500">{item.skill}</div>
+            {progress && <div className="mt-2 text-[8px] text-slate-600">{progress.visiblePassed}/{progress.visibleTotal} visible · {progress.hiddenPassed}/{progress.hiddenTotal} edge cases</div>}
+          </button>;
+        })}</div>
+      </aside>
+      <section className="p-4 sm:p-6">
+        <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">{challenge.level} · {challenge.skill}</div>
+        <div className="mt-1 flex flex-wrap items-center gap-2"><h2 className="text-lg font-semibold text-white">{challenge.title}</h2>{challengeProgress[challenge.id] && <span className={`rounded-full border px-2 py-0.5 text-[8px] uppercase tracking-wider ${challengeProgress[challenge.id].status === "mastered" ? "border-emerald-400/20 bg-emerald-400/5 text-emerald-300" : "border-amber-400/20 bg-amber-400/5 text-amber-300"}`}>{challengeProgress[challenge.id].status}</span>}</div>
+        <p className="mt-3 max-w-3xl text-xs leading-5 text-slate-400">{challenge.prompt}</p>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.02] p-4"><div className="flex items-center gap-2 text-[9px] uppercase tracking-widest text-slate-600"><Lightbulb className="h-3.5 w-3.5" />Hint</div><p className="mt-2 text-xs leading-5 text-slate-400">{challenge.hint}</p></div>
+        <div className="mt-3 rounded-2xl border border-white/10 p-4"><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-600">Automatic test cases</div><p className="mt-1 text-[9px] text-slate-500">These visible cases are part of the submission. Additional edge cases are checked automatically when you run tests.</p><div className="mt-3 space-y-2">{challenge.tests.map((test, index) => <div key={test.id} className="grid gap-2 rounded-lg bg-black/20 p-2 sm:grid-cols-2"><div><div className="text-[8px] uppercase text-slate-600">Input {index + 1}</div><pre className="mt-1 whitespace-pre-wrap font-mono text-[9px] text-slate-400">{test.input}</pre></div><div><div className="text-[8px] uppercase text-slate-600">Expected output</div><pre className="mt-1 whitespace-pre-wrap font-mono text-[9px] text-slate-400">{test.expected}</pre></div></div>)}</div></div>
+        <button type="button" onClick={() => loadChallenge(challenge)} className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-[10px] font-semibold text-white"><Zap className="h-4 w-4" />Start question in editor</button>
+      </section>
     </div>}
 
     {tab === "assess" && <div className="p-4 sm:p-6"><AlgorithmAssessmentPanel /></div>}
