@@ -296,99 +296,68 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Generated lesson did not meet the depth standard.", retryable: true }, { status: 422 });
       }
 
-      const lessonRow = {
-        user_id: user.id,
-        subject_id: resolvedSubject.id,
-        topic: request.topic.slice(0, 500),
-        title: persistableCandidate.title,
-        description: `A deep ${validDifficulty} lesson on ${request.topic}`,
-        difficulty: validDifficulty,
-        progress: 0,
-        blocks: persistableCandidate.blocks,
-        updated_at: new Date().toISOString(),
-      };
-
       let savedId = durableJobId;
-      let saveError: any = null;
       if (durableJobId) {
-        const { data: updated, error } = await supabase.from("learn_lessons")
-          .update(lessonRow)
-          .eq("id", durableJobId)
-          .eq("user_id", user.id)
-          .select("id")
-          .maybeSingle();
-        savedId = updated?.id ?? null;
-        saveError = error;
-
-        // A browser-local winner can reach persistence before the section lane
-        // has created its draft row. In that case, create the durable lesson
-        // with the same id instead of returning a successful-looking phantom id.
-        if (!saveError && !savedId) {
-          const { data: inserted, error: insertError } = await supabase.from("learn_lessons")
-            .insert({ ...lessonRow, id: durableJobId })
-            .select("id")
-            .single();
-          savedId = inserted?.id ?? null;
-          saveError = insertError;
-        }
-      } else {
-        const { data: inserted, error } = await supabase.from("learn_lessons")
-          .insert(lessonRow)
-          .select("id")
-          .single();
-        savedId = inserted?.id ?? null;
-        saveError = error;
-      }
-
-      if (saveError || !savedId) {
-        return NextResponse.json({ error: "The lesson was generated but could not be saved.", retryable: true }, { status: 500 });
-      }
-
-      await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
-
-      if (durableJobId) {
-        let durableCompletionQuery = supabase
-          .from("cortex_generation_jobs")
-          .update({
-            status: "complete",
-            lease_id: null,
-            lease_until: null,
-            stage: "complete",
-            partial: null,
-            result: {
-              id: savedId,
+        const { data: checkpointResult, error: checkpointWriteError } = await supabase.rpc(
+          "checkpoint_cortex_generation",
+          {
+            p_job_id: durableJobId,
+            p_user_id: user.id,
+            p_lease_id: generationLeaseId,
+            p_status: "complete",
+            p_stage: "complete",
+            p_subject_id: resolvedSubject.id,
+            p_title: persistableCandidate.title,
+            p_topic: request.topic,
+            p_description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+            p_difficulty: validDifficulty,
+            p_progress: 100,
+            p_completed_units: generationSectionCount,
+            p_total_units: generationSectionCount,
+            p_blocks: persistableCandidate.blocks,
+            p_result: {
+              id: durableJobId,
               title: persistableCandidate.title,
               blocks: persistableCandidate.blocks,
               subject: effectiveSubject,
             },
-            progress: 100,
-            completed_units: generationSectionCount,
-            total_units: generationSectionCount,
-            error: null,
-            heartbeat_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", durableJobId)
-          .eq("user_id", user.id);
-        if (generationLeaseId) {
-          durableCompletionQuery = durableCompletionQuery
-            .eq("lease_id", generationLeaseId)
-            .gt("lease_until", new Date().toISOString());
-        }
-        const durableComplete = await durableCompletionQuery.select("id").maybeSingle();
-
-        if (durableComplete.error) {
-          console.warn("[LEARN] durable completion checkpoint failed", {
-            generationJobId: durableJobId,
-            error: durableComplete.error.message,
+          },
+        );
+        if (checkpointWriteError) {
+          log.lessonGenerationFailed({
+            userId: user.id,
+            subject: effectiveSubject,
+            topic,
+            difficulty: validDifficulty,
+            error: `Atomic lesson finalization failed: ${checkpointWriteError.message}`,
           });
-          if (generationLeaseId) {
-            return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
-          }
-        } else if (generationLeaseId && !durableComplete.data) {
+          return NextResponse.json({ error: "The lesson was generated but could not be finalized safely. Cortex preserved the generation lease.", retryable: true }, { status: 503 });
+        }
+        const finalized = Array.isArray(checkpointResult)
+          ? checkpointResult[0]?.checkpointed === true
+          : (checkpointResult as { checkpointed?: boolean } | null)?.checkpointed === true;
+        if (!finalized) {
           return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
         }
+      } else {
+        const { data: inserted, error } = await supabase.from("learn_lessons").insert({
+          user_id: user.id,
+          subject_id: resolvedSubject.id,
+          topic: request.topic.slice(0, 500),
+          title: persistableCandidate.title,
+          description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+          difficulty: validDifficulty,
+          progress: 0,
+          blocks: persistableCandidate.blocks,
+          updated_at: new Date().toISOString(),
+        }).select("id").single();
+        if (error || !inserted?.id) {
+          return NextResponse.json({ error: "The lesson was generated but could not be saved.", retryable: true }, { status: 500 });
+        }
+        savedId = inserted.id;
       }
+
+      await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
 
       return NextResponse.json({
         id: savedId,
@@ -433,7 +402,7 @@ export async function POST(req: Request) {
       generationSectionIndex = checkpointCompleted;
       if (checkpoint.partial && typeof checkpoint.partial === "object") {
         const partial = checkpoint.partial as Record<string, unknown>;
-        if (Array.isArray(partial.blocks)) priorBlocks = partial.blocks.slice(-12) as LessonBlock[];
+        if (Array.isArray(partial.blocks)) priorBlocks = partial.blocks as LessonBlock[];
       }
       if (checkpointCompleted >= expectedSectionCount) {
         const partial = checkpoint.partial && typeof checkpoint.partial === "object"
@@ -575,7 +544,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
           retryable: true,
         }, { status: 503 });
       }
-      const currentBlocks = [...priorBlocks, ...section.blocks].slice(-28);
+      const currentBlocks = [...priorBlocks, ...section.blocks];
 
       // Persist the lesson draft and durable Cortex checkpoint in one database transaction.
       // The lease is part of the transaction, so a stale worker cannot advance the job
