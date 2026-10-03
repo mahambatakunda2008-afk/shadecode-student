@@ -98,11 +98,12 @@ function extractJSONObject(raw: string): string | null {
   return null;
 }
 function cleanJsonText(text: string) { return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/\\(?!["\\/bfnrtu])/g, "\\\\"); }
+function requestForValidationLimit() { return 36; }
 function validateLesson(value: unknown): { title: string; blocks: LessonBlock[] } | null {
   if (!value || typeof value !== "object") return null;
   const p = value as { title?: unknown; blocks?: unknown };
   if (typeof p.title !== "string" || !p.title.trim() || !Array.isArray(p.blocks)) return null;
-  const blocks = p.blocks.filter((b): b is LessonBlock => !!b && typeof b === "object" && typeof (b as LessonBlock).type === "string" && typeof (b as LessonBlock).content === "string" && (b as LessonBlock).content.trim().length >= 40).slice(0, 28);
+  const blocks = p.blocks.filter((b): b is LessonBlock => !!b && typeof b === "object" && typeof (b as LessonBlock).type === "string" && typeof (b as LessonBlock).content === "string" && (b as LessonBlock).content.trim().length >= 40).slice(0, requestForValidationLimit());
   const required = new Set(["objective", "concept", "example", "checkpoint", "exam", "mistake", "summary"]);
   const types = new Set(blocks.map(b => normalizeLessonBlockType(b.type)));
   if (blocks.length < 14 || ![...required].every(type => types.has(type))) return null;
@@ -268,7 +269,7 @@ export async function POST(req: Request) {
             typeof (block as LessonBlock).type === "string" &&
             typeof (block as LessonBlock).content === "string" &&
             (block as LessonBlock).content.trim().length >= 40
-          ).slice(0, 28)
+          ).slice(0, request.broadTopic ? 36 : 28)
         : [];
       const minimumPersistBlocks = request.broadTopic ? 16 : 10;
       const persistableCandidate = candidate ?? (
