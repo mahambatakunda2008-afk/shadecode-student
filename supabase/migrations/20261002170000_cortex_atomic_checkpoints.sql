@@ -1,3 +1,5 @@
+drop function if exists public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb);
+
 -- Atomically persist a lesson section and advance its durable Cortex checkpoint.
 create or replace function public.checkpoint_cortex_generation(
   p_job_id uuid,
@@ -5,6 +7,7 @@ create or replace function public.checkpoint_cortex_generation(
   p_lease_id uuid,
   p_status text,
   p_stage text,
+  p_subject_id uuid,
   p_title text,
   p_topic text,
   p_description text,
@@ -27,20 +30,8 @@ begin
     raise exception 'checkpoint_cortex_generation: service role required';
   end if;
 
-  update public.learn_lessons
-  set title = left(p_title, 255),
-      topic = left(p_topic, 500),
-      description = left(p_description, 1500),
-      difficulty = p_difficulty,
-      progress = greatest(0, least(100, p_progress)),
-      blocks = p_blocks,
-      updated_at = v_now
-  where id = p_job_id and user_id = p_user_id;
-
-  if not found then
-    raise exception 'checkpoint_cortex_generation: lesson draft missing';
-  end if;
-
+  -- Claim validation is the gate. Because this function runs inside one
+  -- transaction, every later write rolls back if the lease is invalid.
   update public.cortex_generation_jobs
   set status = p_status,
       stage = left(p_stage, 80),
@@ -69,11 +60,28 @@ begin
     return;
   end if;
 
+  insert into public.learn_lessons (
+    id, user_id, subject_id, topic, title, description, difficulty, progress, blocks, updated_at
+  ) values (
+    p_job_id, p_user_id, p_subject_id, left(p_topic, 500), left(p_title, 255),
+    left(p_description, 1500), p_difficulty, greatest(0, least(100, p_progress)), p_blocks, v_now
+  )
+  on conflict (id) do update set
+    user_id = excluded.user_id,
+    subject_id = excluded.subject_id,
+    topic = excluded.topic,
+    title = excluded.title,
+    description = excluded.description,
+    difficulty = excluded.difficulty,
+    progress = excluded.progress,
+    blocks = excluded.blocks,
+    updated_at = excluded.updated_at;
+
   return query select true;
 end;
 $$;
 
-revoke execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb)
+revoke execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, uuid, text, text, text, text, integer, integer, integer, jsonb, jsonb)
   from public, anon, authenticated, postgres;
 grant execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb)
   to service_role;
