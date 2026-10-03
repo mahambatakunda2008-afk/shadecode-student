@@ -561,6 +561,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_user_id: user.id,
             p_lease_id: generationLeaseId,
             p_status: "partial",
+            p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
             p_title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255),
             p_topic: request.topic.slice(0, 500),
