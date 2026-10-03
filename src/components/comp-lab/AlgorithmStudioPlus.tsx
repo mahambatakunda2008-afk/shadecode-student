@@ -154,6 +154,30 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
   const ifForEnd = new Map<number, number>();
   const loopStack: Array<{ kind: "FOR" | "WHILE" | "REPEAT"; start: number }> = [];
   const loopStartForEnd = new Map<number, number>();
+  const caseBranchExit = new Map<number, number>();
+
+  // Build direct CASE branch ranges so control does not fall through into the next case.
+  lines.forEach((line, index) => {
+    if (!/^CASE\b/i.test(line.text)) return;
+    let depth = 0;
+    let endIndex: number | undefined;
+    const branchStarts: number[] = [];
+    for (let j = index + 1; j < lines.length; j++) {
+      const text = lines[j].text.toUpperCase();
+      if (/^CASE\b/.test(text)) { depth++; continue; }
+      if (/^ENDCASE\b/.test(text)) {
+        if (depth === 0) { endIndex = j; break; }
+        depth--;
+        continue;
+      }
+      if (depth === 0 && /^(.+?)\s*:\s*(.+)$/.test(lines[j].text)) branchStarts.push(j);
+    }
+    if (endIndex === undefined || !branchStarts.length) return;
+    branchStarts.forEach((start, branchIndex) => {
+      const nextStart = branchStarts[branchIndex + 1] ?? endIndex;
+      caseBranchExit.set(nextStart - 1, endIndex + 1 < lines.length ? endIndex + 1 : endIndex);
+    });
+  });
 
   lines.forEach((line, index) => {
     const text = line.text.toUpperCase();
@@ -230,6 +254,12 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
         const match = lines[j].text.match(/^(.+?)\s*:\s*(.+)$/);
         if (match) add(nodes[i], nodes[j], match[1].trim());
       }
+      continue;
+    }
+
+    const caseExit = caseBranchExit.get(i);
+    if (caseExit !== undefined) {
+      if (caseExit < nodes.length) add(nodes[i], nodes[caseExit]);
       continue;
     }
 
