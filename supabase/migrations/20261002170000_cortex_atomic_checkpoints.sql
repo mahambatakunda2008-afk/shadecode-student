@@ -81,7 +81,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb)
+revoke execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, uuid, text, text, text, text, integer, integer, integer, jsonb, jsonb)
   from public, anon, authenticated, postgres;
 grant execute on function public.checkpoint_cortex_generation(uuid, uuid, uuid, text, text, text, text, text, text, integer, integer, integer, jsonb, jsonb)
   to service_role;
