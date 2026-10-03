@@ -24,11 +24,6 @@ if (knowledgeError) throw knowledgeError;
 
 const keys = new Set((objectives ?? []).map((row) => row.objective_key));
 const knowledgeKeys = new Set((knowledge ?? []).map((row) => row.knowledge_key));
-const expectedKeys = new Set(
-  Array.from({ length: EXPECTED }, (_, i) => i + 1)
-    .map((n) => null),
-);
-
 const failures = [];
 if ((objectives ?? []).length !== EXPECTED) failures.push(`expected ${EXPECTED} objectives, got ${objectives?.length ?? 0}`);
 if ((knowledge ?? []).length !== EXPECTED) failures.push(`expected ${EXPECTED} learning-outcome knowledge rows, got ${knowledge?.length ?? 0}`);
