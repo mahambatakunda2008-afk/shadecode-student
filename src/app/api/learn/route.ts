@@ -698,13 +698,8 @@ Return only valid JSON.`;
         userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
         error: `Lesson pipeline exhausted: ${failures.join(" | ")}`,
       });
-      if (durableJobId) {
-        await supabase.from("learn_lessons").update({
-          title: `Cortex is retrying ${request.topic}`.slice(0, 255),
-          description: "Generation did not finish this pass. The same request can resume safely.",
-          updated_at: new Date().toISOString(),
-        }).eq("id", durableJobId).eq("user_id", user.id);
-      }
+      // Do not mutate the lesson draft here. A stale worker must never overwrite
+      // a newer checkpoint after the lease has moved to another run.
       return NextResponse.json({
         error: "Cortex could not finish this lesson in this run. The request is preserved and can resume safely.",
         retryable: true,
