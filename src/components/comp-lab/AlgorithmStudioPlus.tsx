@@ -127,7 +127,7 @@ function validateFlowchart(code: string, nodes: Node[], edges: Edge[]): FlowIssu
     }
   });
   stack.forEach(item => issues.push({ severity: "error", message: item.kind + " block is not closed.", line: item.line }));
-  if (!lines.some(line => line.text.toUpperCase().startsWith("INPUT ")) && !lines.some(line => /^(OUTPUT|PRINT)\\b/i.test(line.text))) {
+  if (!lines.some(line => line.text.toUpperCase().startsWith("INPUT ")) && !lines.some(line => /^(OUTPUT|PRINT)\b/i.test(line.text))) {
     issues.push({ severity: "warning", message: "No INPUT or OUTPUT statement was detected. Check that the algorithm communicates its result." });
   }
   nodes.filter(node => node.kind === "decision").forEach(node => {
@@ -261,15 +261,21 @@ function buildEdges(code: string, nodes: Node[]): Edge[] {
 
 function shape(kind: Kind) { if (kind === "decision") return "M 0 -36 L 108 0 L 0 36 L -108 0 Z"; if (kind === "input" || kind === "output") return "M -100 -28 L 100 -28 L 78 28 L -122 28 Z"; if (kind === "start" || kind === "end") return "M -92 0 A 92 28 0 1 0 92 0 A 92 28 0 1 0 -92 0"; return "M -96 -30 Q -96 -38 -86 -38 L 86 -38 Q 96 -38 96 -30 L 96 30 Q 96 38 86 38 L -86 38 Q -96 38 -96 30 Z"; }
 function shortText(text: string) { return text.length > 26 ? `${text.slice(0, 25)}…` : text; }
+function flowNodeHalfHeight(kind: Kind) {
+  if (kind === "decision") return 36;
+  if (kind === "input" || kind === "output") return 28;
+  return 38;
+}
 function flowEdgePath(from: Node, to: Node, label?: string) {
   const x1 = from.x;
-  const y1 = from.y + 40;
   const x2 = to.x;
-  const y2 = to.y - 40;
-  if (label === "LOOP" || y2 <= y1) {
+  const upward = to.y < from.y;
+  const y1 = from.y + (upward ? -flowNodeHalfHeight(from.kind) : flowNodeHalfHeight(from.kind));
+  const y2 = to.y + (upward ? flowNodeHalfHeight(to.kind) : -flowNodeHalfHeight(to.kind));
+  if (label === "LOOP" || upward) {
     const side = x1 <= x2 ? -1 : 1;
     const bend = Math.max(70, Math.min(180, Math.abs(x2 - x1) * 0.35));
-    return `M ${x1} ${y1} C ${x1 + side * bend} ${y1 + 24}, ${x2 + side * bend} ${y2 - 24}, ${x2} ${y2}`;
+    return `M ${x1} ${y1} C ${x1 + side * bend} ${y1 + (upward ? -24 : 24)}, ${x2 + side * bend} ${y2 + (upward ? 24 : -24)}, ${x2} ${y2}`;
   }
   const midY = y1 + Math.max(28, (y2 - y1) * 0.5);
   if (Math.abs(x1 - x2) < 8) return `M ${x1} ${y1} L ${x2} ${y2}`;
