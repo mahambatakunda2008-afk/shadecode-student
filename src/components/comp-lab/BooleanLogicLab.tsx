@@ -130,34 +130,45 @@ function kMapGroupLabel(group: number[]) {
   const labels = group.map(index => MAP_LABELS[index]).join(" ↔ ");
   return group.length === 2 ? `2-cell group: ${labels}` : `1-cell group: ${labels}`;
 }
+function kMapTerm(group: number[]) {
+  if (group.length === 4) return "1";
+  const minterms = group.map(index => MINTERMS[index]);
+  if (group.length === 2) {
+    const sameA = ((minterms[0] >> 1) & 1) === ((minterms[1] >> 1) & 1);
+    const sameB = (minterms[0] & 1) === (minterms[1] & 1);
+    if (sameA) return ((minterms[0] >> 1) & 1) ? "A" : "NOT A";
+    if (sameB) return (minterms[0] & 1) ? "B" : "NOT B";
+  }
+  return literalFor(minterms[0]);
+}
+
+function kMapCandidateGroups(cells: Bit[]) {
+  const candidates = [[0,1,2,3],[0,1],[1,2],[2,3],[3,0],[0],[1],[2],[3]];
+  return candidates.filter(group => group.every(index => cells[index] === 1));
+}
+
 function simplifyKMap(cells: Bit[]) {
   const ones = MINTERMS.filter((_, index) => cells[index] === 1);
   if (ones.length === 0) return "0";
   if (ones.length === 4) return "1";
-  const groups: number[][] = [];
-  const add = (indexes: number[]) => {
-    if (indexes.every(index => cells[index] === 1)) groups.push(indexes);
-  };
-  add([0,1,2,3]);
-  add([0,1]); add([1,2]); add([2,3]); add([3,0]);
-  add([0]); add([1]); add([2]); add([3]);
+
+  const groups = kMapCandidateGroups(cells);
+  const covers = (group: number[]) => new Set(group.map(index => MINTERMS[index]));
+  const uncovered = new Set(ones);
   const chosen: number[][] = [];
-  const covered = new Set<number>();
-  for (const group of groups.sort((x,y) => y.length - x.length)) {
-    if (group.some(index => !covered.has(MINTERMS[index]))) {
-      chosen.push(group);
-      group.forEach(index => covered.add(MINTERMS[index]));
-    }
+
+  while (uncovered.size) {
+    const essential = groups.filter(group => {
+      const groupMinterms = covers(group);
+      return [...uncovered].some(minterm => groupMinterms.has(minterm));
+    }).sort((a, b) => b.length - a.length)[0];
+    if (!essential) break;
+    chosen.push(essential);
+    covers(essential).forEach(minterm => uncovered.delete(minterm));
+    groups.splice(groups.indexOf(essential), 1);
   }
-  return chosen.map(group => {
-    if (group.length === 2) {
-      const m = group.map(index => MINTERMS[index]);
-      const sameA = ((m[0] >> 1) & 1) === ((m[1] >> 1) & 1);
-      const sameB = (m[0] & 1) === (m[1] & 1);
-      return sameA ? (((m[0] >> 1) & 1) ? "A" : "NOT A") : sameB ? ((m[0] & 1) ? "B" : "NOT B") : "1";
-    }
-    return literalFor(MINTERMS[group[0]]);
-  }).join(" OR ");
+
+  return chosen.map(kMapTerm).join(" OR ") || "0";
 }
 
 const KMAP_QUESTIONS: Bit[][] = [
