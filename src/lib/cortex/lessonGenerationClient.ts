@@ -56,6 +56,23 @@ function isBrowser() { return typeof window !== "undefined"; }
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
+async function runLocalRecoveryWithHeartbeat<T>(job: GenerationJob<LessonGenerationInput>, token: string, task: () => Promise<T>): Promise<T> {
+  const leaseId = generationLeaseId(job.id);
+  let leaseLost = false;
+  const heartbeatTimer = setInterval(() => {
+    void (async () => {
+      const heartbeat = await heartbeatGenerationLease(token, job.id, leaseId);
+      if (heartbeat === "lost") leaseLost = true;
+    })();
+  }, 20_000);
+  try {
+    const result = await task();
+    if (leaseLost) throw new Error("CORTEX_LEASE_CONFLICT");
+    return result;
+  } finally {
+    clearInterval(heartbeatTimer);
+  }
+}
 function openCompletedLesson(result: LessonGenerationResult) { if (!isBrowser() || window.location.pathname !== "/learn") return; window.location.assign(`/learn/${encodeURIComponent(result.id)}`); }
 function resolvedRequest(job: GenerationJob<LessonGenerationInput>) {
   const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
@@ -298,6 +315,8 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
 }
 async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>, generated: LessonGenerationResult, token: string, leaseId?: string): Promise<LessonGenerationResult> {
   const request = resolvedRequest(job);
+  // Durable jobs remain lease-owned when recovery switches from cloud to browser-local generation.
+  const effectiveLeaseId = leaseId ?? generationLeaseId(job.id);
   const response = await fetch("/api/learn", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -305,7 +324,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
       type: "lesson",
       generationMode: "persist",
       generationJobId: job.id,
-      generationLeaseId: leaseId,
+      generationLeaseId: effectiveLeaseId,
       subject: job.request.subject,
       topic: job.request.prompt,
       difficulty: job.request.difficulty,
@@ -610,10 +629,15 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
             progress: Math.max(24, Math.min(40, getGenerationJob(job.id)?.progress ?? 24)),
             error: "Cloud generation is unavailable. Cortex is switching to the browser-local model.",
           });
-          const localModel = await tryLocalModel(job, token);
+          const localModel = await runLocalRecoveryWithHeartbeat(job, token, () => tryLocalModel(job, token));
           if (localModel) {
+            updateGenerationJob(job.id, {
+              status: "generating",
+              progress: Math.max(40, Math.min(75, getGenerationJob(job.id)?.progress ?? 40)),
+              error: "Browser-local Cortex generated the lesson. Saving the durable checkpoint…",
+            });
             const finished = token
-              ? await persistGeneratedLesson(job, localModel, token)
+              ? await persistGeneratedLesson(job, localModel, token, generationLeaseId(job.id))
               : await saveLocalResult(job, localModel);
             if (token) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
             return getGenerationJobs().find(item => item.id === job.id) ?? job;
@@ -641,7 +665,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
         })();
 
         if (token && navigator.onLine) {
-          const finished = await persistGeneratedLesson(job, localFallback, token);
+          const finished = await persistGeneratedLesson(job, localFallback, token, generationLeaseId(job.id));
           await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
           return getGenerationJobs().find(item => item.id === job.id) ?? job;
         }
