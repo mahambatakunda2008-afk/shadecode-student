@@ -125,6 +125,11 @@ function kMapGroups(cells: Bit[]) {
   const candidates = [[0,1],[1,2],[2,3],[3,0],[0,1,2,3]];
   return candidates.filter(group => group.every(index => cells[index] === 1)).sort((a,b) => b.length-a.length);
 }
+function kMapGroupLabel(group: number[]) {
+  if (group.length === 4) return "4-cell group: 1 essential group";
+  const labels = group.map(index => MAP_LABELS[index]).join(" ↔ ");
+  return group.length === 2 ? `2-cell group: ${labels}` : `1-cell group: ${labels}`;
+}
 function simplifyKMap(cells: Bit[]) {
   const ones = MINTERMS.filter((_, index) => cells[index] === 1);
   if (ones.length === 0) return "0";
@@ -221,7 +226,8 @@ function KMapLab() {
       <p className="mt-2 text-[10px] leading-5 text-[var(--muted-foreground)]">Two-variable K-map. Columns are Gray-code ordered. Toggle cells to build the function. Highlighted groups show adjacent 1s, including wrap-around adjacency, and the minimized SOP is generated from valid groups.</p>
       <div className="mt-4 max-w-md rounded-xl border border-[var(--card-border)] p-3">
         <div className="grid grid-cols-4 gap-2 text-center text-[9px] text-[var(--muted-foreground)]">{MAP_LABELS.map(label => <div key={label}>{label}</div>)}</div>
-        <div className="mt-2 grid grid-cols-4 gap-2">{cells.map((value,i)=>{ const grouped=kMapGroups(cells).some(group=>group.includes(i)); return <button key={i} type="button" aria-label={`K-map cell ${MAP_LABELS[i]}, value ${value}`} onClick={()=>setCells(c=>c.map((v,j)=>j===i?(v?0:1):v))} className={"relative rounded-xl border p-4 font-mono text-lg " + (value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]") + (grouped ? " ring-2 ring-[var(--primary)]/40" : "")}>{value}<span className="absolute right-1.5 top-1 text-[7px] text-[var(--muted-foreground)]">{MINTERMS[i]}</span></button>})}</div>
+        <div className="mt-2 grid grid-cols-4 gap-2">{cells.map((value,i)=>{ const groups=kMapGroups(cells).filter(group=>group.includes(i)); return <button key={i} type="button" aria-label={`K-map cell ${MAP_LABELS[i]}, value ${value}`} title={groups.map(kMapGroupLabel).join(" • ") || "No valid adjacent group yet"} onClick={()=>setCells(c=>c.map((v,j)=>j===i?(v?0:1):v))} className={"relative rounded-xl border p-4 font-mono text-lg " + (value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-[var(--card-border)]") + (groups.length ? " ring-2 ring-[var(--primary)]/40" : "")}>{value}<span className="absolute right-1.5 top-1 text-[7px] text-[var(--muted-foreground)]">{MINTERMS[i]}</span></button>})}</div>
+      <div className="mt-2 flex flex-wrap gap-1.5">{kMapGroups(cells).map((group,index) => <span key={`${group.join("-")}-${index}`} className="rounded-full border border-[var(--card-border)] px-2 py-1 text-[8px] text-[var(--muted-foreground)]">{kMapGroupLabel(group)}</span>)}{kMapGroups(cells).length === 0 && <span className="text-[8px] text-[var(--muted-foreground)]">Turn on adjacent 1s to form valid groups. Wrap-around cells are adjacent.</span>}</div>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Your simplified form</div><div className="mt-1 font-mono">{currentExpression}</div></div><div className="rounded-xl bg-[var(--surface-2)] p-3 text-[10px]"><div className="text-[var(--muted-foreground)]">Target solution</div><div className="mt-1 font-mono">{solved ? targetExpression : "Hidden until the map matches"}</div></div></div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
