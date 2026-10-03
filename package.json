@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "predev": "npm run generate:brand",
-    "build": "next build",
+    "build": "npm run curriculum:biology:generate && next build",
     "prebuild": "npm run generate:brand",
     "start": "next start",
     "test": "vitest run",
