@@ -6,7 +6,7 @@
     "dev": "next dev",
     "predev": "npm run generate:brand",
     "build": "next build",
-    "prebuild": "npm run generate:brand",
+    "prebuild": "npm run generate:brand && node scripts/biology-vercel-seed.mjs",
     "start": "next start",
     "test": "vitest run",
     "lint": "eslint",
