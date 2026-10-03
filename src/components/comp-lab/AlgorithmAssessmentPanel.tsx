@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronRight, RotateCcw, Target, X, Zap } from "lucide-react";
 import { executeCode } from "@/lib/code-lab/runtime";
 
@@ -53,6 +53,27 @@ export default function AlgorithmAssessmentPanel() {
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState<string[]>([]);
   const [testReport, setTestReport] = useState<{ label: string; passed: boolean; actual?: string }[]>([]);
+  const assessmentStorageKey = "shadecode.comp-lab.algorithm-assessment.v1";
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(assessmentStorageKey) || "null") as { index?: number; completed?: string[] } | null;
+      if (!saved) return;
+      const restored = Array.isArray(saved.completed) ? saved.completed.filter(id => QUESTIONS.some(question => question.id === id)) : [];
+      setCompleted(restored);
+      setScore(restored.length);
+      if (typeof saved.index === "number" && saved.index >= 0 && saved.index < QUESTIONS.length) setIndex(saved.index);
+    } catch {
+      // Ignore malformed local assessment state and start a clean session.
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(assessmentStorageKey, JSON.stringify({ index, completed }));
+    } catch {
+      // Persistence is best-effort and must never block assessment use.
+    }
+  }, [index, completed]);
+
 
   const question = QUESTIONS[index];
   const progress = useMemo(() => Math.round((completed.length / QUESTIONS.length) * 100), [completed.length]);
@@ -103,6 +124,7 @@ export default function AlgorithmAssessmentPanel() {
   };
 
   const reset = () => {
+    try { localStorage.removeItem(assessmentStorageKey); } catch { /* best-effort cleanup */ }
     setIndex(0);
     setAnswer("");
     setFeedback(null);
