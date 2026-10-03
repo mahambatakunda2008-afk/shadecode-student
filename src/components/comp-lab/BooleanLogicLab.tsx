@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check, RotateCcw, Sigma, Table2, ToggleLeft } from "lucide-react";
 
-type Bit = 0 | 1;
+export type Bit = 0 | 1;
 type Gate = "AND" | "OR" | "NAND" | "NOR" | "XOR";
 
 const b = (v: boolean | number): Bit => (v ? 1 : 0);
@@ -121,16 +121,16 @@ function literalFor(minterm: number) {
   return `${a ? "A" : "NOT A"} AND ${b2 ? "B" : "NOT B"}`;
 }
 
-function kMapGroups(cells: Bit[]) {
+export function kMapGroups(cells: Bit[]) {
   const candidates = [[0,1],[1,2],[2,3],[3,0],[0,1,2,3]];
   return candidates.filter(group => group.every(index => cells[index] === 1)).sort((a,b) => b.length-a.length);
 }
-function kMapGroupLabel(group: number[]) {
+export function kMapGroupLabel(group: number[]) {
   if (group.length === 4) return "4-cell group: 1 essential group";
   const labels = group.map(index => MAP_LABELS[index]).join(" ↔ ");
   return group.length === 2 ? `2-cell group: ${labels}` : `1-cell group: ${labels}`;
 }
-function kMapTerm(group: number[]) {
+export function kMapTerm(group: number[]) {
   if (group.length === 4) return "1";
   const minterms = group.map(index => MINTERMS[index]);
   if (group.length === 2) {
@@ -142,12 +142,12 @@ function kMapTerm(group: number[]) {
   return literalFor(minterms[0]);
 }
 
-function kMapCandidateGroups(cells: Bit[]) {
+export function kMapCandidateGroups(cells: Bit[]) {
   const candidates = [[0,1,2,3],[0,1],[1,2],[2,3],[3,0],[0],[1],[2],[3]];
   return candidates.filter(group => group.every(index => cells[index] === 1));
 }
 
-function simplifyKMap(cells: Bit[]) {
+export function simplifyKMap(cells: Bit[]) {
   const ones = MINTERMS.filter((_, index) => cells[index] === 1);
   if (ones.length === 0) return "0";
   if (ones.length === 4) return "1";
