@@ -27,20 +27,8 @@ begin
     raise exception 'checkpoint_cortex_generation: service role required';
   end if;
 
-  update public.learn_lessons
-  set title = left(p_title, 255),
-      topic = left(p_topic, 500),
-      description = left(p_description, 1500),
-      difficulty = p_difficulty,
-      progress = greatest(0, least(100, p_progress)),
-      blocks = p_blocks,
-      updated_at = v_now
-  where id = p_job_id and user_id = p_user_id;
-
-  if not found then
-    raise exception 'checkpoint_cortex_generation: lesson draft missing';
-  end if;
-
+  -- Claim validation is the gate. Because this function runs inside one
+  -- transaction, every later write rolls back if the lease is invalid.
   update public.cortex_generation_jobs
   set status = p_status,
       stage = left(p_stage, 80),
@@ -67,6 +55,20 @@ begin
   if not found then
     return query select false;
     return;
+  end if;
+
+  update public.learn_lessons
+  set title = left(p_title, 255),
+      topic = left(p_topic, 500),
+      description = left(p_description, 1500),
+      difficulty = p_difficulty,
+      progress = greatest(0, least(100, p_progress)),
+      blocks = p_blocks,
+      updated_at = v_now
+  where id = p_job_id and user_id = p_user_id;
+
+  if not found then
+    raise exception 'checkpoint_cortex_generation: lesson draft missing';
   end if;
 
   return query select true;
