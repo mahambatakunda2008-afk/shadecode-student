@@ -78,6 +78,21 @@ function layoutFlowchart(nodes: Node[], edges: Edge[]): Node[] {
     column.push(node);
     columns.set(level, column);
   });
+  // Keep decision branches visually separated and give CASE alternatives their own lanes.
+  edges.filter(edge => edge.label && edge.label !== "LOOP").forEach(edge => {
+    const target = nodes.find(node => node.id === edge.to);
+    if (!target) return;
+    const level = levels.get(target.id) ?? 0;
+    const column = columns.get(level);
+    if (!column || column.length < 2) return;
+    const branchIndex = column.findIndex(node => node.id === target.id);
+    if (branchIndex >= 0) {
+      const preferred = edge.label === "FALSE" ? Math.min(2, branchIndex + 1) : edge.label === "TRUE" ? Math.max(0, branchIndex - 1) : branchIndex;
+      const reordered = column.filter(node => node.id !== target.id);
+      reordered.splice(Math.min(preferred, reordered.length), 0, target);
+      columns.set(level, reordered);
+    }
+  });
   return nodes.map(node => {
     const level = levels.get(node.id) ?? Math.min(Math.max(node.line - 1, 0), 7);
     const column = columns.get(level) ?? [node];
