@@ -671,7 +671,30 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
   } finally { if (runningJobId === job.id) runningJobId = null; }
 }
 export function queueLessonGeneration(input: LessonGenerationInput) { return createGenerationJob("lesson", input); }
-export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; markInterruptedJobsForRetry(); let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => { const row = item as Record<string, unknown>; return row.kind === "lesson" && row.request && typeof row.request === "object"; }) as Record<string, unknown> | undefined; if (remote) { const restored: GenerationJob<LessonGenerationInput> = { id: String(remote.id), kind: "lesson", status: String(remote.status) as GenerationJobStatus, request: remote.request as LessonGenerationInput, result: remote.result, partial: remote.partial, progress: typeof remote.progress === "number" ? remote.progress : 0, createdAt: Date.parse(String(remote.created_at ?? "")) || Date.now(), updatedAt: Date.parse(String(remote.updated_at ?? "")) || Date.now(), error: remote.error && typeof remote.error === "object" ? String((remote.error as Record<string, unknown>).message ?? "") : undefined, retryCount: typeof remote.retry_count === "number" ? remote.retry_count : 0 }; job = restoreGenerationJob(restored); } } if (!job) return null; return runJob(job, token); }
+export async function resumeLessonGeneration(token: string | null) { if (!isBrowser() || !token) return null; markInterruptedJobsForRetry(); let active = getActiveGenerationJobs().filter(job => job.kind === "lesson").map(job => job as GenerationJob<LessonGenerationInput>); const preferredId = getActiveId(); let job = (preferredId && active.find(item => item.id === preferredId)) || active[0]; if (!job) { const durable = await listDurableGenerationJobs(token); const remote = durable.find((item) => { const row = item as Record<string, unknown>; return row.kind === "lesson" && row.request && typeof row.request === "object"; }) as Record<string, unknown> | undefined; if (remote) {
+  // The id-scoped read reconciles the lesson row from the durable checkpoint
+  // before the browser resumes generation.
+  const reconciled = await getDurableGenerationJob(token, String(remote.id));
+  const source = reconciled?.job && typeof reconciled.job === "object"
+    ? reconciled.job as Record<string, unknown>
+    : remote;
+  const restored: GenerationJob<LessonGenerationInput> = {
+    id: String(source.id),
+    kind: "lesson",
+    status: String(source.status) as GenerationJobStatus,
+    request: source.request as LessonGenerationInput,
+    result: source.result,
+    partial: source.partial,
+    progress: typeof source.progress === "number" ? source.progress : 0,
+    createdAt: Date.parse(String(source.created_at ?? "")) || Date.now(),
+    updatedAt: Date.parse(String(source.updated_at ?? "")) || Date.now(),
+    error: source.error && typeof source.error === "object"
+      ? String((source.error as Record<string, unknown>).message ?? "")
+      : undefined,
+    retryCount: typeof source.retry_count === "number" ? source.retry_count : 0,
+  };
+  job = restoreGenerationJob(restored);
+} } if (!job) return null; return runJob(job, token); }
 export async function startLessonGeneration(input: LessonGenerationInput, token: string | null) {
   const job = queueLessonGeneration(input);
   if (isBrowser()) {
