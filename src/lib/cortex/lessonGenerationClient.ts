@@ -239,6 +239,13 @@ Return ONLY valid JSON:
 }
 
 Generate 3-5 substantive blocks for this section. Make the blocks useful on their own while clearly fitting into the whole lesson.
+SECTION-SPECIFIC REQUIREMENTS
+- Section 1 must include an objective or clear learner target and foundational concepts.
+- Sections 2-4 must include at least one worked example and one thinking checkpoint.
+- Section 5 must include misconceptions/mistakes, exam transfer, and a thinking checkpoint.
+- The final section must include synthesis/curiosity/next-step content and a summary.
+- Across the lesson, include at least 3 worked examples, 3 thinking checkpoints, 1 exam-transfer block, 1 mistake/misconception block, and 1 summary.
+- A checkpoint must make the learner do some thinking. Do not reveal its answer.
 
 MATH
 Every mathematical expression uses single-dollar LaTeX delimiters. Never use caret exponents or ASCII fractions.`;
@@ -273,6 +280,7 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
           token,
           (getGenerationJob(job.id) ?? job) as GenerationJob,
           "progress",
+          { leaseId: generationLeaseId(job.id) },
         );
       }
     } catch (error) {
