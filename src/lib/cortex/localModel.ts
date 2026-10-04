@@ -167,27 +167,44 @@ export async function generateBrowserLocal(
   options?: { maxTokens?: number; json?: boolean },
 ) {
   const engine = await loadEngine();
-  const result = await engine.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are Cortex, an educational reasoning engine inside Shadecode Student. " +
-          "Teach accurately, deeply, and step-by-step. Respect the learner's curriculum and context. " +
-          "Do not invent syllabus requirements. If the requested task is too large for this local model, " +
-          "return a concise structured continuation request rather than pretending the work is complete.\n" +
-          contextText(context),
-      },
-      { role: "user", content: prompt },
-    ],
-    temperature: 0.25,
-    max_tokens: options?.maxTokens ?? 900,
-    ...(options?.json ? { response_format: { type: "json_object" as const } } : {}),
-  });
+  const system =
+    "You are Cortex, an educational reasoning engine inside Shadecode Student. " +
+    "Teach accurately, deeply, and step-by-step. Respect the learner's curriculum and context. " +
+    "Do not invent syllabus requirements. If the requested task is too large for this local model, " +
+    "return a concise structured continuation request rather than pretending the work is complete.\n" +
+    contextText(context);
 
-  const text = result.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("Browser local model returned empty output.");
-  return text;
+  let lastText = "";
+  for (let attempt = 0; attempt < (options?.json ? 2 : 1); attempt += 1) {
+    const userPrompt = attempt === 0
+      ? prompt
+      : `Your previous response was not valid JSON. Repair it and return ONLY one valid JSON object matching the exact schema requested in the task. Do not add markdown fences, commentary, or prose outside the JSON.\n\nPREVIOUS RESPONSE:\n${lastText.slice(0, 12000)}\n\nORIGINAL TASK:\n${prompt}`;
+
+    const result = await engine.chat.completions.create({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: attempt === 0 ? 0.25 : 0.1,
+      max_tokens: options?.maxTokens ?? 900,
+      ...(options?.json ? { response_format: { type: "json_object" as const } } : {}),
+    });
+
+    lastText = result.choices?.[0]?.message?.content?.trim() ?? "";
+    if (!lastText) throw new Error("Browser local model returned empty output.");
+
+    if (!options?.json) return lastText;
+
+    try {
+      const stripped = lastText.replace(/^\s*\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`\s*$/i, "").trim();
+      const parsed = JSON.parse(stripped) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return lastText;
+    } catch {
+      // One bounded repair attempt follows. Do not loop indefinitely on a small local model.
+    }
+  }
+
+  throw new Error("Browser local model returned invalid JSON.");
 }
 
 export class LocalModel {
