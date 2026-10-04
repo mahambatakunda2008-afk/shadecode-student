@@ -342,6 +342,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
       generatedLesson: {
         title: generated.title,
         blocks: generated.blocks,
+        verifiedCurriculumFallback: generated.offlineFallback === true,
       },
     }),
     cache: "no-store",
@@ -625,34 +626,34 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       return getGenerationJobs().find(item => item.id === job.id) ?? job;
     }
 
-    // Cloud provider outages/quota exhaustion must not immediately collapse into
-    // an IndexedDB-only result. If this browser can run WebGPU, use the local
-    // Cortex model as the next real generation lane.
-    if (isBrowser() && navigator.onLine) {
+    // Provider failure recovery is ordered for latency: verified curriculum first,
+    // then a warm browser model. Never turn an outage into a hidden model download.
+    if (isBrowser() && navigator.onLine && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
       try {
-        const localAvailable = await isBrowserLocalModelAvailable();
-        if (localAvailable) {
-          updateGenerationJob(job.id, {
-            status: "generating",
-            progress: Math.max(24, Math.min(40, getGenerationJob(job.id)?.progress ?? 24)),
-            error: "Cloud generation is unavailable. Cortex is switching to the browser-local model.",
-          });
-          const localModel = await runLocalRecoveryWithHeartbeat(job, token, () => tryLocalModel(job, token));
-          if (localModel) {
-            updateGenerationJob(job.id, {
-              status: "generating",
-              progress: Math.max(40, Math.min(75, getGenerationJob(job.id)?.progress ?? 40)),
-              error: "Browser-local Cortex generated the lesson. Saving the durable checkpoint…",
-            });
-            const finished = token
-              ? await persistGeneratedLesson(job, localModel, token, generationLeaseId(job.id))
-              : await saveLocalResult(job, localModel);
-            if (token) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
-            return getGenerationJobs().find(item => item.id === job.id) ?? job;
-          }
+        const local = generateLocalLesson(job.request.subject, job.request.prompt, context);
+        if (local.blocks.length >= 10) {
+          updateGenerationJob(job.id, { status: "generating", progress: Math.max(26, Math.min(40, getGenerationJob(job.id)?.progress ?? 26)), error: "Cloud generation is unavailable. Cortex is switching to verified curriculum recovery." });
+          const localFallback: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: true, localModel: false };
+          const finished = token ? await persistGeneratedLesson(job, localFallback, token, generationLeaseId(job.id)) : await saveLocalResult(job, localFallback);
+          if (token) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+        }
+      } catch (fallbackError) {
+        console.warn("[LEARN] verified curriculum recovery failed", fallbackError instanceof Error ? fallbackError.message : String(fallbackError));
+      }
+    }
+
+    if (isBrowser() && navigator.onLine && getBrowserLocalModelStatus().status === "ready") {
+      try {
+        updateGenerationJob(job.id, { status: "generating", progress: Math.max(40, Math.min(55, getGenerationJob(job.id)?.progress ?? 40)), error: "Cloud generation is unavailable. Cortex is using the warm browser-local model." });
+        const localModel = await runLocalRecoveryWithHeartbeat(job, token, () => tryLocalModel(job, token));
+        if (localModel) {
+          const finished = token ? await persistGeneratedLesson(job, localModel, token, generationLeaseId(job.id)) : await saveLocalResult(job, localModel);
+          if (token) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+          return getGenerationJobs().find(item => item.id === job.id) ?? job;
         }
       } catch (localModelError) {
-        console.warn("[LEARN] browser-local recovery failed", localModelError instanceof Error ? localModelError.message : String(localModelError));
+        console.warn("[LEARN] warm browser-local recovery failed", localModelError instanceof Error ? localModelError.message : String(localModelError));
       }
     }
 
