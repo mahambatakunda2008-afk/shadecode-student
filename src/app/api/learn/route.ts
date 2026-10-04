@@ -260,6 +260,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
       }
 
+      const verifiedCurriculumFallback = generated.verifiedCurriculumFallback === true;
       const candidate = validateLesson(generated);
       const normalizedGeneratedBlocks = Array.isArray(generated.blocks)
         ? generated.blocks.filter((block: unknown): block is LessonBlock =>
@@ -272,6 +273,7 @@ export async function POST(req: Request) {
         : [];
       const minimumPersistBlocks = request.broadTopic ? 16 : 10;
       const persistableCandidate = candidate ?? (
+        verifiedCurriculumFallback &&
         typeof generated.title === "string" &&
         generated.title.trim().length > 0 &&
         normalizedGeneratedBlocks.length >= minimumPersistBlocks
@@ -283,7 +285,7 @@ export async function POST(req: Request) {
       }
 
       const quality = lessonQualityFailures(persistableCandidate, request).failures;
-      if (quality.length > 0) {
+      if (quality.length > 0 && !verifiedCurriculumFallback) {
         return NextResponse.json({
           error: "Generated lesson failed the learning-quality checks.",
           failures: quality,
@@ -292,7 +294,7 @@ export async function POST(req: Request) {
       }
 
       const finalScore = lessonQualityScore(persistableCandidate.blocks);
-      if (finalScore < 45) {
+      if (finalScore < 45 && !verifiedCurriculumFallback) {
         return NextResponse.json({ error: "Generated lesson did not meet the depth standard.", retryable: true }, { status: 422 });
       }
 
