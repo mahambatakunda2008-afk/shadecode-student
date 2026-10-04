@@ -22,6 +22,7 @@ function relevant(items: OfflineCurriculumKnowledgeItem[], topic: string) {
 }
 function byKind(items: OfflineCurriculumKnowledgeItem[], pattern: RegExp) { return items.filter(x => pattern.test(x.kind)); }
 function content(item: OfflineCurriculumKnowledgeItem) { return item.content ? `: ${clean(item.content)}` : ""; }
+function normalizeKind(kind: string) { const value = kind.toLowerCase(); if (/formula|equation|rule|relationship/.test(value)) return "formula"; if (/example|worked|demonstration/.test(value)) return "example"; return "concept"; }
 
 /** Build only from a structured verified curriculum pack. No topic-specific branches or invented subject knowledge. */
 export function buildOfflineLessonFromPack(subject: string, prompt: string, topic: string, pack: OfflineCurriculumPack): OfflineLesson | null {
@@ -44,10 +45,13 @@ export function buildOfflineLessonFromPack(subject: string, prompt: string, topi
   const applications = byKind(selected, /practical_activity|project_requirement|application/i);
 
   const blocks: OfflineLessonBlock[] = [
+    block("map", "Topic map", `This recovery lesson is assembled only from verified curriculum records mapped to ${clean(topic)}. It does not invent unsupported facts.`),
     block("objective", "Learning target", unique(objectiveList, 8).join("\n")),
     block("prior", "Scope", `Subject: ${subject}\nRequested topic: ${clean(topic)}\n\nOffline teaching is limited to verified curriculum knowledge mapped to the selected topic and its objectives.`),
   ];
-  if (definitions.length) blocks.push(block("concept", "Key concepts", definitions.slice(0, 7).map(x => `- ${x.title}${content(x)}`).join("\n")));
+  const atomicKnowledge = selected.slice(0, 12);
+  atomicKnowledge.forEach((item, index) => blocks.push(block(normalizeKind(item.kind), `${index + 1}. ${item.title}`, item.content ? clean(item.content) : `Verified curriculum item: ${item.title}.`)));
+  if (definitions.length) blocks.push(block("structure", "Key terminology and structure", definitions.slice(0, 6).map(x => `- ${x.title}${content(x)}`).join("\n")));
   if (formulas.length) blocks.push(block("formula", "Rules and relationships", formulas.slice(0, 7).map(x => `- ${x.title}${content(x)}`).join("\n")));
   if (examples.length) blocks.push(block("example", "Verified examples", examples.slice(0, 4).map((x, i) => `Example ${i + 1}: ${x.title}\n${x.content || ""}`.trim()).join("\n\n")));
   if (warnings.length) blocks.push(block("misconception", "Watch for", warnings.slice(0, 5).map(x => `- ${x.title}${content(x)}`).join("\n")));
