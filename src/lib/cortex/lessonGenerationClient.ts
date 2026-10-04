@@ -542,6 +542,44 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       peerAvailable: false,
     }, "deep");
 
+    // Verified curriculum recovery is the fast path. If the device already has
+    // authoritative curriculum data for this request, use it immediately instead
+    // of making the learner wait for a cloud provider just to discover that the
+    // provider is unavailable. This removes the old 20% -> provider timeout ->
+    // 24% recovery staircase for supported cached topics.
+    if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, localContext(job))) {
+      try {
+        updateGenerationJob(job.id, {
+          status: "generating",
+          progress: 10,
+          error: "Cortex is using verified curriculum recovery while online generation is unavailable or warming up.",
+        });
+        const local = generateLocalLesson(job.request.subject, job.request.prompt, localContext(job));
+        if (local.blocks.length >= 10) {
+          const localFallback: LessonGenerationResult = {
+            id: local.id,
+            title: local.title,
+            blocks: local.blocks,
+            offlineFallback: true,
+            localModel: false,
+          };
+          const finished = token && online
+            ? await persistGeneratedLesson(job, localFallback, token, generationLeaseId(job.id))
+            : await saveLocalResult(job, localFallback);
+          if (token && online) {
+            await syncDurableGenerationJob(
+              token,
+              (getGenerationJob(job.id) ?? finished) as GenerationJob,
+              "complete",
+            );
+          }
+          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+        }
+      } catch (error) {
+        console.warn("[LEARN] fast verified curriculum recovery failed", error instanceof Error ? error.message : String(error));
+      }
+    }
+
     // Only a warm local model may enter the speculative race. We never trigger
     // a large first-load model download merely to duplicate a cloud request.
     if (hybrid.mode === "parallel") {
