@@ -5,6 +5,8 @@ import { createClient as createSupabaseClient, type SupabaseClient, type User } 
 import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
+import { canonicalLabel } from "@/lib/topicMastery/canonical";
+import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -104,14 +106,12 @@ function findBlock(plan: Plan, blockId: string) {
   return (plan.blocks ?? []).find(block => block.id === blockId && (block.type === "checkpoint" || block.type === "mastery"));
 }
 
-function cleanTopic(value: string) {
-  return value.replace(/\s+/g, " ").trim().slice(0, 160);
-}
+const cleanTopic = canonicalLabel;
 
 async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number) {
   const subject = cleanTopic(plan.subject || "Paper Study") || "Paper Study";
   const topics = [...new Set((block.interaction?.expectedConcepts ?? []).map(cleanTopic).filter(Boolean))].slice(0, 6);
-  const score = verdict === "correct" ? 1 : verdict === "partially_correct" ? 0.55 : 0;
+  const score = VERDICT_SCORE[verdict] / 100;
   const now = new Date().toISOString();
 
   for (const topic of topics) {
@@ -123,42 +123,20 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
       .eq("topic", topic)
       .maybeSingle();
 
-    const previous = Number(existing?.mastery_score ?? 0.5);
-    const nextMastery = Math.max(0, Math.min(1, previous * 0.65 + score * 0.35));
-    const previousAttempts = Number(existing?.attempts ?? 0);
-    const attempts = previousAttempts + 1;
-    const previousError = Number(existing?.error_rate ?? 0.5);
-    const errorRate = Math.max(0, Math.min(1, previousError * 0.7 + (verdict === "correct" ? 0 : 1) * 0.3));
-    const confidence = Math.max(0, Math.min(1, Number(existing?.confidence ?? 0.4) * 0.7 + score * 0.3));
-    const trend = Math.max(-1, Math.min(1, score - previous));
-    const uncertainty = Math.max(0, Math.min(1, 1 - confidence));
+    const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
 
     await auth.supabase.from("topic_mastery").upsert({
       user_id: auth.user.id,
       subject,
       topic,
-      mastery_score: nextMastery,
-      last_score: score,
-      attempts,
-      last_attempted: now,
-      trend,
-      retention: Number(existing?.retention ?? 0.5),
-      confidence,
-      stability: Number(existing?.stability ?? 0.5),
-      exposure: Number(existing?.exposure ?? 0) + 1,
-      error_rate: errorRate,
-      response_speed: Number(existing?.response_speed ?? 0),
-      prerequisite_health: Number(existing?.prerequisite_health ?? 0.5),
-      recent_improvement: trend,
-      uncertainty,
+      ...row,
     }, { onConflict: "user_id,subject,topic" });
 
-    const priority = verdict === "incorrect" ? 9 : verdict === "partially_correct" ? 6 : nextMastery < 0.65 ? 4 : 1;
     await auth.supabase.from("revision_queue").upsert({
       user_id: auth.user.id,
       topic,
       subject,
-      priority,
+      priority: revisionPriority,
       source: "paper_learning",
       last_seen: now,
     }, { onConflict: "user_id,topic,subject" });

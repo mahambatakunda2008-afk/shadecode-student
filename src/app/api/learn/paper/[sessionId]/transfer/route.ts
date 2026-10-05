@@ -5,6 +5,8 @@ import { createClient as createSupabaseClient, type SupabaseClient, type User } 
 import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
+import { canonicalLabel } from "@/lib/topicMastery/canonical";
+import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -55,22 +57,19 @@ function object(raw: string) {
   }
   return null;
 }
-function clean(value: string) { return value.replace(/\s+/g, " ").trim().slice(0, 160); }
+const clean = canonicalLabel;
 function blockFor(plan: Plan, id: string) { return (plan.blocks ?? []).find(block => block.id === id && (block.type === "checkpoint" || block.type === "mastery")); }
 
 async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict) {
   const subject = clean(plan.subject || "Paper Study") || "Paper Study";
   const concepts = [...new Set((block.interaction?.expectedConcepts ?? []).map(clean).filter(Boolean))].slice(0, 6);
-  const score = verdict === "correct" ? 1 : verdict === "partially_correct" ? 0.55 : 0;
+  const score = VERDICT_SCORE[verdict] / 100;
   const now = new Date().toISOString();
   for (const topic of concepts) {
     const { data: existing } = await auth.supabase.from("topic_mastery").select("mastery_score,last_score,attempts,trend,retention,confidence,stability,exposure,error_rate,response_speed,prerequisite_health,recent_improvement,uncertainty").eq("user_id", auth.user.id).eq("subject", subject).eq("topic", topic).maybeSingle();
-    const previous = Number(existing?.mastery_score ?? 0.5);
-    const next = Math.max(0, Math.min(1, previous * 0.65 + score * 0.35));
-    const trend = Math.max(-1, Math.min(1, score - previous));
-    const confidence = Math.max(0, Math.min(1, Number(existing?.confidence ?? 0.4) * 0.7 + score * 0.3));
-    await auth.supabase.from("topic_mastery").upsert({ user_id: auth.user.id, subject, topic, mastery_score: next, last_score: score, attempts: Number(existing?.attempts ?? 0) + 1, last_attempted: now, trend, retention: Number(existing?.retention ?? 0.5), confidence, stability: Number(existing?.stability ?? 0.5), exposure: Number(existing?.exposure ?? 0) + 1, error_rate: Math.max(0, Math.min(1, Number(existing?.error_rate ?? 0.5) * 0.7 + (verdict === "correct" ? 0 : 1) * 0.3)), response_speed: Number(existing?.response_speed ?? 0), prerequisite_health: Number(existing?.prerequisite_health ?? 0.5), recent_improvement: trend, uncertainty: 1 - confidence }, { onConflict: "user_id,subject,topic" });
-    await auth.supabase.from("revision_queue").upsert({ user_id: auth.user.id, topic, subject, priority: verdict === "incorrect" ? 9 : verdict === "partially_correct" ? 6 : next < 0.65 ? 4 : 1, source: "paper_learning", last_seen: now }, { onConflict: "user_id,topic,subject" });
+    const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
+    await auth.supabase.from("topic_mastery").upsert({ user_id: auth.user.id, subject, topic, ...row }, { onConflict: "user_id,subject,topic" });
+    await auth.supabase.from("revision_queue").upsert({ user_id: auth.user.id, topic, subject, priority: revisionPriority, source: "paper_learning", last_seen: now }, { onConflict: "user_id,topic,subject" });
   }
   await auth.supabase.from("learning_events").insert({ user_id: auth.user.id, type: "paper_transfer", subject, topic: concepts[0] || clean(block.title || "paper transfer"), score, metadata: { source: "paper_learning", blockId: block.id, verdict, concepts, level: plan.level || null, board: plan.board || null } });
 }
