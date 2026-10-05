@@ -179,9 +179,9 @@ export default function PastPapersPage() {
   const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <div style={{ position: "relative", marginBottom: 20 }}>
+    <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-5">
           <Search size={16} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
           <input
             value={searchInput}
@@ -190,11 +190,7 @@ export default function PastPapersPage() {
               runSearch(e.target.value);
             }}
             placeholder='Try "Physics May June 2024 Paper 42"'
-            style={{
-              width: "100%", padding: "12px 40px", borderRadius: 12,
-              background: "var(--surface-2)", border: "1px solid var(--card-border)",
-              color: "var(--foreground)", fontSize: 14,
-            }}
+            className="ssc-focus-ring w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-11 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
           {searchInput && (
             <button
@@ -216,6 +212,7 @@ export default function PastPapersPage() {
           </Step>
         ) : (
           <>
+            <div className="mb-5 flex items-center gap-2 text-xs font-semibold text-[var(--text-tertiary)]"><FileText size={14} /> Exam library</div>
             <Breadcrumb
               board={board}
               level={level}
