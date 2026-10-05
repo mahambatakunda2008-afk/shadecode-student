@@ -7,6 +7,12 @@
 
 
 
+### 2026-10-05 curriculum state reconciliation (verified against live DB)
+- Chemistry 9701: all 37 topics present, 351 learning outcomes, 606 knowledge rows, all `verified`. Supersedes the 2026-09-29 checkpoint below (kept for audit trail).
+- Physics 9702: 25 topics, 300 learning outcomes, verified. Biology 9700: 19 topics, 259 learning outcomes verified; 19 rows still `draft` and need audit/promotion.
+- Mathematics 9709: 128 knowledge rows across 6 top-level topics but **0 learning outcomes**. Next curriculum task: extract official learning outcomes per subsection and store as draft, then audit against official numbering.
+- Do not re-extract 9701/9702/9700 learning outcomes; they already exist.
+
 ### 2026-09-29 curriculum execution checkpoint
 - Chemistry 9701 AS Topics 1–12: 131 normalized learning outcomes extracted and stored as draft knowledge.
 - Self-audit corrected AS Topic 6 to its single official subsection 6.1; electrolysis belongs to A Level Topic 24.
