@@ -30,8 +30,8 @@ export default function CortexGenerationIndicator() {
 
   return (
     <div className="pointer-events-none fixed bottom-[88px] right-4 z-[10000] md:bottom-5" role="status" aria-live="polite">
-      <div className="flex items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] px-3.5 py-3 shadow-lg backdrop-blur">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]">
+      <div className="ssc-surface-raised flex items-center gap-3 rounded-2xl px-3.5 py-3 shadow-lg">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--surface-sunken)] text-[var(--primary)]">
           <BrainCircuit className="h-4.5 w-4.5" />
         </span>
         <span className="min-w-0">
@@ -40,7 +40,7 @@ export default function CortexGenerationIndicator() {
             {primary.status === "queued" ? "Queued safely on this device" : `${primary.progress}% complete`}
           </span>
         </span>
-        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--primary)]" aria-hidden="true" />
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--primary)] motion-reduce:animate-none" aria-hidden="true" />
       </div>
     </div>
   );
