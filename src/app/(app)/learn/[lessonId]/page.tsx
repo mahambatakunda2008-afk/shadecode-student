@@ -191,6 +191,7 @@ export default function LessonDetailPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
+  const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
   const loadLesson = async (token: string) => {
@@ -232,19 +233,23 @@ export default function LessonDetailPage() {
   }, [currentUser]);
 
   useEffect(() => {
-    if (!lesson || lesson.completed) return;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (!lesson) return;
+    try {
+      const saved = localStorage.getItem(`lesson_understanding_${lessonId}`);
+      if (saved === "explain" || saved === "apply" || saved === "review") setUnderstanding(saved);
+    } catch {}
     const onScroll = () => {
       localStorage.setItem(`lesson_scroll_${lessonId}`, String(window.scrollY));
-      const height = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = height > 0 ? Math.min(100, Math.round((window.scrollY / height) * 100)) : 0;
-      if (progress >= 100 && accessToken) {
-        clearTimeout(timeout); timeout = setTimeout(() => { void markComplete(); }, 800);
-      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { window.removeEventListener("scroll", onScroll); if (timeout) clearTimeout(timeout); };
-  }, [lesson, accessToken, lessonId]);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [lesson, lessonId]);
+
+  function setLearningCheck(value: "explain" | "apply" | "review") {
+    setUnderstanding(value);
+    try { localStorage.setItem(`lesson_understanding_${lessonId}`, value); } catch {}
+    if (value === "review") setShowTutor(true);
+  }
 
   async function markComplete() {
     if (!lesson || !accessToken || completing || lesson.completed) return;
@@ -298,10 +303,10 @@ export default function LessonDetailPage() {
         .lesson-steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;counter-reset:step}.lesson-steps li{counter-increment:step;position:relative;padding:11px 14px 11px 46px;background:var(--surface-2);border:1px solid var(--card-border);border-radius:12px;color:var(--muted-foreground)}.lesson-steps li:before{content:counter(step);position:absolute;left:13px;top:11px;width:23px;height:23px;border-radius:7px;background:var(--lesson-soft);color:var(--lesson-accent);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
         .lesson-line{color:var(--muted-foreground);margin-bottom:7px}.lesson-step{color:var(--muted-foreground);padding:9px 12px;border-left:2px solid var(--lesson-border);margin-bottom:7px}.lesson-label{font-weight:800;color:var(--foreground);margin-right:4px}.formula-line{color:var(--foreground);background:var(--surface-2);border:1px solid var(--card-border);border-radius:10px;padding:12px 14px;font-size:15px;overflow:auto}.formula-line .katex{font-size:1.05em}
         .lesson-aside{margin:0 0 25px 14px;padding:13px 0 13px 16px;border-left:2px solid}.aside-title{font-size:12px;font-weight:850;display:flex;gap:8px;align-items:center;margin-bottom:7px}.aside-body{color:var(--muted-foreground);font-size:14px;line-height:1.65}
-        .lesson-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:4px}.lesson-action{min-height:48px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--surface);color:var(--foreground);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;padding:8px;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-action:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-action:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-action.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}.lesson-action.quiz{background:var(--surface-raised);border-color:var(--primary);color:var(--primary)}.lesson-action:disabled{opacity:.55;cursor:not-allowed}
+        .lesson-loop{margin:6px 0 18px;padding:18px;border:1px solid var(--border-subtle);border-radius:16px;background:var(--surface-raised)}.lesson-loop-head{display:flex;align-items:flex-start;gap:11px}.lesson-loop-icon{width:34px;height:34px;border-radius:10px;background:var(--lesson-soft);color:var(--lesson-accent);display:grid;place-items:center;flex:0 0 auto}.lesson-loop-title{font-size:14px;font-weight:800;margin:0}.lesson-loop-copy{font-size:12px;line-height:1.5;color:var(--muted-foreground);margin:3px 0 0}.lesson-loop-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}.lesson-loop-option{min-height:64px;text-align:left;border:1px solid var(--card-border);border-radius:12px;background:var(--surface);padding:10px 11px;color:var(--foreground);cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-loop-option:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-loop-option:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-loop-option.selected{border-color:var(--lesson-accent);background:var(--lesson-soft)}.lesson-loop-option strong{display:block;font-size:12px}.lesson-loop-option span{display:block;margin-top:3px;font-size:11px;line-height:1.4;color:var(--muted-foreground)}.lesson-loop-next{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--muted-foreground)}.lesson-loop-next a{color:var(--lesson-accent);font-weight:800;text-decoration:none}.lesson-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:4px}.lesson-action{min-height:48px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--surface);color:var(--foreground);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;padding:8px;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-action:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-action:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-action.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}.lesson-action.quiz{background:var(--surface-raised);border-color:var(--primary);color:var(--primary)}.lesson-action:disabled{opacity:.55;cursor:not-allowed}
         .lesson-note{text-align:center;color:var(--muted-foreground);font-size:11px;margin-top:8px}.lesson-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;background:var(--card);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:12px 16px;color:#34d399;font-size:13px;font-weight:750;box-shadow:0 12px 40px rgba(0,0,0,.35)}
         .lesson-loading,.lesson-error{min-height:70vh;background:var(--background);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted-foreground);padding:24px}.lesson-error a,.lesson-error button{margin:0 6px;color:#a78bfa;background:none;border:0;cursor:pointer;text-decoration:none;font-size:13px}.spinner{width:34px;height:34px;border-radius:50%;border:2px solid var(--card-border);border-top-color:#8b5cf6;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
+        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-loop-options{grid-template-columns:1fr}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
       `}</style>
 
       {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
@@ -325,6 +330,31 @@ export default function LessonDetailPage() {
 
         {blocks.length ? <div className="lesson-content">
           {blocks.map((block, i) => FLOW.has(block.type) ? <LessonUnit key={i} block={block} number={++unitNumber} /> : <AsideUnit key={i} block={block} />)}
+
+          <section className="lesson-loop" aria-labelledby="learning-check-title">
+            <div className="lesson-loop-head">
+              <div className="lesson-loop-icon"><Brain size={17} /></div>
+              <div>
+                <h2 id="learning-check-title" className="lesson-loop-title">Make the learning stick</h2>
+                <p className="lesson-loop-copy">Before you leave, check what you can actually do. This is more useful than simply reaching the bottom of the page.</p>
+              </div>
+            </div>
+            <div className="lesson-loop-options">
+              <button type="button" className={`lesson-loop-option ${understanding === "explain" ? "selected" : ""}`} aria-pressed={understanding === "explain"} onClick={() => setLearningCheck("explain")}>
+                <strong>I can explain it</strong><span>Teach the idea back in your own words.</span>
+              </button>
+              <button type="button" className={`lesson-loop-option ${understanding === "apply" ? "selected" : ""}`} aria-pressed={understanding === "apply"} onClick={() => setLearningCheck("apply")}>
+                <strong>I can apply it</strong><span>Use the idea on a new problem or example.</span>
+              </button>
+              <button type="button" className={`lesson-loop-option ${understanding === "review" ? "selected" : ""}`} aria-pressed={understanding === "review"} onClick={() => setLearningCheck("review")}>
+                <strong>Not yet</strong><span>Open the tutor and work through the gap.</span>
+              </button>
+            </div>
+            {understanding && <div className="lesson-loop-next">
+              <span>{understanding === "review" ? "Let’s close the gap before moving on." : "Good. Now prove it with a short check."}</span>
+              <Link href={`/learn/${lessonId}/quiz`}>{understanding === "review" ? "Ask Tutor" : "Test Yourself"} <ArrowRight size={12} style={{verticalAlign:"-2px"}} /></Link>
+            </div>}
+          </section>
 
           <div className="lesson-actions" aria-label="Lesson actions">
             {lesson.completed ? <div className="lesson-action primary"><CheckCircle2 size={16} />Completed · +{xpForDiff(lesson.difficulty)} XP</div> : <button className="lesson-action primary" onClick={() => void markComplete()} disabled={completing}>{completing ? "Saving…" : <><CheckCircle2 size={16} />Mark Complete</>}</button>}
