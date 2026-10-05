@@ -55,19 +55,33 @@ describe("updateTopicMasteryFromEvidence", () => {
       subject: "Physics",
       topic: "Oscillations",
       mastery_score: 84,
-      trend: "stable",
+      last_score: 84,
+      attempts: 1,
+      trend: 0,
     }));
   });
 
   it("blends a repeat assessment with the previous mastery score", async () => {
-    maybeSingle.mockResolvedValue({ data: { id: "mastery-1", mastery_score: 70 }, error: null });
+    maybeSingle.mockResolvedValue({ data: { id: "mastery-1", mastery_score: 70, attempts: 2 }, error: null });
     update.mockResolvedValue(undefined);
 
     await updateTopicMasteryFromEvidence("user-1", evidence);
 
     expect(update).toHaveBeenCalledWith(expect.objectContaining({
-      mastery_score: 78,
-      trend: "improving",
+      mastery_score: 74,
+      attempts: 3,
+      trend: 4,
     }));
+    expect(typeof update.mock.calls[0][0].trend).toBe("number");
+  });
+
+  it("normalises cosmetic topic variants to one key", async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: null });
+    insert.mockResolvedValue({ error: null });
+    insert.mockClear();
+
+    await updateTopicMasteryFromEvidence("user-1", { ...evidence, topic: "  Oscillations. " });
+
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ topic: "Oscillations" }));
   });
 });

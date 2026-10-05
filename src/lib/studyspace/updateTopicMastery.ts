@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type { LearningEvidence } from "./evidence";
+import { blendMastery } from "@/lib/topicMastery/blend";
+import { canonicalLabel } from "@/lib/topicMastery/canonical";
 
 /**
  * Best-effort bridge from StudySpace evidence into the existing topic_mastery
@@ -16,16 +18,15 @@ export async function updateTopicMasteryFromEvidence(
 
   try {
     const supabase = createClient();
-    const subject = evidence.subject.trim();
-    const topic = evidence.topic.trim();
+    const subject = canonicalLabel(evidence.subject);
+    const topic = canonicalLabel(evidence.topic);
     if (!subject || !topic) return;
 
-    const score = Math.max(0, Math.min(100, evidence.percentage));
     const now = new Date().toISOString();
 
     const { data: existing, error: lookupError } = await supabase
       .from("topic_mastery")
-      .select("id, mastery_score")
+      .select("id, mastery_score, attempts")
       .eq("user_id", userId)
       .eq("subject", subject)
       .eq("topic", topic)
@@ -36,17 +37,19 @@ export async function updateTopicMasteryFromEvidence(
       return;
     }
 
-    const previous = typeof existing?.mastery_score === "number" ? existing.mastery_score : undefined;
-    const blendedScore = previous === undefined ? score : Math.round(previous * 0.4 + score * 0.6);
-    const trend = previous === undefined ? "stable" : score > previous + 3 ? "improving" : score < previous - 3 ? "declining" : "stable";
+    // Shared EMA + numeric trend: `topic_mastery.trend` is a numeric column, so
+    // the previous string labels ("stable"/"improving") made every write fail.
+    const update = blendMastery(
+      existing ? { mastery_score: Number(existing.mastery_score), attempts: Number(existing.attempts ?? 0) } : null,
+      evidence.percentage,
+    );
 
     const payload = {
       user_id: userId,
       subject,
       topic,
-      mastery_score: blendedScore,
+      ...update,
       last_attempted: now,
-      trend,
     };
 
     const result = existing
