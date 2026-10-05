@@ -6,6 +6,7 @@ import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
+import { resolveCurriculumLink } from "@/lib/topicMastery/curriculumLink";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +69,8 @@ async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict) {
   for (const topic of concepts) {
     const { data: existing } = await auth.supabase.from("topic_mastery").select("mastery_score,last_score,attempts,trend,retention,confidence,stability,exposure,error_rate,response_speed,prerequisite_health,recent_improvement,uncertainty").eq("user_id", auth.user.id).eq("subject", subject).eq("topic", topic).maybeSingle();
     const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
-    await auth.supabase.from("topic_mastery").upsert({ user_id: auth.user.id, subject, topic, ...row }, { onConflict: "user_id,subject,topic" });
+    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic);
+    await auth.supabase.from("topic_mastery").upsert({ user_id: auth.user.id, subject, topic, ...row, ...curriculumLink }, { onConflict: "user_id,subject,topic" });
     await auth.supabase.from("revision_queue").upsert({ user_id: auth.user.id, topic, subject, priority: revisionPriority, source: "paper_learning", last_seen: now }, { onConflict: "user_id,topic,subject" });
   }
   await auth.supabase.from("learning_events").insert({ user_id: auth.user.id, type: "paper_transfer", subject, topic: concepts[0] || clean(block.title || "paper transfer"), score, metadata: { source: "paper_learning", blockId: block.id, verdict, concepts, level: plan.level || null, board: plan.board || null } });

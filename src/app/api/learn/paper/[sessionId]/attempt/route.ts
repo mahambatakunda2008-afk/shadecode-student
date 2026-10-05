@@ -6,6 +6,7 @@ import { callAI } from "@/lib/ai";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
+import { resolveCurriculumLink } from "@/lib/topicMastery/curriculumLink";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
 export const dynamic = "force-dynamic";
@@ -125,11 +126,14 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
 
     const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
 
+    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic);
+
     await auth.supabase.from("topic_mastery").upsert({
       user_id: auth.user.id,
       subject,
       topic,
       ...row,
+      ...curriculumLink,
     }, { onConflict: "user_id,subject,topic" });
 
     await auth.supabase.from("revision_queue").upsert({
