@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, FileCheck2, Sparkles, WandSparkles } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, FileCheck2, Sparkles, WandSparkles, ShieldCheck } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import CortexVerifyPanel from "@/components/cortex/CortexVerifyPanel";
 
@@ -13,9 +13,7 @@ const modes = [
 export default function WorkmatePage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 pb-24 sm:p-7 sm:pb-28">
-      <header className="relative overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm sm:p-8">
-        <div className="pointer-events-none absolute -right-28 -top-32 h-72 w-72 rounded-full bg-[var(--primary-glow)] blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-36 left-1/3 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+      <header className="ssc-surface-raised relative overflow-hidden rounded-3xl p-6 sm:p-8">
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--primary)] shadow-sm">
             <ShadecodeFeatureIcon feature="math-checker" size="sm" /> Math Checker
@@ -45,8 +43,8 @@ export default function WorkmatePage() {
               </div>
             ))}
           </div>
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted-foreground)]">
-            <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-emerald-500" /> Subject-aware</span>
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--muted-foreground)]">
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-500" /> Subject-aware</span>
             <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[var(--primary)]" /> Working-first</span>
             <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-violet-500" /> Cortex-powered</span>
             <span className="ml-auto hidden items-center gap-1 font-semibold sm:inline-flex">Learn from the feedback <ArrowUpRight size={13} /></span>
