@@ -1,5 +1,7 @@
 "use client";
 
+import { rollUpSyllabusCoverage } from "@/lib/topicMastery/coverage";
+import type { CurriculumTopicUnit } from "@/lib/topicMastery/resolver";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -50,6 +52,8 @@ interface TopicMastery {
   trend: number | null;
   recent_improvement: number | null;
   last_attempted: string | null;
+  syllabus_id: string | null;
+  curriculum_topic_key: string | null;
 }
 
 const FETCH_TIMEOUT_MS = 10000;
@@ -102,6 +106,7 @@ export default function AnalyticsContent() {
   const [learningEvents, setLearningEvents] = useState<LearningEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [mastery, setMastery] = useState<TopicMastery[]>([]);
+  const [topicUnits, setTopicUnits] = useState<CurriculumTopicUnit[]>([]);
 
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
@@ -122,12 +127,13 @@ export default function AnalyticsContent() {
         }
 
         const userId = authData.user.id;
-        const [examQuery, focusQuery, eventQuery, taskQuery, masteryQuery] = await Promise.all([
+        const [examQuery, focusQuery, eventQuery, taskQuery, masteryQuery, unitsQuery] = await Promise.all([
           supabase.from("exam_results").select("id, subject, topic, difficulty, score, total_questions, correct_answers, weak_areas, time_taken, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(1000),
           supabase.from("focus_sessions").select("id, duration_minutes, xp_earned, mode, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(1000),
           supabase.from("learning_events").select("id, type, subject, topic, score, time_spent, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(1000),
           supabase.from("tasks").select("id, completed, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(1000),
-          supabase.from("topic_mastery").select("id, subject, topic, mastery_score, trend, recent_improvement, last_attempted").eq("user_id", userId).order("mastery_score", { ascending: true }).limit(500),
+          supabase.from("topic_mastery").select("id, subject, topic, mastery_score, trend, recent_improvement, last_attempted, syllabus_id, curriculum_topic_key").eq("user_id", userId).order("mastery_score", { ascending: true }).limit(500),
+          supabase.from("curriculum_topic_units").select("syllabus_id, subject_id, topic_key, title"),
         ]);
 
         const queries = [examQuery, focusQuery, eventQuery, taskQuery, masteryQuery];
@@ -140,6 +146,8 @@ export default function AnalyticsContent() {
           events: (eventQuery.data ?? []) as LearningEvent[],
           tasks: (taskQuery.data ?? []) as Task[],
           mastery: (masteryQuery.data ?? []) as TopicMastery[],
+          // Titles are decoration for the coverage card; a failure here must not break analytics.
+          topicUnits: ((unitsQuery.error ? [] : unitsQuery.data) ?? []).map((row: { syllabus_id: string; subject_id: string; topic_key: string; title: string }) => ({ syllabusId: row.syllabus_id, subjectId: row.subject_id, topicKey: row.topic_key, title: row.title })) as CurriculumTopicUnit[],
         };
       })();
 
@@ -150,6 +158,7 @@ export default function AnalyticsContent() {
       setLearningEvents(data.events);
       setTasks(data.tasks);
       setMastery(data.mastery);
+      setTopicUnits(data.topicUnits);
     } catch (err) {
       console.error("[Analytics] load failed:", err);
       setError(true);
@@ -182,6 +191,8 @@ export default function AnalyticsContent() {
       return { subject, attempts: rows.length, avg, best: Math.max(...rows.map((e) => Number(e.score || 0))), trend: delta > 10 ? "improving" : delta < -10 ? "declining" : "stable" };
     }).sort((a, b) => b.attempts - a.attempts);
   }, [exams]);
+
+  const syllabusCoverage = useMemo(() => rollUpSyllabusCoverage(mastery, topicUnits), [mastery, topicUnits]);
 
   const weakAreas = useMemo(() => {
     const counts = new Map<string, number>();
@@ -281,6 +292,15 @@ export default function AnalyticsContent() {
                 </div>;
               })}
             </div>
+          </div>}
+
+          {syllabusCoverage.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+            {syllabusCoverage.map((coverage) => <div key={coverage.syllabusId} style={cardStyle}>
+              <p style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>Syllabus coverage · {coverage.syllabusId.replace("cambridge-", "")}</p>
+              <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 11px" }}>{coverage.practisedSubsections} of {coverage.totalSubsections} subsections practised · {coverage.averageMastery}% average</p>
+              <div style={{ height: 5, borderRadius: 99, background: "var(--muted)", marginBottom: 12 }}><div style={{ height: "100%", width: `${Math.round((coverage.practisedSubsections / Math.max(1, coverage.totalSubsections)) * 100)}%`, background: "var(--primary)", borderRadius: 99 }} /></div>
+              {coverage.weakest.map((item) => <div key={item.topicKey} style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 7 }}><span style={{ fontSize: 13, fontWeight: 600 }}>{item.topicKey} {item.title}</span><span style={{ fontSize: 12, fontWeight: 800, color: item.mastery < 60 ? "var(--danger)" : "var(--primary)" }}>{item.mastery}%</span></div>)}
+            </div>)}
           </div>}
 
           {(weakAreas.length > 0 || mastery.length > 0) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
