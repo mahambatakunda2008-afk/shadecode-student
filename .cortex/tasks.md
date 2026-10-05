@@ -9,7 +9,7 @@
 
 ### 2026-10-05 curriculum state reconciliation (verified against live DB)
 - Chemistry 9701: all 37 topics present, 351 learning outcomes, 606 knowledge rows, all `verified`. Supersedes the 2026-09-29 checkpoint below (kept for audit trail).
-- Physics 9702: 25 topics, 300 learning outcomes, verified. Biology 9700: 19 topics, 259 learning outcomes verified; 19 rows still `draft` and need audit/promotion.
+- Physics 9702: 25 topics, 300 learning outcomes, verified. Biology 9700: 19 topics, 259 learning outcomes, all `verified` (the 19 draft topic rows were audited against the official PDF and promoted 2026-10-05; all 44 subsection outcome counts match). `curriculum_knowledge` now has zero non-verified rows across 9700/9701/9702/9709/0478.
 - Mathematics 9709: 153 learning outcomes now stored as `curriculum_knowledge` rows (91 AS / 62 A Level, 38 subsections), derived from the verified `curriculum_objectives` layer and audited line-by-line against the official Cambridge PDF (v4, Dec 2025); all `verified`. Also removed 46 exact-duplicate rows and rekeyed 4 colliding AS/A Level keys (`.as`/`.a`) — 82 rows, 82 distinct keys. Still open: `curriculum_coverage_checks` evidence for 9709.
 - Do not re-extract 9701/9702/9700 learning outcomes; they already exist.
 
