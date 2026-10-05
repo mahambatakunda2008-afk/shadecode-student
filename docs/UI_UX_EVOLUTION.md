@@ -125,3 +125,17 @@ UI work is intentionally independent from the Azure/Cortex worker migration. The
 - Issue #358: design-system and UI/UX scope.
 - PR #359: implementation branch and review history.
 - This document: rationale, completed passes, validation and remaining work.
+
+## Latest validation snapshot: 2026-10-05
+
+- UI/results implementation commit: `46d093b6775ff7ac936784be2ecf31e36d09be6f`.
+- Vercel deployment: `dpl_AwbhJvW26uSGAqsM69z7K3byYoBK`.
+- Vercel state: **READY**.
+- Deployment source: `feat/microsoft-grade-ui-foundation`, commit `46d093b`.
+- GitHub CI workflow run: **success**, run #3123 (workflow `CI`).
+- Combined GitHub status for `46d093b`: **success** (Vercel).
+- Documentation commits followed the implementation so the rationale and validation state remain in the feature branch.
+
+### Merge gate
+
+The feature branch remains intentionally unmerged. GitHub currently reports it as 17 commits ahead and 9 commits behind `main`. This is a release gate, not a reason to discard the work. The next engineering action is to inspect/reconcile the newer mainline changes, then rerun validation against the reconciled branch.
