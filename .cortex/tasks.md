@@ -7,6 +7,42 @@
 
 
 
+### 2026-10-06 Product roadmap (grouped; ordered by Activation > Retention > Virality > Offline > UX > AI)
+
+Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile-first at 360px, no layout shift, server-authoritative for anything scored or shared, unit tests for logic, and an honest empty state instead of fabricated data.
+
+**A. Learn (core study loop)**
+- [x] Verified curriculum for 9700/9701/9702/9709 (249 subsections) and subsection keys on `topic_mastery`
+- [x] Syllabus coverage card in Analytics (renders only from real keyed data)
+- [ ] Revision queue driven by keyed mastery (spaced repetition per subsection, not per free-text topic)
+- [ ] Recurring-mistake tracker: cluster wrong answers across papers by subsection, surface "you keep losing marks on X"
+- [ ] Prerequisite-aware study plan once canonical keys carry prerequisite edges (ADR-2026-topic-canonicalization)
+- [ ] Mark-scheme command-word coach (explain / describe / calculate) with fallback when AI is unavailable
+
+**B. Compete and share (virality)**
+- [x] Challenge scoring is server-authoritative (winner decided from stored challenge score; inputs validated; rate limited)
+- [x] Challenge accept flow now records the attempt and shows a head-to-head result (it previously ignored `cid`, so no attempt was ever saved)
+- [ ] **Past Paper Battle v1:** both players answer the identical frozen question set (stored on the challenge), async 1v1, WhatsApp link, result card. Fairness requires frozen questions; today's challenge only matches subject and difficulty
+- [ ] Anonymous friend path: WhatsApp recipient can take the battle without signup, then is prompted to claim the result (RLS currently allows attempt inserts for authenticated users only)
+- [ ] Past Paper Battle v2: real past-paper questions via Exam Hub where licensing allows
+- [ ] Weekly class and school leagues; streak-save challenges; progress and achievement cards as shareable artifacts
+
+**C. Focus and habits (retention)**
+- [ ] Daily 10-minute mission built from the weakest keyed subsection
+- [ ] Focus sessions linked to study-plan tasks, with results feeding mastery
+- [ ] Load-shedding mode: predictive offline pack of the next day's plan
+
+**D. Teachers and schools**
+- [ ] Class codes, assign a Past Paper Battle, class weak-topic report by subsection
+
+**E. Trust and platform quality**
+- [ ] Accessibility audit (WCAG 2.2 AA) of dashboard, exam-sim, flashcards, challenge pages
+- [ ] Performance budgets (LCP < 2.5s, INP < 200ms on mid-range Android) enforced in CI
+- [ ] Offline sync consolidation (four uncoordinated mechanisms) and PWA install/offline surfaces
+- [ ] Error boundaries and observability on every API route that writes learner data
+- [ ] Move StudySpace mastery sync behind a server route so its rows carry curriculum keys
+- [ ] Fix truncated 9700 subsection titles from the official PDF
+
 ### 2026-10-05 curriculum state reconciliation (verified against live DB)
 - Chemistry 9701: all 37 topics present, 351 learning outcomes, 606 knowledge rows, all `verified`. Supersedes the 2026-09-29 checkpoint below (kept for audit trail).
 - Physics 9702: 25 topics, 300 learning outcomes, verified. Biology 9700: 19 topics, 259 learning outcomes, all `verified` (the 19 draft topic rows were audited against the official PDF and promoted 2026-10-05; all 44 subsection outcome counts match). `curriculum_knowledge` now has zero non-verified rows across 9700/9701/9702/9709/0478.
