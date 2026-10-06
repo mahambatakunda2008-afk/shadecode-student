@@ -9,7 +9,7 @@ import { examCompletedEvent, examStartedEvent, questionAttemptedEvent } from "@/
 import { trackEvent } from "@/lib/traction/client";
 import { createClient } from "@/lib/supabase/client";
 import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
-import type { ExamResults } from "@/lib/exam/types";
+import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 
 function decode(value: string | null) {
   if (!value) return "";
@@ -28,6 +28,18 @@ export default function ExamSimulationClient() {
   const challengerName = decode(params.get("cname")) || "your friend";
   const [subject, setSubject] = useState("");
   const [battle, setBattle] = useState<{ won: boolean; percentage: number } | null>(null);
+  // undefined = still loading; null = no frozen set (older challenge), fall back to a normal exam.
+  const [frozenQuestions, setFrozenQuestions] = useState<ExamQuestion[] | null | undefined>(challengeId ? undefined : null);
+
+  useEffect(() => {
+    if (!challengeId) return;
+    let cancelled = false;
+    fetch(`/api/challenge/questions?id=${encodeURIComponent(challengeId)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { questions?: ExamQuestion[] } | null) => { if (!cancelled) setFrozenQuestions(data?.questions?.length ? data.questions : null); })
+      .catch(() => { if (!cancelled) setFrozenQuestions(null); });
+    return () => { cancelled = true; };
+  }, [challengeId]);
   const [subjectReady, setSubjectReady] = useState(!requestedSubject);
 
   useEffect(() => {
@@ -105,12 +117,12 @@ export default function ExamSimulationClient() {
     void trackEvent("exam_completed", { examId: examInstanceId, subject: subject || null, topic: topic || null, percentage: result.percentage, questionCount: result.results.length });
   };
 
-  if (!subjectReady) {
-    return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] text-sm text-[var(--muted-foreground)]">Preparing your subjects…</main>;
+  if (!subjectReady || frozenQuestions === undefined) {
+    return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] text-sm text-[var(--muted-foreground)]">{frozenQuestions === undefined ? "Loading the challenge…" : "Preparing your subjects…"}</main>;
   }
 
   return <>
-    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
     {battle && challengeId && (
       <aside role="status" aria-live="polite" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-white/10 bg-[var(--card)] p-5 shadow-lg backdrop-blur">
         <p className="text-sm font-semibold text-[var(--foreground)]">{battle.won ? `You beat ${challengerName}!` : `${challengerName} takes this one.`}</p>

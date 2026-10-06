@@ -14,12 +14,13 @@ import { saveWorkObject } from "@/lib/studyspace/store";
 import type { StudySpaceMode } from "@/lib/studyspace/types";
 import { buildFallbackExam } from "@/lib/exam/fallbackExam";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
+import { sanitizeQuestions } from "@/lib/challenge/questions";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
 export type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
 type Answer = { questionId: number; answer: string; timeSpent: number };
-type Props = { initialSubject?: string; initialTopic?: string; initialDifficulty?: number; initialQuestionCount?: number; onExit?: () => void; onFinished?: (result: ExamResults) => void };
+type Props = { initialSubject?: string; initialTopic?: string; initialDifficulty?: number; initialQuestionCount?: number; onExit?: () => void; onFinished?: (result: ExamResults) => void; frozenQuestions?: ExamQuestion[] };
 
 const LEVELS = [{ label: "O-Level", api: "easy" as const, curriculum: "O-Level standard", accent: "var(--brand-cyan)" }, { label: "A-Level", api: "medium" as const, curriculum: "A-Level standard", accent: "var(--brand-blue)" }, { label: "University", api: "hard" as const, curriculum: "university entrance standard", accent: "var(--brand-violet)" }];
 const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", "English", "Geography", "History", "Economics", "Accounting", "Business Studies", "Other"];
@@ -32,7 +33,7 @@ function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.
 function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
 function formulas(subject: string) { const s = subject.toLowerCase(); if (s.includes("math")) return ["a² + b² = c²", "ax² + bx + c = 0", "sin²θ + cos²θ = 1", "gradient = Δy / Δx"]; if (s.includes("physics")) return ["v = u + at", "s = ut + ½at²", "F = ma", "p = mv", "V = IR"]; if (s.includes("chem")) return ["n = m/M", "c = n/V", "PV = nRT", "pH = −log₁₀[H⁺]"]; if (s.includes("computer")) return ["T(n) = O(n)", "binary search: O(log n)", "1 byte = 8 bits"]; return ["State definitions precisely.", "Show method where marks depend on it.", "Check units, assumptions and final statements."]; }
 
-export default function ExamWorkspace({ initialSubject = "", initialTopic = "", initialDifficulty = 1, initialQuestionCount = 10, onExit, onFinished }: Props) {
+export default function ExamWorkspace({ initialSubject = "", initialTopic = "", initialDifficulty = 1, initialQuestionCount = 10, onExit, onFinished, frozenQuestions }: Props) {
   const [subject, setSubject] = useState(initialSubject), [topic, setTopic] = useState(initialTopic), [level, setLevel] = useState(Math.max(0, Math.min(2, initialDifficulty))), [count, setCount] = useState(initialQuestionCount);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]), [answers, setAnswers] = useState<Answer[]>([]), [current, setCurrent] = useState(0), [seconds, setSeconds] = useState(0), [totalSeconds, setTotalSeconds] = useState(0), [startedAt, setStartedAt] = useState(0);
   const [mode, setMode] = useState<"setup" | "exam" | "marking" | "results">("setup"), [generating, setGenerating] = useState(false), [error, setError] = useState<string | null>(null), [userId, setUserId] = useState(""), [online, setOnline] = useState(true), [savedAt, setSavedAt] = useState<number | null>(null);
@@ -53,6 +54,24 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   const setAnswer = (value: string) => { if (!q) return; setAnswers((old) => { const next = [...old], index = next.findIndex((a) => a.questionId === q.id), payload = { questionId: q.id, answer: value, timeSpent: 0 }; if (index >= 0) next[index] = payload; else next.push(payload); return next; }); };
   const go = (index: number) => { if (questions[index]) { setCurrent(index); setHint(null); } };
   const flag = () => q && setFlags((old) => old.includes(q.id) ? old.filter((x) => x !== q.id) : [...old, q.id]);
+
+  // Battle mode: both players sit the identical frozen question set instead of generating a new exam.
+  const frozenStarted = useRef(false);
+  useEffect(() => {
+    if (!frozenQuestions?.length || frozenStarted.current || mode !== "setup") return;
+    frozenStarted.current = true;
+    const total = frozenQuestions.length * 120;
+    workId.current = `exam:battle:${id()}`;
+    setQuestions(frozenQuestions);
+    setAnswers([]);
+    setFlags([]);
+    setCurrent(0);
+    setTotalSeconds(total);
+    setSeconds(total);
+    setStartedAt(Date.now());
+    setMode("exam");
+    setPanel("canvas");
+  }, [frozenQuestions, mode]);
 
   const generate = async () => {
     if (!subject || generating) return;
@@ -203,7 +222,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       if (userId) {
         const correct = markingData.results?.filter((r: ExamResult) => r.correct).length ?? 0;
         try {
-          await createClient().from("exam_results").insert({
+          const supabase = createClient();
+          const { data: saved } = await supabase.from("exam_results").insert({
             user_id: userId,
             subject,
             topic: topic || null,
@@ -213,7 +233,10 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
             correct_answers: correct,
             weak_areas: markingData.weakAreas ?? [],
             time_taken: totalRef.current - secondsRef.current
-          });
+          }).select("id").single();
+          // Keep the sat questions so this result can later be turned into a fair battle.
+          const frozen = sanitizeQuestions(questions);
+          if (saved?.id && frozen) await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
         } catch {}
       }
       if (workId.current) {
