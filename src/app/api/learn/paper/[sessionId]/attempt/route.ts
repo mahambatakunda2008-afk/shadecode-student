@@ -7,6 +7,8 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
 import { resolveCurriculumLink } from "@/lib/topicMastery/curriculumLink";
+import { readPaperScope } from "@/lib/topicMastery/paperScope";
+import type { PaperScope } from "@/lib/topicMastery/resolver";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
 export const dynamic = "force-dynamic";
@@ -109,7 +111,7 @@ function findBlock(plan: Plan, blockId: string) {
 
 const cleanTopic = canonicalLabel;
 
-async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number) {
+async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number, paperScope: PaperScope | null) {
   const subject = cleanTopic(plan.subject || "Paper Study") || "Paper Study";
   const topics = [...new Set((block.interaction?.expectedConcepts ?? []).map(cleanTopic).filter(Boolean))].slice(0, 6);
   const score = VERDICT_SCORE[verdict] / 100;
@@ -126,7 +128,7 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
 
     const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
 
-    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level);
+    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level, paperScope);
 
     await auth.supabase.from("topic_mastery").upsert({
       user_id: auth.user.id,
@@ -183,7 +185,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
 
     const { data: session, error: sessionError } = await auth.supabase
       .from("paper_learning_sessions")
-      .select("id,source_name,selected_page_start,selected_page_end,pages,learning_plan,progress")
+      .select("id,source_name,selected_page_start,selected_page_end,pages,learning_plan,progress,source_metadata")
       .eq("id", sessionId)
       .eq("user_id", auth.user.id)
       .maybeSingle();
@@ -337,7 +339,7 @@ Return ONLY JSON with:
     await auth.supabase.from("paper_learning_sessions").update({ progress: nextProgress }).eq("id", sessionId).eq("user_id", auth.user.id);
 
     try {
-      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo);
+      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo, readPaperScope(session.source_metadata));
     } catch (signalError) {
       console.error("[paper-learning] learning signal update failed", signalError);
     }

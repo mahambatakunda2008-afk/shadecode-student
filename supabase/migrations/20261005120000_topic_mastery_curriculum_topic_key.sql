@@ -25,3 +25,20 @@ where kind = 'learning_outcome'
   and topic_key is not null;
 
 grant select on public.curriculum_topic_units to anon, authenticated, service_role;
+
+-- Adds `level` (as_level | a_level) so paper scope can restrict AS papers to AS content.
+-- Each subsection key has exactly one level across 9700/9701/9702/9709.
+create or replace view public.curriculum_topic_units
+with (security_invoker = true) as
+select distinct
+  syllabus_id,
+  subject_id,
+  topic_key,
+  split_part(title, ': outcome ', 1) as title,
+  level
+from public.curriculum_knowledge
+where kind = 'learning_outcome'
+  and status = 'verified'
+  and topic_key is not null;
+
+grant select on public.curriculum_topic_units to anon, authenticated, service_role;

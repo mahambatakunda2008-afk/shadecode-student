@@ -8,7 +8,7 @@
  * never block a student's mastery write.
  */
 
-import { buildTopicIndex, isSupportedLevel, resolveTopic, type CurriculumTopicUnit, type TopicIndex } from "./resolver";
+import { buildTopicIndex, isSupportedLevel, resolveTopic, type CurriculumTopicUnit, type PaperScope, type TopicIndex } from "./resolver";
 
 interface UnitsClient {
   from(table: "curriculum_topic_units"): {
@@ -31,7 +31,7 @@ export function resetCurriculumLinkCache() {
 async function loadIndex(client: UnitsClient, now: number): Promise<TopicIndex | null> {
   if (cached && now - cached.loadedAt < CACHE_TTL_MS) return cached.index;
 
-  const { data, error } = await client.from("curriculum_topic_units").select("syllabus_id, subject_id, topic_key, title");
+  const { data, error } = await client.from("curriculum_topic_units").select("syllabus_id, subject_id, topic_key, title, level");
   if (error || !data?.length) return cached?.index ?? null;
 
   const units: CurriculumTopicUnit[] = (data as Array<Record<string, unknown>>)
@@ -41,6 +41,7 @@ async function loadIndex(client: UnitsClient, now: number): Promise<TopicIndex |
       subjectId: String(row.subject_id),
       topicKey: String(row.topic_key),
       title: String(row.title),
+      level: row.level ? String(row.level) : undefined,
     }));
 
   cached = { index: buildTopicIndex(units), loadedAt: now };
@@ -57,13 +58,14 @@ export async function resolveCurriculumLink(
   subject: string,
   topic: string,
   level?: string | null,
+  scope?: PaperScope | null,
   now: number = Date.now(),
 ): Promise<CurriculumLink | Record<string, never>> {
   try {
     if (!isSupportedLevel(level)) return {};
     const index = await loadIndex(client, now);
     if (!index) return {};
-    const result = resolveTopic(topic, subject, index);
+    const result = resolveTopic(topic, subject, index, scope);
     if (result.status !== "resolved") return {};
     return { syllabus_id: result.unit.syllabusId, curriculum_topic_key: result.unit.topicKey };
   } catch {

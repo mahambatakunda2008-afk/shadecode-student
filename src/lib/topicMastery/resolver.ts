@@ -17,6 +17,13 @@ export interface CurriculumTopicUnit {
   /** Subsection key, e.g. "1.1". */
   topicKey: string;
   title: string;
+  /** "as_level" | "a_level" from the verified curriculum rows, when known. */
+  level?: string;
+}
+
+export interface PaperScope {
+  syllabusId: string;
+  paper?: number;
 }
 
 export type TopicResolution =
@@ -105,17 +112,37 @@ export function buildTopicIndex(units: CurriculumTopicUnit[]): TopicIndex {
   return { units: indexed };
 }
 
-export function resolveTopic(label: string, subject: string, index: TopicIndex): TopicResolution {
+/**
+ * Narrows the index to what a specific paper can examine. 9709 papers map 1:1 to
+ * syllabus sections (Paper 3 = section 3). For 9700/9701/9702, Papers 1-3 are AS
+ * only; Papers 4-5 may also draw on AS knowledge, so they keep both levels.
+ */
+function unitsForScope(index: TopicIndex, scope: PaperScope): IndexedUnit[] {
+  const inSyllabus = index.units.filter((entry) => entry.unit.syllabusId === scope.syllabusId);
+  if (!scope.paper) return inSyllabus;
+  if (scope.syllabusId === "cambridge-9709") {
+    return inSyllabus.filter((entry) => entry.unit.topicKey.split(".")[0] === String(scope.paper));
+  }
+  if (scope.paper <= 3) return inSyllabus.filter((entry) => entry.unit.level === "as_level");
+  return inSyllabus;
+}
+
+export function resolveTopic(label: string, subject: string, index: TopicIndex, scope?: PaperScope | null): TopicResolution {
   const labelTokens = tokenize(label);
   if (!labelTokens.length) return { status: "none" };
 
-  // A placeholder subject ("Paper Study") means the plan could not identify one: search every
-  // verified subject and rely on the unambiguity rules. A recognised-but-unsupported subject
-  // (e.g. Economics) must never fall through to a cross-subject search.
-  const subjectIds = isGenericSubject(subject) ? null : subjectIdsFor(subject);
-  if (subjectIds && !subjectIds.length) return { status: "none" };
-
-  const pool = subjectIds ? index.units.filter((entry) => subjectIds.includes(entry.unit.subjectId)) : index.units;
+  let pool: IndexedUnit[];
+  if (scope) {
+    // The syllabus code is printed on the paper, so it outranks the AI's free-text subject.
+    pool = unitsForScope(index, scope);
+  } else {
+    // A placeholder subject ("Paper Study") means the plan could not identify one: search every
+    // verified subject and rely on the unambiguity rules. A recognised-but-unsupported subject
+    // (e.g. Economics) must never fall through to a cross-subject search.
+    const subjectIds = isGenericSubject(subject) ? null : subjectIdsFor(subject);
+    if (subjectIds && !subjectIds.length) return { status: "none" };
+    pool = subjectIds ? index.units.filter((entry) => subjectIds.includes(entry.unit.subjectId)) : index.units;
+  }
   if (!pool.length) return { status: "none" };
 
   const labelNormalized = labelTokens.join(" ");

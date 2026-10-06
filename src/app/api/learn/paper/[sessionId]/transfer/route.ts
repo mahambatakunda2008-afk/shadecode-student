@@ -7,6 +7,8 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
 import { resolveCurriculumLink } from "@/lib/topicMastery/curriculumLink";
+import { readPaperScope } from "@/lib/topicMastery/paperScope";
+import type { PaperScope } from "@/lib/topicMastery/resolver";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +63,7 @@ function object(raw: string) {
 const clean = canonicalLabel;
 function blockFor(plan: Plan, id: string) { return (plan.blocks ?? []).find(block => block.id === id && (block.type === "checkpoint" || block.type === "mastery")); }
 
-async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict) {
+async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict, paperScope: PaperScope | null) {
   const subject = clean(plan.subject || "Paper Study") || "Paper Study";
   const concepts = [...new Set((block.interaction?.expectedConcepts ?? []).map(clean).filter(Boolean))].slice(0, 6);
   const score = VERDICT_SCORE[verdict] / 100;
@@ -69,7 +71,7 @@ async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict) {
   for (const topic of concepts) {
     const { data: existing } = await auth.supabase.from("topic_mastery").select("mastery_score,last_score,attempts,trend,retention,confidence,stability,exposure,error_rate,response_speed,prerequisite_health,recent_improvement,uncertainty").eq("user_id", auth.user.id).eq("subject", subject).eq("topic", topic).maybeSingle();
     const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
-    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level);
+    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level, paperScope);
     await auth.supabase.from("topic_mastery").upsert({ user_id: auth.user.id, subject, topic, ...row, ...curriculumLink }, { onConflict: "user_id,subject,topic" });
     await auth.supabase.from("revision_queue").upsert({ user_id: auth.user.id, topic, subject, priority: revisionPriority, source: "paper_learning", last_seen: now }, { onConflict: "user_id,topic,subject" });
   }
@@ -90,7 +92,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
     const clientActionId = normalizeClientActionId(body.clientActionId);
     if (!action || !blockId) return NextResponse.json({ error: "Transfer action and source checkpoint are required." }, { status: 400 });
-    const { data: session } = await auth.supabase.from("paper_learning_sessions").select("id,selected_page_start,selected_page_end,pages,learning_plan").eq("id", sessionId).eq("user_id", auth.user.id).maybeSingle();
+    const { data: session } = await auth.supabase.from("paper_learning_sessions").select("id,selected_page_start,selected_page_end,pages,learning_plan,source_metadata").eq("id", sessionId).eq("user_id", auth.user.id).maybeSingle();
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
     const plan = session.learning_plan as Plan;
     const block = blockFor(plan, blockId);
@@ -160,7 +162,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
       const { error: progressError } = await auth.supabase.from("paper_learning_sessions").update({ progress: { ...progress, completedBlockIds, lastBlockId: blockId, lastVerdict: evaluation.verdict, updatedAt: new Date().toISOString() } }).eq("id", sessionId).eq("user_id", auth.user.id);
       if (progressError) return NextResponse.json({ error: "The transfer was graded, but mastery progress could not be persisted. Please retry from this result." }, { status: 500 });
     }
-    try { await signal(auth, plan, transferBlock, evaluation.verdict); } catch (error) { console.error("[paper-learning] transfer signal failed", error); }
+    try { await signal(auth, plan, transferBlock, evaluation.verdict, readPaperScope(session.source_metadata)); } catch (error) { console.error("[paper-learning] transfer signal failed", error); }
     return NextResponse.json({ action: "submit", transferId, verdict: evaluation.verdict, feedback: evaluation.feedback, misconception: evaluation.misconception || null, nextAction: evaluation.nextAction || null, completed: evaluation.verdict === "correct" });
   } catch (error) {
     console.error("[paper-learning] transfer route failed", error);
