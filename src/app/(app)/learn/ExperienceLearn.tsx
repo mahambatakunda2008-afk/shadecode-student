@@ -17,14 +17,14 @@ function ExperienceLearnIntro({ experience }: { experience: AcademicExperience }
         : { kicker: "Deep learning", title: "Build knowledge you can use", body: "Connect course concepts to assignments, projects and the practical work you are trying to accomplish." };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-6 lg:px-8">
-      <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] px-4 py-3 sm:px-5">
+    <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-4 shadow-sm sm:px-5">
         <div className="flex items-start gap-3">
           <ShadecodeFeatureIcon feature="learn" size="sm" />
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-[.08em] text-[var(--primary)]">{copy.kicker}</p>
-        <h1 className="mt-1 text-lg font-extrabold tracking-tight text-[var(--foreground)] sm:text-xl">{copy.title}</h1>
-        <p className="mt-1 max-w-3xl text-sm leading-5 text-[var(--muted-foreground)]">{copy.body}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[var(--primary)]">{copy.kicker}</p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">{copy.title}</h1>
+        <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">{copy.body}</p>
           </div>
         </div>
       </div>

@@ -1,3 +1,45 @@
+## 2026-10-05 (validation update) — UI/results deployment and CI confirmed
+
+The latest implementation pass has now been independently validated:
+
+- UI/results commit: `46d093b6775ff7ac936784be2ecf31e36d09be6f`.
+- Vercel deployment `dpl_AwbhJvW26uSGAqsM69z7K3byYoBK`: **READY**.
+- Deployment is from `feat/microsoft-grade-ui-foundation` at `46d093b`.
+- GitHub CI run #3123: **completed / success**.
+- Combined GitHub status for `46d093b`: **success**.
+
+The feature branch is still 17 commits ahead and 9 commits behind `main`. No merge or force-update has been performed. The next gate is safe reconciliation with current `main`, followed by another full validation pass.
+
+## 2026-10-05 — Microsoft-grade UI/UX evolution documented and implementation pass advanced
+
+The UI/UX workstream is now recorded as a durable repository artifact rather than living only in chat.
+
+- Scope source: Issue #358.
+- Implementation branch: `feat/microsoft-grade-ui-foundation`.
+- Pull request: #359.
+- Detailed design/implementation record: `docs/UI_UX_EVOLUTION.md`.
+- Semantic design tokens and shared interaction primitives were added in `src/app/globals.css`.
+- Navigation, dashboard, Learn, Exam Hub, WorkMate, Cortex status, exam workspace, and exam results received focused accessibility/state/visual-hierarchy improvements.
+- Learn now exposes real generation states and a deliberate learning-understanding checkpoint.
+- Exam flows now communicate timer, answer, flag, marking, result tabs and expandable review state accessibly.
+- The implementation intentionally avoids wholesale redesign, fake progress, excessive gradients/glassmorphism, generic AI visual language, and backend coupling.
+
+### Validation and branch state
+
+The latest documented UI result pass is commit `46d093b`. Its Vercel deployment was observed building from the correct branch and commit. A previous exam-workspace deployment for `67d21d7` reached READY.
+
+Before merge, branch reconciliation is required. On 2026-10-05 GitHub reports:
+
+- `main`: 9 commits ahead of the feature branch.
+- Feature branch: 17 commits ahead of `main`.
+- Compare status: `diverged`.
+
+No force update or merge has been performed. The nine newer `main` commits must be inspected and reconciled safely, followed by CI/build/deployment validation.
+
+### Why this is being documented
+
+This work is part of the broader Shadecode Student product-quality push for Imagine Cup and future scale. The UI layer must remain independent from the planned Azure/Cortex compute migration so that durable job states can be surfaced consistently without tying the interface to a particular AI provider.
+
 ## 2026-09-29 — Completed Cambridge Chemistry 9701 2025–2027 knowledge layer
 
 The Chemistry curriculum expansion is now teaching-source ready.

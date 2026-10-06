@@ -8,7 +8,7 @@ import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { lessonViewedEvent } from "@/lib/intelligence/emitLearningEvent";
 import { getGenerationJob, subscribeGenerationJobs, type GenerationJob } from "@/lib/cortex/generationJob";
 import { resumeLessonGeneration, startLessonGeneration, type LessonGenerationInput } from "@/lib/cortex/lessonGenerationClient";
-import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Loader2, RefreshCw, Sparkles, Target, Zap } from "lucide-react";
+import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Loader2, RefreshCw, Sparkles, Target, Zap, WifiOff, CircleCheck, Clock3 } from "lucide-react";
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 
 const AUTH_TIMEOUT = 3_000;
@@ -34,13 +34,69 @@ export default function LearnPageResilient() {
   async function load(tok: string) { const r = await fetchWithTimeout("/api/learn", { headers: { Authorization: `Bearer ${tok}` }, cache: "no-store" }, LOAD_TIMEOUT); const data = await r.json().catch(() => ({} as ApiResponse)); if (!r.ok) throw new Error(data.error || `Learn sync failed (${r.status})`); setSubjects(data.subjects ?? []); setLessons(data.lessons ?? []); setSummary(data.summary ?? null); const syncedAt = new Date().toISOString(); await Promise.all((data.lessons ?? []).map((lesson: LearnLesson) => offlineStorage.saveLesson({ id: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, difficulty: lesson.difficulty, progress: lesson.progress, completed: lesson.completed, downloadedAt: syncedAt, lastSyncedAt: syncedAt, size: JSON.stringify(lesson).length }))); }
   async function generate() { const request = topic.trim(); if (!subject || !request || generationJob?.status === "generating" || generationJob?.status === "warming" || generationJob?.status === "queued") return; setError(null); localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, topic: request, mode })); const modeInstruction = mode === "guided" ? "Teach from first principles, using small steps and checks for understanding." : mode === "challenge" ? "Teach at exam level, include common traps, higher-order reasoning and a demanding worked example." : "Teach at a clear standard level, balancing explanation, worked examples and exam application."; const job = await startLessonGeneration({ prompt: request, subject, difficulty: mode === "guided" ? "easy" : mode === "challenge" ? "hard" : "medium", goal: modeInstruction }, token); setGenerationJob(job as LessonJob); }
   function openLesson(lesson: LearnLesson) { void lessonViewedEvent(lesson.id, lesson.subject, lesson.topic); router.push(`/learn/${lesson.id}`); }
-  const generating = generationJob?.status === "queued" || generationJob?.status === "warming" || generationJob?.status === "generating"; const queuedOffline = generationJob?.status === "queued" && offline;
+  const generating = generationJob?.status === "queued" || generationJob?.status === "warming" || generationJob?.status === "generating" || generationJob?.status === "partial";
+  const queuedOffline = generationJob?.status === "queued" && offline;
+  const generationLabel = generationJob?.status === "queued"
+    ? (queuedOffline ? "Waiting for connection" : "Queued")
+    : generationJob?.status === "warming"
+      ? "Preparing your learning session"
+      : generationJob?.status === "generating"
+        ? "Building your lesson"
+        : generationJob?.status === "partial"
+          ? "Checkpoint saved"
+          : generationJob?.status === "complete"
+            ? "Lesson ready"
+            : generationJob?.status === "failed"
+              ? "Generation needs attention"
+              : "Generation";
+  const generationDetail = generationJob?.status === "queued"
+    ? (queuedOffline ? "Your request is saved on this device and will resume when you reconnect." : "Your request is safely queued. You can leave this page and come back.")
+    : generationJob?.status === "warming"
+      ? "Cortex is choosing the best available learning lane."
+      : generationJob?.status === "generating"
+        ? (generationJob.error || "Cortex is assembling and checking the lesson.")
+        : generationJob?.status === "partial"
+          ? "The latest completed sections are checkpointed. Generation can resume without starting from zero."
+          : "";
   if (loading && lessons.length === 0) return <main className="grid min-h-[70vh] place-items-center bg-[var(--background)] text-[var(--muted-foreground)]"><Loader2 className="h-7 w-7 animate-spin" aria-label="Loading Learn" /></main>;
   return <main className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8"><div className="mx-auto max-w-6xl space-y-7">
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-semibold text-[var(--primary)]"><Sparkles className="h-4 w-4" /> Learn</div><h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Learn with intent.</h1><p className="mt-2 max-w-2xl text-[15px] leading-6 text-[var(--muted-foreground)]">Pick the subject, name the thing you need, and Cortex turns it into a focused learning session.</p></div><div className="flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm"><span className={`h-2.5 w-2.5 rounded-full ${offline ? "bg-amber-400" : "bg-emerald-400"}`} /><span>{offline ? "Device-first" : "Ready"}</span></div></header>
     {error && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--primary)]" /><div className="min-w-0 flex-1"><p className="text-sm font-semibold">Something needs attention</p><p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{error}</p></div>{token && !offline && <button type="button" onClick={() => void load(token).catch(e => setError(e instanceof Error ? e.message : "Cloud sync failed."))} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm font-semibold"><RefreshCw className="h-4 w-4" /> Retry</button>}</div>}
-    {generationJob && generating && <div className="rounded-2xl border border-[var(--primary)]/30 bg-[var(--primary-glow)] p-4" role="status" aria-live="polite"><div className="flex items-center gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--card)] text-[var(--primary)]"><Loader2 className="h-5 w-5 animate-spin" /></div><div className="min-w-0 flex-1"><p className="text-sm font-bold">{queuedOffline ? "Saved for when you're back online" : generationJob.status === "warming" ? "Cortex is preparing your lesson" : "Cortex is building your lesson"}</p><p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{queuedOffline ? "Nothing is lost. Shadecode will resume automatically." : "The moment it is ready, you go straight into the lesson."}</p></div><span className="text-sm font-bold tabular-nums">{generationJob.progress}%</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--muted)]"><div className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-500" style={{ width: `${generationJob.progress}%` }} /></div></div>}
-    {generationJob?.status === "failed" && <div role="alert" className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-4"><p className="text-sm font-bold">Cortex could not finish this lesson.</p><p className="mt-1 text-sm text-[var(--muted-foreground)]">{generationJob.error || "Try again. Your previous lessons are safe."}</p><button type="button" onClick={() => void generate()} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-sm font-semibold"><RefreshCw className="h-4 w-4" /> Try again</button></div>}
+    {generationJob && generating && <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 shadow-sm" role="status" aria-live="polite">
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]">
+          {queuedOffline ? <WifiOff className="h-5 w-5" /> : generationJob.status === "partial" ? <CircleCheck className="h-5 w-5" /> : generationJob.status === "queued" ? <Clock3 className="h-5 w-5" /> : <Loader2 className="h-5 w-5 animate-spin" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-sm font-bold">{generationLabel}</p>
+            <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-semibold text-[var(--muted-foreground)]">Job {generationJob.id.slice(0, 8)}</span>
+          </div>
+          <p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{generationDetail}</p>
+        </div>
+        <span className="text-sm font-bold tabular-nums">{generationJob.progress}%</span>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]" aria-hidden="true">
+        <div className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-500" style={{ width: `${generationJob.progress}%` }} />
+      </div>
+      {generationJob.status === "partial" && <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3 text-sm">
+        <span className="text-[var(--muted-foreground)]">Your checkpoint is safe. Refreshing will not erase completed sections.</span>
+        <span className="shrink-0 font-semibold text-[var(--primary)]">Resumable</span>
+      </div>}
+    </div>}
+    {generationJob?.status === "failed" && <div role="alert" className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--surface-sunken)] text-[var(--muted-foreground)]"><AlertCircle className="h-5 w-5" /></div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Cortex stopped this generation cleanly.</p>
+          <p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{generationJob.error || "Your request is safe. You can retry it manually."}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={() => void generate()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--primary)] px-3 text-sm font-semibold text-[var(--primary-foreground)]"><RefreshCw className="h-4 w-4" /> Try again</button>
+        <button type="button" onClick={() => setGenerationJob(null)} className="inline-flex min-h-10 items-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] px-3 text-sm font-semibold">Keep working</button>
+      </div>
+    </div>}
     <section className="rounded-[2rem] border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-sm sm:p-7"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]"><Target className="h-5 w-5" /></div><div><h2 className="text-xl font-bold">What are we mastering?</h2><p className="mt-1 text-sm text-[var(--muted-foreground)]">Be specific. Cortex keeps the request as the source of truth.</p></div></div>
       <div className="mt-6 grid gap-4 lg:grid-cols-[260px_1fr]"><div><label htmlFor="learn-subject" className="mb-2 block text-sm font-semibold">Subject</label><select id="learn-subject" aria-label="Subject" value={subject} onChange={e => setSubject(e.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 text-[15px] outline-none focus:border-[var(--primary)]"><option value="">Choose a subject</option>{subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select><p className="mt-2 text-sm text-[var(--muted-foreground)]">{subjects.length ? `${subjects.length} subjects available` : "Subjects will appear after sync."}</p></div><div><label htmlFor="learn-topic" className="mb-2 block text-sm font-semibold">What do you need help with?</label><textarea id="learn-topic" aria-label="What do you need help with?" value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") void generate(); }} rows={4} maxLength={500} placeholder="e.g. Teach me this topic from the foundations, then test whether I can apply it." className="w-full resize-y rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-[15px] leading-6 outline-none focus:border-[var(--primary)]" /><div className="mt-2 flex items-center justify-between text-sm text-[var(--muted-foreground)]"><span>Ctrl/⌘ + Enter</span><span>{topic.length}/500</span></div></div></div>
       <div className="mt-5"><p className="mb-2 text-sm font-semibold">Jump in</p><div className="flex flex-wrap gap-2">{examples.map(example => <button key={example} type="button" onClick={() => setTopic(example)} className="rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-medium transition hover:border-[var(--primary)] hover:bg-[var(--primary-glow)]">{example}</button>)}</div></div>

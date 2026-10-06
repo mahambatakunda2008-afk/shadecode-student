@@ -101,7 +101,7 @@ export function BottomNav() {
         href={item.href}
         aria-current={active ? "page" : undefined}
         aria-label={primaryLabel(item.href, item.label)}
-        className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
+        className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset ssc-interactive"
       >
         <span
           className={cn(
@@ -143,7 +143,7 @@ export function BottomNav() {
     <>
       <nav
         aria-label={experience.label + " primary navigation"}
-        className="flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
+        className="flex w-full items-stretch border-t border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {leftItems.map(renderNavItem)}
@@ -152,7 +152,7 @@ export function BottomNav() {
           href={dashboardItem.href}
           aria-current={isRouteActive(pathname, dashboardItem.href) ? "page" : undefined}
           aria-label="Home"
-          className="relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-1 pb-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
+          className="relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-1 pb-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset ssc-interactive"
         >
           <span
             className={cn(
@@ -189,7 +189,7 @@ export function BottomNav() {
             aria-label={"Open " + moreTitle}
             aria-expanded={open}
             onClick={() => setOpen(true)}
-            className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
+            className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 pt-2.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset ssc-interactive"
           >
             <span
               className={cn(
@@ -230,7 +230,7 @@ export function BottomNav() {
             className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={() => setOpen(false)}
           />
-          <section className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-[28px] border border-[var(--card-border)] bg-[var(--surface)] p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))] shadow-[var(--shadow-lg)]">
+          <section className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-[24px] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))] shadow-[var(--shadow-lg)]">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">

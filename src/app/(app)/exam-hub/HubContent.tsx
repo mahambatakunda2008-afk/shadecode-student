@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users, ListChecks } from "lucide-react";
+import { FileText, Gamepad2, Bookmark, BarChart3, Target, Sparkles, UploadCloud, Users, ListChecks, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ShadecodeFeatureIcon, type ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
 
@@ -112,60 +112,39 @@ export default function HubContent({ isAdmin }: Props) {
           Everything for exam prep, in one place.
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => {
             const Icon = card.icon;
             const content = (
               <div
-                style={{
-                  padding: 20,
-                  borderRadius: 18,
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--card-border)",
-                  height: "100%",
-                  opacity: card.comingSoon ? 0.6 : 1,
-                  cursor: card.comingSoon ? "default" : "pointer",
-                  transition: "border-color 150ms ease",
-                }}
+                className="ssc-interactive ssc-surface-raised group h-full rounded-2xl p-5"
+                style={{ opacity: card.comingSoon ? 0.6 : 1, cursor: card.comingSoon ? "default" : "pointer" }}
               >
                 <div
+                  className="mb-4 grid size-10 place-items-center rounded-xl border"
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    background: `color-mix(in srgb, ${card.accent} 14%, transparent)`,
-                    border: `1px solid color-mix(in srgb, ${card.accent} 28%, transparent)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 14,
+                    background: `color-mix(in srgb, ${card.accent} 10%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${card.accent} 24%, transparent)`,
                   }}
                 >
                   <ShadecodeFeatureIcon icon={Icon} feature={card.feature} size="md" />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <div className="mb-1 flex items-center gap-2">
                   <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--foreground)", margin: 0 }}>
                     {card.title}
                   </h2>
                   {card.comingSoon && (
                     <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        color: "var(--muted-foreground)",
-                        background: "var(--surface)",
-                        border: "1px solid var(--card-border)",
-                        borderRadius: 999,
-                        padding: "2px 8px",
-                      }}
+                      className="rounded-full border border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-tertiary)]"
                     >
                       Soon
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.5 }}>
+                <p className="text-[13px] leading-6 text-[var(--text-secondary)]">
                   {card.description}
                 </p>
+                {!card.comingSoon && <ArrowRight size={15} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" aria-hidden="true" />}
               </div>
             );
 
