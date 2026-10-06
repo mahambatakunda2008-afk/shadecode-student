@@ -1,3 +1,26 @@
+## 2026-10-06 — Microsoft-grade UI/UX evolution merged into main
+
+PR #359 is now merged into `main` as merge commit `d6c8d3c7621aeddcce67f43a4f462503cfef6282`.
+
+### Reconciliation
+
+The feature branch had diverged from `main`. The newer mainline work included curriculum/mastery resolution, syllabus coverage, paper-learning and battle functionality. The UI branch was merged without force-updating or discarding those changes.
+
+The resulting mainline therefore carries both:
+- the current curriculum/mastery/battle product work
+- the Microsoft-grade Shadecode Student UI/UX evolution
+
+### Release validation
+
+- Pre-merge UI commit `46d093b`: Vercel READY.
+- Pre-merge UI commit `46d093b`: GitHub CI success.
+- Merge commit `d6c8d3c`: production Vercel deployment created and building from `main`.
+- Current production deployment: `dpl_3UYUKRZLBPsM89uk1Cew4zAASD6s`.
+- Build has reached the Next.js optimized production build stage without a build failure at the time of this entry.
+- The final deployment state remains a release gate and must be rechecked.
+
+Detailed UI rationale and scope: `docs/UI_UX_EVOLUTION.md`.
+
 ## 2026-10-05 (validation update) — UI/results deployment and CI confirmed
 
 The latest implementation pass has now been independently validated:
