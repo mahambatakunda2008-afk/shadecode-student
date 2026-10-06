@@ -1,6 +1,7 @@
 // src/app/api/challenge/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { sanitizeQuestions } from '@/lib/challenge/questions'
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
 
 export const dynamic = "force-dynamic";
@@ -66,9 +67,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create challenge' }, { status: 500 })
     }
 
+    // Freeze the exact questions the challenger sat so the opponent answers the same set.
+    // Failure is non-fatal: the challenge still works as a same-subject duel.
+    let frozen = false
+    if (user && typeof result_id === 'string') {
+      const { data: sat } = await supabase
+        .from('exam_result_questions')
+        .select('questions')
+        .eq('result_id', result_id)
+        .maybeSingle()
+      const questions = sat ? sanitizeQuestions(sat.questions) : null
+      if (questions) {
+        const { error: freezeError } = await supabase.from('challenge_questions').insert({ challenge_id: data.id, questions })
+        frozen = !freezeError
+        if (freezeError) console.error('[challenge/POST freeze]', freezeError)
+      }
+    }
+
     return NextResponse.json({
       id:           data.id,
       challengeUrl: `/challenge/${data.id}`,
+      frozen,
     })
   } catch (err) {
     console.error('[challenge/POST]', err)
