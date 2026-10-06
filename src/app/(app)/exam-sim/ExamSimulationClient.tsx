@@ -24,7 +24,10 @@ export default function ExamSimulationClient() {
   const topic = decode(params.get("topic"));
   const count = Number(params.get("count") || params.get("cnt") || 10);
   const safeCount = [5, 10, 15, 20].includes(count) ? count : 10;
+  const challengeId = decode(params.get("cid"));
+  const challengerName = decode(params.get("cname")) || "your friend";
   const [subject, setSubject] = useState("");
+  const [battle, setBattle] = useState<{ won: boolean; percentage: number } | null>(null);
   const [subjectReady, setSubjectReady] = useState(!requestedSubject);
 
   useEffect(() => {
@@ -72,6 +75,17 @@ export default function ExamSimulationClient() {
   }, [examInstanceId, safeCount, subject, subjectReady, topic]);
 
   const handleFinished = (result: ExamResults) => {
+    if (challengeId) {
+      // Server decides the winner from the stored challenge score; the browser only reports its own result.
+      void fetch("/api/challenge/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challenge_id: challengeId, percentage: result.percentage, total_score: result.totalScore, max_score: result.maxScore, time_taken: result.timeTaken }),
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data: { won?: boolean } | null) => { if (data && typeof data.won === "boolean") setBattle({ won: data.won, percentage: result.percentage }); })
+        .catch(() => undefined);
+    }
     for (const question of result.results) {
       void questionAttemptedEvent(examInstanceId, question.questionId, subject || undefined, question.topic || topic || undefined, {
         correct: question.correct,
@@ -95,5 +109,14 @@ export default function ExamSimulationClient() {
     return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] text-sm text-[var(--muted-foreground)]">Preparing your subjects…</main>;
   }
 
-  return <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
+  return <>
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
+    {battle && challengeId && (
+      <aside role="status" aria-live="polite" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-white/10 bg-[var(--card)] p-5 shadow-lg backdrop-blur">
+        <p className="text-sm font-semibold text-[var(--foreground)]">{battle.won ? `You beat ${challengerName}!` : `${challengerName} takes this one.`}</p>
+        <p className="mt-1 text-xs text-[var(--muted-foreground)]">You scored {battle.percentage}%. {battle.won ? "Share the win and send a rematch." : "Review your weak topics, then challenge them back."}</p>
+        <a href={`/challenge/${challengeId}`} className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90">See the challenge</a>
+      </aside>
+    )}
+  </>
 }
