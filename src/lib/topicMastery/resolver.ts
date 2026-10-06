@@ -48,9 +48,29 @@ function stem(token: string): string {
   return token;
 }
 
+const GENERIC_SUBJECTS = new Set(["paper study", "paper checkpoint", "study", "general"]);
+
+/** True when the subject carries no information (empty or a placeholder). */
+export function isGenericSubject(subject: string): boolean {
+  const normalized = tokenize(subject).join(" ");
+  return !normalized || GENERIC_SUBJECTS.has(normalized);
+}
+
+/**
+ * The verified units cover Cambridge AS & A Level only. Papers explicitly marked
+ * as another qualification must never be matched against them, or an IGCSE
+ * "Work and energy" question would be filed under 9702.
+ */
+export function isSupportedLevel(level: string | null | undefined): boolean {
+  if (!level) return true;
+  return !/\b(igcse|gcse|o[\s-]?level|ordinary|checkpoint|grade\s*\d+|form\s*\d+|year\s*(7|8|9|10|11)|ib|ap|sat)\b/i.test(level);
+}
+
 /** Maps a free-text subject ("A Level Physics", "Maths") onto curriculum subject slugs. */
 export function subjectIdsFor(subject: string): string[] {
   const text = ` ${tokenize(subject).join(" ")} `;
+  // "Further Mathematics" is a different syllabus (9231) that is not in the verified set.
+  if (/ further /.test(text)) return [];
   const ids: string[] = [];
   if (/ physic /.test(text)) ids.push("physics");
   if (/ chemistry /.test(text)) ids.push("chemistry");
@@ -89,10 +109,13 @@ export function resolveTopic(label: string, subject: string, index: TopicIndex):
   const labelTokens = tokenize(label);
   if (!labelTokens.length) return { status: "none" };
 
-  const subjectIds = subjectIdsFor(subject);
-  if (!subjectIds.length) return { status: "none" };
+  // A placeholder subject ("Paper Study") means the plan could not identify one: search every
+  // verified subject and rely on the unambiguity rules. A recognised-but-unsupported subject
+  // (e.g. Economics) must never fall through to a cross-subject search.
+  const subjectIds = isGenericSubject(subject) ? null : subjectIdsFor(subject);
+  if (subjectIds && !subjectIds.length) return { status: "none" };
 
-  const pool = index.units.filter((entry) => subjectIds.includes(entry.unit.subjectId));
+  const pool = subjectIds ? index.units.filter((entry) => subjectIds.includes(entry.unit.subjectId)) : index.units;
   if (!pool.length) return { status: "none" };
 
   const labelNormalized = labelTokens.join(" ");

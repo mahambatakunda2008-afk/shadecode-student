@@ -126,7 +126,7 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
 
     const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
 
-    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic);
+    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level);
 
     await auth.supabase.from("topic_mastery").upsert({
       user_id: auth.user.id,

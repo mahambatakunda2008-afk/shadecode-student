@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { buildTopicIndex, resolveTopic, subjectIdsFor, type CurriculumTopicUnit } from "./resolver";
+import { buildTopicIndex, isGenericSubject, isSupportedLevel, resolveTopic, subjectIdsFor, type CurriculumTopicUnit } from "./resolver";
 import { resetCurriculumLinkCache, resolveCurriculumLink } from "./curriculumLink";
 
 const unit = (syllabusId: string, subjectId: string, topicKey: string, title: string): CurriculumTopicUnit => ({ syllabusId, subjectId, topicKey, title });
@@ -26,6 +26,19 @@ describe("subjectIdsFor", () => {
   });
 });
 
+describe("subject and level guards", () => {
+  it("treats placeholders as generic", () => {
+    expect(isGenericSubject("Paper Study")).toBe(true);
+    expect(isGenericSubject("")).toBe(true);
+    expect(isGenericSubject("Physics")).toBe(false);
+  });
+
+  it("rejects non-AS/A-Level qualifications but accepts unknown or A-Level levels", () => {
+    for (const level of ["IGCSE", "GCSE Higher", "O Level", "Grade 10", "Form 4", "Year 9"]) expect(isSupportedLevel(level)).toBe(false);
+    for (const level of ["", null, undefined, "A Level", "AS Level", "A2", "Cambridge International A Level"]) expect(isSupportedLevel(level)).toBe(true);
+  });
+});
+
 describe("resolveTopic", () => {
   it("resolves an exact title regardless of case, plurals and punctuation", () => {
     const result = resolveTopic("  isotopes. ", "Chemistry", index);
@@ -43,9 +56,20 @@ describe("resolveTopic", () => {
     expect(resolveTopic("Newton's second law", "Physics", index).status).toBe("none");
   });
 
-  it("returns none for unknown subjects so nothing is guessed", () => {
-    expect(resolveTopic("Isotopes", "Paper Study", index).status).toBe("none");
+  it("returns none when the recognised subject does not contain the topic", () => {
     expect(resolveTopic("Isotopes", "Physics", index).status).toBe("none");
+  });
+
+  it("searches every verified subject when the plan has no subject, and still resolves only unique matches", () => {
+    expect(resolveTopic("Isotopes", "Paper Study", index)).toMatchObject({ status: "resolved", unit: { syllabusId: "cambridge-9701", topicKey: "1.2" } });
+    expect(resolveTopic("", "", index).status).toBe("none");
+    expect(resolveTopic("Data representation", "Paper Study", index).status).toBe("ambiguous");
+  });
+
+  it("never falls through to a cross-subject search for unsupported subjects", () => {
+    expect(resolveTopic("Functions", "Economics", index).status).toBe("none");
+    expect(resolveTopic("Functions", "Further Mathematics", index).status).toBe("none");
+    expect(subjectIdsFor("Further Mathematics")).toEqual([]);
   });
 
   it("flags the same title in several syllabi as ambiguous", () => {
@@ -71,6 +95,10 @@ describe("resolveCurriculumLink", () => {
 
   it("returns an empty object (never nulls) when unresolved", async () => {
     await expect(resolveCurriculumLink(client({ data: rows, error: null }), "Physics", "Newton's second law")).resolves.toEqual({});
+  });
+
+  it("skips resolution for non-A-Level papers", async () => {
+    await expect(resolveCurriculumLink(client({ data: rows, error: null }), "Chemistry", "Isotopes", "IGCSE")).resolves.toEqual({});
   });
 
   it("never throws when the lookup fails", async () => {

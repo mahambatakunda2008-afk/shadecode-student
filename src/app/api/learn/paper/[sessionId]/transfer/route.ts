@@ -69,7 +69,7 @@ async function signal(auth: Auth, plan: Plan, block: Block, verdict: Verdict) {
   for (const topic of concepts) {
     const { data: existing } = await auth.supabase.from("topic_mastery").select("mastery_score,last_score,attempts,trend,retention,confidence,stability,exposure,error_rate,response_speed,prerequisite_health,recent_improvement,uncertainty").eq("user_id", auth.user.id).eq("subject", subject).eq("topic", topic).maybeSingle();
     const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
-    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic);
+    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level);
     await auth.supabase.from("topic_mastery").upsert({ user_id: auth.user.id, subject, topic, ...row, ...curriculumLink }, { onConflict: "user_id,subject,topic" });
     await auth.supabase.from("revision_queue").upsert({ user_id: auth.user.id, topic, subject, priority: revisionPriority, source: "paper_learning", last_seen: now }, { onConflict: "user_id,topic,subject" });
   }

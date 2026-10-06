@@ -8,7 +8,7 @@
  * never block a student's mastery write.
  */
 
-import { buildTopicIndex, resolveTopic, type CurriculumTopicUnit, type TopicIndex } from "./resolver";
+import { buildTopicIndex, isSupportedLevel, resolveTopic, type CurriculumTopicUnit, type TopicIndex } from "./resolver";
 
 interface UnitsClient {
   from(table: "curriculum_topic_units"): {
@@ -56,9 +56,11 @@ export async function resolveCurriculumLink(
   client: UnitsClient,
   subject: string,
   topic: string,
+  level?: string | null,
   now: number = Date.now(),
 ): Promise<CurriculumLink | Record<string, never>> {
   try {
+    if (!isSupportedLevel(level)) return {};
     const index = await loadIndex(client, now);
     if (!index) return {};
     const result = resolveTopic(topic, subject, index);
