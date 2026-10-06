@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
@@ -14,7 +14,7 @@ import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/exper
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);\n  const moreTriggerRef = useRef<HTMLButtonElement>(null);\n  const closeMenuRef = useRef<HTMLButtonElement>(null);
   const { profile } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
   const groups = getExperienceNavGroups(experience, profile?.curriculum_subjects, profile?.subjects);
@@ -236,7 +236,7 @@ export function BottomNav() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                   Shadecode Student
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-[var(--foreground)]">{moreTitle}</h2>
+                <h2 id="mobile-more-title" className="mt-1 text-lg font-semibold text-[var(--foreground)]">{moreTitle}</h2>
               </div>
               <button
                 type="button"
