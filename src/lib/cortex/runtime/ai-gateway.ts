@@ -1,7 +1,7 @@
 import { buildBehaviorSummary, buildCortexFingerprint, resolveCortexExtension } from "@/lib/cortex/runtime/engine";
 import { createCortexCacheKey, getCachedCortexValue, setCachedCortexValue } from "@/lib/cortex/runtime/cache";
 import { CortexAIRequestPayloadMap, CortexAIRequestType, CortexAIResponse, CortexAIProvider, CortexBehaviorInsightPayload, CortexBehaviorSummaryPayload, CortexStructuredValue } from "@/lib/cortex/types";
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { curriculumSystemPromptContext } from "@/lib/curriculum/system-curriculum-context";
 
@@ -43,7 +43,7 @@ function buildBehaviorPrompt(summary: string, curriculumContext?: CortexBehavior
 
 async function requestBehaviorInsight(summary: string, userId?: string, curriculumContext?: CortexBehaviorInsightPayload["curriculumContext"]): Promise<string> {
   const prompt = buildBehaviorPrompt(summary, curriculumContext);
-  const text = await callAI(prompt, 180, { userId, feature: "cortex", subfeature: "behavior_insight" });
+  const text = await executeCortexText(prompt, 180, { userId, feature: "cortex", subfeature: "behavior_insight" });
   if (text) {
     const parsed = repairAndParseJSON(text, isInsightResponse);
     if (parsed?.insight) return parsed.insight.trim();
