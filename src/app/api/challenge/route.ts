@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { sanitizeQuestions } from '@/lib/challenge/questions'
+import { challengeFromResult } from '@/lib/challenge/fromResult'
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
 
 export const dynamic = "force-dynamic";
@@ -11,16 +12,27 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    const body = await request.json()
-    const {
-      result_id, subject, topic, difficulty,
-      question_count, percentage, total_score, max_score, time_taken, grade,
-    } = body
+    if (!user) return NextResponse.json({ error: 'Sign in to create a challenge' }, { status: 401 })
 
-    if (user && typeof subject === 'string' && subject.trim()) {
+    const body = await request.json()
+    const result_id: unknown = body?.result_id
+    if (typeof result_id !== 'string' || !/^[0-9a-f-]{8,64}$/i.test(result_id)) {
+      return NextResponse.json({ error: 'result_id required' }, { status: 400 })
+    }
+
+    // Everything the challenge advertises comes from the learner's own saved result (RLS: own rows only).
+    const { data: resultRow } = await supabase
+      .from('exam_results')
+      .select('subject, topic, difficulty, score, total_questions, correct_answers, time_taken')
+      .eq('id', result_id)
+      .maybeSingle()
+    const fields = challengeFromResult(resultRow)
+    if (!fields) return NextResponse.json({ error: 'Result not found' }, { status: 404 })
+
+    {
       const resolved = await resolveLearnerSubjects(supabase, user.id)
       const learnerSubjects = resolved.subjects
-      const canonicalSubject = assertRequestedLearnerSubject(learnerSubjects, subject)
+      const canonicalSubject = assertRequestedLearnerSubject(learnerSubjects, fields.subject)
       if (!canonicalSubject) {
         return NextResponse.json({
           error: learnerSubjects.length
@@ -30,7 +42,7 @@ export async function POST(request: NextRequest) {
           subjects: learnerSubjects,
         }, { status: 400 })
       }
-      body.subject = canonicalSubject.name
+      fields.subject = canonicalSubject.name
     }
 
     let challenger_name: string | null = null
@@ -43,21 +55,32 @@ export async function POST(request: NextRequest) {
       challenger_name = profile?.username ?? profile?.display_name ?? null
     }
 
+    // One challenge per result: a repeat tap returns the same link instead of spawning duplicates.
+    const { data: existing } = await supabase
+      .from('challenges')
+      .select('id')
+      .eq('result_id', result_id)
+      .eq('challenger_id', user.id)
+      .maybeSingle()
+    if (existing) {
+      return NextResponse.json({ id: existing.id, challengeUrl: `/challenge/${existing.id}`, frozen: true })
+    }
+
     const { data, error } = await supabase
       .from('challenges')
       .insert({
-        result_id:      result_id ?? null,
-        challenger_id:  user?.id ?? null,
+        result_id,
+        challenger_id:  user.id,
         challenger_name,
-        subject:        body.subject ?? null,
-        topic:          topic ?? null,
-        difficulty,
-        question_count: question_count ?? 10,
-        percentage,
-        total_score,
-        max_score,
-        time_taken,
-        grade,
+        subject:        fields.subject,
+        topic:          fields.topic,
+        difficulty:     fields.difficulty,
+        question_count: fields.question_count,
+        percentage:     fields.percentage,
+        total_score:    fields.total_score,
+        max_score:      fields.max_score,
+        time_taken:     fields.time_taken,
+        grade:          fields.grade,
       })
       .select('id')
       .single()
@@ -70,7 +93,7 @@ export async function POST(request: NextRequest) {
     // Freeze the exact questions the challenger sat so the opponent answers the same set.
     // Failure is non-fatal: the challenge still works as a same-subject duel.
     let frozen = false
-    if (user && typeof result_id === 'string') {
+    {
       const { data: sat } = await supabase
         .from('exam_result_questions')
         .select('questions')
