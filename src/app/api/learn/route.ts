@@ -500,6 +500,7 @@ ${rawSection?.slice(0, 14000) || "No usable candidate was returned."}
 
 Repair only the defective section. Preserve correct material where possible. Do not shorten the teaching merely to satisfy the schema. Return ONLY valid JSON.`;
         rawSection = await executeCortexText(sectionRequestPrompt, 2200, {
+          operation: attempt === 0 ? "lesson.generate_section" : "lesson.repair_section",
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
           maxChainMs: attempt === 0 ? 22000 : 16000, perProviderMaxMs: 6000,
         }).catch((error) => {
