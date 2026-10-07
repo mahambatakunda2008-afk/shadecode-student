@@ -18,12 +18,12 @@ function ExperienceLearnIntro({ experience }: { experience: AcademicExperience }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
-      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-4 shadow-sm sm:px-5">
+      <div className="border-b border-[var(--border-subtle)] px-0 py-4 sm:px-1">
         <div className="flex items-start gap-3">
           <ShadecodeFeatureIcon feature="learn" size="sm" />
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[var(--primary)]">{copy.kicker}</p>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">{copy.title}</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-[28px]">{copy.title}</h1>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">{copy.body}</p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function ExperienceLearn() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
+    <main className="min-h-screen bg-[var(--background)]" data-page="learn">
       <ExperienceLearnIntro experience={experience} />
       <LearnPrefillGuard />
     </main>
