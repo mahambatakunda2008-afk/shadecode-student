@@ -1,5 +1,5 @@
 /** Cortex TeacherAI: tutoring-focused wrapper around the shared AI gateway. */
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "./runtime/execution";
 
 const TEACHER_SYSTEM_PROMPT = `You are a knowledgeable and patient tutor within Shadecode Student.
 Explain concepts clearly and pedagogically, break complex topics into steps, ask guiding questions, provide examples, admit uncertainty, and avoid jargon without defining it.
@@ -11,7 +11,7 @@ export class TeacherAI {
     if (!safeQuestion) return "Please enter a question so I can help you learn.";
     try {
       const prompt = this.buildPrompt(safeQuestion, context);
-      const response = await callAI(prompt, 1800, { userId, feature: "cortex", subfeature: "teacher" });
+      const response = await executeCortexText(prompt, 1800, { operation: "teacher.response", userId, feature: "cortex", subfeature: "teacher" });
       return response ? this.cleanResponse(response) : this.getFallbackResponse(safeQuestion);
     } catch (error) {
       console.error("[TeacherAI] Error:", error);
