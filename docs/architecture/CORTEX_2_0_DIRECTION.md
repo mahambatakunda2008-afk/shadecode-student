@@ -150,3 +150,50 @@ The execution boundary is now the foundation, not the finished Cortex 2.0 system
 3. Add structured execution/failure events.
 4. Separate interaction cache memory from learner memory at the type/API level.
 5. Quarantine or remove redundant legacy lesson endpoints once their callers are migrated.
+
+
+## Implementation checkpoint: intelligence operations expanded
+
+The execution boundary now covers additional student-facing intelligence work:
+
+- `exam.generate`
+- `exam.mark`
+- `math.solve`
+- `revision.generate`
+
+Migrated implementation paths:
+- `src/lib/cortex/examGenerator.ts`
+- `src/lib/cortex/markingEngine.ts`
+- `src/lib/cortex/mathEngine.ts`
+- `src/app/api/exam/mark/route.js`
+- `src/app/api/generate-revision/route.ts`
+
+### Deliberate multimodal exception
+
+`src/app/api/math-checker/route.js` remains a specialist multimodal capability rather than being mechanically rewritten.
+
+It accepts student images and currently contains its own verified vision-provider sequence, including Cloudflare vision licensing recovery and Gemini media handling. The shared `callAI` runtime already supports media, but does not currently provide equivalent Cloudflare vision behavior. Replacing the working specialist lane merely to eliminate a direct provider reference would reduce reliability.
+
+The intended Cortex 2.0 direction is therefore:
+
+**Cortex control plane → capability boundary → specialist execution**
+
+rather than:
+
+**Cortex control plane → force every capability through one text-only function**
+
+The Math Checker should later move behind a typed multimodal capability interface once that interface can preserve its current fallback behavior.
+
+### Current operation map
+
+| Capability | Cortex operation | Execution boundary |
+|---|---|---|
+| Tutor | `teacher.response` | Yes |
+| Lesson generation | `lesson.*` | Yes |
+| Exam generation | `exam.generate` | Yes |
+| Exam marking | `exam.mark` | Yes |
+| Math solving | `math.solve` | Yes |
+| Revision generation | `revision.generate` | Yes |
+| Photo Math Checker | specialist multimodal | Deliberate exception |
+
+This keeps reliability as the primary constraint rather than treating architectural purity as the goal.
