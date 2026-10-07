@@ -1,5 +1,5 @@
 /** Cortex lesson generation with structured coverage, diagram-aware content and safe failure handling. */
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { getMemory } from "./memory";
 import { awardXPBySource } from "@/lib/xp/manager";
 import type { DiagramSpec } from "@/lib/learning/content";
@@ -66,7 +66,7 @@ export async function generateLesson(subject: string, topic: string, userId: str
     const memory = await withTimeout(getMemory(userId), MEMORY_BUDGET_MS, { level: 1, streak: 0, xp: 0, totalTasks: 0, completedTasks: 0, subjects: [], weakTopics: [], frequentlyStudiedSubjects: [], strongSubjects: [], weakSubjects: [], preferredStudyHours: [], averageSessionDuration: 0, totalStudySessions: 0, examScores: [], averageExamScore: 0, longestStreak: 0, totalLessonsCompleted: 0, totalStudyTimeMinutes: 0 });
     const difficulty = memory.level <= 3 ? "easy" : memory.level <= 6 ? "medium" : "hard";
     const prompt = `${LESSON_SYSTEM_PROMPT}\n\nSubject: ${subject}\nTopic: ${topic}\nTarget difficulty: ${difficulty}\nStudent level: ${memory.level}\nWeak areas: ${(memory.weakSubjects ?? []).join(", ") || "none"}\nStrong areas: ${(memory.strongSubjects ?? []).join(", ") || "none"}\n\nReturn JSON with: title, subject, difficulty, summary, sections, diagrams, practiceQuestions, estimatedMinutes, coverage. Generate the lesson now.`;
-    const response = await withTimeout(callAI(prompt, 7000, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 22000, perProviderMaxMs: 5000 }), AI_BUDGET_MS, null);
+    const response = await withTimeout(executeCortexText(prompt, 7000, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 22000, perProviderMaxMs: 5000 }), AI_BUDGET_MS, null);
     if (!response) return null;
     const jsonMatch = response.match(/\{[^]*\}/);
     if (!jsonMatch) return null;
