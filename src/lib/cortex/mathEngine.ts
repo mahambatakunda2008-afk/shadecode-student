@@ -4,7 +4,7 @@
  * AI-powered mathematics problem solver with bounded execution and safe fallback.
  */
 
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { getMemory } from "./memory";
 
 export interface MathSolution { problem: string; subject: string; steps: MathStep[]; finalAnswer: string; conceptsUsed: string[]; difficulty: "easy" | "medium" | "hard"; estimatedAccuracy: number; }
@@ -38,7 +38,7 @@ export async function solveMathProblem(problem: string, subject: string, userId:
     const levelContext = `Student math level: ${memory.level}\nPrior math subjects: ${(memory.subjects ?? []).join(", ")}\n${memory.averageExamScore ? `Average score: ${memory.averageExamScore}%` : ""}`;
     const prompt = `${MATH_SYSTEM_PROMPT}\n\nSubject: ${subject}\nProblem: ${problem}\n\nStudent context:\n${levelContext}\n\nSolve this problem:`;
     const response = await withTimeout(
-      callAI(prompt, 3000, { userId, feature: "math_engine", subfeature: "solve_problem", maxChainMs: 12000, perProviderMaxMs: 3000 }),
+      executeCortexText(prompt, 3000, { operation: "math.solve", userId, feature: "math_engine", subfeature: "solve_problem", maxChainMs: 12000, perProviderMaxMs: 3000 }),
       13000,
       null
     );
