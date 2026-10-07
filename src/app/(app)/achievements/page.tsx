@@ -12,10 +12,10 @@ import {
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
-  common: { bg: "bg-[var(--surface-2)]", border: "border-[var(--card-border)]", text: "text-[var(--muted-foreground)]", glow: "shadow-slate-500/20" },
-  rare: { bg: "bg-blue-500/10", border: "border-blue-500/30", text: "text-blue-500", glow: "shadow-blue-500/20" },
-  epic: { bg: "bg-purple-500/10", border: "border-purple-500/30", text: "text-purple-500", glow: "shadow-purple-500/20" },
-  legendary: { bg: "bg-amber-500/10", border: "border-amber-500/40", text: "text-amber-500", glow: "shadow-amber-500/30" },
+  common: { bg: "bg-[var(--surface-2)]", border: "border-[var(--card-border)]", text: "text-[var(--muted-foreground)]", glow: "" },
+  rare: { bg: "bg-blue-500/10", border: "border-blue-500/30", text: "text-blue-500", glow: "" },
+  epic: { bg: "bg-purple-500/10", border: "border-purple-500/30", text: "text-purple-500", glow: "" },
+  legendary: { bg: "bg-amber-500/10", border: "border-amber-500/40", text: "text-amber-500", glow: "" },
 };
 
 const RARITY_ICONS: Record<string, React.ReactNode> = {
@@ -70,7 +70,7 @@ export default function AchievementsPage() {
         {filtered.map((achievement) => {
           const c = RARITY_COLORS[achievement.rarity];
           const Icon = ACHIEVEMENT_ICONS[achievement.icon] ?? Trophy;
-          return <div key={achievement.id} className={`relative rounded-[14px] p-4 border transition-colors duration-150 ${achievement.unlocked ? `${c.bg} ${c.border} ${c.glow} shadow-lg` : "bg-[var(--surface-2)] border-[var(--card-border)] opacity-60"}`}>
+          return <div key={achievement.id} className={`relative rounded-[14px] p-4 border transition-colors duration-150 ${achievement.unlocked ? `${c.bg} ${c.border} ${c.glow} shadow-none` : "bg-[var(--surface-2)] border-[var(--card-border)] opacity-60"}`}>
             {!achievement.unlocked && <div className="absolute inset-0 bg-[var(--background)]/60 rounded-xl flex items-center justify-center z-10"><Lock className="w-8 h-8 text-[var(--muted-foreground)]" /></div>}
             <div className="flex items-start gap-3"><div className={`shrink-0 rounded-lg p-2 ${c.bg} ${c.text}`}><Icon className={`w-6 h-6 ${achievement.unlocked ? "" : "grayscale"}`} strokeWidth={1.9} aria-hidden="true" /></div><div className="flex-1 min-w-0"><div className="flex items-center gap-1.5"><span className="font-semibold text-[var(--foreground)] text-sm truncate">{achievement.title}</span>{achievement.unlocked && <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />}</div><p className="text-xs text-[var(--muted-foreground)] mt-0.5 line-clamp-2">{achievement.description}</p><div className="flex items-center gap-2 mt-2"><span className={`text-[10px] uppercase tracking-wider ${c.text}`}>{achievement.rarity}</span><span className="text-[10px] text-amber-500">+{achievement.xpReward} XP</span></div></div></div>
           </div>;
