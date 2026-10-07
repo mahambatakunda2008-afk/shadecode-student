@@ -103,7 +103,7 @@ Required structure/content:
 
 Do not pad the lesson with generic motivational text. Do not invent syllabus facts. Use the authorized subject and topic consistently. Return detailed educational content that a student can actually study from.`;
 
-    const aiResponse = await executeCortexText(prompt, 5000, { operation: "lesson.generate_v2", userId: });
+    const aiResponse = await executeCortexText(prompt, 5000, { operation: "lesson.generate_v2", userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_v2" });
     if (!aiResponse) return NextResponse.json({ success: false, error: "Cortex could not generate the lesson right now. Please try again." }, { status: 503 });
 
     const buildResult = await buildLessonContent(aiResponse, {
