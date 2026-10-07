@@ -6,7 +6,7 @@ import { emitExamCompleted } from "@/lib/events";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { examMarkSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
 import { blendMastery } from "@/lib/topicMastery/blend";
@@ -157,7 +157,7 @@ export async function POST(req) {
       const prompt = `You are an expert ${subject} examiner.\n\nMark this exam carefully.\n\nReturn ONLY valid JSON:\n{\n  "results": [{"questionId": 1, "score": 0, "maxScore": 1, "correct": false, "feedback": "short explanation", "modelAnswer": "correct answer", "topic": "topic"}],\n  "weakAreas": [],\n  "strongAreas": [],\n  "cortexInsight": "neutral analytical summary of performance"\n}\n\nRules:\n- MCQ: full or zero marks only\n- Structured: partial credit allowed\n- Keep feedback short and factual\n- weakAreas = topics < 50%\n- strongAreas = topics > 80%\n\nEXAM DATA:\n${qaText}`;
 
       for (let attempt = 1; attempt <= 2 && !markingData; attempt++) {
-        const text = await callAI(prompt, 3000, { userId, feature: "exam_sim", subfeature: "mark_exam", maxChainMs: 20000, perProviderMaxMs: 7000 });
+        const text = await executeCortexText(prompt, 3000, { operation: "exam.mark", userId, feature: "exam_sim", subfeature: "mark_exam", maxChainMs: 20000, perProviderMaxMs: 7000 });
         if (!text) continue;
         markingData = normalizeMarkingData(repairAndParseJSON(text, isMarkingShape), questions);
       }
