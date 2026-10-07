@@ -5,7 +5,7 @@ import { createClient as createSupabaseClient, type SupabaseClient, type User } 
 import type { LearnDetailResponse, LearnLesson, LearnListResponse, LearnSubject, LessonDifficulty } from "@/app/(app)/learn/types";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { learnCoursePreviewSchema, learnGenerateLessonSchema, validateRequestBody } from "@/lib/validation/schemas";
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
@@ -499,7 +499,7 @@ Previous candidate:
 ${rawSection?.slice(0, 14000) || "No usable candidate was returned."}
 
 Repair only the defective section. Preserve correct material where possible. Do not shorten the teaching merely to satisfy the schema. Return ONLY valid JSON.`;
-        rawSection = await callAI(sectionRequestPrompt, 2200, {
+        rawSection = await executeCortexText(sectionRequestPrompt, 2200, {
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
           maxChainMs: attempt === 0 ? 22000 : 16000, perProviderMaxMs: 6000,
         }).catch((error) => {
@@ -636,8 +636,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     // quality failures instead of blindly regenerating an already-good lesson.
     let raw: string | null = null;
     try {
-      raw = await callAI(prompt, 5000, {
-        userId: user.id, feature: "lesson_assistant", subfeature: "generate_deep_lesson",
+      raw = await executeCortexText(prompt, 5000, { operation: "lesson.generate_deep", userId:,
         maxChainMs: 24000, perProviderMaxMs: 6500,
       });
     } catch (error) {
@@ -662,8 +661,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
 REPAIR PASS: ${repairAttempt + 1}
 Do not rewrite good material just for variety. Fix the named defects. Preserve accurate explanations, examples and reasoning. The repaired lesson must be internally coherent and must pass the quality gate, not merely contain more blocks.
 Return only valid JSON.`;
-          const repaired = await callAI(repairPrompt, 4600, {
-            userId: user.id, feature: "lesson_assistant", subfeature: "targeted_lesson_repair",
+          const repaired = await executeCortexText(repairPrompt, 4600, { operation: "lesson.repair_targeted", userId:,
             maxChainMs: 16000, perProviderMaxMs: 6000,
           });
           const repairedParsed = repaired ? safeParseJSON(repaired) : null;
