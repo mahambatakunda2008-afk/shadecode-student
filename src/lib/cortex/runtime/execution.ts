@@ -11,10 +11,17 @@ import {
   classifyCortexExecutionFailure,
   emitCortexExecutionEvent,
 } from "./executionEvents";
+import { getCortexRecoveryPolicy } from "./recovery";
 
 export type CortexExecutionOptions = CallAIOptions & {
   /** Stable Cortex operation name used for telemetry and future execution policy. */
   operation: string;
+  recovery?: {
+    hasVerifiedData?: boolean;
+    hasWarmLocal?: boolean;
+    hasCheckpoint?: boolean;
+    supportsRepair?: boolean;
+  };
 };
 
 export async function executeCortexText(
@@ -23,7 +30,7 @@ export async function executeCortexText(
   options: CortexExecutionOptions,
 ): Promise<string | null> {
   const operation = options.operation.trim() || "cortex.text";
-  const { operation: _operation, ...aiOptions } = options;
+  const { operation: _operation, recovery: recoveryContext, ...aiOptions } = options;
   const startedAt = Date.now();
   const eventContext = {
     operation,
@@ -57,11 +64,16 @@ export async function executeCortexText(
       return result;
     }
 
+    const failureClass = "empty_response" as const;
+    const recovery = getCortexRecoveryPolicy(failureClass, recoveryContext);
     emitCortexExecutionEvent({
       type: "cortex.execution.failed",
       status: "failed",
-      failureClass: "empty_response",
+      failureClass,
       durationMs,
+      recoveryAction: recovery.action,
+      recoveryAutomatic: recovery.automatic,
+      recoveryMaxAttempts: recovery.maxAttempts,
       ...eventContext,
     });
     return null;
@@ -75,11 +87,15 @@ export async function executeCortexText(
       error: error instanceof Error ? error.message : String(error),
     });
 
+    const recovery = getCortexRecoveryPolicy(failureClass, recoveryContext);
     emitCortexExecutionEvent({
       type: "cortex.execution.failed",
       status: "failed",
       failureClass,
       durationMs,
+      recoveryAction: recovery.action,
+      recoveryAutomatic: recovery.automatic,
+      recoveryMaxAttempts: recovery.maxAttempts,
       ...eventContext,
     });
 
