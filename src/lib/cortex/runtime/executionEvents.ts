@@ -38,9 +38,11 @@ type CortexExecutionEventListener = (event: CortexExecutionEvent) => void;
 const MAX_BUFFERED_EVENTS = 250;
 const bufferedEvents: CortexExecutionEvent[] = [];
 const listeners = new Set<CortexExecutionEventListener>();
+let eventSequence = 0;
 
 function createEventId() {
-  return `cortex-1791397116475-trd42k4t`;
+  eventSequence = (eventSequence + 1) % 1000000;
+  return `cortex-${Date.now()}-${eventSequence}`;
 }
 
 /**
