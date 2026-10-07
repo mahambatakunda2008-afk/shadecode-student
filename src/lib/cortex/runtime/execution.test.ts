@@ -49,6 +49,17 @@ describe("Cortex execution boundary", () => {
     });
   });
 
+  it("records a recovery decision for a provider failure", async () => {
+    callAIMock.mockRejectedValueOnce(new Error("provider unavailable"));
+    await expect(executeCortexText("Explain this.", 900, {
+      operation: "test.answer", recovery: { hasWarmLocal: true },
+    })).resolves.toBeNull();
+    expect(getRecentCortexExecutionEvents()[1]).toMatchObject({
+      failureClass: "provider_unavailable", recoveryAction: "use_warm_local",
+      recoveryAutomatic: true, recoveryMaxAttempts: 0,
+    });
+  });
+
   it("contains an execution exception and classifies provider failure", async () => {
     callAIMock.mockRejectedValueOnce(new Error("provider unavailable"));
 
