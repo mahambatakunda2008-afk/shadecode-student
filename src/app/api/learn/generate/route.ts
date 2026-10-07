@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
@@ -164,7 +164,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
   const fallback = () => buildDeterministicLessonFallback(request.subject, request.topic);
   let raw: string | null = null;
   try {
-    raw = await callAI(lessonPrompt(request, curriculumContext), 4200, { userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
+    raw = await executeCortexText(lessonPrompt(request, curriculumContext), 4200, { operation: "lesson.generate_legacy", userId, feature: "lesson_assistant", subfeature: "generate_lesson", maxChainMs: 28000, perProviderMaxMs: 6500, curriculumContext });
   } catch (error) {
     console.warn("[LEARN] primary generation failed", error instanceof Error ? error.message : String(error));
   }
@@ -186,7 +186,7 @@ async function generateAndValidate(request: ReturnType<typeof resolveLessonReque
     console.warn("[LEARN] skipping repair: insufficient time remaining in the generation budget");
   } else {
     try {
-      const repair = await callAI(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
+      const repair = await executeCortexText(buildLessonRepairPrompt(request.subject || "General", request.topic, raw, curriculumContext, request.difficulty, initialFailures), 4200, { operation: "lesson.repair_quality", userId, feature: "lesson_assistant", subfeature: "repair_lesson_quality", maxChainMs: repairBudget.maxChainMs, perProviderMaxMs: repairBudget.perProviderMaxMs, curriculumContext });
       if (repair) {
         parsed = parseLesson(repair);
         if (parsed && qualityCheck(parsed, request).length === 0) return parsed;
