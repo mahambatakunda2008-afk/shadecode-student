@@ -637,7 +637,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     // quality failures instead of blindly regenerating an already-good lesson.
     let raw: string | null = null;
     try {
-      raw = await executeCortexText(prompt, 5000, { operation: "lesson.generate_deep", userId:,
+      raw = await executeCortexText(prompt, 5000, { operation: "lesson.generate_deep", userId: user.id,
         maxChainMs: 24000, perProviderMaxMs: 6500,
       });
     } catch (error) {
