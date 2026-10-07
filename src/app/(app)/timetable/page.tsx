@@ -220,7 +220,7 @@ export default function Timetable() {
   };
 
   return (
-    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <main className="ssc-page" data-page="timetable" style={{ paddingTop: "28px" }}>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
         <ShadecodeFeatureIcon feature="timetable" size="sm" />
@@ -251,7 +251,7 @@ export default function Timetable() {
                   border: selected ? `1px solid ${color}60` : "1px solid transparent",
                   color: selected ? color : "var(--muted-foreground)",
                   fontWeight: selected ? 700 : 400,
-                  transition: "all 0.2s",
+                  transition: "border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out",
                 }}>
                   {selected && <span style={{ marginRight: "4px" }}>●</span>}
                   {s.name}
@@ -363,7 +363,7 @@ export default function Timetable() {
           border: "none", borderRadius: "12px", padding: "14px",
           fontWeight: 800, fontSize: "15px",
           cursor: selectedSubjects.length === 0 ? "not-allowed" : "pointer",
-          boxShadow: selectedSubjects.length === 0 ? "none" : "0 0 20px var(--primary-glow)",
+          boxShadow: "none",
         }}
       >
         Generate Schedule →
@@ -412,7 +412,7 @@ export default function Timetable() {
                 <div style={{
                   width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0,
                   background: slot.is_break ? "#f59e0b" : (slot.color || "#6366f1"),
-                  boxShadow: `0 0 6px ${slot.is_break ? "#f59e0b" : (slot.color || "#6366f1")}80`,
+                  boxShadow: "none",
                 }} />
 
                 <p style={{
