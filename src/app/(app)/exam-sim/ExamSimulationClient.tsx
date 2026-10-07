@@ -10,6 +10,7 @@ import { trackEvent } from "@/lib/traction/client";
 import { createClient } from "@/lib/supabase/client";
 import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
+import { clearPendingChallenge } from "@/lib/challenge/pending";
 
 function decode(value: string | null) {
   if (!value) return "";
@@ -95,7 +96,7 @@ export default function ExamSimulationClient() {
         body: JSON.stringify({ challenge_id: challengeId, percentage: result.percentage, total_score: result.totalScore, max_score: result.maxScore, time_taken: result.timeTaken }),
       })
         .then((response) => (response.ok ? response.json() : null))
-        .then((data: { won?: boolean } | null) => { if (data && typeof data.won === "boolean") setBattle({ won: data.won, percentage: result.percentage }); })
+        .then((data: { won?: boolean } | null) => { if (data && typeof data.won === "boolean") { setBattle({ won: data.won, percentage: result.percentage }); clearPendingChallenge(); } })
         .catch(() => undefined);
     }
     for (const question of result.results) {

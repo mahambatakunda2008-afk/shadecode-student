@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BrandMark } from '@/components/brand/BrandMark'
+import AcceptChallengeLink from '@/components/challenge/AcceptChallengeLink'
+import { challengeAcceptUrl } from '@/lib/challenge/pending'
 
 interface Challenge {
   id: string
@@ -86,7 +88,7 @@ export default async function ChallengePage({ params }: Props) {
   const diff = DIFF_BADGE[c.difficulty] ?? 'bg-slate-500/15 text-slate-300 border-slate-500/30'
   const name = c.challenger_name ?? 'A student'
 
-  const acceptUrl = `/exam-sim?cid=${id}&sub=${encodeURIComponent(c.subject)}&dif=${encodeURIComponent(c.difficulty)}&cnt=${c.question_count}&cpct=${c.percentage}&cgrade=${c.grade}&cname=${encodeURIComponent(name)}`
+  const acceptUrl = challengeAcceptUrl({ id, subject: c.subject, difficulty: c.difficulty, question_count: c.question_count, percentage: c.percentage, grade: c.grade, challenger_name: c.challenger_name })
 
   const whatsappText = encodeURIComponent(
     `${name} scored ${c.percentage}% (Grade ${c.grade}) on ${c.subject} ${c.difficulty} on Shadecode Student 🔥\n\nCan you beat it? ${`https://shadecodestudent.vercel.app/challenge/${id}`}`
@@ -169,12 +171,13 @@ export default async function ChallengePage({ params }: Props) {
 
         {/* CTAs */}
         <div className="space-y-3">
-          <Link
+          <AcceptChallengeLink
+            id={id}
             href={acceptUrl}
             className="block w-full text-center rounded-xl bg-[#22D3EE] hover:bg-[#67E8F9] text-[#06111C] font-bold py-4 px-4 text-base transition-colors duration-200 shadow-[0_0_24px_rgba(34,211,238,0.3)]"
           >
             Accept Challenge →
-          </Link>
+          </AcceptChallengeLink>
           
            <a href={`https://wa.me/?text=${whatsappText}`}
             target="_blank"

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { TourProvider } from '@/context/TourContext';
 import { ProductTour } from '@/components/tour/ProductTour';
+import PendingChallengeBanner from '@/components/challenge/PendingChallengeBanner';
 
 /**
  * Dashboard presentation wrapper.
@@ -17,6 +18,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <TourProvider onboardingCompleted={false} tourCompleted={true}>
       {children}
+      <PendingChallengeBanner />
       <ProductTour />
     </TourProvider>
   );
