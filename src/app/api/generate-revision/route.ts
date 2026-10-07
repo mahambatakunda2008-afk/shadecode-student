@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { generateRevisionSchema, validateRequestBody } from "@/lib/validation/schemas";
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -82,7 +82,7 @@ ${content}`;
   // -> OpenAI -> OpenRouter) instead of a bespoke direct-OpenAI fetch with
   // no timeout and no fallback -- same gateway every other AI route uses,
   // with per-user cost attribution via userId.
-  const raw = await callAI(prompt, 2000, { userId: user.id, feature: "content_generation", subfeature: "generate_revision" });
+  const raw = await executeCortexText(prompt, 2000, { operation: "revision.generate", userId: user.id, feature: "content_generation", subfeature: "generate_revision" });
   if (!raw) return NextResponse.json({ error: "AI unavailable - all providers failed or timed out" }, { status: 503 });
 
   const jsonText = extractJSONObject(raw) ?? raw;
