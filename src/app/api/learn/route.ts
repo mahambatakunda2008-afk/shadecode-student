@@ -503,6 +503,10 @@ Repair only the defective section. Preserve correct material where possible. Do 
           operation: attempt === 0 ? "lesson.generate_section" : "lesson.repair_section",
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
           maxChainMs: attempt === 0 ? 22000 : 16000, perProviderMaxMs: 6000,
+          recovery: {
+            hasCheckpoint: Boolean(durableJobId),
+            supportsRepair: attempt > 0,
+          },
         }).catch((error) => {
           console.warn("[LEARN] section generation attempt failed", { attempt, error: error instanceof Error ? error.message : String(error) });
           return null;
@@ -639,6 +643,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     try {
       raw = await executeCortexText(prompt, 5000, { operation: "lesson.generate_deep", userId: user.id,
         maxChainMs: 24000, perProviderMaxMs: 6500,
+        recovery: { hasCheckpoint: Boolean(durableJobId), supportsRepair: false },
       });
     } catch (error) {
       console.warn("[LEARN] primary lesson generation failed", error instanceof Error ? error.message : String(error));
@@ -664,6 +669,7 @@ Do not rewrite good material just for variety. Fix the named defects. Preserve a
 Return only valid JSON.`;
           const repaired = await executeCortexText(repairPrompt, 4600, { operation: "lesson.repair_targeted", userId: user.id,
             maxChainMs: 16000, perProviderMaxMs: 6000,
+            recovery: { hasCheckpoint: Boolean(durableJobId), supportsRepair: true },
           });
           const repairedParsed = repaired ? safeParseJSON(repaired) : null;
           if (!repairedParsed) {
