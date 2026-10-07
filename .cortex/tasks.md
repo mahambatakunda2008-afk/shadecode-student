@@ -22,7 +22,10 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 **B. Compete and share (virality)**
 - [x] Challenge scoring is server-authoritative (winner decided from stored challenge score; inputs validated; rate limited)
 - [x] Challenge accept flow now records the attempt and shows a head-to-head result (it previously ignored `cid`, so no attempt was ever saved)
-- [ ] **Past Paper Battle v1:** both players answer the identical frozen question set (stored on the challenge), async 1v1, WhatsApp link, result card. Fairness requires frozen questions; today's challenge only matches subject and difficulty
+- [x] **Past Paper Battle v1 (shipped 2026-10-06):** result -> Challenge-a-friend card on the exam results screen -> frozen question set copied from the challenger's sat questions -> friend sits identical questions -> server-decided win/loss card. Scores are read from the saved `exam_results` row; accepting stores a `pending_challenge` cookie so the battle survives signup/onboarding (dashboard banner)
+- [ ] **Battle v1.5 server-side marking:** the exam client receives the answer key and marks in-browser, so an opponent's own score can be forged. Required before leaderboards or class competitions. Mark against a server-held key and return only scores
+- [ ] **Legacy `/results/[id]` page and its OG image are not wired to the live schema** (they read `total`, `question_count`, `user_name`, `xp_earned`, which do not exist on `exam_results`; RLS also hides rows from non-owners; nothing links to them). Either rebuild as a public, privacy-safe share card or delete
+- [ ] Anonymous friend plays without an account (needs an auth/RLS decision from Takunda before touching)
 - [ ] Anonymous friend path: WhatsApp recipient can take the battle without signup, then is prompted to claim the result (RLS currently allows attempt inserts for authenticated users only)
 - [ ] Past Paper Battle v2: real past-paper questions via Exam Hub where licensing allows
 - [ ] Weekly class and school leagues; streak-save challenges; progress and achievement cards as shareable artifacts
