@@ -662,7 +662,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
 REPAIR PASS: ${repairAttempt + 1}
 Do not rewrite good material just for variety. Fix the named defects. Preserve accurate explanations, examples and reasoning. The repaired lesson must be internally coherent and must pass the quality gate, not merely contain more blocks.
 Return only valid JSON.`;
-          const repaired = await executeCortexText(repairPrompt, 4600, { operation: "lesson.repair_targeted", userId:,
+          const repaired = await executeCortexText(repairPrompt, 4600, { operation: "lesson.repair_targeted", userId: user.id,
             maxChainMs: 16000, perProviderMaxMs: 6000,
           });
           const repairedParsed = repaired ? safeParseJSON(repaired) : null;
