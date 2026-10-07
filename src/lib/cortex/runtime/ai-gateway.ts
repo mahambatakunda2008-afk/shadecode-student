@@ -43,7 +43,7 @@ function buildBehaviorPrompt(summary: string, curriculumContext?: CortexBehavior
 
 async function requestBehaviorInsight(summary: string, userId?: string, curriculumContext?: CortexBehaviorInsightPayload["curriculumContext"]): Promise<string> {
   const prompt = buildBehaviorPrompt(summary, curriculumContext);
-  const text = await executeCortexText(prompt, 180, { userId, feature: "cortex", subfeature: "behavior_insight" });
+  const text = await executeCortexText(prompt, 180, { operation: "behavior.insight", userId, feature: "cortex", subfeature: "behavior_insight" });
   if (text) {
     const parsed = repairAndParseJSON(text, isInsightResponse);
     if (parsed?.insight) return parsed.insight.trim();
