@@ -1,12 +1,4 @@
-import type { CortexExecutionFailureClass } from "./executionEvents";
-
-export type CortexRecoveryAction =
-  | "use_verified_data"
-  | "use_warm_local"
-  | "repair_output"
-  | "retry_within_budget"
-  | "resume_checkpoint"
-  | "stop_cleanly";
+import type { CortexExecutionFailureClass, CortexRecoveryAction } from "./executionEvents";
 
 export interface CortexRecoveryPolicy {
   action: CortexRecoveryAction;
