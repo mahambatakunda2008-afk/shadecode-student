@@ -7,6 +7,10 @@
  * decision about *what* work to execute and records the operation identity here.
  */
 import { callAI, type CallAIOptions } from "@/lib/ai";
+import {
+  classifyCortexExecutionFailure,
+  emitCortexExecutionEvent,
+} from "./executionEvents";
 
 export type CortexExecutionOptions = CallAIOptions & {
   /** Stable Cortex operation name used for telemetry and future execution policy. */
@@ -20,21 +24,65 @@ export async function executeCortexText(
 ): Promise<string | null> {
   const operation = options.operation.trim() || "cortex.text";
   const { operation: _operation, ...aiOptions } = options;
+  const startedAt = Date.now();
+  const eventContext = {
+    operation,
+    feature: aiOptions.feature ?? "cortex",
+    subfeature: aiOptions.subfeature ?? operation,
+    ...(aiOptions.userId ? { userId: aiOptions.userId } : {}),
+  };
+
+  emitCortexExecutionEvent({
+    type: "cortex.execution.started",
+    status: "started",
+    ...eventContext,
+  });
 
   try {
-    return await callAI(prompt, maxTokens, {
+    const result = await callAI(prompt, maxTokens, {
       ...aiOptions,
       feature: aiOptions.feature ?? "cortex",
       subfeature: aiOptions.subfeature ?? operation,
     });
+
+    const durationMs = Date.now() - startedAt;
+
+    if (typeof result === "string" && result.trim()) {
+      emitCortexExecutionEvent({
+        type: "cortex.execution.completed",
+        status: "completed",
+        durationMs,
+        ...eventContext,
+      });
+      return result;
+    }
+
+    emitCortexExecutionEvent({
+      type: "cortex.execution.failed",
+      status: "failed",
+      failureClass: "empty_response",
+      durationMs,
+      ...eventContext,
+    });
+    return null;
   } catch (error) {
-    // The shared AI runtime normally converts provider failures into a null
-    // result. This boundary also protects Cortex callers if that contract
-    // changes, so a provider exception never becomes a Cortex crash.
+    const durationMs = Date.now() - startedAt;
+    const failureClass = classifyCortexExecutionFailure(error);
+
     console.error("[CortexExecution] execution failed", {
       operation,
+      failureClass,
       error: error instanceof Error ? error.message : String(error),
     });
+
+    emitCortexExecutionEvent({
+      type: "cortex.execution.failed",
+      status: "failed",
+      failureClass,
+      durationMs,
+      ...eventContext,
+    });
+
     return null;
   }
 }
