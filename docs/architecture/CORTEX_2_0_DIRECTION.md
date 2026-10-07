@@ -105,3 +105,48 @@ Use models where reasoning, generation, teaching, or interpretation is actually 
 
 ## Definition of done
 Cortex 2.0 is successful when a student can request a learning task and Cortex can autonomously determine the safest and most useful execution path, complete it or recover meaningfully, preserve progress across interruption, validate the result, and learn from the outcome without the UI needing to understand which model or provider performed the work.
+
+## Implementation checkpoint: execution boundary
+
+The first consolidation pass is now implemented.
+
+### Canonical model execution boundary
+
+Cortex model-backed work now enters through:
+
+`src/lib/cortex/runtime/execution.ts`
+
+Feature code supplies a stable Cortex `operation` name. The execution boundary delegates to the existing shared AI runtime, which remains responsible for provider fallback, time budgets, curriculum grounding, telemetry, and provider-specific mechanics.
+
+Migrated paths:
+- `src/lib/cortex/teacher.ts`
+- `src/lib/cortex/lessonGenerator.ts`
+- `src/app/api/learn/route.ts`
+- `src/app/api/cortex/generate-lesson/route.ts`
+- `src/lib/cortex/runtime/ai-gateway.ts`
+
+This is deliberately a **control-plane consolidation**, not a provider rewrite. The existing durable lesson pipeline, checkpoints, leases, local recovery, and verified curriculum fallback remain intact.
+
+### New rule
+
+> Cortex feature code must not call the provider runtime directly. It asks the Cortex execution boundary to perform a named operation.
+
+This gives us one place to add future execution policy, failure classification, evidence events, budgets, capability selection, and model/lane substitution without teaching every feature how the AI infrastructure works.
+
+### Verification status
+
+- Central execution module added.
+- Cortex lesson/tutor/insight model calls migrated.
+- Explicit operation identities added to lesson generation paths.
+- Execution-boundary unit tests added.
+- Full local TypeScript/test execution could not be run from the connected environment because the repository cannot be cloned into the execution container without network access.
+- The next verification pass should run `npm run verify` in the normal development/CI environment before merging further architectural changes.
+
+### Remaining architecture work
+
+The execution boundary is now the foundation, not the finished Cortex 2.0 system. Next:
+1. Inventory and classify non-Cortex AI callers outside the Cortex tree.
+2. Route Exam, Math Checker, and other intelligence endpoints through explicit Cortex operations where appropriate.
+3. Add structured execution/failure events.
+4. Separate interaction cache memory from learner memory at the type/API level.
+5. Quarantine or remove redundant legacy lesson endpoints once their callers are migrated.
