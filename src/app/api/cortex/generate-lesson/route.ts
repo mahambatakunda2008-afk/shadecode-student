@@ -1,7 +1,7 @@
 /** Cortex Learn generation endpoint. */
 import { NextResponse, NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { buildLessonContent } from "@/lib/cortex/contentBuilder";
 import { createExplanationTemplate, createPracticeTemplate, createQuizTemplate } from "@/lib/cortex/templates";
 import { getCache, generateCacheKey, shouldCache } from "@/lib/cortex/cache";
@@ -103,7 +103,7 @@ Required structure/content:
 
 Do not pad the lesson with generic motivational text. Do not invent syllabus facts. Use the authorized subject and topic consistently. Return detailed educational content that a student can actually study from.`;
 
-    const aiResponse = await callAI(prompt, 5000, { userId: user.id, feature: "lesson_assistant", subfeature: "generate_lesson_v2" });
+    const aiResponse = await executeCortexText(prompt, 5000, { operation: "lesson.generate_v2", userId: });
     if (!aiResponse) return NextResponse.json({ success: false, error: "Cortex could not generate the lesson right now. Please try again." }, { status: 503 });
 
     const buildResult = await buildLessonContent(aiResponse, {
