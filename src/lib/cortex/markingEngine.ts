@@ -5,7 +5,7 @@
  * step-by-step evaluation, feedback, and weak-area identification.
  */
 
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import type { ExamQuestion } from "./examGenerator";
 
 export interface MarkingResult {
@@ -134,7 +134,7 @@ ${studentAnswer}
 Mark this answer:`;
 
     const response = await withTimeout(
-      callAI(prompt, 1000, {
+      executeCortexText(prompt, 1000, { operation: "exam.mark",
         feature: "exam_sim",
         subfeature: "mark_answer",
         maxChainMs: 6000,
