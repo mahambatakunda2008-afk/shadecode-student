@@ -45,13 +45,13 @@ export default function AchievementsPage() {
   if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" /></div>;
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+    <main className="ssc-page" data-page="achievements">
       <div>
         <div className="flex items-center gap-3"><ShadecodeFeatureIcon feature="leaderboard" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Progress system</p><h1 className="text-2xl font-bold text-[var(--foreground)]">{copy.title}</h1></div></div>
         <p className="text-[var(--muted-foreground)] text-sm mt-1">{copy.subtitle}</p>
       </div>
 
-      <div className="bg-[var(--card)] rounded-xl p-4 border border-[var(--card-border)]">
+      <div className="bg-[var(--card)] rounded-[14px] p-4 border border-[var(--card-border)]">
         <div className="flex justify-between items-center mb-2"><span className="text-sm text-[var(--muted-foreground)]">{copy.progress}</span><span className="text-sm font-medium text-[var(--foreground)]">{totalUnlocked} / {totalAchievements} {copy.unlocked}</span></div>
         <div className="h-3 bg-[var(--muted)] rounded-full overflow-hidden"><div className="h-full bg-[var(--primary)] rounded-full transition-all duration-500" style={{ width: `${progress}%` }} /></div>
         <div className="flex gap-2 mt-3">
@@ -64,13 +64,13 @@ export default function AchievementsPage() {
         </div>
       </div>
 
-      <div className="flex gap-2">{[{ key: "all", label: "All" }, { key: "unlocked", label: "Unlocked" }, { key: "locked", label: "Locked" }].map((f) => <button key={f.key} onClick={() => setFilter(f.key)} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${filter === f.key ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20" : "bg-[var(--surface-2)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"}`}>{f.label}</button>)}</div>
+      <div className="flex gap-2">{[{ key: "all", label: "All" }, { key: "unlocked", label: "Unlocked" }, { key: "locked", label: "Locked" }].map((f) => <button key={f.key} onClick={() => setFilter(f.key)} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${filter === f.key ? "bg-[var(--primary)] text-white shadow-none" : "bg-[var(--surface-2)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"}`}>{f.label}</button>)}</div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((achievement) => {
           const c = RARITY_COLORS[achievement.rarity];
           const Icon = ACHIEVEMENT_ICONS[achievement.icon] ?? Trophy;
-          return <div key={achievement.id} className={`relative rounded-xl p-4 border transition-all duration-300 ${achievement.unlocked ? `${c.bg} ${c.border} ${c.glow} shadow-lg` : "bg-[var(--surface-2)] border-[var(--card-border)] opacity-60"}`}>
+          return <div key={achievement.id} className={`relative rounded-[14px] p-4 border transition-colors duration-150 ${achievement.unlocked ? `${c.bg} ${c.border} ${c.glow} shadow-lg` : "bg-[var(--surface-2)] border-[var(--card-border)] opacity-60"}`}>
             {!achievement.unlocked && <div className="absolute inset-0 bg-[var(--background)]/60 rounded-xl flex items-center justify-center z-10"><Lock className="w-8 h-8 text-[var(--muted-foreground)]" /></div>}
             <div className="flex items-start gap-3"><div className={`shrink-0 rounded-lg p-2 ${c.bg} ${c.text}`}><Icon className={`w-6 h-6 ${achievement.unlocked ? "" : "grayscale"}`} strokeWidth={1.9} aria-hidden="true" /></div><div className="flex-1 min-w-0"><div className="flex items-center gap-1.5"><span className="font-semibold text-[var(--foreground)] text-sm truncate">{achievement.title}</span>{achievement.unlocked && <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />}</div><p className="text-xs text-[var(--muted-foreground)] mt-0.5 line-clamp-2">{achievement.description}</p><div className="flex items-center gap-2 mt-2"><span className={`text-[10px] uppercase tracking-wider ${c.text}`}>{achievement.rarity}</span><span className="text-[10px] text-amber-500">+{achievement.xpReward} XP</span></div></div></div>
           </div>;
