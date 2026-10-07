@@ -1,5 +1,5 @@
 /** Cortex exam generation with strict validation and bounded AI execution. */
-import { callAI } from "@/lib/ai";
+import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { getMemory } from "./memory";
 
@@ -211,7 +211,7 @@ export async function generateExam(subject: string, topics: string[], difficulty
     } as Awaited<ReturnType<typeof getMemory>>);
 
     const prompt = buildPrompt(safeSubject, safeTopics, difficulty, safeCount, memory);
-    const response = await withTimeout(callAI(prompt, 6000, {
+    const response = await withTimeout(executeCortexText(prompt, 6000, { operation: "exam.generate",
       userId,
       feature: "exam_sim",
       subfeature: "generate_exam",
