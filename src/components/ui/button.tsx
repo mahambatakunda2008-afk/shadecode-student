@@ -4,11 +4,11 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-[var(--radius)] border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-all outline-none select-none shadow-sm hover:-translate-y-px disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none focus-visible:ring-4 focus-visible:ring-[var(--ring)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg:not([class*='size-'])]:size-4 group-hover/button:[&_svg]:scale-105",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-[var(--radius)] border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-colors outline-none select-none shadow-none disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-4 focus-visible:ring-[var(--ring)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg:not([class*='size-'])]:size-4 ",
   {
     variants: {
       variant: {
-        default: "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[0_10px_28px_var(--primary-glow)] hover:bg-[var(--primary-hover)]",
+        default: "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-none hover:bg-[var(--primary-hover)]",
         outline:
           "border-[var(--card-border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-2)]",
         secondary:
