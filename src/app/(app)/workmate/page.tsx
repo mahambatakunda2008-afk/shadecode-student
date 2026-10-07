@@ -13,12 +13,12 @@ const modes = [
 export default function WorkmatePage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 pb-24 sm:p-7 sm:pb-28">
-      <header className="ssc-surface-raised relative overflow-hidden rounded-3xl p-6 sm:p-8">
+      <header className="ssc-surface-raised relative overflow-hidden rounded-2xl border-[var(--border-subtle)] p-5 sm:p-7">
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--primary)] shadow-sm">
             <ShadecodeFeatureIcon feature="math-checker" size="sm" /> Math Checker
           </div>
-          <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-4xl font-black tracking-[-0.045em] sm:text-5xl">Math Checker.</h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted-foreground)] sm:text-base">
@@ -29,9 +29,9 @@ export default function WorkmatePage() {
               <CheckCircle2 size={14} /> Built around your working
             </div>
           </div>
-          <div className="mt-7 grid gap-2 sm:grid-cols-3">
+          <div className="mt-6 grid gap-px overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--border-subtle)] sm:grid-cols-3">
             {modes.map(({ icon: Icon, label, description }, index) => (
-              <div key={label} className={`rounded-2xl border p-4 ${index === 0 ? "border-[var(--primary)]/25 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}>
+              <div key={label} className={`bg-[var(--surface-raised)] p-4 ${index === 0 ? "border-[var(--primary)]/25 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="grid size-8 place-items-center rounded-xl bg-[var(--muted)] text-[var(--primary)]"><Icon size={16} /></span>
