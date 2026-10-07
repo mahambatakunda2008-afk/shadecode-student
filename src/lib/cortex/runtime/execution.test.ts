@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const callAIMock = vi.fn();
 
@@ -7,9 +7,19 @@ vi.mock("@/lib/ai", () => ({
 }));
 
 import { executeCortexText } from "./execution";
+import {
+  classifyCortexExecutionFailure,
+  clearCortexExecutionEventsForTests,
+  getRecentCortexExecutionEvents,
+} from "./executionEvents";
 
 describe("Cortex execution boundary", () => {
-  it("forwards model work through the shared AI runtime", async () => {
+  afterEach(() => {
+    callAIMock.mockReset();
+    clearCortexExecutionEventsForTests();
+  });
+
+  it("forwards model work through the shared AI runtime and emits lifecycle events", async () => {
     callAIMock.mockResolvedValueOnce("generated answer");
 
     await expect(
@@ -19,21 +29,52 @@ describe("Cortex execution boundary", () => {
       }),
     ).resolves.toBe("generated answer");
 
-    expect(callAIMock).toHaveBeenCalledWith("Explain this.", 900, {
-      userId: "user-1",
-      feature: "cortex",
-      subfeature: "test.answer",
+    expect(getRecentCortexExecutionEvents()).toMatchObject([
+      { type: "cortex.execution.started", operation: "test.answer", status: "started" },
+      { type: "cortex.execution.completed", operation: "test.answer", status: "completed" },
+    ]);
+    expect(getRecentCortexExecutionEvents()).toHaveLength(2);
+  });
+
+  it("classifies a null AI result as an empty response", async () => {
+    callAIMock.mockResolvedValueOnce(null);
+
+    await expect(
+      executeCortexText("Explain this.", 900, { operation: "test.answer" }),
+    ).resolves.toBeNull();
+
+    expect(getRecentCortexExecutionEvents()[1]).toMatchObject({
+      type: "cortex.execution.failed",
+      failureClass: "empty_response",
     });
   });
 
-  it("contains an execution exception instead of leaking provider failure", async () => {
-    callAIMock.mockRejectedValueOnce(new Error("provider exploded"));
+  it("contains an execution exception and classifies provider failure", async () => {
+    callAIMock.mockRejectedValueOnce(new Error("provider unavailable"));
 
     await expect(
-      executeCortexText("Explain this.", 900, {
-        operation: "test.answer",
-        userId: "user-1",
-      }),
+      executeCortexText("Explain this.", 900, { operation: "test.answer" }),
     ).resolves.toBeNull();
+
+    expect(getRecentCortexExecutionEvents()[1]).toMatchObject({
+      type: "cortex.execution.failed",
+      failureClass: "provider_unavailable",
+    });
+  });
+});
+
+describe("Cortex execution failure classification", () => {
+  it.each([
+    ["request timed out", "timeout"],
+    ["429 rate limit exceeded", "rate_limited"],
+    ["invalid response schema", "invalid_response"],
+    ["curriculum grounding unavailable", "grounding_unavailable"],
+    ["operation aborted", "aborted"],
+  ])("classifies %s", (message, expected) => {
+    expect(classifyCortexExecutionFailure(new Error(message))).toBe(expected);
+  });
+
+  it("falls back to execution_exception", () => {
+    expect(classifyCortexExecutionFailure(new Error("something broke"))).toBe("execution_exception");
   });
 });
