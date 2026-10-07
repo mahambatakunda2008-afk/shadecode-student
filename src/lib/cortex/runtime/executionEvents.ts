@@ -7,6 +7,13 @@
  * successful student operation into a failed request.
  */
 
+export type CortexRecoveryAction =
+  | "use_verified_data"
+  | "use_warm_local"
+  | "repair_output"
+  | "resume_checkpoint"
+  | "stop_cleanly";
+
 export type CortexExecutionStatus = "started" | "completed" | "failed";
 
 export type CortexExecutionFailureClass =
@@ -31,6 +38,9 @@ export interface CortexExecutionEvent {
   subfeature?: string;
   userId?: string;
   failureClass?: CortexExecutionFailureClass;
+  recoveryAction?: CortexRecoveryAction;
+  recoveryAutomatic?: boolean;
+  recoveryMaxAttempts?: number;
 }
 
 type CortexExecutionEventListener = (event: CortexExecutionEvent) => void;
