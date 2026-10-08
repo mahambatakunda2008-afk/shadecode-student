@@ -103,9 +103,9 @@ export default function HubContent({ isAdmin }: Props) {
     : CARDS;
 
   return (
-    <main className="ssc-page" data-page="exam-hub">
+    <div className="ssc-page-full">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-4 flex items-center gap-3"><ShadecodeFeatureIcon feature="past-papers" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Exam preparation</p><h1 className="text-2xl font-bold text-[var(--foreground)]">
+        <div className="mb-2 flex items-center gap-3"><ShadecodeFeatureIcon feature="past-papers" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Exam preparation</p><h1 className="text-2xl font-bold text-[var(--foreground)]">
           Exam Hub
         </h1></div></div>
         <p className="mb-7 text-sm text-[var(--muted-foreground)]">
@@ -117,7 +117,7 @@ export default function HubContent({ isAdmin }: Props) {
             const Icon = card.icon;
             const content = (
               <div
-                className="ssc-card-interactive group h-full p-5"
+                className="ssc-interactive ssc-surface-raised group h-full rounded-2xl p-5"
                 style={{ opacity: card.comingSoon ? 0.6 : 1, cursor: card.comingSoon ? "default" : "pointer" }}
               >
                 <div
@@ -144,7 +144,7 @@ export default function HubContent({ isAdmin }: Props) {
                 <p className="text-[13px] leading-6 text-[var(--text-secondary)]">
                   {card.description}
                 </p>
-                {!card.comingSoon && <ArrowRight size={15} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:text-[var(--primary)]" aria-hidden="true" />}
+                {!card.comingSoon && <ArrowRight size={15} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" aria-hidden="true" />}
               </div>
             );
 
