@@ -30,6 +30,20 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [ ] Past Paper Battle v2: real past-paper questions via Exam Hub where licensing allows
 - [ ] Weekly class and school leagues; streak-save challenges; progress and achievement cards as shareable artifacts
 
+**A2. Generation that cannot fail (shipped 2026-10-08/09; see docs/EXAM_GENERATION_QA_V2.md)**
+- Context: AI providers returned 0 of 29 calls over 7 days (Gemini 503/6s aborts, OpenRouter free-tier timeouts, Cloudflare empty). Do not depend on models for core practice.
+- [x] Deterministic question engine (`src/lib/exam/engine`): 36 seeded, parametrised generators across Mathematics, Physics, Chemistry, Computer Science; answers computed, each verified against an independent recomputation over 250 seeds
+- [x] Exact numeric marker (units, sci-notation, fractions, unicode minus) used by the offline marker and the server's deterministic marker; engine papers work with no network
+- [x] Guaranteed paper ladder: AI -> engine -> curated bank -> honest retryable 503 (never the generic placeholder stub); visible notice when a built-in paper is used
+- [x] Engine-backed lesson quiz (multiple choice with common-error distractors; exactly one correct option verified over 240 seeded quizzes)
+- [x] Fixed `$...$` inline maths never rendering in exams (regex required a trailing `$$`)
+- [ ] Engine coverage: Biology/Economics/Business/English cannot be computed; ground them in verified curriculum outcomes (self-check checklists) rather than invented Q&A
+- [ ] Mixed papers: engine numeric questions plus AI conceptual questions when AI is up, so a live paper is never worse than the fallback
+- [ ] AI circuit breaker: skip AI for a few minutes after repeated failures so students are never made to wait on dead providers
+- [ ] Server-side battle marking from the seed: the server rebuilds the paper from `seed`, holds the key, and marks, so battle scores cannot be forged (engine papers only at first)
+- [ ] Flashcards, notes and lessons: audit each AI path for the same ladder (lessons already have a local fallback pack)
+- [ ] Owner action: provider keys. GROQ_API_KEY was assumed to be the fast option but is not usable; pick any reachable low-latency provider later and add it to the chain
+
 **C. Focus and habits (retention)**
 - [ ] Daily 10-minute mission built from the weakest keyed subsection
 - [ ] Focus sessions linked to study-plan tasks, with results feeding mastery
