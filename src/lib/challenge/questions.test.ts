@@ -16,11 +16,14 @@ describe("sanitizeQuestions", () => {
     expect(sanitizeQuestions("x")).toBeNull();
     expect(sanitizeQuestions(Array.from({ length: 21 }, (_, i) => ({ ...short, id: i + 1 })))).toBeNull();
   });
-  it("rejects malformed items, duplicate ids and multiple choice without options", () => {
+  it("rejects malformed items and multiple choice without options", () => {
     expect(sanitizeQuestions([{ ...short, marks: 0 }])).toBeNull();
     expect(sanitizeQuestions([{ ...short, type: "essay2" }])).toBeNull();
-    expect(sanitizeQuestions([short, { ...short }])).toBeNull();
     expect(sanitizeQuestions([{ ...mcq, options: ["only one"] }])).toBeNull();
+  });
+  it("accepts string or repeated ids from server-built papers and renumbers 1..n", () => {
+    const result = sanitizeQuestions([{ ...short, id: "fallback_eng_42_1" }, { ...mcq, id: "q_2_1700000000_abc" }, { ...short, id: "fallback_eng_42_1" }]);
+    expect(result?.map((question) => question.id)).toEqual([1, 2, 3]);
   });
   it("caps long strings", () => {
     expect(sanitizeQuestions([{ ...short, question: "x".repeat(9000) }])?.[0].question).toHaveLength(4000);

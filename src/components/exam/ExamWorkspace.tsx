@@ -99,6 +99,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           topic: q.topic,
           modelAnswer: q.modelAnswer,
           markingCriteria: q.markingCriteria,
+          numeric: q.numeric,
         })));
         setAnswers([]);
         setFlags([]);
@@ -159,6 +160,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           topic: q.topic,
           modelAnswer: q.modelAnswer,
           markingCriteria: q.markingCriteria,
+          numeric: q.numeric,
         })));
         setAnswers([]);
         setFlags([]);

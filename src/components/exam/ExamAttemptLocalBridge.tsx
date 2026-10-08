@@ -82,7 +82,7 @@ function seedOfflineAttempt(subject: string, topic: string, count: number, level
   const difficulty = level >= 2 ? "hard" : level <= 0 ? "easy" : "medium";
   const generated = buildGuaranteedExam(subject, topic, difficulty, count);
   if (!generated || !generated.questions.length) return null;
-  const questions = generated.questions.map((question, index) => ({ id: index + 1, type: question.type, question: question.question, options: question.options, marks: question.marks, topic: question.topic, modelAnswer: question.modelAnswer, markingCriteria: question.markingCriteria })) as LocalExamAttempt["questions"];
+  const questions = generated.questions.map((question, index) => ({ id: index + 1, type: question.type, question: question.question, options: question.options, marks: question.marks, topic: question.topic, modelAnswer: question.modelAnswer, markingCriteria: question.markingCriteria, numeric: question.numeric })) as LocalExamAttempt["questions"];
   const totalSeconds = Math.max(300, Math.round(generated.durationMinutes * 60));
   return { workId: `exam:offline:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`, subject, topic, questions, answers: [], current: 0, seconds: totalSeconds, totalSeconds, startedAt: Date.now(), flags: [], canvas: "", level: Math.max(0, Math.min(2, Math.floor(Number(level) || 0))), count: questions.length };
 }

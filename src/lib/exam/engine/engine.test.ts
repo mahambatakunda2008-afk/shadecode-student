@@ -82,3 +82,19 @@ describe("battle question sanitiser", () => {
     expect(sanitizeQuestions([{ ...base, numeric: { exact: 1, tolerance: -1 } }])?.[0].numeric).toBeUndefined();
   });
 });
+
+describe("the shape the client keeps in state", () => {
+  it("survives the client-side id/field mapping and is still marked exactly offline", () => {
+    const exam = buildGuaranteedExam("Physics", "Kinematics", "medium", 4, 123)!;
+    // Mirrors ExamWorkspace's fallback mapping: renumbered ids, explicit field pick, numeric preserved.
+    const mapped = exam.questions.map((q, idx) => ({ id: idx + 1, type: q.type, question: q.question, options: q.options, marks: q.marks, topic: q.topic, modelAnswer: q.modelAnswer, markingCriteria: q.markingCriteria, numeric: q.numeric })) as unknown as ExamQuestion[];
+    const answers: ExamAnswer[] = mapped.map((q, i) => ({ questionId: i + 1, answer: formatAnswer(q.numeric!), timeSpent: 5 }));
+    expect(markExamOffline(mapped, answers, 60).percentage).toBe(100);
+  });
+  it("keeps the numeric spec through the battle freeze even when ids are strings", () => {
+    const exam = buildEngineExam({ subject: "Chemistry", topic: "moles", difficulty: "medium", count: 5, seed: 3 })!;
+    const frozen = sanitizeQuestions(exam.questions);
+    expect(frozen).toHaveLength(5);
+    expect(frozen?.every((q) => q.numeric && typeof q.id === "number")).toBe(true);
+  });
+});

@@ -32,9 +32,8 @@ export function sanitizeQuestions(input: unknown): ExamQuestion[] | null {
 
     const question = text(item.question, 4000);
     const type = typeof item.type === "string" && TYPES.has(item.type) ? (item.type as ExamQuestion["type"]) : null;
-    const id = typeof item.id === "number" && Number.isInteger(item.id) && item.id > 0 && item.id <= 1000 ? item.id : null;
     const marks = typeof item.marks === "number" && Number.isFinite(item.marks) && item.marks >= 1 && item.marks <= 50 ? item.marks : null;
-    if (!question || !type || id === null || marks === null) return null;
+    if (!question || !type || marks === null) return null;
 
     const options = Array.isArray(item.options)
       ? item.options.map((option) => text(option, 500)).filter((option): option is string => option !== null).slice(0, 8)
@@ -42,7 +41,9 @@ export function sanitizeQuestions(input: unknown): ExamQuestion[] | null {
     if (type === "multiple_choice" && (!options || options.length < 2)) return null;
 
     cleaned.push({
-      id,
+      // Papers arrive with numeric or string ids depending on how they were built; a frozen set is its own
+      // universe, so renumber 1..n and both players answer against the same ids.
+      id: cleaned.length + 1,
       type,
       question,
       marks,
@@ -54,5 +55,5 @@ export function sanitizeQuestions(input: unknown): ExamQuestion[] | null {
     });
   }
 
-  return new Set(cleaned.map((question) => question.id)).size === cleaned.length ? cleaned : null;
+  return cleaned;
 }
