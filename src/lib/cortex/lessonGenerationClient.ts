@@ -12,6 +12,7 @@ import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { getDurableGenerationJob, listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
 import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
+import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
