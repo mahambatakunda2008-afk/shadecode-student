@@ -197,7 +197,7 @@ export default function LeaderboardPage() {
   ═══════════════════════════ */
 
   return (
-    <main className="ssc-page" style={{ paddingTop: "28px" }}>
+    <div style={{ padding: "32px 20px 24px", maxWidth: "1100px", margin: "0 auto" }}>
 
       {/* HEADER */}
       <div style={{ marginBottom: "28px" }}>
@@ -207,7 +207,7 @@ export default function LeaderboardPage() {
             Progress & competition
           </p>
         </div>
-        <h1 style={{ fontSize: "32px", lineHeight: 1.15, fontWeight: 750, margin: 0 }}>
+        <h1 style={{ fontSize: "clamp(32px, 6vw, 56px)", lineHeight: 1, fontWeight: 900, margin: 0 }}>
           Leaderboard
         </h1>
         <p style={{ marginTop: "12px", color: "var(--muted-foreground)", fontSize: "15px" }}>
@@ -231,11 +231,11 @@ export default function LeaderboardPage() {
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            padding: "10px 14px",
-            borderRadius: "10px",
+            padding: "12px 18px",
+            borderRadius: "16px",
             border: "1px solid var(--card-border)",
             background: "var(--surface-2)",
-            color: "var(--foreground)",
+            color: "white",
             cursor: "pointer",
             fontWeight: 700,
           }}
@@ -257,8 +257,8 @@ export default function LeaderboardPage() {
             marginBottom: "22px",
             background: "var(--primary-glow)",
             border: "1px solid rgba(99,102,241,0.2)",
-            borderRadius: "14px",
-            padding: "18px",
+            borderRadius: "24px",
+            padding: "22px",
           }}
         >
           <div
@@ -287,8 +287,8 @@ export default function LeaderboardPage() {
           style={{
             padding: "90px 24px",
             textAlign: "center",
-            borderRadius: "14px",
-            background: "var(--surface-raised)",
+            borderRadius: "28px",
+            background: "var(--surface-2)",
             border: "1px solid var(--card-border)",
           }}
         >
@@ -322,10 +322,10 @@ export default function LeaderboardPage() {
                     style={{
                       background: rankStyle.bg,
                       border: rankStyle.border,
-                      borderRadius: "14px",
-                      padding: "20px 16px",
+                      borderRadius: "26px",
+                      padding: "24px 18px",
                       textAlign: "center",
-                      transform: "none",
+                      transform: actualRank === 1 ? "translateY(-12px)" : "none",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px", color: rankStyle.color }}>
@@ -367,7 +367,7 @@ export default function LeaderboardPage() {
             style={{
               background: "var(--surface-2)",
               border: "1px solid var(--card-border)",
-              borderRadius: "14px",
+              borderRadius: "28px",
               overflow: "hidden",
             }}
           >
