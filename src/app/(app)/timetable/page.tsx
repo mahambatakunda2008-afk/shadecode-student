@@ -363,7 +363,7 @@ export default function Timetable() {
           border: "none", borderRadius: "12px", padding: "14px",
           fontWeight: 800, fontSize: "15px",
           cursor: selectedSubjects.length === 0 ? "not-allowed" : "pointer",
-          boxShadow: selectedSubjects.length === 0 ? "none" : "0 0 20px var(--primary-glow)",
+          boxShadow: "none",
         }}
       >
         Generate Schedule →
@@ -412,7 +412,7 @@ export default function Timetable() {
                 <div style={{
                   width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0,
                   background: slot.is_break ? "#f59e0b" : (slot.color || "#6366f1"),
-                  boxShadow: `0 0 6px ${slot.is_break ? "#f59e0b" : (slot.color || "#6366f1")}80`,
+                  boxShadow: "none",
                 }} />
 
                 <p style={{
