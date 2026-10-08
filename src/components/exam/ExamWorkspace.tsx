@@ -1,6 +1,5 @@
 "use client";
 
-import katex from "katex";
 import "katex/dist/katex.min.css";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Calculator, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudOff, Flag, FlagOff, Grid2X2, Lightbulb, Loader2, Menu, MoreHorizontal, Paperclip, Pencil, RotateCcw, Save, Wifi, X, Zap } from "lucide-react";
@@ -12,11 +11,12 @@ import StudyCanvas from "@/components/studyspace/StudyCanvas";
 import { createStudySession, deleteStudySession, getStudySession, saveStudySession } from "@/lib/studyspace/session";
 import { saveWorkObject } from "@/lib/studyspace/store";
 import type { StudySpaceMode } from "@/lib/studyspace/types";
-import { buildCuratedFallbackExam } from "@/lib/exam/fallbackExam";
+import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
 import ExamSourceNotice from "./ExamSourceNotice";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
 import { sanitizeQuestions } from "@/lib/challenge/questions";
 import ChallengeFriend from "./ChallengeFriend";
+import { renderMath as math } from "@/lib/exam/mathText";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
@@ -29,7 +29,6 @@ const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Sc
 const COUNTS = [5, 10, 15, 20];
 const KEY = "shadecode-exam-workspace";
 
-function math(text: string) { try { return (text || "").replace(/\$\$([^$]+)\$\$/g, (_, e) => katex.renderToString(e, { displayMode: true, throwOnError: false })).replace(/\$([^$]+)\$\$/g, (_, e) => katex.renderToString(e, { displayMode: false, throwOnError: false })); } catch { return text; } }
 function grade(p: number) { return p >= 90 ? "A*" : p >= 80 ? "A" : p >= 70 ? "B" : p >= 60 ? "C" : p >= 50 ? "D" : p >= 40 ? "E" : "U"; }
 function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.floor(n / 3600); const m = Math.floor((n % 3600) / 60); const sec = n % 60; return h ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`; }
 function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
@@ -86,7 +85,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       if (!online) {
         const difficulty = LEVELS[level].api;
         const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
-        const generated = buildCuratedFallbackExam(subject, cleanTopic, difficulty, count);
+        const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
         if (!generated) { setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
         setPaperSource("fallback");
         const total = count * 120;
@@ -146,7 +145,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       // Graceful fallback to offline questions if online generation fails
       const difficulty = LEVELS[level].api;
       const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
-      const generated = buildCuratedFallbackExam(subject, cleanTopic, difficulty, count);
+      const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
       if (generated && generated.questions.length > 0) {
         setPaperSource("fallback");
         const total = count * 120;
