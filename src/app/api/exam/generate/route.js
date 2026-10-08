@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
 import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
+import { matchGenerators } from "@/lib/exam/engine";
+import { examAiBreaker } from "@/lib/aiCircuitBreaker";
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
@@ -52,8 +54,22 @@ export async function POST(req) {
       ? topic.replace(/\s*\((?:O-Level|A-Level|University|O-Level standard|A-Level standard|university entrance standard)[^)]*\)\s*$/i, "").trim()
       : "";
 
-    let exam = await generateExam(canonicalSubject.name, cleanTopic ? [cleanTopic] : [canonicalSubject.name], difficulty, questionCount, userId);
+    // When the AI providers have been failing, skip straight to the engine, but only when the engine
+    // can actually serve this topic. Otherwise the AI stays the only option and is still attempted.
+    const engineCovers = matchGenerators(canonicalSubject.name, cleanTopic).length > 0;
+    const skipAi = engineCovers && !examAiBreaker.shouldAttempt();
+
+    let exam = null;
     let source = "cortex";
+    if (!skipAi) {
+      try {
+        exam = await generateExam(canonicalSubject.name, cleanTopic ? [cleanTopic] : [canonicalSubject.name], difficulty, questionCount, userId);
+      } catch {
+        exam = null;
+      }
+      if (exam) examAiBreaker.recordSuccess();
+      else examAiBreaker.recordFailure();
+    }
 
     if (!exam) {
       // Deterministic engine first (exact, instant), then curated questions. Never serve generic placeholders.
