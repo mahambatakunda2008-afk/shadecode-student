@@ -659,7 +659,7 @@ async function runJob(
     throw new Error("All online lesson generation lanes failed.");
   } catch (error) {
     // Use the latest stored job because section generation updates its checkpoint in storage.
-    const currentJob = getGenerationJob(job.id) ?? job;
+    const currentJob = (getGenerationJob(job.id) ?? job) as GenerationJob<LessonGenerationInput>;
     const message = errorMessage(error); const context = localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
