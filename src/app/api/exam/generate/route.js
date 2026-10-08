@@ -4,7 +4,7 @@ import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schema
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
-import { buildFallbackExam } from "@/lib/exam/fallbackExam";
+import { buildCuratedFallbackExam } from "@/lib/exam/fallbackExam";
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
@@ -56,8 +56,17 @@ export async function POST(req) {
     let source = "cortex";
 
     if (!exam) {
-      exam = buildFallbackExam(canonicalSubject.name, cleanTopic, difficulty, questionCount);
+      // Only hand-written questions for this exact topic are acceptable. Never serve generic placeholders.
+      exam = buildCuratedFallbackExam(canonicalSubject.name, cleanTopic, difficulty, questionCount);
       source = "deterministic-fallback";
+    }
+
+    if (!exam) {
+      return NextResponse.json({
+        error: "Live question generation is busy right now, so we couldn't build this paper. Nothing was lost. Please try again in a minute, or choose a different topic.",
+        code: "GENERATION_UNAVAILABLE",
+        retryable: true,
+      }, { status: 503 });
     }
 
     void supabase.from("exams").insert({

@@ -23,7 +23,7 @@ export function buildFallbackExam(subject: string, topic: string, difficulty: st
   return { subject, title: `${subject}${topic ? ` · ${topic}` : ""} Practice Paper`, questions, totalMarks, durationMinutes: Math.max(5, Math.round(totalMarks * 2.5)), difficulty: level, topics: [requestedTopic] };
 }
 
-function getBank(subject: string, topic: string): Seed[] {
+function getCuratedBank(subject: string, topic: string): Seed[] | null {
   const s = subject.toLowerCase();
   const t = topic.toLowerCase();
 
@@ -79,6 +79,11 @@ function getBank(subject: string, topic: string): Seed[] {
     short("State one advantage and one limitation of a linked list compared with a fixed-size array.", "It can grow without moving the whole structure, but it uses extra memory for links and lacks direct constant-time indexing.", 3),
   ];
 
+  return null;
+}
+
+/** Generic placeholder prompts. Never served to students: kept only for the legacy buildFallbackExam contract. */
+function getGenericBank(subject: string, topic: string): Seed[] {
   const label = topic.trim() || "the stated topic";
   return [
     short(`Define ${label} precisely in the context of ${subject}.`, `A precise, subject-specific definition of ${label}.`, 2),
@@ -92,4 +97,22 @@ function getBank(subject: string, topic: string): Seed[] {
     short(`Explain what evidence would make a conclusion about ${label} convincing.`, "Relevant, sufficient evidence that directly supports the conclusion and is consistent with the question conditions.", 3),
     structured(`Design a short worked check for a claim about ${label}. State the input or evidence required and what result would support the claim.`, "A relevant test with a defined input/evidence source and a clearly defined supporting result.", 4),
   ];
+}
+
+function getBank(subject: string, topic: string): Seed[] {
+  return getCuratedBank(subject, topic) ?? getGenericBank(subject, topic);
+}
+
+/** True only when hand-written, correct questions exist for this exact subject and topic. */
+export function hasCuratedBank(subject: string, topic: string): boolean {
+  return getCuratedBank(subject, topic.trim() || "core concepts") !== null;
+}
+
+/**
+ * Built-in practice paper from curated questions only. Returns null instead of
+ * inventing generic placeholder questions, so callers must surface an honest
+ * message (docs/EXAM_GENERATION_QA_V2.md: never silently downgrade to fabricated questions).
+ */
+export function buildCuratedFallbackExam(subject: string, topic: string, difficulty: string, count: number): GeneratedExam | null {
+  return hasCuratedBank(subject, topic) ? buildFallbackExam(subject, topic, difficulty, count) : null;
 }

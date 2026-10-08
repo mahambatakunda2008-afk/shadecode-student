@@ -12,7 +12,8 @@ import StudyCanvas from "@/components/studyspace/StudyCanvas";
 import { createStudySession, deleteStudySession, getStudySession, saveStudySession } from "@/lib/studyspace/session";
 import { saveWorkObject } from "@/lib/studyspace/store";
 import type { StudySpaceMode } from "@/lib/studyspace/types";
-import { buildFallbackExam } from "@/lib/exam/fallbackExam";
+import { buildCuratedFallbackExam } from "@/lib/exam/fallbackExam";
+import ExamSourceNotice from "./ExamSourceNotice";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
 import { sanitizeQuestions } from "@/lib/challenge/questions";
 import ChallengeFriend from "./ChallengeFriend";
@@ -59,6 +60,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   // Battle mode: both players sit the identical frozen question set instead of generating a new exam.
   const frozenStarted = useRef(false);
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  // "fallback" = a built-in curated practice set was used because live generation was unavailable.
+  const [paperSource, setPaperSource] = useState<"live" | "fallback">("live");
   useEffect(() => {
     if (!frozenQuestions?.length || frozenStarted.current || mode !== "setup") return;
     frozenStarted.current = true;
@@ -83,7 +86,9 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       if (!online) {
         const difficulty = LEVELS[level].api;
         const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
-        const generated = buildFallbackExam(subject, cleanTopic, difficulty, count);
+        const generated = buildCuratedFallbackExam(subject, cleanTopic, difficulty, count);
+        if (!generated) { setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
+        setPaperSource("fallback");
         const total = count * 120;
         workId.current = `exam:offline:${id()}`;
         setQuestions(generated.questions.map((q, idx) => ({
@@ -126,6 +131,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       if (!res.ok || !Array.isArray(data.questions)) throw new Error(data.error || "No questions were generated.");
       const total = count * 120;
       workId.current = `exam:${id()}`;
+      setPaperSource(data.metadata?.source === "deterministic-fallback" ? "fallback" : "live");
       setQuestions(data.questions);
       setAnswers([]);
       setFlags([]);
@@ -140,8 +146,9 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       // Graceful fallback to offline questions if online generation fails
       const difficulty = LEVELS[level].api;
       const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
-      const generated = buildFallbackExam(subject, cleanTopic, difficulty, count);
+      const generated = buildCuratedFallbackExam(subject, cleanTopic, difficulty, count);
       if (generated && generated.questions.length > 0) {
+        setPaperSource("fallback");
         const total = count * 120;
         workId.current = `exam:fallback:${id()}`;
         setQuestions(generated.questions.map((q, idx) => ({
@@ -164,7 +171,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         setResumeId(null);
         setPanel("canvas");
       } else {
-        setError(e instanceof FetchTimeoutError ? "Generation took too long. Standard paper loaded." : e instanceof Error ? e.message : "Could not generate the exam.");
+        setError(e instanceof FetchTimeoutError ? "Question generation is taking too long right now. Nothing was lost. Please try again in a minute." : e instanceof Error ? e.message : "Could not generate the exam. Please try again.");
       }
     } finally {
       setGenerating(false);
@@ -268,7 +275,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
   if (!q) return null;
   const qNo = current + 1, flagged = flags.includes(q.id), timerPercent = totalSeconds ? seconds / totalSeconds * 100 : 100;
 
-  return <div className="min-h-screen"><header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--background)]/95 backdrop-blur"><div className="mx-auto flex max-w-[1800px] items-center gap-3 px-3 py-3 sm:px-5"><button onClick={() => setMobileNav(true)} aria-label="Open question navigator" className="rounded-xl border border-[var(--card-border)] p-2 lg:hidden"><Menu size={18} aria-hidden="true" /></button><button onClick={onExit} aria-label="Exit exam simulation" className="hidden items-center gap-1 rounded-xl px-2 py-2 text-sm font-bold text-[var(--muted-foreground)] lg:flex"><ArrowLeft size={16} aria-hidden="true" /> Exam Simulation</button><div className="hidden h-5 w-px bg-[var(--card-border)] lg:block" /><div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-sm font-bold"><span className="truncate">{subject}</span><ChevronRight size={14} /><span className="truncate text-[var(--muted-foreground)]">{topic || "Mixed topics"}</span></div><p className="text-[11px] text-[var(--muted-foreground)]">{LEVELS[level].label} · Paper 1 · {questions.length} questions</p></div><span className={`hidden items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold sm:flex ${online ? "border-emerald-500/20 text-emerald-500" : "border-amber-500/20 text-amber-500"}`}>{online ? <Wifi size={14} /> : <CloudOff size={14} />}{online ? "Online" : "Offline"}</span><span className={`flex items-center gap-2 rounded-xl border px-3 py-2 font-mono text-sm font-black ${danger ? "border-red-500/30 text-red-500" : "border-[var(--card-border)]"}`} aria-label={`${time(seconds)} remaining${danger ? ", time is running low" : ""}`}><Clock3 size={15} aria-hidden="true" />{time(seconds)}</span><button onClick={() => setConfirmSubmit(true)} className="hidden rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-black text-[var(--primary-foreground)] sm:block">Submit</button></div></header>
+  return <div className="min-h-screen">{paperSource === "fallback" && <ExamSourceNotice />}<header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--background)]/95 backdrop-blur"><div className="mx-auto flex max-w-[1800px] items-center gap-3 px-3 py-3 sm:px-5"><button onClick={() => setMobileNav(true)} aria-label="Open question navigator" className="rounded-xl border border-[var(--card-border)] p-2 lg:hidden"><Menu size={18} aria-hidden="true" /></button><button onClick={onExit} aria-label="Exit exam simulation" className="hidden items-center gap-1 rounded-xl px-2 py-2 text-sm font-bold text-[var(--muted-foreground)] lg:flex"><ArrowLeft size={16} aria-hidden="true" /> Exam Simulation</button><div className="hidden h-5 w-px bg-[var(--card-border)] lg:block" /><div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-sm font-bold"><span className="truncate">{subject}</span><ChevronRight size={14} /><span className="truncate text-[var(--muted-foreground)]">{topic || "Mixed topics"}</span></div><p className="text-[11px] text-[var(--muted-foreground)]">{LEVELS[level].label} · Paper 1 · {questions.length} questions</p></div><span className={`hidden items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold sm:flex ${online ? "border-emerald-500/20 text-emerald-500" : "border-amber-500/20 text-amber-500"}`}>{online ? <Wifi size={14} /> : <CloudOff size={14} />}{online ? "Online" : "Offline"}</span><span className={`flex items-center gap-2 rounded-xl border px-3 py-2 font-mono text-sm font-black ${danger ? "border-red-500/30 text-red-500" : "border-[var(--card-border)]"}`} aria-label={`${time(seconds)} remaining${danger ? ", time is running low" : ""}`}><Clock3 size={15} aria-hidden="true" />{time(seconds)}</span><button onClick={() => setConfirmSubmit(true)} className="hidden rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-black text-[var(--primary-foreground)] sm:block">Submit</button></div></header>
   <div className="sr-only" aria-live="polite" aria-atomic="true">Question {qNo} of {questions.length}. {answered.has(q.id) ? "Answered." : "Not answered."} {flagged ? "Flagged for review." : ""} {time(seconds)} remaining.</div>
   <div className="mx-auto grid max-w-[1800px] gap-3 p-3 sm:p-5 lg:grid-cols-[220px_minmax(480px,1fr)_300px]"><aside className="hidden rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3 lg:block"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Question paper</p><p className="mt-1 text-sm font-black">Paper 1</p></div><Grid2X2 size={16} className="text-[var(--primary)]" /></div><div className="mt-3 max-h-[calc(100vh-180px)] overflow-auto rounded-xl bg-[var(--muted)] p-2">{questions.map((question, i) => <button key={question.id} onClick={() => go(i)} className={`flex w-full items-center gap-2 rounded-xl p-2.5 text-left ${i === current ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--card)]"}`}><span className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black ${i === current ? "bg-white/30" : answered.has(question.id) ? "bg-emerald-500/15 text-emerald-500" : "bg-[var(--card)]"}`}>{i + 1}</span><span className="min-w-0 flex-1 truncate text-xs font-semibold">{question.topic}</span>{flags.includes(question.id) && <Flag size={12} fill="currentColor" />}</button>)}</div></aside>
   <main className="min-w-0"><div className="mb-3 flex flex-wrap items-center gap-1 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-2"><ToolButton active={panel === "canvas"} onClick={() => { setPanel("canvas"); setCanvasOpen(true); }} icon={<Pencil size={14} />} label="Canvas" /><ToolButton active={panel === "calculator"} onClick={() => setPanel("calculator")} icon={<Calculator size={14} />} label="Calculator" /><ToolButton active={panel === "formulae"} onClick={() => setPanel("formulae")} icon={<BookOpen size={14} />} label="Formulae" /><ToolButton active={panel === "hint"} onClick={() => void askHint()} icon={<Lightbulb size={14} />} label="AI Hint" /><ToolButton active={panel === "upload"} onClick={() => { setPanel("upload"); fileRef.current?.click(); }} icon={<Paperclip size={14} />} label="Upload" /><div className="ml-auto flex gap-1"><button onClick={flag} aria-label={flagged ? "Remove flag from question" : "Flag question for review"} aria-pressed={flagged} className={`rounded-xl p-2.5 ${flagged ? "bg-amber-500/10 text-amber-500" : "hover:bg-[var(--muted)]"}`}>{flagged ? <Flag size={15} fill="currentColor" aria-hidden="true" /> : <FlagOff size={15} aria-hidden="true" />}</button><button onClick={() => setMore((v) => !v)} aria-label={more ? "Close more exam tools" : "Open more exam tools"} aria-expanded={more} className="rounded-xl p-2.5 hover:bg-[var(--muted)]"><MoreHorizontal size={17} aria-hidden="true" /></button></div></div>{more && <div className="mb-3 flex flex-wrap gap-2 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-3"><button onClick={() => setCanvasOpen((v) => !v)} className="rounded-xl px-3 py-2 text-xs font-bold hover:bg-[var(--muted)]">Toggle Canvas</button><button onClick={() => document.documentElement.requestFullscreen?.()} className="rounded-xl px-3 py-2 text-xs font-bold hover:bg-[var(--muted)]">Fullscreen</button><button onClick={() => setConfirmSubmit(true)} className="rounded-xl px-3 py-2 text-xs font-bold text-red-500">End exam</button></div>}
