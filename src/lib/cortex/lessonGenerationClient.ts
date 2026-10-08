@@ -522,7 +522,11 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
 
     return result;
 }
-async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) {
+async function runJob(
+  job: GenerationJob<LessonGenerationInput>,
+  token: string,
+  allowCheckpointResume = true,
+) {
   // One browser job owns one durable identity. Retries and refreshes reuse it.
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
@@ -675,15 +679,21 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
 
     // Cortex recovery policy selects exactly one safe recovery lane. The browser
     // runner executes that decision, but never invents a generic whole-job retry.
-    if (recoveryPolicy.action === "resume_checkpoint") {
+    if (recoveryPolicy.action === "resume_checkpoint" && allowCheckpointResume) {
+      // A checkpoint recovery is a bounded continuation, not a whole-job retry.
+      // Re-enter the same durable job exactly once so tryCloudLesson/tryLocalModel
+      // starts from completedUnits already stored in job.partial.
       updateGenerationJob(job.id, {
         status: "queued",
         progress: Math.min(90, Math.max(20, getGenerationJob(job.id)?.progress ?? job.progress)),
-        error: "Cortex preserved your checkpoint. This generation will resume from the saved progress instead of restarting.",
+        error: "Cortex preserved your checkpoint. Resuming from the saved progress instead of restarting.",
       });
       saveActiveId(job.id);
-      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress", { leaseId: generationLeaseId(job.id) });
-      return getGenerationJobs().find(item => item.id === job.id) ?? job;
+      const checkpointJob = getGenerationJob(job.id) ?? job;
+      await syncDurableGenerationJob(token, checkpointJob as GenerationJob, "progress", {
+        leaseId: generationLeaseId(job.id),
+      });
+      return runJob(checkpointJob as GenerationJob<LessonGenerationInput>, token, false);
     }
 
     if (recoveryPolicy.action === "stop_cleanly") {
