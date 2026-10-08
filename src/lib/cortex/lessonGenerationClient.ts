@@ -12,6 +12,7 @@ import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { getDurableGenerationJob, listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
 import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
+import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
@@ -654,6 +655,13 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
     throw new Error("All online lesson generation lanes failed.");
   } catch (error) {
     const message = errorMessage(error); const context = localContext(job);
+    const failureClass = classifyCortexExecutionFailure(error);
+    const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
+      hasVerifiedData: isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context),
+      hasWarmLocal: isBrowser() && getBrowserLocalModelStatus().status === "ready",
+      hasCheckpoint: Boolean(job.partial),
+      supportsRepair: false,
+    });
 
     if (message === "CORTEX_LEASE_CONFLICT") {
       updateGenerationJob(job.id, {
@@ -665,9 +673,32 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       return getGenerationJobs().find(item => item.id === job.id) ?? job;
     }
 
-    // Provider failure recovery is ordered for latency: verified curriculum first,
-    // then a warm browser model. Never turn an outage into a hidden model download.
-    if (isBrowser() && navigator.onLine && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
+    // Cortex recovery policy selects exactly one safe recovery lane. The browser
+    // runner executes that decision, but never invents a generic whole-job retry.
+    if (recoveryPolicy.action === "resume_checkpoint") {
+      updateGenerationJob(job.id, {
+        status: "queued",
+        progress: Math.min(90, Math.max(20, getGenerationJob(job.id)?.progress ?? job.progress)),
+        error: "Cortex preserved your checkpoint. This generation will resume from the saved progress instead of restarting.",
+      });
+      saveActiveId(job.id);
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "progress", { leaseId: generationLeaseId(job.id) });
+      return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    }
+
+    if (recoveryPolicy.action === "stop_cleanly") {
+      updateGenerationJob(job.id, {
+        status: "failed",
+        progress: job.progress,
+        error: message + " Cortex stopped this generation cleanly. Your request is safe to retry manually.",
+      });
+      await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? job) as GenerationJob, "failed");
+      if (getActiveId() === job.id) saveActiveId(null);
+      return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    }
+
+    // Execute the selected recovery lane. Never turn an outage into a hidden model download.
+    if (recoveryPolicy.action === "use_verified_data" && isBrowser() && navigator.onLine && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
       try {
         const local = generateLocalLesson(job.request.subject, job.request.prompt, context);
         if (local.blocks.length >= 10) {
@@ -682,7 +713,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       }
     }
 
-    if (isBrowser() && navigator.onLine && getBrowserLocalModelStatus().status === "ready") {
+    if (recoveryPolicy.action === "use_warm_local" && isBrowser() && navigator.onLine && getBrowserLocalModelStatus().status === "ready") {
       try {
         updateGenerationJob(job.id, { status: "generating", progress: Math.max(40, Math.min(55, getGenerationJob(job.id)?.progress ?? 40)), error: "Cloud generation is unavailable. Cortex is using the warm browser-local model." });
         const localModel = await runLocalRecoveryWithHeartbeat(job, token, () => tryLocalModel(job, token));
@@ -696,7 +727,7 @@ async function runJob(job: GenerationJob<LessonGenerationInput>, token: string) 
       }
     }
 
-    if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
+    if (recoveryPolicy.action === "use_verified_data" && isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context)) {
       try {
         // An online provider failure is not an offline-storage success.
         // Build from the verified local curriculum lane, then use the same
