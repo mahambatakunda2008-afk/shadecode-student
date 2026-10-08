@@ -658,12 +658,14 @@ async function runJob(
 
     throw new Error("All online lesson generation lanes failed.");
   } catch (error) {
-    const message = errorMessage(error); const context = localContext(job);
+    // Use the latest stored job because section generation updates its checkpoint in storage.
+    const currentJob = getGenerationJob(job.id) ?? job;
+    const message = errorMessage(error); const context = localContext(currentJob as GenerationJob<LessonGenerationInput>);
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
-      hasVerifiedData: isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, context),
+      hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
       hasWarmLocal: isBrowser() && getBrowserLocalModelStatus().status === "ready",
-      hasCheckpoint: Boolean(job.partial),
+      hasCheckpoint: Boolean(currentJob.partial),
       supportsRepair: false,
     });
 
