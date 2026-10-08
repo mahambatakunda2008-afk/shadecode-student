@@ -7,12 +7,20 @@
  */
 
 import type { ExamQuestion } from "@/lib/exam/types";
+import type { NumericSpec } from "@/lib/exam/engine/numeric";
 
 const TYPES = new Set(["multiple_choice", "short_answer", "structured", "essay"]);
 const MAX_QUESTIONS = 20;
 
 const text = (value: unknown, max: number): string | null =>
   typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
+
+function numericSpec(value: unknown): NumericSpec | null {
+  if (!value || typeof value !== "object") return null;
+  const { exact, tolerance, unit } = value as Record<string, unknown>;
+  if (typeof exact !== "number" || !Number.isFinite(exact) || typeof tolerance !== "number" || !Number.isFinite(tolerance) || tolerance < 0) return null;
+  return { exact, tolerance, ...(typeof unit === "string" && unit.trim() ? { unit: unit.trim().slice(0, 24) } : {}) };
+}
 
 export function sanitizeQuestions(input: unknown): ExamQuestion[] | null {
   if (!Array.isArray(input) || input.length === 0 || input.length > MAX_QUESTIONS) return null;
@@ -42,6 +50,7 @@ export function sanitizeQuestions(input: unknown): ExamQuestion[] | null {
       ...(options?.length ? { options } : {}),
       ...(text(item.modelAnswer, 4000) ? { modelAnswer: text(item.modelAnswer, 4000)! } : {}),
       ...(text(item.markingCriteria, 2000) ? { markingCriteria: text(item.markingCriteria, 2000)! } : {}),
+      ...(numericSpec(item.numeric) ? { numeric: numericSpec(item.numeric)! } : {}),
     });
   }
 

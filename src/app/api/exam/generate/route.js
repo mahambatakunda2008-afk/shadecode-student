@@ -4,7 +4,7 @@ import { examGenerateSchema, validateRequestBody } from "@/lib/validation/schema
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/auth-helpers";
 import { generateExam } from "@/lib/cortex/examGenerator";
-import { buildCuratedFallbackExam } from "@/lib/exam/fallbackExam";
+import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
@@ -56,8 +56,8 @@ export async function POST(req) {
     let source = "cortex";
 
     if (!exam) {
-      // Only hand-written questions for this exact topic are acceptable. Never serve generic placeholders.
-      exam = buildCuratedFallbackExam(canonicalSubject.name, cleanTopic, difficulty, questionCount);
+      // Deterministic engine first (exact, instant), then curated questions. Never serve generic placeholders.
+      exam = buildGuaranteedExam(canonicalSubject.name, cleanTopic, difficulty, questionCount);
       source = "deterministic-fallback";
     }
 

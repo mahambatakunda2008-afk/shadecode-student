@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getExamAttempt, saveExamAttempt, type LocalExamAttempt } from "@/lib/local-first/exam-attempt";
 import { localFirstStore } from "@/lib/local-first/store";
-import { buildCuratedFallbackExam } from "@/lib/exam/fallbackExam";
+import { buildGuaranteedExam } from "@/lib/exam/guaranteedExam";
 
 const LEGACY_KEY = "shadecode-exam-workspace";
 
@@ -80,7 +80,7 @@ function toLegacy(attempt: LocalExamAttempt): LegacyExam {
 function seedOfflineAttempt(subject: string, topic: string, count: number, level: number): LegacyExam | null {
   if (!subject.trim()) return null;
   const difficulty = level >= 2 ? "hard" : level <= 0 ? "easy" : "medium";
-  const generated = buildCuratedFallbackExam(subject, topic, difficulty, count);
+  const generated = buildGuaranteedExam(subject, topic, difficulty, count);
   if (!generated || !generated.questions.length) return null;
   const questions = generated.questions.map((question, index) => ({ id: index + 1, type: question.type, question: question.question, options: question.options, marks: question.marks, topic: question.topic, modelAnswer: question.modelAnswer, markingCriteria: question.markingCriteria })) as LocalExamAttempt["questions"];
   const totalSeconds = Math.max(300, Math.round(generated.durationMinutes * 60));

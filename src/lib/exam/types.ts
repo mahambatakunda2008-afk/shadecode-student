@@ -1,3 +1,5 @@
+import type { NumericSpec } from "./engine/numeric";
+
 export type ExamQuestion = {
   id: number;
   type: "multiple_choice" | "short_answer" | "structured" | "essay";
@@ -7,6 +9,7 @@ export type ExamQuestion = {
   topic: string;
   modelAnswer?: string;
   markingCriteria?: string;
+  numeric?: NumericSpec;
 };
 
 export type ExamAnswer = { questionId: number; answer: string; timeSpent: number };

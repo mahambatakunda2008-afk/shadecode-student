@@ -10,6 +10,7 @@ import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { calculateExamScore, computeTopicScores } from "@/lib/exam/scoring";
 import { blendMastery } from "@/lib/topicMastery/blend";
+import { markNumeric } from "@/lib/exam/engine/numeric";
 import { createInitialLearningState, reduceLearningObservation } from "@/lib/cortex/learningState";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,10 @@ function markDeterministic(questions, answers) {
   const results = questions.map((q) => {
     const answer = answerMap.get(String(q.id)) || "";
     const model = String(q.modelAnswer || "").trim();
+    if (q.numeric && typeof q.numeric.exact === "number" && typeof q.numeric.tolerance === "number") {
+      const correct = Boolean(answer) && markNumeric(answer, q.numeric).correct;
+      return { questionId: q.id, score: correct ? q.marks : 0, maxScore: q.marks, correct, feedback: !answer ? "No answer submitted." : correct ? "Correct." : "Not quite. Check your working against the model answer.", modelAnswer: model, topic: q.topic };
+    }
     if (q.type === "multiple_choice") {
       const correct = Boolean(answer && model && answer.toLowerCase() === model.toLowerCase());
       return { questionId: q.id, score: correct ? q.marks : 0, maxScore: q.marks, correct, feedback: correct ? "Correct." : `Incorrect. The expected answer is ${model}.`, modelAnswer: model, topic: q.topic };

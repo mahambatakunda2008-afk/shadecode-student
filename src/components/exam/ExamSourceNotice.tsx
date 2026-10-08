@@ -8,7 +8,7 @@ export default function ExamSourceNotice() {
       role="status"
       className="mx-auto mt-2 w-fit max-w-[92vw] rounded-2xl border border-white/10 bg-[var(--card)] px-4 py-2 text-center text-xs text-[var(--muted-foreground)]"
     >
-      Live question generation is unavailable, so this is a built-in practice set for this topic.
+      Live question generation is unavailable, so this is a built-in practice paper. It works offline and is marked exactly.
     </p>
   );
 }

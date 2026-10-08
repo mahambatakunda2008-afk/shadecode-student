@@ -2,6 +2,7 @@
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { repairAndParseJSON } from "@/lib/ai/parseJson";
 import { getMemory } from "./memory";
+import type { NumericSpec } from "@/lib/exam/engine/numeric";
 
 export type QuestionType = "multiple_choice" | "short_answer" | "structured" | "essay";
 export interface ExamQuestion {
@@ -14,6 +15,8 @@ export interface ExamQuestion {
   difficulty: "easy" | "medium" | "hard";
   modelAnswer?: string;
   markingCriteria?: string;
+  /** Set by the deterministic engine: the answer is marked exactly, offline, with no model. */
+  numeric?: NumericSpec;
 }
 export interface GeneratedExam {
   subject: string;

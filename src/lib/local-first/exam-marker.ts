@@ -1,4 +1,5 @@
 import type { ExamQuestion, ExamAnswer, ExamResult } from "@/lib/exam/types";
+import { markNumeric } from "@/lib/exam/engine/numeric";
 
 type MarkableQuestion = ExamQuestion;
 
@@ -41,6 +42,14 @@ export function markExamOffline(questions: MarkableQuestion[], answers: ExamAnsw
 
     if (!answer.trim()) {
       results.push({ questionId: question.id, score: 0, maxScore: maxScoreForQuestion, correct: false, feedback: "No answer submitted.", modelAnswer: question.modelAnswer ?? "", topic: question.topic });
+      continue;
+    }
+
+    if (question.numeric) {
+      const { correct } = markNumeric(answer, question.numeric);
+      const score = correct ? maxScoreForQuestion : 0;
+      totalScore += score;
+      results.push({ questionId: question.id, score, maxScore: maxScoreForQuestion, correct, feedback: correct ? "Correct." : "Not quite. Check your working against the model answer.", modelAnswer: question.modelAnswer ?? "", topic: question.topic || "General" });
       continue;
     }
 
