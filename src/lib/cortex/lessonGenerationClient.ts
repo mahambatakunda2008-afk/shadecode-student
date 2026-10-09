@@ -687,7 +687,8 @@ async function runJob(
       // means WebGPU is supported, and the local loader reports cold-start
       // progress through the generation job. A provider outage must not prevent
       // that supported local lane from being attempted.
-      if (localStatus === "available" || localStatus === "ready" || hybrid.mode === "parallel-prep") {
+      let localFailure: unknown = null;
+      if (localStatus !== "unsupported" || hybrid.mode === "parallel-prep") {
         updateGenerationJob(job.id, {
           status: "generating",
           progress: Math.max(20, getGenerationJob(job.id)?.progress ?? 20),
@@ -707,19 +708,22 @@ async function runJob(
             }
             return getGenerationJobs().find(item => item.id === job.id) ?? finished;
           }
+          localFailure = new Error("On-device lesson generation returned no valid lesson.");
         } catch (error) {
+          localFailure = error;
           console.warn(
             "[LEARN] on-device lesson recovery failed",
             error instanceof Error ? error.message : String(error),
           );
-          // Preserve both failures for the final recovery/error explanation,
-          // without rerunning either lane.
-          if (cloudFailure instanceof Error && error instanceof Error) {
-            error = new Error(
-              `Cloud lane failed: ${cloudFailure.message}. On-device lane failed: ${error.message}`,
-            );
-          }
         }
+      }
+
+      if (cloudFailure || localFailure) {
+        const details = [
+          cloudFailure instanceof Error ? `Cloud lane: ${cloudFailure.message}` : null,
+          localFailure instanceof Error ? `On-device lane: ${localFailure.message}` : null,
+        ].filter(Boolean).join(". ");
+        throw new Error(details || "Cloud and on-device lesson generation did not produce a valid lesson.");
       }
     }
 
