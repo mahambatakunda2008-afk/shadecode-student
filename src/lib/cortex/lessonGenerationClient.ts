@@ -10,7 +10,7 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { getDurableGenerationJob, listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
-import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
+import { generateBrowserLocal, getBrowserLocalModelStatus, subscribeBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
@@ -154,6 +154,33 @@ function parseLocalModelSection(raw: string): { title?: string; blocks: Array<Re
   }
 }
 
+async function generateWithVisibleLocalModelProgress(
+  job: GenerationJob<LessonGenerationInput>,
+  prompt: string,
+  options: { maxTokens: number; json: boolean },
+): Promise<string> {
+  const unsubscribe = subscribeBrowserLocalModelStatus((status, progress) => {
+    if (status !== "loading") return;
+    const current = getGenerationJob(job.id);
+    const visibleProgress = Math.max(
+      current?.progress ?? 15,
+      Math.min(36, 18 + Math.round(progress * 0.18)),
+    );
+    updateGenerationJob(job.id, {
+      status: "generating",
+      progress: visibleProgress,
+      error: progress < 100
+        ? `Cortex is preparing its on-device model (${Math.round(progress)}%). The first model download may take time; this is local setup, not another cloud-provider retry.`
+        : "Cortex is preparing on-device inference.",
+    });
+  });
+  try {
+    return await generateBrowserLocal(prompt, undefined, options);
+  } finally {
+    unsubscribe();
+  }
+}
+
 async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: string, persistProgress = true): Promise<LessonGenerationResult | null> {
   if (!isBrowser()) return null;
 
@@ -253,7 +280,7 @@ MATH
 Every mathematical expression uses single-dollar LaTeX delimiters. Never use caret exponents or ASCII fractions.`;
 
     try {
-      const raw = await generateBrowserLocal(sectionPrompt, undefined, {
+      const raw = await generateWithVisibleLocalModelProgress(job, sectionPrompt, {
         maxTokens: request.broadTopic ? 1400 : 1200,
         json: true,
       });
