@@ -14,7 +14,9 @@ import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/exper
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);\n  const moreTriggerRef = useRef<HTMLButtonElement>(null);\n  const closeMenuRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeMenuRef = useRef<HTMLButtonElement>(null);
   const { profile } = useUser();
   const experience = getAcademicExperience(normalizeStudyLevel(profile?.study_level));
   const groups = getExperienceNavGroups(experience, profile?.curriculum_subjects, profile?.subjects);
