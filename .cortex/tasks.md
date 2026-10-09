@@ -39,8 +39,9 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] Fixed `$...$` inline maths never rendering in exams (regex required a trailing `$$`)
 - [ ] Engine coverage: Biology/Economics/Business/English cannot be computed; ground them in verified curriculum outcomes (self-check checklists) rather than invented Q&A
 - [ ] Mixed papers: engine numeric questions plus AI conceptual questions when AI is up, so a live paper is never worse than the fallback
-- [ ] AI circuit breaker: skip AI for a few minutes after repeated failures so students are never made to wait on dead providers
-- [ ] Server-side battle marking from the seed: the server rebuilds the paper from `seed`, holds the key, and marks, so battle scores cannot be forged (engine papers only at first)
+- [x] AI circuit breaker (`src/lib/aiCircuitBreaker.ts`): 3 failures in 10 min pauses AI for 3 min, one probe request tests recovery; only skips AI when the engine can serve the topic
+- [x] Server-marked battles (deterministic papers: numeric or multiple choice): keyless play set + private `challenge_answer_keys` (service role only) + `POST /api/challenge/mark` records a verified attempt. Papers needing judgement (written AI-marked answers) stay self-reported (`marking = 'client'`)
+- [ ] Battle follow-ups: show a Verified badge on the challenge page and win card; verify the challenger's own score (it is still read from their saved result); Biology and written papers need AI or self-marking before they can be verified
 - [ ] Flashcards, notes and lessons: audit each AI path for the same ladder (lessons already have a local fallback pack)
 - [ ] Owner action: provider keys. GROQ_API_KEY was assumed to be the fast option but is not usable; pick any reachable low-latency provider later and add it to the chain
 
