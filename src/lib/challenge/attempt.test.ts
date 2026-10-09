@@ -19,6 +19,13 @@ describe("validateAttempt", () => {
   });
 });
 
+describe("integer columns", () => {
+  it("rounds fractional values because the attempts table stores whole numbers", () => {
+    const result = validateAttempt({ ...base, percentage: 72.4, total_score: 17.6, max_score: 25, time_taken: 419.5 });
+    expect(result).toMatchObject({ percentage: 72, totalScore: 18, maxScore: 25, timeTaken: 420 });
+  });
+});
+
 describe("didWin", () => {
   it("requires strictly beating the stored score", () => {
     expect(didWin(80, 79)).toBe(true);

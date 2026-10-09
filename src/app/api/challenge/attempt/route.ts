@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { didWin, validateAttempt } from '@/lib/challenge/attempt'
+import { gradeForPercentage } from '@/lib/challenge/fromResult'
 
 export const dynamic = "force-dynamic";
 
@@ -46,8 +47,8 @@ export async function POST(request: NextRequest) {
         percentage:  attempt.percentage,
         total_score: attempt.totalScore,
         max_score:   attempt.maxScore,
-        time_taken:  attempt.timeTaken,
-        grade:       attempt.grade,
+        time_taken:  attempt.timeTaken ?? 0,
+        grade:       attempt.grade ?? gradeForPercentage(attempt.percentage),
         won,
       })
 

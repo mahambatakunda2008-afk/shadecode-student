@@ -44,7 +44,8 @@ export function validateAttempt(input: AttemptInput): ValidAttempt | null {
   const timeTaken = input.time_taken == null ? null : boundedNumber(input.time_taken, 0, MAX_SECONDS);
   const grade = typeof input.grade === "string" && input.grade.trim() ? input.grade.trim().slice(0, 8) : null;
 
-  return { challengeId: input.challenge_id, percentage, totalScore, maxScore, timeTaken, grade };
+  // The attempts table stores whole numbers (percentage, scores, seconds are integer columns).
+  return { challengeId: input.challenge_id, percentage: Math.round(percentage), totalScore: Math.round(totalScore), maxScore: Math.round(maxScore), timeTaken: timeTaken === null ? null : Math.round(timeTaken), grade };
 }
 
 /** Strictly higher than the challenger wins; a tie is not a win. */
