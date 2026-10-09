@@ -159,3 +159,27 @@
 .dashboard-subject-tile:hover, .dashboard-metric:hover { transform:translateY(-1px); }
 .dashboard-primary-action { min-height:42px; }
 @media (prefers-reduced-motion: reduce) { .dashboard-hero-orb, .dashboard-live-dot::after { animation:none !important; } }
+
+
+/* Dashboard hierarchy pass: one focal action, quiet supporting data. */
+.dashboard-header { margin-bottom: 22px; }
+.dashboard-header h2 { font-size: clamp(1.8rem, 3vw, 2.35rem); font-weight: 600; }
+.dashboard-header-stat { min-width: 132px; padding: 10px 13px; border-radius: 12px; box-shadow: none; }
+.dashboard-hero { margin-bottom: 12px; border-radius: 16px; box-shadow: none; border-color: var(--border-subtle); }
+.dashboard-hero::before { border-left-width: 2px; }
+.dashboard-hero-content { padding: 21px 23px 19px; }
+.dashboard-hero h2 { font-size: clamp(1.45rem, 2.6vw, 2rem); }
+.dashboard-primary-action { min-height: 40px; padding: 10px 14px; border-radius: 10px; box-shadow: none; transition: background-color .15s ease, border-color .15s ease; }
+.dashboard-primary-action:hover { transform: none; filter: none; }
+.dashboard-momentum { gap: 1px; margin-bottom: 24px; border: 1px solid var(--border-subtle); border-radius: 14px; overflow: hidden; background: var(--border-subtle); }
+.dashboard-metric { min-height: 66px; padding: 11px 13px; border: 0; border-radius: 0; background: var(--surface-raised); box-shadow: none; }
+.dashboard-metric:hover { transform: none; box-shadow: none; }
+.dashboard-grid { gap: 20px; }
+.dashboard-main-column, .dashboard-side-column { gap: 20px; }
+.dashboard-panel, .dashboard-focus, .dashboard-cortex { border-radius: 14px; box-shadow: none; }
+.dashboard-focus, .dashboard-cortex { border-color: var(--border-subtle); }
+.dashboard-focus h3, .dashboard-cortex h3 { margin-top: 12px; }
+.dashboard-section-title { margin-bottom: 10px; }
+.dashboard-section-title h3 { font-size: 16px; }
+.dashboard-outline-action { border-radius: 9px; }
+.dashboard-stale-banner, .dashboard-core-error { border-radius: 10px; box-shadow: none; }

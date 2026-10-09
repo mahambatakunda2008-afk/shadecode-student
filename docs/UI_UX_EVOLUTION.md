@@ -139,3 +139,61 @@ UI work is intentionally independent from the Azure/Cortex worker migration. The
 ### Merge gate
 
 The feature branch remains intentionally unmerged. GitHub currently reports it as 17 commits ahead and 9 commits behind `main`. This is a release gate, not a reason to discard the work. The next engineering action is to inspect/reconcile the newer mainline changes, then rerun validation against the reconciled branch.
+
+
+## Surgical product-wide pass: 2026-10-07
+
+The previous foundation improved individual screens, but the product still felt visually assembled. This pass addresses the underlying visual grammar instead of adding more decoration.
+
+### System changes
+- Removed the application-wide background radial gradients.
+- Reduced global shadow depth and corner radii.
+- Removed button lift, shadow and icon-scaling behavior.
+- Made interactive cards respond through color/border rather than elevation jumps.
+- Tightened page typography and spacing.
+- Standardized compact control dimensions.
+
+### Navigation
+- Reduced Sidebar visual weight and removed the heavy profile panel treatment.
+- Active navigation now uses a quieter semantic surface instead of a bright primary glow.
+- Mobile More navigation keeps explicit dialog semantics and focus handling.
+
+### Feature iconography
+ShadecodeFeatureIcon was a major source of visual noise because it applied dark tiles, brand gradients, glow and scale to nearly every feature icon.
+
+It now uses semantic surfaces, subtle borders, normal foreground icons, primary color only for active state, no gradient, no glow and no scale jump.
+
+### Dashboard
+- Reduced the dashboard hero footprint.
+- Flattened the metric strip into one coherent data surface.
+- Reduced panel elevation and hover movement.
+- Kept Cortex as the focal intelligence layer without making every supporting element look like an AI card.
+
+### Learn
+- Removed the introductory Learn card treatment.
+- The entry surface now behaves as a workspace heading with a divider.
+- Learning content remains the dominant visual object.
+
+### Math Checker
+- Reduced the oversized hero treatment.
+- Mode selection now reads as one control group rather than three separate cards.
+- Kept the working-first product message intact.
+
+### Public experience
+- Removed large background radial effects.
+- Changed primary CTA treatment to a restrained high-contrast control.
+- Reduced mock-product elevation and glass treatment.
+- Kept Shadecode brand gradients available for identity, not as the default UI surface.
+
+### Design rule going forward
+
+> The interface should look quieter as the learner becomes more focused.
+
+No new screen should introduce a gradient, floating AI treatment, oversized card, decorative glow or motion effect unless it communicates a real state or hierarchy decision.
+
+## Current validation
+
+- Latest branch includes the shell accessibility pass and the surgical visual-system pass.
+- Vercel preview is building against the latest corrected commit `5ab591068f49120cd03d5e9c132e7919354c1c28`.
+- The branch has not been merged into `main`.
+- A literal newline insertion was caught and corrected before merge.

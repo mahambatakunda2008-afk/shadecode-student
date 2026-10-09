@@ -325,7 +325,7 @@ export default function LeaderboardPage() {
                       borderRadius: "26px",
                       padding: "24px 18px",
                       textAlign: "center",
-                      transform: actualRank === 1 ? "translateY(-12px)" : "none",
+                      transform: "none",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px", color: rankStyle.color }}>

@@ -22,7 +22,7 @@ export default function PublicHomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   return (
     <main className="min-h-screen overflow-hidden bg-[var(--brand-ink)] text-slate-100">
-      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[var(--brand-ink)]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[var(--brand-ink)]/96">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Shadecode Student home"><BrandLockup compact /></Link>
           <nav className="hidden items-center gap-7 md:flex" aria-label="Primary navigation">
@@ -30,35 +30,35 @@ export default function PublicHomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/auth/login" className="hidden rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:text-white sm:inline-flex">Sign in</Link>
-            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-gradient)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:-translate-y-0.5">Get started <ArrowRight size={15} /></Link>
+            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Get started <ArrowRight size={15} /></Link>
           </div>
         </div>
       </header>
 
       <section className="relative border-b border-white/[0.07]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(0,229,255,.13),transparent_28%),radial-gradient(circle_at_75%_8%,rgba(36,91,255,.12),transparent_30%),radial-gradient(circle_at_92%_45%,rgba(122,60,255,.10),transparent_28%)]" />
+        
         <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 pb-24 pt-16 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-32 lg:pt-24">
           <div>
             <div className="mb-7"><BrandLockup /></div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/[0.08] px-3.5 py-2 text-sm font-semibold tracking-wide text-cyan-200"><Sparkles size={15} /> Study smarter. Live sharper.</div>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={15} /> Study smarter. Live sharper.</div>
             <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">A learning system that <span className="ssc-brand-gradient">learns how you learn.</span></h1>
             <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Lessons, questions, mistakes, exams, projects and study behaviour become one evolving learning experience, with Cortex helping decide what should happen next.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-gradient)] px-5 py-3.5 font-semibold text-white shadow-xl shadow-blue-950/30 transition hover:-translate-y-0.5">Start studying free <ArrowRight size={17} /></Link>
-              <a href="#intelligence" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.07]">See how it works</a>
+              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={17} /></Link>
+              <a href="#intelligence" className="inline-flex items-center gap-2 rounded-[10px] border border-white/12 bg-transparent px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.05]">See how it works</a>
             </div>
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400"><span>Responsive PWA</span><span>AI-assisted</span><span>Local-first</span><span>Built for learning</span></div>
           </div>
 
           <div className="relative mx-auto w-full max-w-[540px]">
-            <div className="absolute -inset-6 rounded-full bg-[radial-gradient(circle,rgba(36,91,255,.22),transparent_60%)] blur-2xl" />
-            <div className="relative rounded-[30px] border border-white/10 bg-[var(--brand-surface)]/95 p-5 shadow-2xl shadow-black/50 backdrop-blur">
+            <div className="absolute -inset-6 hidden" />
+            <div className="relative rounded-[18px] border border-white/10 bg-[var(--brand-surface)] p-5 shadow-xl shadow-black/30">
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
                 <div className="flex items-center gap-3"><BrandMark className="h-9 w-9 text-[var(--brand-blue)]" aria-hidden="true" /><div><div className="font-[var(--font-brand)] text-xs tracking-[.14em] text-white">SHADECODE</div><div className="mt-1 font-[var(--font-brand)] text-[11px] tracking-[.25em] text-slate-500">CORTEX OS</div></div></div>
                 <span className="flex items-center gap-2 text-xs font-medium text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Learning state</span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
-              <div className="rounded-2xl border border-blue-400/15 bg-gradient-to-br from-cyan-400/[0.07] via-blue-500/[0.05] to-violet-500/[0.08] p-4.5">
+              <div className="rounded-2xl border border-blue-400/15 bg-white/[0.03] p-4.5">
                 <div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.1em] text-cyan-200">Next action</div><div className="mt-1.5 text-base font-semibold text-white">Practise mechanics</div></div><Zap className="text-[var(--brand-blue)]" size={21} /></div>
                 <p className="mt-2.5 text-sm leading-6 text-slate-400">Chosen from the learner's recent evidence, not a random prompt.</p>
                 <div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1.5 text-sm font-semibold text-cyan-200"><CheckCircle2 size={14} /> Evidence-backed</span><span className="rounded-lg bg-[var(--brand-gradient)] px-3 py-1.5 text-sm font-semibold text-white">Start</span></div>

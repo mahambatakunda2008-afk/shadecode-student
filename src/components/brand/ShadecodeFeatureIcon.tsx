@@ -109,12 +109,14 @@ export function ShadecodeFeatureIcon({ icon: Icon, feature, label, active = fals
   }
   return (
     <span aria-label={label} role={label ? "img" : undefined}
-      className={cn("shadecode-feature-icon relative inline-flex shrink-0 items-center justify-center overflow-hidden border",
-        "border-[color-mix(in_srgb,var(--brand-blue)_58%,transparent)] bg-[var(--brand-ink)] shadow-[0_10px_28px_rgba(36,91,255,0.16)] transition-transform duration-200",
-        active && "scale-[1.03] shadow-[0_12px_34px_rgba(122,60,255,0.20)]", s.tile, className)}>
-      <span className="absolute inset-0 opacity-[0.12]" style={{ background: "var(--brand-gradient)" }} aria-hidden="true" />
-      <span className="absolute inset-[1px] rounded-[inherit] border border-white/[0.04]" aria-hidden="true" />
-      <Glyph feature={feature} Icon={Icon} active={active} gradient />
+      className={cn(
+        "shadecode-feature-icon relative inline-flex shrink-0 items-center justify-center border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--muted-foreground)]",
+        "transition-colors duration-150",
+        active && "border-[color-mix(in_srgb,var(--primary)_28%,var(--border-subtle))] bg-[var(--primary-glow)] text-[var(--primary)]",
+        s.tile,
+        className,
+      )}>
+      <Glyph feature={feature} Icon={Icon} active={active} gradient={false} />
     </span>
   );
 }
