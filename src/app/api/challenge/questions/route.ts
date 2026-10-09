@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
   if (!id || !/^[0-9a-f-]{8,64}$/i.test(id)) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const supabase = await createSupabaseServerClient()
-  const { data } = await supabase.from('challenge_questions').select('questions').eq('challenge_id', id).maybeSingle()
+  const { data } = await supabase.from('challenge_questions').select('questions, marking').eq('challenge_id', id).maybeSingle()
   const questions = data ? sanitizeQuestions(data.questions) : null
   if (!questions) return NextResponse.json({ error: 'No frozen questions for this challenge' }, { status: 404 })
 
-  return NextResponse.json({ questions })
+  return NextResponse.json({ questions, marking: data?.marking === 'server' ? 'server' : 'client' })
 }

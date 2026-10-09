@@ -22,7 +22,7 @@ export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
 export type ExamResults = { totalScore: number; maxScore: number; percentage: number; grade: string; weakAreas: string[]; strongAreas: string[]; cortexInsight: string; results: ExamResult[]; timeTaken: number };
 type Answer = { questionId: number; answer: string; timeSpent: number };
-type Props = { initialSubject?: string; initialTopic?: string; initialDifficulty?: number; initialQuestionCount?: number; onExit?: () => void; onFinished?: (result: ExamResults) => void; frozenQuestions?: ExamQuestion[] };
+type Props = { initialSubject?: string; initialTopic?: string; initialDifficulty?: number; initialQuestionCount?: number; onExit?: () => void; onFinished?: (result: ExamResults) => void; frozenQuestions?: ExamQuestion[]; serverMarkChallengeId?: string };
 
 const LEVELS = [{ label: "O-Level", api: "easy" as const, curriculum: "O-Level standard", accent: "var(--brand-cyan)" }, { label: "A-Level", api: "medium" as const, curriculum: "A-Level standard", accent: "var(--brand-blue)" }, { label: "University", api: "hard" as const, curriculum: "university entrance standard", accent: "var(--brand-violet)" }];
 const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", "English", "Geography", "History", "Economics", "Accounting", "Business Studies", "Other"];
@@ -34,7 +34,7 @@ function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.
 function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
 function formulas(subject: string) { const s = subject.toLowerCase(); if (s.includes("math")) return ["a² + b² = c²", "ax² + bx + c = 0", "sin²θ + cos²θ = 1", "gradient = Δy / Δx"]; if (s.includes("physics")) return ["v = u + at", "s = ut + ½at²", "F = ma", "p = mv", "V = IR"]; if (s.includes("chem")) return ["n = m/M", "c = n/V", "PV = nRT", "pH = −log₁₀[H⁺]"]; if (s.includes("computer")) return ["T(n) = O(n)", "binary search: O(log n)", "1 byte = 8 bits"]; return ["State definitions precisely.", "Show method where marks depend on it.", "Check units, assumptions and final statements."]; }
 
-export default function ExamWorkspace({ initialSubject = "", initialTopic = "", initialDifficulty = 1, initialQuestionCount = 10, onExit, onFinished, frozenQuestions }: Props) {
+export default function ExamWorkspace({ initialSubject = "", initialTopic = "", initialDifficulty = 1, initialQuestionCount = 10, onExit, onFinished, frozenQuestions, serverMarkChallengeId }: Props) {
   const [subject, setSubject] = useState(initialSubject), [topic, setTopic] = useState(initialTopic), [level, setLevel] = useState(Math.max(0, Math.min(2, initialDifficulty))), [count, setCount] = useState(initialQuestionCount);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]), [answers, setAnswers] = useState<Answer[]>([]), [current, setCurrent] = useState(0), [seconds, setSeconds] = useState(0), [totalSeconds, setTotalSeconds] = useState(0), [startedAt, setStartedAt] = useState(0);
   const [mode, setMode] = useState<"setup" | "exam" | "marking" | "results">("setup"), [generating, setGenerating] = useState(false), [error, setError] = useState<string | null>(null), [userId, setUserId] = useState(""), [online, setOnline] = useState(true), [savedAt, setSavedAt] = useState<number | null>(null);
@@ -187,7 +187,20 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
     setMode("marking");
     try {
       let markingData: ExamResults | null = null;
-      if (online) {
+      if (serverMarkChallengeId) {
+        // Verified battle: the browser holds no answer key, so the server marks and records the attempt.
+        try {
+          const res = await fetchWithTimeout("/api/challenge/mark", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ challenge_id: serverMarkChallengeId, answers: answersRef.current, timeTaken: totalRef.current - secondsRef.current })
+          }, 25000);
+          if (res.ok) markingData = await res.json();
+        } catch {
+          // handled below
+        }
+        if (!markingData) throw new Error(online ? "We couldn't submit your battle just now. Your answers are saved, so please try again." : "You're offline. Reconnect to submit your battle. Your answers are saved.");
+      } else if (online) {
         try {
           const { data: { session } } = await createClient().auth.getSession();
           const res = await fetchWithTimeout("/api/exam/mark", {
@@ -247,7 +260,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           // Keep the sat questions so this result can later be turned into a fair battle.
           const frozen = sanitizeQuestions(questions);
           if (saved?.id) setSavedResultId(saved.id);
-          if (saved?.id && frozen) await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
+          if (saved?.id && frozen && !serverMarkChallengeId) await supabase.from("exam_result_questions").insert({ result_id: saved.id, user_id: userId, questions: frozen });
         } catch {}
       }
       if (workId.current) {

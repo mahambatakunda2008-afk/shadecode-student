@@ -36,4 +36,7 @@ export type ExamResults = {
   results: ExamResult[];
   timeTaken: number;
   source?: "local-deterministic" | "server";
+  /** Battle results marked by the server against the private key. */
+  won?: boolean;
+  verified?: boolean;
 };

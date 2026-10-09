@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { sanitizeQuestions } from '@/lib/challenge/questions'
 import { challengeFromResult } from '@/lib/challenge/fromResult'
+import { isDeterministicPaper, splitPaper } from '@/lib/challenge/serverMarking'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
 
 export const dynamic = "force-dynamic";
@@ -101,7 +103,18 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
       const questions = sat ? sanitizeQuestions(sat.questions) : null
       if (questions) {
-        const { error: freezeError } = await supabase.from('challenge_questions').insert({ challenge_id: data.id, questions })
+        // Deterministic papers are frozen as a keyless play set; the key stays server-side so the
+        // opponent's score is marked by the server and cannot be forged. Other papers stay self-reported.
+        let playSet = questions
+        let marking: 'server' | 'client' = 'client'
+        const admin = createSupabaseAdminClient()
+        if (admin && isDeterministicPaper(questions)) {
+          const split = splitPaper(questions)
+          const { error: keyError } = await admin.from('challenge_answer_keys').insert({ challenge_id: data.id, key: split.key })
+          if (keyError) console.error('[challenge/POST key]', keyError)
+          else { playSet = split.playSet; marking = 'server' }
+        }
+        const { error: freezeError } = await supabase.from('challenge_questions').insert({ challenge_id: data.id, questions: playSet, marking })
         frozen = !freezeError
         if (freezeError) console.error('[challenge/POST freeze]', freezeError)
       }

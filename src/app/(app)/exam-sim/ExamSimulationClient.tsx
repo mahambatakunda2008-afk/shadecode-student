@@ -31,13 +31,15 @@ export default function ExamSimulationClient() {
   const [battle, setBattle] = useState<{ won: boolean; percentage: number } | null>(null);
   // undefined = still loading; null = no frozen set (older challenge), fall back to a normal exam.
   const [frozenQuestions, setFrozenQuestions] = useState<ExamQuestion[] | null | undefined>(challengeId ? undefined : null);
+  // "server": the play set is keyless and the server marks (verified). "client": older self-reported challenge.
+  const [marking, setMarking] = useState<"server" | "client">("client");
 
   useEffect(() => {
     if (!challengeId) return;
     let cancelled = false;
     fetch(`/api/challenge/questions?id=${encodeURIComponent(challengeId)}`)
       .then((response) => (response.ok ? response.json() : null))
-      .then((data: { questions?: ExamQuestion[] } | null) => { if (!cancelled) setFrozenQuestions(data?.questions?.length ? data.questions : null); })
+      .then((data: { questions?: ExamQuestion[]; marking?: string } | null) => { if (cancelled) return; setMarking(data?.marking === "server" ? "server" : "client"); setFrozenQuestions(data?.questions?.length ? data.questions : null); })
       .catch(() => { if (!cancelled) setFrozenQuestions(null); });
     return () => { cancelled = true; };
   }, [challengeId]);
@@ -88,7 +90,10 @@ export default function ExamSimulationClient() {
   }, [examInstanceId, safeCount, subject, subjectReady, topic]);
 
   const handleFinished = (result: ExamResults) => {
-    if (challengeId) {
+    if (challengeId && marking === "server") {
+      // Verified battle: the server already marked and recorded this attempt and told us who won.
+      if (typeof result.won === "boolean") { setBattle({ won: result.won, percentage: Math.round(result.percentage) }); clearPendingChallenge(); }
+    } else if (challengeId) {
       // Server decides the winner from the stored challenge score; the browser only reports its own result.
       void fetch("/api/challenge/attempt", {
         method: "POST",
@@ -123,7 +128,7 @@ export default function ExamSimulationClient() {
   }
 
   return <>
-    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
+    <ExamAttemptLocalBridge subject={subject} topic={topic} count={safeCount} level={1}><AcademicExamContext /><ExamWorkspace initialSubject={subject} initialTopic={topic} initialQuestionCount={safeCount} frozenQuestions={frozenQuestions ?? undefined} serverMarkChallengeId={challengeId && marking === "server" && frozenQuestions ? challengeId : undefined} onExit={() => router.push("/dashboard")} onFinished={handleFinished} /></ExamAttemptLocalBridge>;
     {battle && challengeId && (
       <aside role="status" aria-live="polite" className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-white/10 bg-[var(--card)] p-5 shadow-lg backdrop-blur">
         <p className="text-sm font-semibold text-[var(--foreground)]">{battle.won ? `You beat ${challengerName}!` : `${challengerName} takes this one.`}</p>
