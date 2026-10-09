@@ -15,6 +15,14 @@ Cortex 3.0 is a reliability program, not a provider shopping list and not a UI r
 - Model initialization publishes status/progress events, but the lesson runner previously did not translate those events into visible generation-job progress. That can make local recovery appear stalled.
 - `src/lib/cortex/offlineLessonEngine.ts` deliberately refuses to invent curriculum knowledge when a matching verified pack is unavailable. Preserve this rule.
 
+## Additional failure found and corrected in this branch
+
+The online `cloud` / `parallel-prep` path previously awaited `tryCloudLesson()` directly. When the provider threw (rather than returning a null/empty result), control jumped to the outer job catch. The cold browser-local model was only tried after a normal cloud return, so the recovery policy saw no warm local model and could stop cleanly despite WebGPU being available.
+
+The runner now catches the cloud failure at the lane boundary, records it for diagnostics, and evaluates browser-local recovery before treating the whole learning task as failed. Local recovery is attempted for supported/unknown local status, with the model loader responsible for checking actual WebGPU capability. When both lanes fail, their failure messages are combined rather than discarding the cloud error.
+
+This is still subject to type-checking and real-browser verification. In particular, verify that the combined error remains useful to the user-facing failure handler and that provider failures do not cause duplicate persistence or lease conflicts.
+
 ## Change in this branch
 
 The lesson runner now subscribes to local-model status during local section generation and updates the job's progress/error text while the model initializes. This distinguishes local model setup from a cloud-provider retry and makes progress visible through the existing generation-job state.
