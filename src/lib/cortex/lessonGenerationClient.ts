@@ -661,18 +661,64 @@ async function runJob(
     // Cloud is the normal online lane. "parallel-prep" means the local model is
     // available but cold, so cloud work must not wait for a model download.
     if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep") {
-      const cloudModel = await tryCloudLesson(job, token);
+      let cloudModel: LessonGenerationResult | null = null;
+      let cloudFailure: unknown = null;
+
+      try {
+        cloudModel = await tryCloudLesson(job, token);
+      } catch (error) {
+        // A provider exception is a lane failure, not a task failure. Keep it
+        // local to this lane so a supported on-device model still gets a chance.
+        cloudFailure = error;
+        console.warn(
+          "[LEARN] cloud lesson lane failed; evaluating local recovery",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+
       if (cloudModel) {
         const finished = await persistGeneratedLesson(job, cloudModel, token, generationLeaseId(job.id));
         await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
         return getGenerationJobs().find(item => item.id === job.id) ?? job;
       }
-      if (hybrid.mode === "parallel-prep" && localStatus === "available") {
-        const localModel = await tryLocalModel(job, token);
-        if (localModel) {
-          const finished = await persistGeneratedLesson(job, localModel, token);
-          await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
-          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+
+      // Try browser-local inference after either an empty cloud result or a
+      // thrown provider error. Do not require the model to be warm: "available"
+      // means WebGPU is supported, and the local loader reports cold-start
+      // progress through the generation job. A provider outage must not prevent
+      // that supported local lane from being attempted.
+      if (localStatus === "available" || localStatus === "ready" || hybrid.mode === "parallel-prep") {
+        updateGenerationJob(job.id, {
+          status: "generating",
+          progress: Math.max(20, getGenerationJob(job.id)?.progress ?? 20),
+          error: cloudFailure
+            ? "Cloud generation failed. Cortex is switching to on-device recovery; your lesson checkpoint is preserved."
+            : "Cloud generation returned no usable lesson. Cortex is switching to on-device recovery.",
+        });
+
+        try {
+          const localModel = await tryLocalModel(job, token);
+          if (localModel) {
+            const finished = token && online
+              ? await persistGeneratedLesson(job, localModel, token, generationLeaseId(job.id))
+              : await saveLocalResult(job, localModel);
+            if (token && online) {
+              await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+            }
+            return getGenerationJobs().find(item => item.id === job.id) ?? finished;
+          }
+        } catch (error) {
+          console.warn(
+            "[LEARN] on-device lesson recovery failed",
+            error instanceof Error ? error.message : String(error),
+          );
+          // Preserve both failures for the final recovery/error explanation,
+          // without rerunning either lane.
+          if (cloudFailure instanceof Error && error instanceof Error) {
+            error = new Error(
+              `Cloud lane failed: ${cloudFailure.message}. On-device lane failed: ${error.message}`,
+            );
+          }
         }
       }
     }
