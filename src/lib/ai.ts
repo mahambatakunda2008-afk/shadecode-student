@@ -2,6 +2,7 @@
 // Local inference is available for desktop/dev builds; the zero-cost cloud chain remains the production fallback.
 import { logAIUsage } from "@/lib/ai/tracker";
 import { getVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
+import { createCircuitBreaker, type CircuitBreaker } from "@/lib/aiCircuitBreaker";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
 const DEFAULT_MAX_CHAIN_MS = 28000;
@@ -10,6 +11,19 @@ const TELEMETRY_BUDGET_MS = 500;
 const ALLOW_PAID_AI = process.env.ALLOW_PAID_AI === "true";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:7b";
+
+// Per-provider memory. A provider that has failed several times in a row is skipped for a short time
+// instead of costing every request its full budget, so working providers later in the chain are reached
+// sooner. One probe request per provider tests recovery once the pause ends. State is per server instance.
+const providerBreakers = new Map<string, CircuitBreaker>();
+function providerBreaker(provider: string): CircuitBreaker {
+  let breaker = providerBreakers.get(provider);
+  if (!breaker) {
+    breaker = createCircuitBreaker({ failureThreshold: 4, windowMs: 5 * 60_000, openMs: 90_000 });
+    providerBreakers.set(provider, breaker);
+  }
+  return breaker;
+}
 
 export interface CallAIOptions {
   userId?: string;
@@ -82,6 +96,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const HARD_TIMEOUT_GRACE_MS = 250;
   async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
     if (!canTry()) return null;
+    const breaker = providerBreaker(provider);
+    if (!breaker.shouldAttempt()) return null;
     const startTime = Date.now();
     const timeout = providerTimeout();
     // Hard race, independent of the request's own timeout/AbortController: some providers do not
@@ -98,12 +114,15 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     try {
       const text = await Promise.race([request(timeout), hardTimeout]);
       if (hardTimedOut) {
+        breaker.recordFailure();
         logResult({ provider, model, startTime, success: false, err: new Error(`Hard timeout: provider did not respond within its ${timeout}ms budget`) });
         return null;
       }
-      if (text && text.trim().length > 20) { logResult({ provider, model, startTime, success: true, text }); return text; }
+      if (text && text.trim().length > 20) { breaker.recordSuccess(); logResult({ provider, model, startTime, success: true, text }); return text; }
+      breaker.recordFailure();
       logResult({ provider, model, startTime, success: false, err: "Empty or unusable AI response" });
     } catch (err) {
+      breaker.recordFailure();
       logResult({ provider, model, startTime, success: false, err });
       console.error(`[AI] ${provider} failed:`, err);
     }

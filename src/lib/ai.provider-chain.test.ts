@@ -195,4 +195,47 @@ describe("callAI provider fallback chain", () => {
     expect(calledUrls).not.toContain("https://api.groq.com/openai/v1/chat/completions");
     expect(calledUrls).not.toContain("https://openrouter.ai/api/v1/chat/completions");
   });
+
+  describe("per-provider circuit breaker", () => {
+    const call = async (callAI: (p: string, n: number, o: object) => Promise<string | null>) =>
+      callAI("teach me quadratics", 500, { skipCurriculumGrounding: true, curriculumContext: "" });
+
+    it("stops calling a provider that keeps failing and still reaches the next one", async () => {
+      vi.stubEnv("GROQ_API_KEY", "groq-key");
+      vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+      fetchMock.mockImplementation(async (url: string) => {
+        if (url.includes("groq.com")) return jsonResponse(null, false, 503);
+        return jsonResponse({ choices: [{ message: { content: "a lesson from openrouter" } }] });
+      });
+      const { callAI } = await import("./ai");
+      for (let i = 0; i < 4; i++) expect(await call(callAI)).toBe("a lesson from openrouter");
+      const groqCallsBefore = fetchMock.mock.calls.filter(([url]) => String(url).includes("groq.com")).length;
+      expect(groqCallsBefore).toBe(4);
+
+      expect(await call(callAI)).toBe("a lesson from openrouter");
+      const groqCallsAfter = fetchMock.mock.calls.filter(([url]) => String(url).includes("groq.com")).length;
+      expect(groqCallsAfter).toBe(4); // the dead provider was skipped without spending any time on it
+    });
+
+    it("lets a recovered provider back in after the pause", async () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date("2026-10-09T10:00:00Z"));
+        vi.stubEnv("GROQ_API_KEY", "groq-key");
+        let groqHealthy = false;
+        fetchMock.mockImplementation(async () => (groqHealthy ? jsonResponse({ choices: [{ message: { content: "a lesson from groq again" } }] }) : jsonResponse(null, false, 503)));
+        const { callAI } = await import("./ai");
+        for (let i = 0; i < 4; i++) expect(await call(callAI)).toBeNull();
+        expect(await call(callAI)).toBeNull(); // open: skipped
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+
+        vi.setSystemTime(new Date("2026-10-09T10:02:00Z")); // past the 90 s pause
+        groqHealthy = true;
+        expect(await call(callAI)).toBe("a lesson from groq again"); // the probe succeeds and closes the breaker
+        expect(await call(callAI)).toBe("a lesson from groq again");
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
 });
