@@ -299,7 +299,7 @@ export default function AnalyticsContent() {
               <p style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>Syllabus coverage · {coverage.syllabusId.replace("cambridge-", "")}</p>
               <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 11px" }}>{coverage.practisedSubsections} of {coverage.totalSubsections} subsections practised · {coverage.averageMastery}% average</p>
               <div style={{ height: 5, borderRadius: 99, background: "var(--muted)", marginBottom: 12 }}><div style={{ height: "100%", width: `${Math.round((coverage.practisedSubsections / Math.max(1, coverage.totalSubsections)) * 100)}%`, background: "var(--primary)", borderRadius: 99 }} /></div>
-              {coverage.weakest.map((item) => <div key={item.topicKey} style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 7 }}><span style={{ fontSize: 13, fontWeight: 600 }}>{item.topicKey} {item.title}</span><span style={{ fontSize: 12, fontWeight: 800, color: item.mastery < 60 ? "var(--danger)" : "var(--primary)" }}>{item.mastery}%</span></div>)}
+              {coverage.weakest.map((item) => <div key={item.topicKey} style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 7 }}><a href={`/study/revise?syllabus=${coverage.syllabusId}&topic=${item.topicKey}`} style={{ fontSize: 13, fontWeight: 600, color: "inherit", textDecoration: "none" }} title="Revise this topic">{item.topicKey} {item.title} →</a><span style={{ fontSize: 12, fontWeight: 800, color: item.mastery < 60 ? "var(--danger)" : "var(--primary)" }}>{item.mastery}%</span></div>)}
             </div>)}
           </div>}
 

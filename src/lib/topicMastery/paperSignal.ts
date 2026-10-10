@@ -43,8 +43,10 @@ export function projectPaperSignal(
   existing: ExistingPaperMastery | null | undefined,
   verdict: PaperVerdict,
   nowIso: string,
+  /** 0-100 evidence that replaces the verdict's default, e.g. a softer self-assessed score. */
+  evidenceOverride?: number,
 ) {
-  const evidence = VERDICT_SCORE[verdict];
+  const evidence = evidenceOverride === undefined ? VERDICT_SCORE[verdict] : Math.max(0, Math.min(100, evidenceOverride));
   const blended = blendMastery(
     existing
       ? { mastery_score: num(existing.mastery_score, evidence), attempts: num(existing.attempts, 0) }
