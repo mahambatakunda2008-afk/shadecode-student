@@ -37,6 +37,14 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] Guaranteed paper ladder: AI -> engine -> curated bank -> honest retryable 503 (never the generic placeholder stub); visible notice when a built-in paper is used
 - [x] Engine-backed lesson quiz (multiple choice with common-error distractors; exactly one correct option verified over 240 seeded quizzes)
 - [x] Fixed `$...$` inline maths never rendering in exams (regex required a trailing `$$`)
+- [x] Standard adopted: docs/GENERATION_RESILIENCE_STANDARD.md (ladder L0-L4, rules, per-feature status). Follow it for every generating feature
+- [x] Per-provider circuit breaker in the shared AI chain (dead providers cost nothing; one probe per 90 s)
+- [x] `/study/revise`: model-free retrieval-practice decks from verified outcomes, ratings feed keyed mastery and the revision queue
+- [x] Fixed silent failure: `revision_queue.source` CHECK rejected paper-learning rows
+- [ ] Paper learning fallback: when AI evaluation fails, offer self-check against the expected concepts instead of a 500 (needs UI state)
+- [ ] L0 verified library: persist every validated AI output (lesson, quiz, notes) keyed by subsection and serve it first; warm it with a background job whenever providers are healthy
+- [ ] Biology and other uncomputable subjects: richer L2 (notes outline, glossary of defined terms) beyond outcome prompts
+- [ ] Telemetry: record which tier served each generation so we can watch the AI-free share rise
 - [ ] Engine coverage: Biology/Economics/Business/English cannot be computed; ground them in verified curriculum outcomes (self-check checklists) rather than invented Q&A
 - [ ] Mixed papers: engine numeric questions plus AI conceptual questions when AI is up, so a live paper is never worse than the fallback
 - [x] AI circuit breaker (`src/lib/aiCircuitBreaker.ts`): 3 failures in 10 min pauses AI for 3 min, one probe request tests recovery; only skips AI when the engine can serve the topic
