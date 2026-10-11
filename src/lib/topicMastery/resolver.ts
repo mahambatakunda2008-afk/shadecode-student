@@ -117,14 +117,17 @@ export function buildTopicIndex(units: CurriculumTopicUnit[]): TopicIndex {
  * syllabus sections (Paper 3 = section 3). For 9700/9701/9702, Papers 1-3 are AS
  * only; Papers 4-5 may also draw on AS knowledge, so they keep both levels.
  */
+/** Whether a subsection can be examined by the given paper (see unitsForScope for the rules). */
+export function unitMatchesScope(unit: CurriculumTopicUnit, scope: PaperScope): boolean {
+  if (unit.syllabusId !== scope.syllabusId) return false;
+  if (!scope.paper) return true;
+  if (scope.syllabusId === "cambridge-9709") return unit.topicKey.split(".")[0] === String(scope.paper);
+  if (scope.paper <= 3) return unit.level === "as_level";
+  return true;
+}
+
 function unitsForScope(index: TopicIndex, scope: PaperScope): IndexedUnit[] {
-  const inSyllabus = index.units.filter((entry) => entry.unit.syllabusId === scope.syllabusId);
-  if (!scope.paper) return inSyllabus;
-  if (scope.syllabusId === "cambridge-9709") {
-    return inSyllabus.filter((entry) => entry.unit.topicKey.split(".")[0] === String(scope.paper));
-  }
-  if (scope.paper <= 3) return inSyllabus.filter((entry) => entry.unit.level === "as_level");
-  return inSyllabus;
+  return index.units.filter((entry) => unitMatchesScope(entry.unit, scope));
 }
 
 export function resolveTopic(label: string, subject: string, index: TopicIndex, scope?: PaperScope | null): TopicResolution {
