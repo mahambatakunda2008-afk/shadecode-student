@@ -159,42 +159,44 @@ export default function Timetable() {
   };
 
   const saveSchedule = async () => {
-    if (!userId || schedule.length === 0) return;
+    if (!userId || schedule.length === 0 || loading) return;
     setLoading(true);
     setSaveError(null);
+    setSaved(false);
 
-    const { error: delErr } = await supabase.from("timetable").delete().eq("user_id", userId);
-    if (delErr) {
-      console.error("[Timetable] delete failed, aborting save:", delErr.message);
-      setSaveError("Couldn't save your timetable. Please try again.");
+    try {
+      // Replace the schedule in one database transaction. The RPC derives
+      // ownership from auth.uid() and persists only real table columns.
+      const slots = schedule.map(({ subject, start_time, end_time, is_break }) => ({
+        subject,
+        start_time,
+        end_time,
+        is_break,
+      }));
+      const { error } = await supabase.rpc("replace_own_timetable", { p_slots: slots });
+
+      if (error) {
+        console.error("[Timetable] atomic save failed:", error.message);
+        setSaveError("Couldn't save your timetable. Your previous saved timetable has been kept. Please try again.");
+        return;
+      }
+
+      setSaved(true);
+      emitCortexEvent({
+        userId,
+        type: "timetable.saved",
+        source: "timetable",
+        data: {
+          sessions: schedule.filter(s => !s.is_break).length,
+          totalMinutes: schedule.filter(s => !s.is_break).length * parseInt(duration, 10),
+        },
+      });
+    } catch (error) {
+      console.error("[Timetable] atomic save error:", error);
+      setSaveError("Couldn't save your timetable. Your previous saved timetable has been kept. Please check your connection and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { error: insErr } = await supabase
-      .from("timetable")
-      .insert(schedule.map(slot => ({ ...slot, user_id: userId })));
-    if (insErr) {
-      // The old timetable is already gone at this point -- surface this
-      // loudly rather than silently claiming success over an empty table.
-      console.error("[Timetable] insert failed after delete, data lost:", insErr.message);
-      setSaveError("Your timetable failed to save and may be empty now. Please recreate it or try again.");
-      setLoading(false);
-      return;
-    }
-
-    setSaved(true);
-    setLoading(false);
-
-    emitCortexEvent({
-      userId,
-      type: "timetable.saved",
-      source: "timetable",
-      data: {
-        sessions: schedule.filter(s => !s.is_break).length,
-        totalMinutes: schedule.filter(s => !s.is_break).length * parseInt(duration),
-      },
-    });
   };
 
   const totalStudyMins = schedule.filter(s => !s.is_break).length * parseInt(duration);
