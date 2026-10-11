@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { callAI } from "@/lib/ai";
 import { detectPaperScope } from "@/lib/topicMastery/paperScope";
+import { buildSelfCheckPlan, type OutcomeInput } from "@/lib/learn/paperSelfCheck";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { applyQuestionCorrections, buildPaperSourceText, extractPdfPages, normalizePageRange, selectPaperQuestions, type PaperPage, type PaperQuestionCorrection } from "@/lib/learn/paperLearning";
@@ -65,6 +66,21 @@ async function authenticate(req: Request): Promise<AuthContext | null> {
     const { data: { user }, error } = await client.auth.getUser();
     return error || !user ? null : { supabase: admin, user };
   } catch { return null; }
+}
+
+async function loadOutcomes(supabase: AuthContext["supabase"], syllabusId: string | undefined): Promise<OutcomeInput[]> {
+  if (!syllabusId) return [];
+  try {
+    const { data } = await supabase
+      .from("curriculum_knowledge")
+      .select("topic_key, title, content, level")
+      .eq("syllabus_id", syllabusId)
+      .eq("kind", "learning_outcome")
+      .eq("status", "verified");
+    return (data ?? []) as OutcomeInput[];
+  } catch {
+    return [];
+  }
 }
 
 function extractObject(raw: string) {
@@ -317,7 +333,14 @@ export async function POST(req: Request) {
       perProviderMaxMs: 15000,
       media: [{ mimeType: file.type || "application/pdf", data: Buffer.from(await file.arrayBuffer()).toString("base64") }],
     });
-    const plan = raw ? parsePlan(raw) : null;
+    let plan: Plan | null = raw ? parsePlan(raw) : null;
+    let degraded = false;
+    if (!plan) {
+      // The AI could not build a session. The extracted questions still make a working, model-free
+      // self-check session, so the student is never left with a dead upload.
+      const fallback = buildSelfCheckPlan({ sourceName: file.name, questions: scopedQuestions, scope: paperScope, outcomes: await loadOutcomes(auth.supabase, paperScope?.syllabusId) });
+      if (fallback) { plan = fallback as unknown as Plan; degraded = true; }
+    }
     if (!plan) {
       await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => { const corrected = correctionResult.questions.find(item => item.questionNumber === question.questionNumber)?.questionText ?? question.questionText; return { questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: corrected.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: corrected !== question.questionText ? corrected.slice(0, 6000) : null, correctionStatus: corrected !== question.questionText ? "user-verified" : "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod }; }), error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
       return NextResponse.json({ error: "Cortex couldn't turn these pages into a reliable learning session. The extracted paper is still preserved so you can retry." }, { status: 422 });
@@ -326,8 +349,8 @@ export async function POST(req: Request) {
     const { error: updateError } = await auth.supabase.from("paper_learning_sessions").update({ status: "processed", learning_plan: plan, source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), paperScope, questionCount: questions.length, selectedPageCount: selectedPages.length, selectedPageStart: range.start, selectedPageEnd: range.end, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => { const corrected = correctionResult.questions.find(item => item.questionNumber === question.questionNumber)?.questionText ?? question.questionText; return { questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: corrected.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: corrected !== question.questionText ? corrected.slice(0, 6000) : null, correctionStatus: corrected !== question.questionText ? "user-verified" : "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod }; }), pageHashes: selectedPages.map(page => ({ pageNumber: page.pageNumber, textHash: page.textHash })), sourceFingerprint: selectedPages.map(page => page.textHash).join(":"), subject: plan.subject || null, level: plan.level || null, board: plan.board || null, topics: plan.topics ?? [], processedAt: new Date().toISOString() } }).eq("id", session.id).eq("user_id", auth.user.id);
     if (updateError) return NextResponse.json({ error: "The learning plan was generated but could not be saved." }, { status: 500 });
 
-    await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: "medium" });
-    return NextResponse.json({ id: session.id, ...safePlan(plan), pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questionCount: questions.length, selectedQuestionNumbers });
+    if (!degraded) await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: "medium" });
+    return NextResponse.json({ id: session.id, degraded, ...safePlan(plan), pageCount: pages.length, selectedPageStart: range.start, selectedPageEnd: range.end, questionCount: questions.length, selectedQuestionNumbers });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Something went wrong while processing the paper." }, { status: 500 });
   }

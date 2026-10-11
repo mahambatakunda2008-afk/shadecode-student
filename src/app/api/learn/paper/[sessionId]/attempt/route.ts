@@ -8,6 +8,8 @@ import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
 import { resolveCurriculumLink } from "@/lib/topicMastery/curriculumLink";
 import { readPaperScope } from "@/lib/topicMastery/paperScope";
+import { isRevisionRating, RATING_EVIDENCE } from "@/lib/study/revisionDeck";
+import { selfCheckEvaluation } from "@/lib/learn/paperSelfCheck";
 import type { PaperScope } from "@/lib/topicMastery/resolver";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
@@ -111,10 +113,15 @@ function findBlock(plan: Plan, blockId: string) {
 
 const cleanTopic = canonicalLabel;
 
-async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number, paperScope: PaperScope | null) {
+async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block, verdict: EvaluationVerdict, attemptNo: number, paperScope: PaperScope | null, evidenceOverride?: number) {
   const subject = cleanTopic(plan.subject || "Paper Study") || "Paper Study";
-  const topics = [...new Set((block.interaction?.expectedConcepts ?? []).map(cleanTopic).filter(Boolean))].slice(0, 6);
-  const score = VERDICT_SCORE[verdict] / 100;
+  // Self-check blocks carry the exact verified subsection: record one row for it instead of one per outcome sentence.
+  const exact = (block as Block & { curriculum?: { syllabusId: string; topicKey: string; title: string } }).curriculum;
+  const selfChecked = block.interaction?.evaluationMode === "self_check";
+  const topics = exact
+    ? [cleanTopic(exact.title)].filter(Boolean)
+    : selfChecked ? [] : [...new Set((block.interaction?.expectedConcepts ?? []).map(cleanTopic).filter(Boolean))].slice(0, 6);
+  const score = (evidenceOverride ?? VERDICT_SCORE[verdict]) / 100;
   const now = new Date().toISOString();
 
   for (const topic of topics) {
@@ -126,9 +133,11 @@ async function recordLearningSignal(auth: AuthContext, plan: Plan, block: Block,
       .eq("topic", topic)
       .maybeSingle();
 
-    const { row, revisionPriority } = projectPaperSignal(existing, verdict, now);
+    const { row, revisionPriority } = projectPaperSignal(existing, verdict, now, evidenceOverride);
 
-    const curriculumLink = await resolveCurriculumLink(auth.supabase, subject, topic, plan.level, paperScope);
+    const curriculumLink = exact
+      ? { syllabus_id: exact.syllabusId, curriculum_topic_key: exact.topicKey }
+      : await resolveCurriculumLink(auth.supabase, subject, topic, plan.level, paperScope);
 
     await auth.supabase.from("topic_mastery").upsert({
       user_id: auth.user.id,
@@ -174,13 +183,14 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { sessionId } = await context.params;
-    const body = await req.json().catch(() => ({})) as { blockId?: unknown; action?: unknown; response?: unknown; clientActionId?: unknown };
+    const body = await req.json().catch(() => ({})) as { blockId?: unknown; action?: unknown; response?: unknown; clientActionId?: unknown; selfRating?: unknown };
     const blockId = typeof body.blockId === "string" ? body.blockId.trim().slice(0, 80) : "";
     const action = body.action === "hint" || body.action === "reveal" || body.action === "teach-page" || body.action === "explain-step" || body.action === "why" || body.action === "quiz" ? body.action : "submit";
     const responseText = typeof body.response === "string" ? body.response.trim().slice(0, 6000) : "";
+    const selfRating = isRevisionRating(body.selfRating) ? body.selfRating : null;
     const clientActionId = normalizeClientActionId(body.clientActionId);
     if (!blockId) return NextResponse.json({ error: "Checkpoint is missing." }, { status: 400 });
-    if (action === "submit" && !responseText) return NextResponse.json({ error: "Write an attempt before submitting." }, { status: 400 });
+    if (action === "submit" && !responseText && !selfRating) return NextResponse.json({ error: "Write an attempt before submitting." }, { status: 400 });
     if (action === "submit" && !clientActionId) return NextResponse.json({ error: "Submission identity is missing. Please try again." }, { status: 400 });
 
     const { data: session, error: sessionError } = await auth.supabase
@@ -218,6 +228,7 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
 
     const plan = session.learning_plan as Plan;
     const block = findBlock(plan, blockId);
+    const selfCheck = block?.interaction?.evaluationMode === "self_check";
     if (!block?.interaction?.prompt || !block.interaction.rubric || !block.interaction.modelAnswer) {
       return NextResponse.json({ error: "This checkpoint does not have enough evaluation data yet. Generate a new paper session." }, { status: 422 });
     }
@@ -306,9 +317,18 @@ ${responseText}
 Return ONLY JSON with:
 {"verdict":"correct|partially_correct|incorrect","feedback":"specific feedback that teaches, not just a score","misconception":"only if a concrete misconception is visible","nextAction":"what the student should do next","hint":"one useful hint without giving away the solution","solution":"only include the complete solution when verdict is correct; otherwise return an empty string"}`;
 
-    const raw = await callAI(prompt, 2800, { userId: auth.user.id, feature: "paper_learning", subfeature: "checkpoint_evaluation", maxChainMs: 28000, perProviderMaxMs: 9000, skipCurriculumGrounding: true });
-    const evaluation = raw ? parseEvaluation(raw) : null;
-    if (!evaluation) return NextResponse.json({ error: "Cortex couldn't reliably grade that attempt. Your answer was not recorded as correct." }, { status: 422 });
+    let evaluation: Evaluation;
+    if (selfCheck) {
+      // Model-free: the student rated their own answer against the syllabus points.
+      const selfEvaluation = selfRating ? selfCheckEvaluation(selfRating, block.interaction.expectedConcepts ?? []) : null;
+      if (!selfEvaluation) return NextResponse.json({ error: "Choose how well your answer matched the syllabus points." }, { status: 400 });
+      evaluation = selfEvaluation;
+    } else {
+      const raw = await callAI(prompt, 2800, { userId: auth.user.id, feature: "paper_learning", subfeature: "checkpoint_evaluation", maxChainMs: 28000, perProviderMaxMs: 9000, skipCurriculumGrounding: true });
+      const graded = raw ? parseEvaluation(raw) : null;
+      if (!graded) return NextResponse.json({ error: "Cortex couldn't reliably grade that attempt. Your answer was not recorded as correct." }, { status: 422 });
+      evaluation = graded;
+    }
 
     const attemptNo = submitCount + 1;
     const { error: attemptError } = await auth.supabase.from("paper_learning_attempts").insert({
@@ -339,7 +359,7 @@ Return ONLY JSON with:
     await auth.supabase.from("paper_learning_sessions").update({ progress: nextProgress }).eq("id", sessionId).eq("user_id", auth.user.id);
 
     try {
-      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo, readPaperScope(session.source_metadata));
+      await recordLearningSignal(auth, plan, block, evaluation.verdict, attemptNo, readPaperScope(session.source_metadata), selfCheck && selfRating ? RATING_EVIDENCE[selfRating].evidence : undefined);
     } catch (signalError) {
       console.error("[paper-learning] learning signal update failed", signalError);
     }

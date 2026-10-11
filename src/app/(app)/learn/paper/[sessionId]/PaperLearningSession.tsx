@@ -1,5 +1,6 @@
 "use client";
 
+import SelfCheckPanel, { type SelfRating } from "./SelfCheckPanel";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, BookOpen, Check, CheckCircle2, ChevronRight, FileText, Lightbulb, Loader2, RotateCcw, Send, WifiOff, Target, GraduationCap } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -89,21 +90,23 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
     else { setActiveId(null); setResult(null); setAnswer(""); }
   }
 
-  async function checkpointAction(action: "submit" | "hint" | "reveal") {
+  async function checkpointAction(action: "submit" | "hint" | "reveal", selfRating?: SelfRating) {
     if (!currentBlock || offline) return;
     setActionError(null);
-    if (action === "submit" && !answer.trim()) { setActionError("Write your reasoning first. Even a rough attempt gives Cortex something to diagnose."); return; }
+    if (action === "submit" && !selfRating && !answer.trim()) { setActionError("Write your reasoning first. Even a rough attempt gives Cortex something to diagnose."); return; }
     const actionId = action === "submit" ? (submitActionId ?? crypto.randomUUID()) : undefined;
     if (actionId && !submitActionId) setSubmitActionId(actionId);
     setChecking(true);
     try {
-      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/attempt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ blockId: currentBlock.id, action, response: answer, clientActionId: actionId }) });
+      const response = await fetch(`/api/learn/paper/${encodeURIComponent(sessionId)}/attempt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ blockId: currentBlock.id, action, response: answer, selfRating, clientActionId: actionId }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Cortex couldn't process that action.");
       if (action === "hint") setHint(data.hint || null);
       else if (action === "reveal") setRevealed(data.solution || null);
       else {
         setResult(data as Evaluation);
+        // Each self-rating is its own attempt; reusing the id would replay the previous one.
+        if (selfRating) setSubmitActionId(null);
         if (data.verdict === "correct") {
           const next = new Set(completedIds); next.add(currentBlock.id);
           const nextSession = { ...session, progress: { ...(session?.progress ?? {}), completedBlockIds: [...next], lastBlockId: currentBlock.id, lastVerdict: data.verdict } } as Session;
@@ -237,7 +240,11 @@ export default function PaperLearningSession({ sessionId }: { sessionId: string 
                     ) : null}
                   </div>
                 )}
-                <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => checkpointAction("submit")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)] disabled:opacity-50">{checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Check my reasoning</button><button type="button" onClick={() => checkpointAction("hint")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-bold disabled:opacity-50"><Lightbulb className="h-4 w-4" /> Give me a hint</button><button type="button" onClick={() => checkpointAction("reveal")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><RotateCcw className="h-4 w-4" /> Show solution</button><button type="button" onClick={() => learningAction("teach-page")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><BookOpen className="h-4 w-4" /> Teach this page</button><button type="button" onClick={() => learningAction("explain-step")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Explain this step</button><button type="button" onClick={() => learningAction("why")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Why?</button><button type="button" onClick={() => learningAction("quiz")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Quiz me</button></div>
+                {block.interaction?.evaluationMode === "self_check" ? (
+                  <SelfCheckPanel concepts={block.interaction.expectedConcepts ?? []} busy={checking || offline} onRate={rating => checkpointAction("submit", rating)} onHint={() => checkpointAction("hint")} onReveal={() => checkpointAction("reveal")} />
+                ) : (
+                  <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => checkpointAction("submit")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)] disabled:opacity-50">{checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Check my reasoning</button><button type="button" onClick={() => checkpointAction("hint")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-bold disabled:opacity-50"><Lightbulb className="h-4 w-4" /> Give me a hint</button><button type="button" onClick={() => checkpointAction("reveal")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><RotateCcw className="h-4 w-4" /> Show solution</button><button type="button" onClick={() => learningAction("teach-page")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"><BookOpen className="h-4 w-4" /> Teach this page</button><button type="button" onClick={() => learningAction("explain-step")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Explain this step</button><button type="button" onClick={() => learningAction("why")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Why?</button><button type="button" onClick={() => learningAction("quiz")} disabled={checking || offline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Quiz me</button></div>
+                )}
               </div>}
             </article>;
           })}
