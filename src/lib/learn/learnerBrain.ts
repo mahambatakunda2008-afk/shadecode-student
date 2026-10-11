@@ -19,13 +19,13 @@ export type LearnerBrainSignal = {
 };
 
 export function normalizeLearnerTopic(subject: string, topic: string): string {
-  return `${subject}|${topic}`
+  const normalizePart = (value: string) => value
     .normalize("NFKC")
-    .trim()
     .toLocaleLowerCase("en")
-    .replace(/[^\p{L}\p{N}|]+/gu, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
-    .slice(0, 240);
+    .trim();
+  return `${normalizePart(subject)}|${normalizePart(topic)}`.slice(0, 240);
 }
 
 export async function rememberLearnerSignal(
