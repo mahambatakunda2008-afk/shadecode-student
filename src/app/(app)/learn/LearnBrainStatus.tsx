@@ -30,7 +30,7 @@ export default function LearnBrainStatus() {
   }, []);
 
   async function enableLocalBrain() {
-    setMessage("Preparing Cortex local AI. The first setup downloads approximately 1.1 GB.");
+    setMessage("Preparing Cortex local AI. The first setup downloads model files and can take a while; Wi-Fi is recommended.");
     const ready = await warmBrowserLocalModel();
     const current = getBrowserLocalModelStatus();
     setStatus(current.status);
@@ -56,7 +56,7 @@ export default function LearnBrainStatus() {
               </div>
               <p className="mt-1 max-w-2xl text-sm leading-5 text-[var(--muted-foreground)]">{message}</p>
               <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
-                The model runs on this device after setup. Your learner memory syncs through your account when online; the model is not retrained from private activity.
+                The model runs on this device after setup and uses about 1.1 GB of GPU memory. Initial downloads can be large. Your learner memory syncs through your account when online; the model is not retrained from private activity.
               </p>
             </div>
           </div>
