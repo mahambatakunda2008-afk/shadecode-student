@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type LearnerBrainEventType =
   | "request"
+  | "lesson_opened"
   | "lesson_completed"
   | "generation_failed"
   | "checkpoint_answered"
