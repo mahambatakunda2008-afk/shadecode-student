@@ -491,7 +491,6 @@ export async function POST(req: Request) {
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
         buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
-      learnerMemoryContext,
         learnerMemoryContext,
         `SECTION JOB: ${sectionJob}`,
         `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
@@ -559,6 +558,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             });
           }
 
+          await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: "provider_chain_exhausted_no_verified_pack", difficulty: validDifficulty });
           return NextResponse.json({
             error: "Cortex providers are unavailable and no matching curated lesson is available for this topic. Your request and checkpoint are preserved.",
             retryable: false,
@@ -745,6 +745,7 @@ Return only valid JSON.`;
     }
 
     if (!parsed?.blocks.length || failures.length > 0) {
+      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: failures.slice(0, 3).join(", "), difficulty: validDifficulty });
       log.lessonGenerationFailed({
         userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
         error: `Lesson pipeline exhausted: ${failures.join(" | ")}`,
