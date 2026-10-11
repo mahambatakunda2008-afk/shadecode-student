@@ -233,15 +233,20 @@ export async function POST(req: Request) {
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
     const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
-    await rememberLearnerSignal(supabase, user.id, {
-      subject: effectiveSubject,
-      topic: request.topic,
-      topic_key: learnerTopicKey,
-      event_type: "request",
-      outcome: "started",
-      difficulty: validDifficulty,
-      metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
-    });
+    const shouldRecordLearnerRequest =
+      body.generationMode !== "persist" &&
+      (body.generationMode !== "section" || Number(body.generationSectionIndex) === 0);
+    if (shouldRecordLearnerRequest) {
+      await rememberLearnerSignal(supabase, user.id, {
+        subject: effectiveSubject,
+        topic: request.topic,
+        topic_key: learnerTopicKey,
+        event_type: "request",
+        outcome: "started",
+        difficulty: validDifficulty,
+        metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
+      });
+    }
     const learnerMemoryContext = await buildLearnerBrainContext(supabase, user.id, effectiveSubject, request.topic)
       .catch(() => "");
 
