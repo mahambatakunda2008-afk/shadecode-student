@@ -8,7 +8,7 @@ import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 import { lessonViewedEvent } from "@/lib/intelligence/emitLearningEvent";
 import { getGenerationJob, subscribeGenerationJobs, type GenerationJob } from "@/lib/cortex/generationJob";
 import { resumeLessonGeneration, startLessonGeneration, type LessonGenerationInput } from "@/lib/cortex/lessonGenerationClient";
-import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Clock3, Compass, GraduationCap, Loader2, RefreshCw, Sparkles, Target, Wifi, WifiOff, Zap, Flame, BrainCircuit, ChevronRight, CirclePlay, NotebookPen, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Compass, GraduationCap, Loader2, RefreshCw, Sparkles, Target, Wifi, WifiOff, Zap, Flame, BrainCircuit, ChevronRight, CirclePlay, NotebookPen, ShieldCheck } from "lucide-react";
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
@@ -173,7 +173,7 @@ export default function LearnPageResilient() {
 
   async function generate() {
     const request = topic.trim();
-    if (!subject || !request || isGenerating) return;
+    if (!subject || !request || ["queued", "warming", "generating", "partial"].includes(generationJob?.status ?? "")) return;
     setError(null);
     localStorage.setItem(LAST_REQUEST_KEY, JSON.stringify({ subject, topic: request, mode }));
     const modeInstruction = mode === "guided"
