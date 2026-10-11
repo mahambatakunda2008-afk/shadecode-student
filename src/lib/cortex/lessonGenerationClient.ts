@@ -14,6 +14,7 @@ import { generateBrowserLocal, getBrowserLocalModelStatus, subscribeBrowserLocal
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
+import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
@@ -287,10 +288,7 @@ Return ONLY valid JSON:
 
 Generate 3-5 substantive blocks for this section. Make the blocks useful on their own while clearly fitting into the whole lesson.
 SECTION-SPECIFIC REQUIREMENTS
-- Section 1 must include an objective or clear learner target and foundational concepts.
-- Sections 2-4 must include at least one worked example and one thinking checkpoint.
-- Section 5 must include misconceptions/mistakes, exam transfer, and a thinking checkpoint.
-- The final section must include synthesis/curiosity/next-step content and a summary.
+${buildLocalSectionRequirements(index, sectionCount)}
 - Across the lesson, include at least 3 worked examples, 3 thinking checkpoints, 1 exam-transfer block, 1 mistake/misconception block, and 1 summary.
 - A checkpoint must make the learner do some thinking. Do not reveal its answer.
 
