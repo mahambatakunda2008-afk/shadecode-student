@@ -298,12 +298,33 @@ MATH
 Every mathematical expression uses single-dollar LaTeX delimiters. Never use caret exponents or ASCII fractions.`;
 
     try {
-      const raw = await generateWithVisibleLocalModelProgress(job, sectionPrompt, {
-        maxTokens: request.broadTopic ? 1400 : 1200,
-        json: true,
-      });
-      const parsed = parseLocalModelSection(raw);
-      if (!parsed || parsed.blocks.length < 3) return null;
+      let parsed: ReturnType<typeof parseLocalModelSection> = null;
+      let lastRaw = "";
+      let lastIssue = "The model returned no usable section.";
+      // A valid JSON object is not automatically a valid teaching section.
+      // Give the local model one targeted repair before abandoning the whole lesson.
+      for (let repair = 0; repair < 2 && !parsed; repair += 1) {
+        const attemptPrompt = repair === 0
+          ? sectionPrompt
+          : `${sectionPrompt}
+
+LOCAL SECTION REPAIR
+The previous output did not satisfy the minimum section contract.
+Problem: ${lastIssue}
+Previous output:
+${lastRaw.slice(0, 6000)}
+Return a corrected JSON object with a title and at least 3 distinct, substantive blocks. Each block must have type, title, and content. Do not repeat previous sections.`;
+        lastRaw = await generateWithVisibleLocalModelProgress(job, attemptPrompt, {
+          maxTokens: request.broadTopic ? 1400 : 1200,
+          json: true,
+        });
+        parsed = parseLocalModelSection(lastRaw);
+        if (!parsed || parsed.blocks.length < 3) {
+          lastIssue = "Expected a JSON object with a title and at least 3 substantive blocks.";
+          parsed = null;
+        }
+      }
+      if (!parsed) throw new Error(`Local model section contract failed: ${lastIssue}`);
 
       if (index === 0 && parsed.title) title = parsed.title;
       const usable = parsed.blocks
@@ -313,7 +334,7 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
         ))
         .slice(0, 6);
 
-      if (usable.length < 3) return null;
+      if (usable.length < 3) throw new Error("Local model repeated existing content instead of teaching new material.");
       allBlocks.push(...usable);
 
       const progress = Math.min(75, 20 + Math.round(((index + 1) / sectionCount) * 55));
