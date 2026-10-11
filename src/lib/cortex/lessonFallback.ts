@@ -65,7 +65,7 @@ const FALLBACK_LESSONS: Record<string, FallbackLesson> = {
       { type: "practice", title: "Progressive practice", content: "1. Calculate the force needed to accelerate a 1200 kg car at 2.5 m/s². Answer guidance: apply F = ma directly.\n2. A resultant force of 15 N gives an object an acceleration of 3 m/s². Find its mass. Answer guidance: rearrange F = ma to m = F/a.\n3. Explain, using Newton's third law, what happens when a swimmer pushes against a pool wall. Answer guidance: name both objects and both forces.\n4. A rocket expels gas downward to accelerate upward. Explain this using Newton's third law. Answer guidance: identify the action force on the gas and the reaction force on the rocket." },
       { type: "summary", title: "Master the strategy", content: "You should now be able to state all three of Newton's laws, use F = ma to solve for any one of force, mass or acceleration, and correctly identify genuine action-reaction pairs by checking they act on two different objects." },
     ],
-  },,
+  },
   "physics|waves": {
     title: "Waves: describing, measuring, and explaining wave motion",
     blocks: [
