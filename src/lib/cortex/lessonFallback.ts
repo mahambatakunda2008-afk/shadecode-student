@@ -107,10 +107,45 @@ function normalize(value: string): string {
 }
 
 function normalizeSubject(value: string): string {
-  const cleaned = normalize(value);
+  const cleaned = normalize(value)
+    .replace(/\b(970[0-9]|961[0-9]|9[0-9]{3})\b/g, " ")
+    .replace(/\b(as|a level|a-level|a-levels|cambridge|international|igcse|o level|o-level|gcse)\b/g, " ")
+    .replace(/[()[\]_-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (/^(physics|phys|physical science)\b/.test(cleaned)) return "physics";
+  if (/^(math|maths|mathematics|pure mathematics)\b/.test(cleaned)) return "mathematics";
+  if (/^(computer science|computing|comp sci|cs|ict)\b/.test(cleaned)) return "computer science";
+  if (/^(chemistry|chem)\b/.test(cleaned)) return "chemistry";
+  if (/^(biology|bio)\b/.test(cleaned)) return "biology";
   return SUBJECT_ALIASES[cleaned] ?? cleaned;
 }
 
+function normalizeTopic(value: string): string {
+  return normalize(value)
+    .replace(/\b(topic|chapter|unit|notes|lesson|please teach me|teach me|explain)\b/g, " ")
+    .replace(/[,:;.!?]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function buildDeterministicLessonFallback(subject: string, topic: string): FallbackLesson | null {
-  return FALLBACK_LESSONS[`${normalizeSubject(subject)}|${normalize(topic)}`] ?? null;
+  const normalizedSubject = normalizeSubject(subject);
+  const normalizedTopic = normalizeTopic(topic);
+  const exact = FALLBACK_LESSONS[`${normalizedSubject}|${normalizedTopic}`];
+  if (exact) return exact;
+
+  // Match a curated topic when the learner adds a natural-language request,
+  // syllabus code, or exam phrasing around the topic. Never broaden the
+  // subject match: a Physics lesson must not leak into another subject.
+  for (const [key, lesson] of Object.entries(FALLBACK_LESSONS)) {
+    const separator = key.indexOf("|");
+    const knownSubject = key.slice(0, separator);
+    const knownTopic = key.slice(separator + 1);
+    if (knownSubject !== normalizedSubject) continue;
+    if (normalizedTopic === knownTopic || normalizedTopic.startsWith(`${knownTopic} `) || normalizedTopic.endsWith(` ${knownTopic}`) || normalizedTopic.includes(` ${knownTopic} `)) {
+      return lesson;
+    }
+  }
+  return null;
 }
