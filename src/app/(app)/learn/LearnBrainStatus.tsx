@@ -26,7 +26,7 @@ export default function LearnBrainStatus() {
       else if (nextStatus === "error") setMessage("Local model setup failed. Learn can still use online and verified-curriculum lanes.");
     });
     void isBrowserLocalModelAvailable().finally(() => setChecking(false));
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, []);
 
   async function enableLocalBrain() {
