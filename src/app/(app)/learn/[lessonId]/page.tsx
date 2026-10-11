@@ -191,7 +191,8 @@ export default function LessonDetailPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
-  const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);\n  const [activeSection, setActiveSection] = useState(0);
+  const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
+  const [activeSection, setActiveSection] = useState(0);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
   const loadLesson = async (token: string) => {
@@ -282,7 +283,8 @@ export default function LessonDetailPage() {
 
   const t = theme(lesson.subject); const Icon = t.icon; const d = DIFF[lesson.difficulty] ?? DIFF.medium;
   const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
-  const coreBlocks = blocks.filter(block => FLOW.has(block.type));\n  const readingMinutes = Math.max(1, Math.ceil(blocks.reduce((total, block) => total + block.content.split(/\s+/).filter(Boolean).length, 0) / 220));
+  const coreBlocks = blocks.filter(block => FLOW.has(block.type));
+  const readingMinutes = Math.max(1, Math.ceil(blocks.reduce((total, block) => total + block.content.split(/\s+/).filter(Boolean).length, 0) / 220));
   const completedUnits = Math.min(coreBlocks.length, Math.max(0, Math.round((lesson.progress / 100) * coreBlocks.length)));
   const progressLabel = lesson.completed ? "Complete" : coreBlocks.length ? `${completedUnits} of ${coreBlocks.length} sections` : "Ready to study";
   let unitNumber = 0;
