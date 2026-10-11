@@ -23,6 +23,12 @@ create index if not exists learner_brain_events_user_topic_idx
 
 alter table public.learner_brain_events enable row level security;
 
+-- Explicit least-privilege Data API grants. Writes are server-side only.
+grant select on table public.learner_brain_events to authenticated;
+grant all on table public.learner_brain_events to service_role;
+grant usage, select on sequence public.learner_brain_events_id_seq to service_role;
+
+
 drop policy if exists "Learners can read their own brain memory" on public.learner_brain_events;
 create policy "Learners can read their own brain memory"
   on public.learner_brain_events for select
