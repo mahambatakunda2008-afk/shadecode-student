@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { buildLearnerBrainContext } from "@/lib/learn/learnerBrain";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 
 export const dynamic = "force-dynamic";
 
@@ -32,5 +33,38 @@ export async function GET(req: Request) {
     });
   } catch {
     return NextResponse.json({ context: "", available: false }, { status: 503 });
+  }
+}
+
+
+export async function POST(req: Request) {
+  try {
+    const sessionClient = await createSupabaseServerClient();
+    const { data: { user }, error: authError } = await sessionClient.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await req.json().catch(() => ({}));
+    if (!body || body.eventType !== "lesson_opened") {
+      return NextResponse.json({ error: "Unsupported learner memory event." }, { status: 400 });
+    }
+    const subject = typeof body.subject === "string" ? body.subject.trim().slice(0, 120) : "";
+    const topic = typeof body.topic === "string" ? body.topic.trim().slice(0, 240) : "";
+    if (!subject || !topic) return NextResponse.json({ error: "Subject and topic are required." }, { status: 400 });
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return NextResponse.json({ accepted: false }, { status: 503 });
+    const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+    await rememberLearnerSignal(admin, user.id, {
+      subject,
+      topic,
+      topic_key: normalizeLearnerTopic(subject, topic),
+      event_type: "lesson_opened",
+      outcome: "opened",
+      metadata: { source: "lesson_view" },
+    });
+    return NextResponse.json({ accepted: true }, { status: 202 });
+  } catch {
+    return NextResponse.json({ accepted: false }, { status: 503 });
   }
 }
