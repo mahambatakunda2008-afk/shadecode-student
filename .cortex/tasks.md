@@ -41,7 +41,9 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] Per-provider circuit breaker in the shared AI chain (dead providers cost nothing; one probe per 90 s)
 - [x] `/study/revise`: model-free retrieval-practice decks from verified outcomes, ratings feed keyed mastery and the revision queue
 - [x] Fixed silent failure: `revision_queue.source` CHECK rejected paper-learning rows
-- [ ] Paper learning fallback: when AI evaluation fails, offer self-check against the expected concepts instead of a 500 (needs UI state)
+- [x] Paper learning self-check fallback (2026-10-09): AI plan failure builds a model-free session from the extracted questions; checkpoints show the matched subsection's official outcomes and take a Got it / Unsure / Not yet rating (softer evidence, one keyed mastery row per subsection)
+- [ ] Validate self-check topic matching on real Cambridge papers (9702/9701/9709/9700); tune the margin if too many questions return no match
+- [ ] Paper learning: the explain-step, why and quiz-me actions and the transfer question still need AI; add model-free equivalents or hide them in self-check sessions
 - [ ] L0 verified library: persist every validated AI output (lesson, quiz, notes) keyed by subsection and serve it first; warm it with a background job whenever providers are healthy
 - [ ] Biology and other uncomputable subjects: richer L2 (notes outline, glossary of defined terms) beyond outcome prompts
 - [ ] Telemetry: record which tier served each generation so we can watch the AI-free share rise
