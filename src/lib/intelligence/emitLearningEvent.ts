@@ -77,6 +77,21 @@ async function post(input: LearningEventInput): Promise<boolean> {
       body: JSON.stringify(input),
       keepalive: true,
     }, POST_TIMEOUT_MS);
+    if (response.ok && input.source === "learn" && input.type === "lesson.viewed" && input.subjectId && input.topicId) {
+      // Keep the canonical learning-event pipeline authoritative; this is a
+      // best-effort personalization signal and must never block the event.
+      void fetchWithTimeout("/api/learn/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          eventType: "lesson_opened",
+          subject: input.subjectId,
+          topic: input.topicId,
+        }),
+        keepalive: true,
+      }, POST_TIMEOUT_MS).catch(() => undefined);
+    }
     return response.ok;
   } catch { return false; }
 }
