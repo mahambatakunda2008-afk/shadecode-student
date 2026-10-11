@@ -240,6 +240,13 @@ export default function LessonDetailPage() {
     } catch {}
     const onScroll = () => {
       localStorage.setItem(`lesson_scroll_${lessonId}`, String(window.scrollY));
+      const sections = Array.from(document.querySelectorAll<HTMLElement>(".lesson-unit[id]"));
+      let nearest = 0;
+      for (let index = 0; index < sections.length; index += 1) {
+        if (sections[index].getBoundingClientRect().top <= 180) nearest = index;
+        else break;
+      }
+      setActiveSection(nearest);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
