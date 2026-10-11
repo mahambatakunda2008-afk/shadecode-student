@@ -350,16 +350,19 @@ Return a corrected JSON object with a title and at least 3 distinct, substantive
         );
       }
     } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
       console.info("[LEARN] browser-local section failed", {
         section: index + 1,
-        error: error instanceof Error ? error.message : String(error),
+        error: reason,
       });
-      return null;
+      throw new Error(`Browser-local section ${index + 1} failed: ${reason}`);
     }
   }
 
   const minimumBlocks = request.broadTopic ? 14 : 10;
-  if (allBlocks.length < minimumBlocks) return null;
+  if (allBlocks.length < minimumBlocks) {
+    throw new Error(`Browser-local lesson assembled ${allBlocks.length} blocks; ${minimumBlocks} are required before quality review.`);
+  }
 
   const candidate: LessonGenerationResult = {
     id: `local-model-${Date.now().toString(36)}`,
@@ -430,7 +433,7 @@ Return ONLY JSON with a title and 3-6 NEW blocks that specifically fill the list
         topic: request.topic,
       });
     }
-    return null;
+    throw new Error(`Browser-local lesson failed quality checks after bounded repair: ${quality.failures.join(", ")}`);
   }
 
   return candidate;
