@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { buildRevisionDeck, isRevisionRating, RATING_EVIDENCE, type OutcomeRow } from '@/lib/study/revisionDeck'
 import { rollUpSubsectionMastery } from '@/lib/study/subsectionMastery'
-import { projectPaperSignal } from '@/lib/topicMastery/paperSignal'
+import { recordKeyedMastery, type MasteryClient } from '@/lib/topicMastery/record'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,41 +85,18 @@ export async function POST(request: NextRequest) {
     const subject = unit ? SUBJECT_NAMES[unit.subject_id] : null
     if (!unit || !subject) return NextResponse.json({ error: 'Unknown topic' }, { status: 404 })
 
-    const { data: existing } = await supabase
-      .from('topic_mastery')
-      .select('mastery_score, attempts, confidence, error_rate, exposure, retention, stability, response_speed, prerequisite_health')
-      .eq('user_id', user.id)
-      .eq('subject', subject)
-      .eq('topic', unit.title)
-      .maybeSingle()
-
-    const now = new Date().toISOString()
     const { evidence, verdict } = RATING_EVIDENCE[rating]
-    const { row, revisionPriority } = projectPaperSignal(existing, verdict, now, evidence)
-
-    const { error } = await supabase.from('topic_mastery').upsert({
-      user_id: user.id,
+    const { mastery } = await recordKeyedMastery(supabase as unknown as MasteryClient, user.id, {
       subject,
       topic: unit.title,
-      syllabus_id: syllabusId,
-      curriculum_topic_key: topicKey,
-      ...row,
-    }, { onConflict: 'user_id,subject,topic' })
-    if (error) throw error
+      syllabusId,
+      topicKey,
+      verdict,
+      evidence,
+      queueSource: 'syllabus_selfcheck',
+    })
 
-    if (rating !== 'got_it') {
-      const { error: queueError } = await supabase.from('revision_queue').upsert({
-        user_id: user.id,
-        topic: unit.title,
-        subject,
-        priority: revisionPriority,
-        source: 'syllabus_selfcheck',
-        last_seen: now,
-      }, { onConflict: 'user_id,topic,subject' })
-      if (queueError) console.error('[study/revision queue]', queueError)
-    }
-
-    return NextResponse.json({ ok: true, mastery: Math.round(row.mastery_score) })
+    return NextResponse.json({ ok: true, mastery })
   } catch (error) {
     console.error('[study/revision POST]', error)
     return NextResponse.json({ error: 'Could not save your rating. Please try again.', retryable: true }, { status: 500 })
