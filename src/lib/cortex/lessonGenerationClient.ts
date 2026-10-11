@@ -92,6 +92,22 @@ function localContext(job: GenerationJob<LessonGenerationInput>) {
   const memory = buildLocalLearnerContext(readLocalLearnerMemory());
   return `${cachedGrounding ? `\n\n${cachedGrounding}` : ""}${curriculum ? `\n\n${curriculum}` : ""}\n\n${memory}`;
 }
+
+async function readCrossDeviceLearnerMemory(token: string, subject: string, topic: string): Promise<string> {
+  if (!token || !isBrowser() || !navigator.onLine) return "";
+  try {
+    const params = new URLSearchParams({ subject, topic });
+    const response = await fetch(`/api/learn/memory?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!response.ok) return "";
+    const data = await response.json().catch(() => ({}));
+    return typeof data.context === "string" ? data.context.slice(0, 1800) : "";
+  } catch {
+    return "";
+  }
+}
 function validateResult(result: LessonGenerationResult, request: ReturnType<typeof resolveLessonRequest>) {
   const normalized = normalizeLessonBlocks(result.blocks);
   const quality = lessonQualityFailures({ title: result.title, blocks: normalized.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content ?? "") })) }, request);
@@ -201,6 +217,8 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: s
 
   const context = localContext(job);
   const resolved = buildResolvedLessonPrompt(request);
+  const crossDeviceMemory = await readCrossDeviceLearnerMemory(token, job.request.subject, request.topic);
+  const learnerContext = [localContext(job), crossDeviceMemory].filter(Boolean).join("\n\n");
   const sectionCount = request.broadTopic ? 6 : 4;
   const sectionPlan = request.broadTopic
     ? [
@@ -237,7 +255,7 @@ REQUEST
 ${resolved}
 
 VERIFIED LOCAL CURRICULUM
-${grounding || context || "No verified curriculum data is cached. Do not invent board-specific claims."}
+${grounding || context || "No verified curriculum data is cached. Do not invent board-specific claims."}\n\n${learnerContext}
 
 SECTION JOB
 ${sectionPlan[index]}
