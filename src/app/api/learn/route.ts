@@ -14,6 +14,7 @@ import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } fr
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
+import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -231,6 +232,19 @@ export async function POST(req: Request) {
       goal: typeof goal === "string" ? goal : undefined,
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
+    const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
+    await rememberLearnerSignal(supabase, user.id, {
+      subject: effectiveSubject,
+      topic: request.topic,
+      topic_key: learnerTopicKey,
+      event_type: "request",
+      outcome: "started",
+      difficulty: validDifficulty,
+      metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
+    });
+    const learnerMemoryContext = await buildLearnerBrainContext(supabase, user.id, effectiveSubject, request.topic)
+      .catch(() => "");
+
     const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     const generationMode = body.generationMode === "section" || body.generationMode === "persist" ? body.generationMode : "complete";
     const generationLeaseId = typeof body.generationLeaseId === "string" && /^[0-9a-f-]{36}$/i.test(body.generationLeaseId)
@@ -359,6 +373,7 @@ export async function POST(req: Request) {
         savedId = inserted.id;
       }
 
+      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
 
       return NextResponse.json({
@@ -476,6 +491,8 @@ export async function POST(req: Request) {
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
         buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      learnerMemoryContext,
+        learnerMemoryContext,
         `SECTION JOB: ${sectionJob}`,
         `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
         "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
@@ -777,6 +794,7 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
+    await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
     return NextResponse.json({ id: savedId, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
   } catch (err: any) {
