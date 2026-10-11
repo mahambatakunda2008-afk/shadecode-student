@@ -31,6 +31,11 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Maths", "trigonometric identities")).not.toBeNull();
   });
 
+  it("matches syllabus-coded subject names and natural-language topic requests", () => {
+    expect(buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic")).not.toBeNull();
+    expect(buildDeterministicLessonFallback("Cambridge International AS Level Physics 9702", "waves")).not.toBeNull();
+  });
+
   it("returns null for a topic with no hand-authored fallback", () => {
     expect(buildDeterministicLessonFallback("Mathematics", "Quadratic equations")).toBeNull();
     expect(buildDeterministicLessonFallback("Biology", "Cell structure")).toBeNull();
