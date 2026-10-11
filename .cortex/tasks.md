@@ -43,7 +43,8 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] Fixed silent failure: `revision_queue.source` CHECK rejected paper-learning rows
 - [x] Paper learning self-check fallback (2026-10-09): AI plan failure builds a model-free session from the extracted questions; checkpoints show the matched subsection's official outcomes and take a Got it / Unsure / Not yet rating (softer evidence, one keyed mastery row per subsection)
 - [ ] Validate self-check topic matching on real Cambridge papers (9702/9701/9709/9700); tune the margin if too many questions return no match
-- [ ] Paper learning: the explain-step, why and quiz-me actions and the transfer question still need AI; add model-free equivalents or hide them in self-check sessions
+- [x] Self-check sessions hide the AI-only actions; a model-free 'fresh question on this topic' (engine, server-seeded, exactly marked) records keyed mastery as real evidence (2026-10-10)
+- [ ] Paper learning self-check has no model-free teaching text (explain / why). Needs written worked content per subsection, or a verified L0 library of validated AI explanations
 - [ ] L0 verified library: persist every validated AI output (lesson, quiz, notes) keyed by subsection and serve it first; warm it with a background job whenever providers are healthy
 - [ ] Biology and other uncomputable subjects: richer L2 (notes outline, glossary of defined terms) beyond outcome prompts
 - [ ] Telemetry: record which tier served each generation so we can watch the AI-free share rise

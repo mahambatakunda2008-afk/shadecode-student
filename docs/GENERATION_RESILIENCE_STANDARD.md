@@ -42,7 +42,7 @@ Every generation request resolves through these tiers in order and stops at the 
 | Lesson quiz | L1 (covered topics), L3, L4 | L2 for uncovered topics |
 | Revise by syllabus (flashcard-style decks) | L2 only (no model) | content is outcome prompts, not definitions |
 | Lessons | Cortex local packs + L3 | audit coverage of local packs |
-| Paper learning (plan, evaluate, transfer) | L3, L2 self-check (plan and checkpoints) | self-check matching is unvalidated on real papers; explain, why and quiz actions still need AI |
+| Paper learning (plan, evaluate, transfer) | L3; L2 self-check plan and checkpoints; L1 engine practice question per matched topic | self-check matching unvalidated on real papers; Biology and uncovered topics have no practice question; AI-only actions (explain, why, quiz-me, transfer) are hidden in self-check sessions, so there is no model-free teaching text |
 | AI tutor | L3 plus its own fallbacks | audit |
 | Battle marking | L1 server-marked; written papers self-reported | verify challenger score |
 
