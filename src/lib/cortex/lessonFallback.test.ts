@@ -2,14 +2,10 @@ import { describe, expect, it } from "vitest";
 import { buildDeterministicLessonFallback } from "./lessonFallback";
 import { lessonQualityFailures, type LessonQualityRequest } from "./lessonQuality";
 
-// Each entry is the exact (subject, topic) pair a fallback should match, plus
-// the "teach" request that generate/route.ts would build for a matching
-// lesson. This is the whole point of the fallback existing: it's the last
-// resort when every AI provider fails, so it must itself pass the same
-// quality gate real AI output has to pass -- a fallback that fails the gate
-// is worse than no fallback, since generateAndValidate would report the
-// generic "could not produce a lesson" error either way, silently hiding
-// that a hand-authored lesson was sitting right there unused.
+// These authored examples check fallback matching and the quality gate for
+// topics whose lesson shape is designed to satisfy it. Some deep topics (such
+// as Waves) are intentionally allowed to use curated material even when the
+// AI-generation heuristic asks for additional checkpoint/continuation blocks.
 const CASES: { subject: string; topic: string }[] = [
   { subject: "Mathematics", topic: "Trigonometric identities" },
   { subject: "Computer Science", topic: "Binary number systems" },
@@ -34,6 +30,15 @@ describe("buildDeterministicLessonFallback", () => {
   it("matches syllabus-coded subject names and natural-language topic requests", () => {
     expect(buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic")).not.toBeNull();
     expect(buildDeterministicLessonFallback("Cambridge International AS Level Physics 9702", "waves")).not.toBeNull();
+  });
+
+  it("keeps the authored AS Physics Waves lesson available for deterministic recovery", () => {
+    const lesson = buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic");
+    expect(lesson).not.toBeNull();
+    expect(lesson!.title.toLowerCase()).toContain("waves");
+    expect(lesson!.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson!.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson!.blocks.some((block) => block.type === "checkpoint")).toBe(true);
   });
 
   it("returns null for a topic with no hand-authored fallback", () => {
