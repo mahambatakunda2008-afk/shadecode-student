@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import katex from "katex";
@@ -193,6 +193,7 @@ export default function LessonDetailPage() {
   const [showToast, setShowToast] = useState(false);
   const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
   const [activeSection, setActiveSection] = useState(0);
+  const restoredScrollRef = useRef(false);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
   const loadLesson = async (token: string) => {
@@ -235,6 +236,15 @@ export default function LessonDetailPage() {
 
   useEffect(() => {
     if (!lesson) return;
+    if (!restoredScrollRef.current) {
+      restoredScrollRef.current = true;
+      try {
+        const savedPosition = Number(localStorage.getItem(`lesson_scroll_${lessonId}`) ?? 0);
+        if (Number.isFinite(savedPosition) && savedPosition > 0) {
+          requestAnimationFrame(() => window.scrollTo({ top: savedPosition, behavior: "instant" }));
+        }
+      } catch {}
+    }
     try {
       const saved = localStorage.getItem(`lesson_understanding_${lessonId}`);
       if (saved === "explain" || saved === "apply" || saved === "review") setUnderstanding(saved);
