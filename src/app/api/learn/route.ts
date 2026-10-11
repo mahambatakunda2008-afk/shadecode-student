@@ -652,6 +652,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     const prompt = [
       buildResolvedLessonPrompt(request),
       buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      learnerMemoryContext,
       "\nRESUMABLE GENERATION CONTRACT",
       "This request may be resumed after an interrupted generation run. Return a complete lesson for the exact request. Do not rely on hidden prior output.",
       "For broad topics, follow the curriculum map and give every major branch substantive treatment. Do not spend the whole lesson on the first branch.",
