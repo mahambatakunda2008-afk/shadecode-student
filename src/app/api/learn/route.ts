@@ -516,10 +516,37 @@ Repair only the defective section. Preserve correct material where possible. Do 
         // section merely needs another schema repair. Do not burn another 16-22s
         // retrying the same dead provider chain.
         if (!rawSection) {
+          // Section mode used to exit here immediately when the provider chain
+          // was exhausted. That bypassed the curated deterministic fallback
+          // used by complete-lesson mode, leaving students with a hard failure
+          // even for topics Cortex can teach without any AI provider.
+          const deterministicFallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
+          if (deterministicFallback) {
+            const fallbackQuality = lessonQualityFailures(deterministicFallback, request).failures;
+            if (fallbackQuality.length === 0) {
+              return NextResponse.json({
+                sectionIndex: generationSectionCount - 1,
+                sectionCount: generationSectionCount,
+                title: deterministicFallback.title,
+                blocks: deterministicFallback.blocks,
+                partialBlocks: deterministicFallback.blocks,
+                complete: true,
+                deterministicFallback: true,
+                providerUnavailable: true,
+                fallbackReason: "provider_chain_exhausted",
+              });
+            }
+            console.warn("[LEARN] deterministic lesson fallback failed quality gate", {
+              topic: request.topic,
+              failures: fallbackQuality,
+            });
+          }
+
           return NextResponse.json({
-            error: "Cortex providers are currently unavailable. Switch to a local recovery lane or retry later.",
+            error: "Cortex providers are unavailable and no matching curated lesson is available for this topic. Your request and checkpoint are preserved.",
             retryable: false,
             providerUnavailable: true,
+            fallbackAvailable: false,
           }, { status: 503 });
         }
 
