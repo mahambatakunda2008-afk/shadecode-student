@@ -543,23 +543,29 @@ Repair only the defective section. Preserve correct material where possible. Do 
           // even for topics Cortex can teach without any AI provider.
           const deterministicFallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
           if (deterministicFallback) {
+            // Curated lessons are authored and reviewed ahead of time. The deep-generation
+            // quality gate expects a full AI-produced lesson shape (including multiple
+            // checkpoints and continuation blocks), so applying it here rejects valid
+            // curriculum recovery and recreates the 20% -> 24% failure loop.
+            // Subject/topic matching happens inside buildDeterministicLessonFallback;
+            // retain the curated lesson and label its origin honestly.
             const fallbackQuality = lessonQualityFailures(deterministicFallback, request).failures;
-            if (fallbackQuality.length === 0) {
-              return NextResponse.json({
-                sectionIndex: generationSectionCount - 1,
-                sectionCount: generationSectionCount,
-                title: deterministicFallback.title,
-                blocks: deterministicFallback.blocks,
-                partialBlocks: deterministicFallback.blocks,
-                complete: true,
-                deterministicFallback: true,
-                providerUnavailable: true,
-                fallbackReason: "provider_chain_exhausted",
+            if (fallbackQuality.length > 0) {
+              console.info("[LEARN] using curated fallback despite generation-only quality warnings", {
+                topic: request.topic,
+                failures: fallbackQuality,
               });
             }
-            console.warn("[LEARN] deterministic lesson fallback failed quality gate", {
-              topic: request.topic,
-              failures: fallbackQuality,
+            return NextResponse.json({
+              sectionIndex: generationSectionCount - 1,
+              sectionCount: generationSectionCount,
+              title: deterministicFallback.title,
+              blocks: deterministicFallback.blocks,
+              partialBlocks: deterministicFallback.blocks,
+              complete: true,
+              deterministicFallback: true,
+              providerUnavailable: true,
+              fallbackReason: "provider_chain_exhausted",
             });
           }
 
@@ -745,12 +751,17 @@ Return only valid JSON.`;
 
     // Curated recovery is the final safety net for known high-traffic topics. It is never
     // represented as AI output and never pretends to cover unsupported curriculum.
+    let usedDeterministicFallback = false;
     if (!parsed?.blocks.length) {
       const fallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
-      if (fallback) { parsed = fallback; failures = lessonQualityFailures(parsed, request).failures; }
+      if (fallback) {
+        parsed = fallback;
+        usedDeterministicFallback = true;
+        failures = [];
+      }
     }
 
-    if (!parsed?.blocks.length || failures.length > 0) {
+    if (!parsed?.blocks.length || (!usedDeterministicFallback && failures.length > 0)) {
       await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: failures.slice(0, 3).join(", "), difficulty: validDifficulty });
       log.lessonGenerationFailed({
         userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
@@ -765,7 +776,7 @@ Return only valid JSON.`;
     }
 
     const finalScore = lessonQualityScore(parsed.blocks);
-    if (finalScore < 45) {
+    if (!usedDeterministicFallback && finalScore < 45) {
       return NextResponse.json({
         error: "The lesson did not meet the depth standard yet. Cortex preserved the request for another recovery pass.",
         retryable: true,
@@ -803,7 +814,15 @@ Return only valid JSON.`;
     }
     await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
-    return NextResponse.json({ id: savedId, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
+    return NextResponse.json({
+      id: savedId,
+      title: parsed.title,
+      blocks: parsed.blocks,
+      qualityScore: finalScore,
+      subject: effectiveSubject,
+      deterministicFallback: usedDeterministicFallback,
+      providerUnavailable: usedDeterministicFallback,
+    });
   } catch (err: any) {
     log.apiFailure({ route: "/api/learn", method: "POST", error: err.message || String(err), userId: auth?.user?.id }); return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
