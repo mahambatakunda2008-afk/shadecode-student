@@ -3,70 +3,41 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getAcademicExperience, normalizeStudyLevel, type AcademicExperience } from "@/lib/academic/experience";
 import LearnPrefillGuard from "./LearnPrefillGuard";
-import LearnBrainStatus from "./LearnBrainStatus";
-import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
-
-function ExperienceLearnIntro({ experience }: { experience: AcademicExperience }) {
-  const copy = experience.stage === "early-childhood"
-    ? { kicker: "Stories & language", title: "Let's learn together", body: "Listen, notice, ask questions and build early language through short, playful learning moments." }
-    : experience.family === "foundation"
-      ? { kicker: "Discovery learning", title: "Learn by understanding", body: "Build the idea first, then practise it. Short explanations and activities help you keep what you discover." }
-      : experience.family === "school"
-        ? { kicker: "Focused study", title: "Turn difficult topics into clear ideas", body: "Learn from your syllabus context, practise deliberately and use what you understand in questions." }
-        : { kicker: "Deep learning", title: "Build knowledge you can use", body: "Connect course concepts to assignments, projects and the practical work you are trying to accomplish." };
-
-  return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
-      <div className="border-b border-[var(--border-subtle)] px-0 py-4 sm:px-1">
-        <div className="flex items-start gap-3">
-          <ShadecodeFeatureIcon feature="learn" size="sm" />
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[var(--primary)]">{copy.kicker}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-[28px]">{copy.title}</h1>
-        <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">{copy.body}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ExperienceLearn() {
   const router = useRouter();
-  const [experience, setExperience] = useState<AcademicExperience | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
+    const verifySession = async () => {
+      try {
+        const { data, error } = await createClient().auth.getUser();
+        if (error || !data.user) {
+          router.replace("/auth/login");
+          return;
+        }
+        if (!cancelled) setReady(true);
+      } catch {
         router.replace("/auth/login");
-        return;
       }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("study_level, education_stage")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      setExperience(getAcademicExperience(normalizeStudyLevel(profile?.study_level || profile?.education_stage)));
     };
-    void load();
+    void verifySession();
     return () => { cancelled = true; };
   }, [router]);
 
-  if (!experience) {
-    return <main className="min-h-[60vh] bg-[var(--background)] p-6" aria-busy="true" />;
+  if (!ready) {
+    return (
+      <main className="min-h-[70vh] bg-[#f7f7f4] px-5 py-10 dark:bg-[#101311]" aria-busy="true">
+        <div className="mx-auto max-w-7xl animate-pulse space-y-5">
+          <div className="h-5 w-36 rounded-full bg-black/10 dark:bg-white/10" />
+          <div className="h-12 w-3/5 rounded-2xl bg-black/10 dark:bg-white/10" />
+          <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]"><div className="h-80 rounded-[28px] bg-black/10 dark:bg-white/10" /><div className="h-80 rounded-[28px] bg-black/10 dark:bg-white/10" /></div>
+        </div>
+      </main>
+    );
   }
 
-  return (
-    <main className="min-h-screen bg-[var(--background)]" data-page="learn">
-      <ExperienceLearnIntro experience={experience} />
-      <LearnBrainStatus />
-      <LearnPrefillGuard />
-    </main>
-  );
+  return <LearnPrefillGuard />;
 }
