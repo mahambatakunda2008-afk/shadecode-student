@@ -601,6 +601,29 @@ Repair only the defective section. Preserve correct material where possible. Do 
       }
 
       if (!section) {
+        // Malformed/low-quality model output can exhaust the section repair loop just
+        // as completely as a provider outage. For known topics, recover with the
+        // authored lesson before returning an error to the learner.
+        const deterministicFallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
+        if (deterministicFallback) {
+          const fallbackQuality = lessonQualityFailures(deterministicFallback, request).failures;
+          if (fallbackQuality.length > 0) {
+            console.info("[LEARN] using curated fallback after section repair exhaustion", {
+              topic: request.topic,
+              failures: fallbackQuality,
+            });
+          }
+          return NextResponse.json({
+            sectionIndex: generationSectionCount - 1,
+            sectionCount: generationSectionCount,
+            title: deterministicFallback.title,
+            blocks: deterministicFallback.blocks,
+            partialBlocks: deterministicFallback.blocks,
+            complete: true,
+            deterministicFallback: true,
+            fallbackReason: "section_repair_exhausted",
+          });
+        }
         return NextResponse.json({
           error: "This lesson section could not be made reliable yet. The generation state is preserved for resume/retry.",
           retryable: true,
@@ -752,7 +775,7 @@ Return only valid JSON.`;
     // Curated recovery is the final safety net for known high-traffic topics. It is never
     // represented as AI output and never pretends to cover unsupported curriculum.
     let usedDeterministicFallback = false;
-    if (!parsed?.blocks.length) {
+    if (!parsed?.blocks.length || failures.length > 0) {
       const fallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
       if (fallback) {
         parsed = fallback;
