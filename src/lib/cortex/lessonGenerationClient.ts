@@ -378,10 +378,58 @@ Return a corrected JSON object with a title and at least 3 distinct, substantive
   }, request);
 
   if (quality.failures.length) {
-    console.info("[LEARN] browser-local assembled lesson rejected by quality gate", {
+    console.info("[LEARN] browser-local lesson needs a final quality repair", {
       failures: quality.failures,
       topic: request.topic,
     });
+    try {
+      const repairPrompt = `You are repairing an almost-complete student lesson. Do not rewrite the existing lesson.
+SUBJECT: ${job.request.subject}
+TOPIC: ${request.topic}
+LEARNER LEVEL: ${job.request.level || "unspecified"}
+EXAM BOARD: ${job.request.examBoard || "unspecified"}
+
+QUALITY GAPS TO FIX:
+${quality.failures.map((failure) => `- ${failure}`).join("\n")}
+
+EXISTING SECTION HEADINGS AND TYPES:
+${candidate.blocks.map((block) => `- ${String(block.type)}: ${String(block.title || "").slice(0, 100)}`).join("\n")}
+
+Return ONLY JSON with a title and 3-6 NEW blocks that specifically fill the listed gaps. Do not duplicate the existing headings or material. Every block must contain type, title, and at least 40 characters of accurate teaching content. Use a worked example, thinking checkpoint, exam-transfer block, misconception/mistake block, synthesis, or summary only where it fills a real gap. Never invent syllabus requirements or reveal the answer inside a checkpoint.`;
+      const repairRaw = await generateWithVisibleLocalModelProgress(job, repairPrompt, {
+        maxTokens: 1400,
+        json: true,
+      });
+      const patch = parseLocalModelSection(repairRaw);
+      const additions = (patch?.blocks ?? []).filter((block) => !candidate.blocks.some((existing) =>
+        String(existing.type) === String(block.type) &&
+        String(existing.content).trim() === String(block.content).trim()
+      ));
+      if (additions.length) {
+        const repairedCandidate: LessonGenerationResult = {
+          ...candidate,
+          blocks: [...candidate.blocks, ...additions].slice(0, request.broadTopic ? 36 : 28),
+        };
+        const repairedQuality = lessonQualityFailures({
+          title: repairedCandidate.title,
+          blocks: repairedCandidate.blocks.map((block) => ({
+            type: String(block.type),
+            title: typeof block.title === "string" ? block.title : undefined,
+            content: String(block.content),
+          })),
+        }, request);
+        if (repairedQuality.failures.length === 0) return repairedCandidate;
+        console.info("[LEARN] final local quality repair still failed", {
+          failures: repairedQuality.failures,
+          topic: request.topic,
+        });
+      }
+    } catch (error) {
+      console.info("[LEARN] final local quality repair failed", {
+        error: error instanceof Error ? error.message : String(error),
+        topic: request.topic,
+      });
+    }
     return null;
   }
 
