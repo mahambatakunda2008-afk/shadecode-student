@@ -381,6 +381,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     let assembledTitle = persistedPartial && typeof (persistedPartial as Record<string, unknown>).title === "string"
       ? String((persistedPartial as Record<string, unknown>).title)
       : request.topic || job.request.prompt;
+    let assembledOfflineFallback = false;
 
     const leaseId = generationLeaseId(job.id);
     for (let sectionIndex = persistedCompletedUnits; sectionIndex < sectionCount; sectionIndex += 1) {
@@ -445,6 +446,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           if (response.ok && sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
             assembledBlocks = sectionData.partialBlocks;
             if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+            assembledOfflineFallback = sectionData.deterministicFallback === true;
             break;
           }
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
@@ -478,6 +480,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       if (sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
         assembledBlocks = sectionData.partialBlocks;
         if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+        assembledOfflineFallback = sectionData.deterministicFallback === true;
         break;
       }
 
@@ -520,7 +523,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
     updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: result.title, blocks: result.blocks } });
 
-    return result;
+    return assembledOfflineFallback ? { ...result, offlineFallback: true, localModel: false } : result;
 }
 async function runJob(
   job: GenerationJob<LessonGenerationInput>,
