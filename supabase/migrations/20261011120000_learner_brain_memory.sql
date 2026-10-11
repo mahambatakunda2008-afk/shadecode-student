@@ -7,7 +7,7 @@ create table if not exists public.learner_brain_events (
   topic text not null default '',
   topic_key text not null default '',
   event_type text not null check (event_type in (
-    'request', 'lesson_completed', 'generation_failed', 'checkpoint_answered',
+    'request', 'lesson_opened', 'lesson_completed', 'generation_failed', 'checkpoint_answered',
     'help_requested', 'feedback'
   )),
   outcome text not null default '',
