@@ -109,3 +109,5 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [ ] Build and rendered desktop/mobile QA still required. These changes remain on the redesign branch and are not released to production.
 
 - [x] Lesson reader: removed the old olive theme from subject accents, difficulty labels, the empty-state link, and tutor surface; uses the shared semantic palette while preserving subject-specific icons and lesson content.
+
+- [x] Study plan now uses the shared workspace page/header spacing and has legible plan-load error text in both light and dark themes.
