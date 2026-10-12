@@ -57,6 +57,10 @@ The initial route inventory found roughly 80 application page/layout files acros
 4. The authenticated desktop sidebar has been widened from 240px to 256px to reduce cramped navigation labels.
 5. Learn used a separate olive/green palette hard-coded throughout its main workspace. Those styles now use shared semantic tokens and a restrained blue/violet identity.
 6. Learn's primary “Start learning” action now appears directly beneath the topic field rather than after the teaching-style cards. The default teaching mode remains available; students can still customise it.
+7. The onboarding steps now use semantic blue/violet tokens rather than a separate cyan accent system, with a consistent dark setup surface.
+8. The mobile student and admin navigation now share a quieter surface, safer focus treatment, and less dominant active Home tile.
+9. Exam Hub now exposes its two most common actions at the top and uses the shared interactive-card system.
+10. Math Checker has a shorter, action-first introduction; its working area is no longer pushed down by a large promotional header. Cortex Verify and the public landing page now use the shared blue/violet accent language.
 
 ## Redesign phases
 

@@ -20,7 +20,7 @@ export default function ExperienceTasks() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8" data-experience={experience.family} data-study-level={experience.stage}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
+        <header className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
           <div className="flex items-start gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Icon className="h-5 w-5" /></div>
             <div>
