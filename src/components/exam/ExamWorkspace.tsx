@@ -16,6 +16,8 @@ import ExamSourceNotice from "./ExamSourceNotice";
 import { markExamOffline } from "@/lib/local-first/exam-marker";
 import { sanitizeQuestions } from "@/lib/challenge/questions";
 import ChallengeFriend from "./ChallengeFriend";
+import { sendLearningSignals } from "@/lib/learning/client";
+import { signalsFromMarkedPaper } from "@/lib/learning/signals";
 import { renderMath as math } from "@/lib/exam/mathText";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
@@ -242,6 +244,8 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       }
 
       setResults(markingData);
+      // Learning loop: record each question's outcome (and any diagnosed mistake). Battles are recorded by the server.
+      if (userId && !serverMarkChallengeId) sendLearningSignals(signalsFromMarkedPaper(questions as ExamQuestion[], markingData.results ?? []));
       if (userId) {
         const correct = markingData.results?.filter((r: ExamResult) => r.correct).length ?? 0;
         try {

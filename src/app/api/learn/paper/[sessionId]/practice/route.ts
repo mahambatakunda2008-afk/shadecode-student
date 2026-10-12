@@ -5,6 +5,9 @@ import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { checkPracticeAnswer, newPracticeQuestion } from '@/lib/learn/enginePractice'
 import { freshSeed } from '@/lib/exam/engine/rng'
 import { recordKeyedMastery, type MasteryClient } from '@/lib/topicMastery/record'
+import { matchGenerators } from '@/lib/exam/engine'
+import { generatorWeights } from '@/lib/learning/adaptive'
+import { recordSignalsServer } from '@/lib/learning/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,14 +49,29 @@ export async function POST(request: NextRequest, context: { params: Promise<{ se
     }
 
     if (action === 'new') {
-      const question = newPracticeQuestion(subject, curriculum.title, freshSeed())
+      // Learn from this learner's own history: more of the question types they tend to get wrong.
+      let weights: Record<string, number> | undefined
+      try {
+        const ids = matchGenerators(subject, curriculum.title).map((generator) => generator.id)
+        const { data: history } = await supabase
+          .from('learning_signals')
+          .select('item_key, correct')
+          .eq('kind', 'question')
+          .in('item_key', ids)
+          .order('created_at', { ascending: false })
+          .limit(200)
+        if (history?.length) weights = generatorWeights(history)
+      } catch {
+        weights = undefined
+      }
+      const question = newPracticeQuestion(subject, curriculum.title, freshSeed(), weights)
       if (!question) return NextResponse.json({ error: 'No practice question is available for this topic yet', code: 'NO_PRACTICE' }, { status: 404 })
       return NextResponse.json(question)
     }
 
     const answer = typeof body?.answer === 'string' ? body.answer : ''
     if (!answer.trim()) return NextResponse.json({ error: 'Enter your answer first' }, { status: 400 })
-    const checked = checkPracticeAnswer(subject, curriculum.title, body?.seed, answer)
+    const checked = checkPracticeAnswer(subject, curriculum.title, body?.seed, body?.generator, answer)
     if (!checked) return NextResponse.json({ error: 'That practice question is no longer valid. Try a new one.', code: 'NO_PRACTICE' }, { status: 404 })
 
     let mastery: number | null = null
@@ -69,6 +87,19 @@ export async function POST(request: NextRequest, context: { params: Promise<{ se
     } catch (error) {
       console.error('[paper practice mastery]', error)
     }
+
+    await recordSignalsServer(supabase, user.id, [{
+      kind: 'question',
+      source: 'engine',
+      item_key: checked.generator,
+      syllabus_id: curriculum.syllabusId,
+      topic_key: curriculum.topicKey,
+      correct: checked.correct,
+      score: checked.correct ? 100 : 0,
+      mistake_id: checked.mistakeId ?? null,
+      time_spent_seconds: null,
+      props: { from: 'paper_selfcheck' },
+    }])
 
     return NextResponse.json({ ...checked, mastery })
   } catch (error) {

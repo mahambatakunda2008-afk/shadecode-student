@@ -5,6 +5,7 @@ import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { buildRevisionDeck, isRevisionRating, RATING_EVIDENCE, type OutcomeRow } from '@/lib/study/revisionDeck'
 import { rollUpSubsectionMastery } from '@/lib/study/subsectionMastery'
 import { recordKeyedMastery, type MasteryClient } from '@/lib/topicMastery/record'
+import { recordSignalsServer } from '@/lib/learning/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -95,6 +96,19 @@ export async function POST(request: NextRequest) {
       evidence,
       queueSource: 'syllabus_selfcheck',
     })
+
+    await recordSignalsServer(supabase, user.id, [{
+      kind: 'deck',
+      source: 'deck',
+      item_key: null,
+      syllabus_id: syllabusId,
+      topic_key: topicKey,
+      correct: null,
+      score: evidence,
+      mistake_id: null,
+      time_spent_seconds: null,
+      props: { rating },
+    }])
 
     return NextResponse.json({ ok: true, mastery })
   } catch (error) {

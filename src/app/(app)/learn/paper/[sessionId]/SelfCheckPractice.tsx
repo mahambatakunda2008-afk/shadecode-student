@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 
-type Practice = { seed: number; question: string; marks: number };
-type Outcome = { correct: boolean; answer: string; working: string };
+type Practice = { seed: number; generator: string; question: string; marks: number };
+type Outcome = { correct: boolean; answer: string; working: string; hint?: string };
 type Phase = "idle" | "loading" | "question" | "checking" | "result" | "unavailable" | "error";
 
 const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[var(--primary-glow)] disabled:opacity-50";
@@ -42,7 +42,7 @@ export default function SelfCheckPractice({ sessionId, blockId }: { sessionId: s
     if (!practice || !answer.trim()) return;
     setPhase("checking");
     try {
-      const { ok, status, data } = await call({ blockId, action: "check", seed: practice.seed, answer });
+      const { ok, status, data } = await call({ blockId, action: "check", seed: practice.seed, generator: practice.generator, answer });
       if (ok) { setOutcome(data as Outcome); setPhase("result"); }
       else setPhase(status === 404 ? "unavailable" : "error");
     } catch { setPhase("error"); }
@@ -78,6 +78,7 @@ export default function SelfCheckPractice({ sessionId, blockId }: { sessionId: s
           ) : outcome && (
             <div role="status" className="mt-3 rounded-xl bg-[var(--surface)] p-3 text-sm leading-6">
               <p className="font-bold">{outcome.correct ? "Correct." : `Not quite. The answer is ${outcome.answer}.`}</p>
+              {!outcome.correct && outcome.hint && <p className="mt-1">{outcome.hint}</p>}
               {outcome.working && <p className="mt-1 text-[var(--muted-foreground)]">{outcome.working}</p>}
               <button type="button" onClick={() => void next()} className={`${button} mt-3`}><RotateCcw className="h-4 w-4" aria-hidden /> Another one</button>
             </div>

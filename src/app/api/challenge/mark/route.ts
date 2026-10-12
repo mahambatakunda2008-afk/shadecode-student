@@ -7,6 +7,8 @@ import { sanitizeQuestions } from '@/lib/challenge/questions'
 import { markAgainstKey, type KeyEntry } from '@/lib/challenge/serverMarking'
 import { didWin } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
+import { signalsFromMarkedPaper } from '@/lib/learning/signals'
+import { recordSignalsServer } from '@/lib/learning/server'
 import type { ExamAnswer } from '@/lib/exam/types'
 
 export const dynamic = 'force-dynamic'
@@ -75,6 +77,10 @@ export async function POST(request: NextRequest) {
       })
       if (error) console.error('[challenge/mark insert]', error)
     }
+
+    // Learning loop: each question's outcome, with the key's generator id and any diagnosed mistake.
+    const keyById = new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry]))
+    await recordSignalsServer(supabase, user.id, signalsFromMarkedPaper(playSet.map((question) => ({ ...question, ...keyById.get(question.id) })) as never, marked.results, 'battle'))
 
     return NextResponse.json({ ...marked, won, verified: true })
   } catch (error) {
