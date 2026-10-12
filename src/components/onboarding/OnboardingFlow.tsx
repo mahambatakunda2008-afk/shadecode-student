@@ -8,6 +8,7 @@ import { AcademicContextStep } from './steps/AcademicContextStep';
 import { SubjectsStep } from './steps/SubjectStep';
 import { StepGoalSelection } from './steps/StepGoalSelection';
 import { ConfirmStep } from './steps/ConfirmStep';
+import { BrandLockup } from '@/components/brand/BrandLockup';
 import { mapOnboardingFormData } from '@/lib/onboarding/mapFormData';
 import { setOnboardingComplete } from '@/lib/onboarding';
 import { createClient } from '@/lib/supabase/client';
@@ -61,25 +62,22 @@ export function OnboardingFlow() {
 
   const common = { data: formData, onUpdate: update };
   return (
-    <main style={{ minHeight: '100vh', width: '100%', padding: 'clamp(24px, 5vw, 56px) 18px 64px', background: 'radial-gradient(circle at 15% 0%, rgba(0,168,255,.13), transparent 30rem), radial-gradient(circle at 90% 18%, rgba(122,60,255,.08), transparent 24rem), #06111C', color: '#F5F7FA', boxSizing: 'border-box' }}>
+    <main className="dark ssc-onboarding-shell">
       <div style={{ width: '100%', maxWidth: 520, margin: '0 auto' }}>
         <header style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22 }}>
-            <div style={{ width: 9, height: 9, borderRadius: 999, background: 'linear-gradient(135deg,#22D3EE,#245BFF)', boxShadow: '0 0 18px rgba(34,211,238,.45)' }} />
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#AAB2BF' }}>Shadecode Student</span>
-          </div>
+          <div className="ssc-onboarding-brand"><BrandLockup /></div>
           <h1 style={{ fontSize: 'clamp(27px, 6vw, 36px)', lineHeight: 1.08, fontWeight: 750, letterSpacing: '-.035em', color: '#F5F7FA' }}>Let&apos;s build your starting point.</h1>
           <p style={{ color: '#AAB2BF', marginTop: 9, fontSize: 14, lineHeight: 1.55, maxWidth: 430 }}>A few useful choices. No questionnaire marathon. Your answers shape what you see next.</p>
         </header>
 
         <OnboardingProgress currentStep={step} totalSteps={TOTAL} labels={STEP_LABELS} />
 
-        <section key={step} style={{ borderRadius: 20, padding: 'clamp(20px, 5vw, 28px)', background: 'rgba(11,23,36,.92)', border: '1px solid rgba(255,255,255,.10)', boxShadow: '0 24px 70px rgba(0,0,0,.28)', backdropFilter: 'blur(16px)' }}>
+        <section key={step} className="ssc-onboarding-panel">
           {step === 1 && <WelcomeStep {...common} onNext={next} />}
           {step === 2 && <AcademicContextStep {...common} onNext={next} onBack={back} />}
           {step === 3 && <SubjectsStep {...common} onNext={next} onBack={back} />}
           {step === 4 && <StepGoalSelection {...common} onNext={next} onBack={back} />}
-          {step === 5 && <><ConfirmStep {...common} onNext={next} onBack={back} onSubmit={handleSubmit} isSubmitting={isSubmitting} error={submitError} />{recommendations && <div style={{ marginTop: 14, padding: 14, borderRadius: 12, background: 'rgba(34,211,238,.07)', border: '1px solid rgba(34,211,238,.18)' }}><div style={{ fontSize: 12, fontWeight: 700, color: '#67E8F9', marginBottom: 5 }}>Your starting point</div>{recommendations.suggestedCourse?.title && <div style={{ fontSize: 14, fontWeight: 650, color: '#F5F7FA' }}>{recommendations.suggestedCourse.title}</div>}{recommendations.firstLesson?.title && <div style={{ marginTop: 6, fontSize: 12, color: '#AAB2BF' }}>First up: {recommendations.firstLesson.title}</div>}</div>}</>}
+          {step === 5 && <><ConfirmStep {...common} onNext={next} onBack={back} onSubmit={handleSubmit} isSubmitting={isSubmitting} error={submitError} />{recommendations && <div style={{ marginTop: 14, padding: 14, borderRadius: 12, background: 'rgba(34,211,238,.07)', border: '1px solid rgba(34,211,238,.18)' }}><div style={{ fontSize: 12, fontWeight: 700, color: '#67E8F9', marginBottom: 5 }}>Your starting point</div>{recommendations.suggestedCourse?.title && <div className="ssc-onboarding-recommendations__title">{recommendations.suggestedCourse.title}</div>}{recommendations.firstLesson?.title && <div className="ssc-onboarding-recommendations__detail">First up: {recommendations.firstLesson.title}</div>}</div>}</>}
         </section>
       </div>
     </main>
