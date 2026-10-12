@@ -22,16 +22,16 @@ interface SubjectRecord {
 
 // Subject color palette
 const SUBJECT_COLORS = [
-  "#6366f1", "#22c55e", "#f59e0b", "var(--danger)",
-  "#06b6d4", "#8b5cf6", "#ec4899", "#14b8a6",
-  "#f97316", "#84cc16",
+  "#3157D5", "#6657D9", "#4778E8", "#8A6CE8",
+  "#3F6BC8", "#7A72D6", "#5264B8", "#9A83D9",
+  "#405AA8", "#7862B8",
 ];
 
 const DURATION_PRESETS = [
-  { label: "25m", value: "25", icon: "⚡" },
-  { label: "45m", value: "45", icon: "📖" },
-  { label: "60m", value: "60", icon: "🧠" },
-  { label: "90m", value: "90", icon: "🔥" },
+  { label: "25m", value: "25", icon: "25" },
+  { label: "45m", value: "45", icon: "45" },
+  { label: "60m", value: "60", icon: "60" },
+  { label: "90m", value: "90", icon: "90" },
 ];
 
 const BREAK_PRESETS = [
@@ -43,9 +43,9 @@ const BREAK_PRESETS = [
 
 const TIME_PRESETS = [
   { label: "🌅 Early", value: "06:00" },
-  { label: "🌤 Morning", value: "08:00" },
-  { label: "☀️ Midday", value: "12:00" },
-  { label: "🌆 Evening", value: "17:00" },
+  { label: "Morning", value: "08:00" },
+  { label: "Midday", value: "12:00" },
+  { label: "Evening", value: "17:00" },
 ];
 
 export default function Timetable() {
