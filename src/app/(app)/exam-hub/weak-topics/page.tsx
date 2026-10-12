@@ -31,8 +31,8 @@ export default function WeakTopicsPage() {
   const hasData = summary && summary.exam_scores.length > 0;
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+    <main className="ssc-page min-h-screen px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-3xl">
         <Link
           href="/exam-hub"
           style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--muted-foreground)", textDecoration: "none", marginBottom: 16, fontSize: 13, width: "fit-content" }}
@@ -42,7 +42,7 @@ export default function WeakTopicsPage() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <Target size={20} color="var(--danger)" />
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--foreground)", margin: 0 }}>Weak Topics</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Weak topics</h1>
         </div>
         <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 24 }}>
           Based on scores from completed past papers.
@@ -103,7 +103,7 @@ export default function WeakTopicsPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
