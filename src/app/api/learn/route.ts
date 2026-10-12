@@ -330,7 +330,9 @@ export async function POST(req: Request) {
             p_subject_id: resolvedSubject.id,
             p_title: persistableCandidate.title,
             p_topic: request.topic,
-            p_description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+            p_description: verifiedCurriculumFallback
+              ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
+              : `A deep ${validDifficulty} lesson on ${request.topic}`,
             p_difficulty: validDifficulty,
             p_progress: 100,
             p_completed_units: generationSectionCount,
@@ -341,6 +343,7 @@ export async function POST(req: Request) {
               title: persistableCandidate.title,
               blocks: persistableCandidate.blocks,
               subject: effectiveSubject,
+              deterministicFallback: verifiedCurriculumFallback,
             },
           },
         );
@@ -366,7 +369,9 @@ export async function POST(req: Request) {
           subject_id: resolvedSubject.id,
           topic: request.topic.slice(0, 500),
           title: persistableCandidate.title,
-          description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+          description: verifiedCurriculumFallback
+            ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
+            : `A deep ${validDifficulty} lesson on ${request.topic}`,
           difficulty: validDifficulty,
           progress: 0,
           blocks: persistableCandidate.blocks,
@@ -387,6 +392,7 @@ export async function POST(req: Request) {
         blocks: persistableCandidate.blocks,
         qualityScore: finalScore,
         subject: effectiveSubject,
+        deterministicFallback: verifiedCurriculumFallback,
       });
     }
 
