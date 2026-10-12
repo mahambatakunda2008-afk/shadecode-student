@@ -15,6 +15,7 @@ import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridR
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
+import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
@@ -846,6 +847,53 @@ async function runJob(
       });
       saveActiveId(job.id);
       return getGenerationJobs().find(item => item.id === job.id) ?? job;
+    }
+
+    // If both the cloud and browser-local lanes fail, use only an exact hand-authored
+    // lesson whose subject/topic key matches this request. This recovery is deliberately
+    // after the provider/local attempts, so curated material never replaces successful AI
+    // generation. It also avoids depending on the server section fallback being reachable.
+    const curatedFallback = buildDeterministicLessonFallback(
+      currentJob.request.subject,
+      currentJob.request.prompt,
+    );
+    if (curatedFallback && isBrowser()) {
+      try {
+        const fallbackResult: LessonGenerationResult = {
+          id: currentJob.id,
+          title: curatedFallback.title,
+          blocks: curatedFallback.blocks,
+          offlineFallback: true,
+          localModel: false,
+        };
+        const canPersist = Boolean(token && navigator.onLine);
+        const finished = canPersist
+          ? await persistGeneratedLesson(
+              currentJob as GenerationJob<LessonGenerationInput>,
+              fallbackResult,
+              token,
+              generationLeaseId(currentJob.id),
+            )
+          : await saveLocalResult(currentJob as GenerationJob<LessonGenerationInput>, fallbackResult);
+
+        if (canPersist) {
+          await syncDurableGenerationJob(
+            token,
+            (getGenerationJob(currentJob.id) ?? finished) as GenerationJob,
+            "complete",
+          );
+        }
+        console.info("[LEARN] recovered with exact curated lesson after generation lanes failed", {
+          topic: resolvedRequest(currentJob as GenerationJob<LessonGenerationInput>).topic,
+          failureClass,
+        });
+        return getGenerationJobs().find(item => item.id === currentJob.id) ?? finished;
+      } catch (curatedRecoveryError) {
+        console.warn("[LEARN] exact curated recovery could not be saved", {
+          topic: currentJob.request.prompt,
+          error: curatedRecoveryError instanceof Error ? curatedRecoveryError.message : String(curatedRecoveryError),
+        });
+      }
     }
 
     // Cortex recovery policy selects exactly one safe recovery lane. The browser
