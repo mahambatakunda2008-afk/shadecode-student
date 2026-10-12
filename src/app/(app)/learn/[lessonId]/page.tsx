@@ -349,6 +349,7 @@ export default function LessonDetailPage() {
               <span className="lesson-subject"><Icon size={15} color={t.text} />{lesson.subject}</span>
               <span>·</span><span className="lesson-badge">{d.label}</span>
               {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={11} style={{ verticalAlign: "-1px" }} /> Completed</span>}
+              {lesson.description?.startsWith("Curated curriculum recovery lesson") && <span className="lesson-badge" title="Authored curriculum material used as a recovery path"><BookOpen size={11} style={{ verticalAlign: "-1px" }} /> Curated recovery</span>}
             </div>
             <h1 className="lesson-title">{lesson.title}</h1>
             {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
