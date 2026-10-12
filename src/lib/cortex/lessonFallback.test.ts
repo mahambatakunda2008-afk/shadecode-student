@@ -39,6 +39,14 @@ describe("buildDeterministicLessonFallback", () => {
     expect(lesson!.blocks.length).toBeGreaterThanOrEqual(10);
     expect(lesson!.blocks.some((block) => block.type === "example")).toBe(true);
     expect(lesson!.blocks.some((block) => block.type === "checkpoint")).toBe(true);
+
+    // The persist endpoint enforces this minimum after filtering malformed or
+    // empty blocks. Verify this fallback survives that exact contract.
+    const persistableBlocks = lesson!.blocks.filter(
+      (block) => typeof block.content === "string" && block.content.trim().length >= 40,
+    ).slice(0, 28);
+    expect(persistableBlocks.length).toBeGreaterThanOrEqual(10);
+    expect(persistableBlocks.every((block) => typeof block.type === "string")).toBe(true);
   });
 
   it("returns null for a topic with no hand-authored fallback", () => {
