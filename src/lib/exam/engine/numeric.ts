@@ -9,12 +9,23 @@
  * time out or disagree with itself.
  */
 
+/** A classic wrong answer: a value a student gets by a known slip, with kind feedback. */
+export interface NumericMistake {
+  value: number;
+  id: string;
+  hint: string;
+}
+
 export interface NumericSpec {
   /** Unrounded correct value. */
   exact: number;
   /** Absolute tolerance around `exact`. */
   tolerance: number;
   unit?: string;
+  /** Which generator built the question, so outcomes can be learned per question type. */
+  generator?: string;
+  /** Known mistakes for this question, used to diagnose a wrong answer. */
+  mistakes?: NumericMistake[];
 }
 
 const SUPERSCRIPTS: Record<string, string> = {
@@ -85,10 +96,24 @@ export function extractNumbers(raw: string): number[] {
   return values;
 }
 
+/**
+ * How close a typed answer must be to a known mistake to be diagnosed as it.
+ * Scaled to the mistake's own size (the right answer's tolerance can be far larger or smaller),
+ * with a little of the requested rounding allowed so 2 d.p. answers still match.
+ */
+export function mistakeAllowance(spec: Pick<NumericSpec, "tolerance">, mistakeValue: number): number {
+  const integerAnswer = spec.tolerance <= 1e-6;
+  if (integerAnswer && Number.isInteger(mistakeValue)) return 1e-6;
+  const size = Math.abs(mistakeValue);
+  return Math.max(size * 0.006, Math.min(spec.tolerance, size * 0.05), 1e-9);
+}
+
 export interface NumericMark {
   correct: boolean;
   /** The number we compared, when one was found. */
   matched: number | null;
+  /** The known mistake the wrong answer matches, if any. */
+  mistake?: { id: string; hint: string };
 }
 
 /** Accepts the answer when any number in the text is within tolerance (capped to avoid number-spraying). */
@@ -97,5 +122,12 @@ export function markNumeric(answer: string, spec: NumericSpec): NumericMark {
   if (!numbers.length || numbers.length > 8) return { correct: false, matched: numbers.at(-1) ?? null };
   const slack = Math.abs(spec.exact) * 1e-9;
   const hit = numbers.find((value) => Math.abs(value - spec.exact) <= spec.tolerance + slack);
-  return hit !== undefined ? { correct: true, matched: hit } : { correct: false, matched: numbers.at(-1) ?? null };
+  if (hit !== undefined) return { correct: true, matched: hit };
+
+  const matched = numbers.at(-1) ?? null;
+  for (const candidate of spec.mistakes ?? []) {
+    const allowance = mistakeAllowance(spec, candidate.value);
+    if (numbers.some((value) => Math.abs(value - candidate.value) <= allowance)) return { correct: false, matched, mistake: { id: candidate.id, hint: candidate.hint } };
+  }
+  return { correct: false, matched };
 }

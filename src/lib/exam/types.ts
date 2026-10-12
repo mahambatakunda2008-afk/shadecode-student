@@ -23,6 +23,8 @@ export type ExamResult = {
   modelAnswer: string;
   topic: string;
   timeSpent?: number;
+  /** The known mistake this wrong answer matched, when the deterministic marker diagnosed one. */
+  mistakeId?: string;
 };
 
 export type ExamResults = {

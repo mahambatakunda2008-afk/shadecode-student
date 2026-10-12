@@ -28,6 +28,12 @@ export function formulaMass(formula: string): number {
   }, 0);
 }
 
+/** The classic slip: adding each element's Ar once and ignoring the subscripts. */
+export function formulaMassIgnoringCounts(formula: string): number {
+  const elements = [...new Set(formula.match(/[A-Z][a-z]?/g) ?? [])];
+  return elements.reduce((sum, element) => sum + (AR[element] ?? 0), 0);
+}
+
 const COMPOUNDS = ["NaCl", "CaCO3", "NaOH", "H2SO4", "MgO", "H2O", "CO2", "NH3", "Mg(OH)2", "Al2O3", "CuSO4", "KOH", "HCl", "Fe2O3", "ZnO"];
 
 function arLine(formula: string): string {

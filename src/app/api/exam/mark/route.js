@@ -51,8 +51,9 @@ function markDeterministic(questions, answers) {
     const answer = answerMap.get(String(q.id)) || "";
     const model = String(q.modelAnswer || "").trim();
     if (q.numeric && typeof q.numeric.exact === "number" && typeof q.numeric.tolerance === "number") {
-      const correct = Boolean(answer) && markNumeric(answer, q.numeric).correct;
-      return { questionId: q.id, score: correct ? q.marks : 0, maxScore: q.marks, correct, feedback: !answer ? "No answer submitted." : correct ? "Correct." : "Not quite. Check your working against the model answer.", modelAnswer: model, topic: q.topic };
+      const marked = answer ? markNumeric(answer, q.numeric) : { correct: false };
+      const correct = marked.correct;
+      return { questionId: q.id, score: correct ? q.marks : 0, maxScore: q.marks, correct, feedback: !answer ? "No answer submitted." : correct ? "Correct." : marked.mistake ? `Not quite. ${marked.mistake.hint}` : "Not quite. Check your working against the model answer.", modelAnswer: model, topic: q.topic, ...(marked.mistake ? { mistakeId: marked.mistake.id } : {}) };
     }
     if (q.type === "multiple_choice") {
       const correct = Boolean(answer && model && answer.toLowerCase() === model.toLowerCase());

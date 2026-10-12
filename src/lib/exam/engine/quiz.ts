@@ -24,12 +24,14 @@ const LETTERS = ["A", "B", "C", "D"] as const;
 
 function candidates(spec: NumericSpec, allowNegative: boolean): number[] {
   const { exact } = spec;
+  // Real, diagnosed mistakes make the most instructive distractors: each one is a slip students actually make.
+  const mistakeValues = (spec.mistakes ?? []).map((mistake) => mistake.value);
   const integer = spec.tolerance <= 1e-6 && Number.isInteger(exact);
   const list = integer
     ? [exact + 1, exact - 1, exact + 2, exact - 2, exact * 2, Math.round(exact / 2), exact + 10, exact - 10, exact * 10]
     : [exact * 2, exact / 2, exact * 10, exact / 10, exact * 1.1, exact * 0.9, exact * 1.5, exact * 0.75];
   if (allowNegative) list.push(-exact);
-  return list;
+  return [...mistakeValues, ...list];
 }
 
 export function optionsFor(spec: NumericSpec, rng: Rng, allowNegative: boolean): { options: string[]; correctIndex: number } {
@@ -37,7 +39,10 @@ export function optionsFor(spec: NumericSpec, rng: Rng, allowNegative: boolean):
   const shown = new Set<string>([correct]);
   const wrong: string[] = [];
 
-  for (const value of rng.shuffle(candidates(spec, allowNegative))) {
+  const preferred = (spec.mistakes ?? []).map((mistake) => mistake.value);
+  const ordered = candidates(spec, allowNegative);
+  const ranked = [...rng.shuffle(ordered.filter((value) => preferred.includes(value))), ...rng.shuffle(ordered.filter((value) => !preferred.includes(value)))];
+  for (const value of ranked) {
     if (!Number.isFinite(value) || (!allowNegative && value < 0)) continue;
     if (Math.abs(value - spec.exact) <= spec.tolerance * 1.01) continue;
     const text = formatAnswer({ ...spec, exact: value });

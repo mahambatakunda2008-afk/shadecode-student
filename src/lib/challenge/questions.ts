@@ -19,7 +19,20 @@ function numericSpec(value: unknown): NumericSpec | null {
   if (!value || typeof value !== "object") return null;
   const { exact, tolerance, unit } = value as Record<string, unknown>;
   if (typeof exact !== "number" || !Number.isFinite(exact) || typeof tolerance !== "number" || !Number.isFinite(tolerance) || tolerance < 0) return null;
-  return { exact, tolerance, ...(typeof unit === "string" && unit.trim() ? { unit: unit.trim().slice(0, 24) } : {}) };
+  const { generator, mistakes } = value as Record<string, unknown>;
+  const cleanMistakes = Array.isArray(mistakes)
+    ? mistakes
+        .filter((item): item is { value: number; id: string; hint: string } => !!item && typeof item === "object" && Number.isFinite((item as { value?: unknown }).value as number) && typeof (item as { id?: unknown }).id === "string" && typeof (item as { hint?: unknown }).hint === "string")
+        .slice(0, 6)
+        .map((item) => ({ value: item.value, id: item.id.slice(0, 40), hint: item.hint.slice(0, 200) }))
+    : [];
+  return {
+    exact,
+    tolerance,
+    ...(typeof unit === "string" && unit.trim() ? { unit: unit.trim().slice(0, 24) } : {}),
+    ...(typeof generator === "string" && generator.trim() ? { generator: generator.trim().slice(0, 60) } : {}),
+    ...(cleanMistakes.length ? { mistakes: cleanMistakes } : {}),
+  };
 }
 
 export function sanitizeQuestions(input: unknown): ExamQuestion[] | null {

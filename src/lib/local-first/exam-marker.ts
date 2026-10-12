@@ -46,10 +46,10 @@ export function markExamOffline(questions: MarkableQuestion[], answers: ExamAnsw
     }
 
     if (question.numeric) {
-      const { correct } = markNumeric(answer, question.numeric);
+      const { correct, mistake } = markNumeric(answer, question.numeric);
       const score = correct ? maxScoreForQuestion : 0;
       totalScore += score;
-      results.push({ questionId: question.id, score, maxScore: maxScoreForQuestion, correct, feedback: correct ? "Correct." : "Not quite. Check your working against the model answer.", modelAnswer: question.modelAnswer ?? "", topic: question.topic || "General" });
+      results.push({ questionId: question.id, score, maxScore: maxScoreForQuestion, correct, feedback: correct ? "Correct." : mistake ? `Not quite. ${mistake.hint}` : "Not quite. Check your working against the model answer.", modelAnswer: question.modelAnswer ?? "", topic: question.topic || "General", ...(mistake ? { mistakeId: mistake.id } : {}) });
       continue;
     }
 
