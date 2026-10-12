@@ -421,3 +421,18 @@ a:hover .shadecode-feature-icon__glyph { filter: none; }
   .ssc-onboarding-shell { padding: max(20px, env(safe-area-inset-top)) 14px 36px; }
   .ssc-onboarding-panel { border-radius: 15px; }
 }
+
+
+/* Mobile navigation stays calm, legible, and safe-area aware. */
+.ssc-bottom-nav {
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 -8px 28px rgba(23, 32, 51, 0.075);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.dark .ssc-bottom-nav { box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.24); }
+.ssc-bottom-nav a,
+.ssc-bottom-nav button { -webkit-tap-highlight-color: transparent; }
+.ssc-bottom-nav a:focus-visible,
+.ssc-bottom-nav button:focus-visible { outline-offset: -3px; }
