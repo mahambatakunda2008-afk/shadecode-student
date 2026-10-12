@@ -107,3 +107,5 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [x] Timetable palette uses the blue/violet product language rather than a green-heavy subject palette; decorative emoji and duplicated duration icons removed from time controls.
 - [x] Exam Simulator surfaces tightened to shared card geometry; selected multiple-choice answers use semantic primary glow rather than cyan.
 - [ ] Build and rendered desktop/mobile QA still required. These changes remain on the redesign branch and are not released to production.
+
+- [x] Lesson reader: removed the old olive theme from subject accents, difficulty labels, the empty-state link, and tutor surface; uses the shared semantic palette while preserving subject-specific icons and lesson content.
