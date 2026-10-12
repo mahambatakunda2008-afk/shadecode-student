@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { setOnboardingComplete } from "@/lib/onboarding";
 import { Eye, EyeOff } from "lucide-react";
 import { trackEvent } from "@/lib/traction/client";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -79,10 +80,10 @@ export default function Login() {
   const inputStyle = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "13px 14px", color: "var(--foreground)", fontSize: 15, outline: "none", caretColor: "var(--primary)" };
 
   return (
-    <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: "32px 20px" }}>
-      <section style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ marginBottom: 28 }}>
-          <p style={{ color: "var(--primary)", fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase" }}>Shadecode Student</p>
+    <main className="ssc-auth-shell">
+      <section className="ssc-auth-panel">
+        <div className="ssc-auth-heading">
+          <div className="ssc-auth-brand"><BrandLockup /></div>
           <h1 style={{ fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.1, fontWeight: 800, marginTop: 8 }}>Welcome back</h1>
           <p style={{ color: "var(--muted-foreground)", marginTop: 8, fontSize: 15, lineHeight: 1.5 }}>Pick up where you left off.</p>
         </div>
