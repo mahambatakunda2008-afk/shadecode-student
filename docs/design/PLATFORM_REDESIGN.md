@@ -99,3 +99,11 @@ The initial route inventory found roughly 80 application page/layout files acros
 ## Completion standard
 
 Do not call the redesign complete after a token change or a successful build. Completion requires a screen-by-screen review, working critical student journeys, responsive and accessible behaviour, preserved integrations, and inspection of the rendered deployment.
+
+
+## Latest implementation pass
+- [x] Shared interaction pass: consistent focus visibility, semantic input focus, responsive card/form safeguards, reduced-motion handling.
+- [x] Dashboard hierarchy refinement: next action remains the focal point, supporting metrics collapse cleanly on smaller screens, and subject/focus cards receive keyboard focus treatment.
+- [x] Timetable palette uses the blue/violet product language rather than a green-heavy subject palette; decorative emoji and duplicated duration icons removed from time controls.
+- [x] Exam Simulator surfaces tightened to shared card geometry; selected multiple-choice answers use semantic primary glow rather than cyan.
+- [ ] Build and rendered desktop/mobile QA still required. These changes remain on the redesign branch and are not released to production.

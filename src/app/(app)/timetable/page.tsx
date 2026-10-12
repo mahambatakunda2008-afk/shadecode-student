@@ -28,10 +28,10 @@ const SUBJECT_COLORS = [
 ];
 
 const DURATION_PRESETS = [
-  { label: "25m", value: "25", icon: "25" },
-  { label: "45m", value: "45", icon: "45" },
-  { label: "60m", value: "60", icon: "60" },
-  { label: "90m", value: "90", icon: "90" },
+  { label: "25m", value: "25" },
+  { label: "45m", value: "45" },
+  { label: "60m", value: "60" },
+  { label: "90m", value: "90" },
 ];
 
 const BREAK_PRESETS = [
@@ -42,7 +42,7 @@ const BREAK_PRESETS = [
 ];
 
 const TIME_PRESETS = [
-  { label: "🌅 Early", value: "06:00" },
+  { label: "Early", value: "06:00" },
   { label: "Morning", value: "08:00" },
   { label: "Midday", value: "12:00" },
   { label: "Evening", value: "17:00" },
@@ -329,7 +329,7 @@ export default function Timetable() {
               color: duration === p.value ? "var(--primary)" : "var(--muted-foreground)",
               fontWeight: duration === p.value ? 700 : 400,
             }}>
-              {p.icon} {p.label}
+              {p.label}
             </button>
           ))}
           <input type="number" value={duration} onChange={e => setDuration(e.target.value)}
