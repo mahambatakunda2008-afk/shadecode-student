@@ -145,7 +145,7 @@ export function BottomNav() {
     <>
       <nav
         aria-label={experience.label + " primary navigation"}
-        className="flex w-full items-stretch border-t border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
+        className="ssc-bottom-nav flex w-full items-stretch border-t border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {leftItems.map(renderNavItem)}
@@ -158,14 +158,14 @@ export function BottomNav() {
         >
           <span
             className={cn(
-              "relative -mt-5 flex h-12 w-12 items-center justify-center rounded-[17px] border shadow-[0_10px_28px_rgba(36,91,255,0.20)] transition-transform duration-200",
+              "relative -mt-5 flex h-12 w-12 items-center justify-center rounded-[14px] border shadow-[0_4px_12px_rgba(23,32,51,0.08)] transition-colors duration-200",
               isRouteActive(pathname, dashboardItem.href)
-                ? "scale-105 border-[var(--primary)]/35 bg-[var(--brand-ink)]"
+                ? "border-[var(--primary)]/35 bg-[var(--primary-glow)]"
                 : "border-[var(--card-border)] bg-[var(--surface)]",
             )}
           >
             <span
-              className="absolute inset-0 rounded-[17px] opacity-[0.12]"
+              className="absolute inset-0 rounded-[14px] opacity-[0.08]"
               style={{ background: "var(--brand-gradient)" }}
               aria-hidden="true"
             />
