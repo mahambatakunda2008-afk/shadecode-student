@@ -14,6 +14,7 @@ import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } fr
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
+import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -231,6 +232,24 @@ export async function POST(req: Request) {
       goal: typeof goal === "string" ? goal : undefined,
       examBoard: typeof body.examBoard === "string" ? body.examBoard : undefined,
     });
+    const learnerTopicKey = normalizeLearnerTopic(effectiveSubject, request.topic);
+    const shouldRecordLearnerRequest =
+      body.generationMode !== "persist" &&
+      (body.generationMode !== "section" || Number(body.generationSectionIndex) === 0);
+    if (shouldRecordLearnerRequest) {
+      await rememberLearnerSignal(supabase, user.id, {
+        subject: effectiveSubject,
+        topic: request.topic,
+        topic_key: learnerTopicKey,
+        event_type: "request",
+        outcome: "started",
+        difficulty: validDifficulty,
+        metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
+      });
+    }
+    const learnerMemoryContext = await buildLearnerBrainContext(supabase, user.id, effectiveSubject, request.topic)
+      .catch(() => "");
+
     const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     const generationMode = body.generationMode === "section" || body.generationMode === "persist" ? body.generationMode : "complete";
     const generationLeaseId = typeof body.generationLeaseId === "string" && /^[0-9a-f-]{36}$/i.test(body.generationLeaseId)
@@ -359,6 +378,7 @@ export async function POST(req: Request) {
         savedId = inserted.id;
       }
 
+      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
       await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
 
       return NextResponse.json({
@@ -476,6 +496,7 @@ export async function POST(req: Request) {
         `Generate section ${generationSectionIndex + 1} of ${generationSectionCount} for a coherent lesson.`,
         buildResolvedLessonPrompt(request),
         buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+        learnerMemoryContext,
         `SECTION JOB: ${sectionJob}`,
         `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
         "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
@@ -516,10 +537,38 @@ Repair only the defective section. Preserve correct material where possible. Do 
         // section merely needs another schema repair. Do not burn another 16-22s
         // retrying the same dead provider chain.
         if (!rawSection) {
+          // Section mode used to exit here immediately when the provider chain
+          // was exhausted. That bypassed the curated deterministic fallback
+          // used by complete-lesson mode, leaving students with a hard failure
+          // even for topics Cortex can teach without any AI provider.
+          const deterministicFallback = buildDeterministicLessonFallback(effectiveSubject, request.topic);
+          if (deterministicFallback) {
+            const fallbackQuality = lessonQualityFailures(deterministicFallback, request).failures;
+            if (fallbackQuality.length === 0) {
+              return NextResponse.json({
+                sectionIndex: generationSectionCount - 1,
+                sectionCount: generationSectionCount,
+                title: deterministicFallback.title,
+                blocks: deterministicFallback.blocks,
+                partialBlocks: deterministicFallback.blocks,
+                complete: true,
+                deterministicFallback: true,
+                providerUnavailable: true,
+                fallbackReason: "provider_chain_exhausted",
+              });
+            }
+            console.warn("[LEARN] deterministic lesson fallback failed quality gate", {
+              topic: request.topic,
+              failures: fallbackQuality,
+            });
+          }
+
+          await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: "provider_chain_exhausted_no_verified_pack", difficulty: validDifficulty });
           return NextResponse.json({
-            error: "Cortex providers are currently unavailable. Switch to a local recovery lane or retry later.",
+            error: "Cortex providers are unavailable and no matching curated lesson is available for this topic. Your request and checkpoint are preserved.",
             retryable: false,
             providerUnavailable: true,
+            fallbackAvailable: false,
           }, { status: 503 });
         }
 
@@ -608,6 +657,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     const prompt = [
       buildResolvedLessonPrompt(request),
       buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      learnerMemoryContext,
       "\nRESUMABLE GENERATION CONTRACT",
       "This request may be resumed after an interrupted generation run. Return a complete lesson for the exact request. Do not rely on hidden prior output.",
       "For broad topics, follow the curriculum map and give every major branch substantive treatment. Do not spend the whole lesson on the first branch.",
@@ -701,6 +751,7 @@ Return only valid JSON.`;
     }
 
     if (!parsed?.blocks.length || failures.length > 0) {
+      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: failures.slice(0, 3).join(", "), difficulty: validDifficulty });
       log.lessonGenerationFailed({
         userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
         error: `Lesson pipeline exhausted: ${failures.join(" | ")}`,
@@ -750,6 +801,7 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
+    await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
     return NextResponse.json({ id: savedId, title: parsed.title, blocks: parsed.blocks, qualityScore: finalScore, subject: effectiveSubject });
   } catch (err: any) {

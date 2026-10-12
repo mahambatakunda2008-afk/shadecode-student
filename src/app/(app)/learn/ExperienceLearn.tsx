@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAcademicExperience, normalizeStudyLevel, type AcademicExperience } from "@/lib/academic/experience";
 import LearnPrefillGuard from "./LearnPrefillGuard";
+import LearnBrainStatus from "./LearnBrainStatus";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
 function ExperienceLearnIntro({ experience }: { experience: AcademicExperience }) {
@@ -64,6 +65,7 @@ export default function ExperienceLearn() {
   return (
     <main className="min-h-screen bg-[var(--background)]" data-page="learn">
       <ExperienceLearnIntro experience={experience} />
+      <LearnBrainStatus />
       <LearnPrefillGuard />
     </main>
   );
