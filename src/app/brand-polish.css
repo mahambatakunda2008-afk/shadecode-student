@@ -1,153 +1,312 @@
-/* Shadecode visual refinement layer.
- * The goal is restraint: softer geometry, quieter surfaces, deliberate brand color.
+/*
+ * Shadecode Student design system
+ * Direction: Fluent Academic Workspace, with an editorial reading surface and
+ * contextual academic tools. This file is intentionally the final global
+ * refinement layer imported after globals.css.
  */
 
 :root {
-  --shadecode-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --shadecode-radius-card: 18px;
-  --shadecode-radius-control: 12px;
-  --shadecode-border: rgba(16, 24, 40, 0.075);
-  --shadecode-border-dark: rgba(255, 255, 255, 0.075);
+  /* A calm, neutral-first interface. Blue is an action colour, not wallpaper. */
+  --brand-cyan: #4778E8;
+  --brand-blue: #3157D5;
+  --brand-royal: #3157D5;
+  --brand-violet: #6657D9;
+  --brand-magenta: #8063D9;
+  --brand-cyan-strong: #3157D5;
+  --brand-cyan-soft: #B8CAFA;
+  --brand-gradient: linear-gradient(112deg, #3157D5 0%, #4668DD 58%, #6657D9 100%);
+
+  --background: #F5F7FB;
+  --foreground: #172033;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8FC;
+  --surface-3: #E9EDF5;
+  --card: #FFFFFF;
+  --card-border: #E2E7F0;
+  --muted: #F0F3F8;
+  --muted-foreground: #65718A;
+  --primary: #3157D5;
+  --primary-hover: #2548BD;
+  --primary-foreground: #FFFFFF;
+  --primary-glow: rgba(49, 87, 213, 0.11);
+  --accent: #6657D9;
+  --accent-soft: rgba(102, 87, 217, 0.08);
+  --ring: rgba(49, 87, 213, 0.22);
+
+  --surface-raised: #FFFFFF;
+  --surface-sunken: #F5F7FB;
+  --border-subtle: #E8ECF3;
+  --border-strong: #D3DAE7;
+  --text-primary: #172033;
+  --text-secondary: #48556D;
+  --text-tertiary: #65718A;
+  --interactive-hover: #F2F5FA;
+  --interactive-pressed: #E9EEF7;
+  --focus-ring: 0 0 0 3px rgba(49, 87, 213, 0.22);
+
+  --shadecode-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --shadecode-radius-card: 14px;
+  --shadecode-radius-control: 10px;
+  --shadecode-border: #E3E8F1;
 }
 
 .dark {
-  --shadecode-border: var(--shadecode-border-dark);
+  --brand-cyan: #83A4FF;
+  --brand-blue: #83A4FF;
+  --brand-royal: #83A4FF;
+  --brand-violet: #A69AFF;
+  --brand-magenta: #B7A5FF;
+  --brand-cyan-strong: #A6BCFF;
+  --brand-cyan-soft: #D0DBFF;
+  --brand-gradient: linear-gradient(112deg, #83A4FF 0%, #9A9AFF 58%, #B7A5FF 100%);
+
+  --background: #0D111A;
+  --foreground: #EDF1F8;
+  --surface: #121824;
+  --surface-2: #171F2D;
+  --surface-3: #222D3E;
+  --card: #121824;
+  --card-border: #283346;
+  --muted: #171F2D;
+  --muted-foreground: #A0ABC0;
+  --primary: #83A4FF;
+  --primary-hover: #A0B8FF;
+  --primary-foreground: #10182A;
+  --primary-glow: rgba(131, 164, 255, 0.14);
+  --accent: #A69AFF;
+  --accent-soft: rgba(166, 154, 255, 0.12);
+  --ring: rgba(131, 164, 255, 0.28);
+
+  --surface-raised: #121824;
+  --surface-sunken: #0D111A;
+  --border-subtle: #222D3E;
+  --border-strong: #36435A;
+  --text-primary: #EDF1F8;
+  --text-secondary: #C0C9D9;
+  --text-tertiary: #A0ABC0;
+  --interactive-hover: #1A2433;
+  --interactive-pressed: #222D3E;
+  --focus-ring: 0 0 0 3px rgba(131, 164, 255, 0.27);
+  --shadecode-border: #283346;
 }
 
-/* The new mark is a smooth ribbon, so the surrounding brand treatment should be quiet. */
+/* Brand lockup: keep the mark distinctive, keep the surrounding UI quiet. */
 .shadecode-brand__mark {
-  width: 38px;
-  height: 38px;
-  filter: drop-shadow(0 5px 16px rgba(36, 91, 255, 0.12));
-  transition: transform 220ms var(--shadecode-ease), filter 220ms var(--shadecode-ease);
+  width: 36px;
+  height: 36px;
+  filter: none;
+  transition: transform 180ms var(--shadecode-ease);
 }
-
-.shadecode-brand:hover .shadecode-brand__mark {
-  transform: scale(1.035);
-  filter: drop-shadow(0 7px 20px rgba(122, 60, 255, 0.16));
-}
-
+.shadecode-brand:hover .shadecode-brand__mark { transform: translateY(-1px); }
 .shadecode-brand__name {
   font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: -0.025em;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
-
-.shadecode-brand__shade {
-  color: var(--foreground);
-}
-
+.shadecode-brand__shade { color: var(--foreground); }
 .shadecode-brand__code {
-  color: transparent;
-  background: var(--brand-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--primary);
+  background: none;
+  -webkit-text-fill-color: currentColor;
 }
-
 .shadecode-brand__product {
   margin-top: 4px;
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.22em;
-  padding-left: 0.22em;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+  padding-left: 0.19em;
+  color: var(--muted-foreground);
 }
+.shadecode-brand--compact .shadecode-brand__mark { width: 30px; height: 30px; }
+.shadecode-brand--compact .shadecode-brand__name { font-size: 14px; }
 
-.shadecode-brand--compact .shadecode-brand__mark {
-  width: 31px;
-  height: 31px;
+/* One consistent surface language across all modules. */
+.ssc-page,
+.ssc-page-full {
+  width: 100%;
+  animation: none;
 }
-
-.shadecode-brand--compact .shadecode-brand__name {
+.ssc-page {
+  max-width: 1320px;
+  padding: 30px 32px 96px;
+  gap: 24px;
+}
+.ssc-page-full { padding: 30px 32px 96px; }
+.ssc-page-header {
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 2px;
+}
+.ssc-page-header h1 {
+  font-size: clamp(28px, 2.5vw, 36px);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+.ssc-subtitle {
+  margin-top: 7px;
+  max-width: 720px;
+  color: var(--text-secondary);
   font-size: 14px;
+  line-height: 1.6;
 }
+.ssc-kicker,
+.ssc-label {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.085em;
+}
+.ssc-section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.ssc-section-title h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.025em; }
+.ssc-section-title p { color: var(--text-secondary); font-size: 13px; }
 
-/* Premium surfaces: less border, more depth, no excessive glow. */
 .ssc-card,
 .ssc-card-interactive {
-  border-color: var(--shadecode-border);
+  background: var(--surface-raised);
+  border: 1px solid var(--card-border);
   border-radius: var(--shadecode-radius-card);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035), 0 10px 34px rgba(16, 24, 40, 0.035);
+  box-shadow: 0 1px 2px rgba(20, 32, 56, 0.025);
 }
-
 .dark .ssc-card,
-.dark .ssc-card-interactive {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 16px 44px rgba(0, 0, 0, 0.16);
-}
-
+.dark .ssc-card-interactive { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14); }
+.ssc-card--quiet { box-shadow: none; }
+.ssc-card--elevated { box-shadow: 0 8px 24px rgba(20, 32, 56, 0.06); }
+.dark .ssc-card--elevated { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2); }
 .ssc-card-interactive {
-  transition: transform 220ms var(--shadecode-ease), border-color 220ms var(--shadecode-ease), box-shadow 220ms var(--shadecode-ease);
+  transition: border-color 160ms var(--shadecode-ease), background-color 160ms var(--shadecode-ease), box-shadow 160ms var(--shadecode-ease);
 }
-
 .ssc-card-interactive:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--primary) 20%, var(--shadecode-border));
-  box-shadow: 0 12px 38px rgba(16, 24, 40, 0.07);
+  transform: none;
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--card-border));
+  box-shadow: 0 4px 14px rgba(20, 32, 56, 0.045);
 }
-
-.dark .ssc-card-interactive:hover {
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
-}
+.dark .ssc-card-interactive:hover { box-shadow: 0 5px 18px rgba(0, 0, 0, 0.18); }
 
 .ssc-button,
 .ssc-button-secondary,
 .ssc-button-danger,
 .ssc-input,
-.ssc-icon-button {
-  border-radius: var(--shadecode-radius-control);
-}
-
+.ssc-icon-button { border-radius: var(--shadecode-radius-control); }
 .ssc-button {
-  box-shadow: 0 8px 24px var(--primary-glow);
-  transition: transform 180ms var(--shadecode-ease), background-color 180ms var(--shadecode-ease), box-shadow 180ms var(--shadecode-ease);
+  min-height: 42px;
+  font-weight: 650;
+  box-shadow: none;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
 }
-
-.ssc-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 28px var(--primary-glow);
+.ssc-button:hover { transform: translateY(-1px); box-shadow: none; }
+.ssc-button-secondary {
+  background: var(--surface);
+  border-color: var(--card-border);
+  color: var(--foreground);
+  box-shadow: none;
 }
-
+.ssc-button-secondary:hover { background: var(--interactive-hover); border-color: var(--border-strong); }
+.ssc-input {
+  min-height: 44px;
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.ssc-input::placeholder { color: var(--text-tertiary); opacity: 0.9; }
+.ssc-input:focus { border-color: var(--primary); box-shadow: var(--focus-ring); }
 .ssc-icon-button {
-  transition: transform 180ms var(--shadecode-ease), color 180ms var(--shadecode-ease), border-color 180ms var(--shadecode-ease), background-color 180ms var(--shadecode-ease);
+  width: 38px;
+  height: 38px;
+  background: var(--surface);
+  border-color: var(--card-border);
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
-
 .ssc-icon-button:hover {
-  transform: translateY(-1px);
+  transform: none;
+  background: var(--interactive-hover);
+  border-color: var(--border-strong);
 }
+.ssc-button:focus-visible,
+.ssc-icon-button:focus-visible,
+.ssc-card-interactive:focus-visible { box-shadow: var(--focus-ring); }
 
-/* Brand accents should read as highlights, not paint the whole interface cyan. */
-.ssc-brand-glow {
-  box-shadow: 0 0 0 1px rgba(36, 91, 255, 0.055), 0 12px 42px rgba(36, 91, 255, 0.055);
+.ssc-divider { border-color: var(--border-subtle); }
+.ssc-status { font-weight: 650; }
+.ssc-brand-glow { box-shadow: 0 0 0 1px rgba(49, 87, 213, 0.05), 0 8px 28px rgba(49, 87, 213, 0.045); }
+.ssc-brand-rule { background: var(--brand-gradient); opacity: 0.22; }
+
+/* Navigation is a stable workspace frame, not a stack of competing cards. */
+.ssc-sidebar {
+  background: var(--surface);
+  border-right-color: var(--border-subtle);
 }
-
-.ssc-brand-rule {
-  opacity: 0.30;
+.ssc-sidebar > div:first-child {
+  min-height: 66px;
+  padding: 17px 18px;
 }
-
-@media (max-width: 767px) {
-  .shadecode-brand__mark { width: 34px; height: 34px; }
+.ssc-sidebar nav {
+  padding: 14px 12px;
+  gap: 22px;
+  scrollbar-width: thin;
 }
-
-
-/* Feature icon suite: the same cyan-to-violet language as the official app icon. */
-.shadecode-feature-icon__glyph {
-  filter: drop-shadow(0 3px 8px rgba(36, 91, 255, 0.16));
-  transition: filter 180ms var(--shadecode-ease), transform 180ms var(--shadecode-ease);
+.ssc-sidebar nav > div > p {
+  padding-left: 11px;
+  margin-bottom: 7px;
+  font-size: 10px;
+  letter-spacing: 0.11em;
 }
+.ssc-sidebar nav a {
+  min-height: 42px;
+  border-radius: 9px;
+  padding: 6px 10px;
+  gap: 10px;
+  transition: background-color 130ms ease, color 130ms ease;
+}
+.ssc-sidebar nav a:hover { background: var(--interactive-hover); }
+.ssc-sidebar nav a .h-8.w-8 {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.ssc-sidebar nav a .h-8.w-8 svg { width: 17px; height: 17px; }
+.ssc-sidebar nav a > div > span:not(.h-8) {
+  font-size: 13px;
+  letter-spacing: -0.005em;
+}
+.ssc-sidebar > div:last-child {
+  padding: 12px 12px 16px;
+  background: var(--surface);
+  border-top-color: var(--border-subtle);
+}
+.ssc-sidebar > div:last-child a,
+.ssc-sidebar > div:last-child button { min-height: 40px; border-radius: 9px; }
+.ssc-sidebar > div:last-child a:hover,
+.ssc-sidebar > div:last-child button:hover { background: var(--interactive-hover); }
+.ssc-sidebar .rounded-xl.border { border-color: var(--border-subtle); border-radius: 12px; }
 
+/* Avoid oversized, decorative motion. Motion is feedback, not furniture. */
+.shadecode-feature-icon__glyph { filter: none; transition: color 140ms ease, transform 140ms ease; }
 .shadecode-feature-icon:hover .shadecode-feature-icon__glyph,
-a:hover .shadecode-feature-icon__glyph {
-  filter: drop-shadow(0 4px 11px rgba(122, 60, 255, 0.24));
-}
+a:hover .shadecode-feature-icon__glyph { filter: none; }
+.ssc-interactive,
+.ssc-card-interactive { -webkit-tap-highlight-color: transparent; }
 
-.dark .shadecode-feature-icon {
-  border-color: color-mix(in srgb, var(--brand-blue) 52%, transparent);
+@media (max-width: 1023px) {
+  .ssc-page { padding: 26px 24px 96px; }
+  .ssc-page-full { padding: 26px 24px 96px; }
 }
-
+@media (max-width: 767px) {
+  .ssc-page,
+  .ssc-page-full { padding: 20px 16px 100px; gap: 18px; }
+  .ssc-page-header { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .ssc-page-header h1 { font-size: 28px; }
+  .ssc-subtitle { font-size: 14px; }
+  .shadecode-brand__mark { width: 32px; height: 32px; }
+  .ssc-card,
+  .ssc-card-interactive { border-radius: 12px; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .shadecode-feature-icon__glyph {
-    transition: none;
-  }
+  .shadecode-brand__mark,
+  .ssc-card-interactive,
+  .ssc-button,
+  .ssc-icon-button,
+  .shadecode-feature-icon__glyph { transition: none; }
 }
