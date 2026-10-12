@@ -179,9 +179,10 @@ export default function PastPapersPage() {
   const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
 
   return (
-    <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+    <main className="ssc-page min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-5">
+        <header className="ssc-page-header mb-6"><p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">Exam Hub</p><h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">Past papers</h1><p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Find a paper by exam board, level, subject, session and year, or search the library directly.</p></header>
+        <div className="relative mb-5">
           <Search size={16} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
           <input
             value={searchInput}
@@ -320,7 +321,7 @@ export default function PastPapersPage() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 

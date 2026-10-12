@@ -126,8 +126,8 @@ Use only evidence present in the question. Explain the key concept, likely metho
   }, [fetchQuestions]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-6">
+    <main className="ssc-page mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
+      <header className="ssc-page-header mb-6">
         <Link href="/exam-hub" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           ← Exam Hub
         </Link>
@@ -135,9 +135,9 @@ Use only evidence present in the question. Explain the key concept, likely metho
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Search extracted questions from the paper library, then ask Cortex for evidence-grounded help.
         </p>
-      </div>
+      </header>
 
-      <form onSubmit={load} className="mb-6 grid gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 sm:grid-cols-[1fr_180px_auto]">
+      <form onSubmit={load} className="mb-6 grid gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
