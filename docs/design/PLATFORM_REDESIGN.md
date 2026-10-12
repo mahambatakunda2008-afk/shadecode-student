@@ -1,0 +1,97 @@
+# Shadecode Student platform-wide redesign
+
+## Design direction
+
+Use **Fluent Academic Workspace** as the foundation, borrowing the reading clarity of an editorial study product and the contextual awareness of an academic command centre.
+
+The interface is neutral-first. Blue is reserved for primary actions, selected states, focus, and navigation. Violet is a secondary brand accent. Green remains semantic feedback for genuine success or completion, not a dominant decorative theme.
+
+## Non-negotiable product principles
+
+- Redesign the complete product, not only Learn or the dashboard.
+- Preserve Supabase data, authentication, APIs, Cortex routing, lesson recovery, examination flows, offline storage, and existing user work.
+- No mock data in place of real integrations, invented analytics, or fake progress.
+- Primary actions must be visible near the decision or input they act on.
+- Each screen should make its location, available action, and useful next step clear.
+- Responsive behaviour, keyboard access, contrast, loading, empty, success, error, offline, and recovery states are part of the design.
+- Review changes in a branch and validate the rendered application before merging.
+
+## Repository surface discovered
+
+The initial route inventory found roughly 80 application page/layout files across the following areas. This is a working inventory, not a claim that every screen has been fully redesigned.
+
+### Public and account entry
+- Marketing landing page and download page
+- Login, sign-up, verification, password recovery, and password reset
+- Onboarding and setup
+- Offline, share, sync, and result/challenge routes
+
+### Student workspace
+- Dashboard and academic discovery
+- Learn, lesson reader, quiz, lesson history, and paper learning
+- Curriculum, subjects, study, revision, study plan, tasks, focus, and timetable
+- Exam Hub, papers, question sets, saved papers, weak topics, contributions, and source pages
+- Exam simulation and challenge workflows
+- Workmate/Math Checker, Cortex, verification, Code Lab, Comp Lab, and projects
+- Analytics, insights, achievements, leaderboard, careers, WhatsApp, and settings
+
+### Administration
+- Admin dashboard, analytics, AI usage, traction, careers, and feedback
+- Exam Hub boards, questions, upload, moderation, and management
+- Dedicated admin navigation and responsive navigation
+
+### Shared product foundation
+- Global styles and theme tokens
+- Brand lockup and feature icon system
+- Desktop sidebar, mobile navigation, admin navigation, shared shell
+- Offline status, route guards, feedback, achievement notifications, Cortex command bar, and generation indicators
+
+### Native application
+- Inspect the Android/native application separately for parity, navigation, typography, controls, and responsive behaviour. Web styling must not be assumed to redesign native screens.
+
+## Initial implementation findings
+
+1. The global styles and the final brand refinement stylesheet contained overlapping visual overrides. The refinement layer has been consolidated into one neutral-first token and component system.
+2. The public layout forced white text across public routes even when the background was light. It now uses the semantic foreground token.
+3. Login and sign-up now use a shared responsive authentication surface and the actual Shadecode brand lockup.
+4. The authenticated desktop sidebar has been widened from 240px to 256px to reduce cramped navigation labels.
+5. Learn used a separate olive/green palette hard-coded throughout its main workspace. Those styles now use shared semantic tokens and a restrained blue/violet identity.
+6. Learn's primary “Start learning” action now appears directly beneath the topic field rather than after the teaching-style cards. The default teaching mode remains available; students can still customise it.
+
+## Redesign phases
+
+### Phase 1: Shared foundation
+- [x] Create a dedicated redesign branch.
+- [x] Establish neutral-first design tokens and consistent shared components.
+- [x] Correct public route foreground semantics.
+- [x] Apply a shared authentication surface to login and sign-up.
+- [x] Reduce cramped desktop navigation.
+- [x] Replace Learn's hard-coded green theme and move the primary action next to the topic input.
+- [ ] Verify the branch in a real rendered preview and fix any regressions.
+
+### Phase 2: Core student journeys
+- [ ] Dashboard: priorities, data hierarchy, next action, progress, and responsive layout.
+- [ ] Learn: discovery, topic entry, generation states, library, lesson reader, quiz, and recovery.
+- [ ] Exam Hub: discovery, paper/question flows, saved work, and weak-topic routes.
+- [ ] Exam Simulator: distraction-free answering, timer, navigation, marking, results, and review.
+- [ ] Cortex and Workmate: contextual assistance, input hierarchy, recovery, and meaningful status.
+- [ ] Study plan, tasks, focus, timetable, progress, achievements, and leaderboard.
+
+### Phase 3: Full-product parity
+- [ ] Authentication edge states, onboarding steps, settings, account controls, and public landing page.
+- [ ] Administration screens and workflows.
+- [ ] Remaining specialist routes and secondary screens discovered in the repository.
+- [ ] Native Android experience audit and applicable redesign.
+
+### Phase 4: Quality assurance
+- [ ] TypeScript and production build.
+- [ ] Critical navigation and workflow checks.
+- [ ] Responsive desktop, tablet, and mobile checks.
+- [ ] Keyboard and focus checks, contrast review, and reduced-motion behaviour.
+- [ ] Loading, empty, failure, offline, and recovery-state checks.
+- [ ] Confirm existing backend integrations and user data remain intact.
+- [ ] Inspect the actual deployed preview before merging.
+
+## Completion standard
+
+Do not call the redesign complete after a token change or a successful build. Completion requires a screen-by-screen review, working critical student journeys, responsive and accessible behaviour, preserved integrations, and inspection of the rendered deployment.
