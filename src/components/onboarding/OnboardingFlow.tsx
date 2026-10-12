@@ -63,11 +63,11 @@ export function OnboardingFlow() {
   const common = { data: formData, onUpdate: update };
   return (
     <main className="dark ssc-onboarding-shell">
-      <div style={{ width: '100%', maxWidth: 520, margin: '0 auto' }}>
+      <div style={{ width: '100%', maxWidth: 560, margin: '0 auto' }}>
         <header style={{ marginBottom: 28 }}>
           <div className="ssc-onboarding-brand"><BrandLockup /></div>
-          <h1 style={{ fontSize: 'clamp(27px, 6vw, 36px)', lineHeight: 1.08, fontWeight: 750, letterSpacing: '-.035em', color: '#F5F7FA' }}>Let&apos;s build your starting point.</h1>
-          <p style={{ color: '#AAB2BF', marginTop: 9, fontSize: 14, lineHeight: 1.55, maxWidth: 430 }}>A few useful choices. No questionnaire marathon. Your answers shape what you see next.</p>
+          <h1 style={{ fontSize: 'clamp(27px, 6vw, 36px)', lineHeight: 1.08, fontWeight: 750, letterSpacing: '-.035em', color: 'var(--foreground)' }}>Let&apos;s build your starting point.</h1>
+          <p style={{ color: 'var(--muted-foreground)', marginTop: 9, fontSize: 14, lineHeight: 1.55, maxWidth: 430 }}>A few useful choices. No questionnaire marathon. Your answers shape what you see next.</p>
         </header>
 
         <OnboardingProgress currentStep={step} totalSteps={TOTAL} labels={STEP_LABELS} />
@@ -77,7 +77,7 @@ export function OnboardingFlow() {
           {step === 2 && <AcademicContextStep {...common} onNext={next} onBack={back} />}
           {step === 3 && <SubjectsStep {...common} onNext={next} onBack={back} />}
           {step === 4 && <StepGoalSelection {...common} onNext={next} onBack={back} />}
-          {step === 5 && <><ConfirmStep {...common} onNext={next} onBack={back} onSubmit={handleSubmit} isSubmitting={isSubmitting} error={submitError} />{recommendations && <div style={{ marginTop: 14, padding: 14, borderRadius: 12, background: 'rgba(34,211,238,.07)', border: '1px solid rgba(34,211,238,.18)' }}><div style={{ fontSize: 12, fontWeight: 700, color: '#67E8F9', marginBottom: 5 }}>Your starting point</div>{recommendations.suggestedCourse?.title && <div className="ssc-onboarding-recommendations__title">{recommendations.suggestedCourse.title}</div>}{recommendations.firstLesson?.title && <div className="ssc-onboarding-recommendations__detail">First up: {recommendations.firstLesson.title}</div>}</div>}</>}
+          {step === 5 && <><ConfirmStep {...common} onNext={next} onBack={back} onSubmit={handleSubmit} isSubmitting={isSubmitting} error={submitError} />{recommendations && <div className="ssc-onboarding-recommendations"><div className="ssc-onboarding-recommendations__label">Your starting point</div>{recommendations.suggestedCourse?.title && <div className="ssc-onboarding-recommendations__title">{recommendations.suggestedCourse.title}</div>}{recommendations.firstLesson?.title && <div className="ssc-onboarding-recommendations__detail">First up: {recommendations.firstLesson.title}</div>}</div>}</>}
         </section>
       </div>
     </main>
