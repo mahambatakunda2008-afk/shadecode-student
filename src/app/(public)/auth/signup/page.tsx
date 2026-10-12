@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { trackEvent } from "@/lib/traction/client";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 export default function SignUp() {
   const [name, setName] = useState("");
@@ -69,10 +70,10 @@ export default function SignUp() {
   };
 
   return (
-    <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: "32px 20px" }}>
-      <section style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ marginBottom: 28 }}>
-          <p style={{ color: "var(--primary)", fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase" }}>Shadecode Student</p>
+    <main className="ssc-auth-shell">
+      <section className="ssc-auth-panel">
+        <div className="ssc-auth-heading">
+          <div className="ssc-auth-brand"><BrandLockup /></div>
           <h1 style={{ fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.1, fontWeight: 800, marginTop: 8 }}>Create your account</h1>
           <p style={{ color: "var(--muted-foreground)", marginTop: 8, fontSize: 15, lineHeight: 1.5 }}>We&apos;ll use this to build your learning experience.</p>
         </div>
