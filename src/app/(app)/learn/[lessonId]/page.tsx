@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import katex from "katex";
@@ -27,22 +27,22 @@ type Lesson = {
 type Theme = { hex: string; bg: string; border: string; text: string; icon: React.ComponentType<{ size?: number; color?: string }> };
 
 const THEMES: Record<string, Theme> = {
-  Mathematics: { hex: "#8b5cf6", bg: "rgba(139,92,246,.14)", border: "rgba(139,92,246,.28)", text: "#c4b5fd", icon: Calculator },
-  Physics: { hex: "#3b82f6", bg: "rgba(59,130,246,.14)", border: "rgba(59,130,246,.28)", text: "#93c5fd", icon: Zap },
-  Biology: { hex: "#10b981", bg: "rgba(16,185,129,.14)", border: "rgba(16,185,129,.28)", text: "#6ee7b7", icon: Dna },
-  History: { hex: "#f59e0b", bg: "rgba(245,158,11,.14)", border: "rgba(245,158,11,.28)", text: "#fcd34d", icon: Globe },
-  Chemistry: { hex: "#06b6d4", bg: "rgba(6,182,212,.14)", border: "rgba(6,182,212,.28)", text: "#67e8f9", icon: FlaskConical },
-  Geography: { hex: "#14b8a6", bg: "rgba(20,184,166,.14)", border: "rgba(20,184,166,.28)", text: "#5eead4", icon: Globe },
-  "Computer Science": { hex: "#6366f1", bg: "rgba(99,102,241,.14)", border: "rgba(99,102,241,.28)", text: "#a5b4fc", icon: Code2 },
-  Psychology: { hex: "#ec4899", bg: "rgba(236,72,153,.14)", border: "rgba(236,72,153,.28)", text: "#f9a8d4", icon: Brain },
-  Economics: { hex: "#22c55e", bg: "rgba(34,197,94,.14)", border: "rgba(34,197,94,.28)", text: "#86efac", icon: TrendingUp },
-  Languages: { hex: "#f43f5e", bg: "rgba(244,63,94,.14)", border: "rgba(244,63,94,.28)", text: "#fda4af", icon: Languages },
-  Music: { hex: "#a855f7", bg: "rgba(168,85,247,.14)", border: "rgba(168,85,247,.28)", text: "#d8b4fe", icon: Music },
-  Art: { hex: "#f97316", bg: "rgba(249,115,22,.14)", border: "rgba(249,115,22,.28)", text: "#fdba74", icon: Palette },
-  default: { hex: "#64748b", bg: "rgba(100,116,139,.14)", border: "rgba(100,116,139,.28)", text: "#94a3b8", icon: BookOpen },
+  Mathematics: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Calculator },
+  Physics: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Zap },
+  Biology: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Dna },
+  History: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Globe },
+  Chemistry: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: FlaskConical },
+  Geography: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Globe },
+  "Computer Science": { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Code2 },
+  Psychology: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Brain },
+  Economics: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: TrendingUp },
+  Languages: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Languages },
+  Music: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Music },
+  Art: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Palette },
+  default: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: BookOpen },
 };
 const DIFF: Record<string, { label: string; text: string }> = {
-  easy: { label: "Guided", text: "#6ee7b7" }, medium: { label: "Standard", text: "#93c5fd" }, hard: { label: "Challenge", text: "#c4b5fd" },
+  easy: { label: "Guided", text: "#c4dc87" }, medium: { label: "Standard", text: "#b8c9a0" }, hard: { label: "Challenge", text: "#e5d6a6" },
 };
 const FLOW = new Set(["objective", "map", "prior", "concept", "definition", "structure", "mechanism", "formula", "math", "example", "exam", "summary", "application", "comparison", "synthesis", "curiosity", "practice", "next"]);
 const LABELS: Record<string, string> = {
@@ -156,11 +156,11 @@ function renderStructured(content: string, type: string): ReactNode {
   return <div className="lesson-points plain-points">{plain.map((line, i) => <div key={i}>{inline(line, `p-${i}`)}</div>)}</div>;
 }
 
-function LessonUnit({ block, number }: { block: LessonBlock; number: number }) {
+function LessonUnit({ block, number, id }: { block: LessonBlock; number: number; id: string }) {
   const heading = block.title?.trim() || LABELS[block.type] || "Lesson section";
   return (
-    <section className="lesson-unit">
-      <div className="unit-kicker"><span>{String(number).padStart(2, "0")}</span><span>{heading}</span></div>
+    <section className="lesson-unit" id={id} tabIndex={-1} aria-labelledby={`${id}-title`}>
+      <div className="unit-kicker"><span>{String(number).padStart(2, "0")}</span><span id={`${id}-title`}>{heading}</span></div>
       <div className="unit-body">{renderStructured(block.content, block.type)}</div>
     </section>
   );
@@ -192,6 +192,8 @@ export default function LessonDetailPage() {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [understanding, setUnderstanding] = useState<"explain" | "apply" | "review" | null>(null);
+  const [activeSection, setActiveSection] = useState(0);
+  const restoredScrollRef = useRef(false);
   const narration = useLessonNarration(lesson?.blocks ?? []);
 
   const loadLesson = async (token: string) => {
@@ -234,12 +236,28 @@ export default function LessonDetailPage() {
 
   useEffect(() => {
     if (!lesson) return;
+    if (!restoredScrollRef.current) {
+      restoredScrollRef.current = true;
+      try {
+        const savedPosition = Number(localStorage.getItem(`lesson_scroll_${lessonId}`) ?? 0);
+        if (Number.isFinite(savedPosition) && savedPosition > 0) {
+          requestAnimationFrame(() => window.scrollTo({ top: savedPosition, behavior: "instant" }));
+        }
+      } catch {}
+    }
     try {
       const saved = localStorage.getItem(`lesson_understanding_${lessonId}`);
       if (saved === "explain" || saved === "apply" || saved === "review") setUnderstanding(saved);
     } catch {}
     const onScroll = () => {
       localStorage.setItem(`lesson_scroll_${lessonId}`, String(window.scrollY));
+      const sections = Array.from(document.querySelectorAll<HTMLElement>(".lesson-unit[id]"));
+      let nearest = 0;
+      for (let index = 0; index < sections.length; index += 1) {
+        if (sections[index].getBoundingClientRect().top <= 180) nearest = index;
+        else break;
+      }
+      setActiveSection(nearest);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -276,6 +294,7 @@ export default function LessonDetailPage() {
   const t = theme(lesson.subject); const Icon = t.icon; const d = DIFF[lesson.difficulty] ?? DIFF.medium;
   const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
   const coreBlocks = blocks.filter(block => FLOW.has(block.type));
+  const readingMinutes = Math.max(1, Math.ceil(blocks.reduce((total, block) => total + block.content.split(/\s+/).filter(Boolean).length, 0) / 220));
   const completedUnits = Math.min(coreBlocks.length, Math.max(0, Math.round((lesson.progress / 100) * coreBlocks.length)));
   const progressLabel = lesson.completed ? "Complete" : coreBlocks.length ? `${completedUnits} of ${coreBlocks.length} sections` : "Ready to study";
   let unitNumber = 0;
@@ -295,7 +314,17 @@ export default function LessonDetailPage() {
         .lesson-title{font-size:clamp(25px,4vw,34px);line-height:1.13;letter-spacing:-.025em;margin:0 0 10px;font-weight:850}
         .lesson-desc{font-size:14px;line-height:1.65;color:var(--muted-foreground);margin:0 0 18px;max-width:680px}
         .progress-label{display:flex;justify-content:space-between;color:var(--muted-foreground);font-size:11px;margin-bottom:6px}.progress-track{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:var(--lesson-accent);border-radius:99px}
-        .lesson-content{display:flex;flex-direction:column}
+        .lesson-layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:34px;align-items:start}
+        .lesson-toc{position:sticky;top:22px;border:1px solid var(--border-subtle);background:var(--surface-raised);border-radius:16px;padding:14px 10px}
+        .lesson-toc-label{font-size:10px;font-weight:850;letter-spacing:.13em;text-transform:uppercase;color:var(--muted-foreground);padding:0 8px 10px}
+        .lesson-toc-list{display:flex;flex-direction:column;gap:3px}
+        .lesson-toc-item{width:100%;display:grid;grid-template-columns:22px minmax(0,1fr);gap:7px;align-items:start;text-align:left;padding:8px;border:0;border-radius:9px;background:transparent;color:var(--muted-foreground);font-size:11px;line-height:1.4;cursor:pointer}
+        .lesson-toc-item:hover{background:var(--interactive-hover);color:var(--foreground)}
+        .lesson-toc-item[aria-current="location"]{background:var(--lesson-soft);color:var(--foreground);font-weight:800}
+        .lesson-toc-num{font-variant-numeric:tabular-nums;color:var(--lesson-accent);font-weight:850}
+        .lesson-content{display:flex;flex-direction:column;min-width:0}
+        .lesson-reading-meta{display:flex;align-items:center;gap:8px;margin:-12px 0 20px;color:var(--muted-foreground);font-size:11px}
+        .lesson-reading-dot{width:3px;height:3px;border-radius:50%;background:var(--muted-foreground)}
         .lesson-unit{padding:0 0 30px;margin:0 0 30px;border-bottom:1px solid var(--card-border)}
         .unit-kicker{display:flex;align-items:center;gap:11px;color:var(--muted-foreground);font-size:12px;font-weight:800;letter-spacing:.035em;text-transform:uppercase;margin-bottom:13px}.unit-kicker span:first-child{color:var(--lesson-accent);font-variant-numeric:tabular-nums}.unit-kicker span:last-child{color:var(--foreground)}
         .unit-body{font-size:15px;line-height:1.65;max-width:740px}
@@ -305,8 +334,8 @@ export default function LessonDetailPage() {
         .lesson-aside{margin:0 0 25px 14px;padding:13px 0 13px 16px;border-left:2px solid}.aside-title{font-size:12px;font-weight:850;display:flex;gap:8px;align-items:center;margin-bottom:7px}.aside-body{color:var(--muted-foreground);font-size:14px;line-height:1.65}
         .lesson-loop{margin:6px 0 18px;padding:18px;border:1px solid var(--border-subtle);border-radius:16px;background:var(--surface-raised)}.lesson-loop-head{display:flex;align-items:flex-start;gap:11px}.lesson-loop-icon{width:34px;height:34px;border-radius:10px;background:var(--lesson-soft);color:var(--lesson-accent);display:grid;place-items:center;flex:0 0 auto}.lesson-loop-title{font-size:14px;font-weight:800;margin:0}.lesson-loop-copy{font-size:12px;line-height:1.5;color:var(--muted-foreground);margin:3px 0 0}.lesson-loop-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}.lesson-loop-option{min-height:64px;text-align:left;border:1px solid var(--card-border);border-radius:12px;background:var(--surface);padding:10px 11px;color:var(--foreground);cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-loop-option:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-loop-option:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-loop-option.selected{border-color:var(--lesson-accent);background:var(--lesson-soft)}.lesson-loop-option strong{display:block;font-size:12px}.lesson-loop-option span{display:block;margin-top:3px;font-size:11px;line-height:1.4;color:var(--muted-foreground)}.lesson-loop-next{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--muted-foreground)}.lesson-loop-next a{color:var(--lesson-accent);font-weight:800;text-decoration:none}.lesson-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:4px}.lesson-action{min-height:48px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--surface);color:var(--foreground);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;padding:8px;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-action:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-action:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-action.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}.lesson-action.quiz{background:var(--surface-raised);border-color:var(--primary);color:var(--primary)}.lesson-action:disabled{opacity:.55;cursor:not-allowed}
         .lesson-note{text-align:center;color:var(--muted-foreground);font-size:11px;margin-top:8px}.lesson-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;background:var(--card);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:12px 16px;color:#34d399;font-size:13px;font-weight:750;box-shadow:0 12px 40px rgba(0,0,0,.35)}
-        .lesson-loading,.lesson-error{min-height:70vh;background:var(--background);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted-foreground);padding:24px}.lesson-error a,.lesson-error button{margin:0 6px;color:#a78bfa;background:none;border:0;cursor:pointer;text-decoration:none;font-size:13px}.spinner{width:34px;height:34px;border-radius:50%;border:2px solid var(--card-border);border-top-color:#8b5cf6;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-loop-options{grid-template-columns:1fr}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
+        .lesson-loading,.lesson-error{min-height:70vh;background:var(--background);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted-foreground);padding:24px}.lesson-error a,.lesson-error button{margin:0 6px;color:#c4dc87;background:none;border:0;cursor:pointer;text-decoration:none;font-size:13px}.spinner{width:34px;height:34px;border-radius:50%;border:2px solid var(--card-border);border-top-color:#718c53;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+        @media(max-width:820px){.lesson-layout{grid-template-columns:1fr;gap:8px}.lesson-toc{position:static;padding:10px 12px;margin-bottom:18px}.lesson-toc-label{padding-bottom:7px}.lesson-toc-list{flex-direction:row;overflow-x:auto;padding-bottom:2px}.lesson-toc-item{min-width:140px;max-width:210px;border:1px solid var(--border-subtle);background:var(--surface);grid-template-columns:20px minmax(0,1fr)}}\n        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-loop-options{grid-template-columns:1fr}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
       `}</style>
 
       {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
@@ -320,6 +349,7 @@ export default function LessonDetailPage() {
               <span className="lesson-subject"><Icon size={15} color={t.text} />{lesson.subject}</span>
               <span>·</span><span className="lesson-badge">{d.label}</span>
               {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={11} style={{ verticalAlign: "-1px" }} /> Completed</span>}
+              {lesson.description?.startsWith("Curated curriculum recovery lesson") && <span className="lesson-badge" title="Authored curriculum material used as a recovery path"><BookOpen size={11} style={{ verticalAlign: "-1px" }} /> Curated recovery</span>}
             </div>
             <h1 className="lesson-title">{lesson.title}</h1>
             {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
@@ -328,8 +358,21 @@ export default function LessonDetailPage() {
           </div>
         </header>
 
-        {blocks.length ? <div className="lesson-content">
-          {blocks.map((block, i) => FLOW.has(block.type) ? <LessonUnit key={i} block={block} number={++unitNumber} /> : <AsideUnit key={i} block={block} />)}
+        {blocks.length ? <div className="lesson-layout">
+          <nav className="lesson-toc" aria-label="In this lesson">
+            <p className="lesson-toc-label">In this lesson</p>
+            <div className="lesson-toc-list">
+              {coreBlocks.map((block, index) => {
+                const title = block.title?.trim() || LABELS[block.type] || "Lesson section";
+                return <button key={index} type="button" className="lesson-toc-item" aria-current={activeSection === index ? "location" : undefined} onClick={() => { setActiveSection(index); document.getElementById(`lesson-section-${blocks.indexOf(block)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+                  <span className="lesson-toc-num">{String(index + 1).padStart(2, "0")}</span><span>{title}</span>
+                </button>;
+              })}
+            </div>
+          </nav>
+          <div className="lesson-content">
+            <div className="lesson-reading-meta"><Clock size={12} />{readingMinutes} min read<span className="lesson-reading-dot" />{coreBlocks.length} sections<span className="lesson-reading-dot" />{progressLabel}</div>
+            {blocks.map((block, i) => FLOW.has(block.type) ? <LessonUnit key={i} id={`lesson-section-${i}`} block={block} number={++unitNumber} /> : <AsideUnit key={i} block={block} />)}
 
           <section className="lesson-loop" aria-labelledby="learning-check-title">
             <div className="lesson-loop-head">
@@ -364,7 +407,8 @@ export default function LessonDetailPage() {
             {narration.speechSupported && <button className="lesson-action" onClick={narration.status === "idle" ? narration.start : narration.stop}>{narration.status === "speaking" ? <><Pause size={16} />Reading {narration.currentIndex + 1}/{narration.totalSegments}</> : narration.status === "listening" ? <><Mic size={16} />Listening…</> : <><Headphones size={16} />Listen</>}</button>}
           </div>
           {narration.status !== "idle" && narration.voiceCommandsSupported && <p className="lesson-note">Say “next”, “repeat”, or “pause” between sections.</p>}
-        </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "#a78bfa" }}>Generate a new lesson</Link></div>}
+          </div>
+        </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "#c4dc87" }}>Generate a new lesson</Link></div>}
 
         {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={11} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
       </main>

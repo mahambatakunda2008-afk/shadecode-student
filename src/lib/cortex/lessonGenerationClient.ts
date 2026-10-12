@@ -10,10 +10,11 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { getDurableGenerationJob, listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
-import { generateBrowserLocal, getBrowserLocalModelStatus } from "@/lib/cortex/localModel";
+import { generateBrowserLocal, getBrowserLocalModelStatus, subscribeBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
+import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
@@ -92,8 +93,28 @@ function localContext(job: GenerationJob<LessonGenerationInput>) {
   const memory = buildLocalLearnerContext(readLocalLearnerMemory());
   return `${cachedGrounding ? `\n\n${cachedGrounding}` : ""}${curriculum ? `\n\n${curriculum}` : ""}\n\n${memory}`;
 }
+
+async function readCrossDeviceLearnerMemory(token: string, subject: string, topic: string): Promise<string> {
+  if (!token || !isBrowser() || !navigator.onLine) return "";
+  try {
+    const params = new URLSearchParams({ subject, topic });
+    const response = await fetch(`/api/learn/memory?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!response.ok) return "";
+    const data = await response.json().catch(() => ({}));
+    return typeof data.context === "string" ? data.context.slice(0, 1800) : "";
+  } catch {
+    return "";
+  }
+}
 function validateResult(result: LessonGenerationResult, request: ReturnType<typeof resolveLessonRequest>) {
   const normalized = normalizeLessonBlocks(result.blocks);
+  // A server-selected curated curriculum lesson has already passed exact subject/topic
+  // matching. Do not apply AI-generation depth heuristics to it: those heuristics require
+  // extra checkpoints/continuation blocks and used to discard valid recovery lessons.
+  if (result.offlineFallback) return { ...result, blocks: normalized };
   const quality = lessonQualityFailures({ title: result.title, blocks: normalized.map((block) => ({ type: String(block.type), title: typeof block.title === "string" ? block.title : undefined, content: String(block.content ?? "") })) }, request);
   if (quality.failures.length) {
     console.info("[LEARN] lesson rejected by client quality gate", { failures: quality.failures, topic: request.topic });
@@ -109,7 +130,7 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   if (!validated) throw new Error("Generated lesson failed the learning-quality checks.");
   const result: LessonGenerationResult = { id: validated.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}` : `Offline curriculum lesson for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
+  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: generated?.offlineFallback ? `Curated curriculum recovery lesson on ${job.request.prompt}. This lesson uses authored material while AI generation is unavailable.` : generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}` : `Offline curriculum lesson for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: now, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
@@ -154,6 +175,33 @@ function parseLocalModelSection(raw: string): { title?: string; blocks: Array<Re
   }
 }
 
+async function generateWithVisibleLocalModelProgress(
+  job: GenerationJob<LessonGenerationInput>,
+  prompt: string,
+  options: { maxTokens: number; json: boolean },
+): Promise<string> {
+  const unsubscribe = subscribeBrowserLocalModelStatus((status, progress) => {
+    if (status !== "loading") return;
+    const current = getGenerationJob(job.id);
+    const visibleProgress = Math.max(
+      current?.progress ?? 15,
+      Math.min(36, 18 + Math.round(progress * 0.18)),
+    );
+    updateGenerationJob(job.id, {
+      status: "generating",
+      progress: visibleProgress,
+      error: progress < 100
+        ? `Cortex is preparing its on-device model (${Math.round(progress)}%). The first model download may take time; this is local setup, not another cloud-provider retry.`
+        : "Cortex is preparing on-device inference.",
+    });
+  });
+  try {
+    return await generateBrowserLocal(prompt, undefined, options);
+  } finally {
+    unsubscribe();
+  }
+}
+
 async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: string, persistProgress = true): Promise<LessonGenerationResult | null> {
   if (!isBrowser()) return null;
 
@@ -174,6 +222,8 @@ async function tryLocalModel(job: GenerationJob<LessonGenerationInput>, token: s
 
   const context = localContext(job);
   const resolved = buildResolvedLessonPrompt(request);
+  const crossDeviceMemory = await readCrossDeviceLearnerMemory(token, job.request.subject, request.topic);
+  const learnerContext = [localContext(job), crossDeviceMemory].filter(Boolean).join("\n\n");
   const sectionCount = request.broadTopic ? 6 : 4;
   const sectionPlan = request.broadTopic
     ? [
@@ -210,7 +260,7 @@ REQUEST
 ${resolved}
 
 VERIFIED LOCAL CURRICULUM
-${grounding || context || "No verified curriculum data is cached. Do not invent board-specific claims."}
+${grounding || context || "No verified curriculum data is cached. Do not invent board-specific claims."}\n\n${learnerContext}
 
 SECTION JOB
 ${sectionPlan[index]}
@@ -242,10 +292,7 @@ Return ONLY valid JSON:
 
 Generate 3-5 substantive blocks for this section. Make the blocks useful on their own while clearly fitting into the whole lesson.
 SECTION-SPECIFIC REQUIREMENTS
-- Section 1 must include an objective or clear learner target and foundational concepts.
-- Sections 2-4 must include at least one worked example and one thinking checkpoint.
-- Section 5 must include misconceptions/mistakes, exam transfer, and a thinking checkpoint.
-- The final section must include synthesis/curiosity/next-step content and a summary.
+${buildLocalSectionRequirements(index, sectionCount)}
 - Across the lesson, include at least 3 worked examples, 3 thinking checkpoints, 1 exam-transfer block, 1 mistake/misconception block, and 1 summary.
 - A checkpoint must make the learner do some thinking. Do not reveal its answer.
 
@@ -253,12 +300,33 @@ MATH
 Every mathematical expression uses single-dollar LaTeX delimiters. Never use caret exponents or ASCII fractions.`;
 
     try {
-      const raw = await generateBrowserLocal(sectionPrompt, undefined, {
-        maxTokens: request.broadTopic ? 1400 : 1200,
-        json: true,
-      });
-      const parsed = parseLocalModelSection(raw);
-      if (!parsed || parsed.blocks.length < 3) return null;
+      let parsed: ReturnType<typeof parseLocalModelSection> = null;
+      let lastRaw = "";
+      let lastIssue = "The model returned no usable section.";
+      // A valid JSON object is not automatically a valid teaching section.
+      // Give the local model one targeted repair before abandoning the whole lesson.
+      for (let repair = 0; repair < 2 && !parsed; repair += 1) {
+        const attemptPrompt = repair === 0
+          ? sectionPrompt
+          : `${sectionPrompt}
+
+LOCAL SECTION REPAIR
+The previous output did not satisfy the minimum section contract.
+Problem: ${lastIssue}
+Previous output:
+${lastRaw.slice(0, 6000)}
+Return a corrected JSON object with a title and at least 3 distinct, substantive blocks. Each block must have type, title, and content. Do not repeat previous sections.`;
+        lastRaw = await generateWithVisibleLocalModelProgress(job, attemptPrompt, {
+          maxTokens: request.broadTopic ? 1400 : 1200,
+          json: true,
+        });
+        parsed = parseLocalModelSection(lastRaw);
+        if (!parsed || parsed.blocks.length < 3) {
+          lastIssue = "Expected a JSON object with a title and at least 3 substantive blocks.";
+          parsed = null;
+        }
+      }
+      if (!parsed) throw new Error(`Local model section contract failed: ${lastIssue}`);
 
       if (index === 0 && parsed.title) title = parsed.title;
       const usable = parsed.blocks
@@ -268,7 +336,7 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
         ))
         .slice(0, 6);
 
-      if (usable.length < 3) return null;
+      if (usable.length < 3) throw new Error("Local model repeated existing content instead of teaching new material.");
       allBlocks.push(...usable);
 
       const progress = Math.min(75, 20 + Math.round(((index + 1) / sectionCount) * 55));
@@ -286,16 +354,19 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
         );
       }
     } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
       console.info("[LEARN] browser-local section failed", {
         section: index + 1,
-        error: error instanceof Error ? error.message : String(error),
+        error: reason,
       });
-      return null;
+      throw new Error(`Browser-local section ${index + 1} failed: ${reason}`);
     }
   }
 
   const minimumBlocks = request.broadTopic ? 14 : 10;
-  if (allBlocks.length < minimumBlocks) return null;
+  if (allBlocks.length < minimumBlocks) {
+    throw new Error(`Browser-local lesson assembled ${allBlocks.length} blocks; ${minimumBlocks} are required before quality review.`);
+  }
 
   const candidate: LessonGenerationResult = {
     id: `local-model-${Date.now().toString(36)}`,
@@ -314,11 +385,59 @@ Every mathematical expression uses single-dollar LaTeX delimiters. Never use car
   }, request);
 
   if (quality.failures.length) {
-    console.info("[LEARN] browser-local assembled lesson rejected by quality gate", {
+    console.info("[LEARN] browser-local lesson needs a final quality repair", {
       failures: quality.failures,
       topic: request.topic,
     });
-    return null;
+    try {
+      const repairPrompt = `You are repairing an almost-complete student lesson. Do not rewrite the existing lesson.
+SUBJECT: ${job.request.subject}
+TOPIC: ${request.topic}
+LEARNER LEVEL: ${job.request.level || "unspecified"}
+EXAM BOARD: ${job.request.examBoard || "unspecified"}
+
+QUALITY GAPS TO FIX:
+${quality.failures.map((failure) => `- ${failure}`).join("\n")}
+
+EXISTING SECTION HEADINGS AND TYPES:
+${candidate.blocks.map((block) => `- ${String(block.type)}: ${String(block.title || "").slice(0, 100)}`).join("\n")}
+
+Return ONLY JSON with a title and 3-6 NEW blocks that specifically fill the listed gaps. Do not duplicate the existing headings or material. Every block must contain type, title, and at least 40 characters of accurate teaching content. Use a worked example, thinking checkpoint, exam-transfer block, misconception/mistake block, synthesis, or summary only where it fills a real gap. Never invent syllabus requirements or reveal the answer inside a checkpoint.`;
+      const repairRaw = await generateWithVisibleLocalModelProgress(job, repairPrompt, {
+        maxTokens: 1400,
+        json: true,
+      });
+      const patch = parseLocalModelSection(repairRaw);
+      const additions = (patch?.blocks ?? []).filter((block) => !candidate.blocks.some((existing) =>
+        String(existing.type) === String(block.type) &&
+        String(existing.content).trim() === String(block.content).trim()
+      ));
+      if (additions.length) {
+        const repairedCandidate: LessonGenerationResult = {
+          ...candidate,
+          blocks: [...candidate.blocks, ...additions].slice(0, request.broadTopic ? 36 : 28),
+        };
+        const repairedQuality = lessonQualityFailures({
+          title: repairedCandidate.title,
+          blocks: repairedCandidate.blocks.map((block) => ({
+            type: String(block.type),
+            title: typeof block.title === "string" ? block.title : undefined,
+            content: String(block.content),
+          })),
+        }, request);
+        if (repairedQuality.failures.length === 0) return repairedCandidate;
+        console.info("[LEARN] final local quality repair still failed", {
+          failures: repairedQuality.failures,
+          topic: request.topic,
+        });
+      }
+    } catch (error) {
+      console.info("[LEARN] final local quality repair failed", {
+        error: error instanceof Error ? error.message : String(error),
+        topic: request.topic,
+      });
+    }
+    throw new Error(`Browser-local lesson failed quality checks after bounded repair: ${quality.failures.join(", ")}`);
   }
 
   return candidate;
@@ -381,6 +500,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     let assembledTitle = persistedPartial && typeof (persistedPartial as Record<string, unknown>).title === "string"
       ? String((persistedPartial as Record<string, unknown>).title)
       : request.topic || job.request.prompt;
+    let assembledOfflineFallback = false;
 
     const leaseId = generationLeaseId(job.id);
     for (let sectionIndex = persistedCompletedUnits; sectionIndex < sectionCount; sectionIndex += 1) {
@@ -445,6 +565,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
           if (response.ok && sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
             assembledBlocks = sectionData.partialBlocks;
             if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+            assembledOfflineFallback = sectionData.deterministicFallback === true;
             break;
           }
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
@@ -478,6 +599,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       if (sectionData?.complete === true && Array.isArray(sectionData?.partialBlocks)) {
         assembledBlocks = sectionData.partialBlocks;
         if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
+        assembledOfflineFallback = sectionData.deterministicFallback === true;
         break;
       }
 
@@ -516,11 +638,17 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
     };
     if (!data?.id || !Array.isArray(data?.blocks)) throw lastError instanceof Error ? lastError : new Error("The lesson service returned an incomplete lesson.");
     updateGenerationJob(job.id, { status: "partial", progress: 92 });
-    const result = validateResult({ id: data.id, title: data.title || request.topic || job.request.prompt, blocks: data.blocks }, request);
+    const result = validateResult({
+      id: data.id,
+      title: data.title || request.topic || job.request.prompt,
+      blocks: data.blocks,
+      offlineFallback: assembledOfflineFallback,
+      localModel: false,
+    }, request);
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
     updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: result.title, blocks: result.blocks } });
 
-    return result;
+    return assembledOfflineFallback ? { ...result, offlineFallback: true, localModel: false } : result;
 }
 async function runJob(
   job: GenerationJob<LessonGenerationInput>,
@@ -530,6 +658,7 @@ async function runJob(
   // One browser job owns one durable identity. Retries and refreshes reuse it.
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
+  let localModelAttempted = false;
   try {
     rememberLocalTopic(job.request.prompt);
     updateGenerationJob(job.id, {
@@ -589,6 +718,7 @@ async function runJob(
     // Only a warm local model may enter the speculative race. We never trigger
     // a large first-load model download merely to duplicate a cloud request.
     if (hybrid.mode === "parallel") {
+      localModelAttempted = true;
       const localLane = tryLocalModel(job, token, false).then((result) => {
         if (!result) throw new Error("Browser-local Cortex lane produced no valid lesson.");
         return result;
@@ -620,6 +750,7 @@ async function runJob(
     }
 
     if (hybrid.mode === "local") {
+      localModelAttempted = true;
       const localModel = await tryLocalModel(job, token);
       if (localModel) {
         if (token) {
@@ -631,22 +762,60 @@ async function runJob(
       }
     }
 
-    // Cloud is the normal online lane. "parallel-prep" means the local model is
-    // available but cold, so cloud work must not wait for a model download.
+    // Cloud and browser-local inference are independent lanes. A provider exception
+    // must not jump directly to the outer failure handler and skip local recovery.
     if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep") {
-      const cloudModel = await tryCloudLesson(job, token);
+      let cloudModel: LessonGenerationResult | null = null;
+      let cloudFailure: unknown = null;
+      try {
+        cloudModel = await tryCloudLesson(job, token);
+      } catch (error) {
+        cloudFailure = error;
+        console.warn("[LEARN] cloud lane failed; evaluating on-device recovery",
+          error instanceof Error ? error.message : String(error));
+      }
+
       if (cloudModel) {
         const finished = await persistGeneratedLesson(job, cloudModel, token, generationLeaseId(job.id));
         await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
         return getGenerationJobs().find(item => item.id === job.id) ?? job;
       }
-      if (hybrid.mode === "parallel-prep" && localStatus === "available") {
-        const localModel = await tryLocalModel(job, token);
-        if (localModel) {
-          const finished = await persistGeneratedLesson(job, localModel, token);
-          await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
-          return getGenerationJobs().find(item => item.id === job.id) ?? job;
+
+      let localFailure: unknown = null;
+      if (localStatus !== "unsupported" || hybrid.mode === "parallel-prep") {
+        updateGenerationJob(job.id, {
+          status: "generating",
+          progress: Math.max(20, getGenerationJob(job.id)?.progress ?? 20),
+          error: cloudFailure
+            ? "Cloud generation failed. Cortex is switching to on-device recovery; your checkpoint is preserved."
+            : "Cloud generation returned no usable lesson. Cortex is switching to on-device recovery.",
+        });
+        try {
+          localModelAttempted = true;
+          const localModel = await runLocalRecoveryWithHeartbeat(job, token, () => tryLocalModel(job, token));
+          if (localModel) {
+            const finished = token && online
+              ? await persistGeneratedLesson(job, localModel, token, generationLeaseId(job.id))
+              : await saveLocalResult(job, localModel);
+            if (token && online) {
+              await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+            }
+            return getGenerationJobs().find(item => item.id === job.id) ?? finished;
+          }
+          localFailure = new Error("On-device lesson generation returned no valid lesson.");
+        } catch (error) {
+          localFailure = error;
+          console.warn("[LEARN] on-device recovery failed",
+            error instanceof Error ? error.message : String(error));
         }
+      }
+
+      if (cloudFailure || localFailure) {
+        const details = [
+          cloudFailure instanceof Error ? `Cloud lane: ${cloudFailure.message}` : null,
+          localFailure instanceof Error ? `On-device lane: ${localFailure.message}` : null,
+        ].filter(Boolean).join(". ");
+        throw new Error(details || "Cloud and on-device generation did not produce a valid lesson.");
       }
     }
 
@@ -664,7 +833,7 @@ async function runJob(
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
-      hasWarmLocal: isBrowser() && getBrowserLocalModelStatus().status === "ready",
+      hasWarmLocal: !localModelAttempted && isBrowser() && getBrowserLocalModelStatus().status === "ready",
       hasCheckpoint: Boolean(currentJob.partial),
       supportsRepair: false,
     });
@@ -728,6 +897,7 @@ async function runJob(
     if (recoveryPolicy.action === "use_warm_local" && isBrowser() && navigator.onLine && getBrowserLocalModelStatus().status === "ready") {
       try {
         updateGenerationJob(job.id, { status: "generating", progress: Math.max(40, Math.min(55, getGenerationJob(job.id)?.progress ?? 40)), error: "Cloud generation is unavailable. Cortex is using the warm browser-local model." });
+        localModelAttempted = true;
         const localModel = await runLocalRecoveryWithHeartbeat(job, token, () => tryLocalModel(job, token));
         if (localModel) {
           const finished = token ? await persistGeneratedLesson(job, localModel, token, generationLeaseId(job.id)) : await saveLocalResult(job, localModel);

@@ -66,6 +66,31 @@ const FALLBACK_LESSONS: Record<string, FallbackLesson> = {
       { type: "summary", title: "Master the strategy", content: "You should now be able to state all three of Newton's laws, use F = ma to solve for any one of force, mass or acceleration, and correctly identify genuine action-reaction pairs by checking they act on two different objects." },
     ],
   },
+  "physics|waves": {
+    title: "Waves: describing, measuring, and explaining wave motion",
+    blocks: [
+      { type: "objective", title: "Your target", content: "By the end, you should be able to define a wave, distinguish transverse and longitudinal waves, use v = fλ, interpret wave diagrams, and explain reflection, refraction, diffraction and superposition at AS level." },
+      { type: "prior", title: "Before you start", content: "A vibration is an oscillation about an equilibrium position. A medium is the material through which a mechanical wave travels. Keep the source of a wave separate from the particles of the medium: particles usually oscillate locally while energy is transferred through the medium." },
+      { type: "definition", title: "What a wave transfers", content: "A wave is a travelling disturbance that transfers energy from one place to another without the overall transfer of matter. In a mechanical wave, particles of the medium oscillate about equilibrium as the disturbance passes." },
+      { type: "concept", title: "Transverse and longitudinal waves", content: "In a transverse wave, oscillations are perpendicular to the direction of energy transfer. In a longitudinal wave, oscillations are parallel to the direction of energy transfer, producing compressions and rarefactions. Sound in air is longitudinal; electromagnetic waves are transverse." },
+      { type: "definition", title: "Amplitude, wavelength, period and frequency", content: "Amplitude is the maximum displacement from equilibrium. Wavelength λ is the distance between adjacent points in phase, such as crest to crest. Period T is the time for one complete oscillation. Frequency f is the number of oscillations per second, measured in hertz (Hz), and f = 1/T." },
+      { type: "formula", title: "The wave equation", content: "Wave speed = frequency × wavelength, so v = fλ. Use v in m s⁻¹, f in Hz (s⁻¹), and λ in metres. The equation follows because one wavelength passes a fixed point during each period: v = λ/T = fλ." },
+      { type: "example", title: "Worked example: finding wave speed", content: "A wave has frequency 25 Hz and wavelength 0.80 m. Step 1: Write v = fλ. Step 2: Substitute v = 25 × 0.80. Step 3: Calculate v = 20 m s⁻¹. Check the units: Hz × m = s⁻¹ × m = m s⁻¹." },
+      { type: "checkpoint", title: "Try it before moving on", content: "A wave travels at 12 m s⁻¹ and has frequency 6.0 Hz. Calculate its wavelength. Write the equation, rearrange it for λ, substitute the values and include the unit." },
+      { type: "concept", title: "Phase and points in phase", content: "Two points are in phase when they have the same displacement from equilibrium and are moving in the same direction. Adjacent points in phase are separated by one wavelength. Points half a wavelength apart are in antiphase: their displacements are opposite at the same instant." },
+      { type: "example", title: "Worked example: period and frequency", content: "A source makes 18 complete oscillations in 6.0 s. Frequency is oscillations divided by time: f = 18/6.0 = 3.0 Hz. The period is T = 1/f = 1/3.0 = 0.33 s to two significant figures." },
+      { type: "concept", title: "Reflection, refraction and diffraction", content: "Reflection is a wave changing direction at a boundary and returning into its original medium. Refraction occurs when wave speed changes on entering a different region; frequency remains fixed by the source, so wavelength changes. Diffraction is the spreading of waves around an obstacle or through a gap. It is most noticeable when the gap width is similar to the wavelength." },
+      { type: "concept", title: "Superposition and interference", content: "When waves overlap, the resultant displacement is the algebraic sum of their individual displacements. Constructive interference occurs when displacements reinforce; destructive interference occurs when they oppose. For sustained clear interference, the sources should be coherent, meaning they have the same frequency and a constant phase difference." },
+      { type: "misconception", title: "Common mistakes", content: "Do not confuse amplitude with wavelength: amplitude is a displacement, while wavelength is a distance along the wave. Do not claim that frequency changes during refraction; the source fixes the frequency. A larger amplitude does not automatically mean a higher frequency. When using v = fλ, convert wavelength to metres before substituting." },
+      { type: "exam", title: "How to earn the marks", content: "For a calculation, state v = fλ, rearrange before substituting, show working and include units. For a diagram, label amplitude from the equilibrium line and wavelength between matching points in phase. For diffraction, explicitly relate the amount of spreading to the gap size compared with wavelength. For refraction, state which quantity changes and which stays constant." },
+      { type: "practice", title: "Progressive practice", content: "1. A wave has wavelength 0.40 m and frequency 15 Hz. Calculate its speed. 2. A source completes 50 oscillations in 10 s. Find its frequency and period. 3. Explain why wavelength changes when a wave enters a region where its speed decreases but its frequency stays constant. 4. Explain why diffraction is more pronounced when a gap is about the same width as the wavelength. 5. Two coherent waves meet in phase. Describe the resultant displacement at a point where both have equal positive displacement." },
+      { type: "checkpoint", title: "Check the units", content: "A wave has wavelength 2.5 cm and frequency 400 Hz. Convert the wavelength into metres before using v = fλ. What speed do you obtain, and why would using 2.5 directly give the wrong answer?" },
+      { type: "example", title: "Worked example: wavelength after a speed change", content: "A wave of frequency 5.0 Hz travels at 10 m s⁻¹ in one region and 6.0 m s⁻¹ in another. In the first region λ = v/f = 10/5.0 = 2.0 m. In the second region λ = 6.0/5.0 = 1.2 m. The frequency remains 5.0 Hz because the source has not changed, while the wavelength decreases with the speed." },
+      { type: "checkpoint", title: "Predict the diffraction", content: "Two gaps are used with the same wave: one is much wider than the wavelength, and the other is about one wavelength wide. Through which gap should spreading be more noticeable? Explain your prediction using the gap width compared with wavelength." },
+      { type: "synthesis", title: "Connect the ideas", content: "Wave behaviour can be understood by tracking three things: the source frequency, the medium-dependent speed, and the geometry of the wavefront and obstacle. The equation v = fλ links speed, frequency and wavelength; refraction changes speed and wavelength together while frequency stays fixed. Diffraction depends on wavelength compared with gap size, and interference depends on adding displacements at the same point." },
+      { type: "summary", title: "What to retain", content: "A wave transfers energy without overall transfer of matter. Identify transverse or longitudinal motion from the direction of oscillation. Use f = 1/T and v = fλ with consistent SI units. Reflection changes direction, refraction follows a speed change, diffraction produces spreading, and superposition adds displacements." }
+    ]
+  }
 };
 
 const SUBJECT_ALIASES: Record<string, string> = {
@@ -82,10 +107,45 @@ function normalize(value: string): string {
 }
 
 function normalizeSubject(value: string): string {
-  const cleaned = normalize(value);
+  const cleaned = normalize(value)
+    .replace(/\b(970[0-9]|961[0-9]|9[0-9]{3})\b/g, " ")
+    .replace(/\b(as|a level|a-level|a-levels|level|cambridge|international|igcse|o level|o-level|gcse)\b/g, " ")
+    .replace(/[()[\]_-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (/^(physics|phys|physical science)\b/.test(cleaned)) return "physics";
+  if (/^(math|maths|mathematics|pure mathematics)\b/.test(cleaned)) return "mathematics";
+  if (/^(computer science|computing|comp sci|cs|ict)\b/.test(cleaned)) return "computer science";
+  if (/^(chemistry|chem)\b/.test(cleaned)) return "chemistry";
+  if (/^(biology|bio)\b/.test(cleaned)) return "biology";
   return SUBJECT_ALIASES[cleaned] ?? cleaned;
 }
 
+function normalizeTopic(value: string): string {
+  return normalize(value)
+    .replace(/\b(topic|chapter|unit|notes|lesson|please teach me|teach me|explain)\b/g, " ")
+    .replace(/[,:;.!?]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function buildDeterministicLessonFallback(subject: string, topic: string): FallbackLesson | null {
-  return FALLBACK_LESSONS[`${normalizeSubject(subject)}|${normalize(topic)}`] ?? null;
+  const normalizedSubject = normalizeSubject(subject);
+  const normalizedTopic = normalizeTopic(topic);
+  const exact = FALLBACK_LESSONS[`${normalizedSubject}|${normalizedTopic}`];
+  if (exact) return exact;
+
+  // Match a curated topic when the learner adds a natural-language request,
+  // syllabus code, or exam phrasing around the topic. Never broaden the
+  // subject match: a Physics lesson must not leak into another subject.
+  for (const [key, lesson] of Object.entries(FALLBACK_LESSONS)) {
+    const separator = key.indexOf("|");
+    const knownSubject = key.slice(0, separator);
+    const knownTopic = key.slice(separator + 1);
+    if (knownSubject !== normalizedSubject) continue;
+    if (normalizedTopic === knownTopic || normalizedTopic.startsWith(`${knownTopic} `) || normalizedTopic.endsWith(` ${knownTopic}`) || normalizedTopic.includes(` ${knownTopic} `)) {
+      return lesson;
+    }
+  }
+  return null;
 }

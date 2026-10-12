@@ -34,7 +34,7 @@ function gradeInfo(pct: number) {
   if (pct === 100) return { label: "Perfect! 🎯",       color: "#fbbf24" };
   if (pct >= 80)   return { label: "Excellent! 🔥",     color: "#34d399" };
   if (pct >= 60)   return { label: "Good job 👍",       color: "#60a5fa" };
-  if (pct >= 40)   return { label: "Keep going 📚",     color: "#a78bfa" };
+  if (pct >= 40)   return { label: "Keep going 📚",     color: "#c4dc87" };
   return               { label: "Review needed 🔁",  color: "var(--danger)" };
 }
 
@@ -147,10 +147,10 @@ export default function QuizPage() {
     <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
       <div style={{ position: "relative", width: 56, height: 56 }}>
-        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid rgba(139,92,246,0.15)" }} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid rgba(113,140,83,0.15)" }} />
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.9s linear infinite" }} />
         <div style={{ position: "absolute", inset: 10, borderRadius: "50%", background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Brain size={18} color="#a78bfa" />
+          <Brain size={18} color="#c4dc87" />
         </div>
       </div>
       <div style={{ textAlign: "center" }}>
@@ -169,7 +169,7 @@ export default function QuizPage() {
   if (phase === "error") return (
     <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "24px" }}>
       <p style={{ color: "var(--danger)", fontSize: 14, textAlign: "center" }}>{errMsg}</p>
-      <Link href={`/learn/${lessonId}`} style={{ color: "#a78bfa", fontSize: 13, textDecoration: "none" }}>← Back to lesson</Link>
+      <Link href={`/learn/${lessonId}`} style={{ color: "#c4dc87", fontSize: 13, textDecoration: "none" }}>← Back to lesson</Link>
     </div>
   );
 
@@ -186,8 +186,8 @@ export default function QuizPage() {
 
         {/* Score hero */}
         <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), var(--card)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
-          <div style={{ width: 68, height: 68, borderRadius: "50%", background: pct >= 80 ? "rgba(251,191,36,0.15)" : "rgba(139,92,246,0.15)", border: `2px solid ${pct >= 80 ? "rgba(251,191,36,0.35)" : "rgba(139,92,246,0.35)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
-            <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#a78bfa"} />
+          <div style={{ width: 68, height: 68, borderRadius: "50%", background: pct >= 80 ? "rgba(251,191,36,0.15)" : "rgba(113,140,83,0.15)", border: `2px solid ${pct >= 80 ? "rgba(251,191,36,0.35)" : "rgba(139,92,246,0.35)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
+            <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#c4dc87"} />
           </div>
           <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Quiz Complete</p>
           <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
@@ -251,7 +251,7 @@ export default function QuizPage() {
           <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={15} /> Retake
           </button>
-          <Link href={`/learn/${lessonId}`} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #7c3aed, #2563eb)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+          <Link href={`/learn/${lessonId}`} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #718c53, #536943)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
             Back to Lesson <ArrowRight size={15} />
           </Link>
         </div>
@@ -282,12 +282,12 @@ export default function QuizPage() {
               <ArrowLeft size={14} /> Lesson
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Sparkles size={13} color="#a78bfa" />
+              <Sparkles size={13} color="#c4dc87" />
               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted-foreground)" }}>{current + 1} / {questions.length}</span>
             </div>
           </div>
           <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg, #7c3aed, #2563eb)", borderRadius: 999, transition: "width .4s ease" }} />
+            <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg, #718c53, #536943)", borderRadius: 999, transition: "width .4s ease" }} />
           </div>
         </div>
       </div>
@@ -312,7 +312,7 @@ export default function QuizPage() {
                 if (i === q.correctIndex)                             { bg = "rgba(52,211,153,0.12)";  border = "rgba(52,211,153,0.4)";  color = "#34d399"; }
                 else if (i === selected && selected !== q.correctIndex) { bg = "rgba(248,113,113,0.12)"; border = "rgba(248,113,113,0.4)"; color = "var(--danger)"; }
               } else if (selected === i) {
-                bg = "rgba(139,92,246,0.15)"; border = "rgba(139,92,246,0.5)"; color = "#c4b5fd";
+                bg = "rgba(113,140,83,0.15)"; border = "rgba(113,140,83,0.5)"; color = "#c4dc87";
               }
 
               return (
@@ -342,12 +342,12 @@ export default function QuizPage() {
           {/* Action button */}
           {!confirmed ? (
             <button onClick={confirm} disabled={selected === null} className="confirm-btn"
-              style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: selected !== null ? "linear-gradient(135deg, #7c3aed, #2563eb)" : "var(--card-border)", border: "none", color: selected !== null ? "#fff" : "var(--muted-foreground)", fontSize: 14, fontWeight: 700, cursor: selected !== null ? "pointer" : "not-allowed", transition: "all .15s", boxShadow: selected !== null ? "0 0 20px rgba(109,40,217,0.35)" : "none" }}>
+              style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: selected !== null ? "linear-gradient(135deg, #718c53, #536943)" : "var(--card-border)", border: "none", color: selected !== null ? "#fff" : "var(--muted-foreground)", fontSize: 14, fontWeight: 700, cursor: selected !== null ? "pointer" : "not-allowed", transition: "all .15s", boxShadow: selected !== null ? "0 0 20px rgba(64,90,50,0.22)" : "none" }}>
               Confirm Answer
             </button>
           ) : (
             <button onClick={next}
-              style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #7c3aed, #2563eb)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 0 20px rgba(109,40,217,0.35)" }}>
+              style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #718c53, #536943)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 0 20px rgba(64,90,50,0.22)" }}>
               {current < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={15} />
             </button>
           )}
@@ -357,7 +357,7 @@ export default function QuizPage() {
             {questions.map((_, i) => {
               let bg = "var(--card-border)";
               if (i < answers.length) bg = answers[i] === questions[i].correctIndex ? "#34d399" : "var(--danger)";
-              else if (i === current) bg = "#7c3aed";
+              else if (i === current) bg = "#718c53";
               return <div key={i} style={{ width: i === current ? 22 : 8, height: 8, borderRadius: 999, background: bg, transition: "all .3s" }} />;
             })}
           </div>
