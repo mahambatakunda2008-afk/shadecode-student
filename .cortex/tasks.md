@@ -46,6 +46,12 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [x] Self-check sessions hide the AI-only actions; a model-free 'fresh question on this topic' (engine, server-seeded, exactly marked) records keyed mastery as real evidence (2026-10-10)
 - [ ] Paper learning self-check has no model-free teaching text (explain / why). Needs written worked content per subsection, or a verified L0 library of validated AI explanations
 - [ ] L0 verified library: persist every validated AI output (lesson, quiz, notes) keyed by subsection and serve it first; warm it with a background job whenever providers are healthy
+- [x] Learning loop v1 (2026-10-10): `learning_signals` capture, classic-mistake diagnosis for all 36 generators, learner-adaptive practice, private aggregate views
+- [ ] Admin view of `learning_item_stats` / `learning_mistake_stats`: flag question types that are too hard, too easy or broken; list the most common mistakes
+- [ ] Lesson library: rank `learn_lessons` (93 rows, keyed by curriculum objective) by learner outcomes, serve library lessons when generation fails, BM25 search so 'Ask' works with no model
+- [ ] Spaced-repetition daily mission (roadmap C) from keyed mastery + signals, using the adaptive weights
+- [ ] Calibrate difficulty from `learning_item_stats` once there is enough data; retire or fix generators outside 20-95 percent correct
+- [ ] Capture lesson quiz and deck-session signals (quiz page is client-only today)
 - [ ] Biology and other uncomputable subjects: richer L2 (notes outline, glossary of defined terms) beyond outcome prompts
 - [ ] Telemetry: record which tier served each generation so we can watch the AI-free share rise
 - [ ] Engine coverage: Biology/Economics/Business/English cannot be computed; ground them in verified curriculum outcomes (self-check checklists) rather than invented Q&A

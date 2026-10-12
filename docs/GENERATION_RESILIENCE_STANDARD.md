@@ -22,6 +22,26 @@ Every generation request resolves through these tiers in order and stops at the 
 | L3 | AI generation (shared chain, per-provider breakers, hard budgets) | best effort, validated, never required |
 | L4 | Honest degradation | fast, retryable, "nothing was lost", never a placeholder |
 
+## The learning loop (our own engine)
+
+We are not training a language model: that needs GPUs, huge data and money, and would still lose to the
+providers. Instead the platform learns from everything learners do, and uses models only as an optional
+content producer whose output is validated.
+
+1. **Capture.** `learning_signals` records every question outcome (generator id, correct, diagnosed
+   mistake, time) from exams, battles, engine practice and revision decks. Fire-and-forget; RLS insert/select own.
+2. **Diagnose.** `src/lib/exam/engine/mistakes.ts` knows each question type's classic wrong answers, so a wrong
+   answer gets a specific hint instead of "incorrect". The mistake id is recorded.
+3. **Learn per learner.** `src/lib/learning/adaptive.ts` weights question types by the learner's own error rate;
+   practice serves more of what they get wrong and less of what they have mastered.
+4. **Learn across learners.** `learning_item_stats` and `learning_mistake_stats` (service role only) show which
+   question types are hard or broken and which mistakes are most common. Use them to tune generators and to
+   decide which mistakes deserve a written explanation.
+
+Planned: a library of lessons (`learn_lessons`, keyed to curriculum objectives) ranked by learner outcomes and
+searchable with BM25 so "Ask" works with no model; spaced-repetition daily missions from keyed mastery;
+difficulty calibration from the stats.
+
 ## Rules
 
 1. Never serve fabricated or generic placeholder content. If no tier can serve, say so (L4).
@@ -45,6 +65,7 @@ Every generation request resolves through these tiers in order and stops at the 
 | Paper learning (plan, evaluate, transfer) | L3; L2 self-check plan and checkpoints; L1 engine practice question per matched topic | self-check matching unvalidated on real papers; Biology and uncovered topics have no practice question; AI-only actions (explain, why, quiz-me, transfer) are hidden in self-check sessions, so there is no model-free teaching text |
 | AI tutor | L3 plus its own fallbacks | audit |
 | Battle marking | L1 server-marked; written papers self-reported | verify challenger score |
+| Learning loop | capture (exams, battles, practice, decks), mistake diagnosis, learner-adaptive practice | nothing yet reads `learning_item_stats`; no admin view; only ~19 active learners, so cross-learner statistics are thin |
 
 ## Checklist for a new generating feature
 
