@@ -290,7 +290,7 @@ export async function POST(req: Request) {
             (block as LessonBlock).content.trim().length >= 40
           ).slice(0, request.broadTopic ? 36 : 28)
         : [];
-      const minimumPersistBlocks = request.broadTopic ? 16 : 10;
+      const minimumPersistBlocks = verifiedCurriculumFallback ? 10 : request.broadTopic ? 16 : 10;
       const persistableCandidate = candidate ?? (
         verifiedCurriculumFallback &&
         typeof generated.title === "string" &&
