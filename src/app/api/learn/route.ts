@@ -275,7 +275,7 @@ export async function POST(req: Request) {
         if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
         if (!leaseRow) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
       }
-      const generated = body.generatedLesson;
+      const generated = sanitizeLessonText(body.generatedLesson);
       if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
       }
