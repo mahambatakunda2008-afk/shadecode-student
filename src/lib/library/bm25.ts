@@ -68,7 +68,12 @@ export function qualityMultiplier(up: number, down: number): number {
   return 0.7 + 0.6 * approval;
 }
 
-const subjectMatches = (docSubject: string | null, wanted: string) => !!docSubject && docSubject.toLowerCase().includes(wanted.toLowerCase());
+/** Subjects match when they share a word, so "A Level Physics" finds a "Physics" lesson. */
+const subjectMatches = (docSubject: string | null, wanted: string) => {
+  if (!docSubject) return false;
+  const have = new Set(tokenize(docSubject));
+  return tokenize(wanted).some((token) => have.has(token));
+};
 
 export function search(index: Bm25Index, query: string, options: { subject?: string; limit?: number } = {}): SearchHit[] {
   const terms = [...new Set(tokenize(query))];
