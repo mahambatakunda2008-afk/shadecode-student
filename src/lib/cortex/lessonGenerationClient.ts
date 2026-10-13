@@ -837,7 +837,16 @@ async function runJob(
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
       hasWarmLocal: !localModelAttempted && isBrowser() && getBrowserLocalModelStatus().status === "ready",
-      hasCheckpoint: Boolean(currentJob.partial),
+      hasCheckpoint: (() => {
+        const partial = currentJob.partial;
+        if (!partial || typeof partial !== "object") return false;
+        const checkpoint = partial as Record<string, unknown>;
+        // A pre-request progress marker has completedUnits: 0 and no blocks.
+        // It is not a recovery checkpoint: resuming it would repeat the same
+        // first-section failure and recreate the 20% -> 24% wait cycle.
+        return typeof checkpoint.completedUnits === "number" && checkpoint.completedUnits > 0
+          && Array.isArray(checkpoint.blocks) && checkpoint.blocks.length > 0;
+      })(),
       supportsRepair: false,
     });
 
