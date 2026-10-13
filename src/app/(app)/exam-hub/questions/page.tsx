@@ -138,14 +138,22 @@ Use only evidence present in the question. Explain the key concept, likely metho
       </header>
 
       <form onSubmit={load} className="mb-6 grid gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+        <label htmlFor="question-bank-query" className="sr-only">Search question text</label>
         <input
+          id="question-bank-query"
+          type="search"
+          autoComplete="off"
+          aria-label="Search question text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           maxLength={200}
           placeholder="Search question text..."
           className="min-w-0 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
+        <label htmlFor="question-bank-difficulty" className="sr-only">Filter by difficulty</label>
         <select
+          id="question-bank-difficulty"
+          aria-label="Filter questions by difficulty"
           value={difficulty}
           onChange={(event) => setDifficulty(event.target.value)}
           className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)]"
@@ -160,7 +168,7 @@ Use only evidence present in the question. Explain the key concept, likely metho
         </button>
       </form>
 
-      {error && <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600">{error}</div>}
+      {error && <div role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600">{error}</div>}
 
       {!loading && !error && questions.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-10 text-center">
