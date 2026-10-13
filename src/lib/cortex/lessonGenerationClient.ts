@@ -20,7 +20,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
-const CLOUD_GENERATION_TIMEOUT_MS = 82_000;
+// /api/learn is capped at 60 seconds on Vercel. Abort before the platform kills\n// the function so Cortex can persist partial work and enter its recovery lanes.\nconst CLOUD_GENERATION_TIMEOUT_MS = 48_000;
 // The server owns section repair. The browser must not duplicate that retry loop.
 const MAX_CLOUD_ATTEMPTS = 1;
 let runningJobId: string | null = null;
