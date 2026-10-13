@@ -20,7 +20,7 @@ export default function SavedPapersPage() {
   }, []);
 
   return (
-    <main className="ssc-page min-h-screen px-4 py-6 sm:px-6 sm:py-8">
+    <main className="ssc-page min-h-screen px-4 py-5 sm:px-6 sm:py-8">
       <div className="mx-auto w-full max-w-5xl">
         <Link
           href="/exam-hub"
@@ -57,7 +57,7 @@ export default function SavedPapersPage() {
             </p>
             <Link
               href="/exam-hub/papers"
-              style={{ display: "inline-block", padding: "10px 18px", borderRadius: 10, background: "var(--primary)", color: "var(--primary-foreground)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--primary)] px-5 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             >
               Browse Past Papers
             </Link>
