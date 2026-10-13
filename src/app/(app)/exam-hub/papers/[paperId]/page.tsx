@@ -169,9 +169,7 @@ export default function PaperViewerPage() {
               accent="var(--accent)"
               disabled={saving || paper.state?.status === "completed"}
             />
-            <a href={signedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <ActionButton icon={Maximize2} label="Full screen" onClick={() => {}} accent="var(--primary)" />
-            </a>
+            <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><Maximize2 size={15} /> Full screen</a>
           </div>
         </div>
 
@@ -193,6 +191,7 @@ export default function PaperViewerPage() {
 
       {showScoreModal && (
         <div
+          role="presentation"
           onClick={(e) => { if (e.target === e.currentTarget) setShowScoreModal(false); }}
           style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -200,20 +199,25 @@ export default function PaperViewerPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="paper-score-title"
             style={{
               width: "100%", maxWidth: 380, borderRadius: 18, padding: 24,
               background: "var(--surface)", border: "1px solid var(--card-border)",
               boxShadow: "var(--shadow-lg, 0 20px 40px rgba(0,0,0,0.3))",
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", margin: "0 0 6px" }}>
+            <h2 id="paper-score-title" style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", margin: "0 0 6px" }}>
               How did it go?
             </h2>
             <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 18px" }}>
               Add your score to track weak and strong topics — or skip it.
             </p>
 
+            <label htmlFor="paper-score-input" className="sr-only">Score out of 100</label>
             <input
+              id="paper-score-input"
               type="number"
               inputMode="numeric"
               min={0}
@@ -230,7 +234,7 @@ export default function PaperViewerPage() {
               }}
             />
             {scoreError && (
-              <p style={{ fontSize: 12, color: "var(--danger)", margin: "0 0 14px" }}>{scoreError}</p>
+              <p role="alert" style={{ fontSize: 12, color: "var(--danger)", margin: "0 0 14px" }}>{scoreError}</p>
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
