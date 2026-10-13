@@ -21,6 +21,8 @@ export default function PastPapersPage() {
   const [searchResults, setSearchResults] = useState<PastPaperWithState[] | null>(null);
   const [searching, setSearching] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSequenceRef = useRef(0);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => () => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -28,23 +30,37 @@ export default function PastPapersPage() {
 
   function runSearch(query: string) {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const sequence = ++searchSequenceRef.current;
+    setSearchError(null);
     if (!query.trim()) {
       setSearchResults(null);
+      setSearching(false);
       return;
     }
-    searchDebounceRef.current = setTimeout(() => {
-      setSearching(true);
-      fetch(`/api/exam-hub/search?q=${encodeURIComponent(query)}`)
-        .then((res) => res.json())
-        .then((data) => setSearchResults(data.papers ?? []))
-        .catch(() => setSearchResults([]))
-        .finally(() => setSearching(false));
-    }, 350); // debounced — avoids firing a request on every keystroke
+    setSearching(true);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/exam-hub/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error("Search is temporarily unavailable. Please try again.");
+        const data = await response.json();
+        if (sequence !== searchSequenceRef.current) return;
+        setSearchResults(Array.isArray(data.papers) ? data.papers : []);
+      } catch (err) {
+        if (sequence !== searchSequenceRef.current) return;
+        setSearchError(err instanceof Error ? err.message : "Search is temporarily unavailable. Please try again.");
+        setSearchResults([]);
+      } finally {
+        if (sequence === searchSequenceRef.current) setSearching(false);
+      }
+    }, 350); // Debounce requests and ignore stale responses.
   }
 
   function clearSearch() {
+    searchSequenceRef.current += 1;
     setSearchInput("");
     setSearchResults(null);
+    setSearchError(null);
+    setSearching(false);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
   }
 
@@ -216,13 +232,16 @@ export default function PastPapersPage() {
         </div>
 
         {searchResults !== null ? (
-          <Step title={searching ? "Searching..." : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`} loading={searching}>
+          <section aria-label="Past-paper search results" aria-busy={searching}>
+            {searchError && <p role="alert" className="mb-3 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] p-3 text-sm text-[var(--danger)]">{searchError}</p>}
+            <Step title={searching ? "Searching…" : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`} loading={searching}>
             {searchResults.length === 0 && !searching ? (
               <EmptyState message="No matching papers. Try fewer or different words." />
             ) : (
               <PapersList papers={searchResults} />
             )}
-          </Step>
+            </Step>
+          </section>
         ) : (
           <>
             <div className="mb-5 flex items-center gap-2 text-xs font-semibold text-[var(--text-tertiary)]"><FileText size={14} /> Exam library</div>
