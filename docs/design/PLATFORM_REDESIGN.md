@@ -119,3 +119,9 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [x] Saved-paper primary action has a consistent minimum touch target and visible keyboard-focus treatment.
 - [x] Weak-topic fetch errors are exposed with alert semantics for assistive technology.
 - [ ] Continue auditing paper detail/attempt flows and validate interactions in a real browser at desktop and mobile widths.
+
+## Latest core workflow pass
+- [x] Learn's session-check and loading/error surfaces now use the shared light/dark semantic background and foreground tokens instead of hard-coded legacy colors.
+- [x] Past-paper search ignores stale responses when the learner types quickly or clears the query, reports HTTP/network failures instead of presenting them as genuine zero-result searches, and announces the busy state to assistive technology.
+- [x] Past-paper board/level/subject selection cards and document actions use raised neutral surfaces, shared focus treatment, minimum touch height, and restrained hover feedback.
+- [ ] Verify these states in the rendered preview, then continue through paper detail/attempt flows, Learn generation/recovery, and Exam Simulator end-to-end.
