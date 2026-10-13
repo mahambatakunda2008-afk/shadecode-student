@@ -171,9 +171,10 @@ Use only evidence present in the question. Explain the key concept, likely metho
       {error && <div role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600">{error}</div>}
 
       {!loading && !error && questions.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-10 text-center">
-          <p className="font-medium text-[var(--foreground)]">No questions found yet.</p>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">The question bank is populated from verified past-paper ingestion.</p>
+        <div className="rounded-2xl border border-dashed border-[var(--card-border)] bg-[var(--surface-2)] p-8 text-center sm:p-10">
+          <p className="font-medium text-[var(--foreground)]">No questions found.</p>
+          <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[var(--muted-foreground)]">Try a broader search or clear the difficulty filter. You can still practise directly from the verified past-paper library.</p>
+          <Link href="/exam-hub/papers" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-foreground)]">Browse past papers</Link>
         </div>
       )}
 
