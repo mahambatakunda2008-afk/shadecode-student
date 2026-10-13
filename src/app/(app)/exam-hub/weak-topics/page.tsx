@@ -49,7 +49,7 @@ export default function WeakTopicsPage() {
         </p>
 
         {error && (
-          <div style={{ padding: 16, borderRadius: 14, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)", marginBottom: 20 }}>
+          <div role="alert" style={{ padding: 16, borderRadius: 14, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)", marginBottom: 20 }}>
             <p style={{ color: "var(--danger)", margin: 0, fontSize: 13 }}>{error}</p>
           </div>
         )}
