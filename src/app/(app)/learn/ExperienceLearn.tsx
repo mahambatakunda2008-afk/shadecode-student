@@ -57,7 +57,7 @@ export default function ExperienceLearn() {
 
   if (state === "error") {
     return (
-      <main className="min-h-[70vh] bg-[#f7f7f4] px-5 py-10 dark:bg-[#101311]">
+      <main className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]">
         <section className="mx-auto max-w-xl rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-6 shadow-sm sm:p-8" role="alert">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
             <WifiOff size={22} aria-hidden="true" />
@@ -81,7 +81,7 @@ export default function ExperienceLearn() {
 
   if (state !== "ready") {
     return (
-      <main className="min-h-[70vh] bg-[#f7f7f4] px-5 py-10 dark:bg-[#101311]" aria-busy="true" aria-label="Checking your session">
+      <main className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true" aria-label="Checking your session">
         <div className="mx-auto max-w-7xl space-y-5">
           <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
