@@ -22,6 +22,10 @@ export default function PastPapersPage() {
   const [searching, setSearching] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => () => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+  }, []);
+
   function runSearch(query: string) {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     if (!query.trim()) {
@@ -184,7 +188,12 @@ export default function PastPapersPage() {
         <header className="ssc-page-header mb-6"><p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">Exam Hub</p><h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">Past papers</h1><p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Find a paper by exam board, level, subject, session and year, or search the library directly.</p></header>
         <div className="relative mb-5">
           <Search size={16} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
+          <label htmlFor="past-paper-search" className="sr-only">Search past papers</label>
           <input
+            id="past-paper-search"
+            type="search"
+            autoComplete="off"
+            aria-label="Search past papers by subject, session, year, or paper number"
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
@@ -195,6 +204,9 @@ export default function PastPapersPage() {
           />
           {searchInput && (
             <button
+              type="button"
+              aria-label="Clear past-paper search"
+              title="Clear search"
               onClick={clearSearch}
               style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", display: "flex" }}
             >
