@@ -98,15 +98,26 @@ export default function LearnPageResilient() {
     let cancelled = false;
     const boot = async () => {
       let session: Session | null = null;
+      let authTimer: ReturnType<typeof setTimeout> | undefined;
       try {
         const sb = (await import("@/lib/supabase/client")).createClient();
         const result = await Promise.race([
           sb.auth.getSession(),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), AUTH_TIMEOUT)),
+          new Promise<never>((_, reject) => {
+            authTimer = setTimeout(() => reject(new Error("AUTH_SESSION_TIMEOUT")), AUTH_TIMEOUT);
+          }),
         ]);
+        if (result.error) throw result.error;
         session = result.data.session;
         if (session && !cancelled) setToken(session.access_token);
-      } catch {}
+      } catch (authFailure) {
+        console.error("[Learn] could not restore the current session:", authFailure);
+        if (!cancelled) {
+          setError("Your learning space could not verify your session. Try again to reconnect before starting a new lesson. Lessons saved on this device remain available.");
+        }
+      } finally {
+        if (authTimer) clearTimeout(authTimer);
+      }
       const local = await readDeviceLessons(session?.user.id);
       if (cancelled) return;
       if (local.length) setLessons(local);
