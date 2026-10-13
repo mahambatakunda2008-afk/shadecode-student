@@ -15,6 +15,7 @@ import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/le
 import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
+import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
