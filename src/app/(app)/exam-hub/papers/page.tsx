@@ -216,7 +216,7 @@ export default function PastPapersPage() {
               runSearch(e.target.value);
             }}
             placeholder='Try "Physics May June 2024 Paper 42"'
-            className="ssc-focus-ring w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-11 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            className="ssc-focus-ring min-h-12 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-11 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-strong)]"
           />
           {searchInput && (
             <button
@@ -235,7 +235,7 @@ export default function PastPapersPage() {
           <section aria-label="Past-paper search results" aria-busy={searching}>
             {searchError && <p role="alert" className="mb-3 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] p-3 text-sm text-[var(--danger)]">{searchError}</p>}
             <Step title={searching ? "Searching…" : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`} loading={searching}>
-            {searchResults.length === 0 && !searching ? (
+            {searchError ? null : searchResults.length === 0 && !searching ? (
               <EmptyState message="No matching papers. Try fewer or different words." />
             ) : (
               <PapersList papers={searchResults} />
@@ -445,6 +445,7 @@ function OptionCard({ label, sub, onClick }: { label: string; sub?: string; onCl
   return (
     <button
       onClick={onClick}
+      className="ssc-focus-ring min-h-16 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--interactive-hover)]"
       style={{
         padding: "16px 18px",
         borderRadius: 14,
@@ -527,6 +528,7 @@ function PapersList({ papers }: { papers: PastPaperWithState[] }) {
                 <Link
                   key={doc.id}
                   href={`/exam-hub/papers/${doc.id}`}
+                  className="ssc-focus-ring transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--interactive-hover)]"
                   style={{
                     display: "flex",
                     alignItems: "center",
