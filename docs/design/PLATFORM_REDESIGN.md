@@ -111,3 +111,11 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [x] Lesson reader: removed the old olive theme from subject accents, difficulty labels, the empty-state link, and tutor surface; uses the shared semantic palette while preserving subject-specific icons and lesson content.
 
 - [x] Study plan now uses the shared workspace page/header spacing and has legible plan-load error text in both light and dark themes.
+
+
+## Latest Exam Hub workflow pass
+- [x] Past-paper search has a programmatic label, descriptive accessible name, explicit clear-search control semantics, and debounce cleanup on unmount.
+- [x] Question Bank filters have programmatic labels; errors are announced as alerts, and the no-results state links directly to the paper library.
+- [x] Saved-paper primary action has a consistent minimum touch target and visible keyboard-focus treatment.
+- [x] Weak-topic fetch errors are exposed with alert semantics for assistive technology.
+- [ ] Continue auditing paper detail/attempt flows and validate interactions in a real browser at desktop and mobile widths.
