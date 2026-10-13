@@ -14,6 +14,7 @@ import { generateBrowserLocal, getBrowserLocalModelStatus, subscribeBrowserLocal
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
+import { hasCompletedLessonCheckpoint } from "@/lib/cortex/lessonCheckpoint";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 
@@ -837,16 +838,7 @@ async function runJob(
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
       hasWarmLocal: !localModelAttempted && isBrowser() && getBrowserLocalModelStatus().status === "ready",
-      hasCheckpoint: (() => {
-        const partial = currentJob.partial;
-        if (!partial || typeof partial !== "object") return false;
-        const checkpoint = partial as Record<string, unknown>;
-        // A pre-request progress marker has completedUnits: 0 and no blocks.
-        // It is not a recovery checkpoint: resuming it would repeat the same
-        // first-section failure and recreate the 20% -> 24% wait cycle.
-        return typeof checkpoint.completedUnits === "number" && checkpoint.completedUnits > 0
-          && Array.isArray(checkpoint.blocks) && checkpoint.blocks.length > 0;
-      })(),
+      hasCheckpoint: hasCompletedLessonCheckpoint(currentJob.partial),
       supportsRepair: false,
     });
 
