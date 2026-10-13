@@ -65,7 +65,8 @@ difficulty calibration from the stats.
 | Paper learning (plan, evaluate, transfer) | L3; L2 self-check plan and checkpoints; L1 engine practice question per matched topic | self-check matching unvalidated on real papers; Biology and uncovered topics have no practice question; AI-only actions (explain, why, quiz-me, transfer) are hidden in self-check sessions, so there is no model-free teaching text |
 | AI tutor | L3 plus its own fallbacks | audit |
 | Battle marking | L1 server-marked; written papers self-reported | verify challenger score |
-| Tutor 'Ask' / lesson search | L0 library search (BM25, learns from votes), 23 lessons | tiny corpus; not yet used as the generation fallback; lessons unmatched to syllabus subsections |
+| Lessons | Cortex lanes, local packs, exact curated lesson, L0 library lesson (strict match), L3 | library is 23 lessons, so recovery will often find no match |
+| Tutor 'Ask' / lesson search | L0 library search (BM25, learns from votes) at /study/library | not yet the tutor's fallback; lessons unmatched to syllabus subsections |
 | Learning loop | capture (exams, battles, practice, decks), mistake diagnosis, learner-adaptive practice | nothing yet reads `learning_item_stats`; no admin view; only ~19 active learners, so cross-learner statistics are thin |
 
 ## Checklist for a new generating feature
