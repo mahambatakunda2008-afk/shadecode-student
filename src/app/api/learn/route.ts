@@ -482,6 +482,13 @@ export async function POST(req: Request) {
         }
       }
 
+      const sectionStartedAt = Date.now();
+      console.info("[LEARN] section request accepted", {
+        generationJobId: durableJobId,
+        sectionIndex: generationSectionIndex,
+        sectionCount: generationSectionCount,
+      });
+
       const sectionJobs = request.broadTopic
         ? [
             "Orient the learner: define the territory, prerequisites, vocabulary, and why the topic matters.",
@@ -526,6 +533,7 @@ Previous candidate:
 ${rawSection?.slice(0, 14000) || "No usable candidate was returned."}
 
 Repair only the defective section. Preserve correct material where possible. Do not shorten the teaching merely to satisfy the schema. Return ONLY valid JSON.`;
+        const attemptStartedAt = Date.now();
         rawSection = await executeCortexText(sectionRequestPrompt, 2200, {
           operation: attempt === 0 ? "lesson.generate_section" : "lesson.repair_section",
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
@@ -539,6 +547,14 @@ Repair only the defective section. Preserve correct material where possible. Do 
           return null;
         });
 
+        console.info("[LEARN] section model attempt finished", {
+          generationJobId: durableJobId,
+          sectionIndex: generationSectionIndex,
+          attempt,
+          elapsedMs: Date.now() - attemptStartedAt,
+          totalElapsedMs: Date.now() - sectionStartedAt,
+          responseCharacters: rawSection?.length ?? 0,
+        });
         // A null AI response means the provider chain was exhausted, not that the
         // section merely needs another schema repair. Do not burn another 16-22s
         // retrying the same dead provider chain.
