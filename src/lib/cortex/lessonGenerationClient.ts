@@ -760,7 +760,7 @@ async function runJob(
       return finished;
     }
 
-    if (hybrid.mode === "local") {
+    if (hybrid.mode === "local" && localReady) {
       localModelAttempted = true;
       const localModel = await tryLocalModel(job, token);
       if (localModel) {
@@ -793,7 +793,7 @@ async function runJob(
       }
 
       let localFailure: unknown = null;
-      if (localStatus !== "unsupported" || hybrid.mode === "parallel-prep") {
+      if (localReady) {
         updateGenerationJob(job.id, {
           status: "generating",
           progress: Math.max(20, getGenerationJob(job.id)?.progress ?? 20),
