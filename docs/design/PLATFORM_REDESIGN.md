@@ -130,3 +130,4 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [x] Exam Simulation setup controls now use the shared focus ring, semantic raised surfaces, larger touch targets, and accessible alert styling for generation errors.
 - [x] Exam Simulation level and question-count selectors now expose their selected state with `aria-pressed`, in addition to visible styling.
 - [x] Fixed the dashboard watchdog's false-ready detection: its own loading skeleton no longer satisfies the rendered-dashboard selector, so a genuinely stalled dashboard can reach the recovery screen instead of spinning indefinitely.
+- [x] Completed the dashboard watchdog fix end-to-end: the school dashboard now adds `data-dashboard-ready="true"` only after session bootstrap, and the watchdog ignores the generic loading shell when checking readiness. Foundation/beyond-school dashboards continue to use their explicit experience shell.
