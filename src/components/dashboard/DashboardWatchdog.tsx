@@ -11,7 +11,7 @@ export default function DashboardWatchdog() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const dashboardMounted = Boolean(document.querySelector(".dashboard-command-center, .dashboard-shell[data-experience]"));
+      const dashboardMounted = Boolean(document.querySelector("[data-dashboard-ready=\"true\"], .dashboard-shell[data-experience]"));
       if (!dashboardMounted) setTimedOut(true);
     }, WATCHDOG_TIMEOUT);
     return () => window.clearTimeout(timer);
