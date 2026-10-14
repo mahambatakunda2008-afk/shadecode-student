@@ -530,7 +530,8 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
     progress: 0,
     completed: false,
     downloadedAt: now,
-    lastSyncedAt: now,
+    // This lesson has not been confirmed in cloud storage. Do not label it synced.
+    lastSyncedAt: undefined,
     size: JSON.stringify(localOnly).length,
   });
   updateGenerationJob(job.id, {
