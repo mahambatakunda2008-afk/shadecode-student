@@ -320,31 +320,37 @@ export async function POST(req: Request) {
 
       let savedId = durableJobId;
       if (durableJobId) {
+        // Sanitize the entire RPC payload at the persistence boundary. Sanitizing
+        // only lesson text leaves IDs, subject metadata, or future fields capable
+        // of carrying U+0000 into PostgreSQL text/jsonb and breaking finalization.
+        const checkpointArgs = sanitizeLessonText({
+          p_job_id: durableJobId,
+          p_user_id: user.id,
+          p_lease_id: generationLeaseId,
+          p_status: "complete",
+          p_stage: "complete",
+          p_subject_id: resolvedSubject.id,
+          p_title: persistableCandidate.title,
+          p_topic: request.topic,
+          p_description: verifiedCurriculumFallback
+            ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
+            : `A deep ${validDifficulty} lesson on ${request.topic}`,
+          p_difficulty: validDifficulty,
+          p_progress: 100,
+          p_completed_units: generationSectionCount,
+          p_total_units: generationSectionCount,
+          p_blocks: persistableCandidate.blocks,
+          p_result: {
+            id: durableJobId,
+            title: persistableCandidate.title,
+            blocks: persistableCandidate.blocks,
+            subject: effectiveSubject,
+            deterministicFallback: verifiedCurriculumFallback,
+          },
+        });
         const { data: checkpointResult, error: checkpointWriteError } = await supabase.rpc(
           "checkpoint_cortex_generation",
-          {
-            p_job_id: durableJobId,
-            p_user_id: user.id,
-            p_lease_id: generationLeaseId,
-            p_status: "complete",
-            p_stage: "complete",
-            p_subject_id: resolvedSubject.id,
-            p_title: sanitizeLessonText(persistableCandidate.title),
-            p_topic: sanitizeLessonText(request.topic),
-            p_description: sanitizeLessonText(verifiedCurriculumFallback ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.` : `A deep ${validDifficulty} lesson on ${request.topic}`),
-            p_difficulty: validDifficulty,
-            p_progress: 100,
-            p_completed_units: generationSectionCount,
-            p_total_units: generationSectionCount,
-            p_blocks: sanitizeLessonText(persistableCandidate.blocks),
-            p_result: {
-              id: durableJobId,
-              title: sanitizeLessonText(persistableCandidate.title),
-              blocks: sanitizeLessonText(persistableCandidate.blocks),
-              subject: sanitizeLessonText(effectiveSubject),
-              deterministicFallback: verifiedCurriculumFallback,
-            },
-          },
+          checkpointArgs,
         );
         if (checkpointWriteError) {
           log.lessonGenerationFailed({
