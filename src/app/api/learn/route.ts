@@ -200,11 +200,11 @@ export async function POST(req: Request) {
     }
     if (type === "course_save") {
       const draft = body.draft; if (!draft || !Array.isArray(draft.lessons) || !draft.lessons.length) return NextResponse.json({ error: "Invalid draft" }, { status: 400 });
-      const subjName = topic && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`); let subjectId: string | null = null;
+      const subjName = sanitizeLessonText((topic && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`)).toString()).slice(0, 255); let subjectId: string | null = null;
       const { data: existing } = await supabase.from("subjects").select("id").eq("user_id", user.id).eq("name", subjName).maybeSingle();
-      if (existing?.id) subjectId = existing.id; else { const { data: insertedSub } = await supabase.from("subjects").insert({ user_id: user.id, name: subjName }).select("id").single(); subjectId = insertedSub?.id ?? null; }
+      if (existing?.id) subjectId = existing.id; else { const { data: insertedSub } = await supabase.from("subjects").insert({ user_id: user.id, name: sanitizeLessonText(subjName) }).select("id").single(); subjectId = insertedSub?.id ?? null; }
       if (!subjectId) return NextResponse.json({ error: "Failed to resolve subject" }, { status: 500 });
-      const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, topic: (l.topic ?? topic ?? l.title ?? "").toString().slice(0,500), title: (l.title ?? l.summary ?? "Untitled").toString().slice(0,255), description: (l.summary ?? "").toString().slice(0,1500), difficulty: l.difficulty === "hard" ? "hard" : l.difficulty === "medium" ? "medium" : "easy", blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: "text", content: l.summary ?? "" }], progress: 0 }));
+      const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText((l.topic ?? topic ?? l.title ?? "").toString().slice(0,500)), title: sanitizeLessonText((l.title ?? l.summary ?? "Untitled").toString().slice(0,255)), description: sanitizeLessonText((l.summary ?? "").toString().slice(0,1500)), difficulty: l.difficulty === "hard" ? "hard" : l.difficulty === "medium" ? "medium" : "easy", blocks: sanitizeLessonText(Array.isArray(l.blocks) ? l.blocks : [{ type: "text", content: l.summary ?? "" }]), progress: 0 }));
       const { data: insertedLessons, error: insertLessonsError } = await supabase.from("learn_lessons").insert(lessonsToInsert).select("id, title");
       if (insertLessonsError) return NextResponse.json({ success: false, error: `Failed to save lessons: ${insertLessonsError.message}` }, { status: 500 });
       const titleToId = new Map<string, string>(); (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id)); const prereqInserts: any[] = []; const unmappedPrereqs: Array<{ lessonTitle: string; missingPrereq: string }> = [];
@@ -858,8 +858,8 @@ Return only valid JSON.`;
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
     return NextResponse.json({
       id: savedId,
-      title: parsed.title,
-      blocks: parsed.blocks,
+      title: sanitizeLessonText(parsed.title),
+      blocks: sanitizeLessonText(parsed.blocks),
       qualityScore: finalScore,
       subject: effectiveSubject,
       deterministicFallback: usedDeterministicFallback,
