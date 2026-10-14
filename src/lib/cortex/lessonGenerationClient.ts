@@ -20,11 +20,12 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
-function isLocalOnlyCompletion(value: LessonGenerationResult | GenerationJob): boolean {
-  if ("result" in value) {
-    return Boolean((value as GenerationJob<unknown, LessonGenerationResult>).result?.localOnly);
+function isLocalOnlyCompletion(value: { localOnly?: boolean; result?: unknown }): boolean {
+  const result = value.result;
+  if (result && typeof result === "object" && "localOnly" in result) {
+    return Boolean((result as { localOnly?: boolean }).localOnly);
   }
-  return Boolean((value as LessonGenerationResult).localOnly);
+  return Boolean(value.localOnly);
 }
 const ACTIVE_KEY = "shadecode:cortex:lesson-runner:v1";
 // /api/learn declares a 90-second serverless limit. Leave an 18-second buffer
