@@ -467,7 +467,7 @@ export async function POST(req: Request) {
               user_id: user.id,
               subject_id: resolvedSubject.id,
               topic: sanitizeLessonText(request.topic.slice(0, 500)),
-              title: `Cortex is building ${request.topic}`.slice(0, 255),
+              title: sanitizeLessonText(`Cortex is building ${request.topic}`.slice(0, 255)),
               description: "Generation is resumable. Partial sections are saved as they complete.",
               difficulty: validDifficulty,
               progress: 0,
@@ -728,7 +728,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         await supabase.from("learn_lessons").insert({
           id: durableJobId, user_id: user.id, subject_id: resolvedSubject.id,
           topic: sanitizeLessonText(request.topic.slice(0, 500)),
-          title: `Cortex is building ${request.topic}`.slice(0, 255),
+          title: sanitizeLessonText(`Cortex is building ${request.topic}`.slice(0, 255)),
           description: "Generation is resumable. This draft is not yet complete.",
           difficulty: validDifficulty, progress: 0, blocks: [],
         });
