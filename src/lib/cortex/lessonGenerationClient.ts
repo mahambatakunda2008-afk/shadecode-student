@@ -10,7 +10,7 @@ import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { getDurableGenerationJob, listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
-import { generateBrowserLocal, getBrowserLocalModelStatus, subscribeBrowserLocalModelStatus } from "@/lib/cortex/localModel";
+import { generateBrowserLocal, getBrowserLocalModelStatus, isBrowserLocalModelAvailable, subscribeBrowserLocalModelStatus } from "@/lib/cortex/localModel";
 import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
@@ -671,12 +671,19 @@ async function runJob(
       error: "Cortex is selecting the best available generation lane…",
     });
     const online = isBrowser() ? navigator.onLine : false;
+
+    // "available" is the initial UI state, not proof that this device can run WebGPU.
+    // Probe the actual adapter before selecting a local lane; otherwise an unsupported
+    // browser can be sent into a model-load attempt after the cloud lane fails.
+    const browserModelAvailable = isBrowser()
+      ? await isBrowserLocalModelAvailable()
+      : false;
     const localStatus = isBrowser() ? getBrowserLocalModelStatus().status : "unsupported";
     const localReady = localStatus === "ready";
     const hybrid = chooseHybridExecutionMode({
       online,
       browserModelReady: localReady,
-      browserModelAvailable: localStatus !== "unsupported",
+      browserModelAvailable,
       cloudAvailable: online,
       peerAvailable: false,
     }, "deep");
