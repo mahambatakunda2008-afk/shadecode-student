@@ -11,7 +11,7 @@ export default function DashboardWatchdog() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const dashboardMounted = Boolean(document.querySelector(".dashboard-shell"));
+      const dashboardMounted = Boolean(document.querySelector(".dashboard-command-center, .dashboard-shell[data-experience]"));
       if (!dashboardMounted) setTimedOut(true);
     }, WATCHDOG_TIMEOUT);
     return () => window.clearTimeout(timer);
@@ -19,7 +19,7 @@ export default function DashboardWatchdog() {
 
   if (!timedOut) {
     return (
-      <main className="dashboard-shell min-h-full" aria-busy="true" aria-label="Loading dashboard">
+      <main className="dashboard-watchdog-loading min-h-full" aria-busy="true" aria-label="Loading dashboard">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-10 w-10 animate-pulse rounded-xl bg-[var(--surface-2)]" />
