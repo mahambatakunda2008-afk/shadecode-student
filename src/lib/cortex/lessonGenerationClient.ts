@@ -139,9 +139,11 @@ async function saveLocalResult(job: GenerationJob<LessonGenerationInput>, genera
   const local = generated ?? generateLocalLesson(job.request.subject, job.request.prompt, context);
   const validated = validateResult(local, request);
   if (!validated) throw new Error("Generated lesson failed the learning-quality checks.");
-  const result: LessonGenerationResult = { id: validated.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel };
+  // This path only writes to IndexedDB. Mark the result device-only so callers never
+  // mistake a local save for durable server persistence or complete the cloud job.
+  const result: LessonGenerationResult = { id: validated.id, title: validated.title, blocks: validated.blocks, offlineFallback: !generated?.localModel, localModel: !!generated?.localModel, localOnly: true };
   const now = new Date().toISOString();
-  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: generated?.offlineFallback ? `Curated curriculum recovery lesson on ${job.request.prompt}. This lesson uses authored material while AI generation is unavailable.` : generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}` : `Offline curriculum lesson for ${job.request.prompt}`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, size: JSON.stringify(result).length });
+  await offlineStorage.saveLesson({ id: result.id, title: result.title, subject: job.request.subject, description: generated?.offlineFallback ? `Curated curriculum recovery lesson on ${job.request.prompt}. This lesson uses authored material while AI generation is unavailable. Stored on this device only.` : generated?.localModel ? `Locally generated Cortex lesson for ${job.request.prompt}. Stored on this device only.` : `Offline curriculum lesson for ${job.request.prompt}. Stored on this device only.`, blocks: result.blocks, difficulty: job.request.difficulty, progress: 0, completed: false, downloadedAt: now, lastSyncedAt: undefined, size: JSON.stringify(result).length });
   updateGenerationJob(job.id, { status: "complete", progress: 100, result, partial: undefined, error: undefined });
   if (getActiveId() === job.id) saveActiveId(null); openCompletedLesson(result);
   return getGenerationJobs().find(item => item.id === job.id) ?? job;
