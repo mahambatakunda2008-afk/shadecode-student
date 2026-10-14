@@ -127,3 +127,4 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [ ] Verify these states in the rendered preview, then continue through paper detail/attempt flows, Learn generation/recovery, and Exam Simulator end-to-end.
 
 - [x] Past-paper detail view now distinguishes not-found from transient load failures, offers an explicit retry, announces progress-save success/failure, and applies shared keyboard-focus and minimum-touch styling to actions.
+- [x] Exam Simulation setup controls now use the shared focus ring, semantic raised surfaces, larger touch targets, and accessible alert styling for generation errors.
