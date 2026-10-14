@@ -32,6 +32,86 @@ const FALLBACK_LESSONS: Record<string, FallbackLesson> = {
       { type: "summary", title: "The essential strategy", content: "Numerical solution means estimating a root when an exact algebraic method is inconvenient. A sign change locates a bracket, bisection repeatedly halves that bracket, interpolation estimates a crossing from a secant line, and fixed-point iteration repeatedly applies x = g(x). Show your working, keep enough precision, check convergence, and verify the final estimate in the original equation. Follow the exact numerical method required by your course or question." },
     ],
   },
+  "mathematics|trigonometric integration": {
+    "title": "Trigonometric integration: choose identities, transform, and integrate",
+    "blocks": [
+      {
+        "type": "objective",
+        "title": "Learning targets",
+        "content": "By the end, you should be able to integrate basic trigonometric functions, use identities to simplify powers and products, and check an antiderivative by differentiating it. Keep track of constants and the interval restrictions on any identity you use."
+      },
+      {
+        "type": "prior",
+        "title": "The essential derivatives",
+        "content": "You need these derivative facts: d(sin x)/dx = cos x, d(cos x)/dx = -sin x, d(tan x)/dx = sec²x. Integration reverses differentiation, so ∫cos x dx = sin x + C, ∫sin x dx = -cos x + C, and ∫sec²x dx = tan x + C."
+      },
+      {
+        "type": "concept",
+        "title": "Start with the simplest form",
+        "content": "Before choosing a technique, inspect the integrand. A single sine, cosine, or sec² term usually uses a standard result. If powers or products appear, look for an identity that turns the expression into a sum of terms you can integrate separately."
+      },
+      {
+        "type": "formula",
+        "title": "Standard results",
+        "content": "For angles measured in radians: ∫sin x dx = -cos x + C; ∫cos x dx = sin x + C; ∫sec²x dx = tan x + C; ∫cosec²x dx = -cot x + C. Also ∫tan x dx = -ln|cos x| + C, equivalently ln|sec x| + C where defined. The constant C is required for an indefinite integral."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: integrate a simple combination",
+        "content": "Evaluate ∫(3 cos x - 2 sin x) dx. Integrate each term separately: 3∫cos x dx - 2∫sin x dx = 3 sin x + 2 cos x + C. Check by differentiating: 3 cos x - 2 sin x, which matches the original integrand."
+      },
+      {
+        "type": "checkpoint",
+        "title": "Try a standard integral",
+        "content": "Without looking back, evaluate ∫(4 sin x + cos x) dx. Write the antiderivative of each term and include one constant of integration. Then differentiate your answer to check both signs."
+      },
+      {
+        "type": "concept",
+        "title": "Use identities for squared terms",
+        "content": "The Pythagorean identity sin²x + cos²x = 1 is useful, but for integrating a square it is often better to use the double-angle forms: sin²x = (1 - cos 2x)/2 and cos²x = (1 + cos 2x)/2. These convert squared functions into a constant plus a cosine term."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: integrate sin squared",
+        "content": "Evaluate ∫sin²x dx. Replace sin²x with (1 - cos 2x)/2. Then integrate: ∫(1/2 - cos 2x/2) dx = x/2 - (1/2)(sin 2x/2) + C = x/2 - sin 2x/4 + C. Differentiate the result to recover sin²x using the double-angle identity."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: integrate cos squared",
+        "content": "Evaluate ∫cos²x dx. Use cos²x = (1 + cos 2x)/2. Therefore ∫cos²x dx = ∫(1/2 + cos 2x/2) dx = x/2 + sin 2x/4 + C. The factor of 1/2 inside the angle matters: ∫cos 2x dx = sin 2x/2."
+      },
+      {
+        "type": "concept",
+        "title": "Products: simplify before integrating",
+        "content": "For products such as sin x cos x, a double-angle identity can make the integral immediate: sin 2x = 2 sin x cos x, so sin x cos x = sin 2x/2. For more complicated products or mixed powers, decide whether a substitution or an identity gives the simplest integrand. Do not expand blindly."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: a product",
+        "content": "Evaluate ∫sin x cos x dx. Since sin 2x = 2 sin x cos x, rewrite the integrand as (1/2)sin 2x. Its integral is (1/2)(-cos 2x/2) + C = -cos 2x/4 + C. An equivalent answer is sin²x/2 + C, because the two expressions differ only by a constant."
+      },
+      {
+        "type": "misconception",
+        "title": "Common errors",
+        "content": "Do not forget the chain factor: ∫cos 2x dx is sin 2x/2, not sin 2x. Do not integrate sin x as +cos x; its antiderivative is -cos x. Include +C for an indefinite integral. When using ln results, preserve absolute-value bars where the expression may be negative."
+      },
+      {
+        "type": "exam",
+        "title": "A dependable exam method",
+        "content": "First identify whether the integrand is a standard function, a power, or a product. State the identity you use, simplify fully, then integrate term by term. Keep brackets and coefficients visible when the angle is 2x or another multiple of x. Finish with +C and, when possible, differentiate your answer as a check."
+      },
+      {
+        "type": "practice",
+        "title": "Practice ladder",
+        "content": "1. Evaluate ∫(2 cos x - 5 sin x) dx. 2. Evaluate ∫cos²x dx using a double-angle identity. 3. Evaluate ∫sin x cos x dx using sin 2x = 2 sin x cos x. 4. Explain why ∫cos 3x dx = sin 3x/3 + C. 5. Differentiate x/2 - sin 2x/4 and show that it equals sin²x."
+      },
+      {
+        "type": "summary",
+        "title": "The core strategy",
+        "content": "Basic trigonometric integrals follow directly from derivative facts. For squared sine and cosine, use double-angle identities; for products, look for a product-to-double-angle transformation or a useful substitution. Track the coefficient introduced by the chain rule in reverse, include +C, and verify by differentiating."
+      }
+    ]
+  },
   "mathematics|trigonometric identities": {
     title: "Trigonometric identities: transform, prove, simplify",
     blocks: [

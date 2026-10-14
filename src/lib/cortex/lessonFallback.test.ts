@@ -31,4 +31,22 @@ describe("buildDeterministicLessonFallback", () => {
       buildDeterministicLessonFallback("Mathematics", "Differential equations"),
     ).toBeNull();
   });
+  it("returns a curated trigonometric-integration lesson when cloud generation is unavailable", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Mathematics AS Level 9709",
+      "Please teach me trigonometric integration",
+    );
+
+    expect(lesson?.title).toContain("Trigonometric integration");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "summary")).toBe(true);
+  });
+
+  it("does not return the trigonometric-integration lesson for another subject", () => {
+    expect(
+      buildDeterministicLessonFallback("Physics", "Trigonometric integration"),
+    ).toBeNull();
+  });
+
 });
