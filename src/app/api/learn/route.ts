@@ -331,9 +331,7 @@ export async function POST(req: Request) {
             p_subject_id: resolvedSubject.id,
             p_title: sanitizeLessonText(persistableCandidate.title),
             p_topic: sanitizeLessonText(request.topic),
-            p_description: verifiedCurriculumFallback
-              ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
-              : `A deep ${validDifficulty} lesson on ${request.topic}`,
+            p_description: sanitizeLessonText(verifiedCurriculumFallback ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.` : `A deep ${validDifficulty} lesson on ${request.topic}`),
             p_difficulty: validDifficulty,
             p_progress: 100,
             p_completed_units: generationSectionCount,
@@ -343,7 +341,7 @@ export async function POST(req: Request) {
               id: durableJobId,
               title: sanitizeLessonText(persistableCandidate.title),
               blocks: sanitizeLessonText(persistableCandidate.blocks),
-              subject: effectiveSubject,
+              subject: sanitizeLessonText(effectiveSubject),
               deterministicFallback: verifiedCurriculumFallback,
             },
           },
@@ -370,9 +368,7 @@ export async function POST(req: Request) {
           subject_id: resolvedSubject.id,
           topic: sanitizeLessonText(request.topic.slice(0, 500)),
           title: sanitizeLessonText(persistableCandidate.title),
-          description: verifiedCurriculumFallback
-            ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
-            : `A deep ${validDifficulty} lesson on ${request.topic}`,
+          description: sanitizeLessonText(verifiedCurriculumFallback ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.` : `A deep ${validDifficulty} lesson on ${request.topic}`),
           difficulty: validDifficulty,
           progress: 0,
           blocks: sanitizeLessonText(persistableCandidate.blocks),
@@ -671,14 +667,14 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_status: "partial",
             p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
-            p_title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255),
+            p_title: sanitizeLessonText((generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255)),
             p_topic: sanitizeLessonText(request.topic.slice(0, 500)),
             p_description: "Generation is resumable. Partial sections are saved as they complete.",
             p_difficulty: validDifficulty,
             p_progress: durableProgress,
             p_completed_units: generationSectionIndex + 1,
             p_total_units: generationSectionCount,
-            p_blocks: currentBlocks,
+            p_blocks: sanitizeLessonText(currentBlocks),
             p_result: null,
           },
         );
