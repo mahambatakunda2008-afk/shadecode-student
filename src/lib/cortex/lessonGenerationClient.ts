@@ -886,7 +886,6 @@ async function runJob(
 
     if (isBrowser() && !navigator.onLine) {
       const finished = await saveLocalResult(job);
-      if (!finished.localOnly) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
       return finished;
     }
 
@@ -998,7 +997,7 @@ async function runJob(
           updateGenerationJob(job.id, { status: "generating", progress: Math.max(26, Math.min(40, getGenerationJob(job.id)?.progress ?? 26)), error: "Cloud generation is unavailable. Cortex is switching to verified curriculum recovery." });
           const localFallback: LessonGenerationResult = { id: local.id, title: local.title, blocks: local.blocks, offlineFallback: true, localModel: false };
           const finished = token ? await persistGeneratedLesson(job, localFallback, token, generationLeaseId(job.id)) : await saveLocalResult(job, localFallback);
-          if (token && !finished.localOnly) if (!finished.localOnly) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
+          if (token && !finished.localOnly) await syncDurableGenerationJob(token, (getGenerationJob(job.id) ?? finished) as GenerationJob, "complete");
           return getGenerationJobs().find(item => item.id === job.id) ?? job;
         }
       } catch (fallbackError) {
