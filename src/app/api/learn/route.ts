@@ -329,8 +329,8 @@ export async function POST(req: Request) {
             p_status: "complete",
             p_stage: "complete",
             p_subject_id: resolvedSubject.id,
-            p_title: persistableCandidate.title,
-            p_topic: request.topic,
+            p_title: sanitizeLessonText(persistableCandidate.title),
+            p_topic: sanitizeLessonText(request.topic),
             p_description: verifiedCurriculumFallback
               ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
               : `A deep ${validDifficulty} lesson on ${request.topic}`,
@@ -338,11 +338,11 @@ export async function POST(req: Request) {
             p_progress: 100,
             p_completed_units: generationSectionCount,
             p_total_units: generationSectionCount,
-            p_blocks: persistableCandidate.blocks,
+            p_blocks: sanitizeLessonText(persistableCandidate.blocks),
             p_result: {
               id: durableJobId,
-              title: persistableCandidate.title,
-              blocks: persistableCandidate.blocks,
+              title: sanitizeLessonText(persistableCandidate.title),
+              blocks: sanitizeLessonText(persistableCandidate.blocks),
               subject: effectiveSubject,
               deterministicFallback: verifiedCurriculumFallback,
             },
@@ -368,14 +368,14 @@ export async function POST(req: Request) {
         const { data: inserted, error } = await supabase.from("learn_lessons").insert({
           user_id: user.id,
           subject_id: resolvedSubject.id,
-          topic: request.topic.slice(0, 500),
-          title: persistableCandidate.title,
+          topic: sanitizeLessonText(request.topic.slice(0, 500)),
+          title: sanitizeLessonText(persistableCandidate.title),
           description: verifiedCurriculumFallback
             ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
             : `A deep ${validDifficulty} lesson on ${request.topic}`,
           difficulty: validDifficulty,
           progress: 0,
-          blocks: persistableCandidate.blocks,
+          blocks: sanitizeLessonText(persistableCandidate.blocks),
           updated_at: new Date().toISOString(),
         }).select("id").single();
         if (error || !inserted?.id) {
@@ -389,8 +389,8 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         id: savedId,
-        title: persistableCandidate.title,
-        blocks: persistableCandidate.blocks,
+        title: sanitizeLessonText(persistableCandidate.title),
+        blocks: sanitizeLessonText(persistableCandidate.blocks),
         qualityScore: finalScore,
         subject: effectiveSubject,
         deterministicFallback: verifiedCurriculumFallback,
@@ -470,7 +470,7 @@ export async function POST(req: Request) {
               id: durableJobId,
               user_id: user.id,
               subject_id: resolvedSubject.id,
-              topic: request.topic.slice(0, 500),
+              topic: sanitizeLessonText(request.topic.slice(0, 500)),
               title: `Cortex is building ${request.topic}`.slice(0, 255),
               description: "Generation is resumable. Partial sections are saved as they complete.",
               difficulty: validDifficulty,
@@ -672,7 +672,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
             p_title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255),
-            p_topic: request.topic.slice(0, 500),
+            p_topic: sanitizeLessonText(request.topic.slice(0, 500)),
             p_description: "Generation is resumable. Partial sections are saved as they complete.",
             p_difficulty: validDifficulty,
             p_progress: durableProgress,
@@ -731,7 +731,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
       if (!existingJob?.id) {
         await supabase.from("learn_lessons").insert({
           id: durableJobId, user_id: user.id, subject_id: resolvedSubject.id,
-          topic: request.topic.slice(0, 500),
+          topic: sanitizeLessonText(request.topic.slice(0, 500)),
           title: `Cortex is building ${request.topic}`.slice(0, 255),
           description: "Generation is resumable. This draft is not yet complete.",
           difficulty: validDifficulty, progress: 0, blocks: [],
@@ -837,8 +837,8 @@ Return only valid JSON.`;
     if (!subjectId) return NextResponse.json({ error: "Unable to resolve the lesson subject." }, { status: 500 });
 
     const lessonRow = {
-      user_id: user.id, subject_id: subjectId, topic: request.topic.slice(0, 500),
-      title: parsed.title, description: `A deep ${validDifficulty} lesson on ${request.topic}`,
+      user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText(request.topic.slice(0, 500)),
+      title: sanitizeLessonText(parsed.title), description: sanitizeLessonText(`A deep ${validDifficulty} lesson on ${request.topic}`),
       difficulty: validDifficulty, progress: 0, blocks: parsed.blocks,
       updated_at: new Date().toISOString(),
     };
