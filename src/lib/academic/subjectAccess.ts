@@ -16,7 +16,7 @@ export async function resolveLearnerSubject(
   requestedSubject: unknown,
   requestedSubjectId?: unknown,
 ): Promise<SubjectAccessResult> {
-  const requestedName = typeof requestedSubject === "string" ? requestedSubject.trim() : "";
+  // PostgreSQL text cannot contain U+0000. Treat it as invalid input noise at the boundary\n  // so a malformed subject name cannot break subject registration before lesson generation.\n  const requestedName = typeof requestedSubject === "string" ? requestedSubject.replace(/\\u0000/g, "").trim() : "";
   if (!requestedName) return { ok: false, status: 400, error: "Choose a subject." };
   if (isGeneralSubject(requestedName)) {
     return { ok: false, status: 403, error: "General is not a learner subject. Choose one of your configured subjects." };
@@ -74,7 +74,7 @@ export async function resolveLearnerSubject(
 
   const { data: created, error: createError } = await supabase
     .from("subjects")
-    .insert({ user_id: userId, name: subject })
+    .insert({ user_id: userId, name: subject.replace(/\\u0000/g, "").trim() })
     .select("id")
     .single();
 
