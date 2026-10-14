@@ -32,6 +32,146 @@ const FALLBACK_LESSONS: Record<string, FallbackLesson> = {
       { type: "summary", title: "The essential strategy", content: "Numerical solution means estimating a root when an exact algebraic method is inconvenient. A sign change locates a bracket, bisection repeatedly halves that bracket, interpolation estimates a crossing from a secant line, and fixed-point iteration repeatedly applies x = g(x). Show your working, keep enough precision, check convergence, and verify the final estimate in the original equation. Follow the exact numerical method required by your course or question." },
     ],
   },
+  "mathematics|integration by substitution": {
+    "title": "Integration by substitution: reverse the chain rule",
+    "blocks": [
+      {
+        "type": "objective",
+        "title": "Learning targets",
+        "content": "By the end, you should be able to recognise a composite function with an inner derivative, choose a substitution, change the differential correctly, and return to the original variable."
+      },
+      {
+        "type": "prior",
+        "title": "The chain rule in reverse",
+        "content": "If y = F(u) and u = g(x), differentiation gives dy/dx = F'(u)g'(x). Substitution reverses this pattern: when an integrand contains a function of g(x) multiplied by g'(x), set u = g(x) so the integral becomes simpler."
+      },
+      {
+        "type": "concept",
+        "title": "Choose the inner function",
+        "content": "Look for a bracket, a repeated expression, or a function whose derivative also appears in the integrand. Let u equal that inner expression, calculate du/dx, and rearrange to obtain du. Then replace every matching x-expression and dx factor consistently."
+      },
+      {
+        "type": "formula",
+        "title": "The substitution pattern",
+        "content": "If u = g(x), then du = g'(x) dx. Therefore ∫ f(g(x))g'(x) dx = ∫ f(u) du. This is a pattern, not permission to replace only part of the integrand: the differential must change with the variable."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: a linear inner function",
+        "content": "Evaluate ∫ 2x(x² + 1)^4 dx. Let u = x² + 1, so du = 2x dx. The integral becomes ∫u^4 du = u^5/5 + C. Substitute back: (x² + 1)^5/5 + C. Differentiating gives 2x(x² + 1)^4, confirming the result."
+      },
+      {
+        "type": "checkpoint",
+        "title": "Choose a substitution",
+        "content": "For ∫ 3x²(x³ + 4)^5 dx, identify a useful u and write du. Do not integrate yet. Check whether the factor multiplying the bracket is exactly the derivative of the inner expression."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: exponential function",
+        "content": "Evaluate ∫ e^(3x) dx. Let u = 3x, so du = 3 dx and dx = du/3. Then the integral is (1/3)∫e^u du = e^u/3 + C = e^(3x)/3 + C. The factor one third appears because the inner derivative is 3."
+      },
+      {
+        "type": "concept",
+        "title": "Definite integrals: change the limits",
+        "content": "For a definite integral, if you change from x to u, also transform both limits using u = g(x). Then integrate in u and use the new limits. Alternatively, integrate and substitute back into x before applying the original limits, but never mix x-limits with a u-integral."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: definite substitution",
+        "content": "Evaluate ∫ from x=0 to x=1 of 2x(x² + 1)^2 dx. Set u = x² + 1, du = 2x dx. The limits become u=1 and u=2. The integral is ∫ from 1 to 2 of u² du = [u³/3] from 1 to 2 = (8 - 1)/3 = 7/3."
+      },
+      {
+        "type": "misconception",
+        "title": "Common mistakes",
+        "content": "Do not forget a constant factor when du is not exactly the remaining factor. Do not leave an x inside an integral after changing to u unless you explicitly rewrite it in u. For definite integrals, change the limits or substitute back before using the original limits."
+      },
+      {
+        "type": "exam",
+        "title": "Exam method",
+        "content": "Write u = ..., then calculate du clearly. Rewrite the entire integral in the new variable, integrate, and substitute back if the integral is indefinite. For a definite integral, show the transformed limits and evaluate carefully. Differentiate an indefinite answer to check it."
+      },
+      {
+        "type": "practice",
+        "title": "Practice ladder",
+        "content": "1. Evaluate ∫ 6x(3x² + 2)^4 dx. 2. Evaluate ∫ x e^(x²) dx. 3. Evaluate ∫ from 0 to 1 of 2x(x² + 3)^2 dx. 4. Explain why ∫e^(5x) dx contains a factor of one fifth. For each, identify the inner function and its differential before integrating."
+      },
+      {
+        "type": "summary",
+        "title": "The essential strategy",
+        "content": "Substitution reverses the chain rule. Choose an inner function whose derivative is present, convert the differential, rewrite the whole integrand, integrate, and return to x or transform the definite limits. The final derivative should reproduce the original integrand."
+      }
+    ]
+  },
+  "mathematics|integration by parts": {
+    "title": "Integration by parts: turn a product into a simpler integral",
+    "blocks": [
+      {
+        "type": "objective",
+        "title": "Learning targets",
+        "content": "By the end, you should be able to apply integration by parts to products, choose u and dv sensibly, repeat the method when needed, and use the original integral to check whether the result is reasonable."
+      },
+      {
+        "type": "prior",
+        "title": "Where the formula comes from",
+        "content": "The product rule says d(uv)/dx = u(dv/dx) + v(du/dx). Rearranging and integrating gives the integration-by-parts formula. It is useful when differentiating one factor simplifies it and integrating the other factor is straightforward."
+      },
+      {
+        "type": "formula",
+        "title": "The formula",
+        "content": "For an indefinite integral, ∫u dv = uv - ∫v du + C. Choose u as the factor to differentiate and dv as the factor to integrate. Then calculate du and v before substituting into the formula."
+      },
+      {
+        "type": "concept",
+        "title": "Choosing u and dv",
+        "content": "A useful choice makes the remaining integral simpler than the original. In products involving a polynomial and an exponential or trigonometric function, differentiating the polynomial often reduces its power. With logarithmic functions, differentiating the logarithm may remove it from the integrand."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: x e^x",
+        "content": "Evaluate ∫x e^x dx. Choose u=x and dv=e^x dx, so du=dx and v=e^x. Apply the formula: ∫x e^x dx = x e^x - ∫e^x dx = x e^x - e^x + C = e^x(x - 1) + C. Differentiating confirms the product x e^x."
+      },
+      {
+        "type": "checkpoint",
+        "title": "Pick u and dv",
+        "content": "For ∫x cos x dx, which factor would you differentiate and which would you integrate? Write u, dv, du, and v first. Choose the option that leaves a simpler integral after applying the formula."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: x sin x",
+        "content": "Evaluate ∫x sin x dx. Let u=x and dv=sin x dx. Then du=dx and v=-cos x. The result is -x cos x - ∫(-cos x) dx = -x cos x + sin x + C. Differentiate: -cos x + x sin x + cos x = x sin x."
+      },
+      {
+        "type": "concept",
+        "title": "When to repeat the method",
+        "content": "If the new integral still contains a product that can be simplified by parts, apply the formula again. For polynomial factors, repeated differentiation eventually reaches zero. Keep the signs and boundary terms organised at each step."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: a logarithm",
+        "content": "For ∫ln x dx with x>0, write it as ∫ln x · 1 dx. Choose u=ln x and dv=dx, so du=1/x dx and v=x. Then the integral is x ln x - ∫x(1/x) dx = x ln x - x + C."
+      },
+      {
+        "type": "misconception",
+        "title": "Common mistakes",
+        "content": "The formula contains a minus sign: uv - ∫v du. A frequent error is forgetting that the integral of sin x is -cos x. Another is choosing u and dv without checking whether the remaining integral is simpler. Always include +C for an indefinite integral."
+      },
+      {
+        "type": "exam",
+        "title": "Exam method",
+        "content": "State u and dv, then show du and v. Substitute into uv - ∫v du with brackets where necessary. Simplify the remaining integral and include the constant. For a definite integral, evaluate the boundary term uv at both limits and apply the limits to the remaining integral."
+      },
+      {
+        "type": "practice",
+        "title": "Practice ladder",
+        "content": "1. Evaluate ∫x e^x dx. 2. Evaluate ∫x cos x dx. 3. Evaluate ∫ln x dx for x>0. 4. Explain why choosing u=x is useful in ∫x sin x dx. Differentiate each indefinite answer to verify it."
+      },
+      {
+        "type": "summary",
+        "title": "The essential strategy",
+        "content": "Integration by parts is the reverse of the product rule: ∫u dv = uv - ∫v du. Choose the factor whose derivative simplifies the expression, integrate the other factor, apply the minus sign carefully, and check the result by differentiation."
+      }
+    ]
+  },
   "mathematics|trigonometric integration": {
     "title": "Trigonometric integration: choose identities, transform, and integrate",
     "blocks": [

@@ -49,4 +49,18 @@ describe("buildDeterministicLessonFallback", () => {
     ).toBeNull();
   });
 
+  it("provides a verified substitution lesson for an exact Mathematics topic", () => {
+    const lesson = buildDeterministicLessonFallback("Maths AS Level 9709", "Integration by substitution");
+    expect(lesson?.title).toContain("Integration by substitution");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+  });
+
+  it("provides a verified integration-by-parts lesson for an exact Mathematics topic", () => {
+    const lesson = buildDeterministicLessonFallback("Mathematics", "Integration by parts");
+    expect(lesson?.title).toContain("Integration by parts");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+  });
+
 });
