@@ -69,7 +69,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (!promptAlreadyGrounded) {
       groundedPrompt = curriculumGroundingAvailable
         ? `${prompt}${curriculumContext}`
-        : `${prompt}\\n\\n=== CURRICULUM SAFETY NOTE ===\\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\\n=== END CURRICULUM SAFETY NOTE ===`;
+        : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
     }
   } else if (userId) {
     let groundingTimer: ReturnType<typeof setTimeout> | undefined;
@@ -84,19 +84,19 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       if (curriculumResult === timeoutSentinel) {
         curriculumGroundingReason = "lookup_timeout";
         console.warn(`[AI] curriculum grounding exceeded its ${groundingBudgetMs}ms budget; continuing without verified context.`);
-        groundedPrompt = `${prompt}\\n\\n=== CURRICULUM SAFETY NOTE ===\\nVerified curriculum context could not be loaded within the request budget. Do not claim board-specific syllabus alignment or invent syllabus objectives. Teach the requested topic as general educational material.\\n=== END CURRICULUM SAFETY NOTE ===`;
+        groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded within the request budget. Do not claim board-specific syllabus alignment or invent syllabus objectives. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
       } else {
         const curriculumContext = curriculumResult;
         curriculumGroundingAvailable = curriculumContext.trim().length > 0;
         curriculumGroundingReason = curriculumGroundingAvailable ? "resolved" : "unavailable";
         groundedPrompt = curriculumGroundingAvailable
           ? `${prompt}${curriculumContext}`
-          : `${prompt}\\n\\n=== CURRICULUM SAFETY NOTE ===\\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\\n=== END CURRICULUM SAFETY NOTE ===`;
+          : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
       }
     } catch (error) {
       curriculumGroundingReason = "lookup_error";
       console.error("[AI] curriculum grounding failed:", error);
-      groundedPrompt = `${prompt}\\n\\n=== CURRICULUM SAFETY NOTE ===\\nVerified curriculum context could not be loaded. Do not claim board-specific syllabus alignment or invent syllabus objectives.\\n=== END CURRICULUM SAFETY NOTE ===`;
+      groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded. Do not claim board-specific syllabus alignment or invent syllabus objectives.\n=== END CURRICULUM SAFETY NOTE ===`;
     } finally {
       if (groundingTimer) clearTimeout(groundingTimer);
     }
