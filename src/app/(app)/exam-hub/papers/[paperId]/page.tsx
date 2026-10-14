@@ -15,6 +15,7 @@ export default function PaperViewerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [scoreInput, setScoreInput] = useState("");
   const [scoreError, setScoreError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export default function PaperViewerPage() {
     setError(null);
     fetch(`/api/exam-hub/papers/${params.paperId}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Paper not found");
+        if (!res.ok) throw new Error(res.status === 404 ? "This paper could not be found." : "The paper could not be loaded. Check your connection and try again.");
         return res.json();
       })
       .then((data) => {
@@ -49,17 +50,19 @@ export default function PaperViewerPage() {
 
   async function patchState(patch: Record<string, unknown>) {
     setSaving(true);
+    setSaveMessage(null);
     try {
       const res = await fetch(`/api/exam-hub/papers/${params.paperId}/state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) throw new Error("Your progress could not be saved. Check your connection and try again.");
       const data = await res.json();
       setPaper((prev) => (prev ? { ...prev, state: data.state } : prev));
-    } catch {
-      // Non-critical — don't block the viewer over a state-save failure.
+      setSaveMessage("Progress saved.");
+    } catch (err) {
+      setSaveMessage(err instanceof Error ? err.message : "Your progress could not be saved. Check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -122,7 +125,8 @@ export default function PaperViewerPage() {
             <ArrowLeft size={16} /> Back
           </button>
           <div style={{ padding: 20, borderRadius: 18, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)" }}>
-            <p style={{ color: "var(--danger)", margin: 0 }}>{error ?? "Paper not found"}</p>
+            <p role="alert" style={{ color: "var(--danger)", margin: 0 }}>{error ?? "Paper not found"}</p>
+            <button type="button" onClick={load} className="ssc-focus-ring mt-4 inline-flex min-h-11 items-center rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">Try again</button>
           </div>
         </div>
       </div>
@@ -138,6 +142,8 @@ export default function PaperViewerPage() {
         >
           <ArrowLeft size={16} /> Back to papers
         </button>
+
+        {saveMessage && <p role="status" className={`mb-3 rounded-xl border p-3 text-sm ${saveMessage === "Progress saved." ? "border-[var(--border-subtle)] bg-[var(--surface)] text-[var(--muted-foreground)]" : "border-[var(--danger)]/20 bg-[var(--danger-soft)] text-[var(--danger)]"}`}>{saveMessage}</p>}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
           <div>
@@ -185,7 +191,7 @@ export default function PaperViewerPage() {
           {/* Native browser PDF rendering — gives zoom, search, and full-screen
               for free with zero extra dependencies. Signed URL expires in
               10 minutes; the page re-fetches on reload. */}
-          <iframe src={signedUrl} title="Past paper" style={{ width: "100%", height: "100%", border: "none" }} />
+          <iframe src={signedUrl} title={`Past paper ${paper.paper_number} ${PAPER_KIND_LABELS[paper.kind]}`} style={{ width: "100%", height: "100%", border: "none" }} />
         </div>
       </div>
 
@@ -283,8 +289,10 @@ function ActionButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
+      className="ssc-focus-ring min-h-11 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--interactive-hover)]"
       style={{
         display: "flex",
         alignItems: "center",
