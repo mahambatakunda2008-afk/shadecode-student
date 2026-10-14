@@ -103,7 +103,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
   const promptTokens = Math.ceil(groundedPrompt.length / 4);
-  const startedAt = Date.now();
+
   function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) {
     const telemetry = logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs, curriculumGrounding: curriculumGroundingAvailable, curriculumGroundingReason } });
     void Promise.race([telemetry.catch(() => undefined), new Promise<void>(resolve => setTimeout(resolve, TELEMETRY_BUDGET_MS))]);
