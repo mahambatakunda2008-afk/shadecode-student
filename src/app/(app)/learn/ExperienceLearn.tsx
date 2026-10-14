@@ -83,14 +83,14 @@ export default function ExperienceLearn() {
     return (
       <main className="min-h-[70vh] bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true" aria-label="Checking your session">
         <div className="mx-auto max-w-7xl space-y-5">
-          <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+          <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]" role="status" aria-live="polite">
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
             Checking your learning space…
           </div>
           <div className="animate-pulse space-y-5">
-            <div className="h-5 w-36 rounded-full bg-black/10 dark:bg-white/10" />
-            <div className="h-12 w-3/5 rounded-2xl bg-black/10 dark:bg-white/10" />
-            <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]"><div className="h-80 rounded-[28px] bg-black/10 dark:bg-white/10" /><div className="h-80 rounded-[28px] bg-black/10 dark:bg-white/10" /></div>
+            <div className="h-5 w-36 rounded-full bg-[var(--surface-2)]" />
+            <div className="h-12 w-3/5 rounded-2xl bg-[var(--surface-2)]" />
+            <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]"><div className="h-80 rounded-[28px] bg-[var(--surface-2)]" /><div className="h-80 rounded-[28px] bg-[var(--surface-2)]" /></div>
           </div>
         </div>
       </main>
