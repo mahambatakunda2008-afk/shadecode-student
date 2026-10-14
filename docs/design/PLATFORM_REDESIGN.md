@@ -128,3 +128,4 @@ Do not call the redesign complete after a token change or a successful build. Co
 
 - [x] Past-paper detail view now distinguishes not-found from transient load failures, offers an explicit retry, announces progress-save success/failure, and applies shared keyboard-focus and minimum-touch styling to actions.
 - [x] Exam Simulation setup controls now use the shared focus ring, semantic raised surfaces, larger touch targets, and accessible alert styling for generation errors.
+- [x] Exam Simulation level and question-count selectors now expose their selected state with `aria-pressed`, in addition to visible styling.
