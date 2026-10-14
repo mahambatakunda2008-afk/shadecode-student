@@ -835,7 +835,7 @@ Return only valid JSON.`;
     const lessonRow = {
       user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText(request.topic.slice(0, 500)),
       title: sanitizeLessonText(parsed.title), description: sanitizeLessonText(`A deep ${validDifficulty} lesson on ${request.topic}`),
-      difficulty: validDifficulty, progress: 0, blocks: parsed.blocks,
+      difficulty: validDifficulty, progress: 0, blocks: sanitizeLessonText(parsed.blocks),
       updated_at: new Date().toISOString(),
     };
     let savedId = durableJobId;
