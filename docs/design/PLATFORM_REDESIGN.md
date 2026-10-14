@@ -125,3 +125,5 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [x] Past-paper search ignores stale responses when the learner types quickly or clears the query, reports HTTP/network failures instead of presenting them as genuine zero-result searches, and announces the busy state to assistive technology.
 - [x] Past-paper board/level/subject selection cards and document actions use raised neutral surfaces, shared focus treatment, minimum touch height, and restrained hover feedback.
 - [ ] Verify these states in the rendered preview, then continue through paper detail/attempt flows, Learn generation/recovery, and Exam Simulator end-to-end.
+
+- [x] Past-paper detail view now distinguishes not-found from transient load failures, offers an explicit retry, announces progress-save success/failure, and applies shared keyboard-focus and minimum-touch styling to actions.
