@@ -23,28 +23,28 @@ export function buildSyllabusMasteryHeatmap(syllabus: SyllabusTopic[], evidenceB
     const mastery = attempts >= minAttempts && finite(evidence?.mastery_score) ? clamp(evidence.mastery_score) : null;
     const confidence = finite(evidence?.confidence) ? clamp(evidence.confidence) : null;
     const band: MasteryBand = mastery === null ? "not_enough_evidence" : mastery < developingThreshold ? "needs_work" : mastery < strongThreshold ? "developing" : "strong";
-    return { ...item, attempts, mastery, confidence, band };
+    return { ...item, mastery, attempts, confidence, band };
   });
-  const byGroup = new Map<string, SyllabusHeatmapTopic[]>();
+  const groupMap = new Map<string, SyllabusHeatmapTopic[]>();
   for (const topic of topics) {
-    const id = topic.groupId ?? "__ungrouped__";
-    byGroup.set(id, [...(byGroup.get(id) ?? []), topic]);
+    const key = topic.groupId ?? "__ungrouped__";
+    groupMap.set(key, [...(groupMap.get(key) ?? []), topic]);
   }
-  const groups = Array.from(byGroup, ([groupId, members]): SyllabusHeatmapGroup => {
-    const scores = members.flatMap(topic => topic.mastery === null ? [] : [topic.mastery]);
+  const groups = Array.from(groupMap, ([groupId, groupTopics]): SyllabusHeatmapGroup => {
+    const evidenced = groupTopics.flatMap(t => t.mastery === null ? [] : [t.mastery]);
     return {
       groupId,
-      groupTitle: members[0]?.groupTitle ?? (groupId === "__ungrouped__" ? "Ungrouped" : groupId),
-      averageMastery: mean(scores),
-      evidencedTopics: scores.length,
-      totalTopics: members.length,
-      topics: members,
+      groupTitle: groupTopics[0]?.groupTitle ?? (groupId === "__ungrouped__" ? "Ungrouped" : groupId),
+      averageMastery: mean(evidenced),
+      evidencedTopics: evidenced.length,
+      totalTopics: groupTopics.length,
+      topics: groupTopics,
     };
   });
-  const scores = topics.flatMap(topic => topic.mastery === null ? [] : [topic.mastery]);
+  const evidenced = topics.flatMap(t => t.mastery === null ? [] : [t.mastery]);
   return {
     groups,
     topics,
-    summary: { evidencedTopics: scores.length, totalTopics: topics.length, averageMastery: mean(scores) },
+    summary: { evidencedTopics: evidenced.length, totalTopics: topics.length, averageMastery: mean(evidenced) },
   };
 }
