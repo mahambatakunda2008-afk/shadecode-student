@@ -37,7 +37,6 @@ export default function CurriculumMasteryHeatmap() {
 
   const current = syllabi.find(s => s.id === selected) ?? syllabi[0];
   const projected = useMemo(() => current ? projectSyllabusHeatmap(current.objectives) : null, [current]);
-  const label = current ? [current.subject_id, current.qualification_id, current.syllabus_version].filter(Boolean).join(" · ") : "";
 
   return (
     <section aria-labelledby="syllabus-mastery-title" style={{border:"1px solid var(--card-border)",background:"var(--card)",borderRadius:18,padding:20,marginBottom:24}}>
