@@ -11,7 +11,7 @@ import { isBroadTopic } from "@/lib/learn/curriculumPlanner";
 import type { GenerationJobStatus } from "@/lib/cortex/generationJob";
 import { getDurableGenerationJob, listDurableGenerationJobs, syncDurableGenerationJob } from "@/lib/cortex/durableGenerationJob";
 import { generateBrowserLocal, getBrowserLocalModelStatus, isBrowserLocalModelAvailable, subscribeBrowserLocalModelStatus } from "@/lib/cortex/localModel";
-import { chooseHybridExecutionMode, firstSuccessful } from "@/lib/cortex/hybridRuntime";
+import { chooseHybridExecutionMode } from "@/lib/cortex/hybridRuntime";
 import { classifyCortexExecutionFailure } from "@/lib/cortex/runtime/executionEvents";
 import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
 import { hasCompletedLessonCheckpoint } from "@/lib/cortex/lessonCheckpoint";
