@@ -51,7 +51,11 @@ function mean(values: number[]): number | null {
   return values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
 }
 
-/** Project existing mastery evidence onto syllabus topics; this never scores a learner. */
+/**
+ * Project existing mastery evidence onto syllabus topics; this never scores a
+ * learner. Defaults are transparent display bands, not validated predictions.
+ * Missing/low-volume evidence stays "not enough evidence" rather than zero.
+ */
 export function buildSyllabusMasteryHeatmap(
   syllabus: SyllabusTopic[],
   evidenceByTopic: Record<string, TopicMasteryEvidence | undefined>,
@@ -61,21 +65,23 @@ export function buildSyllabusMasteryHeatmap(
   const developingThreshold = clamp(options.developingThreshold ?? 50);
   const strongThreshold = clamp(options.strongThreshold ?? 80);
 
-  const topics = syllabus.map((item): SyllabusHeatmapTopic => {
-    const evidence = evidenceByTopic[item.topicId];
+  const topics: SyllabusHeatmapTopic[] = syllabus.map((topic) => {
+    const evidence = evidenceByTopic[topic.topicId];
     const attempts = finite(evidence?.attempts) ? Math.max(0, Math.floor(evidence.attempts)) : 0;
-    const score = finite(evidence?.mastery_score) ? clamp(evidence.mastery_score) : null;
-    const enough = score !== null && attempts >= minAttempts;
-    const band: MasteryBand = !enough
+    const hasScore = finite(evidence?.mastery_score);
+    const mastery = hasScore ? clamp(evidence.mastery_score as number) : null;
+    const qualified = attempts >= minAttempts && mastery !== null;
+    const band: MasteryBand = !qualified
       ? "not_enough_evidence"
-      : score < developingThreshold
+      : mastery < developingThreshold
         ? "needs_work"
-        : score >= strongThreshold
-          ? "strong"
-          : "developing";
+        : mastery < strongThreshold
+          ? "developing"
+          : "strong";
+
     return {
-      ...item,
-      mastery: enough ? score : null,
+      ...topic,
+      mastery: qualified ? mastery : null,
       attempts,
       confidence: finite(evidence?.confidence) ? clamp(evidence.confidence) : null,
       band,
@@ -84,29 +90,32 @@ export function buildSyllabusMasteryHeatmap(
 
   const buckets = new Map<string, SyllabusHeatmapTopic[]>();
   for (const topic of topics) {
-    const id = topic.groupId ?? "__ungrouped__";
-    const bucket = buckets.get(id) ?? [];
-    bucket.push(topic);
-    buckets.set(id, bucket);
+    const groupId = topic.groupId ?? "ungrouped";
+    const group = buckets.get(groupId) ?? [];
+    group.push(topic);
+    buckets.set(groupId, group);
   }
 
-  const groups = [...buckets.entries()].map(([groupId, members]): SyllabusHeatmapGroup => ({
-    groupId,
-    groupTitle: members[0]?.groupTitle ?? (groupId === "__ungrouped__" ? "Other topics" : groupId),
-    averageMastery: mean(members.flatMap((t) => t.mastery === null ? [] : [t.mastery])),
-    evidencedTopics: members.filter((t) => t.mastery !== null).length,
-    totalTopics: members.length,
-    topics: members,
-  }));
+  const groups = Array.from(buckets, ([groupId, groupTopics]) => {
+    const scores = groupTopics.flatMap((topic) => topic.mastery === null ? [] : [topic.mastery]);
+    return {
+      groupId,
+      groupTitle: groupTopics[0]?.groupTitle ?? (groupId === "ungrouped" ? "Other topics" : groupId),
+      averageMastery: mean(scores),
+      evidencedTopics: scores.length,
+      totalTopics: groupTopics.length,
+      topics: groupTopics,
+    };
+  });
 
-  const evidenced = topics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
+  const scores = topics.flatMap((topic) => topic.mastery === null ? [] : [topic.mastery]);
   return {
     groups,
     topics,
     summary: {
-      evidencedTopics: evidenced.length,
+      evidencedTopics: scores.length,
       totalTopics: topics.length,
-      averageMastery: mean(evidenced),
+      averageMastery: mean(scores),
     },
   };
 }
