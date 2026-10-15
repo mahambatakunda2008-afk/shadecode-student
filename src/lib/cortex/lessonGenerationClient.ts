@@ -790,39 +790,10 @@ async function runJob(
       }
     }
 
-    // Only a warm local model may enter the speculative race. We never trigger
-    // a large first-load model download merely to duplicate a cloud request.
-    if (hybrid.mode === "parallel") {
-      localModelAttempted = true;
-      const localLane = tryLocalModel(job, token, false).then((result) => {
-        if (!result) throw new Error("Browser-local Cortex lane produced no valid lesson.");
-        return result;
-      });
-      const cloudLane = tryCloudLesson(job, token).then((result) => {
-        if (!result) throw new Error("Cloud Cortex lane produced no valid lesson.");
-        return result;
-      });
-
-      const winner = await firstSuccessful([localLane, cloudLane]);
-
-      // A browser-local winner is still a real generated lesson. When the
-      // learner is online and authenticated, never strand it in IndexedDB.
-      // The parallel lane used to call saveLocalResult() unconditionally,
-      // which is exactly how valid local Cortex lessons ended up as
-      // "saving on this device" even though the user was online.
-      const finished = token && online
-        ? await persistGeneratedLesson(job, winner, token)
-        : await saveLocalResult(job, winner);
-
-      if (token && online && !isLocalOnlyCompletion(finished)) {
-        await syncDurableGenerationJob(
-          token,
-          (getGenerationJob(job.id) ?? finished) as GenerationJob,
-          "complete",
-        );
-      }
-      return finished;
-    }
+    // Serialize lesson generation lanes because they share one durable checkpoint.
+    // firstSuccessful does not cancel the losing lane, so concurrent generation can
+    // overwrite the winner's partial payload and make resume state inconsistent.
+    // Run cloud first, then use the warm local model as recovery if cloud fails.
 
     if (hybrid.mode === "local" && localReady) {
       localModelAttempted = true;
@@ -839,7 +810,7 @@ async function runJob(
 
     // Cloud and browser-local inference are independent lanes. A provider exception
     // must not jump directly to the outer failure handler and skip local recovery.
-    if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep") {
+    if (hybrid.mode === "cloud" || hybrid.mode === "parallel-prep" || hybrid.mode === "parallel") {
       let cloudModel: LessonGenerationResult | null = null;
       let cloudFailure: unknown = null;
       try {
