@@ -776,7 +776,7 @@ async function runJob(
           const finished = token && online
             ? await persistGeneratedLesson(job, localFallback, token, generationLeaseId(job.id))
             : await saveLocalResult(job, localFallback);
-          if (token && online) {
+          if (token && online && !isLocalOnlyCompletion(finished)) {
             await syncDurableGenerationJob(
               token,
               (getGenerationJob(job.id) ?? finished) as GenerationJob,
@@ -814,7 +814,7 @@ async function runJob(
         ? await persistGeneratedLesson(job, winner, token)
         : await saveLocalResult(job, winner);
 
-      if (token && online) {
+      if (token && online && !isLocalOnlyCompletion(finished)) {
         await syncDurableGenerationJob(
           token,
           (getGenerationJob(job.id) ?? finished) as GenerationJob,
