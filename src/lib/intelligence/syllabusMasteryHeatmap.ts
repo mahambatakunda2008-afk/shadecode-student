@@ -1,21 +1,9 @@
-export interface SyllabusTopic {
-  topicId: string; title: string; groupId?: string; groupTitle?: string;
-}
-export interface TopicMasteryEvidence {
-  mastery_score?: number | null; attempts?: number | null; confidence?: number | null;
-}
+export interface SyllabusTopic { topicId: string; title: string; groupId?: string; groupTitle?: string; }
+export interface TopicMasteryEvidence { mastery_score?: number | null; attempts?: number | null; confidence?: number | null; }
 export type MasteryBand = "not_enough_evidence" | "needs_work" | "developing" | "strong";
-export interface SyllabusHeatmapTopic extends SyllabusTopic {
-  mastery: number | null; attempts: number; confidence: number | null; band: MasteryBand;
-}
-export interface SyllabusHeatmapGroup {
-  groupId: string; groupTitle: string; averageMastery: number | null;
-  evidencedTopics: number; totalTopics: number; topics: SyllabusHeatmapTopic[];
-}
-export interface SyllabusMasteryHeatmap {
-  groups: SyllabusHeatmapGroup[]; topics: SyllabusHeatmapTopic[];
-  summary: { evidencedTopics: number; totalTopics: number; averageMastery: number | null };
-}
+export interface SyllabusHeatmapTopic extends SyllabusTopic { mastery: number | null; attempts: number; confidence: number | null; band: MasteryBand; }
+export interface SyllabusHeatmapGroup { groupId: string; groupTitle: string; averageMastery: number | null; evidencedTopics: number; totalTopics: number; topics: SyllabusHeatmapTopic[]; }
+export interface SyllabusMasteryHeatmap { groups: SyllabusHeatmapGroup[]; topics: SyllabusHeatmapTopic[]; summary: { evidencedTopics: number; totalTopics: number; averageMastery: number | null }; }
 export interface HeatmapOptions { minAttempts?: number; developingThreshold?: number; strongThreshold?: number; }
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const clamp = (v: number): number => Math.max(0, Math.min(100, v));
@@ -28,49 +16,44 @@ export function buildSyllabusMasteryHeatmap(
   options: HeatmapOptions = {},
 ): SyllabusMasteryHeatmap {
   const minAttempts = Math.max(1, Math.floor(options.minAttempts ?? 3));
-  const developingThreshold = clamp(options.developingThreshold ?? 50);
-  const strongThreshold = clamp(options.strongThreshold ?? 80);
-  const topics = syllabus.map((item): SyllabusHeatmapTopic => {
-    const evidence = evidenceByTopic[item.topicId];
-    const rawAttempts = evidence?.attempts;
-    const attempts = finite(rawAttempts) ? Math.max(0, Math.floor(rawAttempts)) : 0;
-    const rawMastery = evidence?.mastery_score;
-    const mastery = finite(rawMastery) ? clamp(rawMastery) : null;
-    const hasEnough = mastery !== null && attempts >= minAttempts;
-    const rawConfidence = evidence?.confidence;
-    const confidence = finite(rawConfidence) ? clamp(rawConfidence) : null;
-    let band: MasteryBand = "not_enough_evidence";
-    if (hasEnough) {
-      band = mastery! < developingThreshold ? "needs_work"
-        : mastery! >= strongThreshold ? "strong" : "developing";
-    }
-    return { ...item, mastery: hasEnough ? mastery : null, attempts, confidence, band };
-  });
-
-  const grouped = new Map<string, SyllabusHeatmapTopic[]>();
-  for (const topic of topics) {
-    const id = topic.groupId ?? "__ungrouped__";
-    const group = grouped.get(id) ?? [];
-    group.push(topic);
-    grouped.set(id, group);
-  }
-
-  const groups = [...grouped.entries()].map(([groupId, items]): SyllabusHeatmapGroup => {
-    const evidenced = items.flatMap(t => t.mastery === null ? [] : [t.mastery]);
+  const developing = clamp(options.developingThreshold ?? 50);
+  const strong = clamp(options.strongThreshold ?? 80);
+  const topics: SyllabusHeatmapTopic[] = syllabus.map((topic) => {
+    const evidence = evidenceByTopic[topic.topicId];
+    const attempts = finite(evidence?.attempts) ? Math.max(0, Math.floor(evidence.attempts)) : 0;
+    const raw = evidence?.mastery_score;
+    const enough = attempts >= minAttempts && finite(raw);
+    const mastery = enough ? clamp(raw) : null;
+    const band: MasteryBand = mastery === null ? "not_enough_evidence"
+      : mastery < developing ? "needs_work"
+      : mastery < strong ? "developing" : "strong";
     return {
-      groupId,
-      groupTitle: items.find(t => t.groupTitle)?.groupTitle ?? (groupId === "__ungrouped__" ? "Other topics" : groupId),
-      averageMastery: mean(evidenced),
-      evidencedTopics: evidenced.length,
-      totalTopics: items.length,
-      topics: items,
+      ...topic, attempts, mastery,
+      confidence: finite(evidence?.confidence) ? clamp(evidence.confidence) : null,
+      band,
     };
   });
 
-  const evidenced = topics.flatMap(t => t.mastery === null ? [] : [t.mastery]);
+  const buckets = new Map<string, SyllabusHeatmapTopic[]>();
+  for (const topic of topics) {
+    const groupId = topic.groupId ?? "__ungrouped__";
+    const bucket = buckets.get(groupId) ?? [];
+    bucket.push(topic);
+    buckets.set(groupId, bucket);
+  }
+  const groups = Array.from(buckets, ([groupId, groupTopics]) => {
+    const groupTitle = groupTopics.find((t) => t.groupTitle)?.groupTitle
+      ?? (groupId === "__ungrouped__" ? "Other topics" : groupId);
+    const evidenced = groupTopics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
+    return {
+      groupId, groupTitle, topics: groupTopics,
+      averageMastery: mean(evidenced),
+      evidencedTopics: evidenced.length, totalTopics: groupTopics.length,
+    };
+  });
+  const evidenced = topics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
   return {
-    groups,
-    topics,
+    groups, topics,
     summary: { evidencedTopics: evidenced.length, totalTopics: topics.length, averageMastery: mean(evidenced) },
   };
 }
