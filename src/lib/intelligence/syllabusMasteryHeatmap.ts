@@ -16,44 +16,45 @@ export function buildSyllabusMasteryHeatmap(
   options: HeatmapOptions = {},
 ): SyllabusMasteryHeatmap {
   const minAttempts = Math.max(1, Math.floor(options.minAttempts ?? 3));
-  const developing = clamp(options.developingThreshold ?? 50);
-  const strong = clamp(options.strongThreshold ?? 80);
+  const developingThreshold = clamp(options.developingThreshold ?? 50);
+  const strongThreshold = clamp(options.strongThreshold ?? 80);
   const topics: SyllabusHeatmapTopic[] = syllabus.map((topic) => {
     const evidence = evidenceByTopic[topic.topicId];
     const attempts = finite(evidence?.attempts) ? Math.max(0, Math.floor(evidence.attempts)) : 0;
-    const raw = evidence?.mastery_score;
-    const enough = attempts >= minAttempts && finite(raw);
-    const mastery = enough ? clamp(raw) : null;
+    const rawMastery = evidence?.mastery_score;
+    const enough = attempts >= minAttempts && finite(rawMastery);
+    const mastery = enough ? clamp(rawMastery) : null;
     const band: MasteryBand = mastery === null ? "not_enough_evidence"
-      : mastery < developing ? "needs_work"
-      : mastery < strong ? "developing" : "strong";
+      : mastery < developingThreshold ? "needs_work"
+      : mastery < strongThreshold ? "developing" : "strong";
     return {
-      ...topic, attempts, mastery,
+      ...topic, mastery, attempts,
       confidence: finite(evidence?.confidence) ? clamp(evidence.confidence) : null,
       band,
     };
   });
 
-  const buckets = new Map<string, SyllabusHeatmapTopic[]>();
+  const groupMap = new Map<string, SyllabusHeatmapTopic[]>();
   for (const topic of topics) {
     const groupId = topic.groupId ?? "__ungrouped__";
-    const bucket = buckets.get(groupId) ?? [];
-    bucket.push(topic);
-    buckets.set(groupId, bucket);
+    const group = groupMap.get(groupId) ?? [];
+    group.push(topic);
+    groupMap.set(groupId, group);
   }
-  const groups = Array.from(buckets, ([groupId, groupTopics]) => {
-    const groupTitle = groupTopics.find((t) => t.groupTitle)?.groupTitle
-      ?? (groupId === "__ungrouped__" ? "Other topics" : groupId);
-    const evidenced = groupTopics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
+  const groups: SyllabusHeatmapGroup[] = Array.from(groupMap, ([groupId, groupTopics]) => {
+    const scores = groupTopics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
     return {
-      groupId, groupTitle, topics: groupTopics,
-      averageMastery: mean(evidenced),
-      evidencedTopics: evidenced.length, totalTopics: groupTopics.length,
+      groupId,
+      groupTitle: groupTopics[0]?.groupTitle ?? (groupId === "__ungrouped__" ? "Other topics" : groupId),
+      averageMastery: mean(scores),
+      evidencedTopics: scores.length,
+      totalTopics: groupTopics.length,
+      topics: groupTopics,
     };
   });
-  const evidenced = topics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
+  const scores = topics.flatMap((t) => t.mastery === null ? [] : [t.mastery]);
   return {
     groups, topics,
-    summary: { evidencedTopics: evidenced.length, totalTopics: topics.length, averageMastery: mean(evidenced) },
+    summary: { evidencedTopics: scores.length, totalTopics: topics.length, averageMastery: mean(scores) },
   };
 }
