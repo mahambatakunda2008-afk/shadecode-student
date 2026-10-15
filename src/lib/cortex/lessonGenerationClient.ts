@@ -828,7 +828,12 @@ async function runJob(
       }
 
       let localFailure: unknown = null;
-      if (localReady) {
+      // The model may have started loading while the cloud lane was running.
+      // Do not rely on the readiness snapshot taken at job start: a model that is
+      // already loading can still be awaited through generateBrowserLocal().
+      const localStatusAfterCloud = getBrowserLocalModelStatus().status;
+      const localCanRecover = localStatusAfterCloud === "ready" || localStatusAfterCloud === "loading";
+      if (localCanRecover) {
         updateGenerationJob(job.id, {
           status: "generating",
           progress: Math.max(20, getGenerationJob(job.id)?.progress ?? 20),
@@ -878,7 +883,7 @@ async function runJob(
     const failureClass = classifyCortexExecutionFailure(error);
     const recoveryPolicy = getCortexRecoveryPolicy(failureClass, {
       hasVerifiedData: isBrowser() && hasLocalLessonFallback(currentJob.request.subject, currentJob.request.prompt, context),
-      hasWarmLocal: !localModelAttempted && isBrowser() && getBrowserLocalModelStatus().status === "ready",
+      hasWarmLocal: !localModelAttempted && isBrowser() && ["ready", "loading"].includes(getBrowserLocalModelStatus().status),
       hasCheckpoint: hasCompletedLessonCheckpoint(currentJob.partial),
       supportsRepair: false,
     });
@@ -986,7 +991,7 @@ async function runJob(
       }
     }
 
-    if (recoveryPolicy.action === "use_warm_local" && isBrowser() && navigator.onLine && getBrowserLocalModelStatus().status === "ready") {
+    if (recoveryPolicy.action === "use_warm_local" && isBrowser() && navigator.onLine && ["ready", "loading"].includes(getBrowserLocalModelStatus().status)) {
       try {
         updateGenerationJob(job.id, { status: "generating", progress: Math.max(40, Math.min(55, getGenerationJob(job.id)?.progress ?? 40)), error: "Cloud generation is unavailable. Cortex is using the warm browser-local model." });
         localModelAttempted = true;
