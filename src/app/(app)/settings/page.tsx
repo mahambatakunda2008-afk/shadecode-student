@@ -31,7 +31,8 @@ export default function Settings() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [toast, setToast] = useState("");
@@ -99,13 +100,13 @@ export default function Settings() {
   const saveUsername = async () => {
     const nextUsername = username.trim();
     if (!nextUsername) {
-      setProfileError("Username cannot be empty.");
+      setUsernameError("Username cannot be empty.");
       return;
     }
     if (!userId || saving || !usernameChanged) return;
 
     setSaving(true);
-    setProfileError(null);
+    setUsernameError(null);
     try {
       const { error } = await supabase
         .from("profiles")
@@ -118,7 +119,7 @@ export default function Settings() {
       showToast("Profile saved");
     } catch (error) {
       console.error("[Settings] profile update failed:", error);
-      setProfileError("Your username could not be saved. Please try again.");
+      setUsernameError("Your username could not be saved. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -127,14 +128,14 @@ export default function Settings() {
   const handleSignOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
-    setProfileError(null);
+    setAccountError(null);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       router.replace("/");
     } catch (error) {
       console.error("[Settings] sign out failed:", error);
-      setProfileError("You could not be signed out. Check your connection and try again.");
+      setAccountError("You could not be signed out. Check your connection and try again.");
       setSigningOut(false);
     }
   };
@@ -187,15 +188,11 @@ export default function Settings() {
           <h1>{pageTitle}</h1>
           <p className="ssc-subtitle">{pageSubtitle}</p>
         </div>
-        <button type="button" onClick={() => void saveUsername()} disabled={saving || !usernameChanged} className="ssc-button">
-          <Save size={18} aria-hidden="true" />
-          {saving ? "Saving…" : "Save profile"}
-        </button>
-      </header>
+       </header>
 
-      {profileError && (
+      {accountError && (
         <p role="alert" className="mb-4 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/5 px-4 py-3 text-sm text-[var(--danger)]">
-          {profileError}
+          {accountError}
         </p>
       )}
 
@@ -216,14 +213,20 @@ export default function Settings() {
                 value={username}
                 onChange={(event) => {
                   setUsername(event.target.value);
-                  setProfileError(null);
+                  setUsernameError(null);
                 }}
                 placeholder="Choose a username"
                 maxLength={40}
-                aria-invalid={Boolean(profileError)}
+                aria-invalid={Boolean(usernameError)}
+                aria-describedby={usernameError ? "username-help username-error" : "username-help"}
                 className="ssc-input"
               />
-              <span className="text-xs text-[var(--muted-foreground)]">This name identifies your learning space.</span>
+              <span id="username-help" className="text-xs text-[var(--muted-foreground)]">This name identifies your learning space.</span>
+              {usernameError && <span id="username-error" role="alert" className="text-sm text-[var(--danger)]">{usernameError}</span>}
+              <button type="button" onClick={() => void saveUsername()} disabled={saving || !usernameChanged} className="ssc-button mt-1 w-fit">
+                <Save size={18} aria-hidden="true" />
+                {saving ? "Saving…" : "Save username"}
+              </button>
             </label>
             <label className="grid gap-2">
               <span className="ssc-label">Email address</span>
