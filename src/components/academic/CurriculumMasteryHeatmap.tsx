@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { projectSyllabusHeatmap, type HeatmapObjective, type MasteryBand } from "@/lib/curriculum/syllabusMasteryHeatmap";
 
 type SyllabusPayload = {
@@ -64,6 +65,7 @@ export default function CurriculumMasteryHeatmap() {
           <Stat label="With evidence" value={projected.summary.evidenced}/>
           <Stat label="Evidence average" value={projected.summary.averageMastery === null ? "—" : `${projected.summary.averageMastery}%`}/>
         </div>
+        <div style={{marginBottom:14}}><Link href="/learn" className="inline-flex items-center gap-2 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary-glow)] px-3 py-2 text-xs font-semibold text-[var(--primary)]">Study or review in Learn <span aria-hidden="true">→</span></Link></div>
         <div aria-label="Mastery legend" style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:14}}>
           {(Object.keys(palette) as MasteryBand[]).map(b=><span key={b} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:11,color:"var(--muted-foreground)"}}><i aria-hidden="true" style={{width:9,height:9,borderRadius:3,background:palette[b].color}}/>{palette[b].label}</span>)}
         </div>
