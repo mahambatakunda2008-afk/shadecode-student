@@ -13,8 +13,13 @@ export function friendlyAuthError(raw: string | null | undefined): string {
   if (/password.*(weak|easy to guess|pwned|compromised)/i.test(message)) {
     return 'That password is too common to be safe. Please choose a different one.';
   }
-  if (/rate limit|too many requests|over_(email|request)_send_rate_limit|security purposes/i.test(message)) {
-    return 'Too many attempts right now. Please wait a few minutes and try again.';
+  // Per-user cooldown ("For security purposes, you can only request this after N seconds").
+  if (/security purposes|only request this after/i.test(message)) {
+    return 'Please wait a minute before trying again.';
+  }
+  // Project-wide email cap or per-IP limits: not the student's fault, so say so.
+  if (/rate limit|too many requests|over_(email|request)_send_rate_limit/i.test(message)) {
+    return 'We\u2019re handling a lot of sign-ins right now. Please try again in a little while. Your details were not saved.';
   }
   if (/already (been )?registered|user already exists/i.test(message)) {
     return 'That email already has an account. Try signing in instead.';

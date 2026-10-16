@@ -14,8 +14,11 @@ describe('friendlyAuthError', () => {
   it('explains weak or leaked passwords', () => {
     expect(friendlyAuthError('Password is known to be weak and easy to guess, please choose a different one.')).toMatch(/too common/i);
   });
-  it('explains rate limits', () => {
-    expect(friendlyAuthError('email rate limit exceeded')).toMatch(/wait a few minutes/i);
+  it('explains project-wide rate limits without blaming the student', () => {
+    expect(friendlyAuthError('email rate limit exceeded')).toMatch(/try again in a little while/i);
+  });
+  it('explains the per-user cooldown separately', () => {
+    expect(friendlyAuthError('For security purposes, you can only request this after 42 seconds.')).toMatch(/wait a minute/i);
   });
   it('points existing users to sign in', () => {
     expect(friendlyAuthError('User already registered')).toMatch(/signing in/i);
