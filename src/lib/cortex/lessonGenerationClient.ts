@@ -17,6 +17,7 @@ import { getCortexRecoveryPolicy } from "@/lib/cortex/runtime/recovery";
 import { hasCompletedLessonCheckpoint } from "@/lib/cortex/lessonCheckpoint";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
+import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGenerationPolicy";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
@@ -752,12 +753,15 @@ async function runJob(
       peerAvailable: false,
     }, "deep");
 
-    // Verified curriculum recovery is the fast path. If the device already has
-    // authoritative curriculum data for this request, use it immediately instead
-    // of making the learner wait for a cloud provider just to discover that the
-    // provider is unavailable. This removes the old 20% -> provider timeout ->
-    // 24% recovery staircase for supported cached topics.
-    if (isBrowser() && hasLocalLessonFallback(job.request.subject, job.request.prompt, localContext(job))) {
+    // Prefer exact authored recovery immediately when offline or unauthenticated.
+    // An authenticated online learner must get a real Cortex generation attempt first;
+    // the section API itself returns the curated lesson if its provider chain fails.
+    // This keeps the fast recovery path from silently replacing successful AI teaching.
+    if (
+      isBrowser() &&
+      shouldUseFastVerifiedCurriculumRecovery({ online, hasSessionToken: Boolean(token) }) &&
+      hasLocalLessonFallback(job.request.subject, job.request.prompt, localContext(job))
+    ) {
       try {
         updateGenerationJob(job.id, {
           status: "generating",
