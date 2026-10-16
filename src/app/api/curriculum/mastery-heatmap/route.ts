@@ -4,7 +4,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 1000;
 
-async function readAllPages<T>(queryPage: (from: number, to: number) => Promise<any>): Promise<T[]> {
+type PageResult = { data: unknown[] | null; error: unknown | null };
+
+async function readAllPages<T>(
+  queryPage: (from: number, to: number) => PromiseLike<PageResult>,
+): Promise<T[]> {
   const rows: T[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await queryPage(from, from + PAGE_SIZE - 1);
@@ -49,7 +53,7 @@ export async function GET() {
       ...version,
       objectives: objectives.filter(o => o.curriculum_version_id === version.id).map(o => {
         const p = progressByKey.get(`${version.id}:${o.objective_key}`);
-        return {...o, mastery_score: p?.mastery_score ?? null, attempts: p?.attempts ?? 0, learner_status: p?.status ?? "not_started"};
+        return { ...o, mastery_score: p?.mastery_score ?? null, attempts: p?.attempts ?? 0, learner_status: p?.status ?? "not_started" };
       }),
     })).filter(s => s.objectives.length > 0);
     return NextResponse.json({ syllabi });
