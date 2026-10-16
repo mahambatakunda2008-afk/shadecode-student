@@ -1,4 +1,4 @@
-import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, restoreGenerationJob, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
+import { createGenerationJob, getActiveGenerationJobs, getGenerationJob, getGenerationJobs, markInterruptedJobsForRetry, restoreGenerationJob, retryGenerationJob, updateGenerationJob, type GenerationJob } from "@/lib/cortex/generationJob";
 import { offlineStorage } from "@/lib/offline/storage";
 import { generateLocalLesson, hasLocalLessonFallback } from "@/lib/cortex/localLessonGenerator";
 import { getLocalCurriculumGrounding, readLocalCurriculumGrounding, readLocalCurriculumGroundingData } from "@/lib/cortex/localCurriculumGrounding";
@@ -1081,6 +1081,19 @@ export async function resumeLessonGeneration(token: string | null) { if (!isBrow
   };
   job = restoreGenerationJob(restored);
 } } if (!job) return null; return runJob(job, token); }
+export async function retryLessonGeneration(jobId: string, token: string | null) {
+  if (!token) return null;
+  const job = retryGenerationJob(jobId) as GenerationJob<LessonGenerationInput> | null;
+  if (!job) return null;
+
+  // Reuse the original job identity and its partial checkpoint. A retry should
+  // continue completed lesson sections instead of silently throwing them away.
+  saveActiveId(job.id);
+  await syncDurableGenerationJob(token, job, "progress");
+  void runJob(job, token);
+  return getGenerationJobs().find(item => item.id === job.id) ?? job;
+}
+
 export async function startLessonGeneration(input: LessonGenerationInput, token: string | null) {
   const job = queueLessonGeneration(input);
   if (isBrowser()) {
