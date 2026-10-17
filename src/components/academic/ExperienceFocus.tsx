@@ -71,6 +71,7 @@ export default function ExperienceFocus() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completeRef = useRef<() => void>(() => {});
   const sessionStartedRef = useRef(false);
+  const completionHandledRef = useRef(false);
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
@@ -108,6 +109,7 @@ export default function ExperienceFocus() {
     setIsRunning(false);
     setIsFinished(false);
     sessionStartedRef.current = false;
+    completionHandledRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, [totalSeconds]);
 
@@ -117,19 +119,18 @@ export default function ExperienceFocus() {
       return;
     }
     intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          setIsRunning(false);
-          setIsFinished(true);
-          completeRef.current();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning]);
+
+  useEffect(() => {
+    if (timeLeft !== 0 || !isRunning || completionHandledRef.current) return;
+    completionHandledRef.current = true;
+    setIsRunning(false);
+    setIsFinished(true);
+    void completeRef.current();
+  }, [timeLeft, isRunning]);
 
   async function handleSessionComplete() {
     const focusMinutes = selectedPreset === 4 ? customMinutes : preset.minutes;
@@ -137,7 +138,11 @@ export default function ExperienceFocus() {
     let stats = { sessions: 0, minutes: 0 };
     try { stats = JSON.parse(localStorage.getItem(`focus_stats_${today}`) || '{"sessions":0,"minutes":0}'); } catch { /* use defaults */ }
     const newStats = { sessions: (Number(stats.sessions) || 0) + 1, minutes: (Number(stats.minutes) || 0) + focusMinutes };
-    localStorage.setItem(`focus_stats_${today}`, JSON.stringify(newStats));
+    try {
+      localStorage.setItem(`focus_stats_${today}`, JSON.stringify(newStats));
+    } catch {
+      // Keep this session usable when browser storage is unavailable.
+    }
     setSessionsToday(newStats.sessions);
     setTotalFocusToday(newStats.minutes);
 
@@ -175,6 +180,7 @@ export default function ExperienceFocus() {
       setTimeLeft(totalSeconds);
       setIsFinished(false);
       sessionStartedRef.current = false;
+      completionHandledRef.current = false;
     }
     const nextRunning = !isRunning;
     setIsRunning(nextRunning);
@@ -194,6 +200,7 @@ export default function ExperienceFocus() {
     setIsFinished(false);
     setTimeLeft(totalSeconds);
     sessionStartedRef.current = false;
+    completionHandledRef.current = false;
   };
 
   const requestNotificationPermission = () => {
