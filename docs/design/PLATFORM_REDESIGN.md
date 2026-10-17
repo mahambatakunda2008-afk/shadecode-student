@@ -209,3 +209,12 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] The sign-up onboarding cookie now includes `SameSite=Lax`.
 - [ ] Re-run CI against the newest auth-resilience commit and confirm its matching preview is READY.
 - [ ] These defensive error paths still require real authenticated browser testing, including invalid credentials, offline/network failure, email verification, and profile lookup failure.
+
+
+## Authentication recovery follow-up (2026-10-17)
+
+- [x] Sign-in now marks missing required credentials semantically, associates relevant validation errors with fields, announces form busy/error state, and improves the password-visibility control's touch target.
+- [x] Password-reset requests now guard duplicate submissions, recover from thrown/network failures, always release loading state, avoid surfacing raw provider errors, and expose field/error semantics.
+- [x] Password updates now handle thrown/network failures without leaving the form stuck, prevent duplicate submission, use real label/input associations, and support keyboard form submission.
+- [ ] Re-run TypeScript, lint, tests, and production build against the current head; confirm the matching Vercel preview reaches READY.
+- [ ] Real browser verification remains required for expired reset links, valid recovery sessions, invalid credentials, email delivery, mobile layout, and keyboard/screen-reader interaction.
