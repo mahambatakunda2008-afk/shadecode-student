@@ -176,3 +176,8 @@ Verified by script and unit test; rendered visual QA is still required.
 
 
 - [x] Cortex Verify now explains unsupported image types, oversized images, and image-read failures instead of silently ignoring them. Mode controls expose their selected state; upload, clear, and submit controls have keyboard focus treatment and accessible touch targets.
+
+
+- [x] Exam Hub cards now retain readable contrast for upcoming features and expose a clear keyboard-focus outline on navigable cards.
+- [x] Math Checker capability labels no longer imply that “Verify” stays selected while the separate form is in “Help me solve” mode.
+- [ ] The currently running CI was started against an earlier commit than these final follow-ups. A successful run on the latest branch head is still required before treating this pass as validated.
