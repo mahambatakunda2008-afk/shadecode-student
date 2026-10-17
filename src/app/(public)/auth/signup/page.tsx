@@ -79,24 +79,24 @@ export default function SignUp() {
           <p style={{ color: "var(--muted-foreground)", marginTop: 8, fontSize: 15, lineHeight: 1.5 }}>We&apos;ll use this to build your learning experience.</p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-          <label style={{ fontSize: 13, fontWeight: 600 }}>Your name</label>
-          <input aria-label="Your name" placeholder="What should we call you?" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
-          <label style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Email</label>
-          <input aria-label="Email" placeholder="you@example.com" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-          <label style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Password</label>
+        <form onSubmit={(event) => { event.preventDefault(); void handleSignUp(); }} style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+          <label htmlFor="signup-name" style={{ fontSize: 13, fontWeight: 600 }}>Your name</label>
+          <input id="signup-name" placeholder="What should we call you?" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+          <label htmlFor="signup-email" style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Email</label>
+          <input id="signup-email" placeholder="you@example.com" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+          <label htmlFor="signup-password" style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Password</label>
           <div style={{ position: "relative" }}>
-            <input aria-label="Password" placeholder="Create a password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 48 }} />
+            <input id="signup-password" aria-label="Password" placeholder="Create a password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 48 }} />
             <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 6, cursor: "pointer", color: "var(--muted-foreground)" }}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Confirm password</label>
+          <label htmlFor="signup-confirm-password" style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Confirm password</label>
           <div style={{ position: "relative" }}>
-            <input aria-label="Confirm password" placeholder="Enter it again" type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 48 }} />
+            <input id="signup-confirm-password" aria-label="Confirm password" placeholder="Enter it again" type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 48 }} />
             <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 6, cursor: "pointer", color: "var(--muted-foreground)" }}>{showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
           {error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
-          <button type="button" onClick={handleSignUp} disabled={loading} style={{ background: "var(--primary)", color: "white", padding: "14px 16px", borderRadius: 11, fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginTop: 7, opacity: loading ? 0.7 : 1 }}>{loading ? "Creating account…" : "Create account"}</button>
-        </div>
+          <button type="submit" disabled={loading} style={{ background: "var(--primary)", color: "white", padding: "14px 16px", borderRadius: 11, fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginTop: 7, opacity: loading ? 0.7 : 1 }}>{loading ? "Creating account…" : "Create account"}</button>
+        </form>
 
         <p style={{ color: "var(--muted-foreground)", textAlign: "center", fontSize: 14, marginTop: 22 }}>Already have an account? <Link href="/auth/login" style={{ color: "var(--primary)", fontWeight: 700, textDecoration: "none" }}>Sign in</Link></p>
       </section>
