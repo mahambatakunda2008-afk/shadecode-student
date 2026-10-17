@@ -122,7 +122,7 @@ export default function HubContent({ isAdmin }: Props) {
             const content = (
               <div
                 className="ssc-card-interactive group h-full rounded-2xl p-5"
-                style={{ opacity: card.comingSoon ? 0.6 : 1, cursor: card.comingSoon ? "default" : "pointer" }}
+                style={{ cursor: card.comingSoon ? "default" : "pointer" }}
               >
                 <div
                   className="mb-4 grid size-10 place-items-center rounded-xl border"
@@ -155,7 +155,7 @@ export default function HubContent({ isAdmin }: Props) {
             return card.comingSoon ? (
               <div key={card.href}>{content}</div>
             ) : (
-              <Link key={card.href} href={card.href} className="block">
+              <Link key={card.href} href={card.href} className="block rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]">
                 {content}
               </Link>
             );
