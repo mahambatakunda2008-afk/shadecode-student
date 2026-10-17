@@ -191,3 +191,12 @@ Verified by script and unit test; rendered visual QA is still required.
 
 - [x] Admin mobile navigation now has a descriptive navigation landmark, marks the current route with `aria-current="page"`, provides visible keyboard focus, and uses a consistent minimum touch height.
 - [ ] Revalidate CI and the rendered preview at the newest branch head. Admin navigation changes do not replace real-device checks for safe-area insets, label fit, or keyboard traversal.
+
+
+## Finalization pass (2026-10-17)
+
+- [x] Latest CI run on commit `675aba8f3c5555337a3d58e4e6ded5676df9a73f` passed typecheck, lint, tests, and production build.
+- [x] The admin navigation accessibility pass has a READY Vercel preview.
+- [x] Onboarding progress now uses shared semantic theme tokens instead of hard-coded cyan/white colors, announces the current step and total to assistive technology, and constrains long labels on narrow screens.
+- [ ] Re-run CI and wait for a READY deployment at the latest onboarding commit.
+- [ ] Complete authenticated visual and workflow QA across desktop and mobile before merge. Do not treat a successful build as a substitute for these checks.
