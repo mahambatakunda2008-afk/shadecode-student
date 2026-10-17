@@ -33,49 +33,54 @@ export default function Login() {
   }, []);
 
   const handleLogin = async () => {
-    setLoading(true);
+    if (loading) return;
     setError("");
     setVerificationNeeded(false);
-    if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
-    if (!password) { setError("Password is required"); setLoading(false); return; }
-    const normalizedEmail = email.trim();
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-    if (loginError) {
-      const message = loginError.message || "Unable to sign in.";
-      const needsVerification = /email not confirmed|email.*confirm/i.test(message);
-      setVerificationNeeded(needsVerification);
-      setError(needsVerification ? "Your email hasn't been verified yet." : friendlyAuthError(message));
-      setLoading(false);
-      return;
-    }
-    const user = loginData.user;
-    if (!user) {
-      setError("Sign-in completed without an active session. Please try again.");
-      setLoading(false);
-      return;
-    }
-    void trackEvent("user_logged_in", { authMethod: "password" });
+    if (!email.trim()) { setError("Email is required"); return; }
+    if (!password) { setError("Password is required"); return; }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("onboarding_completed")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    setLoading(true);
+    try {
+      const normalizedEmail = email.trim();
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (loginError) {
+        const message = loginError.message || "Unable to sign in.";
+        const needsVerification = /email not confirmed|email.*confirm/i.test(message);
+        setVerificationNeeded(needsVerification);
+        setError(needsVerification ? "Your email hasn't been verified yet." : friendlyAuthError(message));
+        return;
+      }
 
-    if (profileError) {
-      console.error("[login] profile lookup failed:", profileError);
-      setError("Signed in, but we could not load your account setup. Please try again.");
+      const user = loginData.user;
+      if (!user) {
+        setError("Sign-in completed without an active session. Please try again.");
+        return;
+      }
+      void trackEvent("user_logged_in", { authMethod: "password" });
+
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("[login] profile lookup failed:", profileError);
+        setError("Signed in, but we could not load your account setup. Please try again.");
+        return;
+      }
+
+      if (profile?.onboarding_completed === true) {
+        setOnboardingComplete();
+        router.replace(redirectTo);
+      } else {
+        router.replace("/onboarding");
+      }
+    } catch {
+      setError("We couldn't reach the sign-in service. Check your connection and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (profile?.onboarding_completed === true) {
-      setOnboardingComplete();
-      router.replace(redirectTo);
-    } else {
-      router.replace("/onboarding");
-    }
-    setLoading(false);
   };
 
   const inputStyle = { width: "100%", background: "var(--muted)", border: "1px solid var(--card-border)", borderRadius: 10, padding: "13px 14px", color: "var(--foreground)", fontSize: 15, outline: "none", caretColor: "var(--primary)" };
