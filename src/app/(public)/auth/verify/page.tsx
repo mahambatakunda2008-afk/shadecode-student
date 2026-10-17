@@ -9,6 +9,7 @@ export default function VerifyPage() {
   const params = useSearchParams();
   const email = params.get('email') ?? '';
   const [message, setMessage] = useState('');
+  const [messageKind, setMessageKind] = useState<'success' | 'error' | ''>('');
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
@@ -24,17 +25,21 @@ export default function VerifyPage() {
     if (!email || cooldown > 0 || loading) return;
     setLoading(true);
     setMessage('');
+    setMessageKind('');
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
       if (error) {
         setMessage("We couldn't resend the verification email right now. Check your connection and try again.");
+        setMessageKind('error');
       } else {
-        setMessage('Verification email sent. Check your inbox.');
+        setMessage('Verification email sent. Check your inbox and spam folder.');
+        setMessageKind('success');
         setCooldown(6);
       }
     } catch {
       setMessage("We couldn't reach the verification service. Check your connection and try again.");
+      setMessageKind('error');
     } finally {
       setLoading(false);
     }
@@ -45,10 +50,10 @@ export default function VerifyPage() {
       <section style={{ width: '100%', maxWidth: 420 }}>
         <p style={{ color: 'var(--primary)', fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Shadecode Student</p>
         <h1 style={{ fontSize: 30, lineHeight: 1.12, fontWeight: 800, marginTop: 9 }}>Check your email.</h1>
-        <p style={{ color: 'var(--muted-foreground)', marginTop: 10, fontSize: 15, lineHeight: 1.55 }}>We sent a verification link{email ? <> to <strong style={{ color: 'var(--foreground)' }}>{email}</strong></> : ''}. Verify your account, then sign in to continue your setup.</p>
+        <p style={{ color: 'var(--muted-foreground)', marginTop: 10, fontSize: 15, lineHeight: 1.55 }}>{email ? <>We sent a verification link to <strong style={{ color: 'var(--foreground)', overflowWrap: 'anywhere' }}>{email}</strong>. Verify your account, then sign in to continue your setup.</> : 'If you just signed up, check the inbox for the email address you used. Open the verification link, then sign in to continue your setup.'}</p>
         <div style={{ marginTop: 22, padding: 15, borderRadius: 12, background: 'var(--muted)', border: '1px solid var(--card-border)', fontSize: 13, lineHeight: 1.5 }}>No email yet? Check spam, or resend it below.</div>
-        <button type="button" onClick={resend} disabled={!email || loading || cooldown > 0} style={{ width: '100%', marginTop: 12, minHeight: 48, padding: '13px 16px', borderRadius: 11, border: '1px solid var(--card-border)', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? .7 : 1 }}>{loading ? 'Sending…' : cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend verification email'}</button>
-        {message && <p role="status" style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5, overflowWrap: 'anywhere', color: 'var(--muted-foreground)' }}>{message}</p>}
+        <button type="button" onClick={resend} disabled={!email || loading || cooldown > 0} aria-busy={loading} style={{ width: '100%', marginTop: 12, minHeight: 48, padding: '13px 16px', borderRadius: 11, border: '1px solid var(--card-border)', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading || !email || cooldown > 0 ? .7 : 1 }}>{loading ? 'Sending…' : cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend verification email'}</button>
+        {message && <p role={messageKind === 'error' ? 'alert' : 'status'} aria-live={messageKind === 'error' ? 'assertive' : 'polite'} style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5, overflowWrap: 'anywhere', color: messageKind === 'error' ? 'var(--danger)' : 'var(--muted-foreground)' }}>{message}</p>}
         <p style={{ marginTop: 20, textAlign: 'center', fontSize: 14, color: 'var(--muted-foreground)' }}><Link href="/auth/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Back to sign in</Link></p>
       </section>
     </main>
