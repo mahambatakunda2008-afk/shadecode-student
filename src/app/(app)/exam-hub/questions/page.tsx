@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
@@ -44,6 +44,7 @@ export default function QuestionBankPage() {
   const [cortexResult, setCortexResult] = useState<CortexResult | null>(null);
   const [cortexLoading, setCortexLoading] = useState(false);
   const [cortexError, setCortexError] = useState<string | null>(null);
+  const cortexRequestRef = useRef(0);
 
   const fetchQuestions = useCallback(async (searchText: string, selectedDifficulty: string) => {
     setLoading(true);
@@ -68,6 +69,7 @@ export default function QuestionBankPage() {
   }, []);
 
   const askCortex = async (question: Question) => {
+    const requestId = ++cortexRequestRef.current;
     setCortexQuestion(question.id);
     setCortexResult(null);
     setCortexError(null);
@@ -108,11 +110,13 @@ Use only evidence present in the question. Explain the key concept, likely metho
         localMaxTokens: 1200,
         preferParallel: true,
       });
-      setCortexResult(result);
+      if (requestId === cortexRequestRef.current) setCortexResult(result);
     } catch (err) {
-      setCortexError(err instanceof Error ? err.message : "Cortex could not answer right now");
+      if (requestId === cortexRequestRef.current) {
+        setCortexError(err instanceof Error ? err.message : "Cortex could not answer right now");
+      }
     } finally {
-      setCortexLoading(false);
+      if (requestId === cortexRequestRef.current) setCortexLoading(false);
     }
   };
 
@@ -197,17 +201,27 @@ Use only evidence present in the question. Explain the key concept, likely metho
               )}
               <button
                 type="button"
-                onClick={() => (isOpen ? setCortexQuestion(null) : void askCortex(question))}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"
+                onClick={() => {
+                  if (isOpen) {
+                    cortexRequestRef.current += 1;
+                    setCortexLoading(false);
+                    setCortexQuestion(null);
+                  } else {
+                    void askCortex(question);
+                  }
+                }}
+                aria-expanded={isOpen}
+                aria-controls={`cortex-help-${question.id}`}
+                className="ssc-focus-ring mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"
               >
                 <Sparkles size={16} />
                 {isOpen ? "Close Cortex" : "Ask Cortex"}
               </button>
 
               {isOpen && (
-                <div className="mt-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--surface)] p-4">
-                  {cortexLoading && <p className="text-sm text-[var(--muted-foreground)]">Cortex is reading the question…</p>}
-                  {cortexError && <p className="text-sm text-red-600">{cortexError}</p>}
+                <div id={`cortex-help-${question.id}`} className="mt-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--surface)] p-4" aria-busy={cortexLoading}>
+                  {cortexLoading && <p role="status" aria-live="polite" className="text-sm text-[var(--muted-foreground)]">Cortex is reading the question…</p>}
+                  {cortexError && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{cortexError}</p>}
                   {cortexResult && (
                     <div className="space-y-4 text-sm text-[var(--foreground)]">
                       {cortexResult.concept && <div><p className="font-semibold">Key concept</p><p className="mt-1 text-[var(--muted-foreground)]">{cortexResult.concept}</p></div>}
