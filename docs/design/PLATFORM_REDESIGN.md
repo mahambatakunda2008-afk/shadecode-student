@@ -218,3 +218,6 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Password updates now handle thrown/network failures without leaving the form stuck, prevent duplicate submission, use real label/input associations, and support keyboard form submission.
 - [ ] Re-run TypeScript, lint, tests, and production build against the current head; confirm the matching Vercel preview reaches READY.
 - [ ] Real browser verification remains required for expired reset links, valid recovery sessions, invalid credentials, email delivery, mobile layout, and keyboard/screen-reader interaction.
+
+
+- [x] Verification-email resend now catches network/runtime failures, always releases the loading state, avoids exposing raw provider errors, and uses an effect-cleaned cooldown timer to prevent interval leaks after unmount.
