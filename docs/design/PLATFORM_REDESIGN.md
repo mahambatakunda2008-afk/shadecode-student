@@ -173,3 +173,6 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Focus session statistics are scoped to the signed-in user as well as the date, preventing different accounts sharing one browser from seeing each other's local focus totals.
 - [x] Focus duration presets expose their selected state, timer remaining time has a semantic timer label, and the primary/reset/notification controls have visible keyboard focus and minimum touch height.
 - [ ] CI must validate these newest changes. These changes do not replace authenticated browser journeys, cross-device visual review, or manual verification of local-first sync and focus completion.
+
+
+- [x] Cortex Verify now explains unsupported image types, oversized images, and image-read failures instead of silently ignoring them. Mode controls expose their selected state; upload, clear, and submit controls have keyboard focus treatment and accessible touch targets.
