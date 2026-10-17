@@ -228,3 +228,9 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Resend failures use an assertive alert with error styling, while successful sends remain polite status feedback.
 - [x] Resend control exposes its busy state and applies consistent disabled-state feedback; long email addresses wrap instead of overflowing.
 - [ ] Validate CI and the matching preview for this commit. Email delivery, verification links, and the full signup-to-onboarding journey still need an authenticated browser check.
+
+## Password-reset feedback follow-up (2026-10-17)
+
+- [x] Password-reset validation, provider failures, and network failures now use assertive error feedback; successful updates remain polite status feedback.
+- [x] Confirmation mismatch exposes invalid-field semantics and associates the field with its feedback.
+- [ ] CI and preview must validate the latest head. Expired-link and recovery-session journeys still require real browser verification.
