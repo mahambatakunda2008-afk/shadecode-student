@@ -31,6 +31,15 @@ const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Sc
 const COUNTS = [5, 10, 15, 20];
 const KEY = "shadecode-exam-workspace";
 
+function removeLocalExamSnapshot(userId: string) {
+  if (!userId) return;
+  try {
+    localStorage.removeItem(`${KEY}:${userId}`);
+  } catch {
+    // The submitted result must remain successful even if browser storage is blocked.
+  }
+}
+
 function grade(p: number) { return p >= 90 ? "A*" : p >= 80 ? "A" : p >= 70 ? "B" : p >= 60 ? "C" : p >= 50 ? "D" : p >= 40 ? "E" : "U"; }
 function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.floor(n / 3600); const m = Math.floor((n % 3600) / 60); const sec = n % 60; return h ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`; }
 function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
@@ -273,7 +282,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           if (sessionState) await saveStudySession({ ...sessionState, status: "submitted", updatedAt: new Date().toISOString(), remainingMs: 0 });
         } catch {}
       }
-      localStorage.removeItem(`${KEY}:${userId}`);
+      removeLocalExamSnapshot(userId);
       setMode("results");
       onFinished?.(markingData);
     } catch (e) {
@@ -283,7 +292,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       submitRef.current = false;
     }
   };
-  const reset = async () => { if (workId.current) await deleteStudySession(workId.current).catch(() => undefined); localStorage.removeItem(`${KEY}:${userId}`); workId.current = null; setMode("setup"); setQuestions([]); setAnswers([]); setFlags([]); setResults(null); setSeconds(0); setTotalSeconds(0); setResumeId(null); };
+  const reset = async () => { if (workId.current) await deleteStudySession(workId.current).catch(() => undefined); removeLocalExamSnapshot(userId); workId.current = null; setMode("setup"); setQuestions([]); setAnswers([]); setFlags([]); setResults(null); setSeconds(0); setTotalSeconds(0); setResumeId(null); };
   const calc = () => { try { if (!/^[0-9+\-*/().%\s]+$/.test(calculator)) throw new Error("Basic arithmetic only"); const value = Function(`"use strict"; return (${calculator})`)(); setCalcResult(Number.isFinite(value) ? String(value) : "Invalid"); } catch (e) { setCalcResult(e instanceof Error ? e.message : "Invalid"); } };
   const attach = (file?: File) => { if (!file || !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) return; const reader = new FileReader(); reader.onload = () => setAttachment(String(reader.result || "")); reader.readAsDataURL(file); };
 
