@@ -185,3 +185,9 @@ Verified by script and unit test; rendered visual QA is still required.
 
 - [x] CI surfaced a browser/Node timer-handle type mismatch in the new Tasks toast cleanup. The ref now uses the browser timer's numeric handle type.
 - [ ] Re-run TypeScript, lint, tests, and production build against the latest branch head. The earlier CI run failed at typecheck before reaching the remaining checks; no green result is claimed for the latest follow-ups.
+
+
+## Additional implementation pass (2026-10-17, navigation accessibility)
+
+- [x] Admin mobile navigation now has a descriptive navigation landmark, marks the current route with `aria-current="page"`, provides visible keyboard focus, and uses a consistent minimum touch height.
+- [ ] Revalidate CI and the rendered preview at the newest branch head. Admin navigation changes do not replace real-device checks for safe-area insets, label fit, or keyboard traversal.
