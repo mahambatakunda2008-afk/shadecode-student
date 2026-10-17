@@ -40,6 +40,18 @@ export default function PaperViewerPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!showScoreModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowScoreModal(false);
+        setScoreError(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showScoreModal]);
+
   // Best-effort: mark in_progress the first time the paper is opened.
   useEffect(() => {
     if (paper && (!paper.state || paper.state.status === "not_started")) {
@@ -245,7 +257,9 @@ export default function PaperViewerPage() {
 
             <div style={{ display: "flex", gap: 10 }}>
               <button
+                type="button"
                 onClick={skipScore}
+                className="ssc-focus-ring"
                 style={{
                   flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--surface-2)",
                   border: "1px solid var(--card-border)", color: "var(--foreground)",
@@ -255,7 +269,9 @@ export default function PaperViewerPage() {
                 Skip
               </button>
               <button
+                type="button"
                 onClick={submitScore}
+                className="ssc-focus-ring"
                 style={{
                   flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--primary)",
                   border: "none", color: "var(--primary-foreground)",
