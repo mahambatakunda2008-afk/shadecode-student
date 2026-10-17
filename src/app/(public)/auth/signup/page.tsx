@@ -22,24 +22,33 @@ export default function SignUp() {
   const supabase = createClient();
 
   const handleSignUp = async () => {
-    setLoading(true);
+    if (loading) return;
     setError("");
-    if (!name.trim()) { setError("Your name is required"); setLoading(false); return; }
-    if (!email.trim()) { setError("Email is required"); setLoading(false); return; }
-    if (!password) { setError("Password is required"); setLoading(false); return; }
-    if (password !== confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
+    if (!name.trim()) { setError("Your name is required"); return; }
+    if (!email.trim()) { setError("Email is required"); return; }
+    if (!password) { setError("Password is required"); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { full_name: name.trim(), username: name.trim() },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (signUpError) { setError(friendlyAuthError(signUpError.message)); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { full_name: name.trim(), username: name.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (signUpError) {
+        setError(friendlyAuthError(signUpError.message));
+        return;
+      }
 
-    if (data.user) {
+      if (!data.user) {
+        setError("We couldn't create your account. Please try again.");
+        return;
+      }
+
       void trackEvent("user_signed_up", { authMethod: "password" });
 
       try {
@@ -52,10 +61,13 @@ export default function SignUp() {
         // Referral attribution is optional and must never block signup.
       }
 
-      document.cookie = "onboarding_started=1; path=/; max-age=3600";
+      document.cookie = "onboarding_started=1; path=/; max-age=3600; samesite=lax";
       router.push(data.session ? "/onboarding" : `/auth/verify?email=${encodeURIComponent(email.trim())}`);
+    } catch {
+      setError("We couldn't reach the sign-up service. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const inputStyle = {
