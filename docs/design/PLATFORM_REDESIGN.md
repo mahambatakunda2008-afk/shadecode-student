@@ -140,3 +140,15 @@ Do not call the redesign complete after a token change or a successful build. Co
 - [ ] These HTTP smoke checks do not prove authenticated interactions, browser-rendered layout quality, mobile breakpoints, or the complete lesson-generation workflow. Those still need real browser/session validation.
 - [x] Cortex Learn generation policy fix: authenticated online requests now try the cloud/Cortex path before using a verified authored lesson; offline or unauthenticated requests may use exact curated recovery immediately. This prevents a known authored fallback from silently pre-empting AI generation for a signed-in online learner.
 - [ ] PR remains draft and unmerged. Production has not been deployed by this redesign work.
+
+## Static quality pass (no browser available)
+
+Verified by script and unit test; rendered visual QA is still required.
+
+- [x] Token contrast audited for light and dark (`npm run audit:contrast`, guarded by `src/lib/design/contrast.test.ts`). Light-theme status colours (success, warning, danger) and muted text darkened to reach WCAG AA 4.5:1.
+- [x] In-shell `(app)/error.tsx` so one page crash keeps navigation usable; root `error.tsx` rebuilt on the same shared `RouteError` (previous version used hard-coded light text that was unreadable on the light theme and showed developer wording to students).
+- [x] `(app)/loading.tsx` gives every student route an instant skeleton (there were no `loading.tsx` files before).
+- [x] Skip-link target `#main-content` added to the main student layout (it only existed in admin and comp-lab layouts).
+- [x] `prefers-reduced-motion` now also sets `animation-iteration-count: 1` (a 1ms duration alone made infinite animations flicker).
+- [x] `min-h-screen` / `h-screen` upgrade to `dvh` where supported, with `vh` fallback, to stop mobile browser-bar layout jumps.
+- [ ] Still needs a real browser: layout, spacing, mobile breakpoints, tap targets, authenticated flows. About 250 usages of text under 12px have not been reviewed.
