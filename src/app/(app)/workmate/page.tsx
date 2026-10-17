@@ -32,13 +32,11 @@ export default function WorkmatePage() {
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2" aria-label="Math Checker modes">
-          {modes.map(({ icon: Icon, label, description }, index) => (
+          {modes.map(({ icon: Icon, label, description }) => (
             <span
               key={label}
               title={description}
-              className={`inline-flex min-h-9 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${index === 0
-                ? "border-[var(--primary)]/30 bg-[var(--primary-glow)] text-[var(--primary)]"
-                : "border-[var(--card-border)] bg-[var(--surface-2)] text-[var(--muted-foreground)]"}`}
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-2 text-xs font-semibold text-[var(--muted-foreground)]"
             >
               <Icon size={15} aria-hidden="true" />
               <span>{label}</span>
