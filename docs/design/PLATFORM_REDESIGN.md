@@ -200,3 +200,12 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Onboarding progress now uses shared semantic theme tokens instead of hard-coded cyan/white colors, announces the current step and total to assistive technology, and constrains long labels on narrow screens.
 - [ ] Re-run CI and wait for a READY deployment at the latest onboarding commit.
 - [ ] Complete authenticated visual and workflow QA across desktop and mobile before merge. Do not treat a successful build as a substitute for these checks.
+
+## Authentication resilience pass (2026-10-17)
+
+- [x] Sign-up now catches network/runtime failures, shows a recoverable message, and always releases the loading state. Validation happens before entering the loading state, and duplicate submissions are guarded.
+- [x] Sign-in now catches network/runtime failures, shows a recoverable message, and always releases the loading state. Duplicate submissions are guarded.
+- [x] A successful auth response without a user is now handled explicitly on sign-up instead of silently leaving the user on the form.
+- [x] The sign-up onboarding cookie now includes `SameSite=Lax`.
+- [ ] Re-run CI against the newest auth-resilience commit and confirm its matching preview is READY.
+- [ ] These defensive error paths still require real authenticated browser testing, including invalid credentials, offline/network failure, email verification, and profile lookup failure.
