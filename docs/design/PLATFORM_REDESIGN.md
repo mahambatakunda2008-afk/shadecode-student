@@ -221,3 +221,10 @@ Verified by script and unit test; rendered visual QA is still required.
 
 
 - [x] Verification-email resend now catches network/runtime failures, always releases the loading state, avoids exposing raw provider errors, and uses an effect-cleaned cooldown timer to prevent interval leaks after unmount.
+
+## Verification-email recovery follow-up (2026-10-17)
+
+- [x] Verification page no longer claims a message was sent when no email address is available in the route; guidance now tells the student what to check.
+- [x] Resend failures use an assertive alert with error styling, while successful sends remain polite status feedback.
+- [x] Resend control exposes its busy state and applies consistent disabled-state feedback; long email addresses wrap instead of overflowing.
+- [ ] Validate CI and the matching preview for this commit. Email delivery, verification links, and the full signup-to-onboarding journey still need an authenticated browser check.
