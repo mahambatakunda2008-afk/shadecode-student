@@ -164,3 +164,12 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Past-paper score dialog supports Escape to close and has visible keyboard focus on its actions. Download is now one semantic link rather than a button nested inside a link.
 - [ ] CI and Vercel preview must be checked against the latest head after this pass.
 - [ ] These code changes do not replace authenticated end-to-end tests, browser-rendered desktop/tablet/mobile QA, a full accessibility review, or the remaining route-by-route redesign.
+
+
+## Additional implementation pass (2026-10-17, follow-up)
+
+- [x] Tasks workspace notifications now replace and clean up their timeout, preventing an older toast timer from clearing a newer message or leaving a timer behind after unmount.
+- [x] Tasks workspace now uses responsive horizontal spacing, a clear secondary heading, accessible XP progress semantics, explicit button types, and larger keyboard-visible action targets.
+- [x] Focus session statistics are scoped to the signed-in user as well as the date, preventing different accounts sharing one browser from seeing each other's local focus totals.
+- [x] Focus duration presets expose their selected state, timer remaining time has a semantic timer label, and the primary/reset/notification controls have visible keyboard focus and minimum touch height.
+- [ ] CI must validate these newest changes. These changes do not replace authenticated browser journeys, cross-device visual review, or manual verification of local-first sync and focus completion.
