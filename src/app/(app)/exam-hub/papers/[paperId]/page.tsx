@@ -15,6 +15,7 @@ export default function PaperViewerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [scoreInput, setScoreInput] = useState("");
   const [scoreError, setScoreError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export default function PaperViewerPage() {
     setError(null);
     fetch(`/api/exam-hub/papers/${params.paperId}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Paper not found");
+        if (!res.ok) throw new Error(res.status === 404 ? "This paper could not be found." : "The paper could not be loaded. Check your connection and try again.");
         return res.json();
       })
       .then((data) => {
@@ -39,6 +40,18 @@ export default function PaperViewerPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!showScoreModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowScoreModal(false);
+        setScoreError(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showScoreModal]);
+
   // Best-effort: mark in_progress the first time the paper is opened.
   useEffect(() => {
     if (paper && (!paper.state || paper.state.status === "not_started")) {
@@ -49,17 +62,19 @@ export default function PaperViewerPage() {
 
   async function patchState(patch: Record<string, unknown>) {
     setSaving(true);
+    setSaveMessage(null);
     try {
       const res = await fetch(`/api/exam-hub/papers/${params.paperId}/state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) throw new Error("Your progress could not be saved. Check your connection and try again.");
       const data = await res.json();
       setPaper((prev) => (prev ? { ...prev, state: data.state } : prev));
-    } catch {
-      // Non-critical — don't block the viewer over a state-save failure.
+      setSaveMessage("Progress saved.");
+    } catch (err) {
+      setSaveMessage(err instanceof Error ? err.message : "Your progress could not be saved. Check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -122,7 +137,8 @@ export default function PaperViewerPage() {
             <ArrowLeft size={16} /> Back
           </button>
           <div style={{ padding: 20, borderRadius: 18, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)" }}>
-            <p style={{ color: "var(--danger)", margin: 0 }}>{error ?? "Paper not found"}</p>
+            <p role="alert" style={{ color: "var(--danger)", margin: 0 }}>{error ?? "Paper not found"}</p>
+            <button type="button" onClick={load} className="ssc-focus-ring mt-4 inline-flex min-h-11 items-center rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">Try again</button>
           </div>
         </div>
       </div>
@@ -138,6 +154,8 @@ export default function PaperViewerPage() {
         >
           <ArrowLeft size={16} /> Back to papers
         </button>
+
+        {saveMessage && <p role="status" className={`mb-3 rounded-xl border p-3 text-sm ${saveMessage === "Progress saved." ? "border-[var(--border-subtle)] bg-[var(--surface)] text-[var(--muted-foreground)]" : "border-[var(--danger)]/20 bg-[var(--danger-soft)] text-[var(--danger)]"}`}>{saveMessage}</p>}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
           <div>
@@ -158,8 +176,14 @@ export default function PaperViewerPage() {
               accent="var(--warning)"
               disabled={saving}
             />
-            <a href={signedUrl} download onClick={handleDownload} style={{ textDecoration: "none" }}>
-              <ActionButton icon={Download} label="Download" onClick={() => {}} accent="var(--primary)" />
+            <a
+              href={signedUrl}
+              download
+              onClick={handleDownload}
+              className="ssc-focus-ring inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)]"
+              style={{ textDecoration: "none" }}
+            >
+              <Download size={14} aria-hidden="true" /> Download
             </a>
             <ActionButton
               icon={CheckCircle2}
@@ -169,9 +193,7 @@ export default function PaperViewerPage() {
               accent="var(--accent)"
               disabled={saving || paper.state?.status === "completed"}
             />
-            <a href={signedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <ActionButton icon={Maximize2} label="Full screen" onClick={() => {}} accent="var(--primary)" />
-            </a>
+            <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><Maximize2 size={15} /> Full screen</a>
           </div>
         </div>
 
@@ -187,12 +209,13 @@ export default function PaperViewerPage() {
           {/* Native browser PDF rendering — gives zoom, search, and full-screen
               for free with zero extra dependencies. Signed URL expires in
               10 minutes; the page re-fetches on reload. */}
-          <iframe src={signedUrl} title="Past paper" style={{ width: "100%", height: "100%", border: "none" }} />
+          <iframe src={signedUrl} title={`Past paper ${paper.paper_number} ${PAPER_KIND_LABELS[paper.kind]}`} style={{ width: "100%", height: "100%", border: "none" }} />
         </div>
       </div>
 
       {showScoreModal && (
         <div
+          role="presentation"
           onClick={(e) => { if (e.target === e.currentTarget) setShowScoreModal(false); }}
           style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -200,20 +223,25 @@ export default function PaperViewerPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="paper-score-title"
             style={{
               width: "100%", maxWidth: 380, borderRadius: 18, padding: 24,
               background: "var(--surface)", border: "1px solid var(--card-border)",
               boxShadow: "var(--shadow-lg, 0 20px 40px rgba(0,0,0,0.3))",
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", margin: "0 0 6px" }}>
+            <h2 id="paper-score-title" style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", margin: "0 0 6px" }}>
               How did it go?
             </h2>
             <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "0 0 18px" }}>
               Add your score to track weak and strong topics — or skip it.
             </p>
 
+            <label htmlFor="paper-score-input" className="sr-only">Score out of 100</label>
             <input
+              id="paper-score-input"
               type="number"
               inputMode="numeric"
               min={0}
@@ -230,12 +258,14 @@ export default function PaperViewerPage() {
               }}
             />
             {scoreError && (
-              <p style={{ fontSize: 12, color: "var(--danger)", margin: "0 0 14px" }}>{scoreError}</p>
+              <p role="alert" style={{ fontSize: 12, color: "var(--danger)", margin: "0 0 14px" }}>{scoreError}</p>
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
               <button
+                type="button"
                 onClick={skipScore}
+                className="ssc-focus-ring"
                 style={{
                   flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--surface-2)",
                   border: "1px solid var(--card-border)", color: "var(--foreground)",
@@ -245,7 +275,9 @@ export default function PaperViewerPage() {
                 Skip
               </button>
               <button
+                type="button"
                 onClick={submitScore}
+                className="ssc-focus-ring"
                 style={{
                   flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--primary)",
                   border: "none", color: "var(--primary-foreground)",
@@ -279,8 +311,10 @@ function ActionButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
+      className="ssc-focus-ring min-h-11 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--interactive-hover)]"
       style={{
         display: "flex",
         alignItems: "center",

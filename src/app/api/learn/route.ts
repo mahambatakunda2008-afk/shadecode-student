@@ -15,6 +15,7 @@ import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/le
 import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
+import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -199,11 +200,11 @@ export async function POST(req: Request) {
     }
     if (type === "course_save") {
       const draft = body.draft; if (!draft || !Array.isArray(draft.lessons) || !draft.lessons.length) return NextResponse.json({ error: "Invalid draft" }, { status: 400 });
-      const subjName = topic && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`); let subjectId: string | null = null;
+      const subjName = sanitizeLessonText((topic && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`)).toString()).slice(0, 255); let subjectId: string | null = null;
       const { data: existing } = await supabase.from("subjects").select("id").eq("user_id", user.id).eq("name", subjName).maybeSingle();
-      if (existing?.id) subjectId = existing.id; else { const { data: insertedSub } = await supabase.from("subjects").insert({ user_id: user.id, name: subjName }).select("id").single(); subjectId = insertedSub?.id ?? null; }
+      if (existing?.id) subjectId = existing.id; else { const { data: insertedSub } = await supabase.from("subjects").insert({ user_id: user.id, name: sanitizeLessonText(subjName) }).select("id").single(); subjectId = insertedSub?.id ?? null; }
       if (!subjectId) return NextResponse.json({ error: "Failed to resolve subject" }, { status: 500 });
-      const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, topic: (l.topic ?? topic ?? l.title ?? "").toString().slice(0,500), title: (l.title ?? l.summary ?? "Untitled").toString().slice(0,255), description: (l.summary ?? "").toString().slice(0,1500), difficulty: l.difficulty === "hard" ? "hard" : l.difficulty === "medium" ? "medium" : "easy", blocks: Array.isArray(l.blocks) ? l.blocks : [{ type: "text", content: l.summary ?? "" }], progress: 0 }));
+      const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText((l.topic ?? topic ?? l.title ?? "").toString().slice(0,500)), title: sanitizeLessonText((l.title ?? l.summary ?? "Untitled").toString().slice(0,255)), description: sanitizeLessonText((l.summary ?? "").toString().slice(0,1500)), difficulty: l.difficulty === "hard" ? "hard" : l.difficulty === "medium" ? "medium" : "easy", blocks: sanitizeLessonText(Array.isArray(l.blocks) ? l.blocks : [{ type: "text", content: l.summary ?? "" }]), progress: 0 }));
       const { data: insertedLessons, error: insertLessonsError } = await supabase.from("learn_lessons").insert(lessonsToInsert).select("id, title");
       if (insertLessonsError) return NextResponse.json({ success: false, error: `Failed to save lessons: ${insertLessonsError.message}` }, { status: 500 });
       const titleToId = new Map<string, string>(); (insertedLessons ?? []).forEach((r: any) => titleToId.set(r.title, r.id)); const prereqInserts: any[] = []; const unmappedPrereqs: Array<{ lessonTitle: string; missingPrereq: string }> = [];
@@ -274,7 +275,7 @@ export async function POST(req: Request) {
         if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
         if (!leaseRow) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
       }
-      const generated = body.generatedLesson;
+      const generated = sanitizeLessonText(body.generatedLesson);
       if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
       }
@@ -319,33 +320,37 @@ export async function POST(req: Request) {
 
       let savedId = durableJobId;
       if (durableJobId) {
+        // Sanitize the entire RPC payload at the persistence boundary. Sanitizing
+        // only lesson text leaves IDs, subject metadata, or future fields capable
+        // of carrying U+0000 into PostgreSQL text/jsonb and breaking finalization.
+        const checkpointArgs = sanitizeLessonText({
+          p_job_id: durableJobId,
+          p_user_id: user.id,
+          p_lease_id: generationLeaseId,
+          p_status: "complete",
+          p_stage: "complete",
+          p_subject_id: resolvedSubject.id,
+          p_title: persistableCandidate.title,
+          p_topic: request.topic,
+          p_description: verifiedCurriculumFallback
+            ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
+            : `A deep ${validDifficulty} lesson on ${request.topic}`,
+          p_difficulty: validDifficulty,
+          p_progress: 100,
+          p_completed_units: generationSectionCount,
+          p_total_units: generationSectionCount,
+          p_blocks: persistableCandidate.blocks,
+          p_result: {
+            id: durableJobId,
+            title: persistableCandidate.title,
+            blocks: persistableCandidate.blocks,
+            subject: effectiveSubject,
+            deterministicFallback: verifiedCurriculumFallback,
+          },
+        });
         const { data: checkpointResult, error: checkpointWriteError } = await supabase.rpc(
           "checkpoint_cortex_generation",
-          {
-            p_job_id: durableJobId,
-            p_user_id: user.id,
-            p_lease_id: generationLeaseId,
-            p_status: "complete",
-            p_stage: "complete",
-            p_subject_id: resolvedSubject.id,
-            p_title: persistableCandidate.title,
-            p_topic: request.topic,
-            p_description: verifiedCurriculumFallback
-              ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
-              : `A deep ${validDifficulty} lesson on ${request.topic}`,
-            p_difficulty: validDifficulty,
-            p_progress: 100,
-            p_completed_units: generationSectionCount,
-            p_total_units: generationSectionCount,
-            p_blocks: persistableCandidate.blocks,
-            p_result: {
-              id: durableJobId,
-              title: persistableCandidate.title,
-              blocks: persistableCandidate.blocks,
-              subject: effectiveSubject,
-              deterministicFallback: verifiedCurriculumFallback,
-            },
-          },
+          checkpointArgs,
         );
         if (checkpointWriteError) {
           log.lessonGenerationFailed({
@@ -367,14 +372,12 @@ export async function POST(req: Request) {
         const { data: inserted, error } = await supabase.from("learn_lessons").insert({
           user_id: user.id,
           subject_id: resolvedSubject.id,
-          topic: request.topic.slice(0, 500),
-          title: persistableCandidate.title,
-          description: verifiedCurriculumFallback
-            ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
-            : `A deep ${validDifficulty} lesson on ${request.topic}`,
+          topic: sanitizeLessonText(request.topic.slice(0, 500)),
+          title: sanitizeLessonText(persistableCandidate.title),
+          description: sanitizeLessonText(verifiedCurriculumFallback ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.` : `A deep ${validDifficulty} lesson on ${request.topic}`),
           difficulty: validDifficulty,
           progress: 0,
-          blocks: persistableCandidate.blocks,
+          blocks: sanitizeLessonText(persistableCandidate.blocks),
           updated_at: new Date().toISOString(),
         }).select("id").single();
         if (error || !inserted?.id) {
@@ -388,8 +391,8 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         id: savedId,
-        title: persistableCandidate.title,
-        blocks: persistableCandidate.blocks,
+        title: sanitizeLessonText(persistableCandidate.title),
+        blocks: sanitizeLessonText(persistableCandidate.blocks),
         qualityScore: finalScore,
         subject: effectiveSubject,
         deterministicFallback: verifiedCurriculumFallback,
@@ -469,8 +472,8 @@ export async function POST(req: Request) {
               id: durableJobId,
               user_id: user.id,
               subject_id: resolvedSubject.id,
-              topic: request.topic.slice(0, 500),
-              title: `Cortex is building ${request.topic}`.slice(0, 255),
+              topic: sanitizeLessonText(request.topic.slice(0, 500)),
+              title: sanitizeLessonText(`Cortex is building ${request.topic}`.slice(0, 255)),
               description: "Generation is resumable. Partial sections are saved as they complete.",
               difficulty: validDifficulty,
               progress: 0,
@@ -481,6 +484,13 @@ export async function POST(req: Request) {
           }
         }
       }
+
+      const sectionStartedAt = Date.now();
+      console.info("[LEARN] section request accepted", {
+        generationJobId: durableJobId,
+        sectionIndex: generationSectionIndex,
+        sectionCount: generationSectionCount,
+      });
 
       const sectionJobs = request.broadTopic
         ? [
@@ -526,6 +536,7 @@ Previous candidate:
 ${rawSection?.slice(0, 14000) || "No usable candidate was returned."}
 
 Repair only the defective section. Preserve correct material where possible. Do not shorten the teaching merely to satisfy the schema. Return ONLY valid JSON.`;
+        const attemptStartedAt = Date.now();
         rawSection = await executeCortexText(sectionRequestPrompt, 2200, {
           operation: attempt === 0 ? "lesson.generate_section" : "lesson.repair_section",
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
@@ -539,6 +550,14 @@ Repair only the defective section. Preserve correct material where possible. Do 
           return null;
         });
 
+        console.info("[LEARN] section model attempt finished", {
+          generationJobId: durableJobId,
+          sectionIndex: generationSectionIndex,
+          attempt,
+          elapsedMs: Date.now() - attemptStartedAt,
+          totalElapsedMs: Date.now() - sectionStartedAt,
+          responseCharacters: rawSection?.length ?? 0,
+        });
         // A null AI response means the provider chain was exhausted, not that the
         // section merely needs another schema repair. Do not burn another 16-22s
         // retrying the same dead provider chain.
@@ -654,14 +673,14 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_status: "partial",
             p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
-            p_title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255),
-            p_topic: request.topic.slice(0, 500),
+            p_title: sanitizeLessonText((generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255)),
+            p_topic: sanitizeLessonText(request.topic.slice(0, 500)),
             p_description: "Generation is resumable. Partial sections are saved as they complete.",
             p_difficulty: validDifficulty,
             p_progress: durableProgress,
             p_completed_units: generationSectionIndex + 1,
             p_total_units: generationSectionCount,
-            p_blocks: currentBlocks,
+            p_blocks: sanitizeLessonText(currentBlocks),
             p_result: null,
           },
         );
@@ -714,8 +733,8 @@ Repair only the defective section. Preserve correct material where possible. Do 
       if (!existingJob?.id) {
         await supabase.from("learn_lessons").insert({
           id: durableJobId, user_id: user.id, subject_id: resolvedSubject.id,
-          topic: request.topic.slice(0, 500),
-          title: `Cortex is building ${request.topic}`.slice(0, 255),
+          topic: sanitizeLessonText(request.topic.slice(0, 500)),
+          title: sanitizeLessonText(`Cortex is building ${request.topic}`.slice(0, 255)),
           description: "Generation is resumable. This draft is not yet complete.",
           difficulty: validDifficulty, progress: 0, blocks: [],
         });
@@ -820,9 +839,9 @@ Return only valid JSON.`;
     if (!subjectId) return NextResponse.json({ error: "Unable to resolve the lesson subject." }, { status: 500 });
 
     const lessonRow = {
-      user_id: user.id, subject_id: subjectId, topic: request.topic.slice(0, 500),
-      title: parsed.title, description: `A deep ${validDifficulty} lesson on ${request.topic}`,
-      difficulty: validDifficulty, progress: 0, blocks: parsed.blocks,
+      user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText(request.topic.slice(0, 500)),
+      title: sanitizeLessonText(parsed.title), description: sanitizeLessonText(`A deep ${validDifficulty} lesson on ${request.topic}`),
+      difficulty: validDifficulty, progress: 0, blocks: sanitizeLessonText(parsed.blocks),
       updated_at: new Date().toISOString(),
     };
     let savedId = durableJobId;
@@ -845,8 +864,8 @@ Return only valid JSON.`;
     await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
     return NextResponse.json({
       id: savedId,
-      title: parsed.title,
-      blocks: parsed.blocks,
+      title: sanitizeLessonText(parsed.title),
+      blocks: sanitizeLessonText(parsed.blocks),
       qualityScore: finalScore,
       subject: effectiveSubject,
       deterministicFallback: usedDeterministicFallback,

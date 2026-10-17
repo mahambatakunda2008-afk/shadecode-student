@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
@@ -44,8 +44,11 @@ export default function QuestionBankPage() {
   const [cortexResult, setCortexResult] = useState<CortexResult | null>(null);
   const [cortexLoading, setCortexLoading] = useState(false);
   const [cortexError, setCortexError] = useState<string | null>(null);
+  const cortexRequestRef = useRef(0);
+  const questionsRequestRef = useRef(0);
 
   const fetchQuestions = useCallback(async (searchText: string, selectedDifficulty: string) => {
+    const requestId = ++questionsRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -58,16 +61,19 @@ export default function QuestionBankPage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Unable to load questions");
-      setQuestions(payload.questions ?? []);
+      if (requestId === questionsRequestRef.current) setQuestions(payload.questions ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load questions");
-      setQuestions([]);
+      if (requestId === questionsRequestRef.current) {
+        setError(err instanceof Error ? err.message : "Unable to load questions");
+        setQuestions([]);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === questionsRequestRef.current) setLoading(false);
     }
   }, []);
 
   const askCortex = async (question: Question) => {
+    const requestId = ++cortexRequestRef.current;
     setCortexQuestion(question.id);
     setCortexResult(null);
     setCortexError(null);
@@ -108,11 +114,13 @@ Use only evidence present in the question. Explain the key concept, likely metho
         localMaxTokens: 1200,
         preferParallel: true,
       });
-      setCortexResult(result);
+      if (requestId === cortexRequestRef.current) setCortexResult(result);
     } catch (err) {
-      setCortexError(err instanceof Error ? err.message : "Cortex could not answer right now");
+      if (requestId === cortexRequestRef.current) {
+        setCortexError(err instanceof Error ? err.message : "Cortex could not answer right now");
+      }
     } finally {
-      setCortexLoading(false);
+      if (requestId === cortexRequestRef.current) setCortexLoading(false);
     }
   };
 
@@ -126,8 +134,8 @@ Use only evidence present in the question. Explain the key concept, likely metho
   }, [fetchQuestions]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-6">
+    <main className="ssc-page mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-6">
+      <header className="ssc-page-header mb-6">
         <Link href="/exam-hub" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           ← Exam Hub
         </Link>
@@ -135,17 +143,25 @@ Use only evidence present in the question. Explain the key concept, likely metho
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Search extracted questions from the paper library, then ask Cortex for evidence-grounded help.
         </p>
-      </div>
+      </header>
 
-      <form onSubmit={load} className="mb-6 grid gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 sm:grid-cols-[1fr_180px_auto]">
+      <form onSubmit={load} className="mb-6 grid gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+        <label htmlFor="question-bank-query" className="sr-only">Search question text</label>
         <input
+          id="question-bank-query"
+          type="search"
+          autoComplete="off"
+          aria-label="Search question text"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           maxLength={200}
           placeholder="Search question text..."
           className="min-w-0 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
+        <label htmlFor="question-bank-difficulty" className="sr-only">Filter by difficulty</label>
         <select
+          id="question-bank-difficulty"
+          aria-label="Filter questions by difficulty"
           value={difficulty}
           onChange={(event) => setDifficulty(event.target.value)}
           className="rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)]"
@@ -160,12 +176,13 @@ Use only evidence present in the question. Explain the key concept, likely metho
         </button>
       </form>
 
-      {error && <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600">{error}</div>}
+      {error && <div role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600">{error}</div>}
 
       {!loading && !error && questions.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-10 text-center">
-          <p className="font-medium text-[var(--foreground)]">No questions found yet.</p>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">The question bank is populated from verified past-paper ingestion.</p>
+        <div className="rounded-2xl border border-dashed border-[var(--card-border)] bg-[var(--surface-2)] p-8 text-center sm:p-10">
+          <p className="font-medium text-[var(--foreground)]">No questions found.</p>
+          <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[var(--muted-foreground)]">Try a broader search or clear the difficulty filter. You can still practise directly from the verified past-paper library.</p>
+          <Link href="/exam-hub/papers" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-foreground)]">Browse past papers</Link>
         </div>
       )}
 
@@ -188,17 +205,27 @@ Use only evidence present in the question. Explain the key concept, likely metho
               )}
               <button
                 type="button"
-                onClick={() => (isOpen ? setCortexQuestion(null) : void askCortex(question))}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"
+                onClick={() => {
+                  if (isOpen) {
+                    cortexRequestRef.current += 1;
+                    setCortexLoading(false);
+                    setCortexQuestion(null);
+                  } else {
+                    void askCortex(question);
+                  }
+                }}
+                aria-expanded={isOpen}
+                aria-controls={`cortex-help-${question.id}`}
+                className="ssc-focus-ring mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] hover:border-[var(--primary)]"
               >
                 <Sparkles size={16} />
                 {isOpen ? "Close Cortex" : "Ask Cortex"}
               </button>
 
               {isOpen && (
-                <div className="mt-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--surface)] p-4">
-                  {cortexLoading && <p className="text-sm text-[var(--muted-foreground)]">Cortex is reading the question…</p>}
-                  {cortexError && <p className="text-sm text-red-600">{cortexError}</p>}
+                <div id={`cortex-help-${question.id}`} className="mt-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--surface)] p-4" aria-busy={cortexLoading}>
+                  {cortexLoading && <p role="status" aria-live="polite" className="text-sm text-[var(--muted-foreground)]">Cortex is reading the question…</p>}
+                  {cortexError && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{cortexError}</p>}
                   {cortexResult && (
                     <div className="space-y-4 text-sm text-[var(--foreground)]">
                       {cortexResult.concept && <div><p className="font-semibold">Key concept</p><p className="mt-1 text-[var(--muted-foreground)]">{cortexResult.concept}</p></div>}

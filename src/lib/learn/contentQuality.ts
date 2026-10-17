@@ -40,6 +40,8 @@ TEACHING STANDARD
 ${difficultyGuide}
 This must NOT read like an AI summary, Wikipedia paragraph, revision-card dump, or list of definitions. It should feel like a compact textbook chapter taught by an exceptional teacher who can see where a learner will get confused.
 
+DIRECTNESS CONTRACT: Teach directly. Do not open with a fictional story, anecdote, character, imaginary journey, or narrative hook. Do not use stories as analogies or padding. Start with the actual concept, method, definition, diagram description, derivation, or problem. Prefer concise worked examples, explicit steps, comparisons, and exam-style practice. If the requested topic itself is story composition or creative writing, teach the craft directly (structure, plot, character, setting, conflict, language, and editing); use only short, targeted example excerpts with annotations. Never write a complete story unless the learner explicitly asks for one.
+
 The lesson must build a mental model. Explain WHAT something is, WHY it behaves that way, HOW to recognise it, HOW to use it, and WHERE it connects to other ideas. When a rule is given, explain the mechanism or reasoning behind the rule where appropriate. When a formula appears, explain what the symbols mean, why the relationship makes sense, its conditions, units, and how to rearrange/use it. When a process or mechanism is taught, make the sequence explicit.
 
 For a BROAD topic, use the curriculum map above as the spine. Every major branch must receive substantive teaching. Do not spend the whole response on the first branch. If the request is too broad for one lesson, explicitly teach the map and the highest-value foundations, then create clear next-step blocks that continue the journey. Never pretend a tiny answer covers the whole field.
@@ -113,6 +115,8 @@ Requirements:
 - Explain WHY and HOW, not only WHAT.
 - Do not invent syllabus requirements.
 - Make the subject's reasoning style visible in explanations and worked examples.
+- Avoid fictional narratives, anecdotes, story hooks, and story-based analogies. Teach the requested material directly, using concise worked examples and explicit reasoning.
+- If the topic itself is story composition or creative writing, explain the techniques directly and use only short annotated excerpts when needed. Do not write a complete story unless explicitly requested.
 
 Draft to repair:
 ${raw.slice(0, 30000)}`;
