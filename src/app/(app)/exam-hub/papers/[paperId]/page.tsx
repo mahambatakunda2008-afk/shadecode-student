@@ -40,6 +40,18 @@ export default function PaperViewerPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!showScoreModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowScoreModal(false);
+        setScoreError(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showScoreModal]);
+
   // Best-effort: mark in_progress the first time the paper is opened.
   useEffect(() => {
     if (paper && (!paper.state || paper.state.status === "not_started")) {
@@ -164,8 +176,14 @@ export default function PaperViewerPage() {
               accent="var(--warning)"
               disabled={saving}
             />
-            <a href={signedUrl} download onClick={handleDownload} style={{ textDecoration: "none" }}>
-              <ActionButton icon={Download} label="Download" onClick={() => {}} accent="var(--primary)" />
+            <a
+              href={signedUrl}
+              download
+              onClick={handleDownload}
+              className="ssc-focus-ring inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)]"
+              style={{ textDecoration: "none" }}
+            >
+              <Download size={14} aria-hidden="true" /> Download
             </a>
             <ActionButton
               icon={CheckCircle2}
@@ -245,7 +263,9 @@ export default function PaperViewerPage() {
 
             <div style={{ display: "flex", gap: 10 }}>
               <button
+                type="button"
                 onClick={skipScore}
+                className="ssc-focus-ring"
                 style={{
                   flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--surface-2)",
                   border: "1px solid var(--card-border)", color: "var(--foreground)",
@@ -255,7 +275,9 @@ export default function PaperViewerPage() {
                 Skip
               </button>
               <button
+                type="button"
                 onClick={submitScore}
+                className="ssc-focus-ring"
                 style={{
                   flex: 1, padding: "11px 0", borderRadius: 10, background: "var(--primary)",
                   border: "none", color: "var(--primary-foreground)",

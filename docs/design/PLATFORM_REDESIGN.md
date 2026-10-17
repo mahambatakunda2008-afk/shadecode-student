@@ -152,3 +152,15 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] `prefers-reduced-motion` now also sets `animation-iteration-count: 1` (a 1ms duration alone made infinite animations flicker).
 - [x] `min-h-screen` / `h-screen` upgrade to `dvh` where supported, with `vh` fallback, to stop mobile browser-bar layout jumps.
 - [ ] Still needs a real browser: layout, spacing, mobile breakpoints, tap targets, authenticated flows. About 250 usages of text under 12px have not been reviewed.
+
+## Additional implementation pass (2026-10-17)
+
+- [x] Critical dashboard watchdog repair: it now actually renders `ExperienceDashboard`, observes the dashboard's explicit readiness markers, allows up to 15 seconds before showing a recovery overlay, and clears the overlay if startup subsequently recovers. Previously, the watchdog could replace the dashboard with its own skeleton/error state without mounting the dashboard component it was waiting for.
+- [x] Focus timer completion side effects moved out of the React state updater and guarded so a completed block is recorded once. Browser storage write failures no longer interrupt the session-completion flow.
+- [x] Study-plan loading and generation states now announce status/errors accessibly; retry contrast and keyboard focus treatment improved.
+- [x] Timetable generation validates custom session and break durations, preventing invalid values from producing malformed schedule entries. Inputs, selected presets, removal controls, and error feedback have clearer accessible semantics.
+- [x] Question Bank Cortex requests now ignore stale results when another question is selected or the panel closes; loading and error feedback are announced accessibly.
+- [x] Exam Simulator cleanup no longer lets a blocked `localStorage.removeItem` interrupt a successful result transition or reset.
+- [x] Past-paper score dialog supports Escape to close and has visible keyboard focus on its actions. Download is now one semantic link rather than a button nested inside a link.
+- [ ] CI and Vercel preview must be checked against the latest head after this pass.
+- [ ] These code changes do not replace authenticated end-to-end tests, browser-rendered desktop/tablet/mobile QA, a full accessibility review, or the remaining route-by-route redesign.
