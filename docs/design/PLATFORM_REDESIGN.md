@@ -234,3 +234,10 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Password-reset validation, provider failures, and network failures now use assertive error feedback; successful updates remain polite status feedback.
 - [x] Confirmation mismatch exposes invalid-field semantics and associates the field with its feedback.
 - [ ] CI and preview must validate the latest head. Expired-link and recovery-session journeys still require real browser verification.
+
+## Sign-up form quality follow-up (2026-10-17)
+
+- [x] Sign-up fields now expose required/name semantics and connect relevant validation messages to their fields.
+- [x] The form announces its busy state, and password visibility controls have a consistent 40px minimum target.
+- [x] Sign-up errors are announced assertively and long error text wraps within the form.
+- [ ] Revalidate CI and preview at the latest head; the full signup-to-verification journey still needs an authenticated browser session.
