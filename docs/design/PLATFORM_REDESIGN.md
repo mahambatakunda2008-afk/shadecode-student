@@ -181,3 +181,7 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Exam Hub cards now retain readable contrast for upcoming features and expose a clear keyboard-focus outline on navigable cards.
 - [x] Math Checker capability labels no longer imply that “Verify” stays selected while the separate form is in “Help me solve” mode.
 - [ ] The currently running CI was started against an earlier commit than these final follow-ups. A successful run on the latest branch head is still required before treating this pass as validated.
+
+
+- [x] CI surfaced a browser/Node timer-handle type mismatch in the new Tasks toast cleanup. The ref now uses the browser timer's numeric handle type.
+- [ ] Re-run TypeScript, lint, tests, and production build against the latest branch head. The earlier CI run failed at typecheck before reaching the remaining checks; no green result is claimed for the latest follow-ups.
