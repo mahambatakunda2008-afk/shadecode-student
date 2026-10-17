@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { trackEvent } from "@/lib/traction/client";
+import { friendlyAuthError } from "@/lib/auth/friendlyAuthError";
 
 export default function SignUp() {
   const [name, setName] = useState("");
@@ -35,7 +36,7 @@ export default function SignUp() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+    if (signUpError) { setError(friendlyAuthError(signUpError.message)); setLoading(false); return; }
 
     if (data.user) {
       void trackEvent("user_signed_up", { authMethod: "password" });
