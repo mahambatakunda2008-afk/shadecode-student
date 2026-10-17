@@ -8,6 +8,7 @@ import { setOnboardingComplete } from "@/lib/onboarding";
 import { Eye, EyeOff } from "lucide-react";
 import { trackEvent } from "@/lib/traction/client";
 import { BrandLockup } from "@/components/brand/BrandLockup";
+import { friendlyAuthError } from "@/lib/auth/friendlyAuthError";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -43,7 +44,7 @@ export default function Login() {
       const message = loginError.message || "Unable to sign in.";
       const needsVerification = /email not confirmed|email.*confirm/i.test(message);
       setVerificationNeeded(needsVerification);
-      setError(needsVerification ? "Your email hasn't been verified yet." : message);
+      setError(needsVerification ? "Your email hasn't been verified yet." : friendlyAuthError(message));
       setLoading(false);
       return;
     }

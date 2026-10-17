@@ -73,6 +73,7 @@ export default function RevisionHub() {
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">Revise by syllabus</h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">Test yourself on the official learning outcomes, then rate how you did. Works offline from AI and never runs out of cards.</p>
+        <a href="/study/library" className="mt-2 inline-block text-sm font-semibold text-[var(--primary)] hover:underline">Search the lesson library →</a>
       </header>
 
       {load.status === "loading" && <p role="status" className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]"><Loader2 className="size-4 animate-spin" aria-hidden /> Loading your syllabus…</p>}

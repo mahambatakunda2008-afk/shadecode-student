@@ -68,6 +68,22 @@ async function heartbeatGenerationLease(token: string, jobId: string, leaseId: s
   }
 }
 function isBrowser() { return typeof window !== "undefined"; }
+/** A lesson from the shared library that covers the request, or null. Never throws and never waits long. */
+async function fetchLibraryRecovery(subject: string, topic: string): Promise<{ title: string; blocks: Array<Record<string, unknown>> } | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(`/api/library/recover?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`, { signal: controller.signal });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { lesson?: { title?: string; blocks?: Array<Record<string, unknown>> } };
+    const lesson = data.lesson;
+    return lesson?.title && Array.isArray(lesson.blocks) && lesson.blocks.length >= 4 ? { title: lesson.title, blocks: lesson.blocks } : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 function saveActiveId(id: string | null) { if (!isBrowser()) return; try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {} }
 function getActiveId() { if (!isBrowser()) return null; try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; } }
 function errorMessage(value: unknown) { return value instanceof Error ? value.message : "Lesson generation failed."; }
@@ -906,10 +922,16 @@ async function runJob(
     // lesson whose subject/topic key matches this request. This recovery is deliberately
     // after the provider/local attempts, so curated material never replaces successful AI
     // generation. It also avoids depending on the server section fallback being reachable.
-    const curatedFallback = buildDeterministicLessonFallback(
+    let curatedFallback: { title: string; blocks: Array<Record<string, unknown>> } | null = buildDeterministicLessonFallback(
       currentJob.request.subject,
       currentJob.request.prompt,
     );
+    // Next rung: a lesson other students already worked through, when its title covers this topic.
+    // Strict by design; with no match this stays null and the normal failure handling below applies.
+    if (!curatedFallback && isBrowser() && navigator.onLine) {
+      curatedFallback = await fetchLibraryRecovery(currentJob.request.subject, currentJob.request.prompt);
+      if (curatedFallback) console.info("[LEARN] recovering with a library lesson", { topic: currentJob.request.prompt, failureClass });
+    }
     if (curatedFallback && isBrowser()) {
       try {
         const fallbackResult: LessonGenerationResult = {

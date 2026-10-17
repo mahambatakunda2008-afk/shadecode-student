@@ -48,7 +48,12 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [ ] L0 verified library: persist every validated AI output (lesson, quiz, notes) keyed by subsection and serve it first; warm it with a background job whenever providers are healthy
 - [x] Learning loop v1 (2026-10-10): `learning_signals` capture, classic-mistake diagnosis for all 36 generators, learner-adaptive practice, private aggregate views
 - [ ] Admin view of `learning_item_stats` / `learning_mistake_stats`: flag question types that are too hard, too easy or broken; list the most common mistakes
-- [ ] Lesson library: rank `learn_lessons` (93 rows, keyed by curriculum objective) by learner outcomes, serve library lessons when generation fails, BM25 search so 'Ask' works with no model
+- [x] Lesson library v1 (2026-10-10): `lesson_library` filled by a trigger on `learn_lessons` (>= 4 blocks and >= 30 percent progress; 23 of 95 qualified), own BM25 search nudged by helpful votes, `/study/library`. Correction: stored lessons are NOT keyed to curriculum objectives (all have zero keys) and 22 of the 25 easy lessons are empty failed generations
+- [ ] Library: match lessons to verified syllabus subsections (IDF matcher from paperSelfCheck) so they appear in revise decks and on topic pages
+- [x] Library lesson served as a recovery rung when lesson generation fails (after the exact curated lesson, before the generic failure); strict title/topic coverage, never crosses subjects, publish trigger dedupes
+- [ ] Use library search as the tutor's no-model 'Ask' fallback
+- [ ] Library: Computer Science, Accounting and other non-syllabus lessons are in the corpus but outside the four verified syllabi; decide scope
+- [ ] Security follow-up: `src/lib/learning/contentRenderer.tsx` renders `block.markdown` with dangerouslySetInnerHTML; own lessons only today, but sanitise before any cross-user use
 - [ ] Spaced-repetition daily mission (roadmap C) from keyed mastery + signals, using the adaptive weights
 - [ ] Calibrate difficulty from `learning_item_stats` once there is enough data; retire or fix generators outside 20-95 percent correct
 - [ ] Capture lesson quiz and deck-session signals (quiz page is client-only today)
