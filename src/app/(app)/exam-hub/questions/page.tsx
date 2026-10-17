@@ -45,8 +45,10 @@ export default function QuestionBankPage() {
   const [cortexLoading, setCortexLoading] = useState(false);
   const [cortexError, setCortexError] = useState<string | null>(null);
   const cortexRequestRef = useRef(0);
+  const questionsRequestRef = useRef(0);
 
   const fetchQuestions = useCallback(async (searchText: string, selectedDifficulty: string) => {
+    const requestId = ++questionsRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -59,12 +61,14 @@ export default function QuestionBankPage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Unable to load questions");
-      setQuestions(payload.questions ?? []);
+      if (requestId === questionsRequestRef.current) setQuestions(payload.questions ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load questions");
-      setQuestions([]);
+      if (requestId === questionsRequestRef.current) {
+        setError(err instanceof Error ? err.message : "Unable to load questions");
+        setQuestions([]);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === questionsRequestRef.current) setLoading(false);
     }
   }, []);
 
