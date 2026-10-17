@@ -12,7 +12,8 @@ export function AdminBottomNav() {
 
   return (
     <nav
-      className="ssc-bottom-nav flex w-full items-stretch border-t border-[var(--card-border)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
+      aria-label="Administration primary navigation"
+      className="ssc-bottom-nav flex w-full items-stretch border-t border-[var(--border-subtle)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       {items.map(({ href, label, icon: Icon }) => {
@@ -21,11 +22,12 @@ export function AdminBottomNav() {
           <Link
             key={href}
             href={href}
-            className="flex flex-1 flex-col items-center justify-center gap-[5px] pt-[10px] pb-[9px]"
+            aria-current={active ? "page" : undefined}
+            className="flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-[5px] px-1 pt-2 pb-2 outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
           >
             <div
               className={cn(
-                "relative w-10 h-[26px] rounded-full flex items-center justify-center transition-all duration-200",
+                "relative flex h-[30px] w-10 items-center justify-center rounded-full transition-colors duration-200",
                 active ? "bg-[var(--primary-glow)]" : "bg-transparent"
               )}
             >
@@ -35,15 +37,15 @@ export function AdminBottomNav() {
                 tile={false}
                 active={active}
                 className={cn(
-                  "w-[20px] h-[20px] transition-all duration-200",
+                  "h-5 w-5 transition-colors duration-200",
                   active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
                 )}
               />
             </div>
             <span
               className={cn(
-                "text-[10px] leading-none transition-colors duration-200",
-                active ? "text-[var(--primary)] font-semibold" : "text-[var(--muted-foreground)] font-medium"
+                "max-w-full truncate text-[11px] leading-tight transition-colors duration-200",
+                active ? "font-semibold text-[var(--primary)]" : "font-medium text-[var(--muted-foreground)]"
               )}
             >
               {label}
