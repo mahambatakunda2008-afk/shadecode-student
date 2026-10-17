@@ -12,6 +12,7 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageKind, setMessageKind] = useState<'error' | 'success' | ''>('');
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,20 +25,24 @@ export default function ResetPasswordPage() {
 
   const submit = async () => {
     if (loading) return;
-    if (password.length < 6) { setMessage('Use at least 6 characters.'); return; }
-    if (password !== confirm) { setMessage('Passwords do not match.'); return; }
+    if (password.length < 6) { setMessage('Use at least 6 characters.'); setMessageKind('error'); return; }
+    if (password !== confirm) { setMessage('Passwords do not match.'); setMessageKind('error'); return; }
     setLoading(true);
     setMessage('');
+    setMessageKind('');
     try {
       const { error } = await createClient().auth.updateUser({ password });
       if (error) {
         setMessage(friendlyAuthError(error.message));
+        setMessageKind('error');
       } else {
         setMessage('Password updated. Taking you to sign in…');
+        setMessageKind('success');
         window.setTimeout(() => router.push('/auth/login'), 900);
       }
     } catch {
       setMessage("We couldn't reach the password service. Check your connection and try again.");
+      setMessageKind('error');
     } finally {
       setLoading(false);
     }
@@ -56,10 +61,10 @@ export default function ResetPasswordPage() {
         ) : (
           <form onSubmit={(event) => { event.preventDefault(); void submit(); }} aria-busy={loading} style={{ marginTop: 22, display: 'grid', gap: 11 }}>
             <label htmlFor="new-password" style={{ fontSize: 13, fontWeight: 600 }}>New password</label>
-            <input id="new-password" name="password" aria-label="New password" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} style={input} />
+            <input id="new-password" name="password" aria-label="New password" aria-invalid={Boolean(messageKind === 'error' && password.length < 6)} type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} style={input} />
             <label htmlFor="confirm-password" style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Confirm password</label>
-            <input id="confirm-password" name="confirmPassword" aria-label="Confirm password" type="password" autoComplete="new-password" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} style={input} />
-            {message && <p role="status" aria-live="polite" style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{message}</p>}
+            <input id="confirm-password" name="confirmPassword" aria-label="Confirm password" aria-invalid={Boolean(messageKind === 'error' && confirm && password !== confirm)} aria-describedby={messageKind === 'error' ? 'reset-password-message' : undefined} type="password" autoComplete="new-password" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} style={input} />
+            {message && <p id="reset-password-message" role={messageKind === 'error' ? 'alert' : 'status'} aria-live={messageKind === 'error' ? 'assertive' : 'polite'} style={{ color: messageKind === 'error' ? 'var(--danger)' : 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{message}</p>}
             <button type="submit" disabled={loading} style={{ marginTop: 7, minHeight: 48, padding: '14px 16px', borderRadius: 11, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? .7 : 1 }}>{loading ? 'Updating…' : 'Update password'}</button>
           </form>
         )}
