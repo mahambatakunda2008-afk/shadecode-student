@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { friendlyAuthError } from '@/lib/auth/friendlyAuthError';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -22,13 +23,13 @@ export default function ResetPasswordPage() {
   }, []);
 
   const submit = async () => {
-    if (password.length < 8) { setMessage('Use at least 8 characters.'); return; }
+    if (password.length < 6) { setMessage('Use at least 6 characters.'); return; }
     if (password !== confirm) { setMessage('Passwords do not match.'); return; }
     setLoading(true);
     setMessage('');
     const { error } = await createClient().auth.updateUser({ password });
     if (error) {
-      setMessage(error.message);
+      setMessage(friendlyAuthError(error.message));
     } else {
       setMessage('Password updated. Taking you to sign in…');
       setTimeout(() => router.push('/auth/login'), 900);
