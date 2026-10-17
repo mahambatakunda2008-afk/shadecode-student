@@ -176,8 +176,14 @@ export default function PaperViewerPage() {
               accent="var(--warning)"
               disabled={saving}
             />
-            <a href={signedUrl} download onClick={handleDownload} style={{ textDecoration: "none" }}>
-              <ActionButton icon={Download} label="Download" onClick={() => {}} accent="var(--primary)" />
+            <a
+              href={signedUrl}
+              download
+              onClick={handleDownload}
+              className="ssc-focus-ring inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)]"
+              style={{ textDecoration: "none" }}
+            >
+              <Download size={14} aria-hidden="true" /> Download
             </a>
             <ActionButton
               icon={CheckCircle2}
