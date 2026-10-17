@@ -23,18 +23,24 @@ export default function ResetPasswordPage() {
   }, []);
 
   const submit = async () => {
+    if (loading) return;
     if (password.length < 6) { setMessage('Use at least 6 characters.'); return; }
     if (password !== confirm) { setMessage('Passwords do not match.'); return; }
     setLoading(true);
     setMessage('');
-    const { error } = await createClient().auth.updateUser({ password });
-    if (error) {
-      setMessage(friendlyAuthError(error.message));
-    } else {
-      setMessage('Password updated. Taking you to sign in…');
-      setTimeout(() => router.push('/auth/login'), 900);
+    try {
+      const { error } = await createClient().auth.updateUser({ password });
+      if (error) {
+        setMessage(friendlyAuthError(error.message));
+      } else {
+        setMessage('Password updated. Taking you to sign in…');
+        window.setTimeout(() => router.push('/auth/login'), 900);
+      }
+    } catch {
+      setMessage("We couldn't reach the password service. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const input = { width: '100%', background: 'var(--muted)', border: '1px solid var(--card-border)', borderRadius: 10, padding: '13px 14px', color: 'var(--foreground)', fontSize: 15, outline: 'none' };
@@ -48,14 +54,14 @@ export default function ResetPasswordPage() {
         {!ready ? (
           <div style={{ marginTop: 22, padding: 15, borderRadius: 12, background: 'var(--muted)', border: '1px solid var(--card-border)', color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1.5 }}>Open this page from the password reset email. If the link has expired, request a new one from sign in.</div>
         ) : (
-          <div style={{ marginTop: 22, display: 'grid', gap: 11 }}>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>New password</label>
-            <input aria-label="New password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} style={input} />
-            <label style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Confirm password</label>
-            <input aria-label="Confirm password" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} style={input} />
-            {message && <p role="status" style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>{message}</p>}
-            <button type="button" onClick={submit} disabled={loading} style={{ marginTop: 7, padding: '14px 16px', borderRadius: 11, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? .7 : 1 }}>{loading ? 'Updating…' : 'Update password'}</button>
-          </div>
+          <form onSubmit={(event) => { event.preventDefault(); void submit(); }} aria-busy={loading} style={{ marginTop: 22, display: 'grid', gap: 11 }}>
+            <label htmlFor="new-password" style={{ fontSize: 13, fontWeight: 600 }}>New password</label>
+            <input id="new-password" name="password" aria-label="New password" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} style={input} />
+            <label htmlFor="confirm-password" style={{ fontSize: 13, fontWeight: 600, marginTop: 5 }}>Confirm password</label>
+            <input id="confirm-password" name="confirmPassword" aria-label="Confirm password" type="password" autoComplete="new-password" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} style={input} />
+            {message && <p role="status" aria-live="polite" style={{ color: 'var(--muted-foreground)', fontSize: 13, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{message}</p>}
+            <button type="submit" disabled={loading} style={{ marginTop: 7, minHeight: 48, padding: '14px 16px', borderRadius: 11, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? .7 : 1 }}>{loading ? 'Updating…' : 'Update password'}</button>
+          </form>
         )}
       </section>
     </main>
