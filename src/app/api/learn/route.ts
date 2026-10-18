@@ -260,10 +260,19 @@ export async function POST(req: Request) {
     // learner-brain query cannot consume the time budget before the first model call.
     let learnerMemoryContext = "";
     try {
-      learnerMemoryContext = await Promise.race([
-        buildLearnerBrainContext(supabase, user.id, effectiveSubject, request.topic),
-        new Promise<string>((resolve) => setTimeout(() => resolve(""), 900)),
-      ]);
+      const memoryContextPromise = buildLearnerBrainContext(
+        supabase,
+        user.id,
+        effectiveSubject,
+        request.topic,
+      );
+      learnerMemoryContext = await new Promise<string>((resolve) => {
+        const timer = setTimeout(() => resolve(""), 900);
+        memoryContextPromise.then(
+          (value) => { clearTimeout(timer); resolve(value); },
+          () => { clearTimeout(timer); resolve(""); },
+        );
+      });
     } catch {
       learnerMemoryContext = "";
     }
