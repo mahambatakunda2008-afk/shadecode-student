@@ -14,6 +14,7 @@ import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } fr
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
+import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 
 export const dynamic = "force-dynamic";
@@ -185,7 +186,7 @@ export async function POST(req: Request) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter); if (rateLimitCheck) return rateLimitCheck;
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { supabase, user } = auth; const body = await req.json(); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
+    const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
     if (type === "course_preview") {
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
@@ -274,7 +275,7 @@ export async function POST(req: Request) {
         if (leaseError) return NextResponse.json({ error: "Unable to verify generation lease.", retryable: true }, { status: 503 });
         if (!leaseRow) return NextResponse.json({ error: "Generation lease is no longer valid.", leaseConflict: true }, { status: 409 });
       }
-      const generated = body.generatedLesson;
+      const generated = sanitizeLessonText(body.generatedLesson);
       if (!generated || typeof generated !== "object" || typeof generated.title !== "string" || !Array.isArray(generated.blocks)) {
         return NextResponse.json({ error: "Invalid generated lesson payload." }, { status: 400 });
       }
@@ -328,8 +329,8 @@ export async function POST(req: Request) {
             p_status: "complete",
             p_stage: "complete",
             p_subject_id: resolvedSubject.id,
-            p_title: persistableCandidate.title,
-            p_topic: request.topic,
+            p_title: sanitizeLessonText(persistableCandidate.title),
+            p_topic: sanitizeLessonText(request.topic),
             p_description: verifiedCurriculumFallback
               ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
               : `A deep ${validDifficulty} lesson on ${request.topic}`,
@@ -337,14 +338,14 @@ export async function POST(req: Request) {
             p_progress: 100,
             p_completed_units: generationSectionCount,
             p_total_units: generationSectionCount,
-            p_blocks: persistableCandidate.blocks,
-            p_result: {
+            p_blocks: sanitizeLessonText(persistableCandidate.blocks),
+            p_result: sanitizeLessonText({
               id: durableJobId,
               title: persistableCandidate.title,
               blocks: persistableCandidate.blocks,
               subject: effectiveSubject,
               deterministicFallback: verifiedCurriculumFallback,
-            },
+            }),
           },
         );
         if (checkpointWriteError) {
@@ -367,14 +368,14 @@ export async function POST(req: Request) {
         const { data: inserted, error } = await supabase.from("learn_lessons").insert({
           user_id: user.id,
           subject_id: resolvedSubject.id,
-          topic: request.topic.slice(0, 500),
-          title: persistableCandidate.title,
-          description: verifiedCurriculumFallback
+          topic: sanitizeLessonText(request.topic.slice(0, 500)),
+          title: sanitizeLessonText(persistableCandidate.title),
+          description: sanitizeLessonText(verifiedCurriculumFallback
             ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
-            : `A deep ${validDifficulty} lesson on ${request.topic}`,
+            : `A deep ${validDifficulty} lesson on ${request.topic}`),
           difficulty: validDifficulty,
           progress: 0,
-          blocks: persistableCandidate.blocks,
+          blocks: sanitizeLessonText(persistableCandidate.blocks),
           updated_at: new Date().toISOString(),
         }).select("id").single();
         if (error || !inserted?.id) {
@@ -654,14 +655,14 @@ Repair only the defective section. Preserve correct material where possible. Do 
             p_status: "partial",
             p_subject_id: resolvedSubject.id,
             p_stage: `section_${generationSectionIndex + 1}_of_${generationSectionCount}`,
-            p_title: (generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255),
-            p_topic: request.topic.slice(0, 500),
+            p_title: sanitizeLessonText((generationSectionIndex === 0 ? section.title : `Cortex is building ${request.topic}`).slice(0, 255)),
+            p_topic: sanitizeLessonText(request.topic.slice(0, 500)),
             p_description: "Generation is resumable. Partial sections are saved as they complete.",
             p_difficulty: validDifficulty,
             p_progress: durableProgress,
             p_completed_units: generationSectionIndex + 1,
             p_total_units: generationSectionCount,
-            p_blocks: currentBlocks,
+            p_blocks: sanitizeLessonText(currentBlocks),
             p_result: null,
           },
         );
@@ -820,9 +821,9 @@ Return only valid JSON.`;
     if (!subjectId) return NextResponse.json({ error: "Unable to resolve the lesson subject." }, { status: 500 });
 
     const lessonRow = {
-      user_id: user.id, subject_id: subjectId, topic: request.topic.slice(0, 500),
-      title: parsed.title, description: `A deep ${validDifficulty} lesson on ${request.topic}`,
-      difficulty: validDifficulty, progress: 0, blocks: parsed.blocks,
+      user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText(request.topic.slice(0, 500)),
+      title: sanitizeLessonText(parsed.title), description: sanitizeLessonText(`A deep ${validDifficulty} lesson on ${request.topic}`),
+      difficulty: validDifficulty, progress: 0, blocks: sanitizeLessonText(parsed.blocks),
       updated_at: new Date().toISOString(),
     };
     let savedId = durableJobId;
