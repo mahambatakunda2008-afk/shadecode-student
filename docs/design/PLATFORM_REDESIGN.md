@@ -155,7 +155,7 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Touch: `.ssc-button` and `.ssc-icon-button` reach 44px on coarse pointers; hover lift disabled on touch so it no longer sticks after a tap.
 - [x] Legibility floor: `text-[9px]` and `text-[10px]` render at 11px. Inline `fontSize` values under 11 are not covered and still need review.
 - [x] Typed `--` in user-facing strings replaced with em dashes (offline banner, dashboard greeting, stale-data banner, retention messages).
-- [ ] OPEN, needs an iPhone: `viewport` has no `viewportFit: "cover"`, so every `env(safe-area-inset-*)` in the app (bottom nav included) evaluates to 0 on iOS. Enabling it also moves content under the notch and status bar, so test top and bottom insets on a real device first.
+- [ ] DEFERRED (no iOS device available): `viewport` has no `viewportFit: "cover"`, so `env(safe-area-inset-*)` evaluates to 0 on iOS, including the bottom nav. Enabling it also moves content under the notch and status bar, so test on a real iPhone before changing it. No effect on Android or desktop.
 - [ ] Still needs a real browser: layout, spacing, mobile breakpoints, tap targets, authenticated flows. About 250 usages of text under 12px have not been reviewed.
 
 ## Additional implementation pass (2026-10-17)
