@@ -1,6 +1,7 @@
 // src/app/results/[id]/opengraph-image.tsx
 import { ImageResponse } from 'next/og'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { BrandMark } from '@/lib/og/BrandMark'
 
 // Node.js runtime (Edge runtime is deprecated in Next.js 16)
 export const runtime = 'nodejs'
@@ -45,7 +46,7 @@ export default async function OGImage({
             fontWeight: 700,
           }}
         >
-          ◈ Shadecode Student
+          Shadecode Student
         </div>,
         { ...size }
       )
@@ -77,7 +78,7 @@ export default async function OGImage({
 
         {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
-          <span style={{ color: '#6366f1', fontSize: 24, fontWeight: 800 }}>◈</span>
+          <BrandMark size={24} color="#6366f1" />
           <span style={{ color: '#94a3b8', fontSize: 20, fontWeight: 600 }}>Shadecode Student</span>
         </div>
 
@@ -165,7 +166,7 @@ export default async function OGImage({
           fontWeight: 700,
         }}
       >
-        ◈ Shadecode Student
+        Shadecode Student
       </div>,
       { ...size }
     )

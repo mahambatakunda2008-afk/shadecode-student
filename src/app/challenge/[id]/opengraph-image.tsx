@@ -1,6 +1,7 @@
 // src/app/challenge/[id]/opengraph-image.tsx
 import { ImageResponse } from 'next/og'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { BrandMark } from '@/lib/og/BrandMark'
 
 export const runtime     = 'edge'
 export const alt         = 'Shadecode Student Challenge'
@@ -34,7 +35,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
         {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: '#6366f1', fontSize: 22, fontWeight: 800 }}>◈</span>
+            <BrandMark size={22} color="#6366f1" />
             <span style={{ color: '#64748b', fontSize: 18, fontWeight: 600 }}>Shadecode Student</span>
           </div>
           <div style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 999, padding: '8px 22px', color: '#fb923c', fontSize: 15, fontWeight: 700 }}>
@@ -77,7 +78,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
   } catch {
     return new ImageResponse(
       <div style={{ background: '#08080c', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1', fontSize: 32, fontWeight: 700 }}>
-        ◈ Shadecode Student · Challenge
+        Shadecode Student · Challenge
       </div>,
       { ...size }
     )
