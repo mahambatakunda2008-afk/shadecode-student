@@ -89,7 +89,18 @@ This is not merely a UI complaint. Production logs prove provider-chain exhausti
 
 Two focused draft PRs now implement and test the first code-level reliability changes:
 
-- **PR #380** (`fix(learn): prevent optional learner services from failing lessons`): the Learn route previously awaited the learner request-signal write before starting generation, then awaited memory and XP side effects after the lesson was already saved. The request signal is now non-blocking, learner-memory enrichment is bounded to 900 ms and safely skipped if slow/unavailable, and post-save side effects cannot turn a successful durable save into a generation error. CI is running; this is not merged.
-- **PR #381** (`fix(exam): validate generated papers before starting`): Exam Simulation now validates exact question count, IDs, question types, duplicate question text, topic, question content, marks, and multiple-choice options before entering the timed workspace. The validator has unit tests for malformed and duplicate data. CI is running; this is not merged.
+- **PR #380** (`fix(learn): prevent optional learner services from failing lessons`): the Learn route previously awaited the learner request-signal write before starting generation, then awaited memory and XP side effects after the lesson was already saved. The request signal is now non-blocking, learner-memory enrichment is bounded to 900 ms and safely skipped if slow/unavailable, and post-save side effects cannot turn a successful durable save into a generation error. the combined typecheck/lint/test/build CI job passed; this is not merged.
+- **PR #381** (`fix(exam): validate generated papers before starting`): Exam Simulation now validates exact question count, IDs, question types, duplicate question text, topic, question content, marks, and multiple-choice options before entering the timed workspace. The validator has unit tests for malformed and duplicate data. the combined typecheck/lint/test/build CI job passed; this is not merged.
 
 These are focused first repairs, not the complete incident fix. Provider exhaustion still needs authenticated production-like acceptance testing, and the remaining Exam marking/resume journeys plus UI/icon QA are still release gates. Keep all PRs unmerged until their CI checks pass and the signed-in workflows are tested.
+
+
+## Follow-up verification and timer hygiene
+
+- **PR #380 CI:** combined typecheck, lint, tests, and build completed successfully on the current recorded run. The code is still unmerged and has not been proven by a signed-in end-to-end lesson generation.
+- **PR #381 CI:** combined typecheck, lint, tests, and build completed successfully on the current recorded run. This verifies the paper validator and its unit tests compile and pass, but does not prove the complete Exam Simulation, marking, resume, and persistence journeys.
+- **PR #382** (`fix(ai): clear provider hard-timeout timers after settlement`): clears the per-provider hard-timeout timer when an attempt settles, and clears the telemetry budget timer when telemetry completes early. This is bounded-work cleanup, not a provider-availability fix. CI is pending for the latest commit.
+- **PR #383** (`test(cortex): cover immutable nested lesson sanitation`): adds regression coverage for recursively sanitizing array values without mutating the input payload. CI is pending.
+- **PR #369** remains a draft product-wide redesign and is not release-ready while authenticated journey and responsive visual QA gates remain incomplete.
+
+Do not merge based on green CI alone. Next required evidence is a signed-in test that generates a known topic, persists it, reloads it from storage, and confirms no false failure is shown; plus Exam generation, answer saving, marking, result persistence, and resume. Continue to check the deployed commit and production runtime errors after release.
