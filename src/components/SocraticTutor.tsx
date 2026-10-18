@@ -33,13 +33,14 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
     scrollToBottom();
   }, [session?.conversation]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || loading) return;
+  const handleSendMessage = async (messageOverride?: string) => {
+    const messageContent = messageOverride ?? input;
+    if (!messageContent.trim() || loading) return;
 
     const userMessage: TutoringMessage = {
       id: crypto.randomUUID(),
       role: "student",
-      content: input,
+      content: messageContent,
       type: "question",
       timestamp: new Date().toISOString(),
     };
@@ -55,7 +56,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
       userId,
       subject,
       topic,
-      question: input,
+      question: messageContent,
       conversation: newConversation,
       currentHintLevel: 0,
       conceptsCovered: [],
@@ -73,7 +74,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         userId,
         subject,
         topic,
-        question: input,
+        question: messageContent,
         previousContext: newConversation,
         lessonContext,
       };
@@ -217,8 +218,8 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
           <div style={{ textAlign: "center", padding: "40px 20px" }}>
             <p style={{ fontSize: "3rem", marginBottom: "12px" }}>🎓</p>
             <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>Socratic Tutoring</p>
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "16px" }}>
-              I&apos;ll guide you through learning rather than giving answers. Ask me a question about {topic}!
+            <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "10px" }}>
+              I&apos;ll help you understand {topic}, practise the steps, and check what you can do independently. I may ask a question first because your reasoning helps me target the explanation, but you can always ask for more detail or a worked explanation.
             </p>
           </div>
         ) : (
@@ -268,6 +269,24 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
             <Lightbulb size={14} />
             {currentHintLevel === 0 ? "Get Hint" : `Next Hint (${currentHintLevel}/4)`}
           </button>
+        </div>
+      )}
+
+      {/* Structured help controls: student control without forcing a single tutoring style */}
+      {session && session.conversation.length > 0 && !loading && (
+        <div aria-label="Choose how the tutor should help" style={{ padding: "10px 16px", borderTop: "1px solid var(--card-border)", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ width: "100%", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", marginBottom: 2 }}>Need a different kind of help?</span>
+          {[
+            { label: "Hint is too vague", prompt: "That hint is too vague. Give me a more specific next step based on the question and what I have tried." },
+            { label: "Show more detail", prompt: "Show me a more detailed explanation of the current problem, including the key reasoning steps. Do not skip important steps." },
+            { label: "Try another method", prompt: "Show me a different valid method for approaching the current problem, and explain when it is useful." },
+            { label: "Why this question?", prompt: "Explain briefly why you are asking me this question and how it helps me solve the problem." },
+            { label: "Show worked solution", prompt: "I am stuck. Show a worked solution with the reasoning for each step, then give me a similar question to try independently." },
+          ].map(action => (
+            <button key={action.label} type="button" onClick={() => handleSendMessage(action.prompt)} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--card)", color: "var(--foreground)", fontSize: 11, fontWeight: 600, cursor: "pointer", minHeight: 34 }}>
+              {action.label}
+            </button>
+          ))}
         </div>
       )}
 
