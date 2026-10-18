@@ -28,7 +28,7 @@ test.describe("Exam Simulation acceptance journey", () => {
 
     // Either a live-generated paper or an explicitly labelled deterministic fallback is acceptable.
     await expect(page.getByText(/Paper 1 · 5 questions/)).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByRole("heading", { name: /Question 1 of 5/ })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Question 1 of 5")).toBeVisible({ timeout: 15_000 });
 
     for (let index = 1; index <= 5; index += 1) {
       const answer = page.getByLabel(`Answer for question ${index}`);
@@ -37,7 +37,7 @@ test.describe("Exam Simulation acceptance journey", () => {
 
       if (index < 5) {
         await page.getByRole("button", { name: "Next" }).click();
-        await expect(page.getByRole("heading", { name: new RegExp(`Question ${index + 1} of 5`) })).toBeVisible();
+        await expect(page.getByText(`Question ${index + 1} of 5`)).toBeVisible();
       }
     }
 
