@@ -140,6 +140,8 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 ## Documentation map
 
 - `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md` — **authoritative master scope, status matrix and execution priorities**
+- `docs/GROWTH_FEEDBACK_REPUTATION_PLAN_2026-10-18.md` — student pilot, feedback loop, retention metrics, honest reviews and repeatable growth experiments
+- `docs/GROWTH_FEEDBACK_REPOSITORY_AUDIT_2026-10-18.md` — source-level audit of existing feedback UI, admin inbox, notification path and implementation gaps
 - `docs/PRODUCT_VISION_2026-09-01.md` — expanded product vision and platform direction
 - `docs/PRIMARY_DISCOVERY_V1.md` — Primary Discovery first implementation contract
 - `docs/architecture/PLATFORM_BOUNDARIES.md` — shared platform and experience ownership
