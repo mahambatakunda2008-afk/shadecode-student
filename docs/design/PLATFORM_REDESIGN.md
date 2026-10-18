@@ -164,3 +164,80 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Past-paper score dialog supports Escape to close and has visible keyboard focus on its actions. Download is now one semantic link rather than a button nested inside a link.
 - [ ] CI and Vercel preview must be checked against the latest head after this pass.
 - [ ] These code changes do not replace authenticated end-to-end tests, browser-rendered desktop/tablet/mobile QA, a full accessibility review, or the remaining route-by-route redesign.
+
+
+## Additional implementation pass (2026-10-17, follow-up)
+
+- [x] Tasks workspace notifications now replace and clean up their timeout, preventing an older toast timer from clearing a newer message or leaving a timer behind after unmount.
+- [x] Tasks workspace now uses responsive horizontal spacing, a clear secondary heading, accessible XP progress semantics, explicit button types, and larger keyboard-visible action targets.
+- [x] Focus session statistics are scoped to the signed-in user as well as the date, preventing different accounts sharing one browser from seeing each other's local focus totals.
+- [x] Focus duration presets expose their selected state, timer remaining time has a semantic timer label, and the primary/reset/notification controls have visible keyboard focus and minimum touch height.
+- [ ] CI must validate these newest changes. These changes do not replace authenticated browser journeys, cross-device visual review, or manual verification of local-first sync and focus completion.
+
+
+- [x] Cortex Verify now explains unsupported image types, oversized images, and image-read failures instead of silently ignoring them. Mode controls expose their selected state; upload, clear, and submit controls have keyboard focus treatment and accessible touch targets.
+
+
+- [x] Exam Hub cards now retain readable contrast for upcoming features and expose a clear keyboard-focus outline on navigable cards.
+- [x] Math Checker capability labels no longer imply that “Verify” stays selected while the separate form is in “Help me solve” mode.
+- [ ] The currently running CI was started against an earlier commit than these final follow-ups. A successful run on the latest branch head is still required before treating this pass as validated.
+
+
+- [x] CI surfaced a browser/Node timer-handle type mismatch in the new Tasks toast cleanup. The ref now uses the browser timer's numeric handle type.
+- [ ] Re-run TypeScript, lint, tests, and production build against the latest branch head. The earlier CI run failed at typecheck before reaching the remaining checks; no green result is claimed for the latest follow-ups.
+
+
+## Additional implementation pass (2026-10-17, navigation accessibility)
+
+- [x] Admin mobile navigation now has a descriptive navigation landmark, marks the current route with `aria-current="page"`, provides visible keyboard focus, and uses a consistent minimum touch height.
+- [ ] Revalidate CI and the rendered preview at the newest branch head. Admin navigation changes do not replace real-device checks for safe-area insets, label fit, or keyboard traversal.
+
+
+## Finalization pass (2026-10-17)
+
+- [x] Latest CI run on commit `675aba8f3c5555337a3d58e4e6ded5676df9a73f` passed typecheck, lint, tests, and production build.
+- [x] The admin navigation accessibility pass has a READY Vercel preview.
+- [x] Onboarding progress now uses shared semantic theme tokens instead of hard-coded cyan/white colors, announces the current step and total to assistive technology, and constrains long labels on narrow screens.
+- [ ] Re-run CI and wait for a READY deployment at the latest onboarding commit.
+- [ ] Complete authenticated visual and workflow QA across desktop and mobile before merge. Do not treat a successful build as a substitute for these checks.
+
+## Authentication resilience pass (2026-10-17)
+
+- [x] Sign-up now catches network/runtime failures, shows a recoverable message, and always releases the loading state. Validation happens before entering the loading state, and duplicate submissions are guarded.
+- [x] Sign-in now catches network/runtime failures, shows a recoverable message, and always releases the loading state. Duplicate submissions are guarded.
+- [x] A successful auth response without a user is now handled explicitly on sign-up instead of silently leaving the user on the form.
+- [x] The sign-up onboarding cookie now includes `SameSite=Lax`.
+- [ ] Re-run CI against the newest auth-resilience commit and confirm its matching preview is READY.
+- [ ] These defensive error paths still require real authenticated browser testing, including invalid credentials, offline/network failure, email verification, and profile lookup failure.
+
+
+## Authentication recovery follow-up (2026-10-17)
+
+- [x] Sign-in now marks missing required credentials semantically, associates relevant validation errors with fields, announces form busy/error state, and improves the password-visibility control's touch target.
+- [x] Password-reset requests now guard duplicate submissions, recover from thrown/network failures, always release loading state, avoid surfacing raw provider errors, and expose field/error semantics.
+- [x] Password updates now handle thrown/network failures without leaving the form stuck, prevent duplicate submission, use real label/input associations, and support keyboard form submission.
+- [ ] Re-run TypeScript, lint, tests, and production build against the current head; confirm the matching Vercel preview reaches READY.
+- [ ] Real browser verification remains required for expired reset links, valid recovery sessions, invalid credentials, email delivery, mobile layout, and keyboard/screen-reader interaction.
+
+
+- [x] Verification-email resend now catches network/runtime failures, always releases the loading state, avoids exposing raw provider errors, and uses an effect-cleaned cooldown timer to prevent interval leaks after unmount.
+
+## Verification-email recovery follow-up (2026-10-17)
+
+- [x] Verification page no longer claims a message was sent when no email address is available in the route; guidance now tells the student what to check.
+- [x] Resend failures use an assertive alert with error styling, while successful sends remain polite status feedback.
+- [x] Resend control exposes its busy state and applies consistent disabled-state feedback; long email addresses wrap instead of overflowing.
+- [ ] Validate CI and the matching preview for this commit. Email delivery, verification links, and the full signup-to-onboarding journey still need an authenticated browser check.
+
+## Password-reset feedback follow-up (2026-10-17)
+
+- [x] Password-reset validation, provider failures, and network failures now use assertive error feedback; successful updates remain polite status feedback.
+- [x] Confirmation mismatch exposes invalid-field semantics and associates the field with its feedback.
+- [ ] CI and preview must validate the latest head. Expired-link and recovery-session journeys still require real browser verification.
+
+## Sign-up form quality follow-up (2026-10-17)
+
+- [x] Sign-up fields now expose required/name semantics and connect relevant validation messages to their fields.
+- [x] The form announces its busy state, and password visibility controls have a consistent 40px minimum target.
+- [x] Sign-up errors are announced assertively and long error text wraps within the form.
+- [ ] Revalidate CI and preview at the latest head; the full signup-to-verification journey still needs an authenticated browser session.
