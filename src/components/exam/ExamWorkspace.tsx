@@ -31,6 +31,42 @@ const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Sc
 const COUNTS = [5, 10, 15, 20];
 const KEY = "shadecode-exam-workspace";
 
+/**
+ * Treat the server response as untrusted data. A non-empty array is not necessarily
+ * a usable exam paper: malformed, duplicate, or off-shape questions can break the
+ * workspace and make marking unreliable.
+ */
+function isValidGeneratedPaper(value: unknown, expectedCount: number): value is ExamQuestion[] {
+  if (!Array.isArray(value) || value.length !== expectedCount) return false;
+
+  const ids = new Set<number>();
+  const questionTexts = new Set<string>();
+  const allowedTypes = new Set(["multiple_choice", "short_answer", "structured", "essay"]);
+
+  for (const item of value) {
+    if (!item || typeof item !== "object") return false;
+    const question = item as Partial<ExamQuestion>;
+    if (!Number.isInteger(question.id) || !Number.isFinite(question.id) || ids.has(question.id as number)) return false;
+    if (typeof question.type !== "string" || !allowedTypes.has(question.type)) return false;
+    if (typeof question.question !== "string" || question.question.trim().length < 8) return false;
+    if (typeof question.topic !== "string" || !question.topic.trim()) return false;
+    if (typeof question.marks !== "number" || !Number.isFinite(question.marks) || question.marks <= 0 || question.marks > 100) return false;
+
+    const normalizedQuestion = question.question.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (questionTexts.has(normalizedQuestion)) return false;
+    questionTexts.add(normalizedQuestion);
+    ids.add(question.id as number);
+
+    if (question.type === "multiple_choice") {
+      if (!Array.isArray(question.options) || question.options.length < 2) return false;
+      if (question.options.some((option) => typeof option !== "string" || !option.trim())) return false;
+    }
+    if (question.options !== undefined && (!Array.isArray(question.options) || question.options.some((option) => typeof option !== "string"))) return false;
+  }
+
+  return true;
+}
+
 function grade(p: number) { return p >= 90 ? "A*" : p >= 80 ? "A" : p >= 70 ? "B" : p >= 60 ? "C" : p >= 50 ? "D" : p >= 40 ? "E" : "U"; }
 function time(s: number) { const n = Math.max(0, Math.floor(s)); const h = Math.floor(n / 3600); const m = Math.floor((n % 3600) / 60); const sec = n % 60; return h ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`; }
 function id() { return `${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`; }
@@ -129,8 +165,11 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           questionCount: count
         })
       }, 45000);
-      const data = await res.json();
-      if (!res.ok || !Array.isArray(data.questions)) throw new Error(data.error || "No questions were generated.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Question generation is temporarily unavailable.");
+      if (!isValidGeneratedPaper(data?.questions, count)) {
+        throw new Error("The generated paper did not pass question validation. Trying a verified local practice fallback.");
+      }
       const total = count * 120;
       workId.current = `exam:${id()}`;
       setPaperSource(data.metadata?.source === "deterministic-fallback" ? "fallback" : "live");
