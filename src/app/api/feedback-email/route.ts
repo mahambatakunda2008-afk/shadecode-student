@@ -35,7 +35,6 @@ export async function POST(req: Request) {
 NEW FEEDBACK RECEIVED
 
 Type: ${type}
-User: ${displayUserId} (client-supplied, unverified)
 
 Message:
 ${message}
