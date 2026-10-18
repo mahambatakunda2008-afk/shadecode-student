@@ -25,4 +25,14 @@ describe("sanitizeLessonText", () => {
       title: "Waves", count: 4, enabled: true, empty: null,
     });
   });
+
+  it("sanitizes strings inside arrays without mutating the original payload", () => {
+    const input = { blocks: [{ content: "before\u0000after" }], labels: ["plain", "a\u0000b"] };
+    const result = sanitizeLessonText(input);
+
+    expect(result).toEqual({ blocks: [{ content: "beforeafter" }], labels: ["plain", "ab"] });
+    expect(input.blocks[0].content).toBe("before\u0000after");
+    expect(input.labels[1]).toBe("a\u0000b");
+    expect(result).not.toBe(input);
+  });
 });
