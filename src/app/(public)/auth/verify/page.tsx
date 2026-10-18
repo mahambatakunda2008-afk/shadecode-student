@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { friendlyAuthErrorOr } from '@/lib/auth/friendlyAuthError';
 
 export default function VerifyPage() {
   const params = useSearchParams();
@@ -30,7 +31,7 @@ export default function VerifyPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
       if (error) {
-        setMessage("We couldn't resend the verification email right now. Check your connection and try again.");
+        setMessage(friendlyAuthErrorOr(error.message, "We couldn't resend the verification email right now. Check your connection and try again."));
         setMessageKind('error');
       } else {
         setMessage('Verification email sent. Check your inbox and spam folder.');

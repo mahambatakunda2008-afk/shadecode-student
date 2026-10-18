@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthErrorOr } from "@/lib/auth/friendlyAuthError";
 
 const RESEND_COOLDOWN_SECONDS = 6;
 
@@ -44,7 +45,7 @@ export default function ForgotPasswordPage() {
       });
 
       if (resetError) {
-        setError("We couldn't send the reset link right now. Check your connection and try again.");
+        setError(friendlyAuthErrorOr(resetError.message, "We couldn't send the reset link right now. Check your connection and try again."));
       } else {
         setMessage("If an account exists for that email, we sent a password reset link. Check your inbox.");
         setCooldown(RESEND_COOLDOWN_SECONDS);

@@ -35,3 +35,15 @@ describe('friendlyAuthError', () => {
     expect(friendlyAuthError(undefined)).toMatch(/try again/i);
   });
 });
+
+import { friendlyAuthErrorOr } from './friendlyAuthError';
+
+describe('friendlyAuthErrorOr', () => {
+  it('explains a recognised error instead of the generic fallback', () => {
+    expect(friendlyAuthErrorOr('email rate limit exceeded', 'Check your connection')).toMatch(/try again in a little while/i);
+  });
+  it('keeps the caller fallback for unrecognised or empty errors', () => {
+    expect(friendlyAuthErrorOr('some unknown failure', 'Check your connection')).toBe('Check your connection');
+    expect(friendlyAuthErrorOr(undefined, 'Check your connection')).toBe('Check your connection');
+  });
+});

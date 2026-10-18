@@ -41,3 +41,13 @@ export function friendlyAuthError(raw: string | null | undefined): string {
   }
   return message;
 }
+
+/**
+ * Like friendlyAuthError, but keeps the caller's own fallback wording when the server message is
+ * not one we recognise (so a rate limit is explained, an unknown failure stays generic).
+ */
+export function friendlyAuthErrorOr(raw: string | null | undefined, fallback: string): string {
+  const message = (raw ?? '').trim();
+  const friendly = friendlyAuthError(message);
+  return message && friendly !== message ? friendly : fallback;
+}
