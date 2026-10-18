@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
-import { BrandMark } from "./BrandMark";
+import { OgBrandMark } from "./OgBrandMark";
 
 const require = createRequire(import.meta.url);
 // Same renderer Next uses for opengraph-image routes.
@@ -20,8 +20,8 @@ const render = async (child: unknown) => Buffer.from(await new ImageResponse(fra
 const cardFiles = ["src/app/challenge/[id]/opengraph-image.tsx", "src/app/results/[id]/opengraph-image.tsx"];
 
 describe("share-card images", () => {
-  it("draws the brand mark (it is not blank and not a missing glyph)", async () => {
-    const mark = await render(createElement(BrandMark, { size: 120, color: "#6366f1" }));
+  it("draws the official brand mark (not blank, not a missing glyph)", async () => {
+    const mark = await render(createElement(OgBrandMark, { size: 120 }));
     const blank = await render(null);
     const missing = await render("\u{10FFFF}");
     expect(mark.equals(blank)).toBe(false);
