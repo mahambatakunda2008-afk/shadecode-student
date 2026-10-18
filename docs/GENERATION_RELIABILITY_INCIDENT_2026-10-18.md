@@ -83,3 +83,13 @@ The log query covers the past seven days and the route filters supplied for Lear
 ### What this evidence changes
 
 This is not merely a UI complaint. Production logs prove provider-chain exhaustion is still happening today. The next code pass must reduce dependence on the provider chain and make fallback/recovery work for the exact request, while preserving a clear honest failure state for topics without verified fallback material. A provider retry alone is not a fix. The null-character failure also shows that successful generation can still fail during final persistence, so persistence is a first-class test stage.
+
+
+## First repair pass opened
+
+Two focused draft PRs now implement and test the first code-level reliability changes:
+
+- **PR #380** (`fix(learn): prevent optional learner services from failing lessons`): the Learn route previously awaited the learner request-signal write before starting generation, then awaited memory and XP side effects after the lesson was already saved. The request signal is now non-blocking, learner-memory enrichment is bounded to 900 ms and safely skipped if slow/unavailable, and post-save side effects cannot turn a successful durable save into a generation error. CI is running; this is not merged.
+- **PR #381** (`fix(exam): validate generated papers before starting`): Exam Simulation now validates exact question count, IDs, question types, duplicate question text, topic, question content, marks, and multiple-choice options before entering the timed workspace. The validator has unit tests for malformed and duplicate data. CI is running; this is not merged.
+
+These are focused first repairs, not the complete incident fix. Provider exhaustion still needs authenticated production-like acceptance testing, and the remaining Exam marking/resume journeys plus UI/icon QA are still release gates. Keep all PRs unmerged until their CI checks pass and the signed-in workflows are tested.
