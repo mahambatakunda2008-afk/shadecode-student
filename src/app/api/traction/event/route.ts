@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 const NAME_RE = /^[a-zA-Z0-9_.:-]{1,100}$/;
 const CLIENT_EVENT_ID_RE = /^[a-zA-Z0-9_-]{1,120}$/;
+/** Events come from the browser, so cap payload size on this unauthenticated endpoint. */
+const MAX_PROPERTIES_CHARS = 4000;
 
 export async function POST(request: Request) {
   try {
@@ -22,11 +25,18 @@ export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const properties = body?.properties && typeof body.properties === "object" && !Array.isArray(body.properties)
+    const rawProperties = body?.properties && typeof body.properties === "object" && !Array.isArray(body.properties)
       ? body.properties
       : {};
+    const properties = JSON.stringify(rawProperties).length <= MAX_PROPERTIES_CHARS
+      ? rawProperties
+      : { properties_dropped: true };
 
-    const { error } = await supabase.from("traction_events").insert({
+    // Logged-out visitors (landing and signup funnel) have no insert policy by design, so their
+    // events are written server-side after the validation above. Signed-in users keep using RLS.
+    const writer = user ? supabase : (createSupabaseAdminClient() ?? supabase);
+
+    const { error } = await writer.from("traction_events").insert({
       client_event_id: clientEventId,
       user_id: user?.id ?? null,
       anonymous_id: typeof body?.anonymousId === "string" ? body.anonymousId.slice(0, 120) : null,
