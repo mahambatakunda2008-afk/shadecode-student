@@ -99,8 +99,8 @@ These are focused first repairs, not the complete incident fix. Provider exhaust
 
 - **PR #380 CI:** combined typecheck, lint, tests, and build completed successfully on the current recorded run. The code is still unmerged and has not been proven by a signed-in end-to-end lesson generation.
 - **PR #381 CI:** combined typecheck, lint, tests, and build completed successfully on the current recorded run. This verifies the paper validator and its unit tests compile and pass, but does not prove the complete Exam Simulation, marking, resume, and persistence journeys.
-- **PR #382** (`fix(ai): clear provider hard-timeout timers after settlement`): clears the per-provider hard-timeout timer when an attempt settles, and clears the telemetry budget timer when telemetry completes early. This is bounded-work cleanup, not a provider-availability fix. CI is pending for the latest commit.
-- **PR #383** (`test(cortex): cover immutable nested lesson sanitation`): adds regression coverage for recursively sanitizing array values without mutating the input payload. CI is pending.
+- **PR #382** (`fix(ai): clear provider hard-timeout timers after settlement`): clears the per-provider hard-timeout timer when an attempt settles, and clears the telemetry budget timer when telemetry completes early. This is bounded-work cleanup, not a provider-availability fix. the combined typecheck/lint/test/build CI job passed for the latest commit.
+- **PR #383** (`test(cortex): cover immutable nested lesson sanitation`): adds regression coverage for recursively sanitizing array values without mutating the input payload. the combined typecheck/lint/test/build CI job passed.
 - **PR #369** remains a draft product-wide redesign and is not release-ready while authenticated journey and responsive visual QA gates remain incomplete.
 
 Do not merge based on green CI alone. Next required evidence is a signed-in test that generates a known topic, persists it, reloads it from storage, and confirms no false failure is shown; plus Exam generation, answer saving, marking, result persistence, and resume. Continue to check the deployed commit and production runtime errors after release.
