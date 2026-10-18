@@ -111,3 +111,22 @@ Do not merge based on green CI alone. Next required evidence is a signed-in test
 The repository already contains `e2e/learn/broad-topics.spec.ts`. It signs in using `E2E_EMAIL` and `E2E_PASSWORD`, then generates a real broad topic from the account's existing Learn subjects. It checks that the learner reaches the lesson, that at least 16 lesson units render, that enough units contain substantive text, and that required deep-learning sections are present. The topic must be supplied through `E2E_LEARN_TOPICS`; the test deliberately does not invent a synthetic success case.
 
 This browser test has **not** been run in this work pass because its valid signed-in test account and real curriculum topic are environment-specific secrets/configuration, and CI's standard typecheck/lint/unit-test/build job does not execute it. It is the best existing acceptance gate to run when the E2E credentials are available. A separate Exam Simulation browser journey is still needed for generated paper, answer persistence, marking, results, and resume.
+
+
+## 2026-10-18 post-merge deployment checkpoint
+
+The four focused code changes and the incident report have now been merged to `main`:
+
+- PR #380 Learn secondary-failure isolation: merge commit `07cc5e17160a4ee874f16916f655f932599ab227`.
+- PR #381 generated-paper validation: merge commit `3fd0e6492fdce0d6cdb533a10ecbeb2fa58c4a85`.
+- PR #382 AI provider and telemetry timer cleanup: merge commit `9f813e0af9613b8d35fa21afa3f177fc5c2df1e6`.
+- PR #383 sanitizer regression coverage: merge commit `c5b76993263a178f1e93e9ee01a6a87071365f2b`.
+- PR #379 this incident report: merge commit `8561065cc0a27a1f1098651847690395dee0b8ad`.
+
+Vercel reports the production deployment for main commit `8561065cc0a27a1f1098651847690395dee0b8ad` as **READY**, with the production alias `shadecodestudent.vercel.app`. The standard CI workflows passed for the four code PR heads before merge.
+
+A fresh grouped runtime-error query for the last hour returned no recorded errors for `/api/learn` or `/api/exam/generate`. This is a useful early signal, not proof of success: there may have been little or no traffic, and grouped error tables do not confirm lesson content or persisted exam results.
+
+The new Exam Simulation acceptance test is in PR #384. Its standard CI passed, but authenticated Playwright execution still requires `E2E_EMAIL`, `E2E_PASSWORD`, and `E2E_EXAM_SUBJECT`. The existing signed-in Learn acceptance test also remains unrun in this pass.
+
+**Incident remains open for end-to-end acceptance.** Do not mark lesson generation or Exam Simulation fully resolved until signed-in workflows verify generation, persistence, reload/resume, marking, and result persistence against the deployed app. The broader redesign PR #369 remains draft because visual and authenticated journey QA are incomplete.
