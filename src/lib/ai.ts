@@ -108,8 +108,12 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     // settles within `timeout` plus a small grace period, whatever the underlying request does; an
     // abandoned request's eventual result, if any, is simply discarded.
     let hardTimedOut = false;
+    let hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
     const hardTimeout = new Promise<null>(resolve => {
-      setTimeout(() => { hardTimedOut = true; resolve(null); }, timeout + HARD_TIMEOUT_GRACE_MS);
+      hardTimeoutTimer = setTimeout(() => {
+        hardTimedOut = true;
+        resolve(null);
+      }, timeout + HARD_TIMEOUT_GRACE_MS);
     });
     try {
       const text = await Promise.race([request(timeout), hardTimeout]);
@@ -125,6 +129,11 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       breaker.recordFailure();
       logResult({ provider, model, startTime, success: false, err });
       console.error(`[AI] ${provider} failed:`, err);
+    } finally {
+      // Successful/failed provider calls should not leave their timeout scheduled.
+      // Apart from wasting serverless work, many completed calls can otherwise keep
+      // the event loop alive after the response has already been decided.
+      if (hardTimeoutTimer) clearTimeout(hardTimeoutTimer);
     }
     return null;
   }
