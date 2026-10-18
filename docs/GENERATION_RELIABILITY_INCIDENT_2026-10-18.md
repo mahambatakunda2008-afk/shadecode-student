@@ -67,3 +67,19 @@ The repository contains several attempted reliability fixes, but important fixes
 ## Working rule
 
 Do not say fixed because a patch exists, CI passes, a preview is READY, or a page returns HTTP 200. The incident closes only after the learner-visible workflow succeeds and the saved result is verified.
+
+## Production evidence gathered on 2026-10-18
+
+Vercel grouped runtime errors for the last seven days show the following on the production `/api/learn` route:
+
+- **35 occurrences** of `Provider chain exhausted within 22000ms`, affecting 5 users; last seen 2026-10-18 13:44 UTC.
+- **23 occurrences** of Gemini abort/timeout failures, affecting 5 users; last seen 2026-10-18 13:44 UTC.
+- **12 occurrences** of Cloudflare provider abort/timeout failures, affecting 4 users; last seen 2026-10-18 13:42 UTC.
+- **9 occurrences** of Gemini HTTP 503 / `UNAVAILABLE`, affecting 4 users; last seen 2026-10-18 13:42 UTC.
+- **8 occurrences** of lesson finalization failing because a null character was not permitted, affecting 1 user, between 2026-10-13 23:15 and 23:41 UTC. The repository now has a null-character sanitizer, but the incident must verify that all finalization paths and the active production deployment use it.
+
+The log query covers the past seven days and the route filters supplied for Learn and Exam endpoints; the returned clusters were all Learn errors. Runtime-log retention on the current Vercel plan did not permit querying the full seven-day raw log stream, so this evidence is from the aggregated runtime-error clusters, not a complete request trace.
+
+### What this evidence changes
+
+This is not merely a UI complaint. Production logs prove provider-chain exhaustion is still happening today. The next code pass must reduce dependence on the provider chain and make fallback/recovery work for the exact request, while preserving a clear honest failure state for topics without verified fallback material. A provider retry alone is not a fix. The null-character failure also shows that successful generation can still fail during final persistence, so persistence is a first-class test stage.
