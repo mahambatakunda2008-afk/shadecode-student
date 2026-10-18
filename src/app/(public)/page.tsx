@@ -30,7 +30,7 @@ export default function PublicHomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/auth/login" className="hidden rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:text-white sm:inline-flex">Sign in</Link>
-            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Get started <ArrowRight size={15} /></Link>
+            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Get started <ArrowRight size={16} /></Link>
           </div>
         </div>
       </header>
@@ -40,11 +40,11 @@ export default function PublicHomePage() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 pb-24 pt-16 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-32 lg:pt-24">
           <div>
             <div className="mb-7"><BrandLockup /></div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={15} /> Study smarter. Live sharper.</div>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={16} /> Study smarter. Live sharper.</div>
             <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">A learning system that <span className="ssc-brand-gradient">learns how you learn.</span></h1>
             <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Lessons, questions, mistakes, exams, projects and study behaviour become one evolving learning experience, with Cortex helping decide what should happen next.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={17} /></Link>
+              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={18} /></Link>
               <a href="#intelligence" className="inline-flex items-center gap-2 rounded-[10px] border border-white/12 bg-transparent px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.05]">See how it works</a>
             </div>
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400"><span>Responsive PWA</span><span>AI-assisted</span><span>Local-first</span><span>Built for learning</span></div>
@@ -59,7 +59,7 @@ export default function PublicHomePage() {
               </div>
               <div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
               <div className="rounded-2xl border border-blue-400/15 bg-white/[0.03] p-4.5">
-                <div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.1em] text-blue-200">Next action</div><div className="mt-1.5 text-base font-semibold text-white">Practise mechanics</div></div><Zap className="text-[var(--brand-blue)]" size={21} /></div>
+                <div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.1em] text-blue-200">Next action</div><div className="mt-1.5 text-base font-semibold text-white">Practise mechanics</div></div><Zap className="text-[var(--brand-blue)]" size={22} /></div>
                 <p className="mt-2.5 text-sm leading-6 text-slate-400">Chosen from the learner's recent evidence, not a random prompt.</p>
                 <div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1.5 text-sm font-semibold text-blue-200"><CheckCircle2 size={14} /> Evidence-backed</span><span className="rounded-lg bg-[var(--brand-gradient)] px-3 py-1.5 text-sm font-semibold text-white">Start</span></div>
               </div>

@@ -451,7 +451,7 @@ function PrimaryActionCard({
                 color: tone.color,
               }}
             >
-              <Sparkles size={19} />
+              <Sparkles size={20} />
             </span>
             <span className="ssc-label" style={{ color: tone.color }}>
               {recommendation.priority} priority

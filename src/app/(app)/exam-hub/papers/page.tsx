@@ -544,11 +544,11 @@ function PapersList({ papers }: { papers: PastPaperWithState[] }) {
                   }}
                 >
                   {doc.state?.status === "completed" ? (
-                    <CheckCircle2 size={13} color="var(--accent)" />
+                    <CheckCircle2 size={14} color="var(--accent)" />
                   ) : doc.state?.bookmarked ? (
-                    <BookmarkCheck size={13} color="var(--warning)" />
+                    <BookmarkCheck size={14} color="var(--warning)" />
                   ) : (
-                    <Bookmark size={13} color="var(--muted-foreground)" />
+                    <Bookmark size={14} color="var(--muted-foreground)" />
                   )}
                   {PAPER_KIND_LABELS[doc.kind as PaperKind]}
                 </Link>

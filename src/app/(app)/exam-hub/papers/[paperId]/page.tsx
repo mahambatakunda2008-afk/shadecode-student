@@ -193,7 +193,7 @@ export default function PaperViewerPage() {
               accent="var(--accent)"
               disabled={saving || paper.state?.status === "completed"}
             />
-            <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><Maximize2 size={15} /> Full screen</a>
+            <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><Maximize2 size={16} /> Full screen</a>
           </div>
         </div>
 

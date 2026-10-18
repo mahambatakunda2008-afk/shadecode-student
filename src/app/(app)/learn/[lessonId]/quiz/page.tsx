@@ -249,10 +249,10 @@ export default function QuizPage() {
         {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-            <RotateCcw size={15} /> Retake
+            <RotateCcw size={16} /> Retake
           </button>
           <Link href={`/learn/${lessonId}`} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #718c53, #536943)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-            Back to Lesson <ArrowRight size={15} />
+            Back to Lesson <ArrowRight size={16} />
           </Link>
         </div>
       </div>
@@ -282,7 +282,7 @@ export default function QuizPage() {
               <ArrowLeft size={14} /> Lesson
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Sparkles size={13} color="#c4dc87" />
+              <Sparkles size={14} color="#c4dc87" />
               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted-foreground)" }}>{current + 1} / {questions.length}</span>
             </div>
           </div>
@@ -348,7 +348,7 @@ export default function QuizPage() {
           ) : (
             <button onClick={next}
               style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #718c53, #536943)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 0 20px rgba(64,90,50,0.22)" }}>
-              {current < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={15} />
+              {current < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={16} />
             </button>
           )}
 

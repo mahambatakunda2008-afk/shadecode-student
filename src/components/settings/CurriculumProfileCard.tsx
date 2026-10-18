@@ -154,8 +154,8 @@ export function CurriculumProfileCard() {
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="max-w-2xl text-xs leading-5 text-[var(--muted-foreground)]">If your board or syllabus isn't listed, enter what your school or exam board gives you. Shadecode will keep it unverified until its official curriculum source has been checked.</p>
             <div className="flex gap-2">
-              <button type="button" onClick={add} disabled={!canAdd} className="ssc-button"><Plus size={17} /> Add subject</button>
-              <button type="button" onClick={save} disabled={saving} className="ssc-button">{saving ? <Loader2 size={17} className="animate-spin" /> : <Check size={17} />}{saving ? "Saving" : "Save curriculum"}</button>
+              <button type="button" onClick={add} disabled={!canAdd} className="ssc-button"><Plus size={18} /> Add subject</button>
+              <button type="button" onClick={save} disabled={saving} className="ssc-button">{saving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}{saving ? "Saving" : "Save curriculum"}</button>
             </div>
           </div>
           {message && <p className="mt-3 text-sm text-[var(--muted-foreground)]">{message}</p>}

@@ -264,9 +264,9 @@ export default function Settings() {
       </section>
 
       <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-3">
-        <ActionCard icon={<MessageSquare size={21} aria-hidden="true" />} title="Send feedback" description="Report a bug or suggest an improvement." onClick={() => router.push("/feedback")} />
+        <ActionCard icon={<MessageSquare size={22} aria-hidden="true" />} title="Send feedback" description="Report a bug or suggest an improvement." onClick={() => router.push("/feedback")} />
         <InfoCard
-          icon={<Shield size={21} aria-hidden="true" />}
+          icon={<Shield size={22} aria-hidden="true" />}
           title={isBeyond ? "Workspace details" : isFoundation ? "Learning space details" : "Study space details"}
           rows={[["Product", "Shadecode Student"], ["Experience", experience.label], ["Studio", "Shadecode"]]}
         />
@@ -309,7 +309,7 @@ function ThemeChoice({
       <span>
         <span className="flex items-center gap-2 font-semibold">
           {label}
-          {active && <Check size={15} aria-hidden="true" className="text-[var(--accent)]" />}
+          {active && <Check size={16} aria-hidden="true" className="text-[var(--accent)]" />}
         </span>
         <span className="mt-1 block text-xs text-[var(--muted-foreground)]">{description}</span>
       </span>

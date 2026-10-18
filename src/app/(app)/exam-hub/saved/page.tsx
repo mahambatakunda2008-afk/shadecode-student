@@ -30,7 +30,7 @@ export default function SavedPapersPage() {
         </Link>
 
         <header className="ssc-page-header mb-6 flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Bookmark size={19} /></div>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Bookmark size={20} /></div>
           <div><h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Saved papers</h1><p className="mt-1 text-sm text-[var(--muted-foreground)]">Your bookmarked papers, ready for another attempt.</p></div>
         </header>
 

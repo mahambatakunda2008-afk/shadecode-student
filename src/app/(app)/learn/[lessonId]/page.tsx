@@ -338,9 +338,9 @@ export default function LessonDetailPage() {
         @media(max-width:820px){.lesson-layout{grid-template-columns:1fr;gap:8px}.lesson-toc{position:static;padding:10px 12px;margin-bottom:18px}.lesson-toc-label{padding-bottom:7px}.lesson-toc-list{flex-direction:row;overflow-x:auto;padding-bottom:2px}.lesson-toc-item{min-width:140px;max-width:210px;border:1px solid var(--border-subtle);background:var(--surface);grid-template-columns:20px minmax(0,1fr)}}\n        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-loop-options{grid-template-columns:1fr}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
       `}</style>
 
-      {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
+      {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
       <main className="lesson-shell">
-        <Link href="/learn" className="lesson-back"><ArrowLeft size={15} />Back to Learn</Link>
+        <Link href="/learn" className="lesson-back"><ArrowLeft size={16} />Back to Learn</Link>
 
         <header className="lesson-hero">
           <div className="lesson-hero-bar" />
@@ -348,8 +348,8 @@ export default function LessonDetailPage() {
             <div className="lesson-meta">
               <span className="lesson-subject"><Icon size={15} color={t.text} />{lesson.subject}</span>
               <span>·</span><span className="lesson-badge">{d.label}</span>
-              {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={11} style={{ verticalAlign: "-1px" }} /> Completed</span>}
-              {lesson.description?.startsWith("Curated curriculum recovery lesson") && <span className="lesson-badge" title="Authored curriculum material used as a recovery path"><BookOpen size={11} style={{ verticalAlign: "-1px" }} /> Curated recovery</span>}
+              {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={12} style={{ verticalAlign: "-1px" }} /> Completed</span>}
+              {lesson.description?.startsWith("Curated curriculum recovery lesson") && <span className="lesson-badge" title="Authored curriculum material used as a recovery path"><BookOpen size={12} style={{ verticalAlign: "-1px" }} /> Curated recovery</span>}
             </div>
             <h1 className="lesson-title">{lesson.title}</h1>
             {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
@@ -376,7 +376,7 @@ export default function LessonDetailPage() {
 
           <section className="lesson-loop" aria-labelledby="learning-check-title">
             <div className="lesson-loop-head">
-              <div className="lesson-loop-icon"><Brain size={17} /></div>
+              <div className="lesson-loop-icon"><Brain size={18} /></div>
               <div>
                 <h2 id="learning-check-title" className="lesson-loop-title">Make the learning stick</h2>
                 <p className="lesson-loop-copy">Before you leave, check what you can actually do. This is more useful than simply reaching the bottom of the page.</p>
@@ -401,7 +401,7 @@ export default function LessonDetailPage() {
 
           <div className="lesson-actions" aria-label="Lesson actions">
             {lesson.completed ? <div className="lesson-action primary"><CheckCircle2 size={16} />Completed · +{xpForDiff(lesson.difficulty)} XP</div> : <button className="lesson-action primary" onClick={() => void markComplete()} disabled={completing}>{completing ? "Saving…" : <><CheckCircle2 size={16} />Mark Complete</>}</button>}
-            <Link className="lesson-action quiz" href={`/learn/${lessonId}/quiz`}><HelpCircle size={16} />Test Yourself<ArrowRight size={13} /></Link>
+            <Link className="lesson-action quiz" href={`/learn/${lessonId}/quiz`}><HelpCircle size={16} />Test Yourself<ArrowRight size={14} /></Link>
             <button className="lesson-action" onClick={() => setShowTutor(true)}><MessageSquare size={16} />Ask Tutor</button>
             <button className="lesson-action" onClick={() => void handleDownload()} disabled={downloading}><Download size={16} />{downloading ? `${downloadProgress}%` : "Download"}</button>
             {narration.speechSupported && <button className="lesson-action" onClick={narration.status === "idle" ? narration.start : narration.stop}>{narration.status === "speaking" ? <><Pause size={16} />Reading {narration.currentIndex + 1}/{narration.totalSegments}</> : narration.status === "listening" ? <><Mic size={16} />Listening…</> : <><Headphones size={16} />Listen</>}</button>}
@@ -410,7 +410,7 @@ export default function LessonDetailPage() {
           </div>
         </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "var(--primary)" }}>Generate a new lesson</Link></div>}
 
-        {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={11} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
+        {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={12} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
       </main>
 
       {showTutor && <div role="dialog" aria-modal="true" aria-label="Socratic Tutor" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>

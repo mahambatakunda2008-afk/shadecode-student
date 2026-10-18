@@ -111,7 +111,7 @@ export default function HubContent({ isAdmin }: Props) {
             <p className="max-w-xl text-sm leading-6 text-[var(--muted-foreground)]">Find real papers, practise questions, and turn your results into a focused revision plan.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/exam-hub/papers" className="ssc-button"><FileText size={16} aria-hidden="true" /> Browse papers <ArrowRight size={15} aria-hidden="true" /></Link>
+            <Link href="/exam-hub/papers" className="ssc-button"><FileText size={16} aria-hidden="true" /> Browse papers <ArrowRight size={16} aria-hidden="true" /></Link>
             <Link href="/exam-sim" className="ssc-button ssc-button-secondary"><Gamepad2 size={16} aria-hidden="true" /> Start practice</Link>
           </div>
         </header>
@@ -148,7 +148,7 @@ export default function HubContent({ isAdmin }: Props) {
                 <p className="text-[13px] leading-6 text-[var(--text-secondary)]">
                   {card.description}
                 </p>
-                {!card.comingSoon && <ArrowRight size={15} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" aria-hidden="true" />}
+                {!card.comingSoon && <ArrowRight size={16} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" aria-hidden="true" />}
               </div>
             );
 
