@@ -174,13 +174,6 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const lastTutorResponse = session?.conversation.filter(m => m.role === "tutor").pop();
   const studentAttempts = session?.conversation.filter(m => m.role === "student").length ?? 0;
   const sessionStep = studentAttempts === 0 ? 1 : Math.min(4, studentAttempts + 1);
