@@ -77,11 +77,11 @@ function buildReason(
   isAtRisk: boolean
 ): string {
   if (daysSinceReview === 0) {
-    return `Reviewed today -- retention is fresh.`;
+    return `Reviewed today — retention is fresh.`;
   }
   const dayWord = daysSinceReview === 1 ? "day" : "days";
   if (!isAtRisk) {
-    return `Last reviewed ${daysSinceReview} ${dayWord} ago at ${input.mastery_score}% mastery -- still holding.`;
+    return `Last reviewed ${daysSinceReview} ${dayWord} ago at ${input.mastery_score}% mastery — still holding.`;
   }
   const trendNote = input.trend < 0 ? ", and it was already trending down" : "";
   return `Not reviewed in ${daysSinceReview} ${dayWord}${trendNote} -- risk of forgetting is climbing (${riskScore}/100).`;

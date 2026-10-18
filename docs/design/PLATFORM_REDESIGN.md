@@ -151,6 +151,11 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Skip-link target `#main-content` added to the main student layout (it only existed in admin and comp-lab layouts).
 - [x] `prefers-reduced-motion` now also sets `animation-iteration-count: 1` (a 1ms duration alone made infinite animations flicker).
 - [x] `min-h-screen` / `h-screen` upgrade to `dvh` where supported, with `vh` fallback, to stop mobile browser-bar layout jumps.
+- [x] Icons: iOS home-screen icons made opaque full-bleed (no black corners); lucide icon sizes snapped to the even pixel grid and guarded by `src/lib/design/iconGrid.test.ts`.
+- [x] Touch: `.ssc-button` and `.ssc-icon-button` reach 44px on coarse pointers; hover lift disabled on touch so it no longer sticks after a tap.
+- [x] Legibility floor: `text-[9px]` and `text-[10px]` render at 11px. Inline `fontSize` values under 11 are not covered and still need review.
+- [x] Typed `--` in user-facing strings replaced with em dashes (offline banner, dashboard greeting, stale-data banner, retention messages).
+- [ ] OPEN, needs an iPhone: `viewport` has no `viewportFit: "cover"`, so every `env(safe-area-inset-*)` in the app (bottom nav included) evaluates to 0 on iOS. Enabling it also moves content under the notch and status bar, so test top and bottom insets on a real device first.
 - [ ] Still needs a real browser: layout, spacing, mobile breakpoints, tap targets, authenticated flows. About 250 usages of text under 12px have not been reviewed.
 
 ## Additional implementation pass (2026-10-17)

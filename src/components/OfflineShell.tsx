@@ -70,7 +70,7 @@ export default function OfflineShell() {
   const message = !isOnline
     ? status.pending > 0
       ? `${status.pending} change${status.pending === 1 ? "" : "s"} saved on this device`
-      : "You’re offline -- showing cached content"
+      : "You’re offline — showing cached content"
     : status.failed > 0
       ? `${status.failed} change${status.failed === 1 ? "" : "s"} need${status.failed === 1 ? "s" : ""} attention`
       : `Syncing ${status.pending} saved change${status.pending === 1 ? "" : "s"}`;
