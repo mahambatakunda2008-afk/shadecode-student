@@ -67,7 +67,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
 
     setLoading(true);
     setRequestError(null);
-    setInput("");
+    setInput(messageOverride ? input : "");
 
     try {
       const request: TutoringRequest = {
@@ -98,7 +98,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
     } catch (err) {
       console.error("Failed to generate tutoring response:", err);
       setSession(prev => prev ? { ...prev, conversation: prev.conversation.filter(message => message.id !== userMessage.id), updatedAt: new Date().toISOString() } : null);
-      setInput(userMessage.content);
+      setInput(messageOverride ? input : userMessage.content);
       setRequestError("The tutor could not respond just now. Your attempt is still here. Retry when you are ready.");
     } finally {
       setLoading(false);
