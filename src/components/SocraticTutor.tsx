@@ -210,6 +210,16 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         <p style={{ fontSize: "12px", lineHeight: 1.45, color: "var(--muted-foreground)", margin: 0 }}>
           {studentAttempts === 0 ? "Start with your current thinking. You do not need to get it right first time." : studentAttempts === 1 ? "First attempt captured. Use the feedback to refine your reasoning." : "Keep testing your understanding. The next step is to check what you can do independently."}
         </p>
+        <div aria-label="Learning progress trace" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+          <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
+            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Attempts recorded</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{studentAttempts}</div>
+          </div>
+          <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
+            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Independent check</div>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>Not yet verified</div>
+          </div>
+        </div>
       </div>
 
       {/* Messages */}
