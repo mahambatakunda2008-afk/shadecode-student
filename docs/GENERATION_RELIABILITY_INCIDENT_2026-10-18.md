@@ -104,3 +104,10 @@ These are focused first repairs, not the complete incident fix. Provider exhaust
 - **PR #369** remains a draft product-wide redesign and is not release-ready while authenticated journey and responsive visual QA gates remain incomplete.
 
 Do not merge based on green CI alone. Next required evidence is a signed-in test that generates a known topic, persists it, reloads it from storage, and confirms no false failure is shown; plus Exam generation, answer saving, marking, result persistence, and resume. Continue to check the deployed commit and production runtime errors after release.
+
+
+## Existing browser acceptance test discovered
+
+The repository already contains `e2e/learn/broad-topics.spec.ts`. It signs in using `E2E_EMAIL` and `E2E_PASSWORD`, then generates a real broad topic from the account's existing Learn subjects. It checks that the learner reaches the lesson, that at least 16 lesson units render, that enough units contain substantive text, and that required deep-learning sections are present. The topic must be supplied through `E2E_LEARN_TOPICS`; the test deliberately does not invent a synthetic success case.
+
+This browser test has **not** been run in this work pass because its valid signed-in test account and real curriculum topic are environment-specific secrets/configuration, and CI's standard typecheck/lint/unit-test/build job does not execute it. It is the best existing acceptance gate to run when the E2E credentials are available. A separate Exam Simulation browser journey is still needed for generated paper, answer persistence, marking, results, and resume.
