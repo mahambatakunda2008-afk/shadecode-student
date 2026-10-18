@@ -423,7 +423,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
             }}
           />
           <button
-            onClick={handleSendMessage}
+            onClick={() => handleSendMessage()}
             disabled={!input.trim() || loading}
             aria-label="Send message"
             style={{
