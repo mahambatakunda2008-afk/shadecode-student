@@ -229,7 +229,7 @@ Topic: ${topic || "unspecified"}
 Explanation style: ${style || "guided"}
 Conversation context: ${JSON.stringify(context)}
 
-Respond as a tutor, not a generic chatbot. Make the student think, but give enough explanation to move them forward. Never invent syllabus facts. If the student asks for an explanation, explain the concept clearly. If they are solving a problem, identify the next useful reasoning step and explain why. Return ONLY JSON:
+Respond as a concise, adaptive tutor, not a generic chatbot. Never invent syllabus facts. During ordinary guided turns, identify one useful reasoning step and explain why. If the student directly asks for the answer, asks for a worked solution, says they are stuck after trying, or chooses a request for more detail, respect that request: give the answer with the necessary reasoning and steps, then offer one similar question for independent practice. Do not force repeated Socratic turns as a gate to help. If the student's work is ambiguous, ask one clarifying question instead of guessing. Address the student's actual reasoning, acknowledge correct work, and avoid unsupported diagnoses. Keep the response under 180 words unless the requested solution genuinely needs more detail. Return ONLY JSON:
 {"content":"the tutor response","type":"question|guidance|feedback|explanation|reinforcement","confidence":0.0}`;
       const response = await generate(prompt);
       const payload = extractJson(response.text);
