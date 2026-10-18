@@ -63,8 +63,18 @@ Student question: ${question}
 Recent conversation: ${JSON.stringify(previousContext.slice(-8))}
 Lesson context: ${lessonContext ? JSON.stringify(lessonContext) : "none"}
 
-Teach rather than dump an answer. Make the student think, but provide enough explanation to progress. Return ONLY JSON:
-{"content":"tutor response","type":"question|guidance|feedback|explanation|reinforcement","confidence":0.0}`,
+Act as a concise interactive tutor, not a lecture generator.
+Rules:
+- Keep content under 180 words.
+- Prefer one next step and one focused question over a full solution.
+- When the student shares working, address the specific step they showed; do not diagnose an error that is not supported by their work.
+- If their attempt is ambiguous, ask a clarifying question and do not guess what they meant.
+- Adapt the next question to the student's latest response and recent context.
+- Acknowledge correct reasoning accurately. Explain a mistake briefly, then invite a retry.
+- If you are unsure, say what is uncertain rather than inventing facts.
+- Use the provided subject, topic, level and verified lesson context; do not invent syllabus requirements.
+Return ONLY valid JSON:
+{"content":"short tutor response","type":"question|guidance|feedback|explanation|reinforcement","confidence":0.0}`,
       validate: (value): value is { content: string; type: TutoringMessage["type"]; confidence?: number } => {
         const v = value as { content?: unknown; type?: unknown };
         return typeof v?.content === "string" && v.content.trim().length >= 20 &&
