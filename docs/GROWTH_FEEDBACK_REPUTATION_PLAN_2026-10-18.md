@@ -260,14 +260,14 @@ Repeat channels that produce retained users and actionable learning, not just cl
 
 ## 10. Initial acceptance criteria
 
-- [ ] Existing feedback and analytics implementations inspected before adding new ones.
+- [x] Existing feedback and analytics implementations inspected before adding new ones.
 - [ ] First target segment and workflow stated.
 - [ ] Core workflow failure modes documented.
 - [ ] Feedback is optional, low-friction and never blocks learning.
-- [ ] Server-side authorization and appropriate RLS protect feedback data.
-- [ ] Submission has clear success/failure states.
+- [x] Server-side admin authorization and deployed feedback RLS policy definitions inspected; live authorization behavior still requires testing.
+- [x] Both existing submission surfaces now show a clear persistence-failure state.
 - [ ] Metric definitions and sources are documented.
-- [ ] Voluntary pilot protocol and honest-review request are ready.
+- [x] Voluntary pilot protocol and honest-review request are documented in `docs/FEEDBACK_PILOT_KIT_2026-10-19.md`.
 - [ ] No fake reviews or unsupported learning-outcome claims.
 - [ ] Test, lint, type-check and build results are reported accurately for code changes.
 
@@ -277,7 +277,7 @@ Repeat channels that produce retained users and actionable learning, not just cl
 2. **Gap report:** implemented versus missing.
 3. **Implementation plan:** exact files, migration needs, tests and release risks.
 4. **Minimal feedback implementation:** only if the audit confirms it is needed.
-5. **Pilot kit:** recruitment message, participant instructions, short feedback form and findings template.
+5. **Pilot kit:** `docs/FEEDBACK_PILOT_KIT_2026-10-19.md` includes admin-first recruitment, student invitation, participant instructions, two-week protocol, questions, tracking sheet and decision rules.
 6. **Growth experiment log:** hypotheses and results by channel.
 
 ## 12. Decision rule
