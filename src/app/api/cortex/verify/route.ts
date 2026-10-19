@@ -189,6 +189,24 @@ export async function POST(req: Request) {
       const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Help level: ${level}. ${instruction} Return ONLY JSON with keys level, hint, method, solution, finalAnswer, content as appropriate. Keep explanations student-friendly.`;
       const result = await runStructured(prompt, image);
       if (!validHelp(result)) return NextResponse.json({ error: "Cortex returned an incomplete explanation. Please try again." }, { status: 502 });
+
+      if (level === "hint") {
+        if (typeof result.hint !== "string" || result.hint.trim().length < 10) {
+          return NextResponse.json({ error: "Cortex could not produce a clear hint without revealing the answer. Please try another help level." }, { status: 502 });
+        }
+        result.method = undefined;
+        result.solution = undefined;
+        result.finalAnswer = undefined;
+        result.content = result.hint;
+      } else if (level === "method") {
+        const methodText = typeof result.method === "string" ? result.method : "";
+        if (methodText.trim().length < 10) {
+          return NextResponse.json({ error: "Cortex could not produce a clear method without revealing the answer. Please try another help level." }, { status: 502 });
+        }
+        result.solution = undefined;
+        result.finalAnswer = undefined;
+        result.content = methodText;
+      }
       return NextResponse.json(result);
     }
 
