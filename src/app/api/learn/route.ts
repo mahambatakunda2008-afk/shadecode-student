@@ -16,6 +16,7 @@ import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/le
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
+import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -412,7 +413,7 @@ export async function POST(req: Request) {
 
       // The lesson is already durably saved at this point. Memory and XP are best-effort
       // side effects; neither may turn a successful save into a learner-visible generation failure.
-      const sideEffects = await Promise.allSettled([
+      await runBestEffortSideEffects([
         rememberLearnerSignal(supabase, user.id, {
           subject: effectiveSubject,
           topic: request.topic,
@@ -422,14 +423,11 @@ export async function POST(req: Request) {
           difficulty: validDifficulty,
         }),
         awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
-      ]);
-      for (const result of sideEffects) {
-        if (result.status === "rejected") {
-          console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
-            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
-          });
-        }
-      }
+      ], (error) => {
+        console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
 
       return NextResponse.json({
         id: savedId,
@@ -901,31 +899,26 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
-    // The lesson row is now durable. Secondary learning analytics and XP must
-    // not turn a successful save into a failed request that invites duplicate work.
-    try {
-      await rememberLearnerSignal(supabase, user.id, {
+    // The lesson row is durable. Memory and XP are secondary effects and cannot
+    // turn a successful save into a failed request that invites duplicate work.
+    await runBestEffortSideEffects([
+      rememberLearnerSignal(supabase, user.id, {
         subject: effectiveSubject,
         topic: request.topic,
         topic_key: learnerTopicKey,
         event_type: "lesson_completed",
         outcome: "saved",
         difficulty: validDifficulty,
-      });
-    } catch (memoryError) {
-      console.warn("[LEARN] lesson saved but completion signal could not be recorded", {
+      }),
+      awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
+    ], (error, index) => {
+      console.warn(index === 0
+        ? "[LEARN] lesson saved but completion signal could not be recorded"
+        : "[LEARN] lesson saved but generation XP could not be awarded", {
         lessonId: savedId,
-        error: memoryError instanceof Error ? memoryError.message : String(memoryError),
+        error: error instanceof Error ? error.message : String(error),
       });
-    }
-    try {
-      await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
-    } catch (xpError) {
-      console.warn("[LEARN] lesson saved but generation XP could not be awarded", {
-        lessonId: savedId,
-        error: xpError instanceof Error ? xpError.message : String(xpError),
-      });
-    }
+    });
     return NextResponse.json({
       id: savedId,
       title: parsed.title,
