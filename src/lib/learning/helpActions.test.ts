@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLearningHelpPrompt, getLearningHelpAction, LEARNING_HELP_ACTIONS } from "./helpActions";
+import { buildLearningHelpPrompt, enforceLearningHelpLevel, getLearningHelpAction, LEARNING_HELP_ACTIONS } from "./helpActions";
 
 describe("shared learning help contract", () => {
   it("offers the same five actionable help paths across learning surfaces", () => {
@@ -20,5 +20,41 @@ describe("shared learning help contract", () => {
 
   it("does not create empty context sections", () => {
     expect(buildLearningHelpPrompt("  ", "Try another method")).toBe("Student request: Try another method");
+  });
+});
+
+
+describe("help-level disclosure boundaries", () => {
+  it("removes full answers from hint responses", () => {
+    const result = enforceLearningHelpLevel({
+      hint: "Start by dividing both sides by two.",
+      method: ["Divide both sides", "Simplify"],
+      solution: "The complete worked solution is 2x = 8, so x = 4.",
+      finalAnswer: "x = 4",
+    }, "hint");
+
+    expect(result.hint).toBe("Start by dividing both sides by two.");
+    expect(result.method).toBeUndefined();
+    expect(result.solution).toBeUndefined();
+    expect(result.finalAnswer).toBeUndefined();
+  });
+
+  it("keeps method steps but removes the worked answer from method responses", () => {
+    const result = enforceLearningHelpLevel({
+      hint: "Isolate x.",
+      method: ["Subtract four", "Divide by two"],
+      solution: "x = 4",
+      finalAnswer: "x = 4",
+    }, "method");
+
+    expect(result.method).toEqual(["Subtract four", "Divide by two"]);
+    expect(result.solution).toBeUndefined();
+    expect(result.finalAnswer).toBeUndefined();
+    expect(result.content).toBe("Subtract four\nDivide by two");
+  });
+
+  it("preserves full solutions when the student requests them", () => {
+    const payload = { hint: "Start here", solution: "x = 4", finalAnswer: "x = 4" };
+    expect(enforceLearningHelpLevel(payload, "solution")).toEqual(payload);
   });
 });
