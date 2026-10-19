@@ -10,9 +10,9 @@
 
 The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by both forms after the reliability fix. The existing production Supabase project was inspected read-only on 2026-10-19; policy definitions are verified, but end-to-end client behavior has not been tested.
 
-## Follow-up implementation in review (2026-10-19)
+## Follow-up implementation merged and deployed (2026-10-19)
 
-Branch `fix/feedback-server-persistence-rate-limit` centralizes both feedback surfaces on `POST /api/feedback` rather than allowing browser clients to insert directly into Supabase.
+Merged in [PR #390](https://github.com/mahambatakunda2008-afk/shadecode-student/pull/390), production commit `28c6f36415a6cad23366211bedaeec98ad5f29de`. Both feedback surfaces now use `POST /api/feedback`; browser clients no longer insert directly into Supabase.
 
 - The server derives the user ID from the authenticated Supabase session; client-supplied IDs are ignored.
 - Message type and trimmed length are validated server-side.
@@ -23,7 +23,7 @@ Branch `fix/feedback-server-persistence-rate-limit` centralizes both feedback su
 - The legacy public `/api/feedback-email` endpoint is retired with HTTP 410 so it cannot be called independently to send emails.
 - Route tests cover input validation, server-derived identity, rate-limit behavior, persistence failure, notification failure and missing configuration.
 
-**Migration status:** the additive migration was applied to production on 2026-10-19 and the table, function and grants were verified read-only. The tracked migration filename in this branch matches the observed remote ledger version. The existing historical migration drift still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. Do not treat this new migration as resolving that wider drift.
+**Migration status:** the additive migration was applied to production on 2026-10-19 and the table, function and grants were verified read-only. The tracked migration filename on `main` matches the observed remote ledger version. The Vercel production deployment for commit `28c6f36415a6cad23366211bedaeec98ad5f29de` reached READY. The existing historical migration drift still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. Do not treat this new migration as resolving that wider drift.
 
 ## Evidence inspected
 
