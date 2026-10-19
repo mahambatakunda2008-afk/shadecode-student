@@ -138,7 +138,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
   const handleRequestExplanation = async (style: ExplanationStyle) => {
     if (!session || !session.conversation.length || loading) return;
 
-    const lastStudentMessage = [...session.conversation].filter(m => m.role === "student").pop();
+    const lastStudentMessage = [...session.conversation].filter(m => m.role === "student" && !m.metadata?.helpAction).pop();
     if (!lastStudentMessage) return;
 
     setLoading(true);
