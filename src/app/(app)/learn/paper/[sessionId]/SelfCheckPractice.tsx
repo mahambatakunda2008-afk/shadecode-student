@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
+import LearningEvidenceTrace from "@/components/learning/LearningEvidenceTrace";
 
 type Practice = { seed: number; generator: string; question: string; marks: number };
-type Outcome = { correct: boolean; answer: string; working: string; hint?: string };
+type Outcome = { correct: boolean; answer: string; working: string; hint?: string; mastery?: number | null };
 type Phase = "idle" | "loading" | "question" | "checking" | "result" | "unavailable" | "error";
 
 const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[var(--primary-glow)] disabled:opacity-50";
@@ -77,7 +78,16 @@ export default function SelfCheckPractice({ sessionId, blockId }: { sessionId: s
             </button>
           ) : outcome && (
             <div role="status" className="mt-3 rounded-xl bg-[var(--surface)] p-3 text-sm leading-6">
-              <p className="font-bold">{outcome.correct ? "Correct." : `Not quite. The answer is ${outcome.answer}.`}</p>
+              <LearningEvidenceTrace
+                compact
+                title="Practice evidence"
+                items={[
+                  { label: "This attempt", value: outcome.correct ? "Correct" : "Needs another try" },
+                  { label: "Topic estimate", value: typeof outcome.mastery === "number" ? `${Math.round(outcome.mastery)}% modelled` : "Not available" },
+                ]}
+                note="One checked question is evidence about this attempt, not proof of mastery. Repeat practice and try a similar item independently."
+              />
+              <p className="mt-3 font-bold">{outcome.correct ? "Correct." : `Not quite. The answer is ${outcome.answer}.`}</p>
               {!outcome.correct && outcome.hint && <p className="mt-1">{outcome.hint}</p>}
               {outcome.working && <p className="mt-1 text-[var(--muted-foreground)]">{outcome.working}</p>}
               <button type="button" onClick={() => void next()} className={`${button} mt-3`}><RotateCcw className="h-4 w-4" aria-hidden /> Another one</button>
