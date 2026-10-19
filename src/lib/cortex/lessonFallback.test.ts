@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildDeterministicLessonFallback } from "./lessonFallback";
 import { lessonQualityFailures, type LessonQualityRequest } from "./lessonQuality";
+import { resolveLessonRequest } from "./lessonRequest";
 
 // These authored examples check fallback matching and the quality gate for
 // topics whose lesson shape is designed to satisfy it. Some deep topics (such
@@ -30,6 +31,18 @@ describe("buildDeterministicLessonFallback", () => {
   it("matches syllabus-coded subject names and natural-language topic requests", () => {
     expect(buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic")).not.toBeNull();
     expect(buildDeterministicLessonFallback("Cambridge International AS Level Physics 9702", "waves")).not.toBeNull();
+  });
+
+  it("accepts Waves fallback against the request shape resolved from the learner command", () => {
+    const lesson = buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic");
+    expect(lesson).not.toBeNull();
+    const request = resolveLessonRequest({
+      prompt: "Teach me Waves topic",
+      subject: "Physics (9702) AS Level",
+      topic: "Teach me Waves topic",
+    });
+    expect(request.broadTopic).toBe(true);
+    expect(lessonQualityFailures(lesson!, request).failures).toEqual([]);
   });
 
   it("keeps the authored AS Physics Waves lesson available for deterministic recovery", () => {
