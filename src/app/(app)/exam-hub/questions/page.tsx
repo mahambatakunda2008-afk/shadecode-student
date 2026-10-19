@@ -85,7 +85,7 @@ Marks: ${question.marks ?? "unknown"}
 
 Student-requested help level: ${actionDefinition?.level ?? "balanced explanation"}.
 Use only evidence present in the question. Respect the requested help style. If a different method is requested, give one only if it is genuinely valid. If the final answer cannot be determined from the available information, say so. Return ONLY JSON:
-{"concept":"...","hint":"...","method":["step 1","step 2"],"solution":"...","finalAnswer":"...","examTip":"..."}
+{"concept":"...","hint":"...","method":["step 1","step 2"],"solution":"...","finalAnswer":"...","examTip":"..."}`;
       const result = await runHybridJson<CortexResult>({
         localPrompt,
         validate: (value): value is CortexResult => {
