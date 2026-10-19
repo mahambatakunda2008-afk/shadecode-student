@@ -122,7 +122,11 @@ Be accurate and explicit about uncertainty.`;
           const v = value as VerifyResult;
           return !!v && typeof v === "object" &&
             (attempt.mode === "help"
-              ? typeof v.content === "string" || typeof v.hint === "string" || typeof v.method === "string"
+              ? (attempt.level || "hint") === "hint"
+                ? typeof v.hint === "string" && v.hint.trim().length >= 10
+                : (attempt.level || "hint") === "method"
+                  ? typeof v.method === "string" && v.method.trim().length >= 10
+                  : typeof v.solution === "string" && v.solution.trim().length >= 20
               : typeof v.feedback === "string" || Array.isArray(v.steps));
         },
         cloud: requestCloud,
@@ -131,6 +135,18 @@ Be accurate and explicit about uncertainty.`;
       });
     } else {
       data = await requestCloud();
+    }
+
+    if (attempt.mode === "help" && (attempt.level || "hint") === "hint") {
+      if (typeof data.hint !== "string" || data.hint.trim().length < 10) {
+        throw new Error("Cortex could not produce a clear hint without revealing the answer. Choose another help level and retry.");
+      }
+      data = { ...data, method: undefined, solution: undefined, finalAnswer: undefined, content: data.hint };
+    } else if (attempt.mode === "help" && attempt.level === "method") {
+      if (typeof data.method !== "string" || data.method.trim().length < 10) {
+        throw new Error("Cortex could not produce a clear method without revealing the answer. Choose another help level and retry.");
+      }
+      data = { ...data, solution: undefined, finalAnswer: undefined, content: data.method };
     }
     recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
