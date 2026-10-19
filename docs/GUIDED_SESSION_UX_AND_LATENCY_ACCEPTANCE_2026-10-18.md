@@ -5,7 +5,7 @@
 
 ## Changes in this branch
 
-- The Socratic Tutor now exposes a simple four-step session progress indicator.
+- The Socratic Tutor shows an honest progress trace: practice attempts recorded and independent understanding explicitly marked unverified until a real check exists. An attempt-count-based progress bar was removed because it implied stage/mastery evidence the product does not yet collect.
 - The student response area is explicitly labelled “Your attempt” and supports multiline working.
 - Students can choose structured help actions: a more specific hint, more detail, a different method, an explanation of the tutor’s question, or a worked solution followed by independent practice.
 - The opening copy explains why the tutor may ask about the student’s reasoning while explicitly allowing fuller explanations on request.
