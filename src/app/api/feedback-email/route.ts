@@ -9,23 +9,24 @@ const MAX_MESSAGE_LENGTH = 500;
 export async function POST(req: Request) {
   try {
     // This route is unauthenticated by design (feedback should work even
-    // if session state is flaky), so rate limit by IP -- authLimiter's
-    // 5-per-15min is appropriate for an endpoint that sends a real email
-    // per request via Resend.
+    // if session state is flaky), so rate limit by IP.
     const rateLimitResponse = await applyRateLimit(req, authLimiter);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const { type, message } = await req.json();
+    const body = await req.json();
+    const type = typeof body?.type === "string" ? body.type : "";
+    const message = typeof body?.message === "string" ? body.message.trim() : "";
 
     if (!VALID_TYPES.has(type)) {
       return Response.json({ success: false, error: "Invalid feedback type" }, { status: 400 });
     }
-    if (typeof message !== "string" || message.trim().length === 0) {
+    if (!message) {
       return Response.json({ success: false, error: "Message is required" }, { status: 400 });
     }
     if (message.length > MAX_MESSAGE_LENGTH) {
       return Response.json({ success: false, error: "Message too long" }, { status: 400 });
     }
+
     const resend = new Resend(process.env.RESEND_API_KEY!);
     const email = await resend.emails.send({
       from: "Shadecode <onboarding@resend.dev>",
