@@ -139,6 +139,8 @@ export function CortexIntelligencePanel() {
           <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
         </Link>
 
+        <p className="text-[11px] leading-5 text-slate-400">These patterns are based on recorded learning and assessment evidence. They can be incomplete or change with new attempts; they are not permanent labels of ability.</p>
+
         {/* Weak/Strong Areas */}
         {(report.weakAreas.length > 0 || report.strongAreas.length > 0) && (
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/50">
