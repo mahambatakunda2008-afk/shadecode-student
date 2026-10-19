@@ -16,7 +16,7 @@ Branch `fix/feedback-server-persistence-rate-limit` centralizes both feedback su
 
 - The server derives the user ID from the authenticated Supabase session; client-supplied IDs are ignored.
 - Message type and trimmed length are validated server-side.
-- A new migration defines an atomic PostgreSQL rate-limit function and private bucket table. The route applies a 5-per-15-minute limit to each authenticated user and an HMAC-derived IP bucket for anonymous and authenticated traffic.
+- A new migration defines an atomic PostgreSQL rate-limit function and private bucket table. The route applies a 5-per-15-minute limit per authenticated user and a 20-per-15-minute HMAC-derived IP bucket, leaving room for students sharing school or campus networks.
 - Raw IP addresses are not stored in the limiter table.
 - The route fails closed if the shared limiter/service-role configuration is unavailable.
 - Persistence failures are returned to the student; email notification is bounded and best-effort after persistence.
