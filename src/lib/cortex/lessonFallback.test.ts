@@ -41,6 +41,7 @@ describe("buildDeterministicLessonFallback", () => {
       subject: "Physics (9702) AS Level",
       topic: "Teach me Waves topic",
     });
+    expect(request.topic).toBe("Waves");
     expect(request.broadTopic).toBe(true);
     expect(lessonQualityFailures(lesson!, request).failures).toEqual([]);
   });
