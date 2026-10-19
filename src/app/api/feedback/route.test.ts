@@ -60,6 +60,17 @@ describe("POST /api/feedback", () => {
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
+  it("rejects oversized request bodies before parsing or persistence", async () => {
+    const response = await POST(new Request("http://localhost/api/feedback", {
+      method: "POST",
+      headers: { "x-real-ip": "203.0.113.10" },
+      body: JSON.stringify({ type: "general", message: "x".repeat(9000) }),
+    }));
+    expect(response.status).toBe(413);
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("persists anonymous feedback with a server-controlled null user id", async () => {
     const response = await post({ type: "feature", message: "  Add better practice questions  ", user_id: "someone-else" });
     expect(response.status).toBe(201);
