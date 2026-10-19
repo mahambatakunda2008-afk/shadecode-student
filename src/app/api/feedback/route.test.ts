@@ -82,6 +82,7 @@ describe("POST /api/feedback", () => {
     expect(insertMock.mock.calls[0][0]).toMatchObject({ user_id: "trusted-user-id" });
     expect(rpcMock).toHaveBeenCalledTimes(2);
     expect(rpcMock.mock.calls[0][1]).toMatchObject({ p_bucket_key: "user:trusted-user-id", p_window_seconds: 900, p_max_requests: 5 });
+    expect(rpcMock.mock.calls[1][1].p_max_requests).toBe(20);
     expect(String(rpcMock.mock.calls[1][1].p_bucket_key)).toMatch(/^ip:[a-f0-9]{64}$/);
   });
 
