@@ -54,7 +54,7 @@ export default function CortexVerifyPanel() {
     await help({
       mode: "help",
       subject,
-      question: buildLearningHelpPrompt(question, prompt, result?.feedback),
+      question: buildLearningHelpPrompt(question, prompt, [studentAnswer.trim() ? "Student's current work: " + studentAnswer.trim() : "", result?.feedback].filter(Boolean).join("\n\n")),
       level: definition.level,
       image,
     });
