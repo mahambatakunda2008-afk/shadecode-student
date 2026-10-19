@@ -40,7 +40,7 @@ begin
   set
     request_count = case
       when public.feedback_rate_limits.window_started_at <= now() - make_interval(secs => p_window_seconds) then 1
-      else public.feedback_rate_limits.request_count + 1
+      else least(public.feedback_rate_limits.request_count + 1, p_max_requests + 1)
     end,
     window_started_at = case
       when public.feedback_rate_limits.window_started_at <= now() - make_interval(secs => p_window_seconds) then now()
