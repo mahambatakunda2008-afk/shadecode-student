@@ -10,6 +10,21 @@
 
 The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by both forms after the reliability fix. The existing production Supabase project was inspected read-only on 2026-10-19; policy definitions are verified, but end-to-end client behavior has not been tested.
 
+## Follow-up implementation in review (2026-10-19)
+
+Branch `fix/feedback-server-persistence-rate-limit` centralizes both feedback surfaces on `POST /api/feedback` rather than allowing browser clients to insert directly into Supabase.
+
+- The server derives the user ID from the authenticated Supabase session; client-supplied IDs are ignored.
+- Message type and trimmed length are validated server-side.
+- A new migration defines an atomic PostgreSQL rate-limit function and private bucket table. The route applies a 5-per-15-minute limit to each authenticated user and an HMAC-derived IP bucket for anonymous and authenticated traffic.
+- Raw IP addresses are not stored in the limiter table.
+- The route fails closed if the shared limiter/service-role configuration is unavailable.
+- Persistence failures are returned to the student; email notification is bounded and best-effort after persistence.
+- The legacy public `/api/feedback-email` endpoint is retired with HTTP 410 so it cannot be called independently to send emails.
+- Route tests cover input validation, server-derived identity, rate-limit behavior, persistence failure, notification failure and missing configuration.
+
+**Deployment gate:** the migration is prepared in the branch but has not been applied to production. Do not merge/deploy the endpoint until the migration has been reviewed, applied in a controlled way, and verified to exist in the target database. The existing remote migration history still needs reconciliation; this migration does not repair that historical drift.
+
 ## Evidence inspected
 
 | Area | Source | Observed behavior |
