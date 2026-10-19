@@ -1,13 +1,14 @@
 # Shadecode Student Feedback Loop: Repository Audit
 
-**Audit date:** 2026-10-18  
-**Scope:** Initial source inspection for the Growth, Feedback & Reputation Plan. This is a source-level audit, not a production test or full security review.
+**Initial audit date:** 2026-10-18  
+**Database verification:** 2026-10-19  
+**Scope:** Source inspection plus a read-only inspection of the connected production Supabase schema and policies. This is not a full security review.
 
 ## Executive finding
 
 **Feedback functionality already exists. Do not build a second feedback system.**
 
-The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by the dedicated page. The next step is to harden and unify this existing loop. Production behavior and deployed database policies have not been verified.
+The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by both forms after the reliability fix. The existing production Supabase project was inspected read-only on 2026-10-19; policy definitions are verified, but end-to-end client behavior has not been tested.
 
 ## Evidence inspected
 
@@ -75,6 +76,23 @@ This audit did not inspect the complete table-creation history or verify deploye
 - Rendering/export does not expose data or create injection risks.
 - Retention and deletion behavior for free-text reports is defined.
 
+## Production database verification (read-only, 2026-10-19)
+
+The connected active project `shadecode-student` was inspected directly. No database writes or schema changes were made.
+
+- `public.feedback` exists and currently contains 8 rows.
+- Columns observed: `id` (UUID primary key), `user_id` (nullable UUID referencing `auth.users`), `type` (nullable text), `message` (nullable text), and `created_at` (timestamptz).
+- Row-level security is enabled.
+- Insert policy `feedback insert own or anonymous` allows `user_id IS NULL` or `user_id = auth.uid()`.
+- Select policy `feedback read own` is limited to authenticated users whose `user_id = auth.uid()`. There is no public/anonymous SELECT policy, so the RLS policy set does not grant anonymous users access to feedback rows.
+- No UPDATE or DELETE RLS policies were observed.
+- The admin API uses the server-side authenticated user plus `hasUserRole(user.id, "admin")` check before reading with the service-role client.
+- Table-level grants include more operations than the application needs for `anon` and `authenticated`; RLS currently provides the row-level barrier. Consider least-privilege grants in a reviewed migration, after validating all intended code paths.
+- The remote migration history contains `20260816175542 add_traction_feedback_experiments_exports`, but no corresponding feedback-named migration file was found in the current repository tree. This is a migration-history/repository drift signal, not proof that the table itself is absent from migration history. Reconcile before adding triage columns or policies.
+- Supabase security advisors also reported unrelated findings for `challenge_answer_keys`, two SECURITY DEFINER RPCs (`apply_lesson_vote`, `publish_lesson_to_library`) and leaked-password protection. These were not changed as part of this feedback task and should be triaged separately.
+
+**Boundary:** This verifies the observed remote schema and policy definitions at the time of inspection. It does not replace a live authenticated/anonymous authorization test, and it does not prove every deployed environment matches this project.
+
 ## Recommended implementation order
 
 1. Verify the existing feedback schema and RLS. Do not create a replacement table.
@@ -88,16 +106,16 @@ This audit did not inspect the complete table-creation history or verify deploye
 
 ## Acceptance criteria
 
-- [ ] Both feedback entry points show clear success/failure states.
-- [ ] Email failure does not misrepresent database persistence.
+- [x] Both feedback entry points show a visible persistence-failure state.
+- [x] Email notification is best-effort and does not block success after database persistence.
 - [ ] Both forms use the same validated message/category contract.
-- [ ] Telemetry covers both forms without collecting message content.
-- [ ] Schema and deployed RLS are verified before migration.
+- [x] Telemetry covers both forms without collecting message content.
+- [x] Production feedback schema and deployed RLS policy definitions were inspected read-only; live authorization tests and migration-history reconciliation remain open.
 - [ ] Students cannot read other students' feedback.
 - [ ] Admin authorization is enforced server-side.
-- [ ] Tests cover validation, persistence failure and notification failure.
+- [ ] Tests cover endpoint validation and notification failure; widget/database persistence-failure tests and live authorization tests remain open.
 - [ ] No duplicate feedback table or competing analytics source is introduced.
 
 ## Audit limitation
 
-This reflects files inspected on main on 2026-10-18. It does not claim production has been tested, database policies are correct, or equivalent functionality is absent elsewhere. Verify runtime behavior and search for equivalent implementations before coding.
+The source audit began on 2026-10-18; read-only production schema/policy inspection occurred on 2026-10-19. Runtime submission behavior, live authorization attempts and migration-history reconciliation remain unverified. Search for equivalent implementations before adding new functionality.
