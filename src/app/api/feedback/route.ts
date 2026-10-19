@@ -16,7 +16,7 @@ const NOTIFICATION_BUDGET_MS = 1200;
 function getClientIp(request: Request): string | null {
   const direct = request.headers.get("x-real-ip")?.trim();
   if (direct) return direct.slice(0, 128);
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
   return forwarded ? forwarded.slice(0, 128) : null;
 }
 
