@@ -39,6 +39,14 @@ In FeedbackWidget.tsx, a Supabase insert error is logged and the handler returns
 
 **Action:** unify submission behavior or share a tested helper; show clear success/failure states; ensure email-notification failure does not misrepresent whether the database insert succeeded.
 
+### P1: feedback persistence bypasses server-side rate limiting
+
+Both client forms insert directly into `public.feedback` through the browser Supabase client. The `/api/feedback-email` endpoint has a rate limit, but that limit protects email delivery only; direct database inserts do not pass through it. The database also intentionally allows inserts with a null `user_id`, so an unauthenticated caller can submit rows directly using the public Data API key. RLS limits the identity value on inserts but does not limit request volume.
+
+The current `RateLimiter` implementation stores counters in an in-memory `Map` per server process. It is not a shared/global limiter across serverless instances, so it should not be treated as a strong abuse-control boundary.
+
+**Action:** move persistence behind a validated server endpoint or add another verified abuse-control mechanism before inviting a larger cohort. Derive signed-in identity server-side, retain ownership checks, rate-limit both authenticated and anonymous traffic, keep notification best-effort, and add tests for rate limits and unauthorized identity claims. Do not silently trust client-supplied `user_id` or remove the anonymous path without deciding the intended product behavior.
+
 ### P1: duplicate surfaces and inconsistent telemetry
 The floating widget and dedicated page implement similar forms separately. The reviewed source emits feedback_submitted from the dedicated page, but not from the widget. The widget caps text at 500 characters while the email API accepts up to 5,000 characters.
 
@@ -72,7 +80,7 @@ This audit did not inspect the complete table-creation history or verify deploye
 - Students cannot read other students' feedback.
 - The admin service-role route is reachable only after the server-side admin check.
 - Service-role credentials remain server-side.
-- Rate limiting protects persistence as well as email delivery where appropriate.
+- [ ] Move feedback persistence behind server-side validation/rate limiting or implement another verified abuse-control boundary; current client-side inserts bypass the email endpoint's rate limit.
 - Rendering/export does not expose data or create injection risks.
 - Retention and deletion behavior for free-text reports is defined.
 
@@ -91,7 +99,7 @@ The connected active project `shadecode-student` was inspected directly. No data
 - The remote migration history contains `20260816175542 add_traction_feedback_experiments_exports`, but no corresponding feedback-named migration file was found in the current repository tree. This is a migration-history/repository drift signal, not proof that the table itself is absent from migration history. Reconcile before adding triage columns or policies.
 - Supabase security advisors also reported unrelated findings for `challenge_answer_keys`, two SECURITY DEFINER RPCs (`apply_lesson_vote`, `publish_lesson_to_library`) and leaked-password protection. These were not changed as part of this feedback task and should be triaged separately.
 
-**Boundary:** This verifies the observed remote schema and policy definitions at the time of inspection. It does not replace a live authenticated/anonymous authorization test, and it does not prove every deployed environment matches this project.
+**Boundary:** This verifies the observed remote schema and policy definitions at the time of inspection. It does not replace a live authenticated/anonymous authorization test, and it does not prove every deployed environment matches this project. The current feedback persistence path also bypasses server-side rate limiting, as noted above.
 
 ## Recommended implementation order
 
