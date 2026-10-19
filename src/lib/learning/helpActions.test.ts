@@ -43,6 +43,7 @@ describe("help-level disclosure boundaries", () => {
     const result = enforceLearningHelpLevel({
       hint: "Isolate x.",
       method: ["Subtract four", "Divide by two"],
+      content: "Subtract four then divide",
       solution: "x = 4",
       finalAnswer: "x = 4",
     }, "method");
