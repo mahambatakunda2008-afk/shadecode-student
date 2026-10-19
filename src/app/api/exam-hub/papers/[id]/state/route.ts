@@ -76,7 +76,14 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const parsed = parsePaperStatePatch(await request.json());
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Request body must contain valid JSON" }, { status: 400 });
+    }
+
+    const parsed = parsePaperStatePatch(payload);
     if (parsed.error) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
