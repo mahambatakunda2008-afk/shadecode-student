@@ -32,6 +32,22 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Cambridge International AS Level Physics 9702", "waves")).not.toBeNull();
   });
 
+  it("passes the deep/broad-topic quality gate used by the real Waves recovery request", () => {
+    const lesson = buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic");
+    expect(lesson).not.toBeNull();
+
+    const request: LessonQualityRequest = {
+      intent: "teach",
+      subject: "Physics (9702) AS Level",
+      topic: "Waves",
+      prompt: "Teach me Waves topic",
+      requestedParts: [],
+      broadTopic: true,
+      depth: "deep",
+    };
+    expect(lessonQualityFailures(lesson!, request).failures).toEqual([]);
+  });
+
   it("keeps the authored AS Physics Waves lesson available for deterministic recovery", () => {
     const lesson = buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic");
     expect(lesson).not.toBeNull();
