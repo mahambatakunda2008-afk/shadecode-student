@@ -27,8 +27,11 @@ export async function generateSocraticResponse(request: TutoringRequest): Promis
   const isWeakArea = weakTopics.some(t => t.toLowerCase().includes(topic.toLowerCase()));
 
   // Analyze the student's response if there's previous context
+  // Quick-help controls are requests about the work, not evidence of the
+  // student's reasoning. Keep them in conversation context, but don't analyze
+  // them as if they were a student attempt.
   const lastStudentMessage = previousContext
-    .filter(m => m.role === "student")
+    .filter(m => m.role === "student" && !m.metadata?.helpAction)
     .pop();
 
   const errorAnalysis = lastStudentMessage ? analyzeStudentResponse(lastStudentMessage.content, topic) : undefined;
