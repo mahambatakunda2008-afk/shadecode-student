@@ -10,6 +10,21 @@
 
 The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by both forms after the reliability fix. The existing production Supabase project was inspected read-only on 2026-10-19; policy definitions are verified, but end-to-end client behavior has not been tested.
 
+## Follow-up implementation in review (2026-10-19)
+
+Branch `fix/feedback-server-persistence-rate-limit` centralizes both feedback surfaces on `POST /api/feedback` rather than allowing browser clients to insert directly into Supabase.
+
+- The server derives the user ID from the authenticated Supabase session; client-supplied IDs are ignored.
+- Message type and trimmed length are validated server-side.
+- A new migration defines an atomic PostgreSQL rate-limit function and private bucket table. The route applies a 5-per-15-minute limit per authenticated user and a 20-per-15-minute HMAC-derived IP bucket, leaving room for students sharing school or campus networks.
+- Raw IP addresses are not stored in the limiter table.
+- The route fails closed if the shared limiter/service-role configuration is unavailable.
+- Persistence failures are returned to the student; email notification is bounded and best-effort after persistence.
+- The legacy public `/api/feedback-email` endpoint is retired with HTTP 410 so it cannot be called independently to send emails.
+- Route tests cover input validation, server-derived identity, rate-limit behavior, persistence failure, notification failure and missing configuration.
+
+**Migration status:** the additive migration was applied to production on 2026-10-19 and the table, function and grants were verified read-only. The tracked migration filename in this branch matches the observed remote ledger version. The existing historical migration drift still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. Do not treat this new migration as resolving that wider drift.
+
 ## Evidence inspected
 
 | Area | Source | Observed behavior |

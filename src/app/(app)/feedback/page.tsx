@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/traction/client";
 import { fetchWithTimeout } from "@/lib/async/fetchWithTimeout";
@@ -12,7 +11,6 @@ export default function Feedback() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const supabase = createClient();
   const router = useRouter();
 
   const handleSubmit = async () => {
@@ -20,15 +18,20 @@ export default function Feedback() {
     if (!cleanMessage || submitting || cleanMessage.length > 500) return;
     setSubmitting(true); setError("");
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: insertError } = await supabase.from("feedback").insert({ user_id: user?.id ?? null, type, message: cleanMessage, created_at: new Date().toISOString() });
-      if (insertError) throw insertError;
-      void fetchWithTimeout("/api/feedback-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, message: cleanMessage }) }, 10000).catch((err) => console.error("[Feedback] Notification failed:", err));
+      const response = await fetchWithTimeout("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, message: cleanMessage }),
+      }, 10000);
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.success !== true) {
+        throw new Error(typeof result?.error === "string" ? result.error : "Could not send feedback. Please try again.");
+      }
       void trackEvent("feedback_submitted", { type, messageLength: cleanMessage.length, source: "page" });
       setSubmitted(true);
     } catch (err) {
       console.error("[Feedback] submit failed:", err);
-      setError("Could not send feedback. Please try again.");
+      setError(err instanceof Error ? err.message : "Could not send feedback. Please try again.");
     } finally { setSubmitting(false); }
   };
 
