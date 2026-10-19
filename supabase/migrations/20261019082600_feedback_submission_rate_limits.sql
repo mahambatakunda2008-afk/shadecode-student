@@ -7,6 +7,9 @@ create table if not exists public.feedback_rate_limits (
   updated_at timestamptz not null default now()
 );
 
+create index if not exists feedback_rate_limits_updated_at_idx
+  on public.feedback_rate_limits (updated_at);
+
 alter table public.feedback_rate_limits enable row level security;
 revoke all on table public.feedback_rate_limits from public, anon, authenticated;
 grant all on table public.feedback_rate_limits to service_role;
