@@ -1,5 +1,6 @@
 export type LearningHelpAction = "clearer_hint" | "more_detail" | "different_method" | "worked_solution" | "why_this_step";
 export type LearningHelpLevel = "hint" | "method" | "solution";
+export type LearningHelpResponseStyle = LearningHelpLevel | "balanced";
 
 export interface LearningHelpActionDefinition {
   id: LearningHelpAction;
@@ -52,4 +53,33 @@ export function buildLearningHelpPrompt(question: string, studentRequest: string
     feedback?.trim() ? `Existing feedback to address: ${feedback.trim()}` : "",
   ].filter(Boolean);
   return parts.join("\n\n");
+}
+
+
+/**
+ * Enforce the requested disclosure level after generation as well as in the
+ * prompt. This prevents a model that fills every JSON field from leaking a
+ * worked answer into a hint or method-only response.
+ */
+export function enforceLearningHelpLevel<T extends object>(
+  payload: T,
+  level: LearningHelpResponseStyle,
+): T {
+  if (level === "balanced") return payload;
+  const result = { ...payload } as Record<string, unknown>;
+  if (level === "hint") {
+    result.method = undefined;
+    result.solution = undefined;
+    result.finalAnswer = undefined;
+    result.content = typeof result.hint === "string" ? result.hint : "";
+  } else if (level === "method") {
+    result.solution = undefined;
+    result.finalAnswer = undefined;
+    result.content = typeof result.method === "string"
+      ? result.method
+      : Array.isArray(result.method)
+        ? result.method.filter((step): step is string => typeof step === "string").join("\\n")
+        : typeof result.hint === "string" ? result.hint : "";
+  }
+  return result as T;
 }
