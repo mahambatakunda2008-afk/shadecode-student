@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { fetchWithTimeout } from "@/lib/async/fetchWithTimeout";
 import { trackEvent } from "@/lib/traction/client";
 
@@ -10,23 +9,26 @@ type FeedbackType = "bug" | "feature" | "general";
 
 export function FeedbackWidget() {
   const [open, setOpen] = useState(false); const [type, setType] = useState<FeedbackType>("general"); const [message, setMessage] = useState(""); const [submitting, setSubmitting] = useState(false); const [submitted, setSubmitted] = useState(false); const [errorMessage, setErrorMessage] = useState("");
-  const supabase = createClient();
   const reset = () => { setType("general"); setMessage(""); setSubmitted(false); setErrorMessage(""); };
   const close = () => { setOpen(false); window.setTimeout(reset, 200); };
   useEffect(() => { if (!open) return; const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); });
   const handleSubmit = async () => {
     const trimmed = message.trim(); if (!trimmed || submitting || trimmed.length > 500) return; setSubmitting(true); setErrorMessage("");
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("feedback").insert({ user_id: user?.id ?? null, type, message: trimmed, created_at: new Date().toISOString() });
-      if (error) throw error;
-      // Persisted feedback is successful even if the optional email notification fails.
-      void fetchWithTimeout("/api/feedback-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, message: trimmed }) }, 10000).catch((err) => console.error("[FeedbackWidget] Notification failed:", err));
+      const response = await fetchWithTimeout("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, message: trimmed }),
+      }, 10000);
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.success !== true) {
+        throw new Error(typeof result?.error === "string" ? result.error : "Could not send feedback. Please try again.");
+      }
       void trackEvent("feedback_submitted", { type, messageLength: trimmed.length, source: "widget" });
       setSubmitted(true);
     } catch (err) {
       console.error("[FeedbackWidget] Feedback error:", err);
-      setErrorMessage("Could not send feedback. Your message has not been confirmed as saved. Please try again.");
+      setErrorMessage(err instanceof Error ? err.message : "Could not send feedback. Your message has not been confirmed as saved. Please try again.");
     } finally { setSubmitting(false); }
   };
   return <>
