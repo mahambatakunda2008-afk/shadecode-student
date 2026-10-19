@@ -1,7 +1,7 @@
 # System-wide student agency and learning evidence contract
 
 **Date:** 2026-10-19  
-**Status:** Implemented on the feature branch; validation pending.
+**Status:** Shared components and core-surface integrations implemented on the feature branch; validation pending.
 
 ## Product rule
 
@@ -24,7 +24,7 @@ This contract applies to the personal academic operating system as a whole. It m
 | Socratic Tutor / Cortex tutoring | Clearer hint, more detail, another method, explanation of why, worked solution plus independent practice | Student contributions versus an unverified independent check | Do not count help-button clicks as attempts; don't force repeated questions after a direct request |
 | Cortex Verify / Math Checker | Reuses the shared controls to request another kind of help for the same problem and existing feedback | This submission's verdict and estimated score | The result applies to submitted work only; preserve local/cloud/offline queue behavior |
 | Exam Sim | After the paper is marked, students can request a clearer hint, more detail, another method, explanation, or worked solution on a missed question | Paper score and weak-area count | A paper score is evidence from one assessment, not global subject mastery; do not expose answer help during the timed paper |
-| Exam Hub / Past Papers | Must adopt the same help contract when question review/explanation surfaces are modified | Source/provenance, answer attempts, marking and review evidence | Do not fabricate official answers or claim generated practice is an official past paper |
+| Exam Hub / Past Papers | Question Bank now uses the shared controls and forwards requested help style to Cortex | Source/provenance, answer attempts, marking and review evidence | Do not fabricate official answers or claim generated practice is an official past paper |
 | Challenges and quizzes | Must emit canonical answer/assessment evidence, not conversation activity | Correctness and transfer where verified | Challenge outcomes are not subject mastery |
 | Cortex, study planning, dashboard and insights | Reuse the same action IDs and evidence vocabulary as those workflows are touched | Canonical learning signals, recency and uncertainty | Do not create a second mastery ledger or infer learning from feature usage |
 | Offline/PWA and mobile | Controls must preserve drafts and queued work, then recover on reconnect | Distinguish local-only, queued and server-saved records | Never show a cloud save or completed result unless confirmed |
