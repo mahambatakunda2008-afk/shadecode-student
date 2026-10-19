@@ -71,6 +71,13 @@ describe("POST /api/feedback", () => {
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
+  it("accepts the 500-character message boundary after trimming", async () => {
+    const message = "x".repeat(500);
+    const response = await post({ type: "general", message: `  ${message}  ` });
+    expect(response.status).toBe(201);
+    expect(insertMock.mock.calls[0][0].message).toBe(message);
+  });
+
   it("persists anonymous feedback with a server-controlled null user id", async () => {
     const response = await post({ type: "feature", message: "  Add better practice questions  ", user_id: "someone-else" });
     expect(response.status).toBe(201);
