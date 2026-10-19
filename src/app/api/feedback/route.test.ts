@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   insertMock,
+  serverInsertMock,
   rpcMock,
   sendMock,
   resendConstructor,
@@ -9,6 +10,7 @@ const {
   adminAvailable,
 } = vi.hoisted(() => ({
   insertMock: vi.fn(),
+  serverInsertMock: vi.fn(),
   rpcMock: vi.fn(),
   sendMock: vi.fn(),
   resendConstructor: vi.fn(),
@@ -19,11 +21,11 @@ const {
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => ({
     auth: { getUser: async () => ({ data: { user: currentUser.value }, error: null }) },
-    from: () => ({ insert: insertMock }),
+    from: () => ({ insert: serverInsertMock }),
   }),
 }));
 vi.mock("@/lib/supabase/admin", () => ({
-  createSupabaseAdminClient: () => adminAvailable.value ? { rpc: rpcMock } : null,
+  createSupabaseAdminClient: () => adminAvailable.value ? { rpc: rpcMock, from: () => ({ insert: insertMock }) } : null,
 }));
 vi.mock("resend", () => ({ Resend: resendConstructor }));
 
@@ -38,6 +40,7 @@ const post = (body: unknown, headers: Record<string, string> = { "x-real-ip": "2
 
 beforeEach(() => {
   insertMock.mockReset().mockResolvedValue({ error: null });
+  serverInsertMock.mockReset().mockResolvedValue({ error: null });
   rpcMock.mockReset().mockResolvedValue({ data: true, error: null });
   sendMock.mockReset().mockResolvedValue({ data: { id: "email-1" }, error: null });
   resendConstructor.mockReset().mockImplementation(function (this: { emails: { send: typeof sendMock } }) {
@@ -88,6 +91,7 @@ describe("POST /api/feedback", () => {
       message: "Add better practice questions",
     }));
     expect(insertMock.mock.calls[0][0]).not.toHaveProperty("userId");
+    expect(serverInsertMock).not.toHaveBeenCalled();
     expect(rpcMock).toHaveBeenCalledTimes(1);
     expect(rpcMock.mock.calls[0][0]).toBe("consume_feedback_rate_limit");
     expect(sendMock).toHaveBeenCalledTimes(1);
@@ -98,6 +102,7 @@ describe("POST /api/feedback", () => {
     const response = await post({ type: "bug", message: "The lesson did not load", user_id: "forged-user-id" });
     expect(response.status).toBe(201);
     expect(insertMock.mock.calls[0][0]).toMatchObject({ user_id: "trusted-user-id" });
+    expect(serverInsertMock).not.toHaveBeenCalled();
     expect(rpcMock).toHaveBeenCalledTimes(2);
     expect(rpcMock.mock.calls[0][1]).toMatchObject({ p_bucket_key: "user:trusted-user-id", p_window_seconds: 900, p_max_requests: 5 });
     expect(rpcMock.mock.calls[1][1].p_max_requests).toBe(20);

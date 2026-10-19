@@ -131,7 +131,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Feedback is temporarily unavailable. Please try again later." }, { status: 503 });
     }
 
-    const { error: insertError } = await supabase.from("feedback").insert({
+    const { error: insertError } = await admin.from("feedback").insert({
       user_id: user?.id ?? null,
       type,
       message,
