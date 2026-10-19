@@ -19,7 +19,7 @@ export const LEARNING_HELP_ACTIONS: readonly LearningHelpActionDefinition[] = [
     id: "more_detail",
     label: "Show more detail",
     prompt: "Explain the current problem in more detail. Show the key reasoning steps and define any important terms. Do not pad the explanation.",
-    level: "solution",
+    level: "method",
   },
   {
     id: "different_method",
