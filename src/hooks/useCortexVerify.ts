@@ -5,7 +5,7 @@ import { enqueue, getAll, remove, CortexAttempt } from "../lib/offline/cortex-qu
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { createClient } from "@/lib/supabase/client";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
-import { enforceLearningHelpLevel } from "@/lib/learning/helpActions";
+import { enforceLearningHelpLevel, type LearningHelpResponseStyle } from "@/lib/learning/helpActions";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -139,7 +139,7 @@ Be accurate and explicit about uncertainty.`;
     }
 
     if (attempt.mode === "help") {
-      const level = attempt.level || "hint";
+      const level: LearningHelpResponseStyle = attempt.level === "method" || attempt.level === "solution" ? attempt.level : "hint";
       if (level === "hint" && (typeof data.hint !== "string" || data.hint.trim().length < 10)) {
         throw new Error("Cortex could not produce a clear hint without revealing the answer. Choose another help level and retry.");
       }
