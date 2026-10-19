@@ -5,6 +5,7 @@ import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDow
 import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "@/lib/socratic/types";
 import { generateSocraticResponse, TutoringRequest } from "@/lib/socratic/tutoringEngine";
 import LearningHelpActions from "@/components/learning/LearningHelpActions";
+import LearningEvidenceTrace from "@/components/learning/LearningEvidenceTrace";
 
 interface SocraticTutorProps {
   userId: string;
@@ -205,16 +206,15 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         <p style={{ fontSize: "12px", lineHeight: 1.45, color: "var(--muted-foreground)", margin: "0 0 10px" }}>
           {studentAttempts === 0 ? "Start with what you know or where you are stuck. You do not need to get it right first time." : studentAttempts === 1 ? "Your first contribution is recorded. Use the feedback to refine your reasoning." : "Keep working through the topic. We will only mark understanding as checked after you try a question independently."}
         </p>
-        <div aria-label="Learning progress trace" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
-            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Your contributions</div>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{studentAttempts} recorded</div>
-          </div>
-          <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
-            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Independent check</div>
-            <div style={{ fontSize: 12, fontWeight: 600 }}>Not yet verified</div>
-          </div>
-        </div>
+        <LearningEvidenceTrace
+          compact
+          title="Learning progress trace"
+          items={[
+            { label: "Your contributions", value: `${studentAttempts} recorded` },
+            { label: "Independent check", value: "Not yet verified" },
+          ]}
+          note="Contributions show activity, not mastery. Understanding needs an independent check."
+        />
       </div>
 
       {/* Messages */}
