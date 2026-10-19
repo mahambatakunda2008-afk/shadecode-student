@@ -178,7 +178,6 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
 
   const lastTutorResponse = session?.conversation.filter(m => m.role === "tutor").pop();
   const studentAttempts = session?.conversation.filter(m => m.role === "student" && !m.metadata?.helpAction).length ?? 0;
-  const sessionStep = studentAttempts === 0 ? 1 : Math.min(4, studentAttempts + 1);
   const hasHints = lastTutorResponse?.type === "question" || lastTutorResponse?.type === "guidance";
 
   return (
@@ -199,22 +198,16 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         )}
       </div>
 
-      {/* Visible study-session structure */}
+      {/* Honest study progress: count attempts, not inferred mastery */}
       <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--card-border)", background: "var(--background)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-          <span style={{ fontSize: "12px", fontWeight: 700 }}>Your study session</span>
-          <span style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>Step {sessionStep} of 4</span>
-        </div>
-        <div aria-label={`Study session step ${sessionStep} of 4`} role="progressbar" aria-valuemin={1} aria-valuemax={4} aria-valuenow={sessionStep} style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 5, marginBottom: 8 }}>
-          {[1, 2, 3, 4].map(step => <div key={step} style={{ height: 4, borderRadius: 99, background: step <= sessionStep ? "var(--primary)" : "var(--card-border)" }} />)}
-        </div>
-        <p style={{ fontSize: "12px", lineHeight: 1.45, color: "var(--muted-foreground)", margin: 0 }}>
-          {studentAttempts === 0 ? "Start with your current thinking. You do not need to get it right first time." : studentAttempts === 1 ? "First attempt captured. Use the feedback to refine your reasoning." : "Keep testing your understanding. The next step is to check what you can do independently."}
+        <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: 8 }}>Your study session</div>
+        <p style={{ fontSize: "12px", lineHeight: 1.45, color: "var(--muted-foreground)", margin: "0 0 10px" }}>
+          {studentAttempts === 0 ? "Start with your current thinking. You do not need to get it right first time." : studentAttempts === 1 ? "Your first attempt is recorded. Use the feedback to refine your reasoning." : "Keep practising. We will only mark understanding as checked after you try a question independently."}
         </p>
-        <div aria-label="Learning progress trace" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+        <div aria-label="Learning progress trace" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
-            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Attempts recorded</div>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{studentAttempts}</div>
+            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Practice attempts</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{studentAttempts} recorded</div>
           </div>
           <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
             <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Independent check</div>
