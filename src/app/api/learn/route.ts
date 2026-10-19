@@ -886,8 +886,26 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
-    await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
-    await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+    // The lesson is durably saved. Learner memory and XP are secondary effects:
+    // if either service is unavailable, do not report the saved lesson as a generation failure.
+    const postSaveEffects = await Promise.allSettled([
+      rememberLearnerSignal(supabase, user.id, {
+        subject: effectiveSubject,
+        topic: request.topic,
+        topic_key: learnerTopicKey,
+        event_type: "lesson_completed",
+        outcome: "saved",
+        difficulty: validDifficulty,
+      }),
+      awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
+    ]);
+    for (const result of postSaveEffects) {
+      if (result.status === "rejected") {
+        console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
+          error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        });
+      }
+    }
     return NextResponse.json({
       id: savedId,
       title: parsed.title,
