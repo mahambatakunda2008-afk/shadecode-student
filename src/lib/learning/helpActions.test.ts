@@ -55,7 +55,7 @@ describe("help-level disclosure boundaries", () => {
   });
 
   it("preserves full solutions when the student requests them", () => {
-    const payload = { hint: "Start here", solution: "x = 4", finalAnswer: "x = 4" };
-    expect(enforceLearningHelpLevel(payload, "solution")).toEqual(payload);
+    const payload = { hint: "Start here", solution: "x = 4", finalAnswer: "x = 4", content: "Short generic summary" };
+    expect(enforceLearningHelpLevel(payload, "solution")).toEqual({ ...payload, content: "x = 4" });
   });
 });
