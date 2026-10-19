@@ -23,7 +23,7 @@ Branch `fix/feedback-server-persistence-rate-limit` centralizes both feedback su
 - The legacy public `/api/feedback-email` endpoint is retired with HTTP 410 so it cannot be called independently to send emails.
 - Route tests cover input validation, server-derived identity, rate-limit behavior, persistence failure, notification failure and missing configuration.
 
-**Deployment gate:** the migration is prepared in the branch but has not been applied to production. Do not merge/deploy the endpoint until the migration has been reviewed, applied in a controlled way, and verified to exist in the target database. The existing remote migration history still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. This migration does not repair that historical drift.
+**Migration status:** the additive migration was applied to production on 2026-10-19 and the table, function and grants were verified read-only. The tracked migration filename in this branch matches the observed remote ledger version. The existing historical migration drift still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. Do not treat this new migration as resolving that wider drift.
 
 ## Evidence inspected
 
