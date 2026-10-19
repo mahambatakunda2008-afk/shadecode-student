@@ -46,6 +46,14 @@ describe("buildDeterministicLessonFallback", () => {
     expect(lessonQualityFailures(lesson!, request).failures).toEqual([]);
   });
 
+  it("normalizes command suffixes without altering ordinary curriculum topic labels", () => {
+    const base = { prompt: "", subject: "Physics (9702) AS Level" };
+    expect(resolveLessonRequest({ ...base, prompt: "Teach me Waves topic", topic: "Teach me Waves topic" }).topic).toBe("Waves");
+    expect(resolveLessonRequest({ ...base, prompt: "Teach me Waves chapter", topic: "Teach me Waves chapter" }).topic).toBe("Waves");
+    expect(resolveLessonRequest({ ...base, prompt: "Explain stationary waves", topic: "Stationary Waves" }).topic).toBe("Stationary Waves");
+    expect(resolveLessonRequest({ ...base, prompt: "Teach me waves in a string", topic: "Waves in a string" }).topic).toBe("Waves in a string");
+  });
+
   it("keeps the authored AS Physics Waves lesson available for deterministic recovery", () => {
     const lesson = buildDeterministicLessonFallback("Physics (9702) AS Level", "Teach me Waves topic");
     expect(lesson).not.toBeNull();
