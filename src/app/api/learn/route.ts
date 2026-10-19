@@ -836,7 +836,22 @@ Return only valid JSON.`;
     }
 
     if (!parsed?.blocks.length || (!usedDeterministicFallback && failures.length > 0)) {
-      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: failures.slice(0, 3).join(", "), difficulty: validDifficulty });
+      // Failure telemetry must never replace the useful retryable response. A
+      // learner-memory outage is secondary to the generation failure itself.
+      try {
+        await rememberLearnerSignal(supabase, user.id, {
+          subject: effectiveSubject,
+          topic: request.topic,
+          topic_key: learnerTopicKey,
+          event_type: "generation_failed",
+          outcome: failures.slice(0, 3).join(", "),
+          difficulty: validDifficulty,
+        });
+      } catch (memoryError) {
+        console.warn("[LEARN] failed to record generation failure signal", {
+          error: memoryError instanceof Error ? memoryError.message : String(memoryError),
+        });
+      }
       log.lessonGenerationFailed({
         userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
         error: `Lesson pipeline exhausted: ${failures.join(" | ")}`,
