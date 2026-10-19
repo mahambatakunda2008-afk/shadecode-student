@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/traction/client";
+import { fetchWithTimeout } from "@/lib/async/fetchWithTimeout";
 
 export default function Feedback() {
   const [type, setType] = useState<"bug" | "feature" | "general">("general");
@@ -22,8 +23,8 @@ export default function Feedback() {
       const { data: { user } } = await supabase.auth.getUser();
       const { error: insertError } = await supabase.from("feedback").insert({ user_id: user?.id ?? null, type, message: cleanMessage, created_at: new Date().toISOString() });
       if (insertError) throw insertError;
-      await fetch("/api/feedback-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, message: cleanMessage }) }).catch(() => undefined);
-      void trackEvent("feedback_submitted", { type, messageLength: cleanMessage.length });
+      void fetchWithTimeout("/api/feedback-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, message: cleanMessage }) }, 10000).catch((err) => console.error("[Feedback] Notification failed:", err));
+      void trackEvent("feedback_submitted", { type, messageLength: cleanMessage.length, source: "page" });
       setSubmitted(true);
     } catch (err) {
       console.error("[Feedback] submit failed:", err);
