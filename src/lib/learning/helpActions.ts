@@ -78,7 +78,7 @@ export function enforceLearningHelpLevel<T extends object>(
     result.content = typeof result.method === "string"
       ? result.method
       : Array.isArray(result.method)
-        ? result.method.filter((step): step is string => typeof step === "string").join("\\n")
+        ? result.method.filter((step): step is string => typeof step === "string").join("\n")
         : typeof result.hint === "string" ? result.hint : "";
   }
   return result as T;
