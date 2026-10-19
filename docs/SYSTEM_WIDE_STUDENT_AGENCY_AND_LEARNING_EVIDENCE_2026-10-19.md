@@ -1,7 +1,7 @@
 # System-wide student agency and learning evidence contract
 
 **Date:** 2026-10-19  
-**Status:** Shared components and core-surface integrations implemented on the feature branch; validation pending.
+**Status:** Shared components and core-surface integrations implemented on the feature branch; CI and workflow validation pending.
 
 ## Product rule
 
@@ -24,10 +24,14 @@ This contract applies to the personal academic operating system as a whole. It m
 | Paper-to-Learning self-check practice | Existing hint/reveal controls plus repeatable exact-mark practice | This attempt and the modelled topic estimate, if returned | One checked item is not proof of mastery; retain repeated-practice and transfer checks |
 | Socratic Tutor / Cortex tutoring | Clearer hint, more detail, another method, explanation of why, worked solution plus independent practice | Student contributions versus an unverified independent check | Do not count help-button clicks as attempts; don't force repeated questions after a direct request |
 | Cortex Verify / Math Checker | Reuses the shared controls to request another kind of help for the same problem and existing feedback | This submission's verdict and estimated score | The result applies to submitted work only; preserve local/cloud/offline queue behavior |
+| Lesson quizzes | Same five help actions are available beside each reviewed question; the selected answer and explanation are sent as context | Quiz score, missed items, and independent transfer explicitly marked as not yet checked | Do not treat a single quiz as a grade prediction or mastery proof |
 | Exam Sim | After the paper is marked, students can request a clearer hint, more detail, another method, explanation, or worked solution on a missed question | Paper score and weak-area count | A paper score is evidence from one assessment, not global subject mastery; do not expose answer help during the timed paper |
 | Exam Hub / Past Papers | Question Bank now uses the shared controls and forwards requested help style to Cortex | Source/provenance, answer attempts, marking and review evidence | Do not fabricate official answers or claim generated practice is an official past paper |
 | Challenges and quizzes | Must emit canonical answer/assessment evidence, not conversation activity | Correctness and transfer where verified | Challenge outcomes are not subject mastery |
-| Cortex, study planning, dashboard and insights | Reuse the same action IDs and evidence vocabulary as those workflows are touched | Canonical learning signals, recency and uncertainty | Do not create a second mastery ledger or infer learning from feature usage |
+| Dashboard and Cortex insights | Existing completion/performance signals are described as current evidence, not a diagnosis of ability | Progress and recent performance are separate; weak-area signals are provisional | Do not infer learning from feature usage or imply a causal grade prediction |
+| Study planning | Keep session completion and time-based progress separate from projected outcomes | Any projected grade is labelled as a rough planning heuristic, not a prediction or guarantee | Do not promise grades based on a generated timetable |
+| Challenge sharing | Score card states that the score is one challenge attempt | One challenge score is not overall subject mastery | Keep competition motivating without turning one result into a permanent ability label |
+| Cortex and future insights | Reuse the same action IDs and evidence vocabulary as those workflows are touched | Canonical learning signals, recency and uncertainty | Do not create a second mastery ledger or infer learning from feature usage |
 | Offline/PWA and mobile | Controls must preserve drafts and queued work, then recover on reconnect | Distinguish local-only, queued and server-saved records | Never show a cloud save or completed result unless confirmed |
 
 ## Evidence vocabulary
