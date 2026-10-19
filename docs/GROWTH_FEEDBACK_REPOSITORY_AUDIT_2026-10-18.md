@@ -21,6 +21,7 @@ Merged in [PR #390](https://github.com/mahambatakunda2008-afk/shadecode-student/
 - The route fails closed if the shared limiter/service-role configuration is unavailable.
 - Persistence failures are returned to the student; email notification is bounded and best-effort after persistence.
 - The legacy public `/api/feedback-email` endpoint is retired with HTTP 410 so it cannot be called independently to send emails.
+- A subsequent live grants audit found `anon` and `authenticated` had broad direct privileges on `public.feedback`, including `TRUNCATE`. PR #392 moved persistence to the service-role client after server-side identity validation and removed those grants. The production migration `20261019064858_harden_feedback_table_grants` is applied; read-only verification shows only `postgres` and `service_role` have table privileges. Existing feedback rows were preserved (8 rows observed).
 - Route tests cover input validation, server-derived identity, rate-limit behavior, persistence failure, notification failure and missing configuration.
 
 **Migration status:** the additive migration was applied to production on 2026-10-19 and the table, function and grants were verified read-only. The tracked migration filename on `main` matches the observed remote ledger version. The Vercel production deployment for commit `28c6f36415a6cad23366211bedaeec98ad5f29de` reached READY. The existing historical migration drift still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. Do not treat this new migration as resolving that wider drift.
