@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDown, ChevronUp, RefreshCw, Zap, Globe, Eye, GraduationCap } from "lucide-react";
 import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "@/lib/socratic/types";
 import { generateSocraticResponse, TutoringRequest } from "@/lib/socratic/tutoringEngine";
+import LearningHelpActions from "@/components/learning/LearningHelpActions";
 
 interface SocraticTutorProps {
   userId: string;
@@ -276,21 +277,12 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         </div>
       )}
 
-      {/* Structured help controls: student control without forcing a single tutoring style */}
       {session && session.conversation.length > 0 && !loading && (
-        <div aria-label="Choose how the tutor should help" style={{ padding: "10px 16px", borderTop: "1px solid var(--card-border)", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <span style={{ width: "100%", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", marginBottom: 2 }}>Need a different kind of help?</span>
-          {[
-            { label: "Hint is too vague", prompt: "That hint is too vague. Give me a more specific next step based on the question and what I have tried." },
-            { label: "Show more detail", prompt: "Show me a more detailed explanation of the current problem, including the key reasoning steps. Do not skip important steps." },
-            { label: "Try another method", prompt: "Show me a different valid method for approaching the current problem, and explain when it is useful." },
-            { label: "Why this question?", prompt: "Explain briefly why you are asking me this question and how it helps me solve the problem." },
-            { label: "Show worked solution", prompt: "I am stuck. Show a worked solution with the reasoning for each step, then give me a similar question to try independently." },
-          ].map(action => (
-            <button key={action.label} type="button" onClick={() => handleSendMessage(action.prompt)} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--card-border)", background: "var(--card)", color: "var(--foreground)", fontSize: 11, fontWeight: 600, cursor: "pointer", minHeight: 34 }}>
-              {action.label}
-            </button>
-          ))}
+        <div className="border-t border-[var(--card-border)] px-4 py-3">
+          <LearningHelpActions
+            compact
+            onAction={(_action, prompt) => { void handleSendMessage(prompt); }}
+          />
         </div>
       )}
 
