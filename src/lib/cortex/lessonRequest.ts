@@ -92,7 +92,13 @@ export function resolveLessonRequest(input: LessonRequest) {
   const subject = explicitSubject || inferSubject(prompt);
   const goal = clean(input.goal, 400);
   const explicitTopic = clean(input.topic, 700);
-  const topic = explicitTopic || extractTopic(prompt, subject);
+  // The Learn UI sends its topic field as both prompt and topic. If a learner
+  // types a command ("Teach me Waves topic"), do not let the command words
+  // become part of the canonical topic used for curriculum matching and quality
+  // checks. Keep ordinary topic labels untouched.
+  const topic = explicitTopic
+    ? (COMMAND_PATTERNS.test(explicitTopic) ? extractTopic(explicitTopic, subject).replace(/\\s+\\b(?:topic|chapter|unit|lesson|notes)\\b\\s*$/i, "").trim() || explicitTopic : explicitTopic)
+    : extractTopic(prompt, subject);
   const intent = classifyIntent(prompt, goal);
   const shape = inferRequestShape(prompt, goal, intent);
   const commandLike = COMMAND_PATTERNS.test(prompt);
