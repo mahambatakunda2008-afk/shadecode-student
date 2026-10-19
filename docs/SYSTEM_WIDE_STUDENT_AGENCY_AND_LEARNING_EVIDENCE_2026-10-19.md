@@ -20,7 +20,7 @@ This contract applies to the personal academic operating system as a whole. It m
 
 | Surface | Student agency | Evidence shown | Guardrail |
 |---|---|---|---|
-| Learn lesson page | Opens the existing guided tutor; tutor offers the shared help actions | Saved lesson progress and explicit completion state | Reading progress is not mastery |
+| Learn lesson page | Opens the existing guided tutor; tutor offers the shared help actions | Saved lesson progress and explicit completion state | Reading progress is not mastery |\n| Paper-to-Learning self-check practice | Existing hint/reveal controls plus repeatable exact-mark practice | This attempt and the modelled topic estimate, if returned | One checked item is not proof of mastery; retain repeated-practice and transfer checks |
 | Socratic Tutor / Cortex tutoring | Clearer hint, more detail, another method, explanation of why, worked solution plus independent practice | Student contributions versus an unverified independent check | Do not count help-button clicks as attempts; don't force repeated questions after a direct request |
 | Cortex Verify / Math Checker | Reuses the shared controls to request another kind of help for the same problem and existing feedback | This submission's verdict and estimated score | The result applies to submitted work only; preserve local/cloud/offline queue behavior |
 | Exam Sim | After the paper is marked, students can request a clearer hint, more detail, another method, explanation, or worked solution on a missed question | Paper score and weak-area count | A paper score is evidence from one assessment, not global subject mastery; do not expose answer help during the timed paper |
