@@ -101,10 +101,11 @@ This order may change if production telemetry or a reproducible blocker shows a 
 
 ## Current status as of 2026-10-19
 
-- PR #388 improves the guided-tutor interaction and adds regression coverage for separating actual student attempts from help-control messages.
-- The latest PR #388 commit passed CI typecheck, lint, tests and production build; its Vercel preview reached READY.
-- Authenticated end-to-end and real-device accessibility checks remain unverified. Keep the tutor PR open until these are completed.
-- This document deliberately expands the scope beyond the tutor. The next engineering passes should focus on Cortex generation reliability, lessons, Exam Sim, authentication/data integrity, offline persistence, and dashboard correctness.
+- PR #388 now covers shared student-agency and learning-evidence contracts across Learn, Socratic Tutor, Cortex Verify/Math Checker, Exam Sim post-marking review, and Exam Hub Question Bank/Past Papers.
+- Shared help actions and evidence-trace components are in place on the feature branch. A syntax error in an intermediate Question Bank commit was identified from the preview build and corrected; the latest exact-head CI and preview must be checked before calling this validated.
+- The earlier tutor-only baseline passed CI, but it does not validate the expanded shared-component integrations.
+- Authenticated end-to-end and real-device accessibility checks remain unverified. Keep PR #388 open until these are completed.
+- The next engineering passes still need to focus on Cortex generation reliability, end-to-end lesson persistence, Exam Sim submission/review, authentication/data integrity, offline persistence, and dashboard correctness.
 - Open issue #391 tracks production Supabase migration-history drift. Treat its counts as audit signals, not proof of missing migrations. No blind replay or ledger edits.
 - Production deployment has not been changed by this plan.
 
