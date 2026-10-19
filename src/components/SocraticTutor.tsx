@@ -202,11 +202,11 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
       <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--card-border)", background: "var(--background)" }}>
         <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: 8 }}>Your study session</div>
         <p style={{ fontSize: "12px", lineHeight: 1.45, color: "var(--muted-foreground)", margin: "0 0 10px" }}>
-          {studentAttempts === 0 ? "Start with your current thinking. You do not need to get it right first time." : studentAttempts === 1 ? "Your first attempt is recorded. Use the feedback to refine your reasoning." : "Keep practising. We will only mark understanding as checked after you try a question independently."}
+          {studentAttempts === 0 ? "Start with what you know or where you are stuck. You do not need to get it right first time." : studentAttempts === 1 ? "Your first contribution is recorded. Use the feedback to refine your reasoning." : "Keep working through the topic. We will only mark understanding as checked after you try a question independently."}
         </p>
         <div aria-label="Learning progress trace" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
-            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Practice attempts</div>
+            <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>Your contributions</div>
             <div style={{ fontSize: 13, fontWeight: 700 }}>{studentAttempts} recorded</div>
           </div>
           <div style={{ padding: "8px 10px", border: "1px solid var(--card-border)", borderRadius: 8 }}>
