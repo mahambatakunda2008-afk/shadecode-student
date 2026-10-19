@@ -6,6 +6,9 @@ describe("shared learning help contract", () => {
     expect(LEARNING_HELP_ACTIONS.map((action) => action.id)).toEqual([
       "clearer_hint", "more_detail", "different_method", "worked_solution", "why_this_step",
     ]);
+    expect(getLearningHelpAction("clearer_hint").level).toBe("hint");
+    expect(getLearningHelpAction("more_detail").level).toBe("method");
+    expect(getLearningHelpAction("different_method").level).toBe("method");
     expect(getLearningHelpAction("worked_solution").level).toBe("solution");
   });
 
