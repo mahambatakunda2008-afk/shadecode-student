@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceLearningHelpLevel, type LearningHelpResponseStyle } from "@/lib/learning/helpActions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
@@ -277,7 +278,10 @@ Respond as a concise, adaptive tutor, not a generic chatbot. Never invent syllab
       if (!validQuestionHelp(payload, helpLevel)) {
         return NextResponse.json({ error: "Cortex question help did not pass its teaching-quality gate. Please retry." }, { status: 502 });
       }
-      return NextResponse.json({ ...(payload as Record<string, unknown>), _source: { provider: response.provider, model: response.model } });
+      const responseStyle: LearningHelpResponseStyle =
+        helpLevel === "hint" || helpLevel === "method" || helpLevel === "solution" ? helpLevel : "balanced";
+      const safePayload = enforceLearningHelpLevel(payload as Record<string, unknown>, responseStyle);
+      return NextResponse.json({ ...safePayload, _source: { provider: response.provider, model: response.model } });
     }
 
     const paperId = safeString(body?.paperId, 100);
