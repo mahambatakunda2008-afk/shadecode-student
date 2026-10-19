@@ -97,7 +97,7 @@ export function resolveLessonRequest(input: LessonRequest) {
   // become part of the canonical topic used for curriculum matching and quality
   // checks. Keep ordinary topic labels untouched.
   const topic = explicitTopic
-    ? (COMMAND_PATTERNS.test(explicitTopic) ? extractTopic(explicitTopic, subject).replace(/\\s+\\b(?:topic|chapter|unit|lesson|notes)\\b\\s*$/i, "").trim() || explicitTopic : explicitTopic)
+    ? (COMMAND_PATTERNS.test(explicitTopic) ? extractTopic(explicitTopic, subject).replace(/\s+\b(?:topic|chapter|unit|lesson|notes)\b\s*$/i, "").trim() || explicitTopic : explicitTopic)
     : extractTopic(prompt, subject);
   const intent = classifyIntent(prompt, goal);
   const shape = inferRequestShape(prompt, goal, intent);
