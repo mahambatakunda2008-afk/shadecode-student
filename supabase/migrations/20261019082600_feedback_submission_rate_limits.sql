@@ -23,7 +23,6 @@ set search_path = pg_catalog, public
 as $$
 declare
   v_count integer;
-  v_window_started_at timestamptz;
 begin
   if p_bucket_key is null or length(p_bucket_key) < 1 or length(p_bucket_key) > 200 then
     raise exception 'Invalid feedback rate-limit bucket';
@@ -45,7 +44,7 @@ begin
       else public.feedback_rate_limits.window_started_at
     end,
     updated_at = now()
-  returning request_count, window_started_at into v_count, v_window_started_at;
+  returning request_count into v_count;
 
   -- Old buckets are safe to prune; this table contains no raw IP addresses.
   delete from public.feedback_rate_limits
