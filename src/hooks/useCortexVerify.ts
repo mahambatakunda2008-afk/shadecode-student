@@ -5,6 +5,7 @@ import { enqueue, getAll, remove, CortexAttempt } from "../lib/offline/cortex-qu
 import { emitCortexEvent } from "@/lib/cortex/events/emit";
 import { createClient } from "@/lib/supabase/client";
 import { runHybridJson } from "@/lib/cortex/hybridJson";
+import { enforceLearningHelpLevel } from "@/lib/learning/helpActions";
 
 export type VerifyMode = "check" | "help";
 export type HelpLevel = "hint" | "method" | "solution";
@@ -137,16 +138,18 @@ Be accurate and explicit about uncertainty.`;
       data = await requestCloud();
     }
 
-    if (attempt.mode === "help" && (attempt.level || "hint") === "hint") {
-      if (typeof data.hint !== "string" || data.hint.trim().length < 10) {
+    if (attempt.mode === "help") {
+      const level = attempt.level || "hint";
+      if (level === "hint" && (typeof data.hint !== "string" || data.hint.trim().length < 10)) {
         throw new Error("Cortex could not produce a clear hint without revealing the answer. Choose another help level and retry.");
       }
-      data = { ...data, method: undefined, solution: undefined, finalAnswer: undefined, content: data.hint };
-    } else if (attempt.mode === "help" && attempt.level === "method") {
-      if (typeof data.method !== "string" || data.method.trim().length < 10) {
+      if (level === "method" && (typeof data.method !== "string" || data.method.trim().length < 10)) {
         throw new Error("Cortex could not produce a clear method without revealing the answer. Choose another help level and retry.");
       }
-      data = { ...data, solution: undefined, finalAnswer: undefined, content: data.method };
+      if (level === "solution" && (typeof data.solution !== "string" || data.solution.trim().length < 20)) {
+        throw new Error("Cortex could not produce a complete worked solution. Choose another help level and retry.");
+      }
+      data = enforceLearningHelpLevel(data, level);
     }
     recordVerifyEvent(attempt, data as VerifyResult);
     await remove(attempt.userId, attempt.id);
