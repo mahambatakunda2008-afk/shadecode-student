@@ -21,6 +21,8 @@ After the inventory above was captured, the additive feedback rate-limit migrati
 
 The PR branch now contains `supabase/migrations/20261019063529_feedback_submission_rate_limits.sql`, matching the observed remote version/name. The baseline counts above intentionally describe the pre-follow-up snapshot. PR #390 has since merged; `main` now contains `supabase/migrations/20261019063529_feedback_submission_rate_limits.sql`, matching the applied remote version.
 
+A second security-hardening migration was applied after PR #392's production deployment reached READY. The remote ledger records `20261019064858` / `harden_feedback_table_grants`. Read-only verification confirmed `anon` and `authenticated` have no direct table privileges on `public.feedback`; only `postgres` and `service_role` appear in the table-grant inventory. The 8 existing feedback rows remained intact. The matching tracked filename is `supabase/migrations/20261019064858_harden_feedback_table_grants.sql` on this follow-up branch.
+
 ## Remote ledger entries without an exact filename-stem match
 
 | Remote version | Remote migration name |
