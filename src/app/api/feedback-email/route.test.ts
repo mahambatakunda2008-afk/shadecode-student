@@ -23,7 +23,7 @@ const post = (body: unknown) =>
 
 beforeEach(() => {
   resendSend.mockReset().mockResolvedValue({ data: { id: "email-1" }, error: null });
-  resendConstructor.mockReset().mockImplementation(() => ({ emails: { send: resendSend } }));
+  resendConstructor.mockReset().mockImplementation(function (this: { emails: { send: typeof resendSend } }) { this.emails = { send: resendSend }; });
   applyRateLimitMock.mockReset().mockResolvedValue(null);
   process.env.RESEND_API_KEY = "test-key";
   process.env.FEEDBACK_EMAIL = "feedback@example.com";
