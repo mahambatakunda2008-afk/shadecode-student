@@ -19,7 +19,7 @@ After the inventory above was captured, the additive feedback rate-limit migrati
 - The limiter table has no table privileges for `anon` or `authenticated`; `service_role` has the privileges needed by the RPC.
 - The function's EXECUTE privilege is granted to `service_role` and not to `anon` or `authenticated`.
 
-The PR branch now contains `supabase/migrations/20261019063529_feedback_submission_rate_limits.sql`, matching the observed remote version/name. The baseline counts above intentionally describe the pre-follow-up snapshot; the main branch does not yet include the PR file.
+The PR branch now contains `supabase/migrations/20261019063529_feedback_submission_rate_limits.sql`, matching the observed remote version/name. The baseline counts above intentionally describe the pre-follow-up snapshot. PR #390 has since merged; `main` now contains `supabase/migrations/20261019063529_feedback_submission_rate_limits.sql`, matching the applied remote version.
 
 ## Remote ledger entries without an exact filename-stem match
 
