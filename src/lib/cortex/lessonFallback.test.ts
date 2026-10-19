@@ -51,7 +51,7 @@ describe("buildDeterministicLessonFallback", () => {
     expect(resolveLessonRequest({ ...base, prompt: "Teach me Waves topic", topic: "Teach me Waves topic" }).topic).toBe("Waves");
     expect(resolveLessonRequest({ ...base, prompt: "Teach me Waves chapter", topic: "Teach me Waves chapter" }).topic).toBe("Waves");
     expect(resolveLessonRequest({ ...base, prompt: "Explain stationary waves", topic: "Stationary Waves" }).topic).toBe("Stationary Waves");
-    expect(resolveLessonRequest({ ...base, prompt: "Teach me waves in a string", topic: "Waves in a string" }).topic).toBe("Waves in a string");
+    expect(resolveLessonRequest({ ...base, prompt: "Teach me waves in a string", topic: "Teach me waves in a string" }).topic).toBe("waves in a string");
   });
 
   it("keeps the authored AS Physics Waves lesson available for deterministic recovery", () => {
