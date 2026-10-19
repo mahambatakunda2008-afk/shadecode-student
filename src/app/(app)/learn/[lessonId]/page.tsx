@@ -17,6 +17,7 @@ import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
 import { useLessonNarration } from "@/hooks/useLessonNarration";
+import { trackEvent } from "@/lib/traction/client";
 
 type LessonBlock = { type: string; title?: string; content: string };
 type Lesson = {
@@ -264,8 +265,11 @@ export default function LessonDetailPage() {
   }, [lesson, lessonId]);
 
   function setLearningCheck(value: "explain" | "apply" | "review") {
+    const changed = understanding !== value;
     setUnderstanding(value);
     try { localStorage.setItem(`lesson_understanding_${lessonId}`, value); } catch {}
+    // This is a self-reported check-in, not verified mastery. Never send lesson text.
+    if (changed) void trackEvent("lesson_understanding_self_reported", { lessonId, response: value });
     if (value === "review") setShowTutor(true);
   }
 
