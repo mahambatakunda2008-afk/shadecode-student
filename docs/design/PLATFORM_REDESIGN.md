@@ -155,6 +155,8 @@ Verified by script and unit test; rendered visual QA is still required.
 - [x] Touch: `.ssc-button` and `.ssc-icon-button` reach 44px on coarse pointers; hover lift disabled on touch so it no longer sticks after a tap.
 - [x] Legibility floor: `text-[9px]` and `text-[10px]` render at 11px. Inline `fontSize` values under 11 are not covered and still need review.
 - [x] Typed `--` in user-facing strings replaced with em dashes (offline banner, dashboard greeting, stale-data banner, retention messages).
+- [x] Feature icon set rendered and reviewed visually (light and dark, large and at 20px). Stroke weight matched to lucide (2, active 2.35; was 2.65/2.9, which turned interior detail into blobs). `settings` gear was broken and is replaced; `courses` and `assessments` use clean lucide geometry; `achievements` is now a medal so it no longer duplicates the leaderboard trophy. Covered by `ShadecodeFeatureIcon.test.ts`.
+- [x] Share cards use the official faceted S mark (`src/lib/brand/markGeometry.ts` is the single geometry source; a drift test covers the component and brand SVGs).
 - [ ] DEFERRED (no iOS device available): `viewport` has no `viewportFit: "cover"`, so `env(safe-area-inset-*)` evaluates to 0 on iOS, including the bottom nav. Enabling it also moves content under the notch and status bar, so test on a real iPhone before changing it. No effect on Android or desktop.
 - [ ] Still needs a real browser: layout, spacing, mobile breakpoints, tap targets, authenticated flows. About 250 usages of text under 12px have not been reviewed.
 
