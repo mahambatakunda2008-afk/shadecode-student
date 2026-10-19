@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
+import { enforceLearningHelpLevel, type LearningHelpResponseStyle } from "@/lib/learning/helpActions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -183,31 +184,25 @@ export async function POST(req: Request) {
     }
 
     if (mode === "help") {
-      const level = String(formData.get("level") || "hint");
+      const requestedLevel = String(formData.get("level") || "hint");
+      const level: LearningHelpResponseStyle =
+        requestedLevel === "method" || requestedLevel === "solution" ? requestedLevel : "hint";
       if (!question && !image) return NextResponse.json({ error: "Add the question or a photo first." }, { status: 400 });
       const instruction = level === "hint" ? "Give one specific, useful next step without revealing the final answer." : level === "method" ? "Explain a valid method and its key steps without revealing the final answer unless the question itself explicitly asks for it." : "Give a complete worked solution and final answer, then offer one similar question for independent practice. Do not force another Socratic turn before helping.";
       const prompt = `You are Cortex, an educational tutor. Subject: ${subject}. Question: ${question || "Read the question from the image."} Help level: ${level}. ${instruction} Return ONLY JSON with keys level, hint, method, solution, finalAnswer, content as appropriate. Keep explanations student-friendly.`;
       const result = await runStructured(prompt, image);
       if (!validHelp(result)) return NextResponse.json({ error: "Cortex returned an incomplete explanation. Please try again." }, { status: 502 });
 
-      if (level === "hint") {
-        if (typeof result.hint !== "string" || result.hint.trim().length < 10) {
-          return NextResponse.json({ error: "Cortex could not produce a clear hint without revealing the answer. Please try another help level." }, { status: 502 });
-        }
-        result.method = undefined;
-        result.solution = undefined;
-        result.finalAnswer = undefined;
-        result.content = result.hint;
-      } else if (level === "method") {
-        const methodText = typeof result.method === "string" ? result.method : "";
-        if (methodText.trim().length < 10) {
-          return NextResponse.json({ error: "Cortex could not produce a clear method without revealing the answer. Please try another help level." }, { status: 502 });
-        }
-        result.solution = undefined;
-        result.finalAnswer = undefined;
-        result.content = methodText;
+      if (level === "hint" && (typeof result.hint !== "string" || result.hint.trim().length < 10)) {
+        return NextResponse.json({ error: "Cortex could not produce a clear hint without revealing the answer. Please try another help level." }, { status: 502 });
       }
-      return NextResponse.json(result);
+      if (level === "method" && (typeof result.method !== "string" || result.method.trim().length < 10)) {
+        return NextResponse.json({ error: "Cortex could not produce a clear method without revealing the answer. Please try another help level." }, { status: 502 });
+      }
+      if (level === "solution" && (typeof result.solution !== "string" || result.solution.trim().length < 20)) {
+        return NextResponse.json({ error: "Cortex could not produce a complete worked solution. Please try again." }, { status: 502 });
+      }
+      return NextResponse.json(enforceLearningHelpLevel(result, level));
     }
 
     return NextResponse.json({ error: "Unknown Cortex mode." }, { status: 400 });
