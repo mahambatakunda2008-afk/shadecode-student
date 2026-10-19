@@ -169,12 +169,16 @@ function safeString(value: FormDataEntryValue | null, max = MAX_QUESTION_CHARS) 
   return String(value ?? "").trim().slice(0, max);
 }
 
-function questionPrompt(subject: string, question: string) {
+function questionPrompt(subject: string, question: string, studentRequest = "", existingFeedback = "", helpLevel = "balanced explanation") {
   return `You are Cortex, an exam-focused tutor inside Shadecode Student.
 Subject: ${subject || "General"}
 Question: ${question}
 
-Help the student learn, not merely copy an answer. Explain the key concept, identify the likely method, give one useful hint, and provide a worked solution only as a separate field. Never invent information that is absent from the question. Return ONLY JSON:
+Student-requested help style: ${helpLevel}
+Student request: ${studentRequest || "Give a balanced explanation with a hint, method and worked solution if determinable."}
+Existing feedback to address: ${existingFeedback || "none supplied"}
+
+Respect the student's requested kind of help. Do not force repeated Socratic turns when they ask for a direct explanation or worked solution. For a worked solution, show the necessary reasoning and offer one similar question for independent practice. If a different method is requested, give one only if it is valid. Help the student learn, not merely copy an answer. Never invent information absent from the question. Return ONLY JSON:
 {
   "concept": "short concept name",
   "hint": "short nudge",
@@ -242,6 +246,9 @@ Respond as a concise, adaptive tutor, not a generic chatbot. Never invent syllab
     if (mode === "question-help") {
       const question = safeString(body?.question);
       const questionPaperId = safeString(body?.paperId, 100);
+      const studentRequest = safeString(body?.studentRequest, 500);
+      const existingFeedback = safeString(body?.existingFeedback, 2000);
+      const helpLevel = safeString(body?.helpLevel, 40) || "balanced explanation";
       if (question.length < 3) return NextResponse.json({ error: "A question is required." }, { status: 400 });
 
       let resolvedQuestionSubject = subject;
@@ -265,7 +272,7 @@ Respond as a concise, adaptive tutor, not a generic chatbot. Never invent syllab
         }
       }
 
-      const response = await generate(questionPrompt(resolvedQuestionSubject, question));
+      const response = await generate(questionPrompt(resolvedQuestionSubject, question, studentRequest, existingFeedback, helpLevel));
       const payload = extractJson(response.text);
       if (!validQuestionHelp(payload)) {
         return NextResponse.json({ error: "Cortex question help did not pass its teaching-quality gate. Please retry." }, { status: 502 });
