@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
 import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
+import LearningEvidenceTrace from "@/components/learning/LearningEvidenceTrace";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -205,6 +206,19 @@ export default function QuizPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <LearningEvidenceTrace
+            title="What this quiz shows"
+            items={[
+              { label: "Correct on this attempt", value: `${correctCount} of ${questions.length}` },
+              { label: "Needs another look", value: String(questions.length - correctCount) },
+              { label: "Independent transfer", value: "Not checked yet" },
+              { label: "Topic mastery", value: "Not inferred from one quiz" },
+            ]}
+            note="Use the missed-question explanations, then try a fresh question later without help. This result is evidence from this quiz, not a grade prediction."
+          />
         </div>
 
         {/* Per-question breakdown */}
