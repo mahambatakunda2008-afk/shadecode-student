@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 const VALID_TYPES = new Set(["bug", "feature", "general"]);
 const MAX_MESSAGE_LENGTH = 500;
 const RATE_WINDOW_SECONDS = 15 * 60;
-const RATE_MAX_REQUESTS = 5;
+const RATE_MAX_USER_REQUESTS = 5;
+const RATE_MAX_IP_REQUESTS = 20;
 const NOTIFICATION_BUDGET_MS = 1200;
 
 function getClientIp(request: Request): string | null {
@@ -26,11 +27,12 @@ function ipBucketKey(ip: string, secret: string): string {
 async function consumeRateLimit(
   admin: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
   bucketKey: string,
+  maxRequests: number,
 ): Promise<boolean> {
   const { data, error } = await admin.rpc("consume_feedback_rate_limit", {
     p_bucket_key: bucketKey,
     p_window_seconds: RATE_WINDOW_SECONDS,
-    p_max_requests: RATE_MAX_REQUESTS,
+    p_max_requests: maxRequests,
   });
   if (error || typeof data !== "boolean") throw new Error("Feedback rate limiter unavailable");
   return data;
@@ -108,13 +110,13 @@ export async function POST(request: Request) {
     }
 
     try {
-      if (user && !(await consumeRateLimit(admin, `user:${user.id}`))) {
+      if (user && !(await consumeRateLimit(admin, `user:${user.id}`, RATE_MAX_USER_REQUESTS))) {
         return NextResponse.json({ error: "Too many feedback submissions. Please try again in 15 minutes." }, {
           status: 429,
           headers: { "Retry-After": String(RATE_WINDOW_SECONDS), "Cache-Control": "no-store" },
         });
       }
-      if (ip && !(await consumeRateLimit(admin, ipBucketKey(ip, rateLimitSecret)))) {
+      if (ip && !(await consumeRateLimit(admin, ipBucketKey(ip, rateLimitSecret), RATE_MAX_IP_REQUESTS))) {
         return NextResponse.json({ error: "Too many feedback submissions. Please try again in 15 minutes." }, {
           status: 429,
           headers: { "Retry-After": String(RATE_WINDOW_SECONDS), "Cache-Control": "no-store" },
