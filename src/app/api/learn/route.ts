@@ -836,7 +836,22 @@ Return only valid JSON.`;
     }
 
     if (!parsed?.blocks.length || (!usedDeterministicFallback && failures.length > 0)) {
-      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "generation_failed", outcome: failures.slice(0, 3).join(", "), difficulty: validDifficulty });
+      // Failure telemetry must never replace the useful retryable response. A
+      // learner-memory outage is secondary to the generation failure itself.
+      try {
+        await rememberLearnerSignal(supabase, user.id, {
+          subject: effectiveSubject,
+          topic: request.topic,
+          topic_key: learnerTopicKey,
+          event_type: "generation_failed",
+          outcome: failures.slice(0, 3).join(", "),
+          difficulty: validDifficulty,
+        });
+      } catch (memoryError) {
+        console.warn("[LEARN] failed to record generation failure signal", {
+          error: memoryError instanceof Error ? memoryError.message : String(memoryError),
+        });
+      }
       log.lessonGenerationFailed({
         userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty,
         error: `Lesson pipeline exhausted: ${failures.join(" | ")}`,
@@ -886,8 +901,31 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
-    await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
-    await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+    // The lesson row is now durable. Secondary learning analytics and XP must
+    // not turn a successful save into a failed request that invites duplicate work.
+    try {
+      await rememberLearnerSignal(supabase, user.id, {
+        subject: effectiveSubject,
+        topic: request.topic,
+        topic_key: learnerTopicKey,
+        event_type: "lesson_completed",
+        outcome: "saved",
+        difficulty: validDifficulty,
+      });
+    } catch (memoryError) {
+      console.warn("[LEARN] lesson saved but completion signal could not be recorded", {
+        lessonId: savedId,
+        error: memoryError instanceof Error ? memoryError.message : String(memoryError),
+      });
+    }
+    try {
+      await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+    } catch (xpError) {
+      console.warn("[LEARN] lesson saved but generation XP could not be awarded", {
+        lessonId: savedId,
+        error: xpError instanceof Error ? xpError.message : String(xpError),
+      });
+    }
     return NextResponse.json({
       id: savedId,
       title: parsed.title,
