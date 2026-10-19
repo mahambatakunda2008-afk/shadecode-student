@@ -168,6 +168,7 @@ export default async function ChallengePage({ params }: Props) {
             </div>
           </div>
         </div>
+        <p className="mt-3 px-1 text-xs leading-5 text-slate-500">This is one challenge attempt, not a measure of overall subject mastery. Use practice and fresh questions to build a fuller picture.</p>
 
         {/* CTAs */}
         <div className="space-y-3">
