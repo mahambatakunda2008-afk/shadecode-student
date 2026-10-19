@@ -10,6 +10,17 @@ The remote ledger reports **124 migration entries**. The main branch contains **
 
 **These counts are a drift signal, not a claim that 57 migrations are definitely absent.** Migration versions and filenames sometimes use different timestamps or aliases; SQL may have been renamed, consolidated, applied manually, or omitted from Git. Do not blindly reapply remote migrations, fabricate replacement files, or mark historical migrations as applied based on names alone.
 
+## Follow-up after the initial snapshot
+
+After the inventory above was captured, the additive feedback rate-limit migration was applied to the production project on 2026-10-19 through the managed Supabase migration action. The remote ledger now contains version `20261019063529`, name `feedback_submission_rate_limits`. Read-only verification confirmed:
+
+- `public.feedback_rate_limits` exists.
+- `public.consume_feedback_rate_limit(text, integer, integer)` exists.
+- The limiter table has no table privileges for `anon` or `authenticated`; `service_role` has the privileges needed by the RPC.
+- The function's EXECUTE privilege is granted to `service_role` and not to `anon` or `authenticated`.
+
+The PR branch now contains `supabase/migrations/20261019063529_feedback_submission_rate_limits.sql`, matching the observed remote version/name. The baseline counts above intentionally describe the pre-follow-up snapshot; the main branch does not yet include the PR file.
+
 ## Remote ledger entries without an exact filename-stem match
 
 | Remote version | Remote migration name |
