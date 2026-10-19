@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BrainCircuit, Loader2 } from "lucide-react";
 import { getActiveGenerationJobs, subscribeGenerationJobs, type GenerationJob } from "@/lib/cortex/generationJob";
+import { getGenerationStatusText } from "@/lib/cortex/generationStatusText";
 
 function labelFor(kind: GenerationJob["kind"]) {
   if (kind === "lesson") return "lesson";
@@ -15,7 +16,7 @@ export default function CortexGenerationIndicator() {
   const [jobs, setJobs] = useState<GenerationJob<unknown, unknown>[]>([]);
 
   useEffect(() => {
-    const sync = () => setJobs(getActiveGenerationJobs());
+    const sync = () => setJobs(getActiveGenerationJobs().sort((a, b) => b.updatedAt - a.updatedAt));
     sync();
     return subscribeGenerationJobs(sync);
   }, []);
@@ -37,7 +38,7 @@ export default function CortexGenerationIndicator() {
         <span className="min-w-0">
           <span className="block text-sm font-bold leading-5">{text}</span>
           <span className="mt-0.5 block text-xs text-[var(--muted-foreground)]">
-            {primary.status === "queued" ? "Queued safely on this device" : `${primary.progress}% complete`}
+            {getGenerationStatusText(primary.status)}
           </span>
         </span>
         <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--primary)] motion-reduce:animate-none" aria-hidden="true" />
