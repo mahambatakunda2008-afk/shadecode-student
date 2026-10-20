@@ -99,10 +99,7 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
         const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
         const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
         if (!generated) { setError("You're offline and there's no saved practice set for this topic yet. Reconnect to generate a fresh paper."); return; }
-        setPaperSource("fallback");
-        const total = count * 120;
-        workId.current = `exam:offline:${id()}`;
-        setQuestions(generated.questions.map((q, idx) => ({
+        const fallbackQuestions = generated.questions.map((q, idx) => ({
           id: idx + 1,
           type: q.type,
           question: q.question,
@@ -112,7 +109,15 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           modelAnswer: q.modelAnswer,
           markingCriteria: q.markingCriteria,
           numeric: q.numeric,
-        })));
+        }));
+        if (!isValidGeneratedPaper(fallbackQuestions, count)) {
+          setError("The offline practice set failed question validation. Reconnect and try generating a fresh paper.");
+          return;
+        }
+        setPaperSource("fallback");
+        const total = count * 120;
+        workId.current = `exam:offline:${id()}`;
+        setQuestions(fallbackQuestions);
         setAnswers([]);
         setFlags([]);
         setCurrent(0);
@@ -162,21 +167,22 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
       const difficulty = LEVELS[level].api;
       const cleanTopic = topic ? topic.replace(/\s*\([^)]*\)\s*$/i, "").trim() : "";
       const generated = buildGuaranteedExam(subject, cleanTopic, difficulty, count);
-      if (generated && generated.questions.length > 0) {
+      const fallbackQuestions = generated?.questions?.map((q, idx) => ({
+        id: idx + 1,
+        type: q.type,
+        question: q.question,
+        options: q.options,
+        marks: q.marks,
+        topic: q.topic,
+        modelAnswer: q.modelAnswer,
+        markingCriteria: q.markingCriteria,
+        numeric: q.numeric,
+      }));
+      if (fallbackQuestions && isValidGeneratedPaper(fallbackQuestions, count)) {
         setPaperSource("fallback");
         const total = count * 120;
         workId.current = `exam:fallback:${id()}`;
-        setQuestions(generated.questions.map((q, idx) => ({
-          id: idx + 1,
-          type: q.type,
-          question: q.question,
-          options: q.options,
-          marks: q.marks,
-          topic: q.topic,
-          modelAnswer: q.modelAnswer,
-          markingCriteria: q.markingCriteria,
-          numeric: q.numeric,
-        })));
+        setQuestions(fallbackQuestions);
         setAnswers([]);
         setFlags([]);
         setCurrent(0);
