@@ -20,6 +20,10 @@ describe("sanitizeLessonText", () => {
     });
   });
 
+  it("sanitizes standalone strings and preserves valid Unicode, whitespace, and punctuation", () => {
+    expect(sanitizeLessonText("Wave\u0000s\nλ = v / f; Ω remains.")).toBe("Waves\nλ = v / f; Ω remains.");
+  });
+
   it("preserves valid content and primitive values", () => {
     expect(sanitizeLessonText({ title: "Waves", count: 4, enabled: true, empty: null })).toEqual({
       title: "Waves", count: 4, enabled: true, empty: null,

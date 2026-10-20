@@ -1,25 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { mergePaperScoreHistory, parsePaperStatePatch } from "@/lib/exam-hub/paperStatePatch";
 
 export const dynamic = "force-dynamic";
-
-type StatePatch = Partial<{
-  bookmarked: boolean;
-  status: "not_started" | "in_progress" | "completed";
-  last_page: number;
-  score: number;
-  time_spent_seconds: number;
-  downloaded_offline: boolean;
-}>;
-
-const ALLOWED_KEYS: (keyof StatePatch)[] = [
-  "bookmarked",
-  "status",
-  "last_page",
-  "score",
-  "time_spent_seconds",
-  "downloaded_offline",
-];
 
 const WEAK_THRESHOLD = 50; // score % below this counts as a weak-subject signal
 const STRONG_THRESHOLD = 75; // score % at or above this counts as a strong-subject signal
@@ -54,13 +37,10 @@ async function updateCortexMemory(
 
     const weakSubjects: string[] = memory?.weak_subjects ?? [];
     const strongSubjects: string[] = memory?.strong_subjects ?? [];
-    const examScores: { subject: string; score: number; recorded_at: string }[] =
-      memory?.exam_scores ?? [];
-
-    examScores.push({ subject, score, recorded_at: new Date().toISOString() });
-    const cappedScores = examScores.slice(-50); // bounded history, most recent 50
+    const recordedAt = new Date().toISOString();
+    const cappedScores = mergePaperScoreHistory(memory?.exam_scores, paperId, subject, score, recordedAt);
     const newAverage =
-      cappedScores.reduce((sum, s) => sum + s.score, 0) / cappedScores.length;
+      cappedScores.reduce((sum, entry) => sum + entry.score, 0) / cappedScores.length;
 
     const nextWeak = new Set(weakSubjects.filter((s) => s !== subject));
     const nextStrong = new Set(strongSubjects.filter((s) => s !== subject));
@@ -74,7 +54,7 @@ async function updateCortexMemory(
         strong_subjects: [...nextStrong],
         exam_scores: cappedScores,
         average_exam_score: Math.round(newAverage * 100) / 100,
-        last_study_date: new Date().toISOString(),
+        last_study_date: recordedAt,
       },
       { onConflict: "user_id" }
     );
@@ -96,21 +76,18 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as StatePatch;
-    const patch: Record<string, unknown> = {};
-    for (const key of ALLOWED_KEYS) {
-      if (body[key] !== undefined) patch[key] = body[key];
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Request body must contain valid JSON" }, { status: 400 });
     }
 
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ error: "No valid fields in request" }, { status: 400 });
+    const parsed = parsePaperStatePatch(payload);
+    if (parsed.error) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    if (
-      patch.score !== undefined &&
-      (typeof patch.score !== "number" || patch.score < 0 || patch.score > 100)
-    ) {
-      return NextResponse.json({ error: "score must be a number between 0 and 100" }, { status: 400 });
-    }
+    const patch = parsed.patch as Record<string, unknown>;
 
     const { data, error } = await supabase
       .from("user_past_paper_state")
