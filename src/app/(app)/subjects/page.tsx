@@ -176,7 +176,7 @@ export default function SubjectsPage() {
                       className="gen-btn"
                       style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "9px 0", borderRadius: 10, background: t.bg, border: `1px solid ${t.border}`, fontSize: 12, fontWeight: 600, color: t.text, textDecoration: "none", transition: "filter .15s", cursor: "pointer" }}
                     >
-                      <Sparkles size={13} /> Generate lesson
+                      <Sparkles size={14} /> Generate lesson
                     </Link>
 
                     {/* View lessons for this subject */}

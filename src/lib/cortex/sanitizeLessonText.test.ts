@@ -39,4 +39,19 @@ describe("sanitizeLessonText", () => {
     expect(input.labels[1]).toBe("a\u0000b");
     expect(result).not.toBe(input);
   });
+
+  it("removes null characters from a plain string", () => {
+    expect(sanitizeLessonText("wave\u0000 motion")).toBe("wave motion");
+  });
+
+  it("keeps formulas and non-ASCII text intact while cleaning block content", () => {
+    expect(sanitizeLessonText({ title: "Waves", blocks: [{ content: "Sound\u0000 waves", formula: "v = fλ" }] })).toEqual({
+      title: "Waves",
+      blocks: [{ content: "Sound waves", formula: "v = fλ" }],
+    });
+  });
+
+  it("cleans object keys inside arrays", () => {
+    expect(sanitizeLessonText([{ ["bad\u0000key"]: "ok\u0000" }])).toEqual([{ badkey: "ok" }]);
+  });
 });

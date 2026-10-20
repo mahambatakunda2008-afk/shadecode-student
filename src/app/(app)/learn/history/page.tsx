@@ -165,7 +165,7 @@ export default function LearnHistoryPage() {
 
         {/* ── Search ── */}
         <div style={{ position: "relative", marginBottom: 16 }}>
-          <Search size={15} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <Search size={16} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
           <input
             type="text"
             placeholder="Search lessons or subjects…"
@@ -290,7 +290,7 @@ export default function LearnHistoryPage() {
                       {d.label}
                     </span>
 
-                    <ChevronRight size={15} color="var(--muted-foreground)" style={{ flexShrink: 0 }} />
+                    <ChevronRight size={16} color="var(--muted-foreground)" style={{ flexShrink: 0 }} />
                   </Link>
                 );
               })

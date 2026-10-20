@@ -47,7 +47,7 @@ export default function LearningJourney({ initialState = null }: Props) {
   if (!state) return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <Trophy size={13} color="var(--muted-foreground)" />
+        <Trophy size={14} color="var(--muted-foreground)" />
         <span style={headingStyle}>Learning Journey</span>
       </div>
       <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 14px", lineHeight: 1.6 }}>
@@ -77,7 +77,7 @@ export default function LearningJourney({ initialState = null }: Props) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(250,204,21,0.12)", border: "1px solid rgba(250,204,21,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Trophy size={13} color="#fbbf24" />
+            <Trophy size={14} color="#fbbf24" />
           </div>
           <span style={headingStyle}>Learning Journey</span>
         </div>
@@ -125,7 +125,7 @@ export default function LearningJourney({ initialState = null }: Props) {
             if (isCompleted) {
               dotBg     = "rgba(16,185,129,0.2)";
               dotBorder = "rgba(16,185,129,0.4)";
-              dotContent = <CheckCircle2 size={11} color="#10b981" />;
+              dotContent = <CheckCircle2 size={12} color="#10b981" />;
             } else if (isCurrent) {
               dotBg     = "rgba(139,92,246,0.25)";
               dotBorder = "rgba(139,92,246,0.5)";

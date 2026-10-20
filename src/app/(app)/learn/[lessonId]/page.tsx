@@ -28,22 +28,22 @@ type Lesson = {
 type Theme = { hex: string; bg: string; border: string; text: string; icon: React.ComponentType<{ size?: number; color?: string }> };
 
 const THEMES: Record<string, Theme> = {
-  Mathematics: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Calculator },
-  Physics: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Zap },
-  Biology: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Dna },
-  History: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Globe },
-  Chemistry: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: FlaskConical },
-  Geography: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Globe },
-  "Computer Science": { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Code2 },
-  Psychology: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Brain },
-  Economics: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: TrendingUp },
-  Languages: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Languages },
-  Music: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Music },
-  Art: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: Palette },
-  default: { hex: "#718c53", bg: "rgba(113,140,83,.14)", border: "rgba(113,140,83,.28)", text: "#c4dc87", icon: BookOpen },
+  Mathematics: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Calculator },
+  Physics: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Zap },
+  Biology: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Dna },
+  History: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Globe },
+  Chemistry: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: FlaskConical },
+  Geography: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Globe },
+  "Computer Science": { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Code2 },
+  Psychology: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Brain },
+  Economics: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: TrendingUp },
+  Languages: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Languages },
+  Music: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Music },
+  Art: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: Palette },
+  default: { hex: "var(--primary)", bg: "var(--primary-glow)", border: "color-mix(in srgb, var(--primary) 28%, transparent)", text: "var(--primary)", icon: BookOpen },
 };
 const DIFF: Record<string, { label: string; text: string }> = {
-  easy: { label: "Guided", text: "#c4dc87" }, medium: { label: "Standard", text: "#b8c9a0" }, hard: { label: "Challenge", text: "#e5d6a6" },
+  easy: { label: "Guided", text: "var(--primary)" }, medium: { label: "Standard", text: "var(--text-secondary)" }, hard: { label: "Challenge", text: "var(--accent)" },
 };
 const FLOW = new Set(["objective", "map", "prior", "concept", "definition", "structure", "mechanism", "formula", "math", "example", "exam", "summary", "application", "comparison", "synthesis", "curiosity", "practice", "next"]);
 const LABELS: Record<string, string> = {
@@ -338,13 +338,13 @@ export default function LessonDetailPage() {
         .lesson-aside{margin:0 0 25px 14px;padding:13px 0 13px 16px;border-left:2px solid}.aside-title{font-size:12px;font-weight:850;display:flex;gap:8px;align-items:center;margin-bottom:7px}.aside-body{color:var(--muted-foreground);font-size:14px;line-height:1.65}
         .lesson-loop{margin:6px 0 18px;padding:18px;border:1px solid var(--border-subtle);border-radius:16px;background:var(--surface-raised)}.lesson-loop-head{display:flex;align-items:flex-start;gap:11px}.lesson-loop-icon{width:34px;height:34px;border-radius:10px;background:var(--lesson-soft);color:var(--lesson-accent);display:grid;place-items:center;flex:0 0 auto}.lesson-loop-title{font-size:14px;font-weight:800;margin:0}.lesson-loop-copy{font-size:12px;line-height:1.5;color:var(--muted-foreground);margin:3px 0 0}.lesson-loop-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}.lesson-loop-option{min-height:64px;text-align:left;border:1px solid var(--card-border);border-radius:12px;background:var(--surface);padding:10px 11px;color:var(--foreground);cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-loop-option:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-loop-option:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-loop-option.selected{border-color:var(--lesson-accent);background:var(--lesson-soft)}.lesson-loop-option strong{display:block;font-size:12px}.lesson-loop-option span{display:block;margin-top:3px;font-size:11px;line-height:1.4;color:var(--muted-foreground)}.lesson-loop-next{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--muted-foreground)}.lesson-loop-next a{color:var(--lesson-accent);font-weight:800;text-decoration:none}.lesson-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:4px}.lesson-action{min-height:48px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--surface);color:var(--foreground);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;padding:8px;transition:background .15s ease,border-color .15s ease,transform .15s ease}.lesson-action:hover{background:var(--interactive-hover);border-color:var(--border-strong)}.lesson-action:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}.lesson-action.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}.lesson-action.quiz{background:var(--surface-raised);border-color:var(--primary);color:var(--primary)}.lesson-action:disabled{opacity:.55;cursor:not-allowed}
         .lesson-note{text-align:center;color:var(--muted-foreground);font-size:11px;margin-top:8px}.lesson-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;background:var(--card);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:12px 16px;color:#34d399;font-size:13px;font-weight:750;box-shadow:0 12px 40px rgba(0,0,0,.35)}
-        .lesson-loading,.lesson-error{min-height:70vh;background:var(--background);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted-foreground);padding:24px}.lesson-error a,.lesson-error button{margin:0 6px;color:#c4dc87;background:none;border:0;cursor:pointer;text-decoration:none;font-size:13px}.spinner{width:34px;height:34px;border-radius:50%;border:2px solid var(--card-border);border-top-color:#718c53;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+        .lesson-loading,.lesson-error{min-height:70vh;background:var(--background);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted-foreground);padding:24px}.lesson-error a,.lesson-error button{margin:0 6px;color:var(--primary);background:none;border:0;cursor:pointer;text-decoration:none;font-size:13px}.spinner{width:34px;height:34px;border-radius:50%;border:2px solid var(--card-border);border-top-color:var(--primary);animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
         @media(max-width:820px){.lesson-layout{grid-template-columns:1fr;gap:8px}.lesson-toc{position:static;padding:10px 12px;margin-bottom:18px}.lesson-toc-label{padding-bottom:7px}.lesson-toc-list{flex-direction:row;overflow-x:auto;padding-bottom:2px}.lesson-toc-item{min-width:140px;max-width:210px;border:1px solid var(--border-subtle);background:var(--surface);grid-template-columns:20px minmax(0,1fr)}}\n        @media(max-width:640px){.lesson-shell{padding:20px 13px 55px}.lesson-hero-inner{padding:20px 18px}.lesson-title{font-size:25px}.lesson-loop-options{grid-template-columns:1fr}.lesson-actions{grid-template-columns:repeat(2,1fr)}.lesson-action:last-child{grid-column:auto}.lesson-aside{margin-left:4px}.unit-body{font-size:14px}.lesson-steps li{padding-left:43px}}
       `}</style>
 
-      {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
+      {showToast && <div className="lesson-toast" role="status"><CheckCircle2 size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />{lesson.completed ? "Lesson complete. XP earned." : "Lesson saved for offline use."}</div>}
       <main className="lesson-shell">
-        <Link href="/learn" className="lesson-back"><ArrowLeft size={15} />Back to Learn</Link>
+        <Link href="/learn" className="lesson-back"><ArrowLeft size={16} />Back to Learn</Link>
 
         <header className="lesson-hero">
           <div className="lesson-hero-bar" />
@@ -352,8 +352,8 @@ export default function LessonDetailPage() {
             <div className="lesson-meta">
               <span className="lesson-subject"><Icon size={15} color={t.text} />{lesson.subject}</span>
               <span>·</span><span className="lesson-badge">{d.label}</span>
-              {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={11} style={{ verticalAlign: "-1px" }} /> Completed</span>}
-              {lesson.description?.startsWith("Curated curriculum recovery lesson") && <span className="lesson-badge" title="Authored curriculum material used as a recovery path"><BookOpen size={11} style={{ verticalAlign: "-1px" }} /> Curated recovery</span>}
+              {lesson.completed && <span className="lesson-badge" style={{ color: "#34d399", borderColor: "rgba(52,211,153,.25)" }}><CheckCircle2 size={12} style={{ verticalAlign: "-1px" }} /> Completed</span>}
+              {lesson.description?.startsWith("Curated curriculum recovery lesson") && <span className="lesson-badge" title="Authored curriculum material used as a recovery path"><BookOpen size={12} style={{ verticalAlign: "-1px" }} /> Curated recovery</span>}
             </div>
             <h1 className="lesson-title">{lesson.title}</h1>
             {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
@@ -380,7 +380,7 @@ export default function LessonDetailPage() {
 
           <section className="lesson-loop" aria-labelledby="learning-check-title">
             <div className="lesson-loop-head">
-              <div className="lesson-loop-icon"><Brain size={17} /></div>
+              <div className="lesson-loop-icon"><Brain size={18} /></div>
               <div>
                 <h2 id="learning-check-title" className="lesson-loop-title">Make the learning stick</h2>
                 <p className="lesson-loop-copy">Before you leave, check what you can actually do. This is more useful than simply reaching the bottom of the page.</p>
@@ -405,20 +405,20 @@ export default function LessonDetailPage() {
 
           <div className="lesson-actions" aria-label="Lesson actions">
             {lesson.completed ? <div className="lesson-action primary"><CheckCircle2 size={16} />Completed · +{xpForDiff(lesson.difficulty)} XP</div> : <button className="lesson-action primary" onClick={() => void markComplete()} disabled={completing}>{completing ? "Saving…" : <><CheckCircle2 size={16} />Mark Complete</>}</button>}
-            <Link className="lesson-action quiz" href={`/learn/${lessonId}/quiz`}><HelpCircle size={16} />Test Yourself<ArrowRight size={13} /></Link>
+            <Link className="lesson-action quiz" href={`/learn/${lessonId}/quiz`}><HelpCircle size={16} />Test Yourself<ArrowRight size={14} /></Link>
             <button className="lesson-action" onClick={() => setShowTutor(true)}><MessageSquare size={16} />Ask Tutor</button>
             <button className="lesson-action" onClick={() => void handleDownload()} disabled={downloading}><Download size={16} />{downloading ? `${downloadProgress}%` : "Download"}</button>
             {narration.speechSupported && <button className="lesson-action" onClick={narration.status === "idle" ? narration.start : narration.stop}>{narration.status === "speaking" ? <><Pause size={16} />Reading {narration.currentIndex + 1}/{narration.totalSegments}</> : narration.status === "listening" ? <><Mic size={16} />Listening…</> : <><Headphones size={16} />Listen</>}</button>}
           </div>
           {narration.status !== "idle" && narration.voiceCommandsSupported && <p className="lesson-note">Say “next”, “repeat”, or “pause” between sections.</p>}
           </div>
-        </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "#c4dc87" }}>Generate a new lesson</Link></div>}
+        </div> : <div style={{ textAlign: "center", padding: 50, color: "var(--muted-foreground)" }}><BookOpen size={28} /><p>No content yet.</p><Link href="/learn" style={{ color: "var(--primary)" }}>Generate a new lesson</Link></div>}
 
-        {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={11} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
+        {lesson.updated_at && <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 28, color: "var(--muted-foreground)", fontSize: 11 }}><Clock size={12} />Last updated {new Date(lesson.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</div>}
       </main>
 
       {showTutor && <div role="dialog" aria-modal="true" aria-label="Socratic Tutor" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-        <div style={{ width: "100%", maxWidth: 700, height: "82vh", background: "#0f0f24", border: "1px solid var(--card-border)", borderRadius: 16, overflow: "hidden" }}>
+        <div style={{ width: "100%", maxWidth: 700, height: "82vh", background: "var(--surface)", border: "1px solid var(--card-border)", borderRadius: 16, overflow: "hidden" }}>
           <SocraticTutor userId={currentUser} subject={lesson.subject} topic={lesson.title} lessonContext={{ lessonId: lesson.id, title: lesson.title, subject: lesson.subject, description: lesson.description, blocks: lesson.blocks, difficulty: lesson.difficulty, completed: lesson.completed, progress: lesson.progress }} onClose={() => setShowTutor(false)} />
         </div>
       </div>}

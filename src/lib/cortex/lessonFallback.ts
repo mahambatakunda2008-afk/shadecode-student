@@ -13,6 +13,245 @@ type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
  * restructuring callers.
  */
 const FALLBACK_LESSONS: Record<string, FallbackLesson> = {
+  "mathematics|numerical solution of equations": {
+    title: "Numerical solution of equations: locate, narrow, and estimate roots",
+    blocks: [
+      { type: "objective", title: "What you will learn", content: "By the end, you should be able to explain what a numerical root is, locate a root using a sign change, narrow an interval by bisection, and use iteration carefully to obtain an approximate solution. Numerical answers are estimates, so state the method and appropriate accuracy." },
+      { type: "prior", title: "The meaning of a root", content: "A root of f(x) = 0 is a value of x that makes the function equal to zero. Graphically, it is an x-coordinate where y = f(x) meets or touches the x-axis. Some equations cannot be rearranged into a convenient exact solution, so numerical methods approximate the root." },
+      { type: "concept", title: "Why numerical methods work", content: "Instead of finding an exact algebraic expression, a numerical method produces a sequence of increasingly useful estimates. You must keep track of the interval or iteration rule, avoid premature rounding, and check the final estimate in the original equation." },
+      { type: "example", title: "Worked example: locate a root by sign change", content: "Find an interval containing a root of f(x) = x³ − x − 2. At x = 1, f(1) = 1 − 1 − 2 = −2. At x = 2, f(2) = 8 − 2 − 2 = 4. The function changes sign between 1 and 2, so continuity guarantees at least one root in (1, 2). A sign change is evidence of a crossing, but it does not find the root by itself." },
+      { type: "checkpoint", title: "Try the sign test", content: "For f(x) = x² − 5, calculate f(2) and f(3). Do the signs differ? What does that tell you about a root between those values? Write both function values before deciding." },
+      { type: "concept", title: "Bisection: halve the interval", content: "Once you have an interval [a, b] with opposite signs at its ends, calculate the midpoint m = (a + b)/2. Evaluate f(m). Keep the half whose endpoints have opposite signs, then repeat. Each step halves the interval width, so after n steps its width is (b − a)/2ⁿ, provided the sign-change condition continues to hold." },
+      { type: "example", title: "Worked example: one bisection step", content: "For f(x) = x³ − x − 2, the root lies between 1 and 2. The midpoint is m = (1 + 2)/2 = 1.5. Then f(1.5) = 3.375 − 1.5 − 2 = −0.125. Since f(1.5) is negative and f(2) is positive, the root is in (1.5, 2). The new interval has width 0.5 instead of 1." },
+      { type: "definition", title: "Linear interpolation (regula falsi idea)", content: "If f(a) and f(b) have opposite signs, a straight line between (a, f(a)) and (b, f(b)) crosses the x-axis at an estimate x ≈ [a f(b) − b f(a)]/[f(b) − f(a)]. This uses the secant line rather than the midpoint. It can give a better estimate in some cases, but you must still check the function value and maintain a reliable bracket when the chosen method requires one." },
+      { type: "concept", title: "Iteration from a rearranged equation", content: "An equation f(x) = 0 can sometimes be rearranged into x = g(x). Choose a starting value x₀, then calculate x₁ = g(x₀), x₂ = g(x₁), and continue. The values may converge towards a solution, but not every rearrangement does: estimates can diverge or oscillate. A successful iteration should settle to stable values and satisfy the original equation approximately." },
+      { type: "example", title: "Worked example: fixed-point iteration", content: "To solve x² + x − 2 = 0, one possible rearrangement is x = 2 − x². Starting at x₀ = 1 gives x₁ = 1, so this particular start is already fixed. But this example also warns you to check the method: the equation has another root at −2, and this rearrangement is not guaranteed to find every root. The choice of rearrangement and starting value matters." },
+      { type: "misconception", title: "Common mistakes", content: "A sign change across an interval guarantees a root only when the function is continuous there; it can miss a root where the graph just touches the axis. Do not confuse an approximate numerical root with an exact solution. Do not round every intermediate value, and do not assume every iteration formula converges. Always substitute the final estimate into the original equation." },
+      { type: "exam", title: "A reliable exam method", content: "Show the function values at the interval endpoints and state why their signs locate a root. For bisection, show the midpoint, its function value, and the interval retained. For an iteration question, write the rearranged formula, the starting value, and enough successive values to demonstrate the process. Give the final answer to the requested accuracy and check it in the original equation." },
+      { type: "practice", title: "Practice ladder", content: "1. For f(x) = x³ − 4, show that a root lies between 1 and 2. 2. Perform one bisection step on that interval and decide which half contains the root. 3. Explain why a sign change can miss a root where a curve touches the x-axis. 4. Given xₙ₊₁ = (3 + xₙ)^(1/2) and a stated starting value, calculate the next two iterates using full calculator precision, then inspect whether the values are settling. 5. Substitute a numerical estimate into the original equation and report the residual f(x)." },
+      { type: "summary", title: "The essential strategy", content: "Numerical solution means estimating a root when an exact algebraic method is inconvenient. A sign change locates a bracket, bisection repeatedly halves that bracket, interpolation estimates a crossing from a secant line, and fixed-point iteration repeatedly applies x = g(x). Show your working, keep enough precision, check convergence, and verify the final estimate in the original equation. Follow the exact numerical method required by your course or question." },
+    ],
+  },
+  "mathematics|integration by substitution": {
+    "title": "Integration by substitution: reverse the chain rule",
+    "blocks": [
+      {
+        "type": "objective",
+        "title": "Learning targets",
+        "content": "By the end, you should be able to recognise a composite function with an inner derivative, choose a substitution, change the differential correctly, and return to the original variable."
+      },
+      {
+        "type": "prior",
+        "title": "The chain rule in reverse",
+        "content": "If y = F(u) and u = g(x), differentiation gives dy/dx = F'(u)g'(x). Substitution reverses this pattern: when an integrand contains a function of g(x) multiplied by g'(x), set u = g(x) so the integral becomes simpler."
+      },
+      {
+        "type": "concept",
+        "title": "Choose the inner function",
+        "content": "Look for a bracket, a repeated expression, or a function whose derivative also appears in the integrand. Let u equal that inner expression, calculate du/dx, and rearrange to obtain du. Then replace every matching x-expression and dx factor consistently."
+      },
+      {
+        "type": "formula",
+        "title": "The substitution pattern",
+        "content": "If u = g(x), then du = g'(x) dx. Therefore ∫ f(g(x))g'(x) dx = ∫ f(u) du. This is a pattern, not permission to replace only part of the integrand: the differential must change with the variable."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: a linear inner function",
+        "content": "Evaluate ∫ 2x(x² + 1)^4 dx. Let u = x² + 1, so du = 2x dx. The integral becomes ∫u^4 du = u^5/5 + C. Substitute back: (x² + 1)^5/5 + C. Differentiating gives 2x(x² + 1)^4, confirming the result."
+      },
+      {
+        "type": "checkpoint",
+        "title": "Choose a substitution",
+        "content": "For ∫ 3x²(x³ + 4)^5 dx, identify a useful u and write du. Do not integrate yet. Check whether the factor multiplying the bracket is exactly the derivative of the inner expression."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: exponential function",
+        "content": "Evaluate ∫ e^(3x) dx. Let u = 3x, so du = 3 dx and dx = du/3. Then the integral is (1/3)∫e^u du = e^u/3 + C = e^(3x)/3 + C. The factor one third appears because the inner derivative is 3."
+      },
+      {
+        "type": "concept",
+        "title": "Definite integrals: change the limits",
+        "content": "For a definite integral, if you change from x to u, also transform both limits using u = g(x). Then integrate in u and use the new limits. Alternatively, integrate and substitute back into x before applying the original limits, but never mix x-limits with a u-integral."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: definite substitution",
+        "content": "Evaluate ∫ from x=0 to x=1 of 2x(x² + 1)^2 dx. Set u = x² + 1, du = 2x dx. The limits become u=1 and u=2. The integral is ∫ from 1 to 2 of u² du = [u³/3] from 1 to 2 = (8 - 1)/3 = 7/3."
+      },
+      {
+        "type": "misconception",
+        "title": "Common mistakes",
+        "content": "Do not forget a constant factor when du is not exactly the remaining factor. Do not leave an x inside an integral after changing to u unless you explicitly rewrite it in u. For definite integrals, change the limits or substitute back before using the original limits."
+      },
+      {
+        "type": "exam",
+        "title": "Exam method",
+        "content": "Write u = ..., then calculate du clearly. Rewrite the entire integral in the new variable, integrate, and substitute back if the integral is indefinite. For a definite integral, show the transformed limits and evaluate carefully. Differentiate an indefinite answer to check it."
+      },
+      {
+        "type": "practice",
+        "title": "Practice ladder",
+        "content": "1. Evaluate ∫ 6x(3x² + 2)^4 dx. 2. Evaluate ∫ x e^(x²) dx. 3. Evaluate ∫ from 0 to 1 of 2x(x² + 3)^2 dx. 4. Explain why ∫e^(5x) dx contains a factor of one fifth. For each, identify the inner function and its differential before integrating."
+      },
+      {
+        "type": "summary",
+        "title": "The essential strategy",
+        "content": "Substitution reverses the chain rule. Choose an inner function whose derivative is present, convert the differential, rewrite the whole integrand, integrate, and return to x or transform the definite limits. The final derivative should reproduce the original integrand."
+      }
+    ]
+  },
+  "mathematics|integration by parts": {
+    "title": "Integration by parts: turn a product into a simpler integral",
+    "blocks": [
+      {
+        "type": "objective",
+        "title": "Learning targets",
+        "content": "By the end, you should be able to apply integration by parts to products, choose u and dv sensibly, repeat the method when needed, and use the original integral to check whether the result is reasonable."
+      },
+      {
+        "type": "prior",
+        "title": "Where the formula comes from",
+        "content": "The product rule says d(uv)/dx = u(dv/dx) + v(du/dx). Rearranging and integrating gives the integration-by-parts formula. It is useful when differentiating one factor simplifies it and integrating the other factor is straightforward."
+      },
+      {
+        "type": "formula",
+        "title": "The formula",
+        "content": "For an indefinite integral, ∫u dv = uv - ∫v du + C. Choose u as the factor to differentiate and dv as the factor to integrate. Then calculate du and v before substituting into the formula."
+      },
+      {
+        "type": "concept",
+        "title": "Choosing u and dv",
+        "content": "A useful choice makes the remaining integral simpler than the original. In products involving a polynomial and an exponential or trigonometric function, differentiating the polynomial often reduces its power. With logarithmic functions, differentiating the logarithm may remove it from the integrand."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: x e^x",
+        "content": "Evaluate ∫x e^x dx. Choose u=x and dv=e^x dx, so du=dx and v=e^x. Apply the formula: ∫x e^x dx = x e^x - ∫e^x dx = x e^x - e^x + C = e^x(x - 1) + C. Differentiating confirms the product x e^x."
+      },
+      {
+        "type": "checkpoint",
+        "title": "Pick u and dv",
+        "content": "For ∫x cos x dx, which factor would you differentiate and which would you integrate? Write u, dv, du, and v first. Choose the option that leaves a simpler integral after applying the formula."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: x sin x",
+        "content": "Evaluate ∫x sin x dx. Let u=x and dv=sin x dx. Then du=dx and v=-cos x. The result is -x cos x - ∫(-cos x) dx = -x cos x + sin x + C. Differentiate: -cos x + x sin x + cos x = x sin x."
+      },
+      {
+        "type": "concept",
+        "title": "When to repeat the method",
+        "content": "If the new integral still contains a product that can be simplified by parts, apply the formula again. For polynomial factors, repeated differentiation eventually reaches zero. Keep the signs and boundary terms organised at each step."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: a logarithm",
+        "content": "For ∫ln x dx with x>0, write it as ∫ln x · 1 dx. Choose u=ln x and dv=dx, so du=1/x dx and v=x. Then the integral is x ln x - ∫x(1/x) dx = x ln x - x + C."
+      },
+      {
+        "type": "misconception",
+        "title": "Common mistakes",
+        "content": "The formula contains a minus sign: uv - ∫v du. A frequent error is forgetting that the integral of sin x is -cos x. Another is choosing u and dv without checking whether the remaining integral is simpler. Always include +C for an indefinite integral."
+      },
+      {
+        "type": "exam",
+        "title": "Exam method",
+        "content": "State u and dv, then show du and v. Substitute into uv - ∫v du with brackets where necessary. Simplify the remaining integral and include the constant. For a definite integral, evaluate the boundary term uv at both limits and apply the limits to the remaining integral."
+      },
+      {
+        "type": "practice",
+        "title": "Practice ladder",
+        "content": "1. Evaluate ∫x e^x dx. 2. Evaluate ∫x cos x dx. 3. Evaluate ∫ln x dx for x>0. 4. Explain why choosing u=x is useful in ∫x sin x dx. Differentiate each indefinite answer to verify it."
+      },
+      {
+        "type": "summary",
+        "title": "The essential strategy",
+        "content": "Integration by parts is the reverse of the product rule: ∫u dv = uv - ∫v du. Choose the factor whose derivative simplifies the expression, integrate the other factor, apply the minus sign carefully, and check the result by differentiation."
+      }
+    ]
+  },
+  "mathematics|trigonometric integration": {
+    "title": "Trigonometric integration: choose identities, transform, and integrate",
+    "blocks": [
+      {
+        "type": "objective",
+        "title": "Learning targets",
+        "content": "By the end, you should be able to integrate basic trigonometric functions, use identities to simplify powers and products, and check an antiderivative by differentiating it. Keep track of constants and the interval restrictions on any identity you use."
+      },
+      {
+        "type": "prior",
+        "title": "The essential derivatives",
+        "content": "You need these derivative facts: d(sin x)/dx = cos x, d(cos x)/dx = -sin x, d(tan x)/dx = sec²x. Integration reverses differentiation, so ∫cos x dx = sin x + C, ∫sin x dx = -cos x + C, and ∫sec²x dx = tan x + C."
+      },
+      {
+        "type": "concept",
+        "title": "Start with the simplest form",
+        "content": "Before choosing a technique, inspect the integrand. A single sine, cosine, or sec² term usually uses a standard result. If powers or products appear, look for an identity that turns the expression into a sum of terms you can integrate separately."
+      },
+      {
+        "type": "formula",
+        "title": "Standard results",
+        "content": "For angles measured in radians: ∫sin x dx = -cos x + C; ∫cos x dx = sin x + C; ∫sec²x dx = tan x + C; ∫cosec²x dx = -cot x + C. Also ∫tan x dx = -ln|cos x| + C, equivalently ln|sec x| + C where defined. The constant C is required for an indefinite integral."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: integrate a simple combination",
+        "content": "Evaluate ∫(3 cos x - 2 sin x) dx. Integrate each term separately: 3∫cos x dx - 2∫sin x dx = 3 sin x + 2 cos x + C. Check by differentiating: 3 cos x - 2 sin x, which matches the original integrand."
+      },
+      {
+        "type": "checkpoint",
+        "title": "Try a standard integral",
+        "content": "Without looking back, evaluate ∫(4 sin x + cos x) dx. Write the antiderivative of each term and include one constant of integration. Then differentiate your answer to check both signs."
+      },
+      {
+        "type": "concept",
+        "title": "Use identities for squared terms",
+        "content": "The Pythagorean identity sin²x + cos²x = 1 is useful, but for integrating a square it is often better to use the double-angle forms: sin²x = (1 - cos 2x)/2 and cos²x = (1 + cos 2x)/2. These convert squared functions into a constant plus a cosine term."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: integrate sin squared",
+        "content": "Evaluate ∫sin²x dx. Replace sin²x with (1 - cos 2x)/2. Then integrate: ∫(1/2 - cos 2x/2) dx = x/2 - (1/2)(sin 2x/2) + C = x/2 - sin 2x/4 + C. Differentiate the result to recover sin²x using the double-angle identity."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: integrate cos squared",
+        "content": "Evaluate ∫cos²x dx. Use cos²x = (1 + cos 2x)/2. Therefore ∫cos²x dx = ∫(1/2 + cos 2x/2) dx = x/2 + sin 2x/4 + C. The factor of 1/2 inside the angle matters: ∫cos 2x dx = sin 2x/2."
+      },
+      {
+        "type": "concept",
+        "title": "Products: simplify before integrating",
+        "content": "For products such as sin x cos x, a double-angle identity can make the integral immediate: sin 2x = 2 sin x cos x, so sin x cos x = sin 2x/2. For more complicated products or mixed powers, decide whether a substitution or an identity gives the simplest integrand. Do not expand blindly."
+      },
+      {
+        "type": "example",
+        "title": "Worked example: a product",
+        "content": "Evaluate ∫sin x cos x dx. Since sin 2x = 2 sin x cos x, rewrite the integrand as (1/2)sin 2x. Its integral is (1/2)(-cos 2x/2) + C = -cos 2x/4 + C. An equivalent answer is sin²x/2 + C, because the two expressions differ only by a constant."
+      },
+      {
+        "type": "misconception",
+        "title": "Common errors",
+        "content": "Do not forget the chain factor: ∫cos 2x dx is sin 2x/2, not sin 2x. Do not integrate sin x as +cos x; its antiderivative is -cos x. Include +C for an indefinite integral. When using ln results, preserve absolute-value bars where the expression may be negative."
+      },
+      {
+        "type": "exam",
+        "title": "A dependable exam method",
+        "content": "First identify whether the integrand is a standard function, a power, or a product. State the identity you use, simplify fully, then integrate term by term. Keep brackets and coefficients visible when the angle is 2x or another multiple of x. Finish with +C and, when possible, differentiate your answer as a check."
+      },
+      {
+        "type": "practice",
+        "title": "Practice ladder",
+        "content": "1. Evaluate ∫(2 cos x - 5 sin x) dx. 2. Evaluate ∫cos²x dx using a double-angle identity. 3. Evaluate ∫sin x cos x dx using sin 2x = 2 sin x cos x. 4. Explain why ∫cos 3x dx = sin 3x/3 + C. 5. Differentiate x/2 - sin 2x/4 and show that it equals sin²x."
+      },
+      {
+        "type": "summary",
+        "title": "The core strategy",
+        "content": "Basic trigonometric integrals follow directly from derivative facts. For squared sine and cosine, use double-angle identities; for products, look for a product-to-double-angle transformation or a useful substitution. Track the coefficient introduced by the chain rule in reverse, include +C, and verify by differentiating."
+      }
+    ]
+  },
   "mathematics|trigonometric identities": {
     title: "Trigonometric identities: transform, prove, simplify",
     blocks: [

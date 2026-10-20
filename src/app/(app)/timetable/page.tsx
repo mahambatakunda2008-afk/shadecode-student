@@ -22,16 +22,16 @@ interface SubjectRecord {
 
 // Subject color palette
 const SUBJECT_COLORS = [
-  "#6366f1", "#22c55e", "#f59e0b", "var(--danger)",
-  "#06b6d4", "#8b5cf6", "#ec4899", "#14b8a6",
-  "#f97316", "#84cc16",
+  "#3157D5", "#6657D9", "#4778E8", "#8A6CE8",
+  "#3F6BC8", "#7A72D6", "#5264B8", "#9A83D9",
+  "#405AA8", "#7862B8",
 ];
 
 const DURATION_PRESETS = [
-  { label: "25m", value: "25", icon: "⚡" },
-  { label: "45m", value: "45", icon: "📖" },
-  { label: "60m", value: "60", icon: "🧠" },
-  { label: "90m", value: "90", icon: "🔥" },
+  { label: "25m", value: "25" },
+  { label: "45m", value: "45" },
+  { label: "60m", value: "60" },
+  { label: "90m", value: "90" },
 ];
 
 const BREAK_PRESETS = [
@@ -42,10 +42,10 @@ const BREAK_PRESETS = [
 ];
 
 const TIME_PRESETS = [
-  { label: "🌅 Early", value: "06:00" },
-  { label: "🌤 Morning", value: "08:00" },
-  { label: "☀️ Midday", value: "12:00" },
-  { label: "🌆 Evening", value: "17:00" },
+  { label: "Early", value: "06:00" },
+  { label: "Morning", value: "08:00" },
+  { label: "Midday", value: "12:00" },
+  { label: "Evening", value: "17:00" },
 ];
 
 export default function Timetable() {
@@ -58,6 +58,7 @@ export default function Timetable() {
   const [schedule, setSchedule] = useState<TimetableSlot[]>([]);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [subjectColorMap, setSubjectColorMap] = useState<Record<string, string>>({});
@@ -105,6 +106,17 @@ export default function Timetable() {
 
   const generateSchedule = () => {
     if (selectedSubjects.length === 0) return;
+    const durationMinutes = Number.parseInt(duration, 10);
+    const breakMinutes = Number.parseInt(breakDuration, 10);
+    if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 240) {
+      setScheduleError("Study session length must be between 1 and 240 minutes.");
+      return;
+    }
+    if (!Number.isInteger(breakMinutes) || breakMinutes < 1 || breakMinutes > 60) {
+      setScheduleError("Break length must be between 1 and 60 minutes.");
+      return;
+    }
+    setScheduleError(null);
 
     const slots: TimetableSlot[] = [];
     let [hours, minutes] = startTime.split(":").map(Number);
@@ -120,13 +132,13 @@ export default function Timetable() {
     selectedSubjects.forEach((subject, index) => {
       const color = SUBJECT_COLORS[index % SUBJECT_COLORS.length];
       const start = formatTime(hours, minutes);
-      const endTime = addMinutes(hours, minutes, parseInt(duration));
+      const endTime = addMinutes(hours, minutes, durationMinutes);
       const end = formatTime(endTime.h, endTime.m);
 
       slots.push({ subject, start_time: start, end_time: end, is_break: false, color });
 
       if (index < selectedSubjects.length - 1) {
-        const breakEnd = addMinutes(endTime.h, endTime.m, parseInt(breakDuration));
+        const breakEnd = addMinutes(endTime.h, endTime.m, breakMinutes);
         slots.push({
           subject: "Break",
           start_time: end,
@@ -152,7 +164,7 @@ export default function Timetable() {
         data: {
           sessions: slots.filter(s => !s.is_break).length,
           breaks: slots.filter(s => s.is_break).length,
-          totalMinutes: slots.filter(s => !s.is_break).length * parseInt(duration),
+          totalMinutes: slots.filter(s => !s.is_break).length * durationMinutes,
         },
       });
     }
@@ -199,7 +211,7 @@ export default function Timetable() {
     }
   };
 
-  const totalStudyMins = schedule.filter(s => !s.is_break).length * parseInt(duration);
+  const totalStudyMins = schedule.filter(s => !s.is_break).length * (Number.parseInt(duration, 10) || 0);
   const studySessions = schedule.filter(s => !s.is_break).length;
 
   const cardStyle = {
@@ -247,7 +259,7 @@ export default function Timetable() {
               const color = SUBJECT_COLORS[i % SUBJECT_COLORS.length];
               const selected = selectedSubjects.includes(s.name);
               return (
-                <button key={s.id} onClick={() => toggleSubject(s.name)} style={{
+                <button type="button" key={s.id} onClick={() => toggleSubject(s.name)} aria-pressed={selected} style={{
                   padding: "6px 14px", borderRadius: "20px", fontSize: "13px", cursor: "pointer",
                   background: selected ? `${color}20` : "var(--muted)",
                   border: selected ? `1px solid ${color}60` : "1px solid transparent",
@@ -266,12 +278,13 @@ export default function Timetable() {
         <div style={{ display: "flex", gap: "8px" }}>
           <input
             placeholder="Add subject..."
+            aria-label="Add a custom subject"
             value={customSubject}
             onChange={e => setCustomSubject(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCustomSubject()}
             style={{ ...inputStyle, flex: 1 }}
           />
-          <button onClick={addCustomSubject} style={{
+          <button type="button" aria-label="Add subject" onClick={addCustomSubject} style={{
             background: "var(--primary)", color: "white", border: "none",
             borderRadius: "8px", padding: "10px 14px", fontWeight: 700, cursor: "pointer",
           }}>+</button>
@@ -288,7 +301,7 @@ export default function Timetable() {
                 display: "flex", alignItems: "center", gap: "4px",
               }}>
                 {s}
-                <button onClick={() => setSelectedSubjects(prev => prev.filter(x => x !== s))}
+                <button type="button" aria-label={`Remove ${s} from schedule`} onClick={() => setSelectedSubjects(prev => prev.filter(x => x !== s))}
                   style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0, fontSize: "12px" }}>
                   ✕
                 </button>
@@ -306,7 +319,7 @@ export default function Timetable() {
         <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "6px" }}>Start time</p>
         <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
           {TIME_PRESETS.map(p => (
-            <button key={p.value} onClick={() => setStartTime(p.value)} style={{
+            <button type="button" key={p.value} onClick={() => setStartTime(p.value)} aria-pressed={startTime === p.value} style={{
               padding: "6px 12px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
               background: startTime === p.value ? "color-mix(in srgb, var(--primary) 15%, transparent)" : "var(--muted)",
               border: startTime === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
@@ -316,7 +329,7 @@ export default function Timetable() {
               {p.label}
             </button>
           ))}
-          <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
+          <input type="time" aria-label="Schedule start time" value={startTime} onChange={e => setStartTime(e.target.value)}
             style={{ ...inputStyle, width: "110px", padding: "6px 10px", fontSize: "12px" }} />
         </div>
 
@@ -324,17 +337,17 @@ export default function Timetable() {
         <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "6px" }}>Study session length</p>
         <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
           {DURATION_PRESETS.map(p => (
-            <button key={p.value} onClick={() => setDuration(p.value)} style={{
+            <button type="button" key={p.value} onClick={() => setDuration(p.value)} aria-pressed={duration === p.value} style={{
               padding: "8px 14px", borderRadius: "8px", fontSize: "13px", cursor: "pointer",
               background: duration === p.value ? "var(--primary-glow)" : "var(--muted)",
               border: duration === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
               color: duration === p.value ? "var(--primary)" : "var(--muted-foreground)",
               fontWeight: duration === p.value ? 700 : 400,
             }}>
-              {p.icon} {p.label}
+              {p.label}
             </button>
           ))}
-          <input type="number" value={duration} onChange={e => setDuration(e.target.value)}
+          <input type="number" min={1} max={240} step={1} aria-label="Custom study session length in minutes" value={duration} onChange={e => setDuration(e.target.value)}
             placeholder="Custom"
             style={{ ...inputStyle, width: "80px", padding: "6px 10px", fontSize: "12px" }} />
         </div>
@@ -343,7 +356,7 @@ export default function Timetable() {
         <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "6px" }}>Break length</p>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           {BREAK_PRESETS.map(p => (
-            <button key={p.value} onClick={() => setBreakDuration(p.value)} style={{
+            <button type="button" key={p.value} onClick={() => setBreakDuration(p.value)} aria-pressed={breakDuration === p.value} style={{
               padding: "6px 14px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
               background: breakDuration === p.value ? "rgba(245,158,11,0.15)" : "var(--muted)",
               border: breakDuration === p.value ? "1px solid rgba(245,158,11,0.4)" : "1px solid transparent",
@@ -356,7 +369,10 @@ export default function Timetable() {
         </div>
       </div>
 
+      {scheduleError && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">{scheduleError}</p>}
+
       <button
+        type="button"
         onClick={generateSchedule}
         disabled={selectedSubjects.length === 0}
         style={{
@@ -381,7 +397,7 @@ export default function Timetable() {
                 {studySessions} sessions · {totalStudyMins} min total
               </p>
             </div>
-            <button onClick={saveSchedule} disabled={loading || saved} style={{
+            <button type="button" onClick={saveSchedule} disabled={loading || saved} aria-live="polite" style={{
               background: saved ? "rgba(34,197,94,0.15)" : "var(--muted)",
               color: saved ? "#22c55e" : "var(--foreground)",
               border: saved ? "1px solid rgba(34,197,94,0.3)" : "1px solid var(--card-border)",
@@ -393,7 +409,7 @@ export default function Timetable() {
           </div>
 
           {saveError && (
-            <p style={{ color: "var(--danger, #ef4444)", fontSize: "13px", marginTop: "-8px", marginBottom: "12px" }}>
+            <p role="alert" style={{ color: "var(--danger, #ef4444)", fontSize: "13px", marginTop: "-8px", marginBottom: "12px" }}>
               {saveError}
             </p>
           )}

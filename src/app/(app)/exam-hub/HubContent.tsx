@@ -45,7 +45,7 @@ const CARDS: HubCard[] = [
     icon: Bookmark,
     title: "Saved Papers & Questions",
     description: "Everything you've bookmarked, in one place.",
-    accent: "var(--warning)",
+    accent: "var(--accent)",
     feature: "past-papers",
   },
   {
@@ -61,7 +61,7 @@ const CARDS: HubCard[] = [
     icon: Target,
     title: "Weak Topics",
     description: "Topics to focus on based on your completed papers.",
-    accent: "var(--danger)",
+    accent: "var(--accent)",
     feature: "focus",
   },
   {
@@ -78,7 +78,7 @@ const CARDS: HubCard[] = [
     icon: Users,
     title: "Contribute a Paper",
     description: "Share a paper others are missing and earn XP once approved.",
-    accent: "var(--warning)",
+    accent: "var(--primary)",
     feature: "profile",
   },
 ];
@@ -105,20 +105,24 @@ export default function HubContent({ isAdmin }: Props) {
   return (
     <div className="ssc-page-full">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 flex items-center gap-3"><ShadecodeFeatureIcon feature="past-papers" size="sm" /><div><p className="ssc-kicker ssc-brand-gradient">Exam preparation</p><h1 className="text-2xl font-bold text-[var(--foreground)]">
-          Exam Hub
-        </h1></div></div>
-        <p className="mb-7 text-sm text-[var(--muted-foreground)]">
-          Everything for exam prep, in one place.
-        </p>
+        <header className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-3"><ShadecodeFeatureIcon feature="past-papers" size="sm" /><div><p className="ssc-kicker">Exam preparation</p><h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Exam Hub</h1></div></div>
+            <p className="max-w-xl text-sm leading-6 text-[var(--muted-foreground)]">Find real papers, practise questions, and turn your results into a focused revision plan.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/exam-hub/papers" className="ssc-button"><FileText size={16} aria-hidden="true" /> Browse papers <ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href="/exam-sim" className="ssc-button ssc-button-secondary"><Gamepad2 size={16} aria-hidden="true" /> Start practice</Link>
+          </div>
+        </header>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => {
             const Icon = card.icon;
             const content = (
               <div
-                className="ssc-interactive ssc-surface-raised group h-full rounded-2xl p-5"
-                style={{ opacity: card.comingSoon ? 0.6 : 1, cursor: card.comingSoon ? "default" : "pointer" }}
+                className="ssc-card-interactive group h-full rounded-2xl p-5"
+                style={{ cursor: card.comingSoon ? "default" : "pointer" }}
               >
                 <div
                   className="mb-4 grid size-10 place-items-center rounded-xl border"
@@ -144,14 +148,14 @@ export default function HubContent({ isAdmin }: Props) {
                 <p className="text-[13px] leading-6 text-[var(--text-secondary)]">
                   {card.description}
                 </p>
-                {!card.comingSoon && <ArrowRight size={15} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" aria-hidden="true" />}
+                {!card.comingSoon && <ArrowRight size={16} className="mt-4 text-[var(--text-tertiary)] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" aria-hidden="true" />}
               </div>
             );
 
             return card.comingSoon ? (
               <div key={card.href}>{content}</div>
             ) : (
-              <Link key={card.href} href={card.href} className="block">
+              <Link key={card.href} href={card.href} className="block rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]">
                 {content}
               </Link>
             );

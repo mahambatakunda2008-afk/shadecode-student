@@ -51,8 +51,8 @@ export default function LearnBrainStatus() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold text-[var(--foreground)]">Cortex local AI</h2>
-                {status === "ready" && <span className="inline-flex items-center gap-1 text-xs text-[var(--primary)]"><CheckCircle2 size={13} /> Ready</span>}
-                {status === "loading" && <span className="inline-flex items-center gap-1 text-xs text-[var(--muted-foreground)]"><LoaderCircle size={13} className="animate-spin" /> Setting up</span>}
+                {status === "ready" && <span className="inline-flex items-center gap-1 text-xs text-[var(--primary)]"><CheckCircle2 size={14} /> Ready</span>}
+                {status === "loading" && <span className="inline-flex items-center gap-1 text-xs text-[var(--muted-foreground)]"><LoaderCircle size={14} className="animate-spin" /> Setting up</span>}
               </div>
               <p className="mt-1 max-w-2xl text-sm leading-5 text-[var(--muted-foreground)]">{message}</p>
               <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">

@@ -88,29 +88,29 @@ export function StepGoalSelection({ data, onUpdate, onNext, onBack }: StepProps)
 
   return (
     <div style={{ opacity: in_ ? 1 : 0, transform: in_ ? 'translateY(0)' : 'translateY(8px)', transition: 'opacity .25s ease, transform .25s ease' }}>
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase', color: '#22D3EE', marginBottom: 6 }}>04 · Direction</p>
-      <h2 style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 720, color: '#F5F7FA', marginBottom: 6 }}>{level === 'early-childhood' ? 'What should we explore together?' : 'What should Shadecode help you do?'}</h2>
-      <p style={{ fontSize: 13, lineHeight: 1.5, color: '#AAB2BF', marginBottom: 18 }}>{level === 'early-childhood' ? 'These choices shape the kinds of activities we put first.' : 'Pick one or more. You can change these later.'}</p>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: 6 }}>04 · Direction</p>
+      <h2 style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 720, color: 'var(--foreground)', marginBottom: 6 }}>{level === 'early-childhood' ? 'What should we explore together?' : 'What should Shadecode help you do?'}</h2>
+      <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--muted-foreground)', marginBottom: 18 }}>{level === 'early-childhood' ? 'These choices shape the kinds of activities we put first.' : 'Pick one or more. You can change these later.'}</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
-        {goals.map(([goal, description]) => { const active = selected.includes(goal); return <button key={goal} type="button" onClick={() => toggle(goal)} style={{ padding: 12, borderRadius: 11, textAlign: 'left', cursor: 'pointer', background: active ? 'rgba(36,91,255,.16)' : 'rgba(255,255,255,.045)', border: active ? '1px solid #245BFF' : '1px solid rgba(255,255,255,.09)', color: '#F5F7FA' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={{ fontSize: 13, fontWeight: 680 }}>{goal}</span>{active && <span style={{ color: '#67E8F9', fontSize: 12 }}>✓</span>}</div><div style={{ fontSize: 11, color: '#8F9AA8', marginTop: 5, lineHeight: 1.35 }}>{description}</div></button>; })}
+        {goals.map(([goal, description]) => { const active = selected.includes(goal); return <button key={goal} type="button" onClick={() => toggle(goal)} style={{ padding: 12, borderRadius: 11, textAlign: 'left', cursor: 'pointer', background: active ? 'var(--primary-glow)' : 'rgba(255,255,255,.045)', border: active ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,.09)', color: 'var(--foreground)' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={{ fontSize: 13, fontWeight: 680 }}>{goal}</span>{active && <span style={{ color: 'var(--primary)', fontSize: 12 }}>✓</span>}</div><div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 5, lineHeight: 1.35 }}>{description}</div></button>; })}
       </div>
 
       <div style={{ paddingTop: 17, borderTop: '1px solid rgba(255,255,255,.08)' }}>
-        <div style={{ fontSize: 12, fontWeight: 650, color: '#DCE2E8', marginBottom: 8 }}>{level === 'early-childhood' ? 'How much activity time feels right?' : 'How much do you want to study each day?'}</div>
+        <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--text-secondary)', marginBottom: 8 }}>{level === 'early-childhood' ? 'How much activity time feels right?' : 'How much do you want to study each day?'}</div>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(times.length, 4)}, 1fr)`, gap: 6 }}>
-          {times.map(value => { const active = minutes === value; return <button key={value} type="button" onClick={() => setMinutes(value)} style={{ padding: '9px 5px', borderRadius: 9, cursor: 'pointer', background: active ? 'rgba(34,211,238,.11)' : 'rgba(255,255,255,.035)', border: active ? '1px solid #22D3EE' : '1px solid rgba(255,255,255,.08)', color: active ? '#67E8F9' : '#B8C0CB', fontSize: 12, fontWeight: 650 }}>{value >= 60 ? `${value / 60}h` : `${value}m`}</button>; })}
+          {times.map(value => { const active = minutes === value; return <button key={value} type="button" onClick={() => setMinutes(value)} style={{ padding: '9px 5px', borderRadius: 9, cursor: 'pointer', background: active ? 'var(--primary-glow)' : 'rgba(255,255,255,.035)', border: active ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,.08)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 12, fontWeight: 650 }}>{value >= 60 ? `${value / 60}h` : `${value}m`}</button>; })}
         </div>
       </div>
 
       <div style={{ marginTop: 17 }}>
-        <div style={{ fontSize: 12, fontWeight: 650, color: '#DCE2E8', marginBottom: 8 }}>How should we plan it?</div>
+        <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--text-secondary)', marginBottom: 8 }}>How should we plan it?</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-          {STYLES.map(option => { const active = style === option.id; return <button key={option.id} type="button" onClick={() => setStyle(option.id)} style={{ padding: 11, borderRadius: 10, textAlign: 'left', cursor: 'pointer', background: active ? 'rgba(36,91,255,.16)' : 'rgba(255,255,255,.035)', border: active ? '1px solid #245BFF' : '1px solid rgba(255,255,255,.08)' }}><div style={{ fontSize: 12, fontWeight: 680, color: '#F5F7FA' }}>{option.label}</div><div style={{ fontSize: 10, color: '#8F9AA8', marginTop: 3 }}>{option.desc}</div></button>; })}
+          {STYLES.map(option => { const active = style === option.id; return <button key={option.id} type="button" onClick={() => setStyle(option.id)} style={{ padding: 11, borderRadius: 10, textAlign: 'left', cursor: 'pointer', background: active ? 'var(--primary-glow)' : 'rgba(255,255,255,.035)', border: active ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,.08)' }}><div style={{ fontSize: 12, fontWeight: 680, color: 'var(--foreground)' }}>{option.label}</div><div style={{ fontSize: 10, color: 'var(--muted-foreground)', marginTop: 3 }}>{option.desc}</div></button>; })}
         </div>
       </div>
 
-      {error && <p role="alert" style={{ fontSize: 12, color: '#FB7185', marginTop: 12 }}>{error}</p>}
+      {error && <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginTop: 12 }}>{error}</p>}
       <StepActions onNext={handleNext} onBack={onBack} />
     </div>
   );

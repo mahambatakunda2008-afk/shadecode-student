@@ -167,9 +167,13 @@ export async function PATCH(req: Request) {
 
     if (body.heartbeatOnly === true) {
       const heartbeatAt = new Date().toISOString();
+      // A heartbeat must renew the lease, not merely record liveness. Without
+      // extending lease_until, long browser-local recovery can outlive the
+      // original 90-second lease and lose permission to checkpoint its result.
+      const leaseUntil = new Date(Date.now() + 90_000).toISOString();
       const { data, error } = await auth.client
         .from("cortex_generation_jobs")
-        .update({ heartbeat_at: heartbeatAt, updated_at: heartbeatAt })
+        .update({ heartbeat_at: heartbeatAt, updated_at: heartbeatAt, lease_until: leaseUntil })
         .eq("id", body.id)
         .eq("user_id", auth.user.id)
         .eq("lease_id", leaseId)

@@ -155,7 +155,7 @@ export function TourCard({ step, currentStep, totalSteps, targetRect, onNext, on
           padding: '8px 12px', borderRadius: 10, marginBottom: 16,
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
         }}>
-          <Lightbulb size={11} style={{ marginTop: 1, flexShrink: 0, color: 'rgb(251,191,36)' }} />
+          <Lightbulb size={12} style={{ marginTop: 1, flexShrink: 0, color: 'rgb(251,191,36)' }} />
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', lineHeight: 1.5 }}>{step.tip}</span>
         </div>
       )}

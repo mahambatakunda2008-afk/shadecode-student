@@ -197,7 +197,7 @@ export default function ContributePage() {
           </Row>
 
           <Field label="Subject">
-            <select value={syllabusId} onChange={(e) => setSyllabusId(e.target.value)} style={selectStyle} disabled={!level}>
+            <select aria-label="Subject syllabus" value={syllabusId} onChange={(e) => setSyllabusId(e.target.value)} style={selectStyle} disabled={!level}>
               <option value="" disabled>{level ? "Select a subject…" : "Pick a level first"}</option>
               {subjectOptions.map((s) => <option key={s.id} value={s.id}>{s.subject}</option>)}
             </select>
@@ -205,22 +205,22 @@ export default function ContributePage() {
 
           <Row>
             <Field label="Session">
-              <select value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!board}>
+              <select aria-label="Exam session" value={session} onChange={(e) => setSession(e.target.value)} style={selectStyle} disabled={!board}>
                 <option value="" disabled>{board ? "Select a session…" : "Pick a board first"}</option>
                 {sessionOptions.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
             <Field label="Year">
-              <input type="number" placeholder="e.g. 2025" value={year} onChange={(e) => setYear(e.target.value)} style={selectStyle} />
+              <input aria-label="Exam year" type="number" min={2000} max={2100} placeholder="e.g. 2025" value={year} onChange={(e) => setYear(e.target.value)} style={selectStyle} />
             </Field>
           </Row>
 
           <Row>
             <Field label="Paper #">
-              <input type="number" min={1} placeholder="e.g. 2" value={paperNumber} onChange={(e) => setPaperNumber(e.target.value)} style={selectStyle} />
+              <input aria-label="Paper number" type="number" min={1} placeholder="e.g. 2" value={paperNumber} onChange={(e) => setPaperNumber(e.target.value)} style={selectStyle} />
             </Field>
             <Field label="Variant">
-              <input type="number" min={1} placeholder="e.g. 1" value={variant} onChange={(e) => setVariant(e.target.value)} style={selectStyle} />
+              <input aria-label="Paper variant" type="number" min={1} placeholder="e.g. 1" value={variant} onChange={(e) => setVariant(e.target.value)} style={selectStyle} />
             </Field>
           </Row>
 
@@ -235,7 +235,7 @@ export default function ContributePage() {
             >
               <UploadCloud size={16} />
               {file ? file.name : "Choose a PDF"}
-              <input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} style={{ display: "none" }} />
+              <input aria-label="Choose a PDF file to contribute" className="sr-only" type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </label>
           </Field>
 
@@ -243,7 +243,7 @@ export default function ContributePage() {
             type="submit"
             disabled={submitting || !isComplete}
             style={{
-              padding: "12px 20px", borderRadius: 12, background: "var(--primary)", color: "var(--primary-foreground)",
+              minHeight: 44, padding: "12px 20px", borderRadius: 12, background: "var(--primary)", color: "var(--primary-foreground)",
               fontSize: 14, fontWeight: 600, border: "none", cursor: submitting || !isComplete ? "default" : "pointer", opacity: submitting || !isComplete ? 0.5 : 1,
             }}
           >
@@ -252,6 +252,8 @@ export default function ContributePage() {
 
           {result && (
             <div
+              role={result.ok ? "status" : "alert"}
+              aria-live={result.ok ? "polite" : "assertive"}
               style={{
                 display: "flex", alignItems: "center", gap: 8, padding: 14, borderRadius: 12,
                 background: result.ok ? "var(--accent-soft)" : "var(--danger-soft)",
@@ -325,7 +327,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: "flex", gap: 12 }}>{children}</div>;
+  return <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>{children}</div>;
 }
 
 const selectStyle: React.CSSProperties = {

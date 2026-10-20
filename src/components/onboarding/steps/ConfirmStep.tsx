@@ -22,14 +22,14 @@ export function ConfirmStep({ data, onBack, onSubmit, isSubmitting, error }: Pro
     { label: 'Planning', value: STYLE_MAP[d.studyStyle] ?? 'Flexible pace' },
   ];
   return <div style={{ opacity: in_ ? 1 : 0, transform: in_ ? 'translateY(0)' : 'translateY(8px)', transition: 'opacity .25s ease, transform .25s ease' }}>
-    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase', color: '#22D3EE', marginBottom: 6 }}>05 · Ready</p>
-    <h2 style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 720, color: '#F5F7FA', marginBottom: 6 }}>Your starting point is ready.</h2>
-    <p style={{ fontSize: 13, lineHeight: 1.5, color: '#AAB2BF', marginBottom: 18 }}>One last look. Nothing here is permanent.</p>
+    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: 6 }}>05 · Ready</p>
+    <h2 style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 720, color: 'var(--foreground)', marginBottom: 6 }}>Your starting point is ready.</h2>
+    <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--muted-foreground)', marginBottom: 18 }}>One last look. Nothing here is permanent.</p>
     <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,.09)', marginBottom: 15 }}>
-      {rows.map((row, i) => <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, padding: '10px 13px', background: i % 2 === 0 ? 'rgba(255,255,255,.035)' : 'transparent', borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,.07)' : 'none' }}><span style={{ fontSize: 11, color: '#8F9AA8' }}>{row.label}</span><span style={{ fontSize: 11, fontWeight: 620, color: '#E6EBF0', maxWidth: '62%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{row.value}</span></div>)}
+      {rows.map((row, i) => <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, padding: '10px 13px', background: i % 2 === 0 ? 'rgba(255,255,255,.035)' : 'transparent', borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,.07)' : 'none' }}><span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{row.label}</span><span style={{ fontSize: 11, fontWeight: 620, color: 'var(--foreground)', maxWidth: '62%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{row.value}</span></div>)}
     </div>
-    <div style={{ padding: '11px 13px', borderRadius: 11, background: 'rgba(34,211,238,.06)', border: '1px solid rgba(34,211,238,.15)', marginBottom: 15 }}><div style={{ fontSize: 12, fontWeight: 650, color: '#67E8F9' }}>What happens next?</div><div style={{ fontSize: 11, lineHeight: 1.45, color: '#AAB2BF', marginTop: 4 }}>Shadecode uses this setup to shape your dashboard, recommendations and first learning session.</div></div>
-    {error && <p role="alert" style={{ fontSize: 12, color: '#FB7185', marginBottom: 12 }}>⚠ {error}</p>}
+    <div style={{ padding: '11px 13px', borderRadius: 11, background: 'rgba(34,211,238,.06)', border: '1px solid rgba(34,211,238,.15)', marginBottom: 15 }}><div style={{ fontSize: 12, fontWeight: 650, color: 'var(--primary)' }}>What happens next?</div><div style={{ fontSize: 11, lineHeight: 1.45, color: 'var(--muted-foreground)', marginTop: 4 }}>Shadecode uses this setup to shape your dashboard, recommendations and first learning session.</div></div>
+    {error && <p role="alert" style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 12 }}>⚠ {error}</p>}
     <StepActions onNext={onSubmit} onBack={onBack} nextLabel="Start learning →" isLoading={isSubmitting} />
   </div>;
 }

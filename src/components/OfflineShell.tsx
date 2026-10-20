@@ -70,7 +70,7 @@ export default function OfflineShell() {
   const message = !isOnline
     ? status.pending > 0
       ? `${status.pending} change${status.pending === 1 ? "" : "s"} saved on this device`
-      : "You’re offline -- showing cached content"
+      : "You’re offline — showing cached content"
     : status.failed > 0
       ? `${status.failed} change${status.failed === 1 ? "" : "s"} need${status.failed === 1 ? "s" : ""} attention`
       : `Syncing ${status.pending} saved change${status.pending === 1 ? "" : "s"}`;
@@ -102,7 +102,7 @@ export default function OfflineShell() {
       }}
     >
       <BrandMark width={15} height={15} style={{ color: "#22D3EE", flexShrink: 0 }} aria-hidden="true" />
-      {!isOnline ? <WifiOff size={13} color="#9fb2bc" style={{ flexShrink: 0 }} /> : null}
+      {!isOnline ? <WifiOff size={14} color="#9fb2bc" style={{ flexShrink: 0 }} /> : null}
       {canExpand ? (
         <button
           type="button"
@@ -125,7 +125,7 @@ export default function OfflineShell() {
         >
           <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{message}</span>
           <ChevronDown
-            size={13}
+            size={14}
             aria-hidden="true"
             style={{ flexShrink: 0, transition: "transform 150ms ease", transform: detailsOpen ? "rotate(180deg)" : "none" }}
           />
@@ -153,7 +153,7 @@ export default function OfflineShell() {
             cursor: syncing ? "wait" : "pointer",
           }}
         >
-          <RefreshCw size={13} className={syncing ? "animate-spin" : undefined} aria-hidden="true" />
+          <RefreshCw size={14} className={syncing ? "animate-spin" : undefined} aria-hidden="true" />
         </button>
       )}
       {canExpand && detailsOpen ? (

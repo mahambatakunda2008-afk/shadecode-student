@@ -20,8 +20,8 @@ export default function SavedPapersPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", padding: 24 }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <main className="ssc-page min-h-screen px-4 py-5 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-5xl">
         <Link
           href="/exam-hub"
           style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--muted-foreground)", textDecoration: "none", marginBottom: 16, fontSize: 13, width: "fit-content" }}
@@ -29,9 +29,10 @@ export default function SavedPapersPage() {
           <ArrowLeft size={16} /> Exam Hub
         </Link>
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--foreground)", marginBottom: 20 }}>
-          Saved Papers
-        </h1>
+        <header className="ssc-page-header mb-6 flex items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><Bookmark size={20} /></div>
+          <div><h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Saved papers</h1><p className="mt-1 text-sm text-[var(--muted-foreground)]">Your bookmarked papers, ready for another attempt.</p></div>
+        </header>
 
         {error && (
           <div style={{ padding: 16, borderRadius: 14, background: "var(--danger-soft)", border: "1px solid color-mix(in srgb, var(--danger) 24%, transparent)", marginBottom: 20 }}>
@@ -56,7 +57,7 @@ export default function SavedPapersPage() {
             </p>
             <Link
               href="/exam-hub/papers"
-              style={{ display: "inline-block", padding: "10px 18px", borderRadius: 10, background: "var(--primary)", color: "var(--primary-foreground)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--primary)] px-5 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             >
               Browse Past Papers
             </Link>
@@ -95,6 +96,6 @@ export default function SavedPapersPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

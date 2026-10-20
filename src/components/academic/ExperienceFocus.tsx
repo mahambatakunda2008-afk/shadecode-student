@@ -71,6 +71,7 @@ export default function ExperienceFocus() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completeRef = useRef<() => void>(() => {});
   const sessionStartedRef = useRef(false);
+  const completionHandledRef = useRef(false);
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
@@ -92,7 +93,7 @@ export default function ExperienceFocus() {
       setUserId(user.id);
       const today = new Date().toDateString();
       try {
-        const stats = JSON.parse(localStorage.getItem(`focus_stats_${today}`) || '{"sessions":0,"minutes":0}');
+        const stats = JSON.parse(localStorage.getItem(`focus_stats_${user.id}_${today}`) || '{"sessions":0,"minutes":0}');
         setSessionsToday(Number(stats.sessions) || 0);
         setTotalFocusToday(Number(stats.minutes) || 0);
       } catch {
@@ -108,6 +109,7 @@ export default function ExperienceFocus() {
     setIsRunning(false);
     setIsFinished(false);
     sessionStartedRef.current = false;
+    completionHandledRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, [totalSeconds]);
 
@@ -117,27 +119,30 @@ export default function ExperienceFocus() {
       return;
     }
     intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          setIsRunning(false);
-          setIsFinished(true);
-          completeRef.current();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning]);
+
+  useEffect(() => {
+    if (timeLeft !== 0 || !isRunning || completionHandledRef.current) return;
+    completionHandledRef.current = true;
+    setIsRunning(false);
+    setIsFinished(true);
+    void completeRef.current();
+  }, [timeLeft, isRunning]);
 
   async function handleSessionComplete() {
     const focusMinutes = selectedPreset === 4 ? customMinutes : preset.minutes;
     const today = new Date().toDateString();
     let stats = { sessions: 0, minutes: 0 };
-    try { stats = JSON.parse(localStorage.getItem(`focus_stats_${today}`) || '{"sessions":0,"minutes":0}'); } catch { /* use defaults */ }
+    try { stats = JSON.parse(localStorage.getItem(`focus_stats_${userId}_${today}`) || '{"sessions":0,"minutes":0}'); } catch { /* use defaults */ }
     const newStats = { sessions: (Number(stats.sessions) || 0) + 1, minutes: (Number(stats.minutes) || 0) + focusMinutes };
-    localStorage.setItem(`focus_stats_${today}`, JSON.stringify(newStats));
+    try {
+      localStorage.setItem(`focus_stats_${userId}_${today}`, JSON.stringify(newStats));
+    } catch {
+      // Keep this session usable when browser storage is unavailable.
+    }
     setSessionsToday(newStats.sessions);
     setTotalFocusToday(newStats.minutes);
 
@@ -175,6 +180,7 @@ export default function ExperienceFocus() {
       setTimeLeft(totalSeconds);
       setIsFinished(false);
       sessionStartedRef.current = false;
+      completionHandledRef.current = false;
     }
     const nextRunning = !isRunning;
     setIsRunning(nextRunning);
@@ -194,6 +200,7 @@ export default function ExperienceFocus() {
     setIsFinished(false);
     setTimeLeft(totalSeconds);
     sessionStartedRef.current = false;
+    completionHandledRef.current = false;
   };
 
   const requestNotificationPermission = () => {
@@ -206,7 +213,7 @@ export default function ExperienceFocus() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-7 text-[var(--foreground)] sm:px-6 lg:px-8" data-experience={experience.family} data-study-level={experience.stage}>
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
+        <header className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-7">
           <div className="flex items-start gap-3">
             <ShadecodeFeatureIcon feature="focus" size="sm" />
             <div>
@@ -217,11 +224,11 @@ export default function ExperienceFocus() {
           </div>
         </header>
 
-        <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-8">
+        <section className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5 sm:p-8">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Focus duration">
             {PRESETS.map((item, index) => {
               const selected = selectedPreset === index;
-              return <button key={item.label} type="button" onClick={() => setSelectedPreset(index)} className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition" style={{ borderColor: selected ? accent : "var(--card-border)", background: selected ? "var(--primary-glow)" : "var(--card)", color: selected ? accent : "var(--muted-foreground)" }}>{item.label}</button>;
+              return <button key={item.label} type="button" onClick={() => setSelectedPreset(index)} aria-pressed={selected} className="inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]" style={{ borderColor: selected ? accent : "var(--card-border)", background: selected ? "var(--primary-glow)" : "var(--card)", color: selected ? accent : "var(--muted-foreground)" }}>{item.label}</button>;
             })}
           </div>
 
@@ -234,14 +241,14 @@ export default function ExperienceFocus() {
                 <circle cx="130" cy="130" r="110" fill="none" stroke={isFinished ? "var(--success, #22c55e)" : accent} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-5xl font-black tabular-nums">{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}</div>
+                <div role="timer" aria-label={`${minutes} minutes and ${seconds} seconds remaining`} className="text-5xl font-black tabular-nums">{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}</div>
                 <div className="mt-1 text-sm text-[var(--muted-foreground)]">{isFinished ? copy.complete : isRunning ? copy.running : "Ready"}</div>
               </div>
             </div>
 
             <div className="mt-4 flex gap-2">
-              <button type="button" onClick={toggleTimer} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 font-extrabold text-white transition" style={{ background: accent }}><PrimaryButtonIcon className="h-4 w-4" />{isFinished ? "Start again" : isRunning ? "Pause" : copy.start}</button>
-              <button type="button" onClick={resetTimer} className="inline-flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-5 py-3 font-bold"><RotateCcw className="h-4 w-4" />Reset</button>
+              <button type="button" onClick={toggleTimer} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-3 font-extrabold text-white transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]" style={{ background: accent }}><PrimaryButtonIcon className="h-4 w-4" />{isFinished ? "Start again" : isRunning ? "Pause" : copy.start}</button>
+              <button type="button" onClick={resetTimer} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] px-5 py-3 font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><RotateCcw className="h-4 w-4" />Reset</button>
             </div>
           </div>
         </section>
@@ -251,7 +258,7 @@ export default function ExperienceFocus() {
           <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-5"><div className="text-3xl font-black">{totalFocusToday}m</div><div className="mt-1 text-sm text-[var(--muted-foreground)]">{copy.stat}</div></div>
         </section>
 
-        <button type="button" onClick={requestNotificationPermission} className="mx-auto flex items-center gap-2 text-sm text-[var(--muted-foreground)]"><Hammer className="h-4 w-4" />Enable completion notifications</button>
+        <button type="button" onClick={requestNotificationPermission} className="mx-auto flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--muted-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"><Hammer className="h-4 w-4" />Enable completion notifications</button>
       </div>
     </main>
   );

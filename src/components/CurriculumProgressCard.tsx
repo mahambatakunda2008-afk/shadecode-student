@@ -60,7 +60,7 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <BookOpen size={13} color="#c4b5fd" />
+            <BookOpen size={14} color="#c4b5fd" />
           </div>
           <span style={heading}>Curriculum Progress</span>
         </div>
@@ -76,8 +76,8 @@ export default function CurriculumProgressCard({ initialState = null }: Props) {
       <div className="curriculum-stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
         <Stat label="Current lesson"   value={currentTitle ?? "—"} />
         <Stat label="Recommended next" value={recommended  ?? "—"} />
-        <Stat label="Completed"        value={String(completed)} accent="#10b981" icon={<CheckCircle2 size={11} color="#10b981" />} />
-        <Stat label="Locked"           value={String(locked)}    accent="var(--muted-foreground)" icon={<Lock size={11} color="var(--muted-foreground)" />} />
+        <Stat label="Completed"        value={String(completed)} accent="#10b981" icon={<CheckCircle2 size={12} color="#10b981" />} />
+        <Stat label="Locked"           value={String(locked)}    accent="var(--muted-foreground)" icon={<Lock size={12} color="var(--muted-foreground)" />} />
       </div>
 
       {/* Actions */}

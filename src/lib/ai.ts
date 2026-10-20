@@ -50,6 +50,10 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const { userId, feature = "ai_assistant", subfeature = "generate", media = [] } = options;
   const maxChainMs = Math.max(3000, Math.min(options.maxChainMs ?? DEFAULT_MAX_CHAIN_MS, 60000));
   const perProviderMaxMs = Math.max(1000, Math.min(options.perProviderMaxMs ?? DEFAULT_PER_PROVIDER_MAX_MS, maxChainMs));
+  // Start the overall clock before curriculum lookup so grounding cannot silently consume
+  // the generation window before the first provider is attempted.
+  const startedAt = Date.now();
+  const groundingBudgetMs = Math.min(2500, Math.max(1000, Math.floor(maxChainMs * 0.12)));
   let groundedPrompt = prompt;
   let curriculumGroundingAvailable = false;
   let curriculumGroundingReason = "not requested";
@@ -68,22 +72,38 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
         : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
     }
   } else if (userId) {
+    let groundingTimer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const curriculumContext = await getVerifiedCurriculumPromptContext(userId, prompt);
-      curriculumGroundingAvailable = curriculumContext.trim().length > 0;
-      curriculumGroundingReason = curriculumGroundingAvailable ? "resolved" : "unavailable";
-      groundedPrompt = curriculumGroundingAvailable
-        ? `${prompt}${curriculumContext}`
-        : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+      const timeoutSentinel = Symbol("curriculum-grounding-timeout");
+      const curriculumResult = await Promise.race([
+        getVerifiedCurriculumPromptContext(userId, prompt),
+        new Promise<typeof timeoutSentinel>((resolve) => {
+          groundingTimer = setTimeout(() => resolve(timeoutSentinel), Math.min(groundingBudgetMs, Math.max(0, maxChainMs - (Date.now() - startedAt))));
+        }),
+      ]);
+      if (curriculumResult === timeoutSentinel) {
+        curriculumGroundingReason = "lookup_timeout";
+        console.warn(`[AI] curriculum grounding exceeded its ${groundingBudgetMs}ms budget; continuing without verified context.`);
+        groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded within the request budget. Do not claim board-specific syllabus alignment or invent syllabus objectives. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+      } else {
+        const curriculumContext = curriculumResult;
+        curriculumGroundingAvailable = curriculumContext.trim().length > 0;
+        curriculumGroundingReason = curriculumGroundingAvailable ? "resolved" : "unavailable";
+        groundedPrompt = curriculumGroundingAvailable
+          ? `${prompt}${curriculumContext}`
+          : `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nNo verified board-specific curriculum context was available. Do not claim board-specific syllabus alignment, required scope, terminology, or assessment style. Teach the requested topic as general educational material.\n=== END CURRICULUM SAFETY NOTE ===`;
+      }
     } catch (error) {
       curriculumGroundingReason = "lookup_error";
       console.error("[AI] curriculum grounding failed:", error);
       groundedPrompt = `${prompt}\n\n=== CURRICULUM SAFETY NOTE ===\nVerified curriculum context could not be loaded. Do not claim board-specific syllabus alignment or invent syllabus objectives.\n=== END CURRICULUM SAFETY NOTE ===`;
+    } finally {
+      if (groundingTimer) clearTimeout(groundingTimer);
     }
   }
 
   const promptTokens = Math.ceil(groundedPrompt.length / 4);
-  const startedAt = Date.now();
+
   function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) {
     const telemetry = logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs, curriculumGrounding: curriculumGroundingAvailable, curriculumGroundingReason } }).catch(() => undefined);
     let telemetryTimer: ReturnType<typeof setTimeout> | undefined;

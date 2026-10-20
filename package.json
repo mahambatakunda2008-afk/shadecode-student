@@ -12,6 +12,7 @@
     "lint": "eslint",
     "verify": "tsc --noEmit && npm run lint && npm test",
     "postbuild": "next-sitemap",
+    "audit:contrast": "node scripts/audit-contrast.mjs",
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "test:curriculum": "ts-node src/lib/curriculum/test-curriculum.ts",
     "watch:curriculum": "tsx scripts/curriculum-watch.mjs",

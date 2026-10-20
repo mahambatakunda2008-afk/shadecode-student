@@ -34,7 +34,7 @@ export default function CurriculumProfilePrompt() {
           <p className="truncate text-xs text-[var(--muted-foreground)]">Your exam board, qualification, syllabus and subject help Learn, exams and Cortex stay accurate.</p>
         </div>
         <button type="button" onClick={() => router.push("/settings")} className="ssc-button shrink-0 px-3 py-2 text-xs sm:text-sm">
-          Set curriculum <ArrowRight size={15} />
+          Set curriculum <ArrowRight size={16} />
         </button>
         <button type="button" onClick={() => setVisible(false)} aria-label="Dismiss curriculum reminder" className="rounded-xl p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           <X size={16} />

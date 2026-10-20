@@ -30,7 +30,7 @@ export default function PublicHomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/auth/login" className="hidden rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:text-white sm:inline-flex">Sign in</Link>
-            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Get started <ArrowRight size={15} /></Link>
+            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Get started <ArrowRight size={16} /></Link>
           </div>
         </div>
       </header>
@@ -40,11 +40,11 @@ export default function PublicHomePage() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 pb-24 pt-16 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-32 lg:pt-24">
           <div>
             <div className="mb-7"><BrandLockup /></div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={15} /> Study smarter. Live sharper.</div>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={16} /> Study smarter. Live sharper.</div>
             <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">A learning system that <span className="ssc-brand-gradient">learns how you learn.</span></h1>
             <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Lessons, questions, mistakes, exams, projects and study behaviour become one evolving learning experience, with Cortex helping decide what should happen next.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={17} /></Link>
+              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={18} /></Link>
               <a href="#intelligence" className="inline-flex items-center gap-2 rounded-[10px] border border-white/12 bg-transparent px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.05]">See how it works</a>
             </div>
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400"><span>Responsive PWA</span><span>AI-assisted</span><span>Local-first</span><span>Built for learning</span></div>
@@ -59,9 +59,9 @@ export default function PublicHomePage() {
               </div>
               <div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
               <div className="rounded-2xl border border-blue-400/15 bg-white/[0.03] p-4.5">
-                <div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.1em] text-cyan-200">Next action</div><div className="mt-1.5 text-base font-semibold text-white">Practise mechanics</div></div><Zap className="text-[var(--brand-blue)]" size={21} /></div>
+                <div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.1em] text-blue-200">Next action</div><div className="mt-1.5 text-base font-semibold text-white">Practise mechanics</div></div><Zap className="text-[var(--brand-blue)]" size={22} /></div>
                 <p className="mt-2.5 text-sm leading-6 text-slate-400">Chosen from the learner's recent evidence, not a random prompt.</p>
-                <div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1.5 text-sm font-semibold text-cyan-200"><CheckCircle2 size={14} /> Evidence-backed</span><span className="rounded-lg bg-[var(--brand-gradient)] px-3 py-1.5 text-sm font-semibold text-white">Start</span></div>
+                <div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1.5 text-sm font-semibold text-blue-200"><CheckCircle2 size={14} /> Evidence-backed</span><span className="rounded-lg bg-[var(--brand-gradient)] px-3 py-1.5 text-sm font-semibold text-white">Start</span></div>
               </div>
               <div className="mt-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><div className="flex items-center gap-2 text-sm font-semibold text-white"><BrainCircuit size={16} className="text-violet-300" /> Cortex</div><p className="mt-2 text-sm leading-6 text-slate-400">Observe → understand → act → measure → learn.</p></div>
             </div>
@@ -70,13 +70,13 @@ export default function PublicHomePage() {
       </section>
 
       <section id="intelligence" className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center"><span className="text-sm font-semibold uppercase tracking-[.16em] text-cyan-300">The Cortex loop</span><h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold tracking-[-.03em] text-white sm:text-4xl">Not just an AI tutor. A learning system.</h2><p className="mt-5 text-[16px] leading-7 text-slate-400">The goal is not to make a chatbot sound clever. It is to make the next learning action more useful because the system remembers real evidence.</p></div>
+        <div className="mx-auto max-w-2xl text-center"><span className="text-sm font-semibold uppercase tracking-[.16em] text-blue-300">The Cortex loop</span><h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold tracking-[-.03em] text-white sm:text-4xl">Not just an AI tutor. A learning system.</h2><p className="mt-5 text-[16px] leading-7 text-slate-400">The goal is not to make a chatbot sound clever. It is to make the next learning action more useful because the system remembers real evidence.</p></div>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{loop.map(([number,title,body]) => <div key={number} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5.5 transition hover:border-blue-400/20 hover:bg-white/[0.04]"><span className="ssc-brand-gradient text-sm font-bold">{number}</span><h3 className="mt-3 font-[var(--font-display)] text-lg font-semibold text-white">{title}</h3><p className="mt-2.5 text-[15px] leading-6.5 text-slate-400">{body}</p></div>)}</div>
       </section>
 
       <section id="features" className="border-y border-white/[0.07] bg-white/[0.015]"><div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center"><span className="text-sm font-semibold uppercase tracking-[.16em] text-blue-300">The toolkit</span><h2 className="mt-4 font-[var(--font-display)] text-3xl font-semibold tracking-[-.03em] text-white sm:text-4xl">Many tools. One learning system.</h2></div>
-        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{features.map(({ icon: Icon, label, title, body }) => <div key={label} className="rounded-2xl border border-white/[0.08] bg-[var(--brand-surface)]/75 p-6 transition hover:-translate-y-0.5 hover:border-blue-400/20"><div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-400/10 via-blue-500/10 to-violet-500/10 text-blue-300"><Icon size={21} /></div><div className="mt-5 text-sm font-semibold uppercase tracking-[.12em] text-cyan-200">{label}</div><h3 className="mt-2.5 font-[var(--font-display)] text-lg font-semibold text-white">{title}</h3><p className="mt-2.5 text-[15px] leading-6.5 text-slate-400">{body}</p></div>)}</div>
+        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{features.map(({ icon: Icon, label, title, body }) => <div key={label} className="rounded-2xl border border-white/[0.08] bg-[var(--brand-surface)]/75 p-6 transition hover:-translate-y-0.5 hover:border-blue-400/20"><div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-400/10 via-blue-500/10 to-violet-500/10 text-blue-300"><Icon size={21} /></div><div className="mt-5 text-sm font-semibold uppercase tracking-[.12em] text-blue-200">{label}</div><h3 className="mt-2.5 font-[var(--font-display)] text-lg font-semibold text-white">{title}</h3><p className="mt-2.5 text-[15px] leading-6.5 text-slate-400">{body}</p></div>)}</div>
       </div></section>
 
       <section id="platform" className="border-b border-white/[0.07]"><div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
@@ -86,7 +86,7 @@ export default function PublicHomePage() {
       </div></section>
 
       <section id="future" className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8"><div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-        <div><span className="text-sm font-semibold uppercase tracking-[.16em] text-cyan-300">Product direction</span><h2 className="mt-4 max-w-xl font-[var(--font-display)] text-3xl font-semibold tracking-[-.03em] text-white sm:text-4xl">Build the learning state first. Then make it smarter.</h2><p className="mt-5 max-w-xl text-[16px] leading-7 text-slate-400">Reliable evidence and local-first state come first. Stronger curriculum coverage and assessment intelligence follow. Then increasingly adaptive interventions and efficient local models.</p></div>
+        <div><span className="text-sm font-semibold uppercase tracking-[.16em] text-blue-300">Product direction</span><h2 className="mt-4 max-w-xl font-[var(--font-display)] text-3xl font-semibold tracking-[-.03em] text-white sm:text-4xl">Build the learning state first. Then make it smarter.</h2><p className="mt-5 max-w-xl text-[16px] leading-7 text-slate-400">Reliable evidence and local-first state come first. Stronger curriculum coverage and assessment intelligence follow. Then increasingly adaptive interventions and efficient local models.</p></div>
         <div className="rounded-3xl border border-white/[0.08] bg-[var(--brand-surface)]/80 p-6"><div className="mb-5 text-sm font-semibold uppercase tracking-[.14em] text-violet-300">Research path</div>{["Learning State Engine","Adaptive Intervention Engine","Curriculum + Learning Graph","Offline / local intelligence","Model routing and compression"].map((item,index) => <div key={item} className="flex items-center gap-3 border-t border-white/[0.07] py-3.5 text-[15px] text-slate-300"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-blue-500/10 to-violet-500/15 text-sm font-semibold text-blue-200">0{index+1}</span>{item}</div>)}</div>
       </div></section>
 

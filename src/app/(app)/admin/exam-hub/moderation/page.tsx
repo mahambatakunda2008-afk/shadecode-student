@@ -118,7 +118,7 @@ export default function ModerationQueuePage() {
                       rel="noopener noreferrer"
                       style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "var(--surface)", border: "1px solid var(--card-border)", color: "var(--foreground)", fontSize: 12, fontWeight: 500, textDecoration: "none" }}
                     >
-                      <FileText size={13} /> Preview
+                      <FileText size={14} /> Preview
                     </a>
                   )}
                 </div>

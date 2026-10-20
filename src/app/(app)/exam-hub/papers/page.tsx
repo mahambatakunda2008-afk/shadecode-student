@@ -21,26 +21,46 @@ export default function PastPapersPage() {
   const [searchResults, setSearchResults] = useState<PastPaperWithState[] | null>(null);
   const [searching, setSearching] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSequenceRef = useRef(0);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  useEffect(() => () => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+  }, []);
 
   function runSearch(query: string) {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const sequence = ++searchSequenceRef.current;
+    setSearchError(null);
     if (!query.trim()) {
       setSearchResults(null);
+      setSearching(false);
       return;
     }
-    searchDebounceRef.current = setTimeout(() => {
-      setSearching(true);
-      fetch(`/api/exam-hub/search?q=${encodeURIComponent(query)}`)
-        .then((res) => res.json())
-        .then((data) => setSearchResults(data.papers ?? []))
-        .catch(() => setSearchResults([]))
-        .finally(() => setSearching(false));
-    }, 350); // debounced — avoids firing a request on every keystroke
+    setSearching(true);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/exam-hub/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error("Search is temporarily unavailable. Please try again.");
+        const data = await response.json();
+        if (sequence !== searchSequenceRef.current) return;
+        setSearchResults(Array.isArray(data.papers) ? data.papers : []);
+      } catch (err) {
+        if (sequence !== searchSequenceRef.current) return;
+        setSearchError(err instanceof Error ? err.message : "Search is temporarily unavailable. Please try again.");
+        setSearchResults([]);
+      } finally {
+        if (sequence === searchSequenceRef.current) setSearching(false);
+      }
+    }, 350); // Debounce requests and ignore stale responses.
   }
 
   function clearSearch() {
+    searchSequenceRef.current += 1;
     setSearchInput("");
     setSearchResults(null);
+    setSearchError(null);
+    setSearching(false);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
   }
 
@@ -179,21 +199,30 @@ export default function PastPapersPage() {
   const selectedSyllabus = syllabi.find((s) => s.id === syllabusId) ?? null;
 
   return (
-    <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+    <main className="ssc-page min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-5">
+        <header className="ssc-page-header mb-6"><p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">Exam Hub</p><h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">Past papers</h1><p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">Find a paper by exam board, level, subject, session and year, or search the library directly.</p></header>
+        <div className="relative mb-5">
           <Search size={16} color="var(--muted-foreground)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
+          <label htmlFor="past-paper-search" className="sr-only">Search past papers</label>
           <input
+            id="past-paper-search"
+            type="search"
+            autoComplete="off"
+            aria-label="Search past papers by subject, session, year, or paper number"
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
               runSearch(e.target.value);
             }}
             placeholder='Try "Physics May June 2024 Paper 42"'
-            className="ssc-focus-ring w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-11 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            className="ssc-focus-ring min-h-12 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-11 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-strong)]"
           />
           {searchInput && (
             <button
+              type="button"
+              aria-label="Clear past-paper search"
+              title="Clear search"
               onClick={clearSearch}
               style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", display: "flex" }}
             >
@@ -203,13 +232,16 @@ export default function PastPapersPage() {
         </div>
 
         {searchResults !== null ? (
-          <Step title={searching ? "Searching..." : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`} loading={searching}>
-            {searchResults.length === 0 && !searching ? (
+          <section aria-label="Past-paper search results" aria-busy={searching}>
+            {searchError && <p role="alert" className="mb-3 rounded-xl border border-[var(--danger)]/20 bg-[var(--danger-soft)] p-3 text-sm text-[var(--danger)]">{searchError}</p>}
+            <Step title={searching ? "Searching…" : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`} loading={searching}>
+            {searchError ? null : searchResults.length === 0 && !searching ? (
               <EmptyState message="No matching papers. Try fewer or different words." />
             ) : (
               <PapersList papers={searchResults} />
             )}
-          </Step>
+            </Step>
+          </section>
         ) : (
           <>
             <div className="mb-5 flex items-center gap-2 text-xs font-semibold text-[var(--text-tertiary)]"><FileText size={14} /> Exam library</div>
@@ -320,7 +352,7 @@ export default function PastPapersPage() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -413,6 +445,7 @@ function OptionCard({ label, sub, onClick }: { label: string; sub?: string; onCl
   return (
     <button
       onClick={onClick}
+      className="ssc-focus-ring min-h-16 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--interactive-hover)]"
       style={{
         padding: "16px 18px",
         borderRadius: 14,
@@ -495,6 +528,7 @@ function PapersList({ papers }: { papers: PastPaperWithState[] }) {
                 <Link
                   key={doc.id}
                   href={`/exam-hub/papers/${doc.id}`}
+                  className="ssc-focus-ring transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--interactive-hover)]"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -510,11 +544,11 @@ function PapersList({ papers }: { papers: PastPaperWithState[] }) {
                   }}
                 >
                   {doc.state?.status === "completed" ? (
-                    <CheckCircle2 size={13} color="var(--accent)" />
+                    <CheckCircle2 size={14} color="var(--accent)" />
                   ) : doc.state?.bookmarked ? (
-                    <BookmarkCheck size={13} color="var(--warning)" />
+                    <BookmarkCheck size={14} color="var(--warning)" />
                   ) : (
-                    <Bookmark size={13} color="var(--muted-foreground)" />
+                    <Bookmark size={14} color="var(--muted-foreground)" />
                   )}
                   {PAPER_KIND_LABELS[doc.kind as PaperKind]}
                 </Link>

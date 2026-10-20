@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, FileCheck2, Sparkles, WandSparkles, ShieldCheck } from "lucide-react";
+import { CheckCircle2, FileCheck2, Sparkles, WandSparkles } from "lucide-react";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import CortexVerifyPanel from "@/components/cortex/CortexVerifyPanel";
 
@@ -12,43 +12,37 @@ const modes = [
 
 export default function WorkmatePage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 pb-24 sm:p-7 sm:pb-28">
-      <header className="ssc-surface-raised relative overflow-hidden rounded-2xl border-[var(--border-subtle)] p-5 sm:p-7">
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--primary)] shadow-sm">
-            <ShadecodeFeatureIcon feature="math-checker" size="sm" /> Math Checker
+    <main className="ssc-page max-w-6xl">
+      <header className="ssc-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
+            <ShadecodeFeatureIcon feature="math-checker" size="sm" />
+            <span>Math Checker</span>
           </div>
-          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="text-4xl font-black tracking-[-0.045em] sm:text-5xl">Math Checker.</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted-foreground)] sm:text-base">
-                Bring your working to Cortex. Check the reasoning, get unstuck, and understand what needs to change.
-              </p>
-            </div>
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-300 lg:self-auto">
-              <CheckCircle2 size={14} /> Built around your working
-            </div>
-          </div>
-          <div className="mt-6 grid gap-px overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--border-subtle)] sm:grid-cols-3">
-            {modes.map(({ icon: Icon, label, description }, index) => (
-              <div key={label} className={`bg-[var(--surface-raised)] p-4 ${index === 0 ? "border-[var(--primary)]/25 bg-[var(--primary-glow)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="grid size-8 place-items-center rounded-xl bg-[var(--muted)] text-[var(--primary)]"><Icon size={16} /></span>
-                    <span className="text-sm font-bold">{label}</span>
-                  </div>
-                  {index === 0 && <span className="text-[10px] font-black uppercase tracking-wider text-[var(--primary)]">Active</span>}
-                </div>
-                <p className="mt-2 pl-10 text-xs text-[var(--muted-foreground)]">{description}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--muted-foreground)]">
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} className="text-emerald-500" /> Subject-aware</span>
-            <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[var(--primary)]" /> Working-first</span>
-            <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-violet-500" /> Cortex-powered</span>
-            <span className="ml-auto hidden items-center gap-1 font-semibold sm:inline-flex">Learn from the feedback <ArrowUpRight size={13} /></span>
-          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--primary-glow)] px-3 py-1.5 text-xs font-semibold text-[var(--primary)]">
+            <CheckCircle2 size={14} aria-hidden="true" /> Built around your working
+          </span>
+        </div>
+
+        <div className="mt-4">
+          <h1 className="text-3xl font-bold tracking-[-0.04em] sm:text-4xl">Understand the steps, not just the answer.</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)] sm:text-base">
+            Bring your working to Cortex. Check the reasoning, get unstuck, and see exactly what needs to change.
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Math Checker modes">
+          {modes.map(({ icon: Icon, label, description }) => (
+            <span
+              key={label}
+              title={description}
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--card-border)] bg-[var(--surface-2)] px-3 py-2 text-xs font-semibold text-[var(--muted-foreground)]"
+            >
+              <Icon size={15} aria-hidden="true" />
+              <span>{label}</span>
+              <span className="hidden font-normal sm:inline">· {description}</span>
+            </span>
+          ))}
         </div>
       </header>
 

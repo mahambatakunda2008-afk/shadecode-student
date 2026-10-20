@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthErrorOr } from "@/lib/auth/friendlyAuthError";
 
 const RESEND_COOLDOWN_SECONDS = 6;
 
@@ -36,18 +37,24 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    if (loading) return;
     setLoading(true);
-    const { error: resetError } = await createClient().auth.resetPasswordForEmail(normalized, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
+    try {
+      const { error: resetError } = await createClient().auth.resetPasswordForEmail(normalized, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
 
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setMessage("If an account exists for that email, we sent a password reset link. Check your inbox.");
-      setCooldown(RESEND_COOLDOWN_SECONDS);
+      if (resetError) {
+        setError(friendlyAuthErrorOr(resetError.message, "We couldn't send the reset link right now. Check your connection and try again."));
+      } else {
+        setMessage("If an account exists for that email, we sent a password reset link. Check your inbox.");
+        setCooldown(RESEND_COOLDOWN_SECONDS);
+      }
+    } catch {
+      setError("We couldn't reach the password reset service. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const inputStyle = {
@@ -69,12 +76,12 @@ export default function ForgotPasswordPage() {
         <h1 style={{ fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.1, fontWeight: 800, marginTop: 9 }}>Reset your password</h1>
         <p style={{ color: "var(--muted-foreground)", marginTop: 10, fontSize: 15, lineHeight: 1.5 }}>Enter the email on your account and we&apos;ll send you a secure reset link.</p>
 
-        <form onSubmit={submit} style={{ display: "grid", gap: 11, marginTop: 24 }}>
+        <form onSubmit={submit} aria-busy={loading} style={{ display: "grid", gap: 11, marginTop: 24 }}>
           <label htmlFor="reset-email" style={{ fontSize: 13, fontWeight: 600 }}>Email</label>
-          <input id="reset-email" aria-label="Email" placeholder="you@example.com" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-          {error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.4 }}>{error}</p>}
+          <input id="reset-email" name="email" aria-label="Email" aria-invalid={Boolean(error)} aria-describedby={error ? "reset-error" : undefined} placeholder="you@example.com" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+          {error && <p id="reset-error" role="alert" aria-live="assertive" style={{ color: "var(--danger)", fontSize: 13, lineHeight: 1.5, overflowWrap: "anywhere" }}>{error}</p>}
           {message && <p role="status" style={{ color: "var(--muted-foreground)", fontSize: 13, lineHeight: 1.4 }}>{message}</p>}
-          <button type="submit" disabled={loading || cooldown > 0} style={{ marginTop: 7, padding: "14px 16px", borderRadius: 11, border: "none", background: "var(--primary)", color: "white", fontWeight: 700, fontSize: 15, cursor: loading || cooldown > 0 ? "wait" : "pointer", opacity: loading || cooldown > 0 ? 0.7 : 1 }}>
+          <button type="submit" disabled={loading || cooldown > 0} style={{ marginTop: 7, minHeight: 48, padding: "14px 16px", borderRadius: 11, border: "none", background: "var(--primary)", color: "white", fontWeight: 700, fontSize: 15, cursor: loading || cooldown > 0 ? "wait" : "pointer", opacity: loading || cooldown > 0 ? 0.7 : 1 }}>
             {loading ? "Sending…" : cooldown > 0 ? `Try again in ${cooldown}s` : "Send reset link"}
           </button>
         </form>
