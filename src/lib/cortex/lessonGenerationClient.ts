@@ -105,7 +105,12 @@ async function runLocalRecoveryWithHeartbeat<T>(job: GenerationJob<LessonGenerat
     clearInterval(heartbeatTimer);
   }
 }
-function openCompletedLesson(result: LessonGenerationResult) { if (!isBrowser() || window.location.pathname !== "/learn") return; window.location.assign(`/learn/${encodeURIComponent(result.id)}`); }
+function openCompletedLesson(result: LessonGenerationResult) {
+  // A device-only lesson has no guaranteed cloud detail row. Keep the learner on Learn
+  // so the explicit local-only status and the offline library remain available.
+  if (result.localOnly || !isBrowser() || window.location.pathname !== "/learn") return;
+  window.location.assign(`/learn/${encodeURIComponent(result.id)}`);
+}
 function resolvedRequest(job: GenerationJob<LessonGenerationInput>) {
   const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
   const grounding = readLocalCurriculumGroundingData(job.request.subject, request.topic);
