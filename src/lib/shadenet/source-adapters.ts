@@ -91,7 +91,7 @@ export interface HttpKnowledgeSourceOptions {
  */
 export function createHttpKnowledgeSource(options: HttpKnowledgeSourceOptions): KnowledgeSource {
   const endpoint = new URL(options.endpoint);
-  if (endpoint.protocol !== "https:" && endpoint.hostname !== "localhost") {
+  if (endpoint.protocol !== "https:" && !(endpoint.protocol === "http:" && endpoint.hostname === "localhost")) {
     throw new Error("Knowledge index endpoint must use HTTPS");
   }
   const fetcher = options.fetcher ?? fetch;
