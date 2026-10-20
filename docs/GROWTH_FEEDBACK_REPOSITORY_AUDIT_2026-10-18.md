@@ -1,13 +1,32 @@
 # Shadecode Student Feedback Loop: Repository Audit
 
-**Audit date:** 2026-10-18  
-**Scope:** Initial source inspection for the Growth, Feedback & Reputation Plan. This is a source-level audit, not a production test or full security review.
+**Initial audit date:** 2026-10-18  
+**Database verification:** 2026-10-19  
+**Scope:** Source inspection plus a read-only inspection of the connected production Supabase schema and policies. This is not a full security review.
 
 ## Executive finding
 
 **Feedback functionality already exists. Do not build a second feedback system.**
 
-The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by the dedicated page. The next step is to harden and unify this existing loop. Production behavior and deployed database policies have not been verified.
+The repository contains a floating FeedbackWidget in the authenticated app shell, a dedicated /feedback page, a Supabase feedback table used by both forms, an admin feedback page/API, a rate-limited email notification route, and a traction event emitted by both forms after the reliability fix. The existing production Supabase project was inspected read-only on 2026-10-19; policy definitions are verified, but end-to-end client behavior has not been tested.
+
+## Follow-up implementation merged and deployed (2026-10-19)
+
+Merged in [PR #390](https://github.com/mahambatakunda2008-afk/shadecode-student/pull/390), production commit `28c6f36415a6cad23366211bedaeec98ad5f29de`. Both feedback surfaces now use `POST /api/feedback`; browser clients no longer insert directly into Supabase.
+
+- The server derives the user ID from the authenticated Supabase session; client-supplied IDs are ignored.
+- Message type and trimmed length are validated server-side.
+- A new migration defines an atomic PostgreSQL rate-limit function and private bucket table. The route applies a 5-per-15-minute limit per authenticated user and a 20-per-15-minute HMAC-derived IP bucket, leaving room for students sharing school or campus networks.
+- Raw IP addresses are not stored in the limiter table.
+- The route fails closed if the shared limiter/service-role configuration is unavailable.
+- Persistence failures are returned to the student; email notification is bounded and best-effort after persistence.
+- The legacy public `/api/feedback-email` endpoint is retired with HTTP 410 so it cannot be called independently to send emails.
+- A subsequent live grants audit found `anon` and `authenticated` had broad direct privileges on `public.feedback`, including `TRUNCATE`. PR #392 moved persistence to the service-role client after server-side identity validation and removed those grants. The production migration `20261019064858_harden_feedback_table_grants` is applied; read-only verification shows only `postgres` and `service_role` have table privileges. Existing feedback rows were preserved (8 rows observed).
+- Inspection of the existing Learn lesson page found a self-report check-in ("I can explain it", "I can apply it", "Not yet") that was saved to localStorage but not emitted to analytics. PR `feat/lesson-understanding-telemetry` adds `lesson_understanding_self_reported` with only `lessonId` and the selected response, emitted only when the selection changes. This is self-reported context, not mastery evidence; no lesson text or free-text feedback is sent.
+- The Paper Learning session already has `got_it / unsure / not_yet` self-ratings routed through the attempt endpoint, so no second contextual survey prompt is being added.
+- Route tests cover input validation, server-derived identity, rate-limit behavior, persistence failure, notification failure and missing configuration.
+
+**Migration status:** the additive migration was applied to production on 2026-10-19 and the table, function and grants were verified read-only. The tracked migration filename on `main` matches the observed remote ledger version. The Vercel production deployment for commit `28c6f36415a6cad23366211bedaeec98ad5f29de` reached READY. The existing historical migration drift still needs reconciliation; see `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md`. Do not treat this new migration as resolving that wider drift.
 
 ## Evidence inspected
 
@@ -37,6 +56,14 @@ The repository contains a floating FeedbackWidget in the authenticated app shell
 In FeedbackWidget.tsx, a Supabase insert error is logged and the handler returns without showing an error state. The student may not know the report failed. The dedicated /feedback page does show a retry message. The two forms also have slightly different submission/notification behavior.
 
 **Action:** unify submission behavior or share a tested helper; show clear success/failure states; ensure email-notification failure does not misrepresent whether the database insert succeeded.
+
+### P1: feedback persistence bypasses server-side rate limiting
+
+Both client forms insert directly into `public.feedback` through the browser Supabase client. The `/api/feedback-email` endpoint has a rate limit, but that limit protects email delivery only; direct database inserts do not pass through it. The database also intentionally allows inserts with a null `user_id`, so an unauthenticated caller can submit rows directly using the public Data API key. RLS limits the identity value on inserts but does not limit request volume.
+
+The current `RateLimiter` implementation stores counters in an in-memory `Map` per server process. It is not a shared/global limiter across serverless instances, so it should not be treated as a strong abuse-control boundary.
+
+**Action:** move persistence behind a validated server endpoint or add another verified abuse-control mechanism before inviting a larger cohort. Derive signed-in identity server-side, retain ownership checks, rate-limit both authenticated and anonymous traffic, keep notification best-effort, and add tests for rate limits and unauthorized identity claims. Do not silently trust client-supplied `user_id` or remove the anonymous path without deciding the intended product behavior.
 
 ### P1: duplicate surfaces and inconsistent telemetry
 The floating widget and dedicated page implement similar forms separately. The reviewed source emits feedback_submitted from the dedicated page, but not from the widget. The widget caps text at 500 characters while the email API accepts up to 5,000 characters.
@@ -71,9 +98,27 @@ This audit did not inspect the complete table-creation history or verify deploye
 - Students cannot read other students' feedback.
 - The admin service-role route is reachable only after the server-side admin check.
 - Service-role credentials remain server-side.
-- Rate limiting protects persistence as well as email delivery where appropriate.
+- [ ] Move feedback persistence behind server-side validation/rate limiting or implement another verified abuse-control boundary; current client-side inserts bypass the email endpoint's rate limit.
 - Rendering/export does not expose data or create injection risks.
 - Retention and deletion behavior for free-text reports is defined.
+
+## Production database verification (read-only, 2026-10-19)
+
+The connected active project `shadecode-student` was inspected directly. No database writes or schema changes were made.
+
+- `public.feedback` exists and currently contains 8 rows.
+- Columns observed: `id` (UUID primary key), `user_id` (nullable UUID referencing `auth.users`), `type` (nullable text), `message` (nullable text), and `created_at` (timestamptz).
+- Row-level security is enabled.
+- Insert policy `feedback insert own or anonymous` allows `user_id IS NULL` or `user_id = auth.uid()`.
+- Select policy `feedback read own` is limited to authenticated users whose `user_id = auth.uid()`. There is no public/anonymous SELECT policy, so the RLS policy set does not grant anonymous users access to feedback rows.
+- No UPDATE or DELETE RLS policies were observed.
+- The admin API uses the server-side authenticated user plus `hasUserRole(user.id, "admin")` check before reading with the service-role client.
+- Table-level grants include more operations than the application needs for `anon` and `authenticated`; RLS currently provides the row-level barrier. Consider least-privilege grants in a reviewed migration, after validating all intended code paths.
+- Aggregate telemetry snapshot at inspection time: `public.traction_events` contained 2,668 total events (916 in the preceding 30 days), but **zero** events named `feedback_submitted`, while `public.feedback` contained 8 rows. This could mean prior submissions did not emit/persist that event or the event name was introduced later; it is not enough evidence to choose between those explanations. Verify the event path with a real post-deploy submission and confirm exactly one event is recorded without message content.
+- The remote migration history contains `20260816175542 add_traction_feedback_experiments_exports`, but no corresponding feedback-named migration file was found in the current repository tree. This is a migration-history/repository drift signal, not proof that the table itself is absent from migration history. Reconcile before adding triage columns or policies.
+- Supabase security advisors also reported unrelated findings for `challenge_answer_keys`, two SECURITY DEFINER RPCs (`apply_lesson_vote`, `publish_lesson_to_library`) and leaked-password protection. These were not changed as part of this feedback task and should be triaged separately.
+
+**Boundary:** This verifies the observed remote schema and policy definitions at the time of inspection. It does not replace a live authenticated/anonymous authorization test, and it does not prove every deployed environment matches this project. The current feedback persistence path also bypasses server-side rate limiting, as noted above.
 
 ## Recommended implementation order
 
@@ -88,16 +133,16 @@ This audit did not inspect the complete table-creation history or verify deploye
 
 ## Acceptance criteria
 
-- [ ] Both feedback entry points show clear success/failure states.
-- [ ] Email failure does not misrepresent database persistence.
+- [x] Both feedback entry points show a visible persistence-failure state.
+- [x] Email notification is best-effort and does not block success after database persistence.
 - [ ] Both forms use the same validated message/category contract.
-- [ ] Telemetry covers both forms without collecting message content.
-- [ ] Schema and deployed RLS are verified before migration.
+- [x] Telemetry covers both forms without collecting message content.
+- [x] Production feedback schema and deployed RLS policy definitions were inspected read-only; live authorization tests and migration-history reconciliation remain open.
 - [ ] Students cannot read other students' feedback.
 - [ ] Admin authorization is enforced server-side.
-- [ ] Tests cover validation, persistence failure and notification failure.
+- [ ] Tests cover endpoint validation and notification failure; widget/database persistence-failure tests and live authorization tests remain open.
 - [ ] No duplicate feedback table or competing analytics source is introduced.
 
 ## Audit limitation
 
-This reflects files inspected on main on 2026-10-18. It does not claim production has been tested, database policies are correct, or equivalent functionality is absent elsewhere. Verify runtime behavior and search for equivalent implementations before coding.
+The source audit began on 2026-10-18; read-only production schema/policy inspection occurred on 2026-10-19. Runtime submission behavior, live authorization attempts and migration-history reconciliation remain unverified. Search for equivalent implementations before adding new functionality.

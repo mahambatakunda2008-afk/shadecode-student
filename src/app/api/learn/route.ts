@@ -14,6 +14,7 @@ import { buildDeepLessonPrompt, buildLessonRepairPrompt, lessonQualityScore } fr
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/lessonQuality";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
+import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
   try {
     const rateLimitCheck = await applyRateLimit(req, aiEndpointLimiter); if (rateLimitCheck) return rateLimitCheck;
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { supabase, user } = auth; const body = await req.json(); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
+    const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
     if (type === "course_preview") {
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
@@ -237,8 +238,10 @@ export async function POST(req: Request) {
     const shouldRecordLearnerRequest =
       body.generationMode !== "persist" &&
       (body.generationMode !== "section" || Number(body.generationSectionIndex) === 0);
+    // Learner telemetry is secondary to the learner's requested lesson. A memory/analytics
+    // write failure must never prevent generation from starting.
     if (shouldRecordLearnerRequest) {
-      await rememberLearnerSignal(supabase, user.id, {
+      void rememberLearnerSignal(supabase, user.id, {
         subject: effectiveSubject,
         topic: request.topic,
         topic_key: learnerTopicKey,
@@ -246,10 +249,34 @@ export async function POST(req: Request) {
         outcome: "started",
         difficulty: validDifficulty,
         metadata: { examBoard: typeof body.examBoard === "string" ? body.examBoard.slice(0, 80) : "", level: typeof level === "string" ? level.slice(0, 80) : "" },
+      }).catch((error) => {
+        console.warn("[LEARN] request signal write failed; continuing generation", {
+          topic: request.topic,
+          error: error instanceof Error ? error.message : String(error),
+        });
       });
     }
-    const learnerMemoryContext = await buildLearnerBrainContext(supabase, user.id, effectiveSubject, request.topic)
-      .catch(() => "");
+
+    // Memory enriches generation but is not a hard dependency. Bound the wait so a slow
+    // learner-brain query cannot consume the time budget before the first model call.
+    let learnerMemoryContext = "";
+    try {
+      const memoryContextPromise = buildLearnerBrainContext(
+        supabase,
+        user.id,
+        effectiveSubject,
+        request.topic,
+      );
+      learnerMemoryContext = await new Promise<string>((resolve) => {
+        const timer = setTimeout(() => resolve(""), 900);
+        memoryContextPromise.then(
+          (value) => { clearTimeout(timer); resolve(value); },
+          () => { clearTimeout(timer); resolve(""); },
+        );
+      });
+    } catch {
+      learnerMemoryContext = "";
+    }
 
     const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     const generationMode = body.generationMode === "section" || body.generationMode === "persist" ? body.generationMode : "complete";
@@ -374,7 +401,9 @@ export async function POST(req: Request) {
           subject_id: resolvedSubject.id,
           topic: sanitizeLessonText(request.topic.slice(0, 500)),
           title: sanitizeLessonText(persistableCandidate.title),
-          description: sanitizeLessonText(verifiedCurriculumFallback ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.` : `A deep ${validDifficulty} lesson on ${request.topic}`),
+          description: sanitizeLessonText(verifiedCurriculumFallback
+            ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
+            : `A deep ${validDifficulty} lesson on ${request.topic}`),
           difficulty: validDifficulty,
           progress: 0,
           blocks: sanitizeLessonText(persistableCandidate.blocks),
@@ -386,8 +415,26 @@ export async function POST(req: Request) {
         savedId = inserted.id;
       }
 
-      await rememberLearnerSignal(supabase, user.id, { subject: effectiveSubject, topic: request.topic, topic_key: learnerTopicKey, event_type: "lesson_completed", outcome: "saved", difficulty: validDifficulty });
-      await awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty });
+      // The lesson is already durably saved at this point. Memory and XP are best-effort
+      // side effects; neither may turn a successful save into a learner-visible generation failure.
+      const sideEffects = await Promise.allSettled([
+        rememberLearnerSignal(supabase, user.id, {
+          subject: effectiveSubject,
+          topic: request.topic,
+          topic_key: learnerTopicKey,
+          event_type: "lesson_completed",
+          outcome: "saved",
+          difficulty: validDifficulty,
+        }),
+        awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
+      ]);
+      for (const result of sideEffects) {
+        if (result.status === "rejected") {
+          console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+          });
+        }
+      }
 
       return NextResponse.json({
         id: savedId,

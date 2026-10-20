@@ -105,8 +105,14 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const promptTokens = Math.ceil(groundedPrompt.length / 4);
 
   function logResult(params: { provider: string; model: string; startTime: number; success: boolean; text?: string; err?: unknown }) {
-    const telemetry = logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs, curriculumGrounding: curriculumGroundingAvailable, curriculumGroundingReason } });
-    void Promise.race([telemetry.catch(() => undefined), new Promise<void>(resolve => setTimeout(resolve, TELEMETRY_BUDGET_MS))]);
+    const telemetry = logAIUsage({ userId, feature, subfeature, provider: params.provider, model: params.model, promptTokens, completionTokens: params.text ? Math.ceil(params.text.length / 4) : 0, latencyMs: Date.now() - params.startTime, success: params.success, errorMessage: params.err instanceof Error ? params.err.message : params.err ? String(params.err) : undefined, errorCode: params.err instanceof Error ? params.err.constructor.name : undefined, requestMetadata: { promptLength: groundedPrompt.length, maxTokens, maxChainMs, perProviderMaxMs, curriculumGrounding: curriculumGroundingAvailable, curriculumGroundingReason } }).catch(() => undefined);
+    let telemetryTimer: ReturnType<typeof setTimeout> | undefined;
+    const telemetryBudget = new Promise<void>(resolve => {
+      telemetryTimer = setTimeout(resolve, TELEMETRY_BUDGET_MS);
+    });
+    void Promise.race([telemetry, telemetryBudget]).finally(() => {
+      if (telemetryTimer) clearTimeout(telemetryTimer);
+    });
   }
 
   const remaining = () => Math.max(0, maxChainMs - (Date.now() - startedAt));
@@ -130,7 +136,10 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     let hardTimedOut = false;
     let hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
     const hardTimeout = new Promise<null>(resolve => {
-      hardTimeoutTimer = setTimeout(() => { hardTimedOut = true; resolve(null); }, timeout + HARD_TIMEOUT_GRACE_MS);
+      hardTimeoutTimer = setTimeout(() => {
+        hardTimedOut = true;
+        resolve(null);
+      }, timeout + HARD_TIMEOUT_GRACE_MS);
     });
     try {
       const text = await Promise.race([request(timeout), hardTimeout]);
@@ -147,6 +156,9 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       logResult({ provider, model, startTime, success: false, err });
       console.error(`[AI] ${provider} failed:`, err);
     } finally {
+      // Successful/failed provider calls should not leave their timeout scheduled.
+      // Apart from wasting serverless work, many completed calls can otherwise keep
+      // the event loop alive after the response has already been decided.
       if (hardTimeoutTimer) clearTimeout(hardTimeoutTimer);
     }
     return null;

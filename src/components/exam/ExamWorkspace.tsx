@@ -19,6 +19,7 @@ import ChallengeFriend from "./ChallengeFriend";
 import { sendLearningSignals } from "@/lib/learning/client";
 import { signalsFromMarkedPaper } from "@/lib/learning/signals";
 import { renderMath as math } from "@/lib/exam/mathText";
+import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 
 export type ExamQuestion = { id: number; type: "multiple_choice" | "short_answer" | "structured" | "essay"; question: string; options?: string[]; marks: number; topic: string; modelAnswer?: string; markingCriteria?: string };
 export type ExamResult = { questionId: number; score: number; maxScore: number; correct: boolean; feedback: string; modelAnswer: string; topic: string };
@@ -138,8 +139,11 @@ export default function ExamWorkspace({ initialSubject = "", initialTopic = "", 
           questionCount: count
         })
       }, 45000);
-      const data = await res.json();
-      if (!res.ok || !Array.isArray(data.questions)) throw new Error(data.error || "No questions were generated.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Question generation is temporarily unavailable.");
+      if (!isValidGeneratedPaper(data?.questions, count)) {
+        throw new Error("The generated paper did not pass question validation. Trying a verified local practice fallback.");
+      }
       const total = count * 120;
       workId.current = `exam:${id()}`;
       setPaperSource(data.metadata?.source === "deterministic-fallback" ? "fallback" : "live");
