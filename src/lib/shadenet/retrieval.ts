@@ -145,10 +145,13 @@ export async function retrieveKnowledge(
   const timeoutMs = Math.max(250, Math.min(MAX_TIMEOUT_MS, sources.perSourceTimeoutMs ?? DEFAULT_TIMEOUT_MS));
 
   const local = sources.local ?? createLocalKnowledgeSource();
-  const layers: Array<{ kind: KnowledgeSourceKind; source: { search: (query: KnowledgeQuery, signal?: AbortSignal) => Promise<ShadeNetResource[]> } }> = [
-    { kind: "local", source: local },
-    ...(sources.peers ? [{ kind: "peer" as const, source: sources.peers }] : []),
-    ...(sources.online ? [{ kind: "online" as const, source: sources.online }] : []),
+  const layers: Array<{
+    kind: KnowledgeSourceKind;
+    search: (query: KnowledgeQuery, signal: AbortSignal) => Promise<ShadeNetResource[]>;
+  }> = [
+    { kind: "local", search: (value) => local.search(value) },
+    ...(sources.peers ? [{ kind: "peer" as const, search: (value: KnowledgeQuery, signal: AbortSignal) => sources.peers!.search(value, signal) }] : []),
+    ...(sources.online ? [{ kind: "online" as const, search: (value: KnowledgeQuery, signal: AbortSignal) => sources.online!.search(value, signal) }] : []),
   ];
 
   for (const layer of layers) {
@@ -157,11 +160,11 @@ export async function retrieveKnowledge(
     const controller = new AbortController();
     try {
       const candidates = await withinTimeout(
-        layer.source.search(query, controller.signal),
+        layer.search(query, controller.signal),
         timeoutMs,
         controller,
       );
-      for (const resource of searchKnowledgeResources(candidates, query,)) {
+      for (const resource of searchKnowledgeResources(candidates, query)) {
         if (results.length >= limit) break;
         if (!resource.contentHash || seen.has(resource.contentHash)) continue;
         if (!(await isAuthenticResource(resource))) continue;
