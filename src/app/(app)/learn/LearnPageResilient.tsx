@@ -49,7 +49,7 @@ const QUICK_STARTS = [
   { title: "Teach me from zero", prompt: "Teach me this topic from first principles. Define every important term, explain why each step works, show a fully worked example, then test me.", icon: GraduationCap },
   { title: "Fix what I keep getting wrong", prompt: "Help me understand the common mistakes in this topic. Diagnose likely misconceptions, explain the correct reasoning, then give me practice questions.", icon: Target },
   { title: "Prepare me for exam questions", prompt: "Teach this topic to Cambridge exam standard. Include essential definitions, derivations where relevant, a worked exam-style question, mark-scheme reasoning, and a short test.", icon: NotebookPen },
-  { title: "Revise Geography case studies", prompt: "Build an O-Level Geography 24-case-study revision kit. Do not invent case names or facts. If my teacher's exact list is not included, create a blank 24-item tracker and a reusable case-study template, then tell me to paste the list. For each supplied case, structure concise notes as location/context, causes, impacts, management, outcomes, evidence to verify, flashcards, and exam application.", icon: BookOpen },
+  { title: "Build a revision pack", prompt: "Build a revision pack for the topic I enter, matched to my subject, level, syllabus, and exam board where known. Choose the most useful formats for this topic, such as concise notes, definitions, diagrams, worked examples, flashcards, practice questions, and an answer key. Do not invent syllabus facts or evidence; flag anything that needs verification.", icon: BookOpen },
 ];
 
 export default function LearnPageResilient() {
