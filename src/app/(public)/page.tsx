@@ -41,13 +41,13 @@ export default function PublicHomePage() {
           <div>
             <div className="mb-7"><BrandLockup /></div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={16} /> Study smarter. Live sharper.</div>
-            <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">A learning system that <span className="ssc-brand-gradient">learns how you learn.</span></h1>
-            <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Lessons, questions, mistakes, exams, projects and study behaviour become one evolving learning experience, with Cortex helping decide what should happen next.</p>
+            <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">Study for your Cambridge &amp; ZIMSEC exams <span className="ssc-brand-gradient">with a plan that adapts to you.</span></h1>
+            <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Practise exam-style questions, learn any topic with step-by-step lessons, and see exactly which topics to work on next. Free to start, and it works on your phone.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={18} /></Link>
               <a href="#intelligence" className="inline-flex items-center gap-2 rounded-[10px] border border-white/12 bg-transparent px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.05]">See how it works</a>
             </div>
-            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400"><span>Responsive PWA</span><span>AI-assisted</span><span>Local-first</span><span>Built for learning</span></div>
+            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400"><span>Free to start</span><span>Works on any phone</span><span>Cambridge &amp; ZIMSEC</span><span>Exam practice &amp; lessons</span></div>
           </div>
 
           <div className="relative mx-auto w-full max-w-[540px]">
