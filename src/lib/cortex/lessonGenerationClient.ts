@@ -18,6 +18,7 @@ import { hasCompletedLessonCheckpoint } from "@/lib/cortex/lessonCheckpoint";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGenerationPolicy";
+import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
@@ -297,6 +298,8 @@ ${sectionPlan[index]}
 
 ALREADY GENERATED SECTIONS
 ${allBlocks.slice(-8).map((block) => `${String(block.type)}: ${String(block.content)}`).join("\n") || "None"}
+
+${buildPresentationGuidance(job.request.subject, request.topic)}
 
 TEACHING CONTRACT
 - This is one section of a larger lesson. Do not repeat earlier material unless a short bridge is genuinely useful.
