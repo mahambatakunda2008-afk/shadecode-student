@@ -28,6 +28,16 @@ export interface VerifyResult {
   content?: string;
 }
 
+export interface QueuedVerifyResult {
+  id: string;
+  mode: VerifyMode;
+  subject?: string;
+  question?: string;
+  studentAnswer?: string;
+  completedAt: string;
+  result: VerifyResult;
+}
+
 const REQUEST_TIMEOUT_MS = 30_000;
 const FILE_READ_TIMEOUT_MS = 15_000;
 
@@ -154,6 +164,11 @@ export function useCortexVerify() {
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [queuedResults, setQueuedResults] = useState<QueuedVerifyResult[]>([]);
+
+  const dismissQueuedResult = useCallback((id: string) => {
+    setQueuedResults((current) => current.filter((item) => item.id !== id));
+  }, []);
 
   const submit = useCallback(async (options: {
     mode: VerifyMode;
@@ -205,7 +220,23 @@ export function useCortexVerify() {
         for (const item of items) {
           if (cancelled) return;
           if ((item.attempts || 0) >= 5) continue;
-          try { await sendAttemptNow(item); } catch { /* next pass */ }
+          try {
+            const completed = await sendAttemptNow(item);
+            if (!cancelled) {
+              setQueuedResults((current) => [
+                ...current.filter((queued) => queued.id !== item.id),
+                {
+                  id: item.id,
+                  mode: item.mode,
+                  subject: item.subject,
+                  question: item.question,
+                  studentAnswer: item.studentAnswer,
+                  completedAt: new Date().toISOString(),
+                  result: completed,
+                },
+              ].slice(-5));
+            }
+          } catch { /* keep the attempt queued and retry on the next pass */ }
         }
       } catch { /* signed-out or storage failure */ }
     }
@@ -216,5 +247,5 @@ export function useCortexVerify() {
     return () => { cancelled = true; window.removeEventListener("online", processQueueOnce); if (timer) window.clearTimeout(timer); };
   }, []);
 
-  return { result, loading, error, check, help };
+  return { result, loading, error, check, help, queuedResults, dismissQueuedResult };
 }
