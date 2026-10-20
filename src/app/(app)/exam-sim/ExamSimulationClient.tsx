@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { matchAllowedSubject, isGeneralSubject } from "@/lib/academic/subjectContract";
 import type { ExamQuestion, ExamResults } from "@/lib/exam/types";
 import { clearPendingChallenge } from "@/lib/challenge/pending";
+import { isValidGeneratedPaper } from "@/lib/exam/paperValidation";
 
 function decode(value: string | null) {
   if (!value) return "";
@@ -33,14 +34,33 @@ export default function ExamSimulationClient() {
   const [frozenQuestions, setFrozenQuestions] = useState<ExamQuestion[] | null | undefined>(challengeId ? undefined : null);
   // "server": the play set is keyless and the server marks (verified). "client": older self-reported challenge.
   const [marking, setMarking] = useState<"server" | "client">("client");
+  const [challengeError, setChallengeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!challengeId) return;
     let cancelled = false;
     fetch(`/api/challenge/questions?id=${encodeURIComponent(challengeId)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { questions?: ExamQuestion[]; marking?: string } | null) => { if (cancelled) return; setMarking(data?.marking === "server" ? "server" : "client"); setFrozenQuestions(data?.questions?.length ? data.questions : null); })
-      .catch(() => { if (!cancelled) setFrozenQuestions(null); });
+      .then((response) => {
+        if (!response.ok) throw new Error("The saved challenge paper could not be loaded.");
+        return response.json();
+      })
+      .then((data: { questions?: ExamQuestion[]; marking?: string } | null) => {
+        if (cancelled) return;
+        setMarking(data?.marking === "server" ? "server" : "client");
+        const questions = Array.isArray(data?.questions) ? data.questions : [];
+        if (questions.length && !isValidGeneratedPaper(questions, questions.length)) {
+          setChallengeError("The saved challenge paper failed validation, so it has not been started. Return to the challenge and try again.");
+          setFrozenQuestions(null);
+          return;
+        }
+        setFrozenQuestions(questions.length ? questions : null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFrozenQuestions(null);
+          setChallengeError("The saved challenge paper could not be loaded. Check your connection and try again.");
+        }
+      });
     return () => { cancelled = true; };
   }, [challengeId]);
   const [subjectReady, setSubjectReady] = useState(!requestedSubject);
@@ -125,6 +145,10 @@ export default function ExamSimulationClient() {
 
   if (!subjectReady || frozenQuestions === undefined) {
     return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] text-sm text-[var(--muted-foreground)]">{frozenQuestions === undefined ? "Loading the challenge…" : "Preparing your subjects…"}</main>;
+  }
+
+  if (challengeError) {
+    return <main className="mx-auto grid min-h-[60vh] max-w-2xl place-items-center bg-[var(--background)] px-5 py-10 text-[var(--foreground)]"><section role="alert" className="w-full rounded-2xl border border-amber-500/30 bg-[var(--surface)] p-6"><h1 className="text-xl font-bold">Challenge not ready</h1><p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{challengeError}</p><button type="button" onClick={() => router.push(`/challenge/${challengeId}`)} className="mt-5 min-h-11 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)]">Return to challenge</button></section></main>;
   }
 
   return <>
