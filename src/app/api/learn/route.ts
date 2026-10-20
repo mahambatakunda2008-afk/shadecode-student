@@ -16,7 +16,6 @@ import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/le
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
-import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
