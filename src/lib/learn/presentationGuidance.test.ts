@@ -36,7 +36,7 @@ describe("buildPresentationGuidance", () => {
     expect(guidance).toContain("GEOGRAPHY CASE-STUDY ADD-ON");
     expect(guidance).toContain("location and context; process/issue; causes; impacts; management/response; outcomes; evidence; exam application");
     expect(guidance).toContain("VERIFY BEFORE MEMORISING");
-    expect(guidance).toContain("do not replace their names with invented cases");
+    expect(guidance).toContain("do not replace the list with invented cases");
   });
 
   it("does not trigger the case-study add-on for an ordinary Geography topic", () => {
