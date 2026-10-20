@@ -120,7 +120,7 @@ The exact learner request remains the authority for intent. For a broad topic, u
 PRESENTATION
 This is a learning interface, not an essay. Keep blocks purposeful and scannable. Use short lines, explicit reasoning, worked steps, checkpoints, misconceptions, synthesis and curiosity. Do not pad the lesson merely to hit a number.
 
-${buildPresentationGuidance(request.subject, request.topic)}
+${buildPresentationGuidance(request.subject || "General", request.topic)}
 
 MATH NOTATION
 Any mathematical expression must use single-dollar LaTeX delimiters. Never use caret powers or ASCII slash fractions in student-facing content.
