@@ -13,6 +13,7 @@ import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Compass, GraduationCap
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
+import ShadeNetKnowledgeSearch from "./ShadeNetKnowledgeSearch";
 import GeographyRevisionKit from "./GeographyRevisionKit";
 
 const AUTH_TIMEOUT = 3_000;
@@ -349,6 +350,8 @@ export default function LearnPageResilient() {
             </section>
           </aside>
         </div>
+
+        <div className="mt-6"><ShadeNetKnowledgeSearch /></div>
 
         {generationJob && <section className={`mt-6 rounded-[22px] border p-4 sm:p-5 ${generationJob.status === "failed" ? "border-rose-500/25 bg-rose-500/[0.045]" : "border-[var(--primary)]/30 bg-[var(--surface)] dark:bg-[var(--surface)]"}`} role={generationJob.status === "failed" ? "alert" : "status"} aria-live="polite">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
