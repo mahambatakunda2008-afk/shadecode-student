@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { BookOpen, Search, Wifi, WifiOff } from "lucide-react";
 import { createHttpKnowledgeSource } from "@/lib/shadenet/source-adapters";
 import { retrieveKnowledge, type KnowledgeRetrievalResult } from "@/lib/shadenet/retrieval";
@@ -127,7 +128,7 @@ export default function ShadeNetKnowledgeSearch() {
                 {[resource.metadata.subject, resource.metadata.qualification, resource.metadata.syllabus, source === "local" ? "On this device" : source === "peer" ? "Shared by a peer" : "Online index"].filter(Boolean).join(" · ")}
               </p>
               <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">
-                {typeof resource.content === "string" ? resource.content.slice(0, 1800) : JSON.stringify(resource.content, null, 2).slice(0, 1800)}
+                {typeof resource.content === "string" ? resource.content.slice(0, 1800) : (JSON.stringify(resource.content, null, 2) ?? String(resource.content)).slice(0, 1800)}
               </div>
               {resource.metadata.source && (
                 <p className="mt-3 break-all text-xs text-[var(--muted-foreground)]">Source: {resource.metadata.source}</p>
