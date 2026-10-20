@@ -6,6 +6,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
 import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
+import LearningEvidenceTrace from "@/components/learning/LearningEvidenceTrace";
+import LearningHelpActions from "@/components/learning/LearningHelpActions";
+import { buildLearningHelpPrompt, getLearningHelpAction, type LearningHelpAction } from "@/lib/learning/helpActions";
+import { useCortexVerify } from "@/hooks/useCortexVerify";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -60,6 +64,9 @@ export default function QuizPage() {
   const [token,       setToken]       = useState<string | null>(null);
   const [lessonTitle, setLessonTitle] = useState("");
   const [errMsg,      setErrMsg]      = useState("");
+  const [helpByQuestion, setHelpByQuestion] = useState<Record<number, string>>({});
+  const [helpLoadingId, setHelpLoadingId] = useState<number | null>(null);
+  const { help: requestHelp } = useCortexVerify();
 
   useEffect(() => {
     (async () => {
@@ -127,6 +134,30 @@ export default function QuizPage() {
       });
       void emitLearningEvent(completion);
       setPhase("results");
+    }
+  }
+
+  async function requestQuestionHelp(question: QuizQuestion, index: number, action: LearningHelpAction, prompt: string) {
+    if (helpLoadingId !== null) return;
+    setHelpLoadingId(question.id);
+    setHelpByQuestion((previous) => ({ ...previous, [question.id]: "" }));
+    const level = getLearningHelpAction(action).level;
+    const selectedAnswer = answers[index] === undefined ? "No answer selected" : question.options[answers[index]];
+    const correctAnswer = question.options[question.correctIndex];
+    const context = buildLearningHelpPrompt(
+      question.question,
+      `My answer: ${selectedAnswer}. Correct answer: ${correctAnswer}. Student request: ${prompt}`,
+      question.explanation,
+    );
+    try {
+      const response = await requestHelp({ mode: "help", subject: lessonTitle || "General", question: context, level });
+      const explanation = response?.content || response?.hint || response?.method || response?.solution || response?.finalAnswer;
+      setHelpByQuestion((previous) => ({
+        ...previous,
+        [question.id]: explanation || "Cortex could not respond just now. Your quiz result is preserved. Choose a help option to try again.",
+      }));
+    } finally {
+      setHelpLoadingId(null);
     }
   }
 
@@ -207,6 +238,19 @@ export default function QuizPage() {
           </div>
         </div>
 
+        <div style={{ marginBottom: 24 }}>
+          <LearningEvidenceTrace
+            title="What this quiz shows"
+            items={[
+              { label: "Correct on this attempt", value: `${correctCount} of ${questions.length}` },
+              { label: "Needs another look", value: String(questions.length - correctCount) },
+              { label: "Independent transfer", value: "Not checked yet" },
+              { label: "Topic mastery", value: "Not inferred from one quiz" },
+            ]}
+            note="Use the missed-question explanations, then try a fresh question later without help. This result is evidence from this quiz, not a grade prediction."
+          />
+        </div>
+
         {/* Per-question breakdown */}
         <h3 style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>
           Question Breakdown
@@ -239,6 +283,16 @@ export default function QuizPage() {
                   <div style={{ background: "var(--surface-2)", borderRadius: 10, padding: "10px 14px" }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 5px" }}>Explanation</p>
                     <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{q.explanation}</p>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <LearningHelpActions
+                      compact
+                      disabled={helpLoadingId !== null}
+                      label="Need a different explanation?"
+                      onAction={(action, prompt) => { void requestQuestionHelp(q, i, action, prompt); }}
+                    />
+                    {helpLoadingId === q.id && <p role="status" style={{ marginTop: 8, fontSize: 12, color: "var(--muted-foreground)" }}>Cortex is preparing your explanation…</p>}
+                    {helpByQuestion[q.id] && <div role="status" style={{ marginTop: 10, border: "1px solid var(--card-border)", borderRadius: 10, padding: 12, fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{helpByQuestion[q.id]}</div>}
                   </div>
                 </div>
               </div>

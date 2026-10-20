@@ -13,6 +13,7 @@ import {
   Music, Palette,
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
+import LearningEvidenceTrace from "@/components/learning/LearningEvidenceTrace";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
@@ -358,7 +359,7 @@ export default function LessonDetailPage() {
             <h1 className="lesson-title">{lesson.title}</h1>
             {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
             <div className="progress-label"><span>{progressLabel}</span><strong style={{ color: "var(--lesson-accent)" }}>{lesson.progress}%</strong></div>
-            <div className="progress-track"><div className="progress-fill" style={{ width: `${lesson.progress}%` }} /></div>
+            <div className="progress-track"><div className="progress-fill" style={{ width: `${lesson.progress}%` }} /></div><div style={{ marginTop: 12 }}><LearningEvidenceTrace compact title="Lesson progress" items={[{ label: "Saved progress", value: `${lesson.progress}%` }, { label: "Lesson status", value: lesson.completed ? "Marked complete" : "In progress" }]} note="Reading progress and completion are not proof of independent mastery. Use a quiz or a similar question to check understanding." /></div>
           </div>
         </header>
 

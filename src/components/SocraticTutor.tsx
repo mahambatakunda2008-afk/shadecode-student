@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Lightbulb, List, AlertCircle, BookOpen, Send, ChevronDown, ChevronUp, RefreshCw, Zap, Globe, Eye, GraduationCap } from "lucide-react";
 import { TutoringSession, TutoringMessage, Hint, ReasoningStep, ErrorAnalysis, ConceptReinforcement, ExplanationStyle, LessonContext } from "@/lib/socratic/types";
 import { generateSocraticResponse, TutoringRequest } from "@/lib/socratic/tutoringEngine";
+import LearningHelpActions from "@/components/learning/LearningHelpActions";
+import LearningEvidenceTrace from "@/components/learning/LearningEvidenceTrace";
 
 interface SocraticTutorProps {
   userId: string;
@@ -22,6 +24,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
   const [showReasoning, setShowReasoning] = useState(false);
   const [showConcepts, setShowConcepts] = useState(false);
   const [currentHintLevel, setCurrentHintLevel] = useState(0);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -32,14 +35,16 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
     scrollToBottom();
   }, [session?.conversation]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || loading) return;
+  const handleSendMessage = async (messageOverride?: string) => {
+    const messageContent = messageOverride ?? input;
+    if (!messageContent.trim() || loading) return;
 
     const userMessage: TutoringMessage = {
       id: crypto.randomUUID(),
       role: "student",
-      content: input,
+      content: messageContent,
       type: "question",
+      metadata: messageOverride ? { helpAction: true } : undefined,
       timestamp: new Date().toISOString(),
     };
 
@@ -54,7 +59,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
       userId,
       subject,
       topic,
-      question: input,
+      question: messageContent,
       conversation: newConversation,
       currentHintLevel: 0,
       conceptsCovered: [],
@@ -64,14 +69,15 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
     });
 
     setLoading(true);
-    setInput("");
+    setRequestError(null);
+    setInput(messageOverride ? input : "");
 
     try {
       const request: TutoringRequest = {
         userId,
         subject,
         topic,
-        question: input,
+        question: messageContent,
         previousContext: newConversation,
         lessonContext,
       };
@@ -94,6 +100,9 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
       setCurrentHintLevel(0);
     } catch (err) {
       console.error("Failed to generate tutoring response:", err);
+      setSession(prev => prev ? { ...prev, conversation: prev.conversation.filter(message => message.id !== userMessage.id), updatedAt: new Date().toISOString() } : null);
+      setInput(messageOverride ? input : userMessage.content);
+      setRequestError(messageOverride ? "The tutor could not respond just now. Your work is still here. Choose the help option again to retry." : "The tutor could not respond just now. Your attempt is still here. Retry when you are ready.");
     } finally {
       setLoading(false);
     }
@@ -131,10 +140,11 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
   const handleRequestExplanation = async (style: ExplanationStyle) => {
     if (!session || !session.conversation.length || loading) return;
 
-    const lastStudentMessage = [...session.conversation].filter(m => m.role === "student").pop();
+    const lastStudentMessage = [...session.conversation].filter(m => m.role === "student" && !m.metadata?.helpAction).pop();
     if (!lastStudentMessage) return;
 
     setLoading(true);
+    setRequestError(null);
 
     try {
       const request: TutoringRequest = {
@@ -162,19 +172,14 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
       } : null);
     } catch (err) {
       console.error("Failed to generate explanation:", err);
+      setRequestError("That explanation did not arrive. Your session is intact; try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const lastTutorResponse = session?.conversation.filter(m => m.role === "tutor").pop();
+  const studentAttempts = session?.conversation.filter(m => m.role === "student" && !m.metadata?.helpAction).length ?? 0;
   const hasHints = lastTutorResponse?.type === "question" || lastTutorResponse?.type === "guidance";
 
   return (
@@ -195,14 +200,31 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         )}
       </div>
 
+      {/* Honest study progress: count attempts, not inferred mastery */}
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--card-border)", background: "var(--background)" }}>
+        <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: 8 }}>Your study session</div>
+        <p style={{ fontSize: "12px", lineHeight: 1.45, color: "var(--muted-foreground)", margin: "0 0 10px" }}>
+          {studentAttempts === 0 ? "Start with what you know or where you are stuck. You do not need to get it right first time." : studentAttempts === 1 ? "Your first contribution is recorded. Use the feedback to refine your reasoning." : "Keep working through the topic. We will only mark understanding as checked after you try a question independently."}
+        </p>
+        <LearningEvidenceTrace
+          compact
+          title="Learning progress trace"
+          items={[
+            { label: "Your contributions", value: `${studentAttempts} recorded` },
+            { label: "Independent check", value: "Not yet verified" },
+          ]}
+          note="Contributions show activity, not mastery. Understanding needs an independent check."
+        />
+      </div>
+
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ flex: 1, minHeight: 120, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
         {!session || session.conversation.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 20px" }}>
             <p style={{ fontSize: "3rem", marginBottom: "12px" }}>🎓</p>
             <p style={{ fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>Socratic Tutoring</p>
-            <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "16px" }}>
-              I&apos;ll guide you through learning rather than giving answers. Ask me a question about {topic}!
+            <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "10px" }}>
+              I&apos;ll help you understand {topic}, practise the steps, and check what you can do independently. I may ask a question first because your reasoning helps me target the explanation, but you can always ask for more detail or a worked explanation.
             </p>
           </div>
         ) : (
@@ -220,6 +242,12 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
           </>
         )}
       </div>
+
+      {requestError && (
+        <div role="alert" style={{ margin: "0 16px 8px", padding: "10px 12px", border: "1px solid var(--card-border)", borderRadius: 8, background: "var(--muted)", color: "var(--foreground)", fontSize: 12, lineHeight: 1.45 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} /><span>{requestError}</span></div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       {hasHints && !loading && (
@@ -246,6 +274,15 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
             <Lightbulb size={14} />
             {currentHintLevel === 0 ? "Get Hint" : `Next Hint (${currentHintLevel}/4)`}
           </button>
+        </div>
+      )}
+
+      {session && session.conversation.length > 0 && !loading && (
+        <div className="border-t border-[var(--card-border)] px-4 py-3">
+          <LearningHelpActions
+            compact
+            onAction={(_action, prompt) => { void handleSendMessage(prompt); }}
+          />
         </div>
       )}
 
@@ -345,28 +382,34 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
         </div>
       )}
 
-      {/* Input */}
-      <div style={{ padding: "16px", borderTop: "1px solid var(--card-border)" }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type="text"
+      {/* Distinct student attempt area */}
+      <div style={{ padding: "14px 16px", borderTop: "1px solid var(--card-border)", background: "var(--background)" }}>
+        <label htmlFor="socratic-attempt" style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Your attempt</label>
+        <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "0 0 8px" }}>Show a step, explain your idea, or tell the tutor exactly where you got stuck.</p>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <textarea
+            id="socratic-attempt"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask a question or share your thinking..."
+            onChange={(e) => { setInput(e.target.value); if (requestError) setRequestError(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+            placeholder="Write your working or reasoning here…"
             disabled={loading}
+            rows={2}
             style={{
               flex: 1,
-              padding: "12px 16px",
+              minWidth: 0,
+              resize: "vertical",
+              padding: "12px 14px",
               borderRadius: "8px",
               border: "1px solid var(--card-border)",
-              background: "var(--muted)",
+              background: "var(--card)",
               color: "var(--foreground)",
               fontSize: "14px",
+              lineHeight: 1.5,
             }}
           />
           <button
-            onClick={handleSendMessage}
+            onClick={() => handleSendMessage()}
             disabled={!input.trim() || loading}
             aria-label="Send message"
             style={{
@@ -377,6 +420,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
               border: "none",
               fontWeight: 600,
               fontSize: "14px",
+              minHeight: 44,
               cursor: !input.trim() || loading ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
@@ -386,6 +430,7 @@ export default function SocraticTutor({ userId, subject, topic, initialQuestion,
             <Send size={16} />
           </button>
         </div>
+        <p style={{ fontSize: 10, color: "var(--muted-foreground)", margin: "7px 0 0" }}>Enter to submit · Shift + Enter for a new line</p>
       </div>
 
       <style>{`

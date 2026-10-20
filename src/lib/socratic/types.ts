@@ -33,6 +33,7 @@ export interface TutoringMessage {
     confidence?: number;
     explanationStyle?: ExplanationStyle;
     lessonId?: string;
+    helpAction?: boolean;
   };
 }
 

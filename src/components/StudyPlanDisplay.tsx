@@ -86,7 +86,7 @@ export default function StudyPlanDisplay({ plan, completedSessions = [], onSessi
       {/* Projected Grade */}
       {progress.projectedGrade && (
         <div style={{ padding: 12, borderRadius: 8, background: progress.projectedGrade === plan.goals.targetGrade ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)", border: `1px solid ${progress.projectedGrade === plan.goals.targetGrade ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}` }}>
-          <p style={{ fontSize: "12px", fontWeight: 600, marginBottom: 4 }}>Projected Grade</p>
+          <p style={{ fontSize: "12px", fontWeight: 600, marginBottom: 4 }}>Rough planning estimate</p>
           <p style={{ fontSize: "18px", fontWeight: 800, margin: 0 }}>
             {progress.projectedGrade}
             {progress.projectedGrade !== plan.goals.targetGrade && (
@@ -95,6 +95,7 @@ export default function StudyPlanDisplay({ plan, completedSessions = [], onSessi
               </span>
             )}
           </p>
+          <p style={{ fontSize: "11px", lineHeight: 1.5, color: "var(--muted-foreground)", margin: "6px 0 0" }}>A planning heuristic based on available progress, not a prediction or guarantee of your exam grade.</p>
         </div>
       )}
 
