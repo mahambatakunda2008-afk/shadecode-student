@@ -27,6 +27,9 @@ jobs:
       - name: Generate brand raster assets
         run: npm run generate:brand
 
+      - name: Normalize Lucide icon sizes
+        run: node scripts/snap-icon-sizes.mjs
+
       - name: Typecheck
         run: npx tsc --noEmit
 
