@@ -49,6 +49,7 @@ const QUICK_STARTS = [
   { title: "Teach me from zero", prompt: "Teach me this topic from first principles. Define every important term, explain why each step works, show a fully worked example, then test me.", icon: GraduationCap },
   { title: "Fix what I keep getting wrong", prompt: "Help me understand the common mistakes in this topic. Diagnose likely misconceptions, explain the correct reasoning, then give me practice questions.", icon: Target },
   { title: "Prepare me for exam questions", prompt: "Teach this topic to Cambridge exam standard. Include essential definitions, derivations where relevant, a worked exam-style question, mark-scheme reasoning, and a short test.", icon: NotebookPen },
+  { title: "Revise Geography case studies", prompt: "Build an O-Level Geography 24-case-study revision kit. Do not invent case names or facts. If my teacher's exact list is not included, create a blank 24-item tracker and a reusable case-study template, then tell me to paste the list. For each supplied case, structure concise notes as location/context, causes, impacts, management, outcomes, evidence to verify, flashcards, and exam application.", icon: BookOpen },
 ];
 
 export default function LearnPageResilient() {
@@ -333,7 +334,15 @@ export default function LearnPageResilient() {
             <section className="rounded-[24px] border border-[var(--card-border)] bg-[var(--surface)] p-5 shadow-sm dark:border-[var(--card-border)] dark:bg-[var(--surface)] sm:p-6">
               <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--muted-foreground)] dark:text-[var(--primary)]">A good place to begin</p><h2 className="mt-1.5 text-xl font-semibold tracking-tight">Choose your mission</h2></div><Compass size={20} className="mt-1 text-[var(--muted-foreground)]" /></div>
               <div className="mt-4 space-y-2">
-                {QUICK_STARTS.map(({ title, prompt, icon: Icon }) => <button key={title} type="button" onClick={() => setTopic(current => current.trim() ? `${current.trim()}\n\nTeaching approach: ${prompt}` : prompt)} className="group flex w-full items-start gap-3 rounded-xl border border-[var(--card-border)] p-3 text-left transition hover:border-[var(--primary)]/50 hover:bg-[var(--interactive-hover)] dark:border-[var(--card-border)] dark:hover:bg-[var(--interactive-hover)]"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--primary-glow)] text-[var(--primary)] dark:bg-[var(--surface-2)] dark:text-[var(--primary)]"><Icon size={17} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block text-xs leading-5 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">{title === "Teach me from zero" ? "Start with the idea, not memorisation." : title === "Fix what I keep getting wrong" ? "Find the misconception behind the mistake." : "Definitions, worked solutions, and exam practice."}</span></span><ChevronRight size={16} className="mt-2 shrink-0 text-[var(--muted-foreground)] transition group-hover:translate-x-0.5" /></button>)}
+                {QUICK_STARTS.map(({ title, prompt, icon: Icon }) => <button key={title} type="button" onClick={() => {
+                  if (title === "Revise Geography case studies") {
+                    const geography = subjects.find(item => /geograph/i.test(item.name));
+                    if (geography) setSubject(geography.name);
+                    setTopic(prompt);
+                    return;
+                  }
+                  setTopic(current => current.trim() ? `${current.trim()}\n\nTeaching approach: ${prompt}` : prompt);
+                }} className="group flex w-full items-start gap-3 rounded-xl border border-[var(--card-border)] p-3 text-left transition hover:border-[var(--primary)]/50 hover:bg-[var(--interactive-hover)] dark:border-[var(--card-border)] dark:hover:bg-[var(--interactive-hover)]"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--primary-glow)] text-[var(--primary)] dark:bg-[var(--surface-2)] dark:text-[var(--primary)]"><Icon size={17} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block text-xs leading-5 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">{title === "Teach me from zero" ? "Start with the idea, not memorisation." : title === "Fix what I keep getting wrong" ? "Find the misconception behind the mistake." : "Definitions, worked solutions, and exam practice."}</span></span><ChevronRight size={16} className="mt-2 shrink-0 text-[var(--muted-foreground)] transition group-hover:translate-x-0.5" /></button>)}
               </div>
             </section>
 
