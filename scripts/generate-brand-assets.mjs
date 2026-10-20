@@ -25,7 +25,9 @@ function ensureDirs() {
 async function render(sourcePath, size) {
   const outputFileName = sourcePath.split(/[\\/]/).pop().replace(/\.svg$/i, `-${size}.png`);
   const destination = join(tempDir, outputFileName);
-  await sharp(sourcePath).resize(size, size).png().toFile(destination);
+  const background = sourcePath.includes("-light.svg") ? "#F3F6FA" : "#06111C";
+  // Home-screen icons must be opaque; flatten rounded SVG corners onto the intended brand background.
+  await sharp(sourcePath).resize(size, size).flatten({ background }).png({ palette: false }).toFile(destination);
   return destination;
 }
 
