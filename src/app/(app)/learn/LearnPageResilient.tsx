@@ -210,6 +210,11 @@ export default function LearnPageResilient() {
     router.push(`/learn/${lesson.id}`);
   }
 
+  const completedResult = generationJob?.result && typeof generationJob.result === "object"
+    ? generationJob.result as { id?: unknown; localOnly?: unknown }
+    : null;
+  const localOnlyLessonId = typeof completedResult?.id === "string" ? completedResult.id : null;
+  const localOnlyCompletion = generationJob?.status === "complete" && completedResult?.localOnly === true && Boolean(localOnlyLessonId);
   const isGenerating = ["queued", "warming", "generating", "partial"].includes(generationJob?.status ?? "");
   const queuedOffline = generationJob?.status === "queued" && offline;
   const generationLabel = generationJob?.status === "queued"
@@ -217,14 +222,15 @@ export default function LearnPageResilient() {
     : generationJob?.status === "warming" ? "Preparing your session"
       : generationJob?.status === "generating" ? "Building your lesson"
         : generationJob?.status === "partial" ? "Progress saved"
-          : generationJob?.status === "complete" ? "Lesson ready"
+          : generationJob?.status === "complete" ? (localOnlyCompletion ? "Saved on this device" : "Lesson ready")
             : generationJob?.status === "failed" ? "This attempt stopped" : "Ready";
   const generationDetail = generationJob?.status === "queued"
     ? (queuedOffline ? "Your request is saved on this device and will resume when you reconnect." : "Your request is queued. You can keep this page open or come back.")
     : generationJob?.status === "warming" ? "Cortex is preparing the available learning tools."
       : generationJob?.status === "generating" ? (generationJob.error || "The lesson is being assembled and checked.")
         : generationJob?.status === "partial" ? "Completed sections are checkpointed. Your work will not be thrown away."
-          : generationJob?.status === "failed" ? (generationJob.error || "The attempt stopped before a complete lesson was ready.") : "";
+          : localOnlyCompletion ? "Cloud saving was not confirmed. This lesson is stored on this device only and has not synced to your account."
+            : generationJob?.status === "failed" ? (generationJob.error || "The attempt stopped before a complete lesson was ready.") : "";
 
   const visibleLessons = useMemo(() => {
     const unique = new Map<string, LearnLesson>();
@@ -345,6 +351,7 @@ export default function LearnPageResilient() {
             <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${generationJob.status === "failed" ? "bg-rose-500/10 text-rose-600" : "bg-[var(--primary-glow)] text-[var(--primary)] dark:bg-[var(--surface-2)] dark:text-[var(--primary)]"}`}>{generationJob.status === "failed" ? <AlertCircle size={20} /> : generationJob.status === "complete" ? <CheckCircle2 size={20} /> : queuedOffline ? <WifiOff size={20} /> : isGenerating ? <Loader2 size={20} className="animate-spin" /> : <CirclePlay size={20} />}</div>
             <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold">{generationLabel}</h2><span className="rounded-full bg-[var(--surface-2)] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] dark:bg-[var(--surface-3)] dark:text-[var(--muted-foreground)]">Run {generationJob.id.slice(0, 8)}</span></div><p className="mt-1.5 text-sm leading-6 text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">{generationDetail}</p>
               {isGenerating && <div className="mt-4"><div className="mb-2 flex items-center justify-between text-xs"><span className="font-medium text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">Session progress</span><span className="font-bold tabular-nums">{generationJob.progress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)] dark:bg-[var(--surface-3)]"><div className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-500" style={{ width: `${Math.max(0, Math.min(100, generationJob.progress))}%` }} /></div></div>}
+              {localOnlyCompletion && localOnlyLessonId && <div className="mt-4 flex flex-wrap items-center gap-3"><span className="text-xs leading-5 text-[var(--muted-foreground)]">Use this device to open it. It is not yet available from cloud storage.</span><button type="button" onClick={() => router.push(`/learn/${encodeURIComponent(localOnlyLessonId)}`)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)]"><BookOpen size={16} /> Open saved lesson</button></div>}
               {generationJob.status === "failed" && <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => { void (async () => { const resumed = await retryLessonGeneration(generationJob.id, token); if (resumed) setGenerationJob(resumed as LessonJob); else await generate(); })(); }} disabled={!subject || !topic.trim()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--primary-hover)] disabled:opacity-50"><RefreshCw size={16} /> {hasCompletedLessonCheckpoint(generationJob.partial) ? "Resume from checkpoint" : "Retry lesson"}</button><button type="button" onClick={() => { setTopic(""); setGenerationJob(null); }} className="inline-flex min-h-10 items-center rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold dark:border-[var(--card-border)]">Change topic</button></div>}
             </div>
             <button type="button" aria-label="Dismiss generation status" onClick={() => setGenerationJob(null)} className="self-end rounded-lg p-2 text-[var(--muted-foreground)] transition hover:bg-[var(--surface-2)] dark:hover:bg-[var(--interactive-hover)] sm:self-start"><span className="text-xs font-semibold">Dismiss</span></button>
