@@ -25,7 +25,10 @@ function ensureDirs() {
 async function render(sourcePath, size) {
   const outputFileName = sourcePath.split(/[\\/]/).pop().replace(/\.svg$/i, `-${size}.png`);
   const destination = join(tempDir, outputFileName);
-  await sharp(sourcePath).resize(size, size).png().toFile(destination);
+  const background = sourcePath.includes("-light.svg") ? "#F3F6FA" : "#06111C";
+  // App-store/iOS icons must be opaque square PNGs. Flatten the rounded SVG corners
+  // onto the intended light/dark brand background instead of shipping an alpha channel.
+  await sharp(sourcePath).resize(size, size).flatten({ background }).png({ palette: false }).toFile(destination);
   return destination;
 }
 
