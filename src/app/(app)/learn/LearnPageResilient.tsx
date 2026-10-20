@@ -13,6 +13,7 @@ import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Compass, GraduationCap
 import type { LearnLesson, LearnSubject, LearnSummary } from "./types";
 import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
+import GeographyRevisionKit from "./GeographyRevisionKit";
 
 const AUTH_TIMEOUT = 3_000;
 const LOCAL_TIMEOUT = 2_500;
@@ -265,6 +266,8 @@ export default function LearnPageResilient() {
             <PaperStudyLauncher />
           </div>
         </header>
+
+        <div className="mb-6"><GeographyRevisionKit /></div>
 
         {(error || offline) && <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
           <AlertCircle size={20} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
