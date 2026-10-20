@@ -15,6 +15,7 @@ import { log } from "@/lib/observability";
 import { normalizeLessonBlocks } from "@/lib/learn/mathNotation";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { computeRepairBudget } from "@/lib/learn/generationBudget";
+import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -119,6 +120,8 @@ The exact learner request remains the authority for intent. For a broad topic, u
 PRESENTATION
 This is a learning interface, not an essay. Keep blocks purposeful and scannable. Use short lines, explicit reasoning, worked steps, checkpoints, misconceptions, synthesis and curiosity. Do not pad the lesson merely to hit a number.
 
+${buildPresentationGuidance(request.subject || "General", request.topic)}
+
 MATH NOTATION
 Any mathematical expression must use single-dollar LaTeX delimiters. Never use caret powers or ASCII slash fractions in student-facing content.
 
@@ -146,6 +149,8 @@ CORE RULES
 
 PRESENTATION
 Use 8-14 purposeful blocks for standard requests. Use short scannable lines. Worked examples use Given:, Method:, Step 1:, Step 2:, Answer:. Checkpoints use Question: and Think:. Avoid wall-of-text paragraphs and artificial template headings.
+
+${buildPresentationGuidance(request.subject, request.topic)}
 
 MATH NOTATION
 Any mathematical expression must use single-dollar LaTeX delimiters. Never use caret powers or ASCII slash fractions in student-facing content.

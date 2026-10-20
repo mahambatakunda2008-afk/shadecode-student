@@ -17,6 +17,7 @@ import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
+import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -558,6 +559,7 @@ export async function POST(req: Request) {
         buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
         learnerMemoryContext,
         `SECTION JOB: ${sectionJob}`,
+        buildPresentationGuidance(effectiveSubject, request.topic),
         `PREVIOUS MATERIAL (avoid unnecessary repetition): ${JSON.stringify(priorBlocks)}`,
         "TEACHING CONTRACT: teach deeply, stay inside the exact subject/topic, explain why/how, use concrete examples, avoid invented syllabus claims, and do not put answers inside checkpoints.",
         "Return ONLY JSON with a top-level title string and blocks array; each block must contain type, optional title, and content.",
@@ -755,6 +757,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     const prompt = [
       buildResolvedLessonPrompt(request),
       buildDeepLessonPrompt(effectiveSubject, request.topic, validDifficulty),
+      buildPresentationGuidance(effectiveSubject, request.topic),
       learnerMemoryContext,
       "\nRESUMABLE GENERATION CONTRACT",
       "This request may be resumed after an interrupted generation run. Return a complete lesson for the exact request. Do not rely on hidden prior output.",

@@ -5,6 +5,10 @@ import type { CortexContext } from "./types";
 export const LOCAL_MODEL_ID = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
 export const LOCAL_MODEL_VRAM_MB = 1129;
 
+// Local models can be slow on student hardware, but they must never hold a job forever.
+const MODEL_LOAD_TIMEOUT_MS = 180_000;
+const INFERENCE_TIMEOUT_MS = 90_000;
+
 export type LocalModelStatus =
   | "unsupported"
   | "available"
@@ -51,6 +55,32 @@ function publish(nextStatus: LocalModelStatus, progress = loadProgress) {
   status = nextStatus;
   loadProgress = Math.max(0, Math.min(100, progress));
   for (const listener of listeners) listener(status, loadProgress);
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function resetTimedOutEngine(message: string) {
+  // Terminating the worker cancels a stuck worker-backed load/inference when possible.
+  // The timeout still releases the caller on browsers using the main-thread fallback.
+  worker?.terminate();
+  worker = null;
+  enginePromise = null;
+  publish("error", 0);
+  console.warn("[CORTEX] browser-local model exceeded its time budget", { message });
 }
 
 export function getBrowserLocalModelStatus() {
@@ -123,8 +153,7 @@ async function loadEngine(): Promise<WebLLMEngine> {
           worker?.terminate();
           worker = null;
 
-          // Keep local inference available on browsers where the bundler/worker
-          // path is unavailable. This fallback is still browser-local, never cloud.
+          // This fallback is still browser-local, never cloud.
           const engine = await webllmModule.CreateMLCEngine(LOCAL_MODEL_ID, {
             initProgressCallback,
           });
@@ -140,7 +169,19 @@ async function loadEngine(): Promise<WebLLMEngine> {
       });
   }
 
-  return enginePromise;
+  const pending = enginePromise;
+  try {
+    return await withTimeout(
+      pending,
+      MODEL_LOAD_TIMEOUT_MS,
+      "Browser-local model setup exceeded 3 minutes. You can continue without AI or retry later.",
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("exceeded 3 minutes")) {
+      if (enginePromise === pending) resetTimedOutEngine("model setup timeout");
+    }
+    throw error;
+  }
 }
 
 function contextText(context?: CortexContext) {
@@ -180,15 +221,27 @@ export async function generateBrowserLocal(
       ? prompt
       : `Your previous response was not valid JSON. Repair it and return ONLY one valid JSON object matching the exact schema requested in the task. Do not add markdown fences, commentary, or prose outside the JSON.\n\nPREVIOUS RESPONSE:\n${lastText.slice(0, 12000)}\n\nORIGINAL TASK:\n${prompt}`;
 
-    const result = await engine.chat.completions.create({
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: attempt === 0 ? 0.25 : 0.1,
-      max_tokens: options?.maxTokens ?? 900,
-      ...(options?.json ? { response_format: { type: "json_object" as const } } : {}),
-    });
+    let result: Awaited<ReturnType<typeof engine.chat.completions.create>>;
+    try {
+      result = await withTimeout(
+        engine.chat.completions.create({
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: attempt === 0 ? 0.25 : 0.1,
+          max_tokens: options?.maxTokens ?? 900,
+          ...(options?.json ? { response_format: { type: "json_object" as const } } : {}),
+        }),
+        INFERENCE_TIMEOUT_MS,
+        "Browser-local inference exceeded 90 seconds. Cortex will leave this lane and use recovery instead.",
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("exceeded 90 seconds")) {
+        resetTimedOutEngine("inference timeout");
+      }
+      throw error;
+    }
 
     lastText = result.choices?.[0]?.message?.content?.trim() ?? "";
     if (!lastText) throw new Error("Browser local model returned empty output.");

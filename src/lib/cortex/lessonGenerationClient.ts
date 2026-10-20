@@ -18,6 +18,7 @@ import { hasCompletedLessonCheckpoint } from "@/lib/cortex/lessonCheckpoint";
 import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGenerationPolicy";
+import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
@@ -104,7 +105,12 @@ async function runLocalRecoveryWithHeartbeat<T>(job: GenerationJob<LessonGenerat
     clearInterval(heartbeatTimer);
   }
 }
-function openCompletedLesson(result: LessonGenerationResult) { if (!isBrowser() || window.location.pathname !== "/learn") return; window.location.assign(`/learn/${encodeURIComponent(result.id)}`); }
+function openCompletedLesson(result: LessonGenerationResult) {
+  // A device-only lesson has no guaranteed cloud detail row. Keep the learner on Learn
+  // so the explicit local-only status and the offline library remain available.
+  if (result.localOnly || !isBrowser() || window.location.pathname !== "/learn") return;
+  window.location.assign(`/learn/${encodeURIComponent(result.id)}`);
+}
 function resolvedRequest(job: GenerationJob<LessonGenerationInput>) {
   const request = resolveLessonRequest({ prompt: job.request.prompt, subject: job.request.subject, level: job.request.level, difficulty: job.request.difficulty, goal: job.request.goal, examBoard: job.request.examBoard });
   const grounding = readLocalCurriculumGroundingData(job.request.subject, request.topic);
@@ -297,6 +303,8 @@ ${sectionPlan[index]}
 
 ALREADY GENERATED SECTIONS
 ${allBlocks.slice(-8).map((block) => `${String(block.type)}: ${String(block.content)}`).join("\n") || "None"}
+
+${buildPresentationGuidance(job.request.subject, request.topic)}
 
 TEACHING CONTRACT
 - This is one section of a larger lesson. Do not repeat earlier material unless a short bridge is genuinely useful.

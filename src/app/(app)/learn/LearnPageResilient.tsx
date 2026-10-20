@@ -50,6 +50,7 @@ const QUICK_STARTS = [
   { title: "Teach me from zero", prompt: "Teach me this topic from first principles. Define every important term, explain why each step works, show a fully worked example, then test me.", icon: GraduationCap },
   { title: "Fix what I keep getting wrong", prompt: "Help me understand the common mistakes in this topic. Diagnose likely misconceptions, explain the correct reasoning, then give me practice questions.", icon: Target },
   { title: "Prepare me for exam questions", prompt: "Teach this topic to Cambridge exam standard. Include essential definitions, derivations where relevant, a worked exam-style question, mark-scheme reasoning, and a short test.", icon: NotebookPen },
+  { title: "Build a revision pack", prompt: "Build a revision pack for the topic I enter, matched to my subject, level, syllabus, and exam board where known. Choose the most useful formats for this topic, such as concise notes, definitions, diagrams, worked examples, flashcards, practice questions, and an answer key. Do not invent syllabus facts or evidence; flag anything that needs verification.", icon: BookOpen },
 ];
 
 export default function LearnPageResilient() {
@@ -211,6 +212,11 @@ export default function LearnPageResilient() {
     router.push(`/learn/${lesson.id}`);
   }
 
+  const completedResult = generationJob?.result && typeof generationJob.result === "object"
+    ? generationJob.result as { id?: unknown; localOnly?: unknown }
+    : null;
+  const localOnlyLessonId = typeof completedResult?.id === "string" ? completedResult.id : null;
+  const localOnlyCompletion = generationJob?.status === "complete" && completedResult?.localOnly === true && Boolean(localOnlyLessonId);
   const isGenerating = ["queued", "warming", "generating", "partial"].includes(generationJob?.status ?? "");
   const queuedOffline = generationJob?.status === "queued" && offline;
   const generationLabel = generationJob?.status === "queued"
@@ -218,14 +224,15 @@ export default function LearnPageResilient() {
     : generationJob?.status === "warming" ? "Preparing your session"
       : generationJob?.status === "generating" ? "Building your lesson"
         : generationJob?.status === "partial" ? "Progress saved"
-          : generationJob?.status === "complete" ? "Lesson ready"
+          : generationJob?.status === "complete" ? (localOnlyCompletion ? "Saved on this device" : "Lesson ready")
             : generationJob?.status === "failed" ? "This attempt stopped" : "Ready";
   const generationDetail = generationJob?.status === "queued"
     ? (queuedOffline ? "Your request is saved on this device and will resume when you reconnect." : "Your request is queued. You can keep this page open or come back.")
     : generationJob?.status === "warming" ? "Cortex is preparing the available learning tools."
       : generationJob?.status === "generating" ? (generationJob.error || "The lesson is being assembled and checked.")
         : generationJob?.status === "partial" ? "Completed sections are checkpointed. Your work will not be thrown away."
-          : generationJob?.status === "failed" ? (generationJob.error || "The attempt stopped before a complete lesson was ready.") : "";
+          : localOnlyCompletion ? "Cloud saving was not confirmed. This lesson is stored on this device only and has not synced to your account."
+            : generationJob?.status === "failed" ? (generationJob.error || "The attempt stopped before a complete lesson was ready.") : "";
 
   const visibleLessons = useMemo(() => {
     const unique = new Map<string, LearnLesson>();
