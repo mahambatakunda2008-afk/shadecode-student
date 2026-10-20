@@ -9,3 +9,5 @@ export * from "./webrtc";
 export { ShadeNetResourceCache, shadeNetCache } from "./cache";
 export { SupabaseSignalingTransport } from "./supabase-signaling";
 export * from "./retrieval";
+export * from "./source-adapters";
+export * from "./retrieval";
