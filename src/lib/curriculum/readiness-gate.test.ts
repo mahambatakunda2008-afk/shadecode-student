@@ -74,6 +74,17 @@ describe("evaluateCurriculumReadiness", () => {
     expect(result.blockers).toContain('Coverage dimension "dimension_29" is marked not_applicable without a visible rationale.');
   });
 
+  it("does not accept an empty evidence object as a not-applicable rationale", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      coverageChecks: completeInput.coverageChecks.map((row, index) =>
+        index === 28 ? { ...row, notes: null, evidence: {} } : row
+      ),
+    });
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain('Coverage dimension "dimension_29" is marked not_applicable without a visible rationale.');
+  });
+
   it("blocks duplicate coverage dimension IDs rather than letting the last row win", () => {
     const result = evaluateCurriculumReadiness({
       ...completeInput,
