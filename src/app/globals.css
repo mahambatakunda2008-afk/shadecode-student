@@ -289,3 +289,21 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spaci
 
 /* Legibility floor: nothing below 11px, even where a component asks for 9px or 10px. */
 .text-\[9px\], .text-\[10px\] { font-size: 11px; }
+
+
+/* Keep the mobile learning workspace clear of floating assistant panels.
+   Cortex remains available through the app's normal navigation/actions; the
+   desktop sidebar stays available without covering lesson content. */
+@media (max-width: 899px) {
+  .cortex-card {
+    display: none !important;
+  }
+}
+
+/* Floating decorative layers must never intercept taps or cover content. */
+[data-floating-decoration="true"],
+.ssc-floating-decoration,
+.ssc-floating-particles {
+  display: none !important;
+  pointer-events: none !important;
+}
