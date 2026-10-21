@@ -10,14 +10,14 @@ This queue is the working inventory for syllabus ingestion across exam boards an
 2. Cambridge AS & A Level Chemistry 9701, 2028-2030
 3. Cambridge AS & A Level Physics 9702, 2028-2030
 4. Cambridge AS & A Level Mathematics 9709, 2028-2030
-5. ZIMSEC Primary subject inventory and official documents
+5. ZIMSEC Infant syllabus sources (the official catalogue lists six subject areas) and the wider primary subject/grade inventory
 6. ZIMSEC O Level Computer Science 4021 official-source retrieval and reconciliation
 
 Cambridge's official subject pages expose the new 2028-2030 PDFs. Their exact source URLs are recorded in `official-source-intake-queue.json`. Existing 2025-2027/2026-2027 datasets must remain immutable, version-bound packs. Never duplicate an older pack and simply rename its syllabus year.
 
 ## Cross-board expansion
 
-After the first batch, inventory exact subject/specification codes and effective exam years for Pearson Edexcel, IB MYP/DP, AQA, OCR, and WAEC. Expand ZIMSEC coverage beyond Computer Science, including primary, O Level, and A Level. Include Cambridge Primary and Lower Secondary as stage-specific curriculum frameworks. For WAEC, separate country/exam-specific requirements rather than treating the whole region as a single specification.
+After the first batch, inventory exact subject/specification codes and effective exam years for Pearson Edexcel, IB MYP/DP, AQA, OCR, and WAEC. Expand ZIMSEC coverage beyond Computer Science, including Infant and Grades 1-7 primary where official subject/grade documents exist, then O Level and A Level. Include Cambridge Primary and Lower Secondary as stage-specific curriculum frameworks. For WAEC, separate country/exam-specific requirements rather than treating the whole region as a single specification.
 
 ## Rules that protect students
 
@@ -43,4 +43,4 @@ This validates metadata consistency only. It does not certify content completene
 
 ## Current limits
 
-The initial queue is a finite starting inventory, not an exhaustive list of every qualification offered by every awarding body. The next research pass must enumerate subjects and levels from each authority's official catalogue, identify the exact specification document/version, then add one item per qualification/version. The queue must grow from evidence, not guessed completeness.
+The official ZIMSEC syllabus catalogue currently surfaces Infant subject areas including English Language, Information and Communication Technology, Indigenous Languages, Heritage and Social Studies, Mass Displays, and Mathematics and Science. This is catalogue-level discovery only, not a complete Grades 1-7 inventory or proof that the underlying PDFs have been captured. The initial queue is a finite starting inventory, not an exhaustive list of every qualification offered by every awarding body. The next research pass must enumerate subjects and levels from each authority's official catalogue, identify the exact specification document/version, then add one item per qualification/version. The queue must grow from evidence, not guessed completeness.
