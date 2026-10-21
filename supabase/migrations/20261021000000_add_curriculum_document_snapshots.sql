@@ -2,7 +2,7 @@
 -- The current curriculum_documents row remains the latest URL-level projection for compatibility.
 create table if not exists public.curriculum_document_snapshots (
   id uuid primary key default gen_random_uuid(),
-  source_id uuid not null references public.curriculum_sources(id) on delete cascade,
+  source_id text not null references public.curriculum_sources(id) on delete cascade,
   url text not null,
   title text,
   content_hash text not null,
