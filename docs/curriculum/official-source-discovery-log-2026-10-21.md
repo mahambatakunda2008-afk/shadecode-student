@@ -128,3 +128,21 @@ The official subject pages were followed to their PDF documents. The browser PDF
 - **O Level Physics 5054, 2029:** 53 pages. Official PDF: https://www.cambridgeinternational.org/Images/764158-2029-syllabus.pdf. This is a distinct 2029 edition, not a licence to reuse the 2026–2028 syllabus. The official page notes updated learning objectives/topic structure and assessment changes, including space physics and momentum in the syllabus history.
 
 These five targets have been added to `official-source-intake-queue.json` with status `source_confirmed_content_not_ingested`. No production curriculum data was promoted or changed. SHA-256 calculation from the real PDF bytes, immutable snapshot storage, full extraction, outcome-by-outcome comparison, assessment reconciliation and readiness review remain mandatory.
+
+
+## Further Cambridge IGCSE science editions: 2029 and Double Award routes
+
+The official subject pages were followed to these syllabus PDFs. Browser PDF-viewer metadata confirms the document titles and page counts for the six single-science editions; the two Double Award PDFs are confirmed by official subject-page links and official search-indexed document URLs. All are queued as source-confirmed but not ingested.
+
+- **Biology 0610, 2029:** Version 1, September 2026, 64 pages. https://www.cambridgeinternational.org/Images/764324-2029-syllabus.pdf
+- **Chemistry 0620, 2029:** 59 pages. https://www.cambridgeinternational.org/Images/764330-2029-syllabus.pdf
+- **Physics 0625, 2029:** 61 pages. https://www.cambridgeinternational.org/Images/764332-2029-syllabus.pdf
+- **Biology (9–1) 0970, 2029:** Version 1, September 2026, 64 pages. https://www.cambridgeinternational.org/Images/764352-2029-syllabus.pdf
+- **Chemistry (9–1) 0971, 2029:** Version 1, September 2026, 59 pages. https://www.cambridgeinternational.org/Images/764365-2029-syllabus.pdf
+- **Physics (9–1) 0972, 2029:** 61 pages. https://www.cambridgeinternational.org/Images/764368-2029-syllabus.pdf
+- **Co-ordinated Sciences (Double Award) 0654, 2028–2029:** https://www.cambridgeinternational.org/Images/745689-2028-2029-syllabus.pdf
+- **Co-ordinated Sciences (9–1, Double Award) 0973, 2028–2029:** https://www.cambridgeinternational.org/Images/744836-2028-2029-syllabus.pdf
+
+The 2029 science documents must not be silently substituted with the 2026–2028 versions. The 9–1 qualifications are separate grading/availability configurations even where the official board describes their subject content as otherwise the same as the A*–G version. Availability restrictions must be enforced for the relevant administrative zone and exam series. The Double Award routes combine Biology, Chemistry and Physics and award two grades; they are not equivalent to selecting all three individual sciences.
+
+The queue now has **34 items**. Its status vocabulary still deliberately distinguishes source discovery from completed ingestion and whole-syllabus verification. The PDF bytes have not been retrieved into this workflow; no SHA-256 hashes or complete syllabus verification are claimed.
