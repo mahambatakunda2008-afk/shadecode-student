@@ -80,7 +80,10 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
   if (doc && doc.status !== "verified") {
     blockers.push(`Source document status is "${doc.status ?? "unset"}"; the source document itself is not verified.`);
   }
-  if (doc && doc.extractionStatus !== "extracted") {
+  // The database's extraction-status vocabulary includes both "extracted" and
+  // "verified". Either may indicate successful extraction, but non-empty text
+  // is independently required above so a status label alone cannot pass the gate.
+  if (doc && doc.extractionStatus !== "extracted" && doc.extractionStatus !== "verified") {
     blockers.push(`Source extraction status is "${doc.extractionStatus ?? "unset"}"; extracted text is not recorded as successfully extracted.`);
   }
   if (!Number.isInteger(expected) || expected < 1) {
