@@ -143,8 +143,29 @@ for (const source of report.sources ?? []) {
           syllabusVersion: document.syllabusVersion ?? null,
           textPersisted: evidence.extractionSucceeded,
         },
-      }, { onConflict: "source_id,url,content_hash" });
+      }, { onConflict: "source_id,url,content_hash", ignoreDuplicates: true });
       if (snapshot.error) throw new Error(`Document snapshot ${document.url}: ${snapshot.error.message}`);
+
+      // The source-byte snapshot is immutable. If the same bytes were first recorded
+      // without extracted text, fill the missing extraction artifact without rewriting
+      // the original retrieval timestamp or source fingerprint.
+      if (evidence.extractionSucceeded) {
+        const backfill = await supabase.from("curriculum_document_snapshots").update({
+          content_characters: evidence.extractedCharacters,
+          extracted_text: extractedText,
+          extracted_text_hash: fingerprintExtractedText(extractedText),
+          extraction_status: "extracted",
+          updated_at: new Date().toISOString(),
+          metadata: {
+            watcherVersion: report.watcherVersion,
+            sourceReportedCharacters: document.characters ?? null,
+            syllabusVersion: document.syllabusVersion ?? null,
+            textPersisted: true,
+          },
+        }).eq("source_id", sourceRow.id).eq("url", document.url)
+          .eq("content_hash", document.contentHash).is("extracted_text", null);
+        if (backfill.error) throw new Error(`Document snapshot extraction backfill ${document.url}: ${backfill.error.message}`);
+      }
 
       const upsert = await supabase.from("curriculum_documents").upsert({
         id: previous?.id,
