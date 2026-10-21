@@ -38,7 +38,7 @@ export function AchievementToast() {
   const styles = RARITY_STYLES[current.rarity] || RARITY_STYLES.common;
 
   return (
-    <div className="fixed bottom-20 md:bottom-4 right-4 z-[9999] animate-in slide-in-from-right-4 fade-in duration-300">
+    <div className="ssc-mobile-floating-toast fixed bottom-20 md:bottom-4 right-4 z-[9999] animate-in slide-in-from-right-4 fade-in duration-300">
       <div className={`${styles.bg} ${styles.border} border rounded-xl p-4 ${styles.glow} shadow-2xl max-w-sm`}>
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-xl">
