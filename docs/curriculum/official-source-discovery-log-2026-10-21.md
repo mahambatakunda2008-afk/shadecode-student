@@ -90,3 +90,15 @@ This table deliberately distinguishes source discovery from artifact retrieval. 
 5. Compare all numbered outcomes, section hierarchy, assessment components and practical requirements to the corresponding edition.
 6. Reconcile coverage dimensions under an explicit policy for the board and qualification.
 7. Run the read-only readiness report. Do not promote or mutate production rows until evidence and required review are complete.
+
+
+## Follow-up source-page/PDF inspection (21 October 2026)
+
+The official Cambridge subject pages were opened and their linked PDF documents were followed in the browser. The PDF viewer exposes the full indexed text and page count; this is stronger confirmation of the candidate URLs than catalogue discovery alone, but **it is not a raw-byte download** and does not permit a valid SHA-256 claim.
+
+- **Biology 9700, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **75 pages**. The syllabus identifies Version 1 and exams in 2028–2030. The subject page says learning outcomes were clarified, topics were added/removed or moved between AS and A Level, outcomes were numbered, and Paper 1 duration increased while Paper 4 optional questions/section headings were removed.
+- **Chemistry 9701, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **98 pages**. The subject page confirms updated/numbered outcomes, content changes between levels, and that the data booklet is no longer provided with Papers 1, 2 and 4; required data are provided in the question.
+- **Physics 9702, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **69 pages**. The official page describes clarified learning outcomes and updated command words, with component structure remaining the same and changes described as fairly minor.
+- **Mathematics 9709, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **62 pages**. The document identifies Version 1, published September 2025, and states no significant changes affecting teaching. It still requires route-aware verification: six components (Papers 1–6), multiple AS routes, and distinct A Level combinations. For example, the pure-mathematics-only AS route (Papers 1 and 2) cannot count toward A Level; Paper 4 and Paper 6 cannot be combined.
+
+The indexed PDF text confirms these documents' identity, stated edition and visible page count. The underlying PDF bytes have **not** been retrieved into the project workflow, so hashes, immutable snapshots, extraction-quality checks and line-by-line reconciliation remain incomplete. No source record or curriculum status was promoted based on this follow-up.
