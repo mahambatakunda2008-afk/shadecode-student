@@ -7,7 +7,7 @@ export interface CurriculumDocumentEvidenceInput {
 
 export interface CurriculumDocumentEvidenceState {
   changed: boolean;
-  documentStatus: "discovered" | "draft" | "verified";
+  documentStatus: "discovered" | "draft" | "verified" | "archived";
   extractedText: string | null;
   extractedCharacters: number;
   extractionSucceeded: boolean;
@@ -28,11 +28,9 @@ export function evaluateCurriculumDocumentEvidence(input: CurriculumDocumentEvid
     changed,
     documentStatus: changed
       ? "draft"
-      : input.previousStatus === "verified"
-        ? "verified"
-        : input.previousStatus === "draft"
-          ? "draft"
-          : "discovered",
+      : input.previousStatus === "verified" || input.previousStatus === "draft" || input.previousStatus === "archived"
+        ? input.previousStatus
+        : "discovered",
     extractedText,
     extractedCharacters: extractedText?.length ?? 0,
     extractionSucceeded: extractedText !== null,
