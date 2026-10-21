@@ -4,7 +4,7 @@ import { diffCurriculumKnowledge, knowledgeKey } from "../src/lib/curriculum/kno
 import { diffObjectives } from "../src/lib/curriculum/change-intelligence.ts";
 import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extraction.ts";
 import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
-import { evaluateCurriculumDocumentEvidence } from "../src/lib/curriculum/document-evidence.ts";
+import { evaluateCurriculumDocumentEvidence, shouldProcessCurriculumDocument } from "../src/lib/curriculum/document-evidence.ts";
 import { fingerprintExtractedText } from "../src/lib/curriculum/source-fingerprint.ts";
 import { resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
@@ -180,7 +180,11 @@ for (const source of report.sources ?? []) {
         status: evidence.documentStatus,
       }, { onConflict: "url" }).select("id").single();
       if (upsert.error) throw new Error(`Document ${document.url}: ${upsert.error.message}`);
-      if (!changed) continue;
+      if (!shouldProcessCurriculumDocument({
+        changed,
+        previousExtractedText: previous?.extracted_text ?? null,
+        extractedText,
+      })) continue;
       if (evidence.extractionSucceeded) documentsExtracted += 1;
 
       await recordChange(runId, upsert.data.id, null, previous ? "document_changed" : "document_added",
@@ -194,6 +198,24 @@ for (const source of report.sources ?? []) {
       const profile = getCurriculumExtractionProfile(source.id);
       const extracted = extractCurriculumKnowledge(extractedText, resolved.curriculum, provenance, profile);
       if (!extracted.length) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
+
+      // Avoid duplicate version rows if an older source fingerprint is observed again.
+      // A same-hash version already exists, so leave its normalized knowledge untouched.
+      const { data: sameVersion, error: sameVersionError } = await supabase.from("curriculum_versions")
+        .select("id")
+        .eq("board_id", resolved.curriculum.boardId)
+        .eq("qualification_id", resolved.curriculum.qualificationId)
+        .eq("syllabus_id", resolved.curriculum.syllabusId)
+        .eq("subject_id", resolved.curriculum.subjectId)
+        .eq("syllabus_version", resolved.curriculum.syllabusVersion)
+        .eq("document_hash", document.contentHash)
+        .maybeSingle();
+      if (sameVersionError) throw new Error(`Existing version lookup ${document.url}: ${sameVersionError.message}`);
+      if (sameVersion) {
+        extractionSkipped += 1;
+        sourceExtractionSkipped += 1;
+        continue;
+      }
 
       const { data: priorVersion } = await supabase.from("curriculum_versions")
         .select("id, syllabus_version, status, document_hash, created_at")
