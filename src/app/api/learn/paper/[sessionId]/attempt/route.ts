@@ -12,6 +12,7 @@ import { isRevisionRating, RATING_EVIDENCE } from "@/lib/study/revisionDeck";
 import { selfCheckEvaluation } from "@/lib/learn/paperSelfCheck";
 import type { PaperScope } from "@/lib/topicMastery/resolver";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -227,6 +228,10 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     }
 
     const plan = session.learning_plan as Plan;
+    if (!plan.subject?.trim()) return NextResponse.json({ error: "This paper session has no verified subject.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    const subjectAccess = await resolveLearnerSubject(auth.supabase, auth.user.id, plan.subject);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
+    plan.subject = subjectAccess.subject;
     const block = findBlock(plan, blockId);
     const selfCheck = block?.interaction?.evaluationMode === "self_check";
     if (!block?.interaction?.prompt || !block.interaction.rubric || !block.interaction.modelAnswer) {
