@@ -97,7 +97,7 @@ for (const source of report.sources ?? []) {
   }).select("id").single();
   if (runInsert.error) throw new Error(`Run ${source.id}: ${runInsert.error.message}`);
   const runId = runInsert.data.id;
-  let sourceDocumentsChanged = 0, sourceObjectivesAdded = 0, sourceObjectivesChanged = 0, sourceObjectivesRemoved = 0;
+  let sourceDocumentsChanged = 0, sourceObjectivesAdded = 0, sourceObjectivesChanged = 0, sourceObjectivesRemoved = 0, sourceExtractionSkipped = 0;
 
   try {
     for (const document of source.documents ?? []) {
@@ -188,11 +188,11 @@ for (const source of report.sources ?? []) {
         previous ? "warning" : "info");
 
       const resolved = curriculumFromSource(source, document);
-      if (!resolved || !extractedText) { extractionSkipped += 1; continue; }
+      if (!resolved || !extractedText) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
       const provenance = provenanceFor(source, document, { versionConflict: resolved.conflict });
       const profile = getCurriculumExtractionProfile(source.id);
       const extracted = extractCurriculumKnowledge(extractedText, resolved.curriculum, provenance, profile);
-      if (!extracted.length) { extractionSkipped += 1; continue; }
+      if (!extracted.length) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
 
       const { data: priorVersion } = await supabase.from("curriculum_versions")
         .select("id, syllabus_version, status, document_hash, created_at")
@@ -304,11 +304,22 @@ for (const source of report.sources ?? []) {
       }
     }
 
+    const runStatus = source.status === "ok" && sourceExtractionSkipped === 0
+      ? "completed"
+      : source.status === "partial" || (source.status === "ok" && sourceExtractionSkipped > 0)
+        ? "partial"
+        : "failed";
     const finish = await supabase.from("curriculum_ingestion_runs").update({
-      status: "completed", completed_at: new Date().toISOString(), documents_seen: source.documents?.length ?? 0,
+      status: runStatus, completed_at: new Date().toISOString(), documents_seen: source.documents?.length ?? 0,
       documents_changed: sourceDocumentsChanged, objectives_added: sourceObjectivesAdded, objectives_changed: sourceObjectivesChanged,
       objectives_removed: sourceObjectivesRemoved,
-      metadata: { extractionMode: "whole-syllabus-v2", versionsCreated, knowledgeItemsCreated, knowledgeAdded, knowledgeChanged, knowledgeRemoved, knowledgeMoved, knowledgeRenamed },
+      metadata: {
+        extractionMode: "whole-syllabus-v2",
+        sourceStatus: source.status ?? "unknown",
+        sourceExtractionSkipped,
+        versionsCreated, knowledgeItemsCreated, knowledgeAdded, knowledgeChanged, knowledgeRemoved, knowledgeMoved, knowledgeRenamed,
+      },
+      ...(runStatus === "failed" ? { error: (source.errors ?? []).join("; ") || "Source watcher did not report a successful document ingestion." } : {}),
     }).eq("id", runId);
     if (finish.error) throw new Error(`Finish ${source.id}: ${finish.error.message}`);
   } catch (error) {
