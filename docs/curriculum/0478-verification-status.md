@@ -1,4 +1,4 @@
-> **Status note (2026-09-20, SUPERSEDED-BY-LIVE-DATA):** the counts below are out of date. Live database: `cambridge-0478` 2026-2028 has **29/29** coverage dimensions satisfied and **75 verified knowledge items across all 15 required kinds**, so it satisfies the strict resolver gate. Re-verify with the queries in `docs/curriculum/cambridge-mathematics-9709.md` before relying on this file.
+> **Live status correction (2026-10-21):** production database snapshot shows `cambridge-0478` 2026-2028 is version-status `verified`, with 68/68 objective rows verified, 75/75 knowledge rows verified across 16 observed kinds, and 29 coverage rows: 27 `verified` plus 2 `not_applicable`. The official syllabus PDF and its official update page both identify **version 5, published December 2025**, not version 6. Source: https://www.cambridgeinternational.org/Images/697167-2026-2028-syllabus.pdf and https://www.cambridgeinternational.org/Images/711263-2026-2028-syllabus-update.pdf. The database document row currently reports `extraction_status: partial`, 56 pages and zero stored content characters, so inspect the stored structure/hash and reconcile the source provenance. This correction supersedes the outdated counts and the version-6 claim below; do not use the old sections as current database state.
 
 # Cambridge IGCSE Computer Science 0478 — verification status (2026-09-12)
 
@@ -29,17 +29,9 @@ has sub-sections 1.1–1.3 with ~10 individually numbered outcomes). If finer-gr
 objectives are wanted for mapping/practice generation, that's a real, larger authoring
 task, not a quick follow-up.
 
-## A real discrepancy found: cached document is one version behind
+## Source identity and extraction reconciliation
 
-`curriculum_documents` (row `4cd4b3c5-3de1-4a3c-b823-8532706f1b59`) has
-`structure.version: 5` cached from ingestion. The live PDF's own changelog states:
-
-> "This is version 6, published September 2026."
-
-Version 6's only change (per the syllabus's own changelog) is a wording update to the
-ROUND function description on page 41 — low-stakes, but the cached snapshot should be
-refreshed and the `content_hash` recomputed before anything is promoted to `verified`,
-since the whole point of hash-tracked provenance is catching exactly this kind of drift.
+The official syllabus URL and official syllabus-update page currently identify **version 5, published December 2025**. The earlier version-6 claim in this document was incorrect and is superseded by the live-status note above. The production database still reports `extraction_status: partial` and zero stored content characters for the 56-page document, despite verified knowledge and coverage records. Inspect the stored `structure`, `content_hash`, extraction engine/version and verification-event evidence to determine whether the source was manually reconciled, partially extracted, or inconsistently represented. Do not change version or hash labels without checking the actual source bytes and stored evidence.
 
 ## Coverage dimension gap — precise breakdown
 
@@ -80,14 +72,9 @@ series (those are typically behind the School Support Hub login and weren't chec
 Whether specimen material is sufficient evidence for `mark_scheme_coverage` is a policy
 call for whoever owns this gate, not something to decide by default.
 
-## Knowledge layer: still empty
+## Knowledge layer: populated, but reconcile against the current manifest
 
-`curriculum_knowledge` has 0 rows for every syllabus in production, not just this one.
-The 15 required kinds (`src/lib/curriculum/resolver.ts` `REQUIRED_KNOWLEDGE_KINDS`) are
-entirely unpopulated. Even with every coverage dimension above resolved, the version
-still won't reach `resolved` status in `resolveCurriculumContext` until knowledge exists
-for all 15 kinds. This is the largest remaining piece of work, independent of the
-coverage-dimension gap above.
+The production database snapshot now has 75 verified knowledge rows for 0478 across 16 observed kinds. The resolver currently requires the 15 kinds declared in `src/lib/curriculum/resolver.ts`; the manifest in `src/lib/curriculum/verification/0478-2026-2028.ts` separately lists expected kinds for the verification run. Compare those sets and the observed knowledge rows to ensure every resolver-required kind is present and all assessment details/topic keys remain evidenced. The previous statement that knowledge was empty across production is obsolete.
 
 ## Suggested order of work
 
