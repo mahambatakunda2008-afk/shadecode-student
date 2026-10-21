@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeQuestionQuery } from "@/lib/exam/question-query";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,29 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Exam Hub is learner-scoped. Never return a question simply because its
+    // paper exists in the shared catalog: the syllabus must match enrollment.
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json(
+        { error: "Choose your subjects in onboarding before using Exam Hub.", code: "SUBJECT_NOT_ALLOWED", questions: [], count: 0 },
+        { status: 409 },
+      );
+    }
+
+    const { data: syllabi, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id,subject,board");
+    if (syllabusError) throw syllabusError;
+
+    const allowedSyllabusIds = (syllabi ?? [])
+      .filter((syllabus) => isAllowedSubject(syllabus.subject, learner.subjects.map((subject) => subject.name)))
+      .map((syllabus) => syllabus.id);
+
+    if (allowedSyllabusIds.length === 0) {
+      return NextResponse.json({ questions: [], count: 0 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = normalizeQuestionQuery({
       q: searchParams.get("q"),
@@ -21,9 +46,12 @@ export async function GET(request: Request) {
       limit: searchParams.get("limit"),
     });
 
+    // !inner plus the nested syllabus filter ensures direct paperId/topicId
+    // requests cannot bypass the learner's subject selection.
     let dbQuery = supabase
       .from("exam_questions")
-      .select("id,paper_id,question_number,page_number,topic_id,subtopic,difficulty,marks,question_text,created_at,past_papers(id,syllabus_id,level,session,year,paper_number,variant)")
+      .select("id,paper_id,question_number,page_number,topic_id,subtopic,difficulty,marks,question_text,created_at,past_papers!inner(id,syllabus_id,level,session,year,paper_number,variant)")
+      .in("past_papers.syllabus_id", allowedSyllabusIds)
       .limit(query.limit);
 
     if (query.paperId) dbQuery = dbQuery.eq("paper_id", query.paperId);
@@ -43,13 +71,8 @@ export async function GET(request: Request) {
     }).filter((id): id is string => typeof id === "string" && id.length > 0))];
 
     const syllabusMap = new Map<string, { subject: string; board: string }>();
-    if (syllabusIds.length) {
-      const { data: syllabi, error: syllabusError } = await supabase
-        .from("syllabi")
-        .select("id,subject,board")
-        .in("id", syllabusIds);
-      if (syllabusError) throw syllabusError;
-      for (const syllabus of syllabi ?? []) {
+    for (const syllabus of syllabi ?? []) {
+      if (syllabusIds.includes(syllabus.id)) {
         syllabusMap.set(syllabus.id, { subject: syllabus.subject, board: syllabus.board });
       }
     }
