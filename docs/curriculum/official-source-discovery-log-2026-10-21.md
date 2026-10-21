@@ -1,0 +1,148 @@
+# Official source discovery log: 2026-10-21
+
+**Scope:** targeted discovery for Cambridge International 2028–2031 syllabus editions, Cambridge Computer Science 9618/0478/0265, and ZIMSEC Computer Science 4021.
+**Boundary:** this is a discovery record, not a claim that the PDFs have been downloaded, hashed, extracted, reconciled, or ingested into Shadecode Student.
+
+## Cambridge AS & A Level, exams 2028–2030
+
+The official Cambridge subject pages list the new 2028–2030 syllabus alongside older versions. Cambridge's published guidance says the syllabus year refers to the year the candidate takes the exam: candidates sitting in 2027 use the 2025–2027 syllabus, while candidates sitting in 2028 use the 2028–2030 syllabus.
+
+- **Biology 9700**
+  - Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/
+  - Direct official PDF: https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf
+  - Discovery result confirms the PDF content identifies Biology 9700 for 2028–2030 and includes numbered learning outcomes. It is not a substitute for downloading and checking the complete document.
+- **Chemistry 9701**
+  - Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-chemistry-9701/
+  - Direct official PDF: https://www.cambridgeinternational.org/Images/744624-2028-2030-syllabus.pdf
+  - Discovery result confirms the PDF content identifies Chemistry 9701 for 2028–2030 and contains detailed numbered learning outcomes. Complete extraction and reconciliation remain outstanding.
+- **Physics 9702**
+  - Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/
+  - Direct official PDF listed in the current repository queue: https://www.cambridgeinternational.org/Images/744626-2028-2030-syllabus.pdf
+  - The exact URL is a candidate official source from the queue. Retrieval, response validation, byte hash, page count and content review remain outstanding in this workflow.
+- **Mathematics 9709**
+  - Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/
+  - Direct official PDF listed in the current repository queue: https://www.cambridgeinternational.org/Images/744634-2028-2030-syllabus.pdf
+  - The subject has route-specific combinations, so verification must preserve the route and component matrix rather than flattening all content into one route. Cambridge's official page notes the two A Level route patterns: Pure Mathematics + Probability & Statistics, or Pure Mathematics + Mechanics + Probability & Statistics. Retrieval, byte hash, page count and full reconciliation remain outstanding.
+
+### Official exam-year guidance
+
+Cambridge's help centre states that candidates taking exams in 2027 use the 2025–2027 syllabus and candidates taking exams in 2028 use the 2028–2030 syllabus:
+https://help.cambridgeinternational.org/hc/en-gb/articles/37190057441298-General-FAQ-Which-syllabus-year-should-I-use
+
+**Important:** Cambridge's official subject pages describe substantive syllabus updates, including clarified learning outcomes and topics added, removed, or moved between AS and A Level. Do not assume that a topic-name match means the old and new editions are equivalent. These 2028–2030 PDFs must not be relabelled as the 2025–2027 or 2026–2027 syllabus packs. Keep each edition separately versioned and selected by the student's exam year.
+
+## Cambridge Computer Science source verification targets
+
+### AS & A Level Computer Science 9618, exams 2027–2029
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/
+- Direct official PDF: https://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf
+- The official PDF identifies itself as **Version 2**, published December 2025, and says there are no significant changes affecting teaching. The document is 49 pages and covers exams in 2027, 2028 and 2029.
+- The version notice is not permission to skip verification. The stored/normalized 9618 pack must still be reconciled to this exact PDF and fingerprint, including AS/A Level section boundaries, all numbered outcomes, three assessment routes, paper weightings, programming-language requirements, and practical evidence.
+
+### IGCSE Computer Science 0478, exams 2029–2031
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0478/
+- Direct official PDF: https://www.cambridgeinternational.org/Images/763431-2029-2031-syllabus.pdf
+- The official page lists 2029–2031 as a distinct edition. It describes substantive changes including Python 3 as the only language for teaching, assessment and programming questions; removal of pseudocode; expanded AI/machine-learning and networking content; revised component structure; and calculator-rule changes. Do not carry over 2026–2028 topics or assessment metadata without a document-level diff.
+
+### IGCSE Computer Science 0265, exams in 2029
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0265/
+- Direct official PDF: https://www.cambridgeinternational.org/Images/763395-2029-syllabus.pdf
+- The official PDF is Version 1, published September 2026, and specifies a digital-only exam route for 2029. Cambridge states that 0265 has the same subject content as paper-based 0478/0984/2210 but a different assessment-delivery route. Preserve 0265 as a separate qualification/assessment configuration instead of merging its component delivery details into 0478.
+- Cambridge's official page states that a syllabus for 2030 onwards is due to be published in September 2027. Do not invent or extend the 2029 edition into later years.
+
+## ZIMSEC Computer Science 4021
+
+The official ZIMSEC catalogue lists **Computer Science O level Syllabus**, but the direct syllabus-document URL and edition metadata are not yet confirmed.
+
+Official pages for **Computer Science 4021/01**, **4021/02**, and **4021/03** surfaced as separate paper downloads, each created/updated on 9 March 2026:
+
+- Paper 1 page: https://www5.zimsec.co.zw/download/computer-science-4021-01/
+- Paper 2 page: https://www5.zimsec.co.zw/download/computer-science-4021-02/
+- Paper 3 page: https://www5.zimsec.co.zw/download/computer-science-4021-03/
+- Official syllabus catalogue: https://www5.zimsec.co.zw/syllabi/
+
+The three 4021 pages are individual paper resources, not proof of a complete syllabus document. Do not combine them into a syllabus or use them to mark the syllabus verified. Next retrieval task: follow the catalogue's **Computer Science O level Syllabus** entry to its exact document, confirm the edition and effective years, download the complete file, and record its metadata and hash. If the catalogue does not expose the syllabus document publicly, record the access block and request the document through an authorized route.
+
+## Current evidence state
+
+| Source target | Authority page identified | Direct candidate document URL identified | Bytes retrieved and hashed here | Full extraction/reconciliation complete |
+| --- | --- | --- | --- | --- |
+| Cambridge Biology 9700, 2028–2030 | Yes | Yes | No | No |
+| Cambridge Chemistry 9701, 2028–2030 | Yes | Yes | No | No |
+| Cambridge Physics 9702, 2028–2030 | Yes | Yes, candidate from queue | No | No |
+| Cambridge Mathematics 9709, 2028–2030 | Yes | Yes, candidate from queue | No | No |
+| Cambridge Computer Science 9618, 2027–2029 Version 2 | Yes | Yes | No | No |
+| Cambridge IGCSE Computer Science 0478, 2029–2031 | Yes | Yes | No | No |
+| Cambridge IGCSE Computer Science 0265, 2029 digital route | Yes | Yes | No | No |
+| ZIMSEC Computer Science 4021, 2024–2030 | Yes, catalogue | Not yet confirmed | No | No |
+
+This table deliberately distinguishes source discovery from artifact retrieval. No curriculum database status should change based on this log alone.
+
+## Next execution sequence
+
+1. Retrieve each exact official PDF through an available, authorized fetch path.
+2. Validate HTTP status, content type, byte length, PDF signature and page count.
+3. Calculate SHA-256 from the actual bytes and preserve an immutable snapshot.
+4. Extract text with page boundaries and log warnings, empty pages, tables and diagrams.
+5. Compare all numbered outcomes, section hierarchy, assessment components and practical requirements to the corresponding edition.
+6. Reconcile coverage dimensions under an explicit policy for the board and qualification.
+7. Run the read-only readiness report. Do not promote or mutate production rows until evidence and required review are complete.
+
+
+## Follow-up source-page/PDF inspection (21 October 2026)
+
+The official Cambridge subject pages were opened and their linked PDF documents were followed in the browser. The PDF viewer exposes the full indexed text and page count; this is stronger confirmation of the candidate URLs than catalogue discovery alone, but **it is not a raw-byte download** and does not permit a valid SHA-256 claim.
+
+- **Biology 9700, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **75 pages**. The syllabus identifies Version 1 and exams in 2028–2030. The subject page says learning outcomes were clarified, topics were added/removed or moved between AS and A Level, outcomes were numbered, and Paper 1 duration increased while Paper 4 optional questions/section headings were removed.
+- **Chemistry 9701, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **98 pages**. The subject page confirms updated/numbered outcomes, content changes between levels, and that the data booklet is no longer provided with Papers 1, 2 and 4; required data are provided in the question.
+- **Physics 9702, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **69 pages**. The official page describes clarified learning outcomes and updated command words, with component structure remaining the same and changes described as fairly minor.
+- **Mathematics 9709, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **62 pages**. The document identifies Version 1, published September 2025, and states no significant changes affecting teaching. It still requires route-aware verification: six components (Papers 1–6), multiple AS routes, and distinct A Level combinations. For example, the pure-mathematics-only AS route (Papers 1 and 2) cannot count toward A Level; Paper 4 and Paper 6 cannot be combined.
+
+The indexed PDF text confirms these documents' identity, stated edition and visible page count. The underlying PDF bytes have **not** been retrieved into the project workflow, so hashes, immutable snapshots, extraction-quality checks and line-by-line reconciliation remain incomplete. No source record or curriculum status was promoted based on this follow-up.
+
+
+## ZIMSEC follow-up: distinguish syllabus from exam-paper resources
+
+A further official-site search reconfirmed the ZIMSEC syllabus catalogue entry named **Computer Science O level Syllabus**, but the catalogue page timed out when opened directly in this pass and no exact syllabus-file URL could be established. The search also surfaced the official individual-paper pages for 4021/01 and 4021/02, each showing a single file created and last updated on 9 March 2026; the official O Level downloads index lists 4021/03 as well. These are examination-paper resources, not the full syllabus specification. They must not be used as a substitute for syllabus outcomes, course scope, or the official assessment specification.
+
+Official catalogue and paper index:
+- https://www5.zimsec.co.zw/syllabi/
+- https://www5.zimsec.co.zw/download-category/o-level/page/9/
+- https://www5.zimsec.co.zw/download/computer-science-4021-01/
+- https://www5.zimsec.co.zw/download/computer-science-4021-02/
+
+**State remains unresolved:** 4021's exact syllabus PDF, edition/effective years and full text are still not confirmed. Keep the queue entry in discovery/review status and do not mark the syllabus verified from paper pages or examiner reports.
+
+
+## Additional Cambridge mathematics and physics editions found (21 October 2026)
+
+The official subject pages were followed to their PDF documents. The browser PDF viewer confirms the document identity and page count, but the source files have not been downloaded as raw bytes into the ingestion workflow. These are **discovered, not yet ingested or syllabus-verified**.
+
+- **IGCSE Mathematics 0580, 2028–2030:** Version 2, 70 pages. Official PDF: https://www.cambridgeinternational.org/Images/745681-2028-2030-syllabus.pdf. Core and Extended routes must stay distinct; each has a non-calculator and calculator paper, with different durations and marks. The updated edition contains more examples to clarify depth of teaching.
+- **IGCSE Mathematics (9–1) 0980, 2028–2030:** Version 2, 70 pages. Official PDF: https://www.cambridgeinternational.org/Images/744838-2028-2030-syllabus.pdf. Preserve this as a separate qualification configuration from 0580 because the grade scale and route availability differ.
+- **O Level Mathematics (Syllabus D) 4024, 2028–2030:** Version 2, 47 pages. Official PDF: https://www.cambridgeinternational.org/Images/744869-2028-2030-syllabus.pdf. The syllabus is not available in every administrative zone; the official page specifies zones 3, 4 and 5 only. Its assessment consists of a non-calculator Paper 1 and calculator Paper 2.
+- **AS & A Level Further Mathematics 9231, 2028–2030:** 52 pages. Official PDF: https://www.cambridgeinternational.org/Images/744603-2028-2030-syllabus.pdf. The syllabus assumes prior knowledge of the full 9709 A Level Mathematics content and has route-specific combinations for Further Pure Mathematics, Further Mechanics, and Further Probability & Statistics. Preserve prerequisite and paper-combination dependencies.
+- **O Level Physics 5054, 2029:** 53 pages. Official PDF: https://www.cambridgeinternational.org/Images/764158-2029-syllabus.pdf. This is a distinct 2029 edition, not a licence to reuse the 2026–2028 syllabus. The official page notes updated learning objectives/topic structure and assessment changes, including space physics and momentum in the syllabus history.
+
+These five targets have been added to `official-source-intake-queue.json` with status `source_confirmed_content_not_ingested`. No production curriculum data was promoted or changed. SHA-256 calculation from the real PDF bytes, immutable snapshot storage, full extraction, outcome-by-outcome comparison, assessment reconciliation and readiness review remain mandatory.
+
+
+## Further Cambridge IGCSE science editions: 2029 and Double Award routes
+
+The official subject pages were followed to these syllabus PDFs. Browser PDF-viewer metadata confirms the document titles and page counts for the six single-science editions; the two Double Award PDFs are confirmed by official subject-page links and official search-indexed document URLs. All are queued as source-confirmed but not ingested.
+
+- **Biology 0610, 2029:** Version 1, September 2026, 64 pages. https://www.cambridgeinternational.org/Images/764324-2029-syllabus.pdf
+- **Chemistry 0620, 2029:** 59 pages. https://www.cambridgeinternational.org/Images/764330-2029-syllabus.pdf
+- **Physics 0625, 2029:** 61 pages. https://www.cambridgeinternational.org/Images/764332-2029-syllabus.pdf
+- **Biology (9–1) 0970, 2029:** Version 1, September 2026, 64 pages. https://www.cambridgeinternational.org/Images/764352-2029-syllabus.pdf
+- **Chemistry (9–1) 0971, 2029:** Version 1, September 2026, 59 pages. https://www.cambridgeinternational.org/Images/764365-2029-syllabus.pdf
+- **Physics (9–1) 0972, 2029:** 61 pages. https://www.cambridgeinternational.org/Images/764368-2029-syllabus.pdf
+- **Co-ordinated Sciences (Double Award) 0654, 2028–2029:** https://www.cambridgeinternational.org/Images/745689-2028-2029-syllabus.pdf
+- **Co-ordinated Sciences (9–1, Double Award) 0973, 2028–2029:** https://www.cambridgeinternational.org/Images/744836-2028-2029-syllabus.pdf
+
+The 2029 science documents must not be silently substituted with the 2026–2028 versions. The 9–1 qualifications are separate grading/availability configurations even where the official board describes their subject content as otherwise the same as the A*–G version. Availability restrictions must be enforced for the relevant administrative zone and exam series. The Double Award routes combine Biology, Chemistry and Physics and award two grades; they are not equivalent to selecting all three individual sciences.
+
+The queue now has **34 items**. Its status vocabulary still deliberately distinguishes source discovery from completed ingestion and whole-syllabus verification. The PDF bytes have not been retrieved into this workflow; no SHA-256 hashes or complete syllabus verification are claimed.
