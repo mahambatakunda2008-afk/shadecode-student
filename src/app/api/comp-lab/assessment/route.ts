@@ -10,7 +10,7 @@ const MAX_CODE_LENGTH = 40_000;
 async function requireUser() {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
-  return { user: error || !user ? null : user };
+  return { supabase, user: error || !user ? null : user };
 }
 
 /**
@@ -19,10 +19,9 @@ async function requireUser() {
  * cases are resolved server-side and are never accepted from the request body.
  */
 export async function POST(request: Request) {
-  const { user } = await requireUser();
+  const { supabase, user } = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const supabase = await createSupabaseServerClient();
   const learner = await resolveLearnerSubjects(supabase, user.id);
   if (!hasComputerScienceCurriculum(learner.subjects)) {
     return NextResponse.json(
