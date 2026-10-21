@@ -15,6 +15,20 @@ This queue is the working inventory for syllabus ingestion across exam boards an
 
 Cambridge's official subject pages expose the new 2028-2030 PDFs. Their exact source URLs are recorded in `official-source-intake-queue.json`. Existing 2025-2027/2026-2027 datasets must remain immutable, version-bound packs. Never duplicate an older pack and simply rename its syllabus year.
 
+## Existing versions that must remain supported
+
+The queue also tracks the currently needed editions already present in the repository or production database. These are reconciliation tasks, not permission to replace them with newer editions:
+
+- Cambridge 9700 Biology, 2025-2027
+- Cambridge 9701 Chemistry, 2025-2027
+- Cambridge 9702 Physics, 2025-2027
+- Cambridge 9709 Mathematics, 2026-2027
+- Cambridge 9618 Computer Science, 2027-2029
+- Cambridge IGCSE Computer Science 0478, 2026-2028
+- ZIMSEC O Level Computer Science 4021, 2024-2030
+
+Students preparing for 2026 and 2027 exams must retain their applicable edition while later editions are prepared. Some existing packs carry incomplete or conflicting provenance/coverage evidence. Keep them versioned and explicitly gated rather than deleting them or treating a `verified` flag as sufficient by itself.
+
 ## Cross-board expansion
 
 After the first batch, inventory exact subject/specification codes and effective exam years for Pearson Edexcel, IB MYP/DP, AQA, OCR, and WAEC. Expand ZIMSEC coverage beyond Computer Science, including Infant and Grades 1-7 primary where official subject/grade documents exist, then O Level and A Level. Include Cambridge Primary and Lower Secondary as stage-specific curriculum frameworks. For WAEC, separate country/exam-specific requirements rather than treating the whole region as a single specification.
