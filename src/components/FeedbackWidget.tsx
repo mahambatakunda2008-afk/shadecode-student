@@ -32,7 +32,7 @@ export function FeedbackWidget() {
     } finally { setSubmitting(false); }
   };
   return <>
-    <button type="button" onClick={() => setOpen(true)} aria-label="Send feedback" className="fixed bottom-24 right-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 md:bottom-6 md:right-6" style={{ background: "var(--primary)", color: "white", boxShadow: "0 4px 16px var(--primary-glow, rgba(99,102,241,0.4))" }}><MessageCircle size={22} /></button>
+    <button type="button" onClick={() => setOpen(true)} aria-label="Send feedback" className="ssc-mobile-floating-launcher fixed bottom-24 right-4 z-[9999] hidden h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 md:flex md:bottom-6 md:right-6" style={{ background: "var(--primary)", color: "white", boxShadow: "0 4px 16px var(--primary-glow, rgba(99,102,241,0.4))" }}><MessageCircle size={22} /></button>
     {open && <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/20 p-3 sm:items-center sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="ssc-card relative max-h-[calc(100dvh-1.5rem)] w-full max-w-sm overflow-y-auto p-4 sm:p-5" role="dialog" aria-modal="true" aria-label="Send feedback">
         <button type="button" onClick={close} aria-label="Close" className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--muted)]"><X size={16} /></button>
