@@ -77,6 +77,15 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
   if (!extractedCharacters) {
     blockers.push("No extracted source text is available; manual notes alone do not satisfy this automated evidence gate.");
   }
+  if (doc && doc.status !== "verified") {
+    blockers.push(`Source document status is "${doc.status ?? "unset"}"; the source document itself is not verified.`);
+  }
+  if (doc && doc.extractionStatus !== "extracted") {
+    blockers.push(`Source extraction status is "${doc.extractionStatus ?? "unset"}"; extracted text is not recorded as successfully extracted.`);
+  }
+  if (!Number.isInteger(expected) || expected < 1) {
+    blockers.push("Expected coverage dimension count must be a positive integer.");
+  }
   if (doc && doc.contentCharacters !== extractedCharacters) {
     warnings.push("Stored character count does not match the available extracted text.");
   }
@@ -97,6 +106,12 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
         }
       }
     }
+  }
+  if (!Number.isInteger(objectiveCount) || objectiveCount < 0) {
+    blockers.push("Objective count must be a non-negative integer.");
+  }
+  if (!Number.isInteger(verifiedObjectiveCount) || verifiedObjectiveCount < 0 || verifiedObjectiveCount > objectiveCount) {
+    blockers.push("Verified objective count is invalid or exceeds the recorded objective count.");
   }
   if (!objectiveCount) blockers.push("No curriculum objectives are recorded.");
   if (objectiveCount > 0 && verifiedObjectiveCount < objectiveCount) {
