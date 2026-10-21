@@ -24,6 +24,7 @@ create index if not exists curriculum_document_snapshots_hash_idx
   on public.curriculum_document_snapshots (content_hash);
 
 alter table public.curriculum_document_snapshots enable row level security;
+grant all on table public.curriculum_document_snapshots to service_role;
 
 comment on table public.curriculum_document_snapshots is
   'Versioned curriculum source evidence keyed by source, URL and original-byte SHA-256. Historical hashes remain queryable when the current URL projection changes.';
