@@ -53,12 +53,37 @@ describe("evaluateCurriculumReadiness", () => {
     expect(result.blockers).toContain("Only 8/10 objectives are marked verified.");
   });
 
-  it("does not treat a placeholder source hash as evidence", () => {
+  it("does not treat a placeholder or non-SHA-256-sized source hash as evidence", () => {
+    for (const contentHash of ["not-computed:web-fetch", "a".repeat(32)]) {
+      const result = evaluateCurriculumReadiness({
+        ...completeInput,
+        document: { ...completeInput.document, contentHash },
+      });
+      expect(result.blockers).toContain("Source-byte fingerprint is missing, malformed, or explicitly uncomputed.");
+    }
+  });
+
+  it("blocks not-applicable dimensions without a rationale", () => {
     const result = evaluateCurriculumReadiness({
       ...completeInput,
-      document: { ...completeInput.document, contentHash: "not-computed:web-fetch" },
+      coverageChecks: completeInput.coverageChecks.map((row, index) =>
+        index === 28 ? { ...row, notes: null } : row
+      ),
     });
-    expect(result.blockers).toContain("Source-byte fingerprint is missing, malformed, or explicitly uncomputed.");
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain('Coverage dimension "dimension_29" is marked not_applicable without a visible rationale.');
+  });
+
+  it("blocks duplicate coverage dimension IDs rather than letting the last row win", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      coverageChecks: [
+        ...completeInput.coverageChecks,
+        { dimension: "dimension_1", status: "missing", notes: null },
+      ],
+    });
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain("Coverage inventory contains duplicate dimension IDs: dimension_1.");
   });
 
   it("supports an explicitly configured board-specific coverage inventory", () => {
