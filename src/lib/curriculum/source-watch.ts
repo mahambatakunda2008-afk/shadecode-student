@@ -193,7 +193,7 @@ export const CURRICULUM_SOURCE_WATCHES: CurriculumSourceWatch[] = [
     discoverLinkedDocuments: true,
     extractText: true,
     autoPromote: false,
-  },,
+  },
   {
     id: "pearson-international-gcse-discovery",
     boardId: "pearson-edexcel",
