@@ -43,8 +43,21 @@ async function fetchPage(url) {
   return { url: response.url, text: await response.text() };
 }
 
-async function extractPdf(url) {
-  const parser = new PDFParse({ url });
+async function fetchPdfBytes(url) {
+  const response = await fetch(url, {
+    headers: { "user-agent": "Shadecode-Curriculum-Watcher/1.0" },
+    redirect: "follow",
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length < 5 || bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
+    throw new Error(`Source did not return PDF bytes: ${url}`);
+  }
+  return { url: response.url, bytes };
+}
+
+async function extractPdf(bytes) {
+  const parser = new PDFParse({ data: new Uint8Array(bytes) });
   try {
     const result = await parser.getText();
     return result.text ?? "";
@@ -83,20 +96,28 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
   };
 
   try {
-    const page = await fetchPage(source.url);
-    sourceResult.landingPageHash = sha256(page.text);
-
-    const candidates = source.discoverLinkedDocuments
-      ? extractPdfLinks(page.text, page.url, source.allowedDomains)
-      : source.kind === "pdf" ? [page.url] : [];
+    let candidates = [];
+    if (source.kind === "pdf") {
+      candidates = [source.url];
+    } else {
+      const page = await fetchPage(source.url);
+      sourceResult.landingPageHash = sha256(page.text);
+      candidates = source.discoverLinkedDocuments
+        ? extractPdfLinks(page.text, page.url, source.allowedDomains)
+        : [];
+    }
 
     for (const documentUrl of candidates) {
       try {
-        const text = source.extractText ? await extractPdf(documentUrl) : "";
-        const contentHash = sha256(text);
+        const sourcePdf = await fetchPdfBytes(documentUrl);
+        const contentHash = sha256(sourcePdf.bytes);
+        const text = source.extractText ? await extractPdf(sourcePdf.bytes) : "";
+        const extractionHash = sha256(text);
+        const sourceFile = `${snapshotDir}/${contentHash}.pdf`;
         const snapshotFile = `${snapshotDir}/${contentHash}.txt`;
         const discovery = discoverSyllabusVersion(text, documentUrl);
 
+        await writeFile(sourceFile, sourcePdf.bytes);
         if (text) await writeFile(snapshotFile, text, "utf8");
 
         const effectiveVersion = source.syllabusVersion ?? discovery.version ?? null;
@@ -116,6 +137,8 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
           syllabusVersionConfidence: source.syllabusVersion ? "high" : discovery.confidence,
           syllabusVersionEvidence: source.syllabusVersion ? ["Source registry explicitly configured this syllabus version."] : discovery.evidence,
           contentHash,
+          sourceBytesPath: sourceFile,
+          extractionHash,
           characters: text.length,
           extracted: Boolean(text),
           textPath: text ? snapshotFile : null,
