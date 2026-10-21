@@ -49,7 +49,11 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
   const coverage = input.coverageChecks ?? [];
   const expected = input.expectedCoverageDimensions ?? 29;
   const dimensions = new Map<string, CoverageStatus>();
-  for (const row of coverage) dimensions.set(row.dimension, row.status);
+  const duplicateDimensions = new Set<string>();
+  for (const row of coverage) {
+    if (dimensions.has(row.dimension)) duplicateDimensions.add(row.dimension);
+    dimensions.set(row.dimension, row.status);
+  }
   const coverageDimensionsComplete = [...dimensions.values()].filter((status) => status === "verified" || status === "not_applicable").length;
   const objectiveCount = input.objectiveCount ?? 0;
   const verifiedObjectiveCount = input.verifiedObjectiveCount ?? 0;
@@ -57,7 +61,7 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
 
   if (!input.sourceDocumentId || !doc) blockers.push("No linked source document record.");
   if (!doc?.url) blockers.push("Source document URL is missing.");
-  if (!doc?.contentHash || !/^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test(doc.contentHash)) {
+  if (!doc?.contentHash || !/^[a-f0-9]{64}$/i.test(doc.contentHash)) {
     blockers.push("Source-byte fingerprint is missing, malformed, or explicitly uncomputed.");
   }
   if (!extractedCharacters) {
@@ -70,12 +74,17 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
     blockers.push("No board-specific coverage checks are recorded.");
   } else {
     if (dimensions.size < expected) blockers.push(`Coverage inventory is incomplete: ${dimensions.size}/${expected} unique dimensions recorded.`);
+    if (duplicateDimensions.size > 0) {
+      blockers.push(`Coverage inventory contains duplicate dimension IDs: ${[...duplicateDimensions].sort().join(", ")}.`);
+    }
     const missing = [...dimensions.entries()].filter(([, status]) => status !== "verified" && status !== "not_applicable");
     if (missing.length) blockers.push(`${missing.length} coverage dimension(s) are missing, partial, or unverified.`);
     for (const [dimension, status] of dimensions.entries()) {
       if (status === "not_applicable") {
-        const row = coverage.find((item) => item.dimension === dimension);
-        if (!row?.notes?.trim() && !row?.evidence) warnings.push(`Coverage dimension "${dimension}" is marked not_applicable without a visible rationale.`);
+        const rows = coverage.filter((item) => item.dimension === dimension);
+        if (rows.some((row) => !row.notes?.trim() && !row.evidence)) {
+          blockers.push(`Coverage dimension "${dimension}" is marked not_applicable without a visible rationale.`);
+        }
       }
     }
   }
