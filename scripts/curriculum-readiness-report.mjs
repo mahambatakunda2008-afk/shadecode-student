@@ -13,9 +13,20 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 async function readTable(table, columns = "*") {
-  const { data, error } = await supabase.from(table).select(columns);
-  if (error) throw new Error(`Read ${table}: ${error.message}`);
-  return data ?? [];
+  // PostgREST commonly caps a response at 1,000 rows. Read stable, bounded pages
+  // so readiness totals never silently omit objectives or evidence rows.
+  const pageSize = 500;
+  const rows = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from(table)
+      .select(columns)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(`Read ${table} (offset ${offset}): ${error.message}`);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
 }
 
 const [versions, documents, coverage, objectives, sources] = await Promise.all([
