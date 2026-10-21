@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, MessageCircle, BrainCircuit } from "lucide-react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 import { cn } from "@/lib/utils";
@@ -276,6 +276,14 @@ export function BottomNav() {
                   </Link>
                 );
               })}
+              <button type="button" onClick={() => { setOpen(false); window.dispatchEvent(new Event("shadecode:open-cortex")); }} className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-2.5 text-center">
+                <BrainCircuit className="h-5 w-5 text-[var(--primary)]" />
+                <span className="text-[11px] font-medium leading-tight text-[var(--foreground)]">Ask Cortex</span>
+              </button>
+              <button type="button" onClick={() => { setOpen(false); window.dispatchEvent(new Event("shadecode:open-feedback")); }} className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-2.5 text-center">
+                <MessageCircle className="h-5 w-5 text-[var(--primary)]" />
+                <span className="text-[11px] font-medium leading-tight text-[var(--foreground)]">Send feedback</span>
+              </button>
             </div>
           </section>
         </div>

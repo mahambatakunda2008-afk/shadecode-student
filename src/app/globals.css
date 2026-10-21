@@ -307,3 +307,12 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spaci
   display: none !important;
   pointer-events: none !important;
 }
+
+
+/* Mobile-first cleanup: keep floating launchers and reward toasts from covering study controls. */
+@media (max-width: 767px) {
+  .ssc-mobile-floating-launcher,
+  .ssc-mobile-floating-toast {
+    display: none !important;
+  }
+}

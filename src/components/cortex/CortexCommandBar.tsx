@@ -73,6 +73,8 @@ export default function CortexCommandBar() {
     return () => { window.removeEventListener("shadecode:study-state", sync); window.clearInterval(timer); };
   }, [capabilities]);
 
+  useEffect(() => { const openCortex = () => setOpen(true); window.addEventListener("shadecode:open-cortex", openCortex); return () => window.removeEventListener("shadecode:open-cortex", openCortex); }, []);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setOpen(true); }
@@ -155,7 +157,7 @@ export default function CortexCommandBar() {
 
   return (
     <>
-      {!open && <button type="button" onClick={() => setOpen(true)} className="fixed bottom-[92px] right-4 z-[100] flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-left shadow-[var(--shadow-md)] transition hover:border-[var(--border-strong)] md:bottom-6 md:right-6" aria-label="Open Ask Cortex"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--surface-2)] text-[var(--primary)]"><Command className="h-4 w-4" /></span><span><span className="block text-[13px] font-bold text-[var(--foreground)]">Ask Cortex</span><span className="block text-[11px] text-[var(--muted-foreground)]">Quick study actions</span></span></button>}
+      {!open && <button type="button" onClick={() => setOpen(true)} className="ssc-mobile-floating-launcher fixed bottom-[92px] right-4 z-[100] hidden items-center gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-left shadow-[var(--shadow-md)] transition hover:border-[var(--border-strong)] md:flex md:bottom-6 md:right-6" aria-label="Open Ask Cortex"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--surface-2)] text-[var(--primary)]"><Command className="h-4 w-4" /></span><span><span className="block text-[13px] font-bold text-[var(--foreground)]">Ask Cortex</span><span className="block text-[11px] text-[var(--muted-foreground)]">Quick study actions</span></span></button>}
       {open && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/35 p-3 backdrop-blur-[3px] md:items-center">
         <section className="w-full max-w-2xl overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]" role="dialog" aria-modal="true" aria-label="Cortex Command Center">
           <header className="flex items-center justify-between border-b border-[var(--card-border)] px-5 py-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary-glow)] text-[var(--primary)]"><BrainCircuit className="h-5 w-5" /></span><div><div className="flex items-center gap-2"><h2 className="text-[15px] font-bold text-[var(--foreground)]">Cortex</h2><span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", webmcp ? "border-[var(--primary)]/30 bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] text-[var(--muted-foreground)]")}>{webmcp ? "WebMCP connected" : "WebMCP waiting"}</span></div><p className="text-[12px] text-[var(--muted-foreground)]">Tell me what you want to accomplish.</p></div></div><button type="button" onClick={() => setOpen(false)} className="rounded-xl p-2 text-[var(--muted-foreground)] hover:bg-[var(--surface-2)]" aria-label="Close Cortex"><X className="h-5 w-5" /></button></header>
