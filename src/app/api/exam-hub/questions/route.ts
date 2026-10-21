@@ -37,6 +37,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ questions: [], count: 0 });
     }
 
+    const { data: papers, error: papersError } = await supabase
+      .from("past_papers")
+      .select("id")
+      .in("syllabus_id", allowedSyllabusIds);
+    if (papersError) throw papersError;
+
+    const allowedPaperIds = (papers ?? []).map((paper) => paper.id);
+    if (allowedPaperIds.length === 0) {
+      return NextResponse.json({ questions: [], count: 0 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = normalizeQuestionQuery({
       q: searchParams.get("q"),
@@ -46,12 +57,12 @@ export async function GET(request: Request) {
       limit: searchParams.get("limit"),
     });
 
-    // !inner plus the nested syllabus filter ensures direct paperId/topicId
-    // requests cannot bypass the learner's subject selection.
+    // Filter by allowed paper IDs before applying caller-supplied filters.
+    // Direct paperId/topicId requests therefore cannot bypass enrollment.
     let dbQuery = supabase
       .from("exam_questions")
-      .select("id,paper_id,question_number,page_number,topic_id,subtopic,difficulty,marks,question_text,created_at,past_papers!inner(id,syllabus_id,level,session,year,paper_number,variant)")
-      .in("past_papers.syllabus_id", allowedSyllabusIds)
+      .select("id,paper_id,question_number,page_number,topic_id,subtopic,difficulty,marks,question_text,created_at,past_papers(id,syllabus_id,level,session,year,paper_number,variant)")
+      .in("paper_id", allowedPaperIds)
       .limit(query.limit);
 
     if (query.paperId) dbQuery = dbQuery.eq("paper_id", query.paperId);
