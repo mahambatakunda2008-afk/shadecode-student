@@ -144,7 +144,7 @@
       "level": [
         "primary"
       ],
-      "subject": "*",
+      "subject": "Infant: English Language, Information and Communication Technology, Indigenous Languages, Heritage and Social Studies, Mass Displays, Mathematics and Science",
       "syllabusId": "primary-subject-catalogue",
       "syllabusVersion": "current-to-be-confirmed",
       "examYears": [],
@@ -161,7 +161,7 @@
         "language_and_local_context",
         "syllabus_coverage_gate"
       ],
-      "notes": "Primary is an explicit coverage requirement. Do not infer primary syllabuses from O Level content or generic learning standards."
+      "notes": "ZIMSEC's official syllabus catalogue lists these Infant subject areas. This is only a catalogue-level discovery result; retrieve and version each official document separately. Do not infer Grades 1-7 scope from Infant or O Level documents."
     },
     {
       "id": "zimsec-4021",
