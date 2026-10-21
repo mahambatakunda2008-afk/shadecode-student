@@ -4,6 +4,8 @@ import { diffCurriculumKnowledge, knowledgeKey } from "../src/lib/curriculum/kno
 import { diffObjectives } from "../src/lib/curriculum/change-intelligence.ts";
 import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extraction.ts";
 import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
+import { evaluateCurriculumDocumentEvidence } from "../src/lib/curriculum/document-evidence.ts";
+import { fingerprintExtractedText } from "../src/lib/curriculum/source-fingerprint.ts";
 
 const reportPath = process.env.CURRICULUM_WATCH_REPORT ?? ".curriculum-watch/latest-report.json";
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -107,23 +109,57 @@ for (const source of report.sources ?? []) {
 
       const changed = !previous || previous.content_hash !== document.contentHash;
       if (changed) { documentsChanged += 1; sourceDocumentsChanged += 1; }
-      let extractedText = previous?.content_hash === document.contentHash ? previous.extracted_text : null;
-      if (changed && document.textPath) extractedText = await readFile(document.textPath, "utf8");
 
-      const upsert = await supabase.from("curriculum_documents").upsert({
-        id: previous?.id,
-        source_id: source.id,
+      // Reuse previously persisted text for the same byte fingerprint, but retry extraction
+      // when it was missing. A crawler's reported character count is not extraction evidence.
+      let extractedText = previous?.content_hash === document.contentHash ? previous.extracted_text : null;
+      if ((!extractedText || !extractedText.trim()) && document.textPath) {
+        extractedText = await readFile(document.textPath, "utf8");
+      }
+      const evidence = evaluateCurriculumDocumentEvidence({
+        previousHash: previous?.content_hash ?? null,
+        incomingHash: document.contentHash,
+        previousStatus: previous?.status ?? null,
+        extractedText,
+      });
+      extractedText = evidence.extractedText;
+
+      // Preserve a durable source snapshot for each observed source hash. This table keeps
+      // historical fingerprints even though curriculum_documents remains the URL-level projection.
+      const snapshot = await supabase.from("curriculum_document_snapshots").upsert({
+        source_id: sourceRow.id,
         url: document.url,
         title: document.title ?? null,
         content_hash: document.contentHash,
-        content_characters: document.characters ?? extractedText?.length ?? 0,
-        extracted_text: extractedText ?? null,
+        content_characters: evidence.extractedCharacters,
+        extracted_text: extractedText,
+        extracted_text_hash: extractedText ? fingerprintExtractedText(extractedText) : null,
+        retrieved_at: report.runAt,
+        document_status: evidence.documentStatus,
+        extraction_status: evidence.extractionSucceeded ? "extracted" : "not_extracted",
+        metadata: {
+          watcherVersion: report.watcherVersion,
+          sourceReportedCharacters: document.characters ?? null,
+          syllabusVersion: document.syllabusVersion ?? null,
+          textPersisted: evidence.extractionSucceeded,
+        },
+      }, { onConflict: "source_id,url,content_hash" });
+      if (snapshot.error) throw new Error(`Document snapshot ${document.url}: ${snapshot.error.message}`);
+
+      const upsert = await supabase.from("curriculum_documents").upsert({
+        id: previous?.id,
+        source_id: sourceRow.id,
+        url: document.url,
+        title: document.title ?? null,
+        content_hash: document.contentHash,
+        content_characters: evidence.extractedCharacters,
+        extracted_text: extractedText,
         last_seen_at: report.runAt,
-        status: previous?.status === "verified" ? "verified" : changed ? "draft" : previous?.status ?? "discovered",
+        status: evidence.documentStatus,
       }, { onConflict: "url" }).select("id").single();
       if (upsert.error) throw new Error(`Document ${document.url}: ${upsert.error.message}`);
       if (!changed) continue;
-      documentsExtracted += 1;
+      if (evidence.extractionSucceeded) documentsExtracted += 1;
 
       await recordChange(runId, upsert.data.id, null, previous ? "document_changed" : "document_added",
         previous ? { contentHash: previous.content_hash, status: previous.status } : null,
