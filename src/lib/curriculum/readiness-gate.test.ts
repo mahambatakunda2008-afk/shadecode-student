@@ -42,6 +42,24 @@ describe("evaluateCurriculumReadiness", () => {
     expect(result.blockers).toContain('Source document status is "draft"; the source document itself is not verified.');
   });
 
+  it("accepts the database's verified extraction status when non-empty source text exists", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      document: { ...completeInput.document, extractionStatus: "verified" },
+    });
+    expect(result.ready).toBe(true);
+    expect(result.blockers).toEqual([]);
+  });
+
+  it("still blocks a verified extraction status when the source text is empty", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      document: { ...completeInput.document, extractionStatus: "verified", extractedText: "  ", contentCharacters: 0 },
+    });
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain("No extracted source text is available; manual notes alone do not satisfy this automated evidence gate.");
+  });
+
   it("blocks source text that is not recorded as successfully extracted", () => {
     const result = evaluateCurriculumReadiness({
       ...completeInput,
