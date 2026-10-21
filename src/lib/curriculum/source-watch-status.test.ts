@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarizeCurriculumWatchStatus } from "./source-watch-status";
+import { resolveCurriculumIngestionRunStatus, summarizeCurriculumWatchStatus } from "./source-watch-status";
 
 describe("curriculum watcher source status", () => {
   it("does not call a source successful when it discovers no documents", () => {
@@ -17,5 +17,22 @@ describe("curriculum watcher source status", () => {
   it("reports success when all documents have a valid outcome", () => {
     expect(summarizeCurriculumWatchStatus(["extracted", "extracted"])).toBe("ok");
     expect(summarizeCurriculumWatchStatus(["discovered"])).toBe("ok");
+  });
+});
+
+describe("curriculum ingestion run outcome", () => {
+  it("marks only fully successful ingestion as completed", () => {
+    expect(resolveCurriculumIngestionRunStatus("ok", 0)).toBe("completed");
+  });
+
+  it("marks skipped extraction and partial source results as partial", () => {
+    expect(resolveCurriculumIngestionRunStatus("ok", 1)).toBe("partial");
+    expect(resolveCurriculumIngestionRunStatus("partial", 0)).toBe("partial");
+  });
+
+  it("marks failed or empty discovery as failed", () => {
+    expect(resolveCurriculumIngestionRunStatus("failed", 0)).toBe("failed");
+    expect(resolveCurriculumIngestionRunStatus("no_documents", 0)).toBe("failed");
+    expect(resolveCurriculumIngestionRunStatus(undefined, 0)).toBe("failed");
   });
 });
