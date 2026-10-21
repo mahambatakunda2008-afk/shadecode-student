@@ -36,6 +36,16 @@ export interface CurriculumReadinessResult {
   };
 }
 
+function hasCoverageRationale(row: { notes?: string | null; evidence?: unknown }): boolean {
+  if (typeof row.notes === "string" && row.notes.trim().length > 0) return true;
+  if (typeof row.evidence === "string") return row.evidence.trim().length > 0;
+  if (Array.isArray(row.evidence)) return row.evidence.length > 0;
+  if (row.evidence && typeof row.evidence === "object") {
+    return Object.keys(row.evidence as Record<string, unknown>).length > 0;
+  }
+  return false;
+}
+
 /**
  * Conservative, read-only release gate. It intentionally does not change database
  * status fields. A URL, row status, or source-byte hash alone is not verification.
@@ -82,7 +92,7 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
     for (const [dimension, status] of dimensions.entries()) {
       if (status === "not_applicable") {
         const rows = coverage.filter((item) => item.dimension === dimension);
-        if (rows.some((row) => !row.notes?.trim() && !row.evidence)) {
+        if (rows.some((row) => !hasCoverageRationale(row))) {
           blockers.push(`Coverage dimension "${dimension}" is marked not_applicable without a visible rationale.`);
         }
       }
