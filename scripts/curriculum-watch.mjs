@@ -39,12 +39,15 @@ async function fetchPage(url) {
   return { url: response.url, text: await response.text() };
 }
 
-async function fetchPdfBytes(url) {
+async function fetchPdfBytes(url, allowedDomains) {
   const response = await fetch(url, {
     headers: { "user-agent": "Shadecode-Curriculum-Watcher/1.0" },
     redirect: "follow",
   });
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+  if (!isAllowed(response.url, allowedDomains)) {
+    throw new Error(`PDF redirect left the allowed official domains: ${response.url}`);
+  }
   const bytes = Buffer.from(await response.arrayBuffer());
   fingerprintPdfBytes(bytes);
   return { url: response.url, bytes };
@@ -103,13 +106,13 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
 
     for (const documentUrl of candidates) {
       try {
-        const sourcePdf = await fetchPdfBytes(documentUrl);
+        const sourcePdf = await fetchPdfBytes(documentUrl, source.allowedDomains);
         const contentHash = fingerprintPdfBytes(sourcePdf.bytes);
         const text = source.extractText ? await extractPdf(sourcePdf.bytes) : "";
         const extractionHash = fingerprintExtractedText(text);
         const sourceFile = `${snapshotDir}/${contentHash}.pdf`;
         const snapshotFile = `${snapshotDir}/${contentHash}.txt`;
-        const discovery = discoverSyllabusVersion(text, documentUrl);
+        const discovery = discoverSyllabusVersion(text, sourcePdf.url);
 
         await writeFile(sourceFile, sourcePdf.bytes);
         if (text) await writeFile(snapshotFile, text, "utf8");
@@ -124,8 +127,9 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
         }
 
         sourceResult.documents.push({
-          url: documentUrl,
-          title: documentUrl.split("/").pop() ?? documentUrl,
+          url: sourcePdf.url,
+          requestedUrl: documentUrl,
+          title: sourcePdf.url.split("/").pop() ?? sourcePdf.url,
           syllabusVersion: effectiveVersion,
           syllabusVersionSource: source.syllabusVersion ? "registry" : discovery.version ? "document" : "unresolved",
           syllabusVersionConfidence: source.syllabusVersion ? "high" : discovery.confidence,
