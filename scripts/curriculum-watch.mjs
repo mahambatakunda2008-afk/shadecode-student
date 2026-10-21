@@ -3,6 +3,7 @@ import { PDFParse } from "pdf-parse";
 import { CURRICULUM_SOURCE_WATCHES } from "../src/lib/curriculum/source-watch.ts";
 import { discoverSyllabusVersion } from "../src/lib/curriculum/version-discovery.ts";
 import { fingerprintExtractedText, fingerprintPdfBytes } from "../src/lib/curriculum/source-fingerprint.ts";
+import { summarizeCurriculumWatchStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
 const outputDir = ".curriculum-watch";
 const snapshotDir = `${outputDir}/documents`;
@@ -140,7 +141,8 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
           characters: text.length,
           extracted: Boolean(text),
           textPath: text ? snapshotFile : null,
-          status: "discovered",
+          status: source.extractText ? (text.trim() ? "extracted" : "extraction-empty") : "discovered",
+          ...(source.extractText && !text.trim() ? { error: "PDF parser returned no extracted text." } : {}),
         });
       } catch (error) {
         sourceResult.documents.push({
@@ -149,6 +151,14 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
           error: error instanceof Error ? error.message : String(error),
         });
       }
+    }
+
+    sourceResult.status = summarizeCurriculumWatchStatus(sourceResult.documents.map((document) => document.status));
+    for (const document of sourceResult.documents) {
+      if (document.error) sourceResult.errors.push(`${document.url}: ${document.error}`);
+    }
+    if (sourceResult.status === "no_documents") {
+      sourceResult.errors.push("No official PDF documents were discovered or retrieved for this source.");
     }
   } catch (error) {
     sourceResult.status = "failed";
