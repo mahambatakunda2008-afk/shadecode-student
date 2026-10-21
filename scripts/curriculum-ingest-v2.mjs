@@ -319,7 +319,7 @@ for (const source of report.sources ?? []) {
         sourceExtractionSkipped,
         versionsCreated, knowledgeItemsCreated, knowledgeAdded, knowledgeChanged, knowledgeRemoved, knowledgeMoved, knowledgeRenamed,
       },
-      ...(runStatus === "failed" ? { error: (source.errors ?? []).join("; ") || "Source watcher did not report a successful document ingestion." } : {}),
+      ...(runStatus !== "completed" ? { error: (source.errors ?? []).join("; ") || "Source watcher did not report a fully successful document ingestion." } : {}),
     }).eq("id", runId);
     if (finish.error) throw new Error(`Finish ${source.id}: ${finish.error.message}`);
   } catch (error) {
