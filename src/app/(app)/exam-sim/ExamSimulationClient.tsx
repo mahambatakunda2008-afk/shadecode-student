@@ -144,7 +144,7 @@ export default function ExamSimulationClient() {
   };
 
   if (!subjectReady || frozenQuestions === undefined) {
-    return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] text-sm text-[var(--muted-foreground)]">{frozenQuestions === undefined ? "Loading the challenge…" : "Preparing your subjects…"}</main>;
+    return <main className="grid min-h-[60vh] place-items-center bg-[var(--background)] px-5 py-10 text-[var(--foreground)]" aria-busy="true"><p role="status" aria-live="polite" className="flex max-w-sm items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] px-5 py-4 text-sm leading-6 text-[var(--muted-foreground)] shadow-sm"><span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[var(--primary)]" />{frozenQuestions === undefined ? "Loading the challenge…" : "Preparing your subjects…"}</p></main>;
   }
 
   if (challengeError) {
