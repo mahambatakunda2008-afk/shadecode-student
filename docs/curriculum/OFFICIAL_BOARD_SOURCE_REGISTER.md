@@ -24,6 +24,20 @@ Do not infer missing topics from a syllabus title, previous edition, another boa
 | ZIMSEC | https://www5.zimsec.co.zw/syllabi/ | Official syllabus directory is a discovery entry point. The current database record for O Level Computer Science 4021 points to this directory, not an extracted subject PDF. | Locate and preserve the exact official syllabus for each subject and version. A directory URL is not enough to mark a subject verified. Confirm effective years and any revised syllabus circulars. |
 | WAEC / WASSCE | Official WAEC site: https://www.waeconline.org.ng/ | An exact official syllabus document/source for each subject and the 2026/2027 exam cycle was not confirmed in this audit. | Find and verify the official subject-specific syllabus or regulations for the relevant country/WAEC examination before registering any content. Do not substitute unofficial notes or e-learning summaries. |
 
+## Confirmed Cambridge 2028–2030 transition signals
+
+A live check of official Cambridge subject pages on 2026-10-21 confirms that several existing records need a successor syllabus version, not just a generic “future year” flag:
+
+| Subject | Existing registered version | Official programme page confirms | Action |
+| --- | --- | --- | --- |
+| AS & A Level Biology 9700 | 2025–2027 | 2025–2027 and 2028–2030 PDFs are listed separately. [Official subject page](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/) | Register 2028–2030 as a separate candidate; extract and compare its own PDF before coverage checks. |
+| AS & A Level Chemistry 9701 | 2025–2027 | 2025–2027 and 2028–2030 PDFs are listed separately. [Official subject page](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-chemistry-9701/) | Register 2028–2030 separately. Cambridge's page describes changes to learning outcomes, topic placement and assessment details, so do not copy the old topic map without a line-by-line comparison. |
+| AS & A Level Physics 9702 | 2025–2027 | 2025–2027 and 2028–2030 PDFs are listed separately. [Official subject page](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/) | Register 2028–2030 separately and compare practical and assessment requirements as well as topics. |
+| AS & A Level Mathematics 9709 | 2026–2027 | 2026–2027 and 2028–2030 PDFs are listed separately. [Official subject page](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/) | Preserve the 2026–2027 candidate and register 2028–2030 separately; validate paper routes/options per edition. |
+| AS & A Level Computer Science 9618 | 2027–2029 candidate | The official page lists the 2026 syllabus, 2027–2029 syllabus, updates and a separate pseudocode guide. [Official subject page](https://www.cambridgeinternational.org/programmes-and-qualifications/view/cambridge-international-as-and-a-level-computer-science-9618/) | Fetch the exact 2027–2029 PDF, its syllabus update and pseudocode guide; keep the guide as linked support material, not a replacement for the syllabus. |
+
+These pages confirm that the named editions are available in the awarding body's catalogue. They do **not** establish that Shadecode has downloaded, extracted, fingerprinted or fully mapped those files. The current database rows remain blocked until their evidence fields are populated and reviewed.
+
 ## Database audit snapshot
 
 A read-only Supabase audit on 2026-10-21 found 9 rows in `curriculum_versions` and 9 linked `curriculum_documents`. All 9 linked documents had `content_characters = 0`. Some records had extraction status `verified`, `manual`, or `partial`, and some version records had passing coverage rows, but zero extracted characters means the source content itself has not been evidenced in the database. Some stored fingerprints were placeholders or non-content identifiers; some were short hexadecimal values without evidence that they were computed from the downloaded source bytes.
