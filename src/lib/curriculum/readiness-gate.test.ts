@@ -61,6 +61,27 @@ describe("evaluateCurriculumReadiness", () => {
     expect(result.blockers).toContain("Source-byte fingerprint is missing, malformed, or explicitly uncomputed.");
   });
 
+  it("supports an explicitly configured board-specific coverage inventory", () => {
+    const boardSpecificInput = {
+      ...completeInput,
+      coverageChecks: completeInput.coverageChecks.slice(0, 25),
+      expectedCoverageDimensions: 25,
+    };
+    expect(evaluateCurriculumReadiness(boardSpecificInput).ready).toBe(true);
+    expect(evaluateCurriculumReadiness(boardSpecificInput).metrics.coverageDimensionsRecorded).toBe(25);
+  });
+
+  it("still blocks a board-specific inventory when required dimensions are absent", () => {
+    const boardSpecificInput = {
+      ...completeInput,
+      coverageChecks: completeInput.coverageChecks.slice(0, 24),
+      expectedCoverageDimensions: 25,
+    };
+    const result = evaluateCurriculumReadiness(boardSpecificInput);
+    expect(result.ready).toBe(false);
+    expect(result.blockers.some((reason) => reason.includes("Coverage inventory is incomplete: 24/25"))).toBe(true);
+  });
+
   it("does not infer verification from a version status alone", () => {
     const result = evaluateCurriculumReadiness({
       ...completeInput,
