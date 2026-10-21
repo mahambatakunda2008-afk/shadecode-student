@@ -36,3 +36,19 @@ export function evaluateCurriculumDocumentEvidence(input: CurriculumDocumentEvid
     extractionSucceeded: extractedText !== null,
   };
 }
+
+/**
+ * Reprocess a document when its bytes changed, or when text has just become
+ * available for a previously unextracted source. Do not reprocess unchanged
+ * documents whose extracted text was already persisted.
+ */
+export function shouldProcessCurriculumDocument(input: {
+  changed: boolean;
+  previousExtractedText?: string | null;
+  extractedText?: string | null;
+}): boolean {
+  if (input.changed) return true;
+  const hadPersistedText = typeof input.previousExtractedText === "string" && input.previousExtractedText.trim().length > 0;
+  const hasCurrentText = typeof input.extractedText === "string" && input.extractedText.trim().length > 0;
+  return !hadPersistedText && hasCurrentText;
+}
