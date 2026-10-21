@@ -47,3 +47,37 @@ updating an older pack in place.
    it rather than guessing.
 4. Keep incomplete/unverified packs available only for internal review, not as
    authoritative exam-required content.
+
+
+## Live schema audit (read-only, 2026-10-21)
+
+The production schema was inspected without writing data. The current tables do
+not yet map one-to-one onto the pure resolver candidate type:
+
+- `curriculum_versions` stores `board_id`, nullable `qualification_id`,
+  `syllabus_id`, `syllabus_version`, nullable `subject_id`, nullable
+  `effective_from` / `effective_to` dates, `status`, `source_document_id`,
+  `document_hash`, and provenance. It has no explicit `route_id`,
+  `exam_year_start`, `exam_year_end`, `complete`, or `verified` columns.
+- `curriculum_coverage_checks` links by `curriculum_version_id` and stores
+  dimension, status, evidence, notes, and checked timestamp. These checks must
+  participate in a documented completeness policy, not be reduced to a raw row
+  count.
+- `curriculum_documents` has extraction status, page count, content character
+  count, extracted text, hash, and structure. A version must not be treated as
+  complete just because its version row says a favorable status.
+- `profiles.curriculum_subjects` stores exact learner identities including
+  `syllabusVersion`, but it is user context, not authority, and does not supply
+  a trustworthy exam year by itself.
+
+### Integration blockers
+
+1. Define and test how inclusive exam-year bounds are derived from official
+   effective dates. Do not infer an exam year from the current calendar year.
+2. Resolve the route model before adding route selection to database-backed
+   calls. Until then, do not pretend the current schema distinguishes routes.
+3. Define the authoritative status-to-`verified` mapping and required coverage
+   dimensions, with extraction evidence and version-specific tests.
+4. Reject records with missing qualification/subject/effective dates where the
+   requested identity depends on those fields; never fill them from a guess.
+5. Keep this change read-only: no production schema or row changes were made.
