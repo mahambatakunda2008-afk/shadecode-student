@@ -22,10 +22,11 @@ does not query Supabase or change student-facing routes by itself.
    has a URL, document hash, positive page count and positive extracted-content
    character count, its extraction status is `verified` or `manual`, and all
    25 syllabus dimensions are `verified` or `not_applicable`.
+6. Source document fingerprints must be concrete 32- or 64-character hexadecimal hashes. Placeholder strings such as `not-computed:web-fetch-...` do not count as evidence.
 6. Exam-history dimensions (past papers, mark schemes, examiner reports, grade
    thresholds) remain separate. Passing the syllabus gate does not authorize
    exam-history claims.
-7. If no version matches, a matching version is incomplete, or ranges overlap,
+9. If no version matches, a matching version is incomplete, or ranges overlap,
    do not serve syllabus-specific claims. Return a clear selection/review state.
 
 ## Current live-data implications

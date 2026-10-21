@@ -18,7 +18,7 @@ function validRow(overrides: Partial<CurriculumVersionDatabaseRow> = {}): Curric
     status: "verified",
     document: {
       source_url: "https://example.org/official-syllabus.pdf",
-      document_hash: "sha256:abc123",
+      document_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       extraction_status: "verified",
       page_count: 98,
       content_characters: 12000,
@@ -57,7 +57,7 @@ describe("resolveDatabaseCurriculumVersion", () => {
     const row = validRow({
       document: {
         source_url: "https://example.org/official-syllabus.pdf",
-        document_hash: "sha256:abc123",
+        document_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         extraction_status: "partial",
         page_count: 98,
         content_characters: 0,
@@ -67,6 +67,21 @@ describe("resolveDatabaseCurriculumVersion", () => {
     expect(result.resolution.status).toBe("not_verified");
     expect(result.diagnostics[0].issues).toContain("source_extracted_content_empty");
     expect(result.diagnostics[0].issues).toContain("source_extraction_not_reviewable");
+  });
+
+  it("rejects placeholder source fingerprints even when other evidence is complete", () => {
+    const row = validRow({
+      document: {
+        source_url: "https://example.org/official-syllabus.pdf",
+        document_hash: "not-computed:web-fetch-2026-09-29",
+        extraction_status: "verified",
+        page_count: 98,
+        content_characters: 12000,
+      },
+    });
+    const result = resolveDatabaseCurriculumVersion(request(2026), [row]);
+    expect(result.resolution.status).toBe("not_verified");
+    expect(result.diagnostics[0].issues).toContain("source_document_hash_missing_or_invalid");
   });
 
   it("requires every syllabus coverage dimension to be verified or not applicable", () => {

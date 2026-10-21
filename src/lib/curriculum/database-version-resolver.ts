@@ -41,6 +41,11 @@ function normalized(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+/** Accept only concrete hexadecimal content fingerprints, not placeholders such as "not-computed". */
+function hasComputedDocumentHash(value: string | null | undefined): boolean {
+  return /^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test((value ?? "").trim());
+}
+
 /** Only full calendar-year boundaries can be converted to inclusive exam-year bounds. */
 function fullCalendarYear(date: string | null | undefined, boundary: "start" | "end"): number | null {
   if (!date) return null;
@@ -70,7 +75,7 @@ function trustIssues(row: CurriculumVersionDatabaseRow): string[] {
     issues.push("source_document_missing");
   } else {
     if (!document.source_url) issues.push("source_url_missing");
-    if (!document.document_hash) issues.push("source_document_hash_missing");
+    if (!hasComputedDocumentHash(document.document_hash)) issues.push("source_document_hash_missing_or_invalid");
     if (!Number.isInteger(document.page_count) || (document.page_count ?? 0) < 1) issues.push("source_page_count_missing");
     if (!Number.isInteger(document.content_characters) || (document.content_characters ?? 0) < 1) {
       issues.push("source_extracted_content_empty");
