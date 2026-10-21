@@ -1,0 +1,571 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-21",
+  "purpose": "Authoritative-source intake queue. Queue status is not product support or verification.",
+  "statusVocabulary": {
+    "source_confirmed_content_not_ingested": "Official source identified; normalized whole-syllabus pack is not yet proven complete.",
+    "source_discovery_required": "Official catalogue or board source identified, but the exact qualification/version document still needs discovery.",
+    "blocked_source_access": "The authority/source exists but retrieval or permission is blocking ingestion.",
+    "normalized_pending_review": "A version-bound normalized pack exists but has not passed the complete syllabus gate."
+  },
+  "items": [
+    {
+      "id": "cambridge-9700-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Biology",
+      "syllabusId": "9700",
+      "syllabusVersion": "2028-2030",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 1,
+      "requiredChecks": [
+        "topic_and_subsection_diff",
+        "all_numbered_learning_outcomes",
+        "AS_A_Level_boundary",
+        "assessment_components_and_weightings",
+        "practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official PDF says Version 1, published September 2025, and exams 2028-2030. Do not clone or relabel the 2025-2027 pack."
+    },
+    {
+      "id": "cambridge-9701-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Chemistry",
+      "syllabusId": "9701",
+      "syllabusVersion": "2028-2030",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-chemistry-9701/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744624-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 2,
+      "requiredChecks": [
+        "topic_and_subsection_diff",
+        "all_numbered_learning_outcomes",
+        "AS_A_Level_boundary",
+        "assessment_components_and_weightings",
+        "practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official subject page lists separate 2025-2027 and 2028-2030 syllabuses. Existing Chemistry pack is version-bound to 2025-2027."
+    },
+    {
+      "id": "cambridge-9702-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Physics",
+      "syllabusId": "9702",
+      "syllabusVersion": "2028-2030",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744626-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 3,
+      "requiredChecks": [
+        "topic_and_subsection_diff",
+        "all_numbered_learning_outcomes",
+        "AS_A_Level_boundary",
+        "assessment_components_and_weightings",
+        "practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official subject page lists the 2028-2030 syllabus. Existing Physics pack is version-bound to 2025-2027."
+    },
+    {
+      "id": "cambridge-9709-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Mathematics",
+      "syllabusId": "9709",
+      "syllabusVersion": "2028-2030",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744634-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 4,
+      "requiredChecks": [
+        "route_and_component_matrix",
+        "all_topic_and_outcome_diff",
+        "route_specific_scope",
+        "assessment_components_and_weightings",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Mathematics has multiple AS/A Level routes. Do not collapse route-specific content or relabel the 2026-2027 pack."
+    },
+    {
+      "id": "zimsec-primary",
+      "boardId": "zimsec",
+      "authority": "Zimbabwe School Examinations Council",
+      "qualification": "Primary school syllabuses",
+      "level": [
+        "primary"
+      ],
+      "subject": "Infant: English Language, Information and Communication Technology, Indigenous Languages, Heritage and Social Studies, Mass Displays, Mathematics and Science",
+      "syllabusId": "primary-subject-catalogue",
+      "syllabusVersion": "current-to-be-confirmed",
+      "examYears": [],
+      "officialAuthorityPage": "https://www5.zimsec.co.zw/syllabi/",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 5,
+      "requiredChecks": [
+        "grade_and_subject_inventory",
+        "official_document_per_subject",
+        "edition_and_effective_year",
+        "objectives_and_scope",
+        "assessment_structure",
+        "language_and_local_context",
+        "syllabus_coverage_gate"
+      ],
+      "notes": "ZIMSEC's official syllabus catalogue lists these Infant subject areas. This is only a catalogue-level discovery result; retrieve and version each official document separately. Do not infer Grades 1-7 scope from Infant or O Level documents."
+    },
+    {
+      "id": "zimsec-4021",
+      "boardId": "zimsec",
+      "authority": "Zimbabwe School Examinations Council",
+      "qualification": "Ordinary Level",
+      "level": [
+        "O Level"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "4021",
+      "syllabusVersion": "2024-2030",
+      "examYears": [
+        2026,
+        2027,
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www5.zimsec.co.zw/syllabi/",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 6,
+      "requiredChecks": [
+        "official_pdf_retrieval",
+        "all_objectives_reconciliation",
+        "knowledge_extraction",
+        "assessment_structure",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Current repository data remains draft pending independent retrieval and reconciliation of the official syllabus."
+    },
+    {
+      "id": "pearson-edexcel-core",
+      "boardId": "pearson-edexcel",
+      "authority": "Pearson Qualifications",
+      "qualification": "International GCSE and International A Level",
+      "level": [
+        "International GCSE",
+        "AS",
+        "A Level"
+      ],
+      "subject": "Mathematics, Biology, Chemistry, Physics, Computer Science",
+      "syllabusId": "multiple",
+      "syllabusVersion": "per-qualification-current",
+      "examYears": [],
+      "officialAuthorityPage": "https://qualifications.pearson.com/en/qualifications/edexcel-international-gcses.html",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 7,
+      "requiredChecks": [
+        "qualification_and_subject_inventory",
+        "exact_specification_codes",
+        "effective_first_teaching_and_exam_years",
+        "specification_pdf",
+        "assessment_structure",
+        "coverage_gate"
+      ],
+      "notes": "Board-level registry presence is not evidence that individual Pearson specifications have been ingested."
+    },
+    {
+      "id": "ib-dp-myp",
+      "boardId": "ib",
+      "authority": "International Baccalaureate",
+      "qualification": "Diploma Programme and Middle Years Programme",
+      "level": [
+        "MYP",
+        "DP"
+      ],
+      "subject": "Subject-specific guides",
+      "syllabusId": "multiple",
+      "syllabusVersion": "per-guide-current",
+      "examYears": [],
+      "officialAuthorityPage": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 8,
+      "requiredChecks": [
+        "programme_and_subject_inventory",
+        "current_guide_edition",
+        "access_and_licensing_review",
+        "syllabus_or_guide_scope",
+        "assessment_criteria",
+        "coverage_gate"
+      ],
+      "notes": "IB subject guides may have access restrictions. Respect access and copyright; do not claim full IB coverage from the public programme overview."
+    },
+    {
+      "id": "aqa-qualifications",
+      "boardId": "aqa",
+      "authority": "AQA",
+      "qualification": "GCSE and A-level",
+      "level": [
+        "GCSE",
+        "A Level"
+      ],
+      "subject": "Subject-specific specifications",
+      "syllabusId": "multiple",
+      "syllabusVersion": "per-specification-current",
+      "examYears": [],
+      "officialAuthorityPage": "https://www.aqa.org.uk/qualifications",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 9,
+      "requiredChecks": [
+        "subject_and_specification_inventory",
+        "current_specification_pdf",
+        "effective_exam_year",
+        "assessment_structure",
+        "coverage_gate"
+      ],
+      "notes": "Qualification catalogue only. No individual specification is verified by this queue item."
+    },
+    {
+      "id": "ocr-qualifications",
+      "boardId": "ocr",
+      "authority": "OCR",
+      "qualification": "GCSE and A-level",
+      "level": [
+        "GCSE",
+        "A Level"
+      ],
+      "subject": "Subject-specific specifications",
+      "syllabusId": "multiple",
+      "syllabusVersion": "per-specification-current",
+      "examYears": [],
+      "officialAuthorityPage": "https://www.ocr.org.uk/qualifications/qualification-details/qualification-details.aspx",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 10,
+      "requiredChecks": [
+        "subject_and_specification_inventory",
+        "current_specification_pdf",
+        "effective_exam_year",
+        "assessment_structure",
+        "coverage_gate"
+      ],
+      "notes": "Qualification catalogue only. No individual specification is verified by this queue item."
+    },
+    {
+      "id": "waec-west-africa",
+      "boardId": "waec",
+      "authority": "West African Examinations Council",
+      "qualification": "WASSCE and other WAEC-administered examinations",
+      "level": [
+        "secondary"
+      ],
+      "subject": "Subject-specific syllabuses",
+      "syllabusId": "multiple",
+      "syllabusVersion": "country-and-exam-specific",
+      "examYears": [],
+      "officialAuthorityPage": "https://waecgh.org/home/gbce-abce/",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 11,
+      "requiredChecks": [
+        "country_council_and_exam_scope",
+        "subject_inventory",
+        "official_syllabus_version",
+        "assessment_structure",
+        "coverage_gate"
+      ],
+      "notes": "WAEC is multi-country. Country-specific councils and exam types must be represented separately where their specifications differ."
+    },
+    {
+      "id": "cambridge-primary-lower-secondary",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge Primary and Lower Secondary",
+      "level": [
+        "primary",
+        "lower_secondary"
+      ],
+      "subject": "Subject frameworks and progression",
+      "syllabusId": "multiple",
+      "syllabusVersion": "current-frameworks-to-be-confirmed",
+      "examYears": [],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/",
+      "sourceDocumentUrl": null,
+      "status": "source_discovery_required",
+      "priority": 12,
+      "requiredChecks": [
+        "stage_and_subject_inventory",
+        "framework_edition",
+        "learning_objectives_and_progression",
+        "assessment_or_progression_checkpoints",
+        "coverage_gate"
+      ],
+      "notes": "Treat this as a separate age/stage model, not an exam syllabus clone."
+    },
+    {
+      "id": "cambridge-9700-2025-2027-reconcile",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Biology",
+      "syllabusId": "9700",
+      "syllabusVersion": "2025-2027",
+      "examYears": [
+        2026,
+        2027
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/",
+      "sourceDocumentUrl": null,
+      "status": "normalized_pending_review",
+      "priority": 13,
+      "requiredChecks": [
+        "source_document_status_reconciliation",
+        "source_hash_and_page_count",
+        "all_numbered_learning_outcomes",
+        "assessment_components_and_weightings",
+        "practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "live_database_status_reconciliation"
+      ],
+      "notes": "Preserve the existing 2025-2027 pack for eligible exam years. Live database flags verified outcomes/knowledge, but source document remains draft/manual extraction and only 6 coverage dimensions were recorded. Exact official PDF URL must be revalidated before sourceDocumentUrl is populated."
+    },
+    {
+      "id": "cambridge-9701-2025-2027-reconcile",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Chemistry",
+      "syllabusId": "9701",
+      "syllabusVersion": "2025-2027",
+      "examYears": [
+        2026,
+        2027
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-chemistry-9701/",
+      "sourceDocumentUrl": null,
+      "status": "normalized_pending_review",
+      "priority": 14,
+      "requiredChecks": [
+        "source_document_status_reconciliation",
+        "source_hash_and_page_count",
+        "all_numbered_learning_outcomes",
+        "assessment_components_and_weightings",
+        "practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "live_database_status_reconciliation"
+      ],
+      "notes": "Keep the existing 2025-2027 pack available for eligible exam years. It has structured objectives and knowledge rows, but the audit found no coverage-check rows. Do not treat the verified version flag as sufficient evidence."
+    },
+    {
+      "id": "cambridge-9702-2025-2027-reconcile",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Physics",
+      "syllabusId": "9702",
+      "syllabusVersion": "2025-2027",
+      "examYears": [
+        2026,
+        2027
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/",
+      "sourceDocumentUrl": null,
+      "status": "normalized_pending_review",
+      "priority": 15,
+      "requiredChecks": [
+        "source_document_status_reconciliation",
+        "source_hash_and_page_count",
+        "all_numbered_learning_outcomes",
+        "assessment_components_and_weightings",
+        "practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "live_database_status_reconciliation"
+      ],
+      "notes": "Preserve the existing 2025-2027 pack. Live version flag is verified, but linked source document remains draft/manual extraction. Reconcile provenance before using it as a strict grounding source."
+    },
+    {
+      "id": "cambridge-9709-2026-2027-reconcile",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Mathematics",
+      "syllabusId": "9709",
+      "syllabusVersion": "2026-2027",
+      "examYears": [
+        2026,
+        2027
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/",
+      "sourceDocumentUrl": null,
+      "status": "normalized_pending_review",
+      "priority": 16,
+      "requiredChecks": [
+        "source_document_status_reconciliation",
+        "source_hash_and_page_count",
+        "route_and_component_matrix",
+        "all_numbered_learning_outcomes",
+        "all_25_syllabus_coverage_dimensions",
+        "live_database_status_reconciliation"
+      ],
+      "notes": "Preserve the 2026-2027 pack. Live source registry showed its PDF source row inactive without a last-check timestamp. Mathematics routes/components must remain distinct."
+    },
+    {
+      "id": "cambridge-9618-2027-2029-reconcile",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "9618",
+      "syllabusVersion": "2027-2029",
+      "examYears": [
+        2027,
+        2028,
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/",
+      "sourceDocumentUrl": null,
+      "status": "normalized_pending_review",
+      "priority": 17,
+      "requiredChecks": [
+        "exact_pdf_edition_and_hash",
+        "all_numbered_learning_outcomes",
+        "paper_and_component_structure",
+        "programming_and_practical_requirements",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "A source PDF and candidate-content modules exist, but the live version remains draft, with zero knowledge rows and only 2/29 coverage dimensions verified. This pack must be reconciled before a verified claim."
+    },
+    {
+      "id": "cambridge-0478-2026-2028-reconcile",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "0478",
+      "syllabusVersion": "2026-2028",
+      "examYears": [
+        2026,
+        2027,
+        2028
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0478/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/697167-2026-2028-syllabus.pdf",
+      "status": "normalized_pending_review",
+      "priority": 18,
+      "requiredChecks": [
+        "version_5_document_hash_and_page_count",
+        "partial_extraction_zero_text_discrepancy",
+        "all_numbered_learning_outcomes",
+        "assessment_structure",
+        "all_25_syllabus_coverage_dimensions",
+        "live_database_status_reconciliation"
+      ],
+      "notes": "Official syllabus PDF is Version 5, published December 2025. Resolve the live document's partial extraction/zero stored text discrepancy before treating the version as provenance-complete."
+    },
+    {
+      "id": "zimsec-4021-2024-2030-reconcile",
+      "boardId": "zimsec",
+      "authority": "Zimbabwe School Examinations Council",
+      "qualification": "Ordinary Level",
+      "level": [
+        "O Level"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "4021",
+      "syllabusVersion": "2024-2030",
+      "examYears": [
+        2026,
+        2027,
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www5.zimsec.co.zw/syllabi/",
+      "sourceDocumentUrl": null,
+      "status": "normalized_pending_review",
+      "priority": 19,
+      "requiredChecks": [
+        "official_pdf_retrieval",
+        "source_hash_and_page_count",
+        "all_numbered_learning_outcomes",
+        "knowledge_extraction",
+        "assessment_structure",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "This is the existing 2024-2030 version to reconcile, not a new edition. Database version/document remain draft and the official PDF has not been independently retrieved."
+    }
+  ]
+}
