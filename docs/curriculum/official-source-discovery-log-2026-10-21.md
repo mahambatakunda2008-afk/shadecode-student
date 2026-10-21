@@ -33,13 +33,16 @@ https://help.cambridgeinternational.org/hc/en-gb/articles/37190057441298-General
 
 ## ZIMSEC Computer Science 4021
 
-The official ZIMSEC site surfaced pages titled **Computer Science 4021/01** and **Computer Science 4021/02**, each created/updated on 9 March 2026:
+The official ZIMSEC catalogue lists **Computer Science O level Syllabus**, but the direct syllabus-document URL and edition metadata are not yet confirmed.
+
+Official pages for **Computer Science 4021/01**, **4021/02**, and **4021/03** surfaced as separate paper downloads, each created/updated on 9 March 2026:
 
 - Paper 1 page: https://www5.zimsec.co.zw/download/computer-science-4021-01/
 - Paper 2 page: https://www5.zimsec.co.zw/download/computer-science-4021-02/
+- Paper 3 page: https://www5.zimsec.co.zw/download/computer-science-4021-03/
 - Official syllabus catalogue: https://www5.zimsec.co.zw/syllabi/
 
-The surfaced 4021/01 and 4021/02 pages are labelled as individual papers, not an explicitly identified syllabus document. They must **not** be mistaken for the full 2024–2030 syllabus or used to mark the syllabus verified. Next retrieval task: inspect the official syllabus catalogue, identify the exact syllabus document and edition, download the complete file, and record its metadata and hash. If the catalogue does not expose the syllabus document publicly, record the access block and request the document through an authorized route.
+The three 4021 pages are individual paper resources, not proof of a complete syllabus document. Do not combine them into a syllabus or use them to mark the syllabus verified. Next retrieval task: follow the catalogue's **Computer Science O level Syllabus** entry to its exact document, confirm the edition and effective years, download the complete file, and record its metadata and hash. If the catalogue does not expose the syllabus document publicly, record the access block and request the document through an authorized route.
 
 ## Current evidence state
 
