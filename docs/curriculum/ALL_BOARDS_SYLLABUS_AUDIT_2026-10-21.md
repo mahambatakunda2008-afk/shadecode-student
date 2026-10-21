@@ -18,7 +18,7 @@
 
 | Board / authority | What is present in the repository | Audit status | Main gap / next action |
 |---|---|---|---|
-| Cambridge International AS & A Level Biology 9700 | Live database has a verified `2025-2027` version, 259 verified objectives and 278 verified knowledge rows, but only 6 coverage dimensions are recorded; the source document is marked `draft` with manual extraction. | **Verified flag, incomplete evidence picture** | Reconcile the source document status and completeness gate before treating the pack as fully verified. Build the 2028-2030 version for candidates sitting from 2028 onward. |
+| Cambridge International AS & A Level Biology 9700 | Live database has a verified `2025-2027` version, 259 verified objectives and 278 verified knowledge rows, but only 6 coverage dimensions are recorded; the source document is marked `draft` with manual extraction. The source registry has no completed check timestamp for this PDF. | **Verified flag, incomplete evidence picture** | Reconcile the source document status and completeness gate before treating the pack as fully verified. Build the 2028-2030 version for candidates sitting from 2028 onward. |
 | Cambridge International AS & A Level Chemistry 9701 | Structured outcome dataset `cambridge-9701-2025-2027.json`; live database version is `verified` with 388 verified objectives and 606 verified knowledge rows, but has no coverage-check rows. | **Verified flag, coverage evidence gap; version-bound** | Add/reconcile completeness dimensions and build the 2028-2030 syllabus before claiming coverage for candidates sitting in 2028 onward. The official subject page lists both 2025-2027 and 2028-2030 versions. |
 | Cambridge International AS & A Level Physics 9702 | Structured outcome dataset `cambridge-9702-2025-2027.json`; live database has 325 verified objectives, 514 verified knowledge rows and 23 verified + 2 not-applicable coverage dimensions, but the source document remains `draft` with manual extraction. | **Verified flag conflicts with document state; version-bound** | Resolve the source-document/version evidence and complete a reviewable source reconciliation; then ingest and reconcile the 2028-2030 syllabus. Do not assume the older JSON matches the new version. |
 | Cambridge International AS & A Level Mathematics 9709 | Structured datasets `cambridge-9709-2026-2027.json` and `cambridge-9709-knowledge-2026-2027.json`; live database has 159 verified objectives, 235 verified knowledge rows and 22 verified + 3 not-applicable coverage dimensions, but the source document remains `draft` with manual extraction. | **Verified flag conflicts with document state; version-bound** | Resolve the source-document/version evidence. The official page lists a 2028-2030 syllabus; create a separate immutable 2028-2030 dataset, diff objectives and paper structure, and test both versions. |
@@ -38,11 +38,11 @@
 
 ## High-priority version issue: Cambridge 2028-2030
 
-Cambridge states that syllabus year refers to the year of examination: candidates sitting in 2028 follow the 2028-2030 syllabus. The repository's 9701 and 9702 structured datasets cover 2025-2027, while the 9709 datasets cover 2026-2027. These packs must not silently be used as authoritative exam scope for 2028 candidates.
+Cambridge states that syllabus year refers to the year of examination: candidates sitting in 2028 follow the 2028-2030 syllabus. The repository's 9701 and 9702 structured datasets cover 2025-2027, while the 9709 datasets cover 2026-2027. The live database also has a 9700 Biology 2025-2027 version. Cambridge's official subject pages list 2028-2030 versions for all four subjects. These older packs must not silently be used as authoritative exam scope for 2028 candidates.
 
 Required work:
 
-1. Fetch each official 2028-2030 syllabus and relevant syllabus-update notices.
+1. Fetch each official 2028-2030 syllabus for 9700 Biology, 9701 Chemistry, 9702 Physics and 9709 Mathematics, plus relevant syllabus-update notices.
 2. Record source URL, publication/version, retrieval timestamp and SHA-256 hash.
 3. Extract topics, numbered learning outcomes, exclusions, command words, assessment objectives, papers/components, weightings, practical/coursework/project requirements and permitted resources.
 4. Compare against the prior version; explicitly classify additions, removals, changed wording, moved topics, paper changes and unchanged sections.
@@ -94,7 +94,9 @@ If a dimension truly does not apply, record `not_applicable` with evidence. Miss
 ## Official source starting points checked on 2026-10-21
 
 - Cambridge International syllabus finder: https://www.cambridgeinternational.org/find-syllabus-materials/
+- Cambridge Biology 9700 syllabus overview (lists 2025-2027 and 2028-2030): https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/
 - Cambridge Chemistry 9701 syllabus overview (lists 2025-2027 and 2028-2030): https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-chemistry-9701/
+- Cambridge Physics 9702 syllabus overview (lists 2025-2027 and 2028-2030): https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/
 - Cambridge Mathematics 9709 syllabus overview (lists 2026-2027 and 2028-2030): https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/
 - Cambridge exam-year guidance: https://help.cambridgeinternational.org/hc/en-gb/articles/37190057441298-General-FAQ-Which-syllabus-year-should-I-use
 - ZIMSEC official syllabus catalogue: https://www5.zimsec.co.zw/syllabi/
@@ -133,3 +135,12 @@ The live `shadecode-student` Supabase project was queried read-only after the re
 Some records have a version-level `verified` status even where the source document is `draft` or `extraction_status` is `manual`, and the 9701 record has no coverage-check rows. This may reflect older verification flows or incomplete synchronization. **Do not blindly bulk-promote, demote or rewrite production rows to make labels match.** First inspect the resolver's exact gate semantics, review verification events and source hashes, and reconcile one syllabus at a time with an auditable change.
 
 The 0478 snapshot has 75 verified knowledge rows across 16 observed kinds. The resolver requires 15 kinds and the verification manifest declares a separate expected set; compare these sets explicitly. The old status note's incorrect claim that the PDF was version 6 has been corrected.
+
+
+### Live source-registry inventory
+
+The production `curriculum_sources` table currently contains 12 rows, and its board IDs are only **Cambridge** and **ZIMSEC**. No source-registry rows are present for Pearson Edexcel, IB, AQA, OCR or WAEC. This confirms those boards are not merely missing normalized packs; they are not yet onboarded into the live source-monitoring registry.
+
+The source registry also has a Cambridge Mathematics 9709 PDF row for 2026-2027 marked `active = false`, with no last-check timestamp. Its versioned curriculum data still exists in the database. Reactivate/replace source monitoring only after confirming the correct 2028-2030 URL and migration plan; do not reactivate the old-year source as if it were current.
+
+The 9700/9701/9702 source rows are tagged 2025-2027 and have no recent `last_checked_at` timestamp. The 9701/9702/9700 source records and version/document status inconsistencies should be reconciled together with the 2028-2030 ingestion, not in an isolated metadata-only edit.
