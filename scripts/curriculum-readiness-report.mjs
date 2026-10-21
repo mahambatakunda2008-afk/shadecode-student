@@ -59,7 +59,10 @@ const results = versions.map((version) => {
       status: document.status,
     } : null,
     coverageChecks,
-    expectedCoverageDimensions: Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)\n      && version.provenance.coveragePolicy.expectedDimensions > 0\n      ? version.provenance.coveragePolicy.expectedDimensions\n      : 29,
+    expectedCoverageDimensions: Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)
+      && version.provenance.coveragePolicy.expectedDimensions > 0
+      ? version.provenance.coveragePolicy.expectedDimensions
+      : 29,
     objectiveCount: objectiveSummary.total,
     verifiedObjectiveCount: objectiveSummary.verified,
     provenance: version.provenance ?? {},
@@ -70,7 +73,11 @@ const results = versions.map((version) => {
     subject: version.subject_id,
     syllabusId: version.syllabus_id,
     syllabusVersion: version.syllabus_version,
-    storedStatus: version.status,\n    expectedCoverageDimensions: Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)\n      && version.provenance.coveragePolicy.expectedDimensions > 0\n      ? version.provenance.coveragePolicy.expectedDimensions\n      : 29,
+    storedStatus: version.status,
+    expectedCoverageDimensions: Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)
+      && version.provenance.coveragePolicy.expectedDimensions > 0
+      ? version.provenance.coveragePolicy.expectedDimensions
+      : 29,
     sourceUrl: document?.url ?? source?.url ?? null,
     sourceAuthority: source?.authority ?? null,
     sourceAutoPromote: source?.auto_promote ?? null,
