@@ -6,6 +6,7 @@ import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extr
 import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
 import { evaluateCurriculumDocumentEvidence } from "../src/lib/curriculum/document-evidence.ts";
 import { fingerprintExtractedText } from "../src/lib/curriculum/source-fingerprint.ts";
+import { resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
 const reportPath = process.env.CURRICULUM_WATCH_REPORT ?? ".curriculum-watch/latest-report.json";
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -304,11 +305,7 @@ for (const source of report.sources ?? []) {
       }
     }
 
-    const runStatus = source.status === "ok" && sourceExtractionSkipped === 0
-      ? "completed"
-      : source.status === "partial" || (source.status === "ok" && sourceExtractionSkipped > 0)
-        ? "partial"
-        : "failed";
+    const runStatus = resolveCurriculumIngestionRunStatus(source.status, sourceExtractionSkipped);
     const finish = await supabase.from("curriculum_ingestion_runs").update({
       status: runStatus, completed_at: new Date().toISOString(), documents_seen: source.documents?.length ?? 0,
       documents_changed: sourceDocumentsChanged, objectives_added: sourceObjectivesAdded, objectives_changed: sourceObjectivesChanged,
