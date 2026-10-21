@@ -70,7 +70,7 @@ await mkdir(snapshotDir, { recursive: true });
 
 const report = {
   runAt,
-  watcherVersion: 5,
+  watcherVersion: 6,
   sources: [],
 };
 
