@@ -81,3 +81,32 @@ not yet map one-to-one onto the pure resolver candidate type:
 4. Reject records with missing qualification/subject/effective dates where the
    requested identity depends on those fields; never fill them from a guess.
 5. Keep this change read-only: no production schema or row changes were made.
+
+
+### Observed production records requiring explicit trust policy
+
+A read-only join of `curriculum_versions`, `curriculum_documents`,
+`curriculum_coverage_checks`, `curriculum_objectives`, and
+`curriculum_knowledge` returned the following snapshot:
+
+| Syllabus | Version | Version status | Extraction status | Coverage checks | Objectives | Knowledge rows |
+|---|---|---|---|---:|---:|---:|
+| Cambridge 0478 | 2026-2028 | verified | partial | 29 | 68 | 75 |
+| Cambridge 0984 | 2026-2028 | draft | not_extracted | 29 | 10 | 0 |
+| Cambridge 2210 | 2026-2028 | draft | not_extracted | 29 | 10 | 0 |
+| Cambridge 9618 | 2027-2029 | draft | not_extracted | 29 | 20 | 0 |
+| Cambridge 9700 | 2025-2027 | verified | manual | 6 | 259 | 278 |
+| Cambridge 9701 | 2025-2027 | verified | verified | 0 | 388 | 606 |
+| Cambridge 9702 | 2025-2027 | verified | manual | 25 | 325 | 514 |
+| Cambridge 9709 | 2026-2027 | verified | manual | 25 | 159 | 235 |
+| ZIMSEC 4021 | 2024-2030 | draft | not_extracted | 29 | 141 | 0 |
+
+The same snapshot showed `content_characters = 0` for every listed document,
+including rows whose extraction status is `verified` or `manual`. This is a
+provenance/data-quality discrepancy to reconcile, not proof by itself that every
+objective is wrong. In particular, the 0478 row is marked `verified` while its
+source document is `partial`; 9701 has no coverage-check rows. The resolver
+integration must not turn the version-level `status = verified` value into
+`complete = true, verified = true` without inspecting the source evidence and
+coverage semantics. Do not bulk promote or demote existing records from this
+snapshot.
