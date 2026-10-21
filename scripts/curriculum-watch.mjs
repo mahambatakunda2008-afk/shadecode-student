@@ -1,16 +1,12 @@
-import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { PDFParse } from "pdf-parse";
 import { CURRICULUM_SOURCE_WATCHES } from "../src/lib/curriculum/source-watch.ts";
 import { discoverSyllabusVersion } from "../src/lib/curriculum/version-discovery.ts";
+import { fingerprintExtractedText, fingerprintPdfBytes } from "../src/lib/curriculum/source-fingerprint.ts";
 
 const outputDir = ".curriculum-watch";
 const snapshotDir = `${outputDir}/documents`;
 const runAt = new Date().toISOString();
-
-function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
 
 function absoluteUrl(base, href) {
   try { return new URL(href, base).toString(); } catch { return null; }
@@ -50,9 +46,7 @@ async function fetchPdfBytes(url) {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
   const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length < 5 || bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
-    throw new Error(`Source did not return PDF bytes: ${url}`);
-  }
+  fingerprintPdfBytes(bytes);
   return { url: response.url, bytes };
 }
 
@@ -101,7 +95,7 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
       candidates = [source.url];
     } else {
       const page = await fetchPage(source.url);
-      sourceResult.landingPageHash = sha256(page.text);
+      sourceResult.landingPageHash = fingerprintExtractedText(page.text);
       candidates = source.discoverLinkedDocuments
         ? extractPdfLinks(page.text, page.url, source.allowedDomains)
         : [];
@@ -110,9 +104,9 @@ for (const source of CURRICULUM_SOURCE_WATCHES) {
     for (const documentUrl of candidates) {
       try {
         const sourcePdf = await fetchPdfBytes(documentUrl);
-        const contentHash = sha256(sourcePdf.bytes);
+        const contentHash = fingerprintPdfBytes(sourcePdf.bytes);
         const text = source.extractText ? await extractPdf(sourcePdf.bytes) : "";
-        const extractionHash = sha256(text);
+        const extractionHash = fingerprintExtractedText(text);
         const sourceFile = `${snapshotDir}/${contentHash}.pdf`;
         const snapshotFile = `${snapshotDir}/${contentHash}.txt`;
         const discovery = discoverSyllabusVersion(text, documentUrl);
