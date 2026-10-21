@@ -213,3 +213,95 @@
   .dashboard-momentum { grid-template-columns: 1fr; }
   .dashboard-metric { min-height: 58px; }
 }
+
+
+/* Readability pass: dashboard data must remain comfortable to scan on phones. */
+.dashboard-today-row,
+.dashboard-recent-row,
+.dashboard-exam-row {
+  min-height: 56px;
+}
+.dashboard-today-row strong,
+.dashboard-recent-row strong,
+.dashboard-exam-row strong {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.dashboard-today-row small,
+.dashboard-recent-row small,
+.dashboard-exam-row small {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.dashboard-row-time,
+.dashboard-row-meta {
+  font-size: 0.75rem;
+}
+.dashboard-focus-chip,
+.dashboard-severity,
+.dashboard-score-line,
+.dashboard-score-line strong,
+.dashboard-focus p,
+.dashboard-cortex p,
+.dashboard-outline-action,
+.dashboard-signal-label,
+.dashboard-stale-banner,
+.dashboard-core-error p {
+  font-size: 0.75rem;
+}
+.dashboard-outline-action {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+.dashboard-primary-action {
+  min-height: 44px;
+}
+.dashboard-subject-copy small {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.dashboard-progress-ring b {
+  font-size: 0.7rem;
+}
+.dashboard-section-title {
+  gap: 8px;
+}
+.dashboard-section-title h2 {
+  line-height: 1.3;
+}
+@media (max-width: 760px) {
+  .dashboard-header p {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+  .dashboard-hero p {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+  .dashboard-today-row,
+  .dashboard-recent-row,
+  .dashboard-exam-row {
+    gap: 10px;
+    padding: 12px 10px;
+  }
+  .dashboard-row-time,
+  .dashboard-row-meta {
+    max-width: 34%;
+    white-space: normal;
+    text-align: right;
+  }
+}
+@media (max-width: 420px) {
+  .dashboard-subject-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-subject-tile {
+    min-height: 84px;
+  }
+  .dashboard-row-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
