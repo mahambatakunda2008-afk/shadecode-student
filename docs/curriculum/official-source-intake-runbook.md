@@ -131,3 +131,27 @@ For each syllabus, report:
 - **Change impact:** prior version retained? source changed? affected records? production mutation? (normally none during intake review)
 
 Do not use a global “all boards verified” claim. Report exact subject, edition, stage, and evidence state.
+
+
+## Live audit checkpoint (2026-10-21)
+
+The most recent read-only production audit found the following aggregate evidence gaps. Treat these as investigation targets, not proof that every underlying curriculum entry is incorrect:
+
+- `curriculum_documents`: 9 rows; none currently has non-whitespace `extracted_text`.
+- Five document rows and five curriculum-version rows carry a `verified` status despite the extraction evidence gap.
+- `curriculum_ingestion_runs`: 0 recorded rows at the time of audit.
+- `curriculum_sources`: 12 rows, with `auto_promote=false` for all rows.
+- `curriculum_coverage_checks`: 201 rows; `curriculum_objectives`: 1,380 rows, all carrying a `verified` label at the time of audit.
+- Sampled fingerprints included MD5-shaped values, placeholders, and normalized labels. These samples do not establish that the values are SHA-256 hashes of original source bytes.
+
+### Required handling
+
+1. Do not mass-delete or mass-demote existing curriculum data based on this aggregate report.
+2. Retrieve and preserve the exact source document for each affected version, where official access permits.
+3. Compute a SHA-256 digest from the actual downloaded bytes and independently fingerprint extracted text.
+4. Recover extraction text and inspect page coverage, including tables, figures, appendices, and practical requirements.
+5. Reconcile each version against its exact official edition, recording objective-level source locations and a second review.
+6. Run the readiness report in a trusted environment with read-only database credentials. Keep credentials out of logs and repository files.
+7. Record the report output and blockers in the PR review. A passing software test suite is not evidence that a syllabus itself is complete or correct.
+
+**Validation note:** the readiness PR must have fresh CI on its current head. A Vercel status alone does not replace GitHub Actions typecheck, lint, test, and build results. Do not merge or deploy based on the audit checkpoint alone.
