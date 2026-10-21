@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +20,37 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json(
+        { error: "Choose your subjects in onboarding before using Exam Hub.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 409 },
+      );
+    }
+
     const { data: paper, error: paperError } = await supabase
       .from("past_papers")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
-    if (paperError || !paper) {
+    if (paperError) throw paperError;
+    if (!paper) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+    }
+
+    // Check eligibility before generating any signed storage URL.
+    const { data: syllabus, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id, subject")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+    if (syllabusError) throw syllabusError;
+    if (!syllabus || !isAllowedSubject(syllabus.subject, learner.subjects.map((subject) => subject.name))) {
+      return NextResponse.json(
+        { error: "That paper is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 403 },
+      );
     }
 
     const { data: signed, error: signedError } = await supabase.storage
