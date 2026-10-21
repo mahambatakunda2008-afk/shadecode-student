@@ -11,6 +11,7 @@ export function FeedbackWidget() {
   const [open, setOpen] = useState(false); const [type, setType] = useState<FeedbackType>("general"); const [message, setMessage] = useState(""); const [submitting, setSubmitting] = useState(false); const [submitted, setSubmitted] = useState(false); const [errorMessage, setErrorMessage] = useState("");
   const reset = () => { setType("general"); setMessage(""); setSubmitted(false); setErrorMessage(""); };
   const close = () => { setOpen(false); window.setTimeout(reset, 200); };
+  useEffect(() => { const openFeedback = () => setOpen(true); window.addEventListener("shadecode:open-feedback", openFeedback); return () => window.removeEventListener("shadecode:open-feedback", openFeedback); }, []);
   useEffect(() => { if (!open) return; const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); });
   const handleSubmit = async () => {
     const trimmed = message.trim(); if (!trimmed || submitting || trimmed.length > 500) return; setSubmitting(true); setErrorMessage("");
