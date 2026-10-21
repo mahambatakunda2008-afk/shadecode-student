@@ -4,6 +4,9 @@ import { diffCurriculumKnowledge, knowledgeKey } from "../src/lib/curriculum/kno
 import { diffObjectives } from "../src/lib/curriculum/change-intelligence.ts";
 import { extractCurriculumKnowledge } from "../src/lib/curriculum/knowledge-extraction.ts";
 import { getCurriculumExtractionProfile } from "../src/lib/curriculum/extraction-profiles.ts";
+import { evaluateCurriculumDocumentEvidence, shouldProcessCurriculumDocument } from "../src/lib/curriculum/document-evidence.ts";
+import { fingerprintExtractedText } from "../src/lib/curriculum/source-fingerprint.ts";
+import { resolveCurriculumIngestionRunStatus } from "../src/lib/curriculum/source-watch-status.ts";
 
 const reportPath = process.env.CURRICULUM_WATCH_REPORT ?? ".curriculum-watch/latest-report.json";
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -95,7 +98,7 @@ for (const source of report.sources ?? []) {
   }).select("id").single();
   if (runInsert.error) throw new Error(`Run ${source.id}: ${runInsert.error.message}`);
   const runId = runInsert.data.id;
-  let sourceDocumentsChanged = 0, sourceObjectivesAdded = 0, sourceObjectivesChanged = 0, sourceObjectivesRemoved = 0;
+  let sourceDocumentsChanged = 0, sourceObjectivesAdded = 0, sourceObjectivesChanged = 0, sourceObjectivesRemoved = 0, sourceExtractionSkipped = 0;
 
   try {
     for (const document of source.documents ?? []) {
@@ -107,23 +110,82 @@ for (const source of report.sources ?? []) {
 
       const changed = !previous || previous.content_hash !== document.contentHash;
       if (changed) { documentsChanged += 1; sourceDocumentsChanged += 1; }
-      let extractedText = previous?.content_hash === document.contentHash ? previous.extracted_text : null;
-      if (changed && document.textPath) extractedText = await readFile(document.textPath, "utf8");
 
-      const upsert = await supabase.from("curriculum_documents").upsert({
-        id: previous?.id,
-        source_id: source.id,
+      // Reuse previously persisted text for the same byte fingerprint, but retry extraction
+      // when it was missing. A crawler's reported character count is not extraction evidence.
+      let extractedText = previous?.content_hash === document.contentHash ? previous.extracted_text : null;
+      if ((!extractedText || !extractedText.trim()) && document.textPath) {
+        extractedText = await readFile(document.textPath, "utf8");
+      }
+      const evidence = evaluateCurriculumDocumentEvidence({
+        previousHash: previous?.content_hash ?? null,
+        incomingHash: document.contentHash,
+        previousStatus: previous?.status ?? null,
+        extractedText,
+      });
+      extractedText = evidence.extractedText;
+
+      // Preserve a durable source snapshot for each observed source hash. This table keeps
+      // historical fingerprints even though curriculum_documents remains the URL-level projection.
+      const snapshot = await supabase.from("curriculum_document_snapshots").upsert({
+        source_id: sourceRow.id,
         url: document.url,
         title: document.title ?? null,
         content_hash: document.contentHash,
-        content_characters: document.characters ?? extractedText?.length ?? 0,
-        extracted_text: extractedText ?? null,
+        content_characters: evidence.extractedCharacters,
+        extracted_text: extractedText,
+        extracted_text_hash: extractedText ? fingerprintExtractedText(extractedText) : null,
+        retrieved_at: report.runAt,
+        document_status: evidence.documentStatus,
+        extraction_status: evidence.extractionSucceeded ? "extracted" : "not_extracted",
+        metadata: {
+          watcherVersion: report.watcherVersion,
+          sourceReportedCharacters: document.characters ?? null,
+          syllabusVersion: document.syllabusVersion ?? null,
+          textPersisted: evidence.extractionSucceeded,
+        },
+      }, { onConflict: "source_id,url,content_hash", ignoreDuplicates: true });
+      if (snapshot.error) throw new Error(`Document snapshot ${document.url}: ${snapshot.error.message}`);
+
+      // The source-byte snapshot is immutable. If the same bytes were first recorded
+      // without extracted text, fill the missing extraction artifact without rewriting
+      // the original retrieval timestamp or source fingerprint.
+      if (evidence.extractionSucceeded) {
+        const backfill = await supabase.from("curriculum_document_snapshots").update({
+          content_characters: evidence.extractedCharacters,
+          extracted_text: extractedText,
+          extracted_text_hash: fingerprintExtractedText(extractedText),
+          extraction_status: "extracted",
+          updated_at: new Date().toISOString(),
+          metadata: {
+            watcherVersion: report.watcherVersion,
+            sourceReportedCharacters: document.characters ?? null,
+            syllabusVersion: document.syllabusVersion ?? null,
+            textPersisted: true,
+          },
+        }).eq("source_id", sourceRow.id).eq("url", document.url)
+          .eq("content_hash", document.contentHash).is("extracted_text", null);
+        if (backfill.error) throw new Error(`Document snapshot extraction backfill ${document.url}: ${backfill.error.message}`);
+      }
+
+      const upsert = await supabase.from("curriculum_documents").upsert({
+        id: previous?.id,
+        source_id: sourceRow.id,
+        url: document.url,
+        title: document.title ?? null,
+        content_hash: document.contentHash,
+        content_characters: evidence.extractedCharacters,
+        extracted_text: extractedText,
         last_seen_at: report.runAt,
-        status: previous?.status === "verified" ? "verified" : changed ? "draft" : previous?.status ?? "discovered",
+        status: evidence.documentStatus,
       }, { onConflict: "url" }).select("id").single();
       if (upsert.error) throw new Error(`Document ${document.url}: ${upsert.error.message}`);
-      if (!changed) continue;
-      documentsExtracted += 1;
+      if (!shouldProcessCurriculumDocument({
+        changed,
+        previousExtractedText: previous?.extracted_text ?? null,
+        extractedText,
+      })) continue;
+      if (evidence.extractionSucceeded) documentsExtracted += 1;
 
       await recordChange(runId, upsert.data.id, null, previous ? "document_changed" : "document_added",
         previous ? { contentHash: previous.content_hash, status: previous.status } : null,
@@ -131,11 +193,29 @@ for (const source of report.sources ?? []) {
         previous ? "warning" : "info");
 
       const resolved = curriculumFromSource(source, document);
-      if (!resolved || !extractedText) { extractionSkipped += 1; continue; }
+      if (!resolved || !extractedText) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
       const provenance = provenanceFor(source, document, { versionConflict: resolved.conflict });
       const profile = getCurriculumExtractionProfile(source.id);
       const extracted = extractCurriculumKnowledge(extractedText, resolved.curriculum, provenance, profile);
-      if (!extracted.length) { extractionSkipped += 1; continue; }
+      if (!extracted.length) { extractionSkipped += 1; sourceExtractionSkipped += 1; continue; }
+
+      // Avoid duplicate version rows if an older source fingerprint is observed again.
+      // A same-hash version already exists, so leave its normalized knowledge untouched.
+      const { data: sameVersion, error: sameVersionError } = await supabase.from("curriculum_versions")
+        .select("id")
+        .eq("board_id", resolved.curriculum.boardId)
+        .eq("qualification_id", resolved.curriculum.qualificationId)
+        .eq("syllabus_id", resolved.curriculum.syllabusId)
+        .eq("subject_id", resolved.curriculum.subjectId)
+        .eq("syllabus_version", resolved.curriculum.syllabusVersion)
+        .eq("document_hash", document.contentHash)
+        .maybeSingle();
+      if (sameVersionError) throw new Error(`Existing version lookup ${document.url}: ${sameVersionError.message}`);
+      if (sameVersion) {
+        extractionSkipped += 1;
+        sourceExtractionSkipped += 1;
+        continue;
+      }
 
       const { data: priorVersion } = await supabase.from("curriculum_versions")
         .select("id, syllabus_version, status, document_hash, created_at")
@@ -247,11 +327,18 @@ for (const source of report.sources ?? []) {
       }
     }
 
+    const runStatus = resolveCurriculumIngestionRunStatus(source.status, sourceExtractionSkipped);
     const finish = await supabase.from("curriculum_ingestion_runs").update({
-      status: "completed", completed_at: new Date().toISOString(), documents_seen: source.documents?.length ?? 0,
+      status: runStatus, completed_at: new Date().toISOString(), documents_seen: source.documents?.length ?? 0,
       documents_changed: sourceDocumentsChanged, objectives_added: sourceObjectivesAdded, objectives_changed: sourceObjectivesChanged,
       objectives_removed: sourceObjectivesRemoved,
-      metadata: { extractionMode: "whole-syllabus-v2", versionsCreated, knowledgeItemsCreated, knowledgeAdded, knowledgeChanged, knowledgeRemoved, knowledgeMoved, knowledgeRenamed },
+      metadata: {
+        extractionMode: "whole-syllabus-v2",
+        sourceStatus: source.status ?? "unknown",
+        sourceExtractionSkipped,
+        versionsCreated, knowledgeItemsCreated, knowledgeAdded, knowledgeChanged, knowledgeRemoved, knowledgeMoved, knowledgeRenamed,
+      },
+      ...(runStatus !== "completed" ? { error: (source.errors ?? []).join("; ") || "Source watcher did not report a fully successful document ingestion." } : {}),
     }).eq("id", runId);
     if (finish.error) throw new Error(`Finish ${source.id}: ${finish.error.message}`);
   } catch (error) {

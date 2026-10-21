@@ -493,17 +493,19 @@
         2029
       ],
       "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/",
-      "sourceDocumentUrl": null,
-      "status": "normalized_pending_review",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
       "priority": 17,
       "requiredChecks": [
-        "exact_pdf_edition_and_hash",
-        "all_numbered_learning_outcomes",
-        "paper_and_component_structure",
-        "programming_and_practical_requirements",
-        "all_25_syllabus_coverage_dimensions"
+        "verify_version_2_published_december_2025",
+        "all_AS_and_A_Level_objectives",
+        "section_and_subsection_reconciliation",
+        "three_assessment_routes_and_component_weightings",
+        "programming_language_and_practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
       ],
-      "notes": "A source PDF and candidate-content modules exist, but the live version remains draft, with zero knowledge rows and only 2/29 coverage dimensions verified. This pack must be reconciled before a verified claim."
+      "notes": "Official PDF is Version 2, published December 2025, with no significant teaching changes stated. Existing normalized pack still requires exact document/hash reconciliation and full readiness review; do not infer completion from the minor-change notice."
     },
     {
       "id": "cambridge-0478-2026-2028-reconcile",
@@ -566,6 +568,460 @@
         "all_25_syllabus_coverage_dimensions"
       ],
       "notes": "This is the existing 2024-2030 version to reconcile, not a new edition. Database version/document remain draft and the official PDF has not been independently retrieved."
+    },
+    {
+      "id": "cambridge-0478-2029-2031",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "0478",
+      "syllabusVersion": "2029-2031",
+      "examYears": [
+        2029,
+        2030,
+        2031
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0478/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/763431-2029-2031-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 20,
+      "requiredChecks": [
+        "all_numbered_learning_outcomes",
+        "python_3_only_and_pseudocode_removal",
+        "AI_machine_learning_and_networking_changes",
+        "component_structure_and_weightings",
+        "assessment_and_calculator_rules",
+        "paper_based_route",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official subject page lists the 2029-2031 edition. Major practical-programming changes include Python 3 as the teaching/assessment language and removal of pseudocode; keep separate from 2026-2028 data."
+    },
+    {
+      "id": "cambridge-0265-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "0265",
+      "syllabusVersion": "2029",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0265/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/763395-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 21,
+      "requiredChecks": [
+        "all_numbered_learning_outcomes",
+        "digital_exam_only_route",
+        "python_3_and_practical_programming_requirements",
+        "component_structure_and_weightings",
+        "assessment_and_calculator_rules",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official 2029 digital-only route. Cambridge states content is the same as paper-based 0478/0984/2210, but assessment delivery differs. Keep 0265 as a distinct qualification route. Cambridge says a 2030-onward syllabus is due September 2027."
+    },
+    {
+      "id": "cambridge-0580-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Mathematics",
+      "syllabusId": "0580",
+      "syllabusVersion": "2028-2030 Version 2",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-mathematics-0580/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/745681-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 22,
+      "requiredChecks": [
+        "version_2_document_hash_and_page_count",
+        "all_core_and_extended_outcomes",
+        "tier_route_and_component_matrix",
+        "non_calculator_calculator_rules",
+        "assessment_objectives_and_weightings",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official PDF viewer confirms Version 2, 70 pages, exams 2028-2030. Preserve Core/Extended distinction and paper calculator rules. PDF bytes, hash and full reconciliation remain outstanding."
+    },
+    {
+      "id": "cambridge-0980-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE (9-1)",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Mathematics",
+      "syllabusId": "0980",
+      "syllabusVersion": "2028-2030 Version 2",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-mathematics-9-1-0980/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744838-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 23,
+      "requiredChecks": [
+        "version_2_document_hash_and_page_count",
+        "grade_9_to_1_scale",
+        "all_core_and_extended_outcomes",
+        "tier_route_and_component_matrix",
+        "non_calculator_calculator_rules",
+        "assessment_objectives_and_weightings",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official PDF viewer confirms Version 2, 70 pages, exams 2028-2030. Keep 0980 distinct from 0580 because the grading/qualification route differs even where subject content overlaps."
+    },
+    {
+      "id": "cambridge-4024-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge O Level",
+      "level": [
+        "O Level"
+      ],
+      "subject": "Mathematics (Syllabus D)",
+      "syllabusId": "4024",
+      "syllabusVersion": "2028-2030 Version 2",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-o-level-mathematics-d-4024/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744869-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 24,
+      "requiredChecks": [
+        "version_2_document_hash_and_page_count",
+        "all_numbered_subject_outcomes",
+        "component_and_weighting_matrix",
+        "non_calculator_calculator_rules",
+        "zone_availability",
+        "assessment_objectives",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official PDF viewer confirms Version 2, 47 pages, exams 2028-2030. Qualification availability is limited to administrative zones 3, 4 and 5; verify the candidate's zone before presenting it as available."
+    },
+    {
+      "id": "cambridge-9231-2028-2030",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge International AS & A Level",
+      "level": [
+        "AS",
+        "A Level"
+      ],
+      "subject": "Further Mathematics",
+      "syllabusId": "9231",
+      "syllabusVersion": "2028-2030",
+      "examYears": [
+        2028,
+        2029,
+        2030
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-further-9231/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744603-2028-2030-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 25,
+      "requiredChecks": [
+        "all_AS_and_A_Level_objectives",
+        "prerequisite_dependency_on_9709",
+        "AS_and_A_Level_route_matrix",
+        "paper_combinations_and_weightings",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official PDF viewer confirms 2028-2030 edition, 52 pages. Model AS/A Level routes and dependencies on 9709 explicitly; do not flatten Further Pure, Mechanics and Probability & Statistics choices."
+    },
+    {
+      "id": "cambridge-5054-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge O Level",
+      "level": [
+        "O Level"
+      ],
+      "subject": "Physics",
+      "syllabusId": "5054",
+      "syllabusVersion": "2029",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-o-level-physics-5054/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764158-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 26,
+      "requiredChecks": [
+        "all_numbered_learning_outcomes",
+        "topic_and_subtopic_structure",
+        "space_physics_and_momentum_scope",
+        "measurement_language_and_math_requirements",
+        "assessment_component_structure_and_weightings",
+        "practical_assessment_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official PDF viewer confirms the 2029 edition, 53 pages. The syllabus page describes topic and assessment changes; do not assume it is identical to the 2026-2028 edition. PDF bytes, hash and complete reconciliation remain outstanding."
+    },
+    {
+      "id": "cambridge-0610-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Biology",
+      "syllabusId": "0610",
+      "syllabusVersion": "2029 Version 1",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-biology-0610/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764324-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 27,
+      "requiredChecks": [
+        "version_and_source_hash",
+        "all_numbered_learning_outcomes",
+        "core_and_supplement_scope",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "apparatus_reagents_and_math_requirements",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Official PDF viewer confirms Version 1, published September 2026, 64 pages, exams in 2029. Official notice says no significant changes affecting teaching; still reconcile the exact edition and assessment/practical sections."
+    },
+    {
+      "id": "cambridge-0620-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Chemistry",
+      "syllabusId": "0620",
+      "syllabusVersion": "2029 Version 1",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-chemistry-0620/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764330-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 28,
+      "requiredChecks": [
+        "version_and_source_hash",
+        "all_numbered_learning_outcomes",
+        "core_and_supplement_scope",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "qualitative_analysis_notes",
+        "apparatus_reagents_and_math_requirements",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Official PDF viewer confirms the 2029 edition, 59 pages. Keep it separate from 2026-2028; reconcile qualitative-analysis notes, practical route, apparatus and numbered outcomes."
+    },
+    {
+      "id": "cambridge-0625-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Physics",
+      "syllabusId": "0625",
+      "syllabusVersion": "2029 Version 1",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-0625/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764332-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 29,
+      "requiredChecks": [
+        "version_and_source_hash",
+        "all_numbered_learning_outcomes",
+        "core_and_supplement_scope",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "measurement_language_and_math_requirements",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Official PDF viewer confirms the 2029 edition, 61 pages. Keep separate from 2026-2028 and verify practical assessment, measurement language and full numbered outcomes."
+    },
+    {
+      "id": "cambridge-0970-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE (9-1)",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Biology",
+      "syllabusId": "0970",
+      "syllabusVersion": "2029 Version 1",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-biology-9-1-0970/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764352-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 30,
+      "requiredChecks": [
+        "version_and_source_hash",
+        "grade_9_to_1_route_and_zone_availability",
+        "all_numbered_learning_outcomes",
+        "core_and_supplement_scope",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Official PDF viewer confirms Version 1, published September 2026, 64 pages. It is graded 9-1 and only available in certain administrative zones; keep distinct from 0610."
+    },
+    {
+      "id": "cambridge-0971-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE (9-1)",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Chemistry",
+      "syllabusId": "0971",
+      "syllabusVersion": "2029 Version 1",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-chemistry-9-1-0971/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764365-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 31,
+      "requiredChecks": [
+        "version_and_source_hash",
+        "grade_9_to_1_route_and_zone_availability",
+        "all_numbered_learning_outcomes",
+        "core_and_supplement_scope",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "qualitative_analysis_notes",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Official PDF viewer confirms Version 1, published September 2026, 59 pages. This is the 9-1 route with limited administrative-zone availability; keep distinct from 0620."
+    },
+    {
+      "id": "cambridge-0972-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE (9-1)",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Physics",
+      "syllabusId": "0972",
+      "syllabusVersion": "2029 Version 1",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-9-1-0972/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/764368-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 32,
+      "requiredChecks": [
+        "version_and_source_hash",
+        "grade_9_to_1_route_and_zone_availability",
+        "all_numbered_learning_outcomes",
+        "core_and_supplement_scope",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "measurement_language_and_math_requirements",
+        "all_25_syllabus_coverage_dimensions"
+      ],
+      "notes": "Official PDF viewer confirms the 2029 edition, 61 pages. This is the 9-1 route with limited administrative-zone availability; keep distinct from 0625."
+    },
+    {
+      "id": "cambridge-0654-2028-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE Co-ordinated Sciences (Double Award)",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Co-ordinated Sciences",
+      "syllabusId": "0654",
+      "syllabusVersion": "2028-2029",
+      "examYears": [
+        2028,
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-sciences-co-ordinated-double-0654/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/745689-2028-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 33,
+      "requiredChecks": [
+        "all_biology_chemistry_physics_outcomes",
+        "double_award_scope_and_grade_rules",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "component_route_and_zone_availability",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official subject page lists a distinct 2028-2029 Double Award edition. Preserve integrated Biology/Chemistry/Physics sections and double-award assessment; do not treat as three separate single-science qualifications."
+    },
+    {
+      "id": "cambridge-0973-2028-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE (9-1) Co-ordinated Sciences (Double Award)",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Co-ordinated Sciences",
+      "syllabusId": "0973",
+      "syllabusVersion": "2028-2029",
+      "examYears": [
+        2028,
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-sciences-9-1-only-0973/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/744836-2028-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 34,
+      "requiredChecks": [
+        "all_biology_chemistry_physics_outcomes",
+        "9_to_1_double_award_scope_and_grade_rules",
+        "assessment_components_and_weightings",
+        "practical_assessment_and_safety",
+        "component_route_and_zone_availability",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official subject page lists a distinct 2028-2029 9-1 Double Award edition. Availability is zone/series restricted. Preserve it separately from 0654 and from the single sciences."
     }
   ]
 }
