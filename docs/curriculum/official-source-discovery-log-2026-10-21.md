@@ -1,6 +1,6 @@
 # Official source discovery log: 2026-10-21
 
-**Scope:** targeted discovery for Cambridge International AS & A Level 2028–2030 and ZIMSEC Computer Science 4021.
+**Scope:** targeted discovery for Cambridge International 2028–2031 syllabus editions, Cambridge Computer Science 9618/0478/0265, and ZIMSEC Computer Science 4021.
 **Boundary:** this is a discovery record, not a claim that the PDFs have been downloaded, hashed, extracted, reconciled, or ingested into Shadecode Student.
 
 ## Cambridge AS & A Level, exams 2028–2030
@@ -31,6 +31,28 @@ https://help.cambridgeinternational.org/hc/en-gb/articles/37190057441298-General
 
 **Important:** Cambridge's official subject pages describe substantive syllabus updates, including clarified learning outcomes and topics added, removed, or moved between AS and A Level. Do not assume that a topic-name match means the old and new editions are equivalent. These 2028–2030 PDFs must not be relabelled as the 2025–2027 or 2026–2027 syllabus packs. Keep each edition separately versioned and selected by the student's exam year.
 
+## Cambridge Computer Science source verification targets
+
+### AS & A Level Computer Science 9618, exams 2027–2029
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/
+- Direct official PDF: https://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf
+- The official PDF identifies itself as **Version 2**, published December 2025, and says there are no significant changes affecting teaching. The document is 49 pages and covers exams in 2027, 2028 and 2029.
+- The version notice is not permission to skip verification. The stored/normalized 9618 pack must still be reconciled to this exact PDF and fingerprint, including AS/A Level section boundaries, all numbered outcomes, three assessment routes, paper weightings, programming-language requirements, and practical evidence.
+
+### IGCSE Computer Science 0478, exams 2029–2031
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0478/
+- Direct official PDF: https://www.cambridgeinternational.org/Images/763431-2029-2031-syllabus.pdf
+- The official page lists 2029–2031 as a distinct edition. It describes substantive changes including Python 3 as the only language for teaching, assessment and programming questions; removal of pseudocode; expanded AI/machine-learning and networking content; revised component structure; and calculator-rule changes. Do not carry over 2026–2028 topics or assessment metadata without a document-level diff.
+
+### IGCSE Computer Science 0265, exams in 2029
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0265/
+- Direct official PDF: https://www.cambridgeinternational.org/Images/763395-2029-syllabus.pdf
+- The official PDF is Version 1, published September 2026, and specifies a digital-only exam route for 2029. Cambridge states that 0265 has the same subject content as paper-based 0478/0984/2210 but a different assessment-delivery route. Preserve 0265 as a separate qualification/assessment configuration instead of merging its component delivery details into 0478.
+- Cambridge's official page states that a syllabus for 2030 onwards is due to be published in September 2027. Do not invent or extend the 2029 edition into later years.
+
 ## ZIMSEC Computer Science 4021
 
 The official ZIMSEC catalogue lists **Computer Science O level Syllabus**, but the direct syllabus-document URL and edition metadata are not yet confirmed.
@@ -52,6 +74,9 @@ The three 4021 pages are individual paper resources, not proof of a complete syl
 | Cambridge Chemistry 9701, 2028–2030 | Yes | Yes | No | No |
 | Cambridge Physics 9702, 2028–2030 | Yes | Yes, candidate from queue | No | No |
 | Cambridge Mathematics 9709, 2028–2030 | Yes | Yes, candidate from queue | No | No |
+| Cambridge Computer Science 9618, 2027–2029 Version 2 | Yes | Yes | No | No |
+| Cambridge IGCSE Computer Science 0478, 2029–2031 | Yes | Yes | No | No |
+| Cambridge IGCSE Computer Science 0265, 2029 digital route | Yes | Yes | No | No |
 | ZIMSEC Computer Science 4021, 2024–2030 | Yes, catalogue | Not yet confirmed | No | No |
 
 This table deliberately distinguishes source discovery from artifact retrieval. No curriculum database status should change based on this log alone.
