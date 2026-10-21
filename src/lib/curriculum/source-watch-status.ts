@@ -10,3 +10,12 @@ export function summarizeCurriculumWatchStatus(statuses: CurriculumWatchedDocume
   if (failures === 0) return "ok";
   return successes > 0 ? "partial" : "failed";
 }
+
+export type CurriculumIngestionRunStatus = "completed" | "partial" | "failed";
+
+/** The ingestion process can finish executing while the source ingestion itself fails. */
+export function resolveCurriculumIngestionRunStatus(sourceStatus: string | null | undefined, extractionSkipped: number): CurriculumIngestionRunStatus {
+  if (sourceStatus === "ok" && extractionSkipped === 0) return "completed";
+  if (sourceStatus === "partial" || (sourceStatus === "ok" && extractionSkipped > 0)) return "partial";
+  return "failed";
+}
