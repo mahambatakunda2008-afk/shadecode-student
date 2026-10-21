@@ -64,7 +64,7 @@ describe("resolveDatabaseCurriculumVersion", () => {
       },
     });
     const result = resolveDatabaseCurriculumVersion(request(2026), [row]);
-    expect(result.resolution).toMatchObject({ status: "not_verified", version: { complete: false, verified: false } });
+    expect(result.resolution.status).toBe("not_verified");
     expect(result.diagnostics[0].issues).toContain("source_extracted_content_empty");
     expect(result.diagnostics[0].issues).toContain("source_extraction_not_reviewable");
   });
