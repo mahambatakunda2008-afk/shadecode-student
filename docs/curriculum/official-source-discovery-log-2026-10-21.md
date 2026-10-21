@@ -102,3 +102,16 @@ The official Cambridge subject pages were opened and their linked PDF documents 
 - **Mathematics 9709, 2028–2030:** official linked PDF URL confirmed; browser PDF viewer reports **62 pages**. The document identifies Version 1, published September 2025, and states no significant changes affecting teaching. It still requires route-aware verification: six components (Papers 1–6), multiple AS routes, and distinct A Level combinations. For example, the pure-mathematics-only AS route (Papers 1 and 2) cannot count toward A Level; Paper 4 and Paper 6 cannot be combined.
 
 The indexed PDF text confirms these documents' identity, stated edition and visible page count. The underlying PDF bytes have **not** been retrieved into the project workflow, so hashes, immutable snapshots, extraction-quality checks and line-by-line reconciliation remain incomplete. No source record or curriculum status was promoted based on this follow-up.
+
+
+## ZIMSEC follow-up: distinguish syllabus from exam-paper resources
+
+A further official-site search reconfirmed the ZIMSEC syllabus catalogue entry named **Computer Science O level Syllabus**, but the catalogue page timed out when opened directly in this pass and no exact syllabus-file URL could be established. The search also surfaced the official individual-paper pages for 4021/01 and 4021/02, each showing a single file created and last updated on 9 March 2026; the official O Level downloads index lists 4021/03 as well. These are examination-paper resources, not the full syllabus specification. They must not be used as a substitute for syllabus outcomes, course scope, or the official assessment specification.
+
+Official catalogue and paper index:
+- https://www5.zimsec.co.zw/syllabi/
+- https://www5.zimsec.co.zw/download-category/o-level/page/9/
+- https://www5.zimsec.co.zw/download/computer-science-4021-01/
+- https://www5.zimsec.co.zw/download/computer-science-4021-02/
+
+**State remains unresolved:** 4021's exact syllabus PDF, edition/effective years and full text are still not confirmed. Keep the queue entry in discovery/review status and do not mark the syllabus verified from paper pages or examiner reports.
