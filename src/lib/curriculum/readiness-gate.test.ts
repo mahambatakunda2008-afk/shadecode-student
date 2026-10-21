@@ -33,6 +33,36 @@ describe("evaluateCurriculumReadiness", () => {
     expect(evaluateCurriculumReadiness(completeInput).ready).toBe(true);
   });
 
+  it("blocks a draft source document even when text and version metadata look complete", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      document: { ...completeInput.document, status: "draft" },
+    });
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain('Source document status is "draft"; the source document itself is not verified.');
+  });
+
+  it("blocks source text that is not recorded as successfully extracted", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      document: { ...completeInput.document, extractionStatus: "failed" },
+    });
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain('Source extraction status is "failed"; extracted text is not recorded as successfully extracted.');
+  });
+
+  it("blocks invalid objective and coverage counts", () => {
+    const result = evaluateCurriculumReadiness({
+      ...completeInput,
+      expectedCoverageDimensions: 0,
+      objectiveCount: 2,
+      verifiedObjectiveCount: 3,
+    });
+    expect(result.ready).toBe(false);
+    expect(result.blockers).toContain("Expected coverage dimension count must be a positive integer.");
+    expect(result.blockers).toContain("Verified objective count is invalid or exceeds the recorded objective count.");
+  });
+
   it("blocks an empty extracted document even when version status says verified", () => {
     const result = evaluateCurriculumReadiness({
       ...completeInput,
