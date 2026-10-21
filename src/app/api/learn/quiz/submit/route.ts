@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -37,12 +38,23 @@ export async function POST(req: Request) {
 
     const { data: lesson, error: lessonError } = await supabase
       .from("learn_lessons")
-      .select("id, user_id, curriculum_version_id, curriculum_objective_keys")
+      .select("id, user_id, subject_id, curriculum_version_id, curriculum_objective_keys")
       .eq("id", lessonId)
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (lessonError || !lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+
+    const { data: subjectRow, error: subjectError } = await supabase
+      .from("subjects")
+      .select("id, name")
+      .eq("id", lesson.subject_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (subjectError) return NextResponse.json({ error: "Could not verify lesson subject." }, { status: 500 });
+    if (!subjectRow?.name) return NextResponse.json({ error: "Lesson subject not found.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subjectRow.name, subjectRow.id);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
 
     const objectiveKeys = Array.isArray(lesson.curriculum_objective_keys)
       ? lesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0)
