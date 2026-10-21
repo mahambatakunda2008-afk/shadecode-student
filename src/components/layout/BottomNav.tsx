@@ -131,7 +131,7 @@ export function BottomNav() {
         </span>
         <span
           className={cn(
-            "truncate text-[11px] font-medium leading-tight transition-colors duration-200",
+            "truncate text-xs font-medium leading-tight transition-colors duration-200",
             active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]",
           )}
         >
@@ -173,7 +173,7 @@ export function BottomNav() {
           </span>
           <span
             className={cn(
-              "text-[11px] font-semibold leading-tight",
+              "text-xs font-semibold leading-tight",
               isRouteActive(pathname, dashboardItem.href)
                 ? "text-[var(--primary)]"
                 : "text-[var(--muted-foreground)]",
@@ -207,7 +207,7 @@ export function BottomNav() {
             </span>
             <span
               className={cn(
-                "text-[11px] font-medium leading-tight",
+                "text-xs font-medium leading-tight",
                 anyMoreActive || open
                   ? "text-[var(--primary)]"
                   : "text-[var(--muted-foreground)]",
@@ -224,7 +224,7 @@ export function BottomNav() {
           className="fixed inset-0 z-[10000] md:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label={moreTitle}
+          aria-labelledby="mobile-more-title"
         >
           <button
             type="button"
@@ -267,7 +267,7 @@ export function BottomNav() {
                     <ShadecodeFeatureIcon icon={item.icon} feature={item.feature} size="sm" active={active} />
                     <span
                       className={cn(
-                        "text-[11px] font-medium leading-tight",
+                        "text-xs font-medium leading-tight",
                         active ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]",
                       )}
                     >
