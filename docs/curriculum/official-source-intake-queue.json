@@ -493,17 +493,19 @@
         2029
       ],
       "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/",
-      "sourceDocumentUrl": null,
-      "status": "normalized_pending_review",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/721397-2027-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
       "priority": 17,
       "requiredChecks": [
-        "exact_pdf_edition_and_hash",
-        "all_numbered_learning_outcomes",
-        "paper_and_component_structure",
-        "programming_and_practical_requirements",
-        "all_25_syllabus_coverage_dimensions"
+        "verify_version_2_published_december_2025",
+        "all_AS_and_A_Level_objectives",
+        "section_and_subsection_reconciliation",
+        "three_assessment_routes_and_component_weightings",
+        "programming_language_and_practical_requirements",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
       ],
-      "notes": "A source PDF and candidate-content modules exist, but the live version remains draft, with zero knowledge rows and only 2/29 coverage dimensions verified. This pack must be reconciled before a verified claim."
+      "notes": "Official PDF is Version 2, published December 2025, with no significant teaching changes stated. Existing normalized pack still requires exact document/hash reconciliation and full readiness review; do not infer completion from the minor-change notice."
     },
     {
       "id": "cambridge-0478-2026-2028-reconcile",
@@ -566,6 +568,67 @@
         "all_25_syllabus_coverage_dimensions"
       ],
       "notes": "This is the existing 2024-2030 version to reconcile, not a new edition. Database version/document remain draft and the official PDF has not been independently retrieved."
+    },
+    {
+      "id": "cambridge-0478-2029-2031",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "0478",
+      "syllabusVersion": "2029-2031",
+      "examYears": [
+        2029,
+        2030,
+        2031
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0478/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/763431-2029-2031-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 20,
+      "requiredChecks": [
+        "all_numbered_learning_outcomes",
+        "python_3_only_and_pseudocode_removal",
+        "AI_machine_learning_and_networking_changes",
+        "component_structure_and_weightings",
+        "assessment_and_calculator_rules",
+        "paper_based_route",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official subject page lists the 2029-2031 edition. Major practical-programming changes include Python 3 as the teaching/assessment language and removal of pseudocode; keep separate from 2026-2028 data."
+    },
+    {
+      "id": "cambridge-0265-2029",
+      "boardId": "cambridge",
+      "authority": "Cambridge International Education",
+      "qualification": "Cambridge IGCSE",
+      "level": [
+        "IGCSE"
+      ],
+      "subject": "Computer Science",
+      "syllabusId": "0265",
+      "syllabusVersion": "2029",
+      "examYears": [
+        2029
+      ],
+      "officialAuthorityPage": "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0265/",
+      "sourceDocumentUrl": "https://www.cambridgeinternational.org/Images/763395-2029-syllabus.pdf",
+      "status": "source_confirmed_content_not_ingested",
+      "priority": 21,
+      "requiredChecks": [
+        "all_numbered_learning_outcomes",
+        "digital_exam_only_route",
+        "python_3_and_practical_programming_requirements",
+        "component_structure_and_weightings",
+        "assessment_and_calculator_rules",
+        "all_25_syllabus_coverage_dimensions",
+        "source_hash_and_page_count"
+      ],
+      "notes": "Official 2029 digital-only route. Cambridge states content is the same as paper-based 0478/0984/2210, but assessment delivery differs. Keep 0265 as a distinct qualification route. Cambridge says a 2030-onward syllabus is due September 2027."
     }
   ]
 }
