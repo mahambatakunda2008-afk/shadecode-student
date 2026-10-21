@@ -6,7 +6,7 @@ const completeInput = {
   sourceDocumentId: "doc-1",
   document: {
     url: "https://official.example/syllabus.pdf",
-    contentHash: "abc123",
+    contentHash: "a".repeat(64),
     contentCharacters: 10,
     extractedText: "0123456789",
     extractionStatus: "extracted",
@@ -58,7 +58,7 @@ describe("evaluateCurriculumReadiness", () => {
       ...completeInput,
       document: { ...completeInput.document, contentHash: "not-computed:web-fetch" },
     });
-    expect(result.blockers).toContain("Source-byte fingerprint is missing or explicitly uncomputed.");
+    expect(result.blockers).toContain("Source-byte fingerprint is missing, malformed, or explicitly uncomputed.");
   });
 
   it("does not infer verification from a version status alone", () => {
