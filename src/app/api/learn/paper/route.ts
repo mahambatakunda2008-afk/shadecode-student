@@ -9,6 +9,7 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { applyQuestionCorrections, buildPaperSourceText, extractPdfPages, normalizePageRange, selectPaperQuestions, type PaperPage, type PaperQuestionCorrection } from "@/lib/learn/paperLearning";
 import { extractTopLevelQuestionsFromPages } from "@/lib/exam/question-extraction";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -258,6 +259,13 @@ export async function POST(req: Request) {
     const selectedPages = pages.slice(range.start - 1, range.end);
     // Cambridge prints the syllabus code (e.g. 9702/22) on the cover page, so scan the whole document, not only the selection.
     const paperScope = detectPaperScope(pages.map(page => page.text));
+    if (paperScope?.syllabusId) {
+      const { data: syllabus, error: syllabusError } = await auth.supabase.from("syllabi").select("id,subject").eq("id", paperScope.syllabusId).maybeSingle();
+      if (syllabusError) return NextResponse.json({ error: "Could not verify this paper syllabus." }, { status: 500 });
+      if (!syllabus?.subject) return NextResponse.json({ error: "The paper syllabus could not be resolved." }, { status: 409 });
+      const access = await resolveLearnerSubject(auth.supabase, auth.user.id, syllabus.subject);
+      if (!access.ok) return NextResponse.json({ error: access.error, code: "SUBJECT_NOT_ALLOWED" }, { status: access.status });
+    }
     const questions = extractTopLevelQuestionsFromPages(selectedPages);
     const inspectOnly = String(form.get("inspect") ?? "").toLowerCase() === "1" || String(form.get("inspect") ?? "").toLowerCase() === "true";
     if (inspectOnly) {
@@ -345,6 +353,17 @@ export async function POST(req: Request) {
       await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", questionCount: questions.length, selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => { const corrected = correctionResult.questions.find(item => item.questionNumber === question.questionNumber)?.questionText ?? question.questionText; return { questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: corrected.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: corrected !== question.questionText ? corrected.slice(0, 6000) : null, correctionStatus: corrected !== question.questionText ? "user-verified" : "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod }; }), error: "Cortex did not return a valid learning plan." } }).eq("id", session.id).eq("user_id", auth.user.id);
       return NextResponse.json({ error: "Cortex couldn't turn these pages into a reliable learning session. The extracted paper is still preserved so you can retry." }, { status: 422 });
     }
+
+    if (!plan.subject?.trim()) {
+      await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", error: "Learning plan subject could not be verified." } }).eq("id", session.id).eq("user_id", auth.user.id);
+      return NextResponse.json({ error: "Cortex could not reliably identify this paper subject.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    }
+    const planAccess = await resolveLearnerSubject(auth.supabase, auth.user.id, plan.subject);
+    if (!planAccess.ok) {
+      await auth.supabase.from("paper_learning_sessions").update({ status: "failed", source_metadata: { extraction: "pdf-text", error: "Paper subject is not selected by this learner." } }).eq("id", session.id).eq("user_id", auth.user.id);
+      return NextResponse.json({ error: planAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: planAccess.status });
+    }
+    plan.subject = planAccess.subject;
 
     const { error: updateError } = await auth.supabase.from("paper_learning_sessions").update({ status: "processed", learning_plan: plan, source_metadata: { extraction: "pdf-text", extractedAt: new Date().toISOString(), paperScope, questionCount: questions.length, selectedPageCount: selectedPages.length, selectedPageStart: range.start, selectedPageEnd: range.end, selectionMode: selectedQuestionNumbers.length ? "questions" : "pages", selectedQuestionNumbers, pageVisuals: selectedPages.map(page => ({ pageNumber: page.pageNumber, width: page.visual.width, height: page.visual.height, imageCount: page.visual.imageCount, vectorGraphicCount: page.visual.vectorGraphicCount, hasVisualContent: page.visual.hasVisualContent })), questionIndex: questions.map(question => { const corrected = correctionResult.questions.find(item => item.questionNumber === question.questionNumber)?.questionText ?? question.questionText; return { questionNumber: question.questionNumber, sourcePageStart: question.sourcePageStart, sourcePageEnd: question.sourcePageEnd, questionText: corrected.slice(0, 6000), originalQuestionText: question.questionText.slice(0, 6000), correctedQuestionText: corrected !== question.questionText ? corrected.slice(0, 6000) : null, correctionStatus: corrected !== question.questionText ? "user-verified" : "extracted", extractionConfidence: question.extractionConfidence, extractionMethod: question.extractionMethod }; }), pageHashes: selectedPages.map(page => ({ pageNumber: page.pageNumber, textHash: page.textHash })), sourceFingerprint: selectedPages.map(page => page.textHash).join(":"), subject: plan.subject || null, level: plan.level || null, board: plan.board || null, topics: plan.topics ?? [], processedAt: new Date().toISOString() } }).eq("id", session.id).eq("user_id", auth.user.id);
     if (updateError) return NextResponse.json({ error: "The learning plan was generated but could not be saved." }, { status: 500 });
