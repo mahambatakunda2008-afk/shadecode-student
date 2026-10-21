@@ -73,6 +73,8 @@ export default function CortexCommandBar() {
     return () => { window.removeEventListener("shadecode:study-state", sync); window.clearInterval(timer); };
   }, [capabilities]);
 
+  useEffect(() => { const openCortex = () => setOpen(true); window.addEventListener("shadecode:open-cortex", openCortex); return () => window.removeEventListener("shadecode:open-cortex", openCortex); }, []);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setOpen(true); }
