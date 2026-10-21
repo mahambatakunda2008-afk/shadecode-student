@@ -20,6 +20,12 @@ describe("curriculum document evidence state", () => {
     })).toMatchObject({ changed: true, documentStatus: "draft", extractedText: null, extractedCharacters: 0, extractionSucceeded: false });
   });
 
+  it("preserves archived state when the source fingerprint is unchanged", () => {
+    expect(evaluateCurriculumDocumentEvidence({
+      previousHash: "sha-a", incomingHash: "sha-a", previousStatus: "archived", extractedText: null,
+    })).toMatchObject({ changed: false, documentStatus: "archived" });
+  });
+
   it("never trusts an upstream character count because it is not an input", () => {
     expect(evaluateCurriculumDocumentEvidence({
       previousHash: "sha-a", incomingHash: "sha-a", previousStatus: "draft", extractedText: null,
