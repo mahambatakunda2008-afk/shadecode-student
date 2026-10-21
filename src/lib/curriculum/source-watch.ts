@@ -128,7 +128,7 @@ export const CURRICULUM_SOURCE_WATCHES: CurriculumSourceWatch[] = [
     discoverLinkedDocuments: true,
     extractText: true,
     autoPromote: false,
-  },,
+  },
   {
     id: "cambridge-as-a-level-biology-9700-2028-2030",
     boardId: "cambridge",
