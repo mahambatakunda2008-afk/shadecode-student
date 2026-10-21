@@ -70,11 +70,11 @@ async function heartbeatGenerationLease(token: string, jobId: string, leaseId: s
 }
 function isBrowser() { return typeof window !== "undefined"; }
 /** A lesson from the shared library that covers the request, or null. Never throws and never waits long. */
-async function fetchLibraryRecovery(subject: string, topic: string): Promise<{ title: string; blocks: Array<Record<string, unknown>> } | null> {
+async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "/api/library/recover", timeoutMs = 6000): Promise<{ title: string; blocks: Array<Record<string, unknown>> } | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 6000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(`/api/library/recover?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`, { signal: controller.signal });
+    const response = await fetch(`${endpoint}?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`, { signal: controller.signal });
     if (!response.ok) return null;
     const data = (await response.json()) as { lesson?: { title?: string; blocks?: Array<Record<string, unknown>> } };
     const lesson = data.lesson;
@@ -948,6 +948,12 @@ async function runJob(
     if (!curatedFallback && isBrowser() && navigator.onLine) {
       curatedFallback = await fetchLibraryRecovery(currentJob.request.subject, currentJob.request.prompt);
       if (curatedFallback) console.info("[LEARN] recovering with a library lesson", { topic: currentJob.request.prompt, failureClass });
+    }
+    // Last AI-free rung: an honest study guide built from the learner's own verified syllabus (official
+    // learning outcomes only, no model). Null when the syllabus gives too little for a useful guide.
+    if (!curatedFallback && isBrowser() && navigator.onLine) {
+      curatedFallback = await fetchLibraryRecovery(currentJob.request.subject, currentJob.request.prompt, "/api/library/guide", 9000);
+      if (curatedFallback) console.info("[LEARN] recovering with a syllabus guide", { topic: currentJob.request.prompt, failureClass });
     }
     if (curatedFallback && isBrowser()) {
       try {
