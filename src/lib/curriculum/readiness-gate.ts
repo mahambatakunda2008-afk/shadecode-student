@@ -57,8 +57,8 @@ export function evaluateCurriculumReadiness(input: CurriculumReadinessInput): Cu
 
   if (!input.sourceDocumentId || !doc) blockers.push("No linked source document record.");
   if (!doc?.url) blockers.push("Source document URL is missing.");
-  if (!doc?.contentHash || /^(not-computed|unknown|placeholder|manual-only)/i.test(doc.contentHash)) {
-    blockers.push("Source-byte fingerprint is missing or explicitly uncomputed.");
+  if (!doc?.contentHash || !/^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test(doc.contentHash)) {
+    blockers.push("Source-byte fingerprint is missing, malformed, or explicitly uncomputed.");
   }
   if (!extractedCharacters) {
     blockers.push("No extracted source text is available; manual notes alone do not satisfy this automated evidence gate.");
