@@ -22,14 +22,14 @@ The official Cambridge subject pages list the new 2028–2030 syllabus alongside
 - **Mathematics 9709**
   - Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/
   - Direct official PDF listed in the current repository queue: https://www.cambridgeinternational.org/Images/744634-2028-2030-syllabus.pdf
-  - The subject has route-specific combinations, so verification must preserve the route and component matrix rather than flattening all content into one route. Retrieval, byte hash, page count and full reconciliation remain outstanding.
+  - The subject has route-specific combinations, so verification must preserve the route and component matrix rather than flattening all content into one route. Cambridge's official page notes the two A Level route patterns: Pure Mathematics + Probability & Statistics, or Pure Mathematics + Mechanics + Probability & Statistics. Retrieval, byte hash, page count and full reconciliation remain outstanding.
 
 ### Official exam-year guidance
 
 Cambridge's help centre states that candidates taking exams in 2027 use the 2025–2027 syllabus and candidates taking exams in 2028 use the 2028–2030 syllabus:
 https://help.cambridgeinternational.org/hc/en-gb/articles/37190057441298-General-FAQ-Which-syllabus-year-should-I-use
 
-**Important:** these 2028–2030 PDFs must not be relabelled as the 2025–2027 or 2026–2027 syllabus packs. Keep each edition separately versioned and selected by the student's exam year.
+**Important:** Cambridge's official subject pages describe substantive syllabus updates, including clarified learning outcomes and topics added, removed, or moved between AS and A Level. Do not assume that a topic-name match means the old and new editions are equivalent. These 2028–2030 PDFs must not be relabelled as the 2025–2027 or 2026–2027 syllabus packs. Keep each edition separately versioned and selected by the student's exam year.
 
 ## ZIMSEC Computer Science 4021
 
