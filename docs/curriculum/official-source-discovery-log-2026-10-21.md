@@ -115,3 +115,16 @@ Official catalogue and paper index:
 - https://www5.zimsec.co.zw/download/computer-science-4021-02/
 
 **State remains unresolved:** 4021's exact syllabus PDF, edition/effective years and full text are still not confirmed. Keep the queue entry in discovery/review status and do not mark the syllabus verified from paper pages or examiner reports.
+
+
+## Additional Cambridge mathematics and physics editions found (21 October 2026)
+
+The official subject pages were followed to their PDF documents. The browser PDF viewer confirms the document identity and page count, but the source files have not been downloaded as raw bytes into the ingestion workflow. These are **discovered, not yet ingested or syllabus-verified**.
+
+- **IGCSE Mathematics 0580, 2028–2030:** Version 2, 70 pages. Official PDF: https://www.cambridgeinternational.org/Images/745681-2028-2030-syllabus.pdf. Core and Extended routes must stay distinct; each has a non-calculator and calculator paper, with different durations and marks. The updated edition contains more examples to clarify depth of teaching.
+- **IGCSE Mathematics (9–1) 0980, 2028–2030:** Version 2, 70 pages. Official PDF: https://www.cambridgeinternational.org/Images/744838-2028-2030-syllabus.pdf. Preserve this as a separate qualification configuration from 0580 because the grade scale and route availability differ.
+- **O Level Mathematics (Syllabus D) 4024, 2028–2030:** Version 2, 47 pages. Official PDF: https://www.cambridgeinternational.org/Images/744869-2028-2030-syllabus.pdf. The syllabus is not available in every administrative zone; the official page specifies zones 3, 4 and 5 only. Its assessment consists of a non-calculator Paper 1 and calculator Paper 2.
+- **AS & A Level Further Mathematics 9231, 2028–2030:** 52 pages. Official PDF: https://www.cambridgeinternational.org/Images/744603-2028-2030-syllabus.pdf. The syllabus assumes prior knowledge of the full 9709 A Level Mathematics content and has route-specific combinations for Further Pure Mathematics, Further Mechanics, and Further Probability & Statistics. Preserve prerequisite and paper-combination dependencies.
+- **O Level Physics 5054, 2029:** 53 pages. Official PDF: https://www.cambridgeinternational.org/Images/764158-2029-syllabus.pdf. This is a distinct 2029 edition, not a licence to reuse the 2026–2028 syllabus. The official page notes updated learning objectives/topic structure and assessment changes, including space physics and momentum in the syllabus history.
+
+These five targets have been added to `official-source-intake-queue.json` with status `source_confirmed_content_not_ingested`. No production curriculum data was promoted or changed. SHA-256 calculation from the real PDF bytes, immutable snapshot storage, full extraction, outcome-by-outcome comparison, assessment reconciliation and readiness review remain mandatory.
