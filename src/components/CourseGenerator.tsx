@@ -133,8 +133,8 @@ export default function CourseGenerator() {
             ))}
           </div>
           <div className="mt-3 flex gap-2">
-            <button onClick={handleSave} disabled={loading} className="px-3 py-1 bg-green-600 text-white rounded">{loading ? 'Saving...' : 'Save to my account'}</button>
-            <button onClick={() => setResult(null)} className="px-3 py-1 border rounded">Close</button>
+            <button type="button" onClick={handleSave} disabled={loading} className="px-3 py-1 bg-green-600 text-white rounded">{loading ? 'Saving...' : 'Save to my account'}</button>
+            <button type="button" onClick={() => setResult(null)} className="px-3 py-1 border rounded">Close</button>
           </div>
         </div>
       )}
