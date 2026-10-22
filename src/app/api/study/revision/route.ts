@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
       const access = await resolveLearnerSubject(supabase, user.id, subjectName)
       if (access.ok) eligibleSubjects.add(syllabusId)
     }
+    if (!eligibleSubjects.size) return NextResponse.json({ syllabi: [] })
     const units = (allUnits ?? []).filter((unit) => eligibleSubjects.has(unit.syllabus_id))
     const { data: mastery } = await supabase.from('topic_mastery').select('syllabus_id, curriculum_topic_key, mastery_score').eq('user_id', user.id).in('syllabus_id', [...eligibleSubjects]).not('curriculum_topic_key', 'is', null)
 
