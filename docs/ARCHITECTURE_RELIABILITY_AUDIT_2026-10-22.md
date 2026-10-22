@@ -43,9 +43,11 @@ These documents are useful architecture evidence, but they are not proof that ev
 - Keep subject visibility and access aligned with the learner's enrolled/selected subjects and authorized curriculum context.
 - Update the capability registry and master roadmap when a capability's implementation or release state materially changes.
 
-## First vertical slice: Syllabus Mastery Heatmap
+## Existing Syllabus Mastery Heatmap: reconciliation and hardening
 
-The next feature slice should be a tested, read-only view built from existing curriculum and mastery sources, not a new learning-state system.
+A first read-only Syllabus Mastery Heatmap already exists on `main` from merged PR #370. That implementation reads verified curriculum objectives and `learner_curriculum_objective_progress`. The canonical event audit in this document separately traces the `topic_mastery` compatibility projection. These are not automatically interchangeable sources. Do not build a duplicate heatmap or claim the existing UI is powered by `topic_mastery` without verifying its current source path.
+
+The next slice is reconciliation and hardening: inspect the merged implementation, confirm the intended relationship between objective progress and topic mastery, and preserve explicit insufficient-evidence states. Only bridge the sources if stable, verified objective-to-topic mapping and authorized read paths support it.
 
 ### Required state distinctions
 
@@ -62,7 +64,7 @@ The UI must not render a topic with no evidence as 0% mastery. If the current da
 ### Data and calculation contract
 
 1. Obtain the active subject and syllabus from the existing learner/curriculum context.
-2. Read the authoritative syllabus topic catalogue and `topic_mastery` projection through the existing authorized data path.
+2. Inspect the current heatmap's verified syllabus objective catalogue and `learner_curriculum_objective_progress` source, then compare with `topic_mastery` through existing authorized data paths. Do not silently replace one source with the other.
 3. Use the existing shared mastery semantics; do not calculate a competing score in the component.
 4. Join by stable topic identifiers, not display labels or case-insensitive text guesses.
 5. Treat unmapped evidence as unmapped. Do not attach it to a similarly named topic.
@@ -95,7 +97,7 @@ Do not mark the heatmap shipped until the source integration, unit tests, typech
 
 ### B. Curriculum integrity and heatmap
 - Trace subject selection, active syllabus, stable topic IDs, topic access rules, and mastery reads.
-- Implement the heatmap as a read-only projection over existing contracts.
+- Audit the merged heatmap as a read-only projection over existing contracts; only reconcile objective progress with `topic_mastery` when the mapping and product semantics are verified.
 - Add explicit insufficient-evidence and recoverable-error states.
 
 ### C. Offline and sync reliability
@@ -116,11 +118,11 @@ Do not mark the heatmap shipped until the source integration, unit tests, typech
 
 The reviewed documents consistently identify the canonical evidence spine, mastery reconciliation, offline verification, and Exam Simulation reliability as the highest-value dependencies. They also describe several capabilities as foundations or in progress.
 
-At this checkpoint, the repository's documentation has been reviewed, but the relevant implementation files, live database state, CI results, and production browser flows have not yet been verified in this audit. Accordingly, no feature is upgraded to shipped status here.
+At this checkpoint, the canonical event/mastery implementation has been inspected and the existing heatmap's merged PR description has been reviewed. The current heatmap source path, live database state, CI results for this branch, and production browser flows still require direct verification. Accordingly, no new capability is upgraded to shipped status here.
 
 ## Next engineering action
 
-Inspect the actual source paths for the canonical event bridge, observation adapter, mastery reducer/consumer, curriculum catalogue, and subject-scoped UI. Then implement the smallest testable vertical slice without introducing duplicate state or changing unrelated access behaviour.
+Inspect the canonical event bridge, observation adapter, mastery reducer/consumer, and the already-merged heatmap's data path. Add a regression test for legacy mastery rows, then verify subject-scoped reads, objective/topic mapping, empty-data behaviour, and CI without introducing duplicate state or changing unrelated access behaviour.our.
 
 
 ## Source-level trace performed after the initial checkpoint
