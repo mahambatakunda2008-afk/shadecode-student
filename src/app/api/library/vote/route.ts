@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resetLibraryCache } from '@/lib/library/store'
+import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,22 @@ export async function POST(request: NextRequest) {
     const helpful: unknown = body?.helpful
     if (typeof id !== 'string' || !/^[0-9a-f-]{8,64}$/i.test(id) || typeof helpful !== 'boolean') {
       return NextResponse.json({ error: 'Invalid vote' }, { status: 400 })
+    }
+
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lesson_library')
+      .select('id, subject')
+      .eq('id', id)
+      .maybeSingle()
+    if (lessonError) throw lessonError
+    if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
+
+    const learner = await resolveLearnerSubjects(supabase as never, user.id)
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({ error: 'Choose your subjects in onboarding before rating lessons', code: 'SUBJECT_NOT_ALLOWED' }, { status: 409 })
+    }
+    if (!assertRequestedLearnerSubject(learner.subjects, lesson.subject)) {
+      return NextResponse.json({ error: 'That lesson is not available for your selected subjects', code: 'SUBJECT_NOT_ALLOWED' }, { status: 403 })
     }
 
     const { error } = await supabase.from('lesson_votes').upsert({ user_id: user.id, lesson_id: id, helpful }, { onConflict: 'user_id,lesson_id' })
