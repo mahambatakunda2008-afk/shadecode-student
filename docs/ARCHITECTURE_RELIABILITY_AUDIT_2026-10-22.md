@@ -121,3 +121,32 @@ At this checkpoint, the repository's documentation has been reviewed, but the re
 ## Next engineering action
 
 Inspect the actual source paths for the canonical event bridge, observation adapter, mastery reducer/consumer, curriculum catalogue, and subject-scoped UI. Then implement the smallest testable vertical slice without introducing duplicate state or changing unrelated access behaviour.
+
+
+## Source-level trace performed after the initial checkpoint
+
+The following source files were inspected on the default branch before applying the proposed compatibility fix:
+
+- `src/app/api/intelligence/events/route.ts`
+- `src/lib/intelligence/learningEvents.ts`
+- `src/lib/intelligence/learningObservation.ts`
+- `src/lib/cortex/learningState.ts`
+- `src/lib/intelligence/masteryTransition.ts`
+- `src/lib/intelligence/projectLearningEvent.ts`
+
+### Confirmed from source
+
+- Event ingress authenticates through Supabase server auth, normalizes a supported event, and persists through `insert_canonical_cortex_event`.
+- The ingress attempts the mastery projection after persistence and returns HTTP 202 with `projectionPending` if projection throws. The event can therefore be durably accepted while the projection remains pending.
+- The observation adapter ignores events without an explicit topic and excludes events marked `aggregateOnly`.
+- The shared mastery transition uses a documented 70/30 historical/evidence EMA heuristic. The source explicitly says this is not a validated psychometric model.
+- The projection uses a unique marker keyed from the canonical event ID to avoid processing the same event twice.
+- The projection reads `attempts` and the richer `exposure` field from `topic_mastery`. Before the fix below, its state adapter defaulted a missing/zero exposure to zero even when an older row already had recorded attempts.
+
+### Compatibility issue corrected in this branch
+
+A legacy `topic_mastery` row can have a positive `attempts` count while `exposure` is absent or still zero. The reducer interprets `exposure === 0` as “no prior evidence” and sets mastery to the latest evidence score. That could overwrite the established mastery baseline instead of blending the new observation with prior history.
+
+The branch now initializes the reducer's exposure from the stored attempt count when the richer exposure value is zero/missing. This is a narrow compatibility safeguard; it does not add a new table or scoring algorithm.
+
+**Verification status:** the source change has been committed to this PR branch, but automated tests, typecheck, lint, build, database replay, and browser checks have not been run from this connector. Do not merge or call the fix verified until those gates pass. A focused regression test should cover a legacy row with `attempts > 0` and `exposure = 0/null`, asserting that the next observation uses the historical 70/30 transition rather than resetting mastery to the latest evidence.
