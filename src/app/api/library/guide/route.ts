@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveVerifiedCurriculumPromptContext } from '@/lib/curriculum/ai-grounding'
 import { buildSyllabusGuide, type GuideKnowledgeItem } from '@/lib/cortex/syllabusGuide'
+import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
   const params = new URL(request.url).searchParams
   const subject = (params.get('subject') ?? '').trim().slice(0, 60)
   const topic = (params.get('topic') ?? '').trim().slice(0, 200)
+  if (!subject) return NextResponse.json({ error: 'subject required' }, { status: 400 })
   if (topic.length < 2) return NextResponse.json({ error: 'topic required' }, { status: 400 })
 
   try {
@@ -27,8 +29,13 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
 
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject)
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: 'SUBJECT_NOT_ALLOWED' }, { status: subjectAccess.status })
+    }
+
     // Same prompt shape the lesson generator uses, so identity and topic resolution behave identically.
-    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subject}\nmaster this request: "${topic}"`)
+    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subjectAccess.subject}\nmaster this request: "${topic}"`)
     if (resolved.status !== 'resolved' || !resolved.pack) {
       return NextResponse.json({ error: 'No verified syllabus is available for this topic' }, { status: 404 })
     }
