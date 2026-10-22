@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildKnowledgeGraph, rankNextTopics } from "@/lib/mastery/graph";
 import { generateStudyPlan, type StudyPlanInput } from "@/lib/studyPlan/generator";
 import type { StudyGoals } from "@/lib/studyPlan/types";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,12 @@ export async function GET() {
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (data && Array.isArray(data.subjects)) {
+      for (const subject of data.subjects) {
+        const access = await resolveLearnerSubject(supabase, user.id, subject);
+        if (!access.ok) return NextResponse.json({ plan: null, meta: null, stale: true, message: "Your selected subjects changed. Generate a new study plan for your current subjects." });
+      }
+    }
     return NextResponse.json({ plan: data?.plan ?? null, meta: data ?? null });
   } catch (err) {
     return NextResponse.json(
@@ -64,11 +71,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Choose between 1 and 30 subjects" }, { status: 400 });
     }
 
+    const canonicalSubjects: string[] = [];
+    for (const requested of [...new Set(subjects.map((value) => value.trim()))]) {
+      const access = await resolveLearnerSubject(supabase, user.id, requested);
+      if (!access.ok) return NextResponse.json({ error: access.error, code: "SUBJECT_NOT_ALLOWED" }, { status: access.status });
+      canonicalSubjects.push(access.subject);
+    }
+    const canonicalPriorities: string[] | undefined = prioritySubjects?.length
+      ? [...new Set(prioritySubjects.map((value) => value.trim()))].map((requested) => {
+          const matched = canonicalSubjects.find((subject) => subject.toLowerCase() === requested.toLowerCase());
+          return matched ?? "";
+        })
+      : undefined;
+    if (canonicalPriorities?.some((subject) => !subject)) {
+      return NextResponse.json({ error: "Priority subjects must be among your selected study-plan subjects." }, { status: 400 });
+    }
+
     const { data: masteryRows, error: masteryError } = await supabase
       .from("topic_mastery")
       .select("subject, topic, mastery_score, attempts, last_attempted")
       .eq("user_id", user.id)
-      .in("subject", subjects)
+      .in("subject", canonicalSubjects)
       .lt("mastery_score", 60);
 
     if (masteryError) {
@@ -84,7 +107,7 @@ export async function POST(request: NextRequest) {
       bySubject.set(row.subject, rows);
     }
 
-    for (const subject of subjects) {
+    for (const subject of canonicalSubjects) {
       const rows = bySubject.get(subject) ?? [];
       const graph = buildKnowledgeGraph(
         rows.map((row) => ({
@@ -103,8 +126,8 @@ export async function POST(request: NextRequest) {
       targetGrade,
       examDate,
       availableHoursPerWeek,
-      subjects,
-      prioritySubjects,
+      subjects: canonicalSubjects,
+      prioritySubjects: canonicalPriorities,
       topicHints,
     });
 
@@ -123,8 +146,8 @@ export async function POST(request: NextRequest) {
         target_grade: targetGrade,
         exam_date: examDate,
         available_hours_per_week: availableHoursPerWeek,
-        subjects,
-        priority_subjects: prioritySubjects ?? null,
+        subjects: canonicalSubjects,
+        priority_subjects: canonicalPriorities ?? null,
         plan,
         is_active: true,
       })
