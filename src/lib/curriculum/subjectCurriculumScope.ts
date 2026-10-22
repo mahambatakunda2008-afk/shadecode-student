@@ -28,3 +28,21 @@ export function selectExactCurriculumForSubject(
 
   return selected;
 }
+
+/**
+ * Match an explicit subject request to a selected curriculum identity. When a
+ * subject is supplied, callers must not silently fall back to the only other
+ * configured subject.
+ */
+export function selectCurriculumIdentityForRequestedSubject(
+  identities: StoredCurriculumIdentity[],
+  requestedSubject: string,
+): StoredCurriculumIdentity | null {
+  const requested = normalize(requestedSubject);
+  if (!requested) return null;
+
+  return identities.find((identity) =>
+    normalize(identity.subjectName) === requested ||
+    normalize(identity.subjectId) === requested
+  ) ?? null;
+}
