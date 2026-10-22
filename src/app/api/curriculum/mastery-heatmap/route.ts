@@ -39,7 +39,7 @@ export async function GET() {
 
     const catalogVersions = await readAllPages<any>((from, to) => supabase
       .from("curriculum_versions")
-      .select("id, syllabus_id, syllabus_version, qualification_id, subject_id, status")
+      .select("id, board_id, syllabus_id, syllabus_version, qualification_id, subject_id, status")
       .eq("status", "verified")
       .order("subject_id", { ascending: true })
       .range(from, to));
