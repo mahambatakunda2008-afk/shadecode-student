@@ -6,6 +6,7 @@ import { challengeFromResult } from '@/lib/challenge/fromResult'
 import { isDeterministicPaper, splitPaper } from '@/lib/challenge/serverMarking'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
+import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +138,9 @@ export async function GET(request: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: 'Sign in to open this subject challenge' }, { status: 401 })
+
   const { data, error } = await supabase
     .from('challenges')
     .select('*')
@@ -144,5 +148,9 @@ export async function GET(request: NextRequest) {
     .single()
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json(data)
+  const subjectAccess = await resolveLearnerSubject(supabase, user.id, data.subject)
+  if (!subjectAccess.ok) {
+    return NextResponse.json({ error: subjectAccess.error, code: 'SUBJECT_NOT_ALLOWED' }, { status: subjectAccess.status })
+  }
+  return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } })
 }
