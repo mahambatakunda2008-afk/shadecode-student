@@ -8,10 +8,11 @@ const resolver = vi.fn();
 
 vi.mock("@/lib/rate-limit/limiter", () => ({ applyRateLimit: async () => null, generalApiLimiter: {} }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: currentUser } }) } }) }));
-vi.mock("@/lib/academic/subjectAccess", () => ({ resolveLearnerSubject: async () => subjectResolution }));
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminRows === null ? null : ({ from: () => ({ select: () => ({ eq: () => ({ in: () => ({ limit: async () => ({ data: adminRows, error: null }) }) }) }) }) }),
 }));
+vi.mock("@/lib/academic/subjectAccess", () => ({ resolveLearnerSubject: async () => subjectResolution }));
+vi.mock("@/lib/cortex/enginePractice", () => ({ buildEnginePracticeBlocks: () => null, wrapPracticeLesson: (_subject: string, _topic: string, practice: unknown) => ({ title: "Worked practice: Quadratic equations", blocks: [{ type: "objective", content: "AI lesson generation is unavailable. Use these worked examples and practice." }, ...Array.from({ length: 9 }, (_, i) => ({ type: "practice", content: `Practice item ${i + 1}` } ), { type: "summary", content: "Review your working." }] }) }));
 vi.mock("@/lib/curriculum/ai-grounding", () => ({ resolveVerifiedCurriculumPromptContext: (...args: unknown[]) => { resolver(...args); return Promise.resolve(resolution); } }));
 
 import { GET } from "./route";
@@ -38,11 +39,11 @@ describe("GET /api/library/guide", () => {
   });
   it("404s when the learner has no verified syllabus for the topic", async () => {
     resolution = { status: "none", reason: "no curriculum" };
-    expect((await get("subject=Physics&topic=Waves")).status).toBe(404);
+    expect((await get("subject=Biology&topic=Photosynthesis")).status).toBe(404);
   });
   it("404s when the topic did not match a syllabus subsection", async () => {
     resolution = resolved([]);
-    expect((await get("subject=Physics&topic=Waves")).status).toBe(404);
+    expect((await get("subject=Biology&topic=Photosynthesis")).status).toBe(404);
   });
   it("builds a guide from the learner's own syllabus and uses the generator's prompt shape", async () => {
     const res = await get("subject=Physics&topic=Waves");
@@ -55,10 +56,43 @@ describe("GET /api/library/guide", () => {
   });
   it("404s rather than padding when the syllabus is too thin", async () => {
     adminRows = [row("content_scope", "scope|7.1", "7.1", "", "Only"), row("learning_outcome", "outcome|7.1|1", "7.1", "Describe one thing.")];
-    expect((await get("subject=Physics&topic=Waves")).status).toBe(404);
+    expect((await get("subject=Biology&topic=Photosynthesis")).status).toBe(404);
   });
-  it("still works from the resolved topic items if the admin client is unavailable (and 404s if that is too thin)", async () => {
+  it("404s if the admin client is unavailable and the topic items alone are too thin (no engine match)", async () => {
     adminRows = null;
-    expect((await get("subject=Physics&topic=Waves")).status).toBe(404);
+    expect((await get("subject=Biology&topic=Photosynthesis")).status).toBe(404);
+  });
+
+  it("adds computed worked examples and practice to the syllabus guide when the engine covers the topic", async () => {
+    const { lesson } = await (await get("subject=Physics&topic=Ohm%27s%20law%20and%20resistance")).json();
+    const types = lesson.blocks.map((b: { type: string }) => b.type);
+    expect(types).toContain("example");
+    expect(types).toContain("practice");
+    expect(lesson.blocks[0].content).toMatch(/worked examples and practice/i);
+  });
+
+  it("turns a thin syllabus topic into a real lesson when the engine supplies the practice", async () => {
+    adminRows = [row("content_scope", "scope|7.1", "7.1", "", "Only"), row("learning_outcome", "outcome|7.1|1", "7.1", "Describe one thing.")];
+    const res = await get("subject=Physics&topic=Ohm%27s%20law%20and%20resistance");
+    expect(res.status).toBe(200);
+    expect((await res.json()).lesson.blocks.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it("falls back to a practice-only lesson when no syllabus matches (e.g. ZIMSEC or no curriculum configured)", async () => {
+    resolution = { status: "none", reason: "no curriculum" };
+    const res = await get("subject=Mathematics&topic=Quadratic%20equations");
+    expect(res.status).toBe(200);
+    const { lesson } = await res.json();
+    expect(lesson.title).toBe("Worked practice: Quadratic equations");
+    expect(lesson.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson.blocks[0].type).toBe("objective");
+    expect(lesson.blocks[0].content).toMatch(/AI lesson generation is unavailable/);
+    expect(lesson.blocks.at(-1).type).toBe("summary");
+  });
+
+  it("still gives practice if the syllabus lookup throws", async () => {
+    resolver.mockImplementation(() => { throw new Error("db down"); });
+    const res = await get("subject=Mathematics&topic=Quadratic%20equations");
+    expect(res.status).toBe(200);
   });
 });
