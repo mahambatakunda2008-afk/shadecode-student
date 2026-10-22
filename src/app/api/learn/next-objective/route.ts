@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { normalizeStoredCurriculumIdentities } from "@/lib/curriculum/user-profile";
+import { selectExactCurriculumForSubject } from "@/lib/curriculum/subjectCurriculumScope";
 
 export const dynamic = "force-dynamic";
 
@@ -85,11 +86,7 @@ export async function GET(req: Request) {
     }
 
     const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
-    const stored = identities.find((identity) =>
-      normalize(identity.subjectName) === normalize(subject.name) ||
-      normalize(identity.subjectId) === normalize(subject.name) ||
-      normalize(identity.subjectId) === normalize(subject.id)
-    );
+    const stored = selectExactCurriculumForSubject(identities, subject.id, subject.name);
 
     // A learner's global profile fields are not a safe fallback for per-subject
     // curriculum identity: that could silently attach Physics' syllabus to Geography.
