@@ -1,1 +1,1 @@
-Cortex Verify rebuild CI trigger. Remove after verification if desired.
+Cortex Verify rebuild CI trigger. Subject-access audit pass: lesson library search/open/recovery/votes, challenge details, study-plan subjects, and whole-subject search matching. 2026-10-22.
