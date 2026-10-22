@@ -31,8 +31,12 @@ describe("search", () => {
     expect(search(index, "tourism marketing strategy")).toEqual([]);
   });
 
-  it("filters by subject and respects the limit", () => {
+  it("filters by whole subject identity and respects the limit", () => {
     expect(search(index, "rate of change", { subject: "physics" }).map((hit) => hit.id)).toEqual(["kinematics"]);
+    expect(search(index, "array pointer", { subject: "Science" })).toEqual([]);
+    expect(search(index, "array pointer", { subject: "Computer Science" }).map((hit) => hit.id)).toEqual(["binary"]);
+    const qualified = buildIndex([doc("as-physics", "Waves", "Wave motion and properties.", { subject: "Cambridge International AS Level Physics" })]);
+    expect(search(qualified, "wave motion", { subject: "Physics" }).map((hit) => hit.id)).toEqual(["as-physics"]);
     expect(search(index, "rate change velocity integration", { limit: 1 })).toHaveLength(1);
   });
 
