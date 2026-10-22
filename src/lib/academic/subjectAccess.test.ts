@@ -40,20 +40,20 @@ describe("resolveLearnerSubject", () => {
     const result = await resolveLearnerSubject(supabase, "learner-1", "Chemistry");
     expect(result).toMatchObject({ ok: false, status: 403 });
     expect(supabaseMock.from).toHaveBeenCalledTimes(1);
-    expect(supabase.from).toHaveBeenCalledWith("profiles");
+    expect(supabaseMock.from).toHaveBeenCalledWith("profiles");
   });
 
   it("requires onboarding subjects before granting access", async () => {
     profile.value = { subjects: [], onboarding_completed: true };
     const result = await resolveLearnerSubject(supabase, "learner-1", "Mathematics");
     expect(result).toMatchObject({ ok: false, status: 409 });
-    expect(supabase.from).toHaveBeenCalledTimes(1);
+    expect(supabaseMock.from).toHaveBeenCalledTimes(1);
   });
 
   it("rejects General even when it is requested as a subject", async () => {
     const result = await resolveLearnerSubject(supabase, "learner-1", "General");
     expect(result).toMatchObject({ ok: false, status: 403 });
-    expect(supabase.from).not.toHaveBeenCalled();
+    expect(supabaseMock.from).not.toHaveBeenCalled();
   });
 
   it("resolves case and separator variants to the learner's canonical subject", async () => {
