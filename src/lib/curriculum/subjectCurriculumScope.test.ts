@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectExactCurriculumForSubject } from "./subjectCurriculumScope";
+import { selectCurriculumIdentityForRequestedSubject, selectExactCurriculumForSubject } from "./subjectCurriculumScope";
 import type { StoredCurriculumIdentity } from "./user-profile";
 
 const physics: StoredCurriculumIdentity = {
@@ -36,5 +36,16 @@ describe("selectExactCurriculumForSubject", () => {
 
   it("supports the stored subject ID when the subject name is unavailable", () => {
     expect(selectExactCurriculumForSubject([physics], "physics", "Physics")?.syllabusId).toBe("9702");
+  });
+});
+
+describe("selectCurriculumIdentityForRequestedSubject", () => {
+  it("matches subject names and normalized subject IDs", () => {
+    expect(selectCurriculumIdentityForRequestedSubject([physics, geography], "Computer Science")).toBeNull();
+    expect(selectCurriculumIdentityForRequestedSubject([physics, geography], "GEOGRAPHY")?.subjectId).toBe("geography");
+  });
+
+  it("does not fall back to the only configured curriculum for another requested subject", () => {
+    expect(selectCurriculumIdentityForRequestedSubject([physics], "Geography")).toBeNull();
   });
 });
