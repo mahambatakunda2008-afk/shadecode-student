@@ -354,7 +354,7 @@ export default function LearnPageResilient() {
           </aside>
         </div>
 
-        <div className="mt-6"><ShadeNetKnowledgeSearch /></div>
+        <div className="mt-6"><ShadeNetKnowledgeSearch subjects={subjects.map((item) => ({ id: item.id, name: item.name }))} /></div>
 
         {generationJob && <section className={`mt-6 rounded-[22px] border p-4 sm:p-5 ${generationJob.status === "failed" ? "border-rose-500/25 bg-rose-500/[0.045]" : "border-[var(--primary)]/30 bg-[var(--surface)] dark:bg-[var(--surface)]"}`} role={generationJob.status === "failed" ? "alert" : "status"} aria-live="polite">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
