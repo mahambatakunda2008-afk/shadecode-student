@@ -103,6 +103,20 @@ describe("buildSyllabusGuide", () => {
     expect(guide.blocks.find((b) => b.type === "concept")!.title).toMatch(/^Official name/);
   });
 
+  it("counts real extra blocks toward the floor and updates the honesty note", () => {
+    const thin = [scope("1.1", "Only"), scope("1.2", "Second"), outcome("1.1", 1, "Describe the structure of a cell."), outcome("1.2", 1, "State the function of the nucleus.")];
+    const base = { subject: "Maths", topic: "Quadratics", matchedTopicCodes: ["1.1"], items: thin };
+    expect(buildSyllabusGuide(base)).toBeNull();
+    const extra = Array.from({ length: 6 }, (_, i) => ({ type: "example", title: `Worked example ${i + 1}`, content: `A real computed worked example number ${i + 1} with full working.` }));
+    const guide = buildSyllabusGuide({ ...base, extraBlocks: extra })!;
+    expect(guide.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(guide.blocks[0].content).toMatch(/worked examples and practice with answers/i);
+    expect(guide.blocks[0].content).not.toMatch(/no worked examples/i);
+    const idx = guide.blocks.findIndex((b) => b.type === "example");
+    expect(idx).toBeGreaterThan(0);
+    expect(guide.blocks[guide.blocks.length - 2].type).toBe("exam");
+  });
+
   it("caps the guide at six subsections", () => {
     const many: GuideKnowledgeItem[] = [];
     for (let i = 1; i <= 9; i++) { many.push(scope(`3.${i}`, `Sub ${i}`)); for (let n = 1; n <= 3; n++) many.push(outcome(`3.${i}`, n, `Describe the idea number ${n} in subsection ${i} of this chapter.`)); }
