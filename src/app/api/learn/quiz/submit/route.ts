@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     const objectiveKeys = Array.isArray(lesson.curriculum_objective_keys)
       ? lesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0) : [];
     if (!lesson.curriculum_version_id || objectiveKeys.length === 0) {
-      return NextResponse.json({ verified: true, curriculumTracked: false, score, correctCount, questionCount,
+      return NextResponse.json({ verified: true, curriculumTracked: false, score, correctCount, questionCount, questions,
         reason: "CURRICULUM_UNVERIFIED",
         message: "This quiz was marked against its server-owned answer key, but no verified curriculum mastery was recorded." });
     }
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Quiz marked, but mastery could not be saved. This attempt cannot be resubmitted.",
         verified: true, curriculumTracked: false, score, correctCount, questionCount, retryable: false }, { status: 500 });
     }
-    return NextResponse.json({ verified: true, curriculumTracked: true, score, correctCount, questionCount, mastery: data });
+    return NextResponse.json({ verified: true, curriculumTracked: true, score, correctCount, questionCount, questions, mastery: data });
   } catch (error) {
     console.error("Quiz submission error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
