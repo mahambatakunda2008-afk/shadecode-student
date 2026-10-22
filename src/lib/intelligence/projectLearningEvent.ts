@@ -7,7 +7,7 @@ import {
 import { learningEventToObservation } from "@/lib/intelligence/learningObservation";
 import type { LearningEvent } from "@/lib/intelligence/learningEvents";
 
-function rowToLearningState(row: Record<string, unknown> | null) {
+export function mapTopicMasteryRowToLearningState(row: Record<string, unknown> | null) {
   if (!row) return null;
   return {
     topicId: String(row.topic),
@@ -97,7 +97,7 @@ export async function projectLearningEvent(
       .maybeSingle();
     if (readError) throw readError;
 
-    const previous = rowToLearningState(existing as Record<string, unknown> | null);
+    const previous = mapTopicMasteryRowToLearningState(existing as Record<string, unknown> | null);
     const base = previous ?? createInitialLearningState(topicId);
     const next = reduceLearningObservation(base, observation);
     const evidenceScore = observation.evidenceScore ?? (observation.correct ? 100 : 0);
