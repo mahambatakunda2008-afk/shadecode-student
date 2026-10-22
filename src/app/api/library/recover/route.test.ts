@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 let currentUser: { id: string } | null = { id: "u1" };
 let selectedSubjects: Array<{ id: string; name: string }> = [{ id: "math-id", name: "Mathematics" }];
-const loadLibrary = vi.fn();
-const recoverLesson = vi.fn();
+const { loadLibrary, recoverLesson } = vi.hoisted(() => ({
+  loadLibrary: vi.fn(),
+  recoverLesson: vi.fn(),
+}));
 
 vi.mock("@/lib/rate-limit/limiter", () => ({ applyRateLimit: async () => null, generalApiLimiter: {} }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: currentUser }, error: null }) } }) }));
