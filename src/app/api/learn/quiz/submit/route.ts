@@ -76,8 +76,14 @@ export async function POST(req: Request) {
     });
     if (error) {
       console.error("Curriculum assessment recording error:", error);
-      return NextResponse.json({ error: "Quiz marked, but mastery could not be saved. This attempt cannot be resubmitted.",
-        verified: true, curriculumTracked: false, score, correctCount, questionCount, retryable: false }, { status: 500 });
+      // The quiz score is already verified and the session is consumed. Return the
+      // verified result as success, while clearly separating the mastery-save failure.
+      // A 500 here makes the client hide a valid score and incorrectly call it unverified.
+      return NextResponse.json({
+        verified: true, curriculumTracked: false, score, correctCount, questionCount, questions,
+        warning: "Your quiz score was verified, but syllabus mastery could not be saved. This attempt cannot be resubmitted.",
+        retryable: false,
+      });
     }
     return NextResponse.json({ verified: true, curriculumTracked: true, score, correctCount, questionCount, questions, mastery: data });
   } catch (error) {
