@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { assertRequestedLearnerSubject, resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,30 @@ export async function GET(
 
     if (paperError || !paper) {
       return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+    }
+
+    // This endpoint issues a signed storage URL, so enforce subject access
+    // before generating one. Catalog IDs must not bypass onboarding choices.
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json(
+        { error: "Choose your subjects in onboarding before opening past papers.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 409 },
+      );
+    }
+
+    const { data: syllabus, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id, subject")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+
+    if (syllabusError) throw syllabusError;
+    if (!syllabus || !assertRequestedLearnerSubject(learner.subjects, syllabus.subject)) {
+      return NextResponse.json(
+        { error: "That paper is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 403 },
+      );
     }
 
     const { data: signed, error: signedError } = await supabase.storage
