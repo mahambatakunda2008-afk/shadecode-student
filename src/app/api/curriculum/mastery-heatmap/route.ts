@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 1000;
@@ -25,13 +27,32 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) return NextResponse.json({ syllabi: [] });
+
     const versions = await readAllPages<any>((from, to) => supabase
       .from("curriculum_versions")
       .select("id, syllabus_id, syllabus_version, qualification_id, subject_id, status")
       .eq("status", "verified")
       .order("subject_id", { ascending: true })
       .range(from, to));
-    const versionIds = versions.map(v => v.id);
+    if (!versions.length) return NextResponse.json({ syllabi: [] });
+
+    // Curriculum versions can contain every subject in the shared catalog.
+    // Resolve their syllabus names and only expose versions for this learner's
+    // currently selected subjects before reading any objective rows.
+    const syllabusIds = [...new Set(versions.map(version => version.syllabus_id).filter(Boolean))];
+    const { data: syllabusRows, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id, subject")
+      .in("id", syllabusIds);
+    if (syllabusError) throw syllabusError;
+
+    const allowedSyllabusIds = new Set((syllabusRows ?? [])
+      .filter(syllabus => isAllowedSubject(syllabus.subject, learner.subjects.map(subject => subject.name)))
+      .map(syllabus => syllabus.id));
+    const allowedVersions = versions.filter(version => allowedSyllabusIds.has(version.syllabus_id));
+    const versionIds = allowedVersions.map(version => version.id);
     if (!versionIds.length) return NextResponse.json({ syllabi: [] });
 
     const [objectives, progress] = await Promise.all([
