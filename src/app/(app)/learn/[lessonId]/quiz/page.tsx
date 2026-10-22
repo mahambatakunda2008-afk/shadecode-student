@@ -232,6 +232,8 @@ export default function QuizPage() {
           </div>
         </div>
 
+        {verifiedResult ? (
+          <>
         {/* Per-question breakdown */}
         <h3 style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>
           Question Breakdown
@@ -270,6 +272,9 @@ export default function QuizPage() {
             );
           })}
         </div>
+
+          </>
+        ) : <p style={{ color: "var(--muted-foreground)", fontSize: 13, margin: "0 0 24px" }}>Answer review is unavailable because the server could not verify this attempt.</p>}
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
