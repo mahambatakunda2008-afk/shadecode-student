@@ -57,7 +57,13 @@ export async function POST(req: Request) {
         reason: "CURRICULUM_UNVERIFIED",
         message: "This quiz was marked against its server-owned answer key, but no verified curriculum mastery was recorded." });
     }
-    const { data, error } = await supabase.rpc("record_curriculum_assessment_result", {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!anonKey) throw new Error("Missing Supabase public credentials.");
+    const userScoped = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+    const { data, error } = await userScoped.rpc("record_curriculum_assessment_result", {
       p_user_id: user.id, p_curriculum_version_id: lesson.curriculum_version_id,
       p_objective_keys: objectiveKeys, p_score: score, p_correct_count: correctCount,
       p_question_count: questionCount, p_lesson_id: lesson.id,
