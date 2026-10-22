@@ -23,22 +23,23 @@ function queryFor(table: string) {
   return query;
 }
 
-const supabase = {
+const supabaseMock = {
   from: vi.fn((table: string) => queryFor(table)),
-} as never;
+};
+const supabase = supabaseMock as unknown as Parameters<typeof resolveLearnerSubject>[0];
 
 describe("resolveLearnerSubject", () => {
   beforeEach(() => {
     profile.value = { subjects: ["Mathematics", "Physics"], onboarding_completed: true };
     subjectRows.value = [{ id: "math-id", name: "Mathematics" }];
     lookupError.value = null;
-    (supabase as { from: ReturnType<typeof vi.fn> }).from.mockClear();
+    supabaseMock.from.mockClear();
   });
 
   it("fails closed for a subject absent from the learner profile", async () => {
     const result = await resolveLearnerSubject(supabase, "learner-1", "Chemistry");
     expect(result).toMatchObject({ ok: false, status: 403 });
-    expect(supabase.from).toHaveBeenCalledTimes(1);
+    expect(supabaseMock.from).toHaveBeenCalledTimes(1);
     expect(supabase.from).toHaveBeenCalledWith("profiles");
   });
 
