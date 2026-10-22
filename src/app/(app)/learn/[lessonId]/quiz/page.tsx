@@ -15,7 +15,7 @@ interface QuizQuestion {
   id: number;
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
   explanation: string;
 }
 
@@ -97,8 +97,7 @@ export default function QuizPage() {
 
     const q = questions[current];
     if (!q) return;
-    // Per-question correctness is client-visible for feedback, but is not trusted
-    // as persisted mastery evidence. The final score comes from /api/learn/quiz/submit.
+    // Answer keys stay server-side during the quiz. Feedback is revealed after submission.
   }
 
   async function next() {
@@ -118,6 +117,7 @@ export default function QuizPage() {
         });
         const result = await response.json();
         if (response.ok && result?.verified === true && Number.isInteger(result.correctCount) && Number.isInteger(result.questionCount)) {
+          if (Array.isArray(result.questions) && result.questions.length === questions.length) setQuestions(result.questions);
           setVerifiedResult({ score: result.score, correctCount: result.correctCount, questionCount: result.questionCount, verified: true, curriculumTracked: result.curriculumTracked === true });
           const completion = buildQuizCompletionEvidence({
             quizAttemptId: quizAttemptIdRef.current,
@@ -287,7 +287,7 @@ export default function QuizPage() {
   // ── Quiz ─────────────────────────────────────────────────────────────────
 
   if (!q) return null;
-  const isCorrectAnswer = selected === q.correctIndex;
+  const isCorrectAnswer = q.correctIndex !== undefined && selected === q.correctIndex;
   const progressPct     = (current / questions.length) * 100;
 
   return (
@@ -334,8 +334,9 @@ export default function QuizPage() {
               let color  = "var(--muted-foreground)";
 
               if (confirmed) {
-                if (i === q.correctIndex)                             { bg = "rgba(52,211,153,0.12)";  border = "rgba(52,211,153,0.4)";  color = "#34d399"; }
-                else if (i === selected && selected !== q.correctIndex) { bg = "rgba(248,113,113,0.12)"; border = "rgba(248,113,113,0.4)"; color = "var(--danger)"; }
+                if (q.correctIndex !== undefined && i === q.correctIndex) { bg = "rgba(52,211,153,0.12)"; border = "rgba(52,211,153,0.4)"; color = "#34d399"; }
+                else if (q.correctIndex !== undefined && i === selected && selected !== q.correctIndex) { bg = "rgba(248,113,113,0.12)"; border = "rgba(248,113,113,0.4)"; color = "var(--danger)"; }
+                else if (i === selected) { bg = "rgba(113,140,83,0.15)"; border = "rgba(113,140,83,0.5)"; color = "#c4dc87"; }
               } else if (selected === i) {
                 bg = "rgba(113,140,83,0.15)"; border = "rgba(113,140,83,0.5)"; color = "#c4dc87";
               }
@@ -347,8 +348,8 @@ export default function QuizPage() {
                     {["A", "B", "C", "D"][i]}
                   </div>
                   <span style={{ fontSize: 14, lineHeight: 1.5, fontWeight: (selected === i || (confirmed && i === q.correctIndex)) ? 600 : 400 }}>{opt}</span>
-                  {confirmed && i === q.correctIndex && <CheckCircle2 size={16} color="#34d399" style={{ marginLeft: "auto", flexShrink: 0 }} />}
-                  {confirmed && i === selected && selected !== q.correctIndex && <XCircle size={16} color="var(--danger)" style={{ marginLeft: "auto", flexShrink: 0 }} />}
+                  {confirmed && q.correctIndex !== undefined && i === q.correctIndex && <CheckCircle2 size={16} color="#34d399" style={{ marginLeft: "auto", flexShrink: 0 }} />}
+                  {confirmed && q.correctIndex !== undefined && i === selected && selected !== q.correctIndex && <XCircle size={16} color="var(--danger)" style={{ marginLeft: "auto", flexShrink: 0 }} />}
                 </button>
               );
             })}
@@ -356,11 +357,13 @@ export default function QuizPage() {
 
           {/* Explanation after confirm */}
           {confirmed && (
-            <div style={{ borderRadius: 14, padding: "14px 16px", background: isCorrectAnswer ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)", border: `1px solid ${isCorrectAnswer ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, marginBottom: 20, animation: "fadeUp .2s ease" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: isCorrectAnswer ? "#34d399" : "var(--danger)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
-                {isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
+            <div style={{ borderRadius: 14, padding: "14px 16px", background: q.correctIndex === undefined ? "var(--surface-2)" : isCorrectAnswer ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)", border: `1px solid ${q.correctIndex === undefined ? "var(--card-border)" : isCorrectAnswer ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, marginBottom: 20, animation: "fadeUp .2s ease" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: q.correctIndex === undefined ? "var(--muted-foreground)" : isCorrectAnswer ? "#34d399" : "var(--danger)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
+                {q.correctIndex === undefined ? "Answer saved" : isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
               </p>
-              <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{q.explanation}</p>
+              <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>
+                {q.correctIndex === undefined ? "The correct answer and explanation will appear in your results after the final question." : q.explanation}
+              </p>
             </div>
           )}
 
@@ -381,7 +384,8 @@ export default function QuizPage() {
           <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 24 }}>
             {questions.map((_, i) => {
               let bg = "var(--card-border)";
-              if (i < answers.length) bg = answers[i] === questions[i].correctIndex ? "#34d399" : "var(--danger)";
+              if (i < answers.length && questions[i]?.correctIndex !== undefined) bg = answers[i] === questions[i].correctIndex ? "#34d399" : "var(--danger)";
+              else if (i < answers.length) bg = "var(--muted-foreground)";
               else if (i === current) bg = "#718c53";
               return <div key={i} style={{ width: i === current ? 22 : 8, height: 8, borderRadius: 999, background: bg, transition: "all .3s" }} />;
             })}
