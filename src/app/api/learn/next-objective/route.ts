@@ -124,10 +124,10 @@ export async function GET(req: Request) {
         reason: "CURRICULUM_UNVERIFIED",
         message: "This exact curriculum is not verified in Shadecode yet. No syllabus-specific objective will be invented.",
         subject: subject.name,
-        board: boardId,
-        qualification: qualificationId,
-        syllabus: syllabusId,
-        version: syllabusVersion,
+        board: stored.boardId,
+        qualification: stored.qualificationId,
+        syllabus: stored.syllabusId,
+        version: stored.syllabusVersion,
       });
     }
 
