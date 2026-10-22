@@ -15,14 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = await createSupabaseServerClient()
-    const { data, error } = await supabase
-      .from('lesson_library')
-      .select('id, title, topic, subject, difficulty, blocks, helpful_up, helpful_down')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    if (!data) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
-
+    // Authenticate and establish eligibility before reading lesson content.
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: 'Sign in to open lessons' }, { status: 401 })
 
@@ -30,6 +23,14 @@ export async function GET(request: NextRequest) {
     if (learner.subjects.length === 0) {
       return NextResponse.json({ error: 'Choose your subjects in onboarding before opening lessons', code: 'SUBJECT_NOT_ALLOWED' }, { status: 409 })
     }
+
+    const { data, error } = await supabase
+      .from('lesson_library')
+      .select('id, title, topic, subject, difficulty, blocks, helpful_up, helpful_down')
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    if (!data) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
     if (!assertRequestedLearnerSubject(learner.subjects, data.subject)) {
       return NextResponse.json({ error: 'That lesson is not available for your selected subjects', code: 'SUBJECT_NOT_ALLOWED' }, { status: 403 })
     }
