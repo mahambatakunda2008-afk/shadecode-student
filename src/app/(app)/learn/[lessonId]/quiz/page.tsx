@@ -214,13 +214,13 @@ export default function QuizPage() {
           <div style={{ width: 68, height: 68, borderRadius: "50%", background: pct >= 80 ? "rgba(251,191,36,0.15)" : "rgba(113,140,83,0.15)", border: `2px solid ${pct >= 80 ? "rgba(251,191,36,0.35)" : "rgba(139,92,246,0.35)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
             <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#c4dc87"} />
           </div>
-          <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Quiz Complete</p>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{verifiedResult ? "Quiz Complete" : "Answers Submitted"}</p>
           <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{verifiedResult ? `${pct}%` : "—"}</h1>
-          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{grade.label}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{verifiedResult ? grade.label : "Awaiting verification"}</p>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24 }}>
             {[
-              { val: `${correctCount}/${questions.length}`, label: "Correct",  color: "#34d399" },
+              { val: verifiedResult ? `${correctCount}/${questions.length}` : "—", label: "Correct", color: "#34d399" },
               { val: verifiedResult ? `+${earnedXP}` : "—", label: "XP Earned", color: "#fbbf24" },
               { val: verifiedResult ? `${questions.length - correctCount}` : "—", label: "Missed", color: "var(--danger)" },
             ].map((s, i) => (
