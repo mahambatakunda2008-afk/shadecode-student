@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
+import { resolveLearnerSubjects, assertRequestedLearnerSubject } from '@/lib/subjects/resolveLearnerSubjects'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,16 @@ export async function GET(request: NextRequest) {
     if (error) throw error
     if (!data) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return NextResponse.json({ error: 'Sign in to open lessons' }, { status: 401 })
+
+    const learner = await resolveLearnerSubjects(supabase as never, user.id)
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({ error: 'Choose your subjects in onboarding before opening lessons', code: 'SUBJECT_NOT_ALLOWED' }, { status: 409 })
+    }
+    if (!assertRequestedLearnerSubject(learner.subjects, data.subject)) {
+      return NextResponse.json({ error: 'That lesson is not available for your selected subjects', code: 'SUBJECT_NOT_ALLOWED' }, { status: 403 })
+    }
     const { data: vote } = user
       ? await supabase.from('lesson_votes').select('helpful').eq('lesson_id', id).eq('user_id', user.id).maybeSingle()
       : { data: null }
