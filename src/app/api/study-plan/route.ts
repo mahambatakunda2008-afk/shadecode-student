@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
     const targetGrade = body.targetGrade as StudyGoals["targetGrade"];
     const examDate = body.examDate as string;
     const availableHoursPerWeek = Number(body.availableHoursPerWeek);
-    const subjects = Array.isArray(body.subjects) ? body.subjects.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0) : [];
-    const prioritySubjects = Array.isArray(body.prioritySubjects)
-      ? body.prioritySubjects.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
+    const subjects: string[] = Array.isArray(body.subjects) ? (body.subjects as unknown[]).filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0) : [];
+    const prioritySubjects: string[] | undefined = Array.isArray(body.prioritySubjects)
+      ? (body.prioritySubjects as unknown[]).filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
       : undefined;
 
     if (!targetGrade || !VALID_GRADES.includes(targetGrade)) {
