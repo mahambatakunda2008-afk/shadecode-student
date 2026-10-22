@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resetLibraryCache } from '@/lib/library/store'
+import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,19 @@ export async function POST(request: NextRequest) {
     const helpful: unknown = body?.helpful
     if (typeof id !== 'string' || !/^[0-9a-f-]{8,64}$/i.test(id) || typeof helpful !== 'boolean') {
       return NextResponse.json({ error: 'Invalid vote' }, { status: 400 })
+    }
+
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lesson_library')
+      .select('subject')
+      .eq('id', id)
+      .maybeSingle()
+    if (lessonError) throw lessonError
+    if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
+
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, lesson.subject)
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: 'SUBJECT_NOT_ALLOWED' }, { status: subjectAccess.status })
     }
 
     const { error } = await supabase.from('lesson_votes').upsert({ user_id: user.id, lesson_id: id, helpful }, { onConflict: 'user_id,lesson_id' })
