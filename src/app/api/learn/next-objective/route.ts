@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 
@@ -67,20 +68,29 @@ export async function GET(req: Request) {
       .maybeSingle();
     if (profileError) return NextResponse.json({ error: "Unable to resolve academic context." }, { status: 500 });
 
-    const subjectsQuery = supabase.from("subjects").select("id, name").eq("user_id", user.id);
-    const { data: subjects, error: subjectsError } = await subjectsQuery;
-    if (subjectsError) return NextResponse.json({ error: "Unable to resolve subject." }, { status: 500 });
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({
+        available: false,
+        reason: "SUBJECT_REQUIRED",
+        message: "Choose your subjects in onboarding before asking for the next curriculum objective.",
+      });
+    }
 
+    // Use the canonical onboarding subject list, not every legacy row in
+    // public.subjects. Stale subjects must not unlock curriculum objectives.
     const subject = requestedSubjectId
-      ? (subjects ?? []).find((item) => item.id === requestedSubjectId)
-      : (subjects ?? [])[0];
+      ? learner.subjects.find((item) => item.id === requestedSubjectId)
+      : learner.subjects[0];
 
     if (!subject) {
       return NextResponse.json({
         available: false,
-        reason: "SUBJECT_REQUIRED",
-        message: "Choose a subject before asking for the next curriculum objective.",
-      });
+        reason: requestedSubjectId ? "SUBJECT_NOT_ALLOWED" : "SUBJECT_REQUIRED",
+        message: requestedSubjectId
+          ? "That subject is not among your currently selected subjects."
+          : "Choose a subject before asking for the next curriculum objective.",
+      }, { status: requestedSubjectId ? 403 : 409 });
     }
 
     const storedSubjects = Array.isArray(profile?.curriculum_subjects) ? profile.curriculum_subjects : [];
