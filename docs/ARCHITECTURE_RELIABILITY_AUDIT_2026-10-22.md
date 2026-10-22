@@ -227,3 +227,77 @@ Rate each dimension only after collecting evidence, and publish the score with i
 6. Recalculate the scorecard from evidence, publishing unknowns and negative results as well as positive results.
 
 A school-licensing or telecom partnership is a hypothesis to validate, not an assumed solution. Do not pursue zero-rating or institutional integrations until buyer interest, economics, operational capacity, and privacy requirements are better understood.
+
+
+## Sustainable monetization and distribution strategy
+
+### Strategic thesis
+
+Do not make a recurring student subscription the only route to sustainability. In markets where household disposable income and access to online payments are constrained, individual monthly payments may create a barrier before the product has demonstrated enough value. Treat institutional licensing, sponsored cohorts, paid physical/teaching products, and optional telecom distribution as experiments to validate. Keep a useful core learning experience free while proving learning value and retention.
+
+This is a strategic hypothesis, not evidence that any buyer, sponsor, or telecom operator has agreed to pay. No revenue, contract, zero-rating arrangement, or partnership should be described as secured until documented.
+
+### Proposed model portfolio, ordered by validation priority
+
+| Model | Primary payer | Potential offer | Why it may fit | Main risks / proof required |
+|---|---|---|---|---|
+| **1. School licensing (B2B)** | School or school network | Shadecode Student access plus selected SCS workflows, teacher-facing reporting, onboarding and support | One institutional buyer may fund access for a whole cohort; schools already coordinate learning and communication | Long sales cycle; school budgets and fee rules vary; implementation/support burden; privacy and consent; schools may not want bundled products. Validate with buyer interviews and a paid pilot before pricing at scale. |
+| **2. Corporate/NGO-sponsored access** | Corporate CSR/ESG programme, foundation, NGO, donor | Sponsored seats for defined schools/cohorts, with anonymized and aggregated impact reporting | Can fund access for learners who cannot pay directly | Grant cycles and renewals are uncertain; reporting must be credible; sponsor influence and branding must not compromise teaching or student privacy. Do not sell identifiable student performance/recruitment data. |
+| **3. Free core plus print and teaching add-ons** | Parents, students, schools | Print-ready revision packs, worksheets, teacher-reviewed past-paper packs, workshops or bootcamps | Families may value a tangible, clearly scoped product more than a generic app subscription | Printing, distribution, moderation and instructor time create real costs; exam-content licensing/copyright must be checked; digital access must not be deliberately crippled to force purchases. Pilot small batches and measure contribution margin. |
+| **4. Telecom distribution / micro-bundles** | Telecom operator, student via approved billing, or both | Sponsored/discounted data, educational bundles, or airtime billing where the operator supports it | Could reduce data/payment friction and make discovery easier | Requires operator approval, commercial terms, technical integration, support, and regulatory review. Zero-rating is not something Shadecode can enable alone. Treat all price points and partner examples as illustrative, not negotiated offers. |
+| **5. Optional individual payment** | Student/parent | Clearly optional premium services, where they add real value | Simple to test with a small segment and useful for learning willingness-to-pay | Should not be the sole sustainability plan or exclude learners from core practice; payment methods and affordability vary. |
+
+The models can coexist. Start with the ones that can be tested without major engineering or capital expenditure. Do not build telecom billing or a full school enterprise suite before securing credible buyer interest.
+
+### School + SCS bundling: boundaries before build
+
+A bundle may be commercially compelling, but Shadecode Student and Shadecode SCS serve different users and handle different data. Keep permissions, roles, data retention, and product responsibilities explicit.
+
+Before any pilot:
+- Identify the actual buyer, school decision-maker, daily users, and the specific problem the school is paying to solve.
+- Define which SCS functions are included and which Student features are included; do not promise a complete suite that has not been built and tested.
+- Separate student learning records from communication/administrative records unless a documented purpose and permission justify a link.
+- Use least-privilege access, school-scoped authorization, auditability, retention/deletion rules, and appropriate parent/learner notices and consent.
+- Report learning trends at an appropriate aggregate level; do not expose private student conversations or turn uncertain mastery estimates into high-stakes decisions.
+- Pilot with a small cohort, track teacher workload and student outcomes, and agree on support and exit/export procedures.
+
+The suggested `$10–$15 per learner per year` is only a pricing hypothesis. Test it against real school budgets, what is already covered by ICT fees, willingness to pay, implementation cost, and the value actually delivered. Do not assume schools can or will add it to mandatory fees.
+
+### Sponsored access: measurable impact without surveillance
+
+Offer sponsors a defined, time-limited cohort and a transparent impact report: seats activated, study sessions completed, syllabus areas practised, completion/failure rates, and carefully designed learning checks where feasible. Publish definitions and limitations. Use aggregated/de-identified reporting by default, suppress small groups where re-identification is possible, and never promise direct access to identifiable learner scores, private activity, or a recruitment pipeline built from minors' data. Sponsor branding must be modest and must not influence curriculum, assessment, or student recommendations.
+
+### Low-cost AI and infrastructure economics
+
+The target is not literally “zero cost”; it is **predictable, low cost per successful learning task**, with no paid API required for basic offline functionality. Follow the existing offline-cost policy:
+- Prefer deterministic local tools for calculations, checking, structured workflows, and known syllabus content when they can do the job reliably.
+- Cache versioned, reusable explanations and common curriculum resources where licensing permits; do not treat different student contexts as identical merely because prompts look similar.
+- Route only tasks that need generative reasoning to a model; set timeouts, bounded retries, budgets, and a deterministic recovery path.
+- Make offline progress durable and sync idempotent when connectivity returns; never imply a cloud-only operation has succeeded while it is pending.
+- Evaluate smaller open-weight models on representative syllabus tasks for correctness, latency, memory use, hardware requirements, redistribution licence, and total hosting cost before selecting or fine-tuning one.
+- Do not promise that an open-source model or a regional VPS is free. Hardware, hosting, monitoring, updates, safety evaluation, and support all cost money.
+- Measure cost per successful completed lesson/check/session, not only cost per API request. Include failed generations and retries.
+
+### Phased validation plan
+
+**Phase A: near-zero-cost discovery**
+1. Interview 8–12 school decision-makers across different school types, without treating this small sample as representative.
+2. Ask about current communication/reporting pain, existing ICT allocations, purchasing authority, approval cycles, student device/connectivity constraints, and budget ranges.
+3. Show a concise demo of working features only. Record objections and what a buyer would need to see before paying.
+4. Offer a narrowly scoped pilot with clear boundaries; seek a real budget signal rather than relying only on compliments.
+
+**Phase B: prove utility and delivery**
+1. Run a small learner cohort and measure activation, successful study tasks, completion failures, repeat use, and learning checks.
+2. Record teacher setup/support time and the full cost of delivering the pilot.
+3. Test one paid print/workshop offer with actual pre-orders or purchases before investing in inventory.
+4. Draft one sponsor proposal using defensible metrics and privacy-safe reporting.
+
+**Phase C: economics and scale gate**
+- Calculate annual cost per active learner and cost per successful learning task, including support, hosting, model use, payments, printing, and onboarding.
+- Calculate school contribution margin at several tested price points; distinguish revenue from cash actually collected.
+- Proceed to a larger rollout only if there is evidence of continued use, a credible payer, acceptable privacy/safeguarding controls, and sustainable delivery cost.
+- Pursue telecom integration only after an operator or aggregator confirms a feasible route, commercial terms, and technical requirements.
+
+### Decision rule
+
+The near-term priority is **prove that learners reliably benefit, then prove who will pay for that benefit**. The likely starting portfolio is free core student access + a small school/SCS discovery pilot + a tightly scoped print/workshop experiment. Sponsored access is a parallel funding path. Telecom micro-bundling remains a later partnership-dependent option. Optional B2C payments can be tested, but must not be assumed to carry the business alone.
