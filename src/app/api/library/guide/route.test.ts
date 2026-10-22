@@ -12,7 +12,6 @@ vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminRows === null ? null : ({ from: () => ({ select: () => ({ eq: () => ({ in: () => ({ limit: async () => ({ data: adminRows, error: null }) }) }) }) }) }),
 }));
 vi.mock("@/lib/academic/subjectAccess", () => ({ resolveLearnerSubject: async () => subjectResolution }));
-vi.mock("@/lib/cortex/enginePractice", () => ({ buildEnginePracticeBlocks: () => null, wrapPracticeLesson: (_subject: string, _topic: string, _practice: unknown) => ({ title: "Worked practice: Quadratic equations", blocks: Array.from({ length: 10 }, (_, i) => ({ type: i === 0 ? "objective" : i === 9 ? "summary" : "practice", content: i === 0 ? "AI lesson generation is unavailable. Use these worked examples and practice." : `Practice item ${i + 1}` })) }) }));
 vi.mock("@/lib/curriculum/ai-grounding", () => ({ resolveVerifiedCurriculumPromptContext: (...args: unknown[]) => { resolver(...args); return Promise.resolve(resolution); } }));
 
 import { GET } from "./route";
