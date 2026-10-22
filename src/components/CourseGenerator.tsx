@@ -1,15 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function CourseGenerator() {
   const [topic, setTopic] = useState("");
   const [goal, setGoal] = useState("");
   const [level, setLevel] = useState("beginner");
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [subject, setSubject] = useState("");
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/learn", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error ?? "Could not load your subjects.");
+        const available = Array.isArray(payload.subjects)
+          ? payload.subjects.filter((item: any) => typeof item?.id === "string" && typeof item?.name === "string")
+          : [];
+        if (!cancelled) {
+          setSubjects(available);
+          setSubject((current) => available.some((item: { id: string; name: string }) => item.name === current) ? current : (available[0]?.name ?? ""));
+        }
+      })
+      .catch(() => { if (!cancelled) setSubjects([]); })
+      .finally(() => { if (!cancelled) setSubjectsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   async function handleSubmit(e: any) {
     e.preventDefault();
+    if (!subject) { setResult({ error: "Choose one of your configured subjects before generating a course." }); return; }
     setLoading(true);
     setResult(null);
     try {
@@ -31,25 +54,33 @@ export default function CourseGenerator() {
   }
 
   async function handleSave() {
-    if (!confirm('Save generated course into your account?')) return;
+    if (!subject) { setResult({ error: "Choose one of your configured subjects before saving this course." }); return; }
+    if (!confirm("Save this course under " + subject + "?")) return;
     setLoading(true);
     try {
       // Send edited draft to save endpoint
       const res = await fetch('/api/learn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'course_save', topic, goal, level, draft: result.preview }),
+        body: JSON.stringify({ type: "course_save", topic, goal, level, subject, draft: result.preview }),
       });
       const data = await res.json();
+      if (!res.ok || data?.success !== true) throw new Error(data?.error ?? "Course could not be saved.");
       setResult({ saved: data });
     } catch (err) {
-      setResult({ error: 'Save failed' });
+      setResult({ error: err instanceof Error ? err.message : "Save failed" });
     } finally { setLoading(false); }
   }
 
   return (
     <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow-sm max-w-lg mx-auto">
       <h3 className="text-lg font-semibold mb-2">Generate AI Course</h3>
+      <label className="block mb-2">Subject
+        <select value={subject} onChange={(e) => setSubject(e.target.value)} disabled={subjectsLoading || subjects.length === 0} className="w-full mt-1 p-2 border rounded">
+          {subjects.length === 0 ? <option value="">No configured subjects found</option> : subjects.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+        </select>
+        {subjects.length === 0 && !subjectsLoading && <span className="block mt-1 text-xs text-red-600">Choose subjects in your learner profile before generating a course.</span>}
+      </label>
       <label className="block mb-2">Topic
         <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., Learn Python" className="w-full mt-1 p-2 border rounded" />
       </label>
@@ -63,7 +94,7 @@ export default function CourseGenerator() {
           <option value="advanced">Advanced</option>
         </select>
       </label>
-      <button disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? 'Generating...' : 'Generate Course'}</button>
+      <button disabled={loading || subjectsLoading || !subject} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? 'Generating...' : 'Generate Course'}</button>
 
       {result?.preview && (
         <div className="mt-4">
