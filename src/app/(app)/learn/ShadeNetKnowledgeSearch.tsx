@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { BookOpen, Search, Wifi, WifiOff } from "lucide-react";
 import { createHttpKnowledgeSource } from "@/lib/shadenet/source-adapters";
@@ -24,6 +24,10 @@ export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<KnowledgeRetrievalResult | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!subjects.some((item) => item.name === subject)) setSubject(subjects[0]?.name ?? "");
+  }, [subjects, subject]);
 
   const onlineSource = useMemo(() => {
     if (!INDEX_URL) return undefined;
