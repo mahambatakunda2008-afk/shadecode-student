@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectCurriculumIdentityForRequestedSubject, selectExactCurriculumForSubject } from "./subjectCurriculumScope";
+import { extractExplicitSubjectFromPrompt, selectCurriculumIdentityForRequestedSubject, selectExactCurriculumForSubject } from "./subjectCurriculumScope";
 import type { StoredCurriculumIdentity } from "./user-profile";
 
 const physics: StoredCurriculumIdentity = {
@@ -47,5 +47,17 @@ describe("selectCurriculumIdentityForRequestedSubject", () => {
 
   it("does not fall back to the only configured curriculum for another requested subject", () => {
     expect(selectCurriculumIdentityForRequestedSubject([physics], "Geography")).toBeNull();
+  });
+});
+
+describe("extractExplicitSubjectFromPrompt", () => {
+  it("reads the generated Subject header without requiring exact capitalization", () => {
+    expect(extractExplicitSubjectFromPrompt("Subject: Physics\nTopic: Waves")).toBe("Physics");
+    expect(extractExplicitSubjectFromPrompt("  subject : Computer Science\nTopic: Algorithms")).toBe("Computer Science");
+  });
+
+  it("returns null when there is no explicit subject header", () => {
+    expect(extractExplicitSubjectFromPrompt("Learn about Geography")).toBeNull();
+    expect(extractExplicitSubjectFromPrompt("Subject:   \nTopic: Waves")).toBeNull();
   });
 });
