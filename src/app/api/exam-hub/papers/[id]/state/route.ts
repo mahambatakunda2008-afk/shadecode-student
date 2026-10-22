@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mergePaperScoreHistory, parsePaperStatePatch } from "@/lib/exam-hub/paperStatePatch";
+import { assertRequestedLearnerSubject, resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,36 @@ export async function POST(
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
     const patch = parsed.patch as Record<string, unknown>;
+
+    // Do not let a stale/direct paper ID update another subject's state or
+    // feed an unrelated score into the learner's Cortex subject signals.
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json(
+        { error: "Choose your subjects in onboarding before updating past papers.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 409 },
+      );
+    }
+    const { data: paper, error: paperError } = await supabase
+      .from("past_papers")
+      .select("id, syllabus_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (paperError) throw paperError;
+    if (!paper) return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+
+    const { data: syllabus, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id, subject")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+    if (syllabusError) throw syllabusError;
+    if (!syllabus || !assertRequestedLearnerSubject(learner.subjects, syllabus.subject)) {
+      return NextResponse.json(
+        { error: "That paper is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 403 },
+      );
+    }
 
     const { data, error } = await supabase
       .from("user_past_paper_state")
