@@ -53,6 +53,8 @@ export default function QuizPage() {
 
   const [phase,       setPhase]       = useState<Phase>("loading");
   const [questions,   setQuestions]   = useState<QuizQuestion[]>([]);
+  const [quizId, setQuizId] = useState<string>("");
+  const [verifiedResult, setVerifiedResult] = useState<{ score: number; correctCount: number; questionCount: number; verified: boolean; curriculumTracked: boolean } | null>(null);
   const [current,     setCurrent]     = useState(0);
   const [selected,    setSelected]    = useState<number | null>(null);
   const [answers,     setAnswers]     = useState<number[]>([]);
@@ -83,7 +85,7 @@ export default function QuizPage() {
           body: JSON.stringify({ lessonId }),
         });
         const qd = await qr.json();
-        if (qd?.questions?.length) { setQuestions(qd.questions); setPhase("quiz"); }
+        if (qd?.questions?.length && typeof qd.quizId === "string") { setQuestions(qd.questions); setQuizId(qd.quizId); setPhase("quiz"); }
         else { setErrMsg("Couldn't generate quiz questions. Please try again."); setPhase("error"); }
       } catch { setErrMsg("Something went wrong. Please try again."); setPhase("error"); }
     })();
@@ -95,19 +97,11 @@ export default function QuizPage() {
 
     const q = questions[current];
     if (!q) return;
-    const result = {
-      questionId: q.id,
-      correct: selected === q.correctIndex,
-      score: selected === q.correctIndex ? 100 : 0,
-      maxScore: 100,
-      percentage: selected === q.correctIndex ? 100 : 0,
-      questionIndex: current,
-    };
-    const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result]);
-    if (event) void emitLearningEvent(event);
+    // Per-question correctness is client-visible for feedback, but is not trusted
+    // as persisted mastery evidence. The final score comes from /api/learn/quiz/submit.
   }
 
-  function next() {
+  async function next() {
     if (selected === null) return;
     const newAnswers = [...answers, selected];
     setAnswers(newAnswers);
@@ -118,26 +112,57 @@ export default function QuizPage() {
     } else {
       const finalCorrectCount = newAnswers.filter((a, i) => a === questions[i]?.correctIndex).length;
       const finalPercentage = questions.length > 0 ? Math.round((finalCorrectCount / questions.length) * 100) : 0;
-      const completion = buildQuizCompletionEvidence({
-        quizAttemptId: quizAttemptIdRef.current,
-        lessonId,
-        percentage: finalPercentage,
-        questionCount: questions.length,
-        correctCount: finalCorrectCount,
-      });
-      void emitLearningEvent(completion);
+      try {
+        const response = await fetch("/api/learn/quiz/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ quizId, answers: newAnswers.map(selectedIndex => ({ selectedIndex })) }),
+        });
+        const result = await response.json();
+        if (response.ok && result?.verified === true && Number.isInteger(result.correctCount) && Number.isInteger(result.questionCount)) {
+          setVerifiedResult({ score: result.score, correctCount: result.correctCount, questionCount: result.questionCount, verified: true, curriculumTracked: result.curriculumTracked === true });
+          const completion = buildQuizCompletionEvidence({
+            quizAttemptId: quizAttemptIdRef.current,
+            lessonId,
+            percentage: result.score,
+            questionCount: result.questionCount,
+            correctCount: result.correctCount,
+          });
+          void emitLearningEvent(completion);
+        } else {
+          setVerifiedResult(null);
+          setErrMsg(result?.error ?? "Your answers were recorded locally, but the score could not be verified. Syllabus mastery was not updated.");
+        }
+      } catch {
+        setVerifiedResult(null);
+        setErrMsg("The score could not be verified because the connection failed. Syllabus mastery was not updated.");
+      }
       setPhase("results");
     }
   }
 
-  function restart() {
-    quizAttemptIdRef.current = createQuizAttemptId();
-    setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
+  async function restart() {
+    if (!token) return;
+    setPhase("generating");
+    try {
+      const response = await fetch("/api/learn/quiz", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lessonId }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.questions?.length || typeof data.quizId !== "string") throw new Error(data?.error ?? "Could not create a new quiz.");
+      quizAttemptIdRef.current = createQuizAttemptId();
+      setQuizId(data.quizId); setQuestions(data.questions); setVerifiedResult(null); setErrMsg("");
+      setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
+    } catch (error) {
+      setErrMsg(error instanceof Error ? error.message : "Could not create a new quiz.");
+      setPhase("error");
+    }
   }
 
   const q             = questions[current];
-  const correctCount  = answers.filter((a, i) => a === questions[i]?.correctIndex).length;
-  const pct           = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+  const correctCount  = verifiedResult?.correctCount ?? answers.filter((a, i) => a === questions[i]?.correctIndex).length;
+  const pct           = verifiedResult?.score ?? (questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0);
   const grade         = gradeInfo(pct);
   const earnedXP      = xpForScore(correctCount, questions.length);
 
@@ -183,6 +208,8 @@ export default function QuizPage() {
         <Link href={`/learn/${lessonId}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none", marginBottom: 28 }}>
           <ArrowLeft size={14} /> Back to lesson
         </Link>
+
+        {verifiedResult ? <p style={{ color: verifiedResult.curriculumTracked ? "#34d399" : "var(--muted-foreground)", fontSize: 12, margin: "0 0 14px" }}>{verifiedResult.curriculumTracked ? "Score verified and syllabus mastery updated." : "Score verified. This lesson is not linked to verified curriculum objectives, so syllabus mastery was not changed."}</p> : <p style={{ color: "var(--danger)", fontSize: 12, margin: "0 0 14px" }}>{errMsg || "Score not verified. Syllabus mastery was not updated."}</p>}
 
         {/* Score hero */}
         <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), var(--card)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
