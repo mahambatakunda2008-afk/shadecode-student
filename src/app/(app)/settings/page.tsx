@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
+  Heart,
   LogOut,
   MessageSquare,
   Monitor,
@@ -263,8 +264,9 @@ export default function Settings() {
         <ShadeNetSettingsCard />
       </section>
 
-      <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-3">
+      <section aria-label="More settings" className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         <ActionCard icon={<MessageSquare size={22} aria-hidden="true" />} title="Send feedback" description="Report a bug or suggest an improvement." onClick={() => router.push("/feedback")} />
+        <ActionCard icon={<Heart size={22} aria-hidden="true" />} title="Support Shadecode" description="Contribute voluntarily to help keep learning accessible." onClick={() => router.push("/support")} />
         <InfoCard
           icon={<Shield size={22} aria-hidden="true" />}
           title={isBeyond ? "Workspace details" : isFoundation ? "Learning space details" : "Study space details"}
