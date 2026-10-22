@@ -15,7 +15,10 @@ function rowToLearningState(row: Record<string, unknown> | null) {
     retention: Number(row.retention) || 0,
     confidence: Number(row.confidence) || 0,
     stability: Number(row.stability) || 0,
-    exposure: Number(row.exposure) || 0,
+    // Older topic_mastery rows may predate the richer exposure field. Preserve
+    // their recorded attempt history so the reducer does not mistake an
+    // established topic for a first-ever observation and reset its baseline.
+    exposure: Number(row.exposure) || Number(row.attempts) || 0,
     errorRate: Number(row.error_rate) || 0,
     responseSpeed: Number(row.response_speed) || 0,
     prerequisiteHealth: Number(row.prerequisite_health) || 0,
