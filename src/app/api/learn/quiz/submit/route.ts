@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
+import { markLessonQuiz } from "@/lib/learn/quiz-marking";
 export const dynamic = "force-dynamic";
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,18 +38,9 @@ export async function POST(req: Request) {
     }
     const questions = Array.isArray(session.questions) ? session.questions : [];
     if (!questions.length || answers.length !== questions.length) return NextResponse.json({ error: "Submit one answer for each question" }, { status: 400 });
-    const selectedIndexes: number[] = [];
-    for (const answer of answers) {
-      const value = answer && typeof answer === "object" ? (answer as { selectedIndex?: unknown }).selectedIndex : null;
-      if (!Number.isInteger(value) || (value as number) < 0 || (value as number) > 3) return NextResponse.json({ error: "Invalid answer selection" }, { status: 400 });
-      selectedIndexes.push(value as number);
-    }
-    const correctCount = questions.reduce((count: number, question: any, index: number) => {
-      const key = question && typeof question.correctIndex === "number" ? question.correctIndex : -1;
-      return count + (selectedIndexes[index] === key ? 1 : 0);
-    }, 0);
-    const questionCount = questions.length;
-    const score = Math.round((correctCount / questionCount) * 10000) / 100;
+    const marked = markLessonQuiz(questions, answers);
+    if (!marked) return NextResponse.json({ error: "Invalid answer selection or quiz answer key" }, { status: 400 });
+    const { correctCount, questionCount, score } = marked;
     const { data: lesson, error: lessonError } = await supabase.from("learn_lessons")
       .select("id, curriculum_version_id, curriculum_objective_keys")
       .eq("id", session.lesson_id).eq("user_id", user.id).maybeSingle();
