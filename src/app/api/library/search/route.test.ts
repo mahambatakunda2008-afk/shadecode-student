@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 let currentUser: { id: string } | null = { id: "u1" };
 let selectedSubjects: Array<{ id: string; name: string }> = [{ id: "math-id", name: "Mathematics" }];
-const loadLibrary = vi.fn();
-const search = vi.fn();
-const bestSnippet = vi.fn();
+const { loadLibrary, search, bestSnippet } = vi.hoisted(() => ({
+  loadLibrary: vi.fn(),
+  search: vi.fn(),
+  bestSnippet: vi.fn(),
+}));
 
 vi.mock("@/lib/rate-limit/limiter", () => ({ applyRateLimit: async () => null, generalApiLimiter: {} }));
 vi.mock("@/lib/supabase/server", () => ({
