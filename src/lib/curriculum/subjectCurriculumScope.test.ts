@@ -52,12 +52,12 @@ describe("selectCurriculumIdentityForRequestedSubject", () => {
 
 describe("extractExplicitSubjectFromPrompt", () => {
   it("reads the generated Subject header without requiring exact capitalization", () => {
-    expect(extractExplicitSubjectFromPrompt("Subject: Physics\nTopic: Waves")).toBe("Physics");
+    expect(extractExplicitSubjectFromPrompt("Intent: teach\nRequested topic: Waves\nSubject: Physics\nTopic: Waves")).toBe("Physics");
     expect(extractExplicitSubjectFromPrompt("  subject : Computer Science\nTopic: Algorithms")).toBe("Computer Science");
   });
 
   it("returns null when there is no explicit subject header", () => {
-    expect(extractExplicitSubjectFromPrompt("Learn about Geography")).toBeNull();
+    expect(extractExplicitSubjectFromPrompt("Intent: teach\nRequested topic: Geography")).toBeNull();
     expect(extractExplicitSubjectFromPrompt("Subject:   \nTopic: Waves")).toBeNull();
   });
 });
