@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Subject and topic are required." }, { status: 400 });
     }
 
-    const context = await buildLearnerBrainContext(supabase, user.id, subject, topic);
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject);
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
+    }
+
+    const context = await buildLearnerBrainContext(supabase, user.id, subjectAccess.subject, topic);
     return NextResponse.json({ context, available: Boolean(context) }, {
       headers: { "Cache-Control": "private, no-store, max-age=0" },
     });
@@ -55,10 +61,14 @@ export async function POST(req: Request) {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) return NextResponse.json({ accepted: false }, { status: 503 });
     const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+    const subjectAccess = await resolveLearnerSubject(admin, user.id, subject);
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
+    }
     await rememberLearnerSignal(admin, user.id, {
-      subject,
+      subject: subjectAccess.subject,
       topic,
-      topic_key: normalizeLearnerTopic(subject, topic),
+      topic_key: normalizeLearnerTopic(subjectAccess.subject, topic),
       event_type: "lesson_opened",
       outcome: "opened",
       metadata: { source: "lesson_view" },
