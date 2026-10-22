@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SESSIONS_BY_BOARD } from "@/lib/exam-hub/types";
+import { assertRequestedLearnerSubject, resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,16 @@ export async function POST(request: Request) {
     const paperNumber = Number(formData.get("paperNumber"));
     const variant = Number(formData.get("variant"));
     const kind = String(formData.get("kind") ?? "").trim();
+
+    if (!syllabusId) return NextResponse.json({ error: "Choose a syllabus from your selected subjects." }, { status: 400 });
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (!learner.subjects.length) return NextResponse.json({ error: "Choose your subjects in onboarding before contributing a paper.", code: "SUBJECT_NOT_ALLOWED" }, { status: 409 });
+    const { data: syllabusRow, error: syllabusError } = await supabase.from("syllabi").select("id, subject").eq("id", syllabusId).maybeSingle();
+    if (syllabusError) return NextResponse.json({ error: "Could not verify the syllabus." }, { status: 500 });
+    if (!syllabusRow) return NextResponse.json({ error: "Syllabus not found." }, { status: 404 });
+    if (!assertRequestedLearnerSubject(learner.subjects, syllabusRow.subject)) {
+      return NextResponse.json({ error: "That syllabus is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    }
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Missing file" }, { status: 400 });
