@@ -8,12 +8,14 @@ import type { LessonBlock, Snippet } from "@/lib/library/bm25";
 type Result = { id: string; title: string; subject: string | null; difficulty: string | null; snippet: Snippet | null; helpful: { up: number; down: number } };
 type Lesson = { id: string; title: string; subject: string | null; difficulty: string | null; blocks: LessonBlock[]; helpful_up: number; helpful_down: number };
 type Phase = "idle" | "loading" | "done" | "error";
+type LearnerSubject = { id: string; name: string };
 
 const card = "rounded-2xl border border-white/10 bg-[var(--card)] shadow-lg";
 const button = "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-white/5 disabled:opacity-60";
 
-export default function LibraryHub() {
+export default function LibraryHub({ subjects }: { subjects: LearnerSubject[] }) {
   const [query, setQuery] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState(subjects[0]?.name ?? "");
   const [phase, setPhase] = useState<Phase>("idle");
   const [results, setResults] = useState<Result[]>([]);
   const [asked, setAsked] = useState("");
@@ -24,11 +26,11 @@ export default function LibraryHub() {
 
   const runSearch = useCallback(async () => {
     const text = query.trim();
-    if (text.length < 2) return;
+    if (text.length < 2 || !selectedSubject) return;
     setPhase("loading");
     setNotice(null);
     try {
-      const response = await fetch(`/api/library/search?q=${encodeURIComponent(text)}`);
+      const response = await fetch(`/api/library/search?q=${encodeURIComponent(text)}&subject=${encodeURIComponent(selectedSubject)}`);
       const data = (await response.json()) as { results?: Result[] };
       if (!response.ok) throw new Error("search failed");
       setResults(data.results ?? []);
@@ -37,7 +39,7 @@ export default function LibraryHub() {
     } catch {
       setPhase("error");
     }
-  }, [query]);
+  }, [query, selectedSubject]);
 
   async function open(id: string) {
     setOpening(id);
@@ -106,13 +108,15 @@ export default function LibraryHub() {
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">Search lessons other students have worked through. Instant, and it works even when AI is unavailable.</p>
       </header>
 
-      <form role="search" onSubmit={(event) => { event.preventDefault(); void runSearch(); }} className="flex gap-2">
+      {subjects.length === 0 ? <p role="status" className={`${card} mt-4 p-5 text-sm text-[var(--muted-foreground)]`}>Choose your academic subjects in your profile before searching the lesson library.</p> : <form role="search" onSubmit={(event) => { event.preventDefault(); void runSearch(); }} className="flex flex-wrap gap-2">
         <label htmlFor="library-search" className="sr-only">Search the lesson library</label>
+        <label htmlFor="library-subject" className="sr-only">Subject</label>
+        <select id="library-subject" value={selectedSubject} onChange={(event) => { setSelectedSubject(event.target.value); setResults([]); setPhase("idle"); }} className="h-11 w-full rounded-xl border border-white/10 bg-[var(--card)] px-3 text-sm text-[var(--foreground)]">{subjects.map((subject) => <option key={subject.id} value={subject.name}>{subject.name}</option>)}</select>
         <input id="library-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. how does binary search work" maxLength={200} className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-[var(--card)] px-4 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]" />
-        <button type="submit" disabled={phase === "loading" || query.trim().length < 2} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-sm font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-60">
+        <button type="submit" disabled={phase === "loading" || query.trim().length < 2 || !selectedSubject} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--primary)] px-5 text-sm font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-60">
           {phase === "loading" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Search className="size-4" aria-hidden />} Search
         </button>
-      </form>
+      </form>}
 
       {notice && <p role="alert" className="mt-3 text-sm text-[var(--danger)]">{notice}</p>}
       {phase === "error" && <p role="alert" className="mt-4 text-sm text-[var(--danger)]">The library is unavailable right now. Please try again.</p>}
