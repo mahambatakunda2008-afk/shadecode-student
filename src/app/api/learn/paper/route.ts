@@ -229,11 +229,24 @@ export async function GET(req: Request) {
     const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,mime_type,source_size_bytes,page_count,selected_page_start,selected_page_end,status,source_metadata,pages,learning_plan,progress,created_at,updated_at").eq("id", id).eq("user_id", auth.user.id).maybeSingle();
     if (error) return NextResponse.json({ error: "Couldn't load the paper session." }, { status: 500 });
     if (!data) return NextResponse.json({ error: "Paper session not found." }, { status: 404 });
+    // Ownership alone is not enough: selected subjects can change after a
+    // session is created. Gate before returning source pages or answers.
+    let learner;
+    try { learner = await resolveLearnerSubjects(auth.supabase, auth.user.id); }
+    catch { return NextResponse.json({ error: "Could not verify your academic subjects." }, { status: 500 }); }
+    if (!learner.subjects.length) return NextResponse.json({ error: "Choose your academic subjects before opening this paper session.", code: "SUBJECTS_REQUIRED" }, { status: 409 });
+    if (!isAllowedSubject((data.learning_plan as Plan | null)?.subject, learner.subjects.map(subject => subject.name))) {
+      return NextResponse.json({ error: "This paper session is not available for your selected subjects.", code: "SUBJECT_NOT_SELECTED" }, { status: 403 });
+    }
     return NextResponse.json({ ...data, learning_plan: safePlan(data.learning_plan as Plan) });
   }
   const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,page_count,selected_page_start,selected_page_end,status,learning_plan,progress,created_at,updated_at").eq("user_id", auth.user.id).order("updated_at", { ascending: false }).limit(20);
   if (error) return NextResponse.json({ error: "Couldn't load paper sessions." }, { status: 500 });
-  return NextResponse.json({ sessions: (data ?? []).map(session => ({ ...session, learning_plan: safePlan(session.learning_plan as Plan) })) });
+  let allowedNames: string[];
+  try { allowedNames = (await resolveLearnerSubjects(auth.supabase, auth.user.id)).subjects.map(subject => subject.name); }
+  catch { return NextResponse.json({ error: "Could not verify your academic subjects." }, { status: 500 }); }
+  const visibleSessions = (data ?? []).filter(session => isAllowedSubject((session.learning_plan as Plan | null)?.subject, allowedNames));
+  return NextResponse.json({ sessions: visibleSessions.map(session => ({ ...session, learning_plan: safePlan(session.learning_plan as Plan) })) });
 }
 
 export async function POST(req: Request) {
