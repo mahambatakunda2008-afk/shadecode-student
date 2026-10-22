@@ -5,42 +5,27 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveVerifiedCurriculumPromptContext } from '@/lib/curriculum/ai-grounding'
 import { buildSyllabusGuide, type GuideKnowledgeItem } from '@/lib/cortex/syllabusGuide'
+import { buildEnginePracticeBlocks, wrapPracticeLesson } from '@/lib/cortex/enginePractice'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * AI-free recovery lesson: when every AI provider is down, build a syllabus study guide for the learner's
- * own verified syllabus. Built only from official learning outcomes (no model, no invented content), and
- * 404 when the syllabus gives too little for an honest guide.
- */
-export async function GET(request: NextRequest) {
-  const limited = await applyRateLimit(request, generalApiLimiter)
-  if (limited) return limited
 
-  const params = new URL(request.url).searchParams
-  const subject = (params.get('subject') ?? '').trim().slice(0, 60)
-  const topic = (params.get('topic') ?? '').trim().slice(0, 200)
-  if (topic.length < 2) return NextResponse.json({ error: 'topic required' }, { status: 400 })
+function respond(lesson: { title: string; blocks: unknown[] }) {
+  return NextResponse.json({ lesson: { title: lesson.title, blocks: lesson.blocks, source: 'ai-free-recovery' } }, { headers: { 'Cache-Control': 'private, no-store' } })
+}
 
+async function tryBuildSyllabusGuide(input: { userId: string; subject: string; topic: string; extraBlocks?: Array<{ type: string; title: string; content: string }> }) {
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
-
     // Same prompt shape the lesson generator uses, so identity and topic resolution behave identically.
-    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subject}\nmaster this request: "${topic}"`)
-    if (resolved.status !== 'resolved' || !resolved.pack) {
-      return NextResponse.json({ error: 'No verified syllabus is available for this topic' }, { status: 404 })
-    }
+    const resolved = await resolveVerifiedCurriculumPromptContext(input.userId, `${input.subject}\nmaster this request: "${input.topic}"`)
+    if (resolved.status !== 'resolved' || !resolved.pack) return null
     const { pack } = resolved
 
     const topicItems: GuideKnowledgeItem[] = pack.knowledge.map((item) => ({
       kind: item.kind, code: item.code, title: item.title, content: item.content, topicCode: item.topicCode,
     }))
     const matchedTopicCodes = [...new Set(topicItems.map((item) => item.topicCode).filter((code): code is string => Boolean(code)))]
-    if (!matchedTopicCodes.length) {
-      return NextResponse.json({ error: 'This topic did not match a syllabus subsection' }, { status: 404 })
-    }
+    if (!matchedTopicCodes.length) return null
 
     // Widen to the rest of the syllabus chapter so a narrow topic still yields a useful guide.
     let items = topicItems
@@ -56,11 +41,43 @@ export async function GET(request: NextRequest) {
         items = data.map((row) => ({ kind: row.kind, code: row.knowledge_key, title: row.title, content: row.content, topicCode: row.topic_key }))
       }
     }
+    return buildSyllabusGuide({ subject: pack.subject || input.subject, topic: resolved.resolvedTopic || input.topic, matchedTopicCodes, items, extraBlocks: input.extraBlocks })
+  } catch (error) {
+    console.error('[library/guide] syllabus guide unavailable', error)
+    return null
+  }
+}
 
-    const guide = buildSyllabusGuide({ subject: pack.subject || subject, topic: resolved.resolvedTopic || topic, matchedTopicCodes, items })
-    if (!guide) return NextResponse.json({ error: 'Not enough syllabus detail for an honest guide on this topic' }, { status: 404 })
+/**
+ * AI-free recovery lesson: when every AI provider is down, build (1) a syllabus study guide from the learner's own
+ * verified syllabus plus worked examples/practice from the question engine, or (2) engine practice alone when no
+ * syllabus matches. No model, no invented content; 404 when there is not enough for an honest lesson.
+ */
+export async function GET(request: NextRequest) {
+  const limited = await applyRateLimit(request, generalApiLimiter)
+  if (limited) return limited
 
-    return NextResponse.json({ lesson: { title: guide.title, blocks: guide.blocks, source: 'syllabus-guide' } }, { headers: { 'Cache-Control': 'private, no-store' } })
+  const params = new URL(request.url).searchParams
+  const subject = (params.get('subject') ?? '').trim().slice(0, 60)
+  const topic = (params.get('topic') ?? '').trim().slice(0, 200)
+  if (topic.length < 2) return NextResponse.json({ error: 'topic required' }, { status: 400 })
+
+  try {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
+
+    // Worked examples and practice from the question engine: independent of any syllabus data or AI provider.
+    const practice = buildEnginePracticeBlocks(subject, topic)
+
+    // Syllabus guide from the learner's verified syllabus, when one exists for this topic.
+    const guide = await tryBuildSyllabusGuide({ userId: user.id, subject, topic, extraBlocks: practice?.blocks })
+    if (guide) return respond(guide)
+
+    // No syllabus match (e.g. ZIMSEC, or no curriculum configured): a practice-only lesson still works.
+    if (practice) return respond(wrapPracticeLesson(subject, topic, practice))
+
+    return NextResponse.json({ error: 'Not enough syllabus detail or practice material for an honest lesson on this topic' }, { status: 404 })
   } catch (error) {
     console.error('[library/guide]', error)
     return NextResponse.json({ error: 'The syllabus guide is unavailable', retryable: true }, { status: 503 })
