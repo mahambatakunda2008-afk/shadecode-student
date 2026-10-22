@@ -58,7 +58,7 @@ export default function ShadeNetKnowledgeSearch() {
     <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-5 sm:p-6" aria-labelledby="shadenet-search-title">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]">
-          <BookOpen size={21} aria-hidden="true" />
+          <BookOpen size={22} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
           <h2 id="shadenet-search-title" className="text-lg font-semibold">Knowledge search</h2>
@@ -100,11 +100,11 @@ export default function ShadeNetKnowledgeSearch() {
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-2)] px-2.5 py-1">
-          <WifiOff size={13} aria-hidden="true" /> Local search, AI not required
+          <WifiOff size={14} aria-hidden="true" /> Local search, AI not required
         </span>
         {onlineSource ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-2)] px-2.5 py-1">
-            <Wifi size={13} aria-hidden="true" /> Approved online index configured
+            <Wifi size={14} aria-hidden="true" /> Approved online index configured
           </span>
         ) : (
           <span>Online index not configured</span>
