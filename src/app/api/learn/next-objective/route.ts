@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { normalizeStoredCurriculumIdentities } from "@/lib/curriculum/user-profile";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export async function GET(req: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("curriculum_board, qualification, syllabus_code, syllabus_year, education_stage, curriculum_subjects")
+      .select("education_stage, curriculum_subjects")
       .eq("id", user.id)
       .maybeSingle();
     if (profileError) return NextResponse.json({ error: "Unable to resolve academic context." }, { status: 500 });
@@ -83,25 +84,21 @@ export async function GET(req: Request) {
       });
     }
 
-    const storedSubjects = Array.isArray(profile?.curriculum_subjects) ? profile.curriculum_subjects : [];
-    const stored = storedSubjects.find((item: any) => {
-      if (!item || typeof item !== "object") return false;
-      const subjectName = normalize(item.subjectName ?? item.name);
-      const subjectId = normalize(item.subjectId ?? item.id);
-      return subjectName === normalize(subject.name) || subjectId === normalize(subject.id);
-    }) as Record<string, unknown> | undefined;
+    const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
+    const stored = identities.find((identity) =>
+      normalize(identity.subjectName) === normalize(subject.name) ||
+      normalize(identity.subjectId) === normalize(subject.name) ||
+      normalize(identity.subjectId) === normalize(subject.id)
+    );
 
-    const boardId = String(stored?.boardId ?? profile?.curriculum_board ?? "").trim();
-    const qualificationId = String(stored?.qualificationId ?? stored?.qualification ?? profile?.qualification ?? "").trim();
-    const syllabusId = String(stored?.syllabusId ?? stored?.syllabusCode ?? profile?.syllabus_code ?? "").trim();
-    const syllabusVersion = String(stored?.syllabusVersion ?? stored?.year ?? profile?.syllabus_year ?? "").trim();
-    const subjectId = String(stored?.subjectId ?? "").trim() || normalize(subject.name);
-
-    if (!boardId || !qualificationId || !syllabusId || !syllabusVersion) {
+    // A learner's global profile fields are not a safe fallback for per-subject
+    // curriculum identity: that could silently attach Physics' syllabus to Geography.
+    if (!stored?.boardId || !stored.qualificationId || !stored.syllabusId ||
+        !stored.syllabusVersion || !stored.subjectId) {
       return NextResponse.json({
         available: false,
         reason: "CURRICULUM_NOT_SELECTED",
-        message: "Your exact exam board, qualification, syllabus and version are not fully selected yet.",
+        message: "Choose the exact board, qualification, syllabus and version for this subject before selecting objectives.",
         subject: subject.name,
       });
     }
@@ -109,15 +106,19 @@ export async function GET(req: Request) {
     const { data: versions, error: versionError } = await supabase
       .from("curriculum_versions")
       .select("id, board_id, qualification_id, syllabus_id, syllabus_version, subject_id, effective_from, effective_to, status")
-      .eq("board_id", boardId)
-      .eq("qualification_id", qualificationId)
-      .eq("syllabus_id", syllabusId)
-      .eq("syllabus_version", syllabusVersion)
+      .eq("board_id", stored.boardId)
+      .eq("qualification_id", stored.qualificationId)
+      .eq("syllabus_id", stored.syllabusId)
+      .eq("syllabus_version", stored.syllabusVersion)
       .eq("status", "verified");
     if (versionError) return NextResponse.json({ error: "Unable to resolve verified curriculum." }, { status: 500 });
 
     const version = (versions ?? []).find((item) =>
-      normalize(item.subject_id) === normalize(subjectId) || normalize(item.subject_id) === normalize(subject.name)
+      normalize(item.board_id) === normalize(stored.boardId) &&
+      normalize(item.qualification_id) === normalize(stored.qualificationId) &&
+      normalize(item.syllabus_id) === normalize(stored.syllabusId) &&
+      normalize(item.syllabus_version) === normalize(stored.syllabusVersion) &&
+      normalize(item.subject_id) === normalize(stored.subjectId)
     );
 
     if (!version) {
