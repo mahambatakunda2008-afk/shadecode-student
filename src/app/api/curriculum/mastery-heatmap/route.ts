@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeStoredCurriculumIdentities } from "@/lib/curriculum/user-profile";
+import { filterHeatmapVersionsForLearner } from "@/lib/curriculum/heatmapScope";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 1000;
@@ -25,12 +27,23 @@ export async function GET() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const versions = await readAllPages<any>((from, to) => supabase
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("curriculum_subjects")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profileError) throw profileError;
+
+    const learnerCurricula = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
+    if (!learnerCurricula.length) return NextResponse.json({ syllabi: [] });
+
+    const catalogVersions = await readAllPages<any>((from, to) => supabase
       .from("curriculum_versions")
       .select("id, syllabus_id, syllabus_version, qualification_id, subject_id, status")
       .eq("status", "verified")
       .order("subject_id", { ascending: true })
       .range(from, to));
+    const versions = filterHeatmapVersionsForLearner(catalogVersions, learnerCurricula);
     const versionIds = versions.map(v => v.id);
     if (!versionIds.length) return NextResponse.json({ syllabi: [] });
 
