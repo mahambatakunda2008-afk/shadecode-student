@@ -50,7 +50,7 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
   if (!identities.length) return { status: "none", promptContext: "", reason: "No learner board, level and subject curriculum selection is configured." };
 
-  const explicitSubject = prompt.match(/^\s*subject\s*:\s*([^\n]+)/i)?.[1]?.trim();
+  const explicitSubject = extractExplicitSubjectFromPrompt(prompt);
   const normalizedPrompt = prompt.toLowerCase();
   const identity = explicitSubject
     ? selectCurriculumIdentityForRequestedSubject(identities, explicitSubject)
