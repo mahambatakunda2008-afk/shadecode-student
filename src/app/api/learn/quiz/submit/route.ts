@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { markLessonQuiz } from "@/lib/learn/quiz-marking";
+import { resolveLearnerSubjects, assertRequestedLearnerSubject } from "@/lib/subjects/resolveLearnerSubjects";
 export const dynamic = "force-dynamic";
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -42,9 +43,13 @@ export async function POST(req: Request) {
     if (!marked) return NextResponse.json({ error: "Invalid answer selection or quiz answer key" }, { status: 400 });
     const { correctCount, questionCount, score } = marked;
     const { data: lesson, error: lessonError } = await supabase.from("learn_lessons")
-      .select("id, curriculum_version_id, curriculum_objective_keys")
+      .select("id, subject_id, curriculum_version_id, curriculum_objective_keys")
       .eq("id", session.lesson_id).eq("user_id", user.id).maybeSingle();
     if (lessonError || !lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+    const { data: subjectRow } = await supabase.from("subjects").select("name").eq("id", lesson.subject_id).maybeSingle();
+    const learnerSubjects = await resolveLearnerSubjects(supabase, user.id);
+    if (!learnerSubjects.subjects.length) return NextResponse.json({ error: "Select your subjects before submitting a quiz.", code: "SUBJECTS_REQUIRED" }, { status: 409 });
+    if (!subjectRow?.name || !assertRequestedLearnerSubject(learnerSubjects.subjects, subjectRow.name)) return NextResponse.json({ error: "This lesson subject is not in your selected subjects.", code: "SUBJECT_NOT_SELECTED" }, { status: 403 });
     const submittedAt = new Date().toISOString();
     const { data: claimed, error: claimError } = await supabase.from("lesson_quiz_sessions")
       .update({ submitted_at: submittedAt }).eq("id", quizId).eq("user_id", user.id)
