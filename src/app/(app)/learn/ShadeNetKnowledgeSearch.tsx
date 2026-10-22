@@ -18,9 +18,9 @@ function trustLabel(status?: string) {
   }
 }
 
-export default function ShadeNetKnowledgeSearch() {
+export default function ShadeNetKnowledgeSearch({ subjects }: { subjects: Array<{ id: string; name: string }> }) {
   const [query, setQuery] = useState("");
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(subjects[0]?.name ?? "");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<KnowledgeRetrievalResult | null>(null);
   const [error, setError] = useState("");
@@ -33,7 +33,7 @@ export default function ShadeNetKnowledgeSearch() {
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!query.trim() || busy) return;
+    if (!query.trim() || !subject || busy) return;
     setBusy(true);
     setError("");
     try {
@@ -53,6 +53,8 @@ export default function ShadeNetKnowledgeSearch() {
       setBusy(false);
     }
   }
+
+  if (subjects.length === 0) return null;
 
   return (
     <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-5 sm:p-6" aria-labelledby="shadenet-search-title">
@@ -80,17 +82,18 @@ export default function ShadeNetKnowledgeSearch() {
           required
         />
         <label className="sr-only" htmlFor="shadenet-subject">Filter by subject</label>
-        <input
+        <select
           id="shadenet-subject"
           value={subject}
-          onChange={(event) => setSubject(event.target.value)}
-          maxLength={80}
-          placeholder="Subject (optional)"
+          onChange={(event) => { setSubject(event.target.value); setResult(null); setError(""); }}
           className="min-h-11 min-w-0 rounded-xl border border-[var(--card-border)] bg-[var(--surface-2)] px-3 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]"
-        />
+          required
+        >
+          {subjects.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+        </select>
         <button
           type="submit"
-          disabled={busy || !query.trim()}
+          disabled={busy || !query.trim() || !subject || subjects.length === 0}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Search size={16} aria-hidden="true" />
