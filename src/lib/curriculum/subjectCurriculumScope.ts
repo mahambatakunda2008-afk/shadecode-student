@@ -46,3 +46,14 @@ export function selectCurriculumIdentityForRequestedSubject(
     normalize(identity.subjectId) === requested
   ) ?? null;
 }
+
+/**
+ * Read the explicit subject header emitted by buildResolvedLessonPrompt.
+ * An explicit but unconfigured subject must be distinguishable from a prompt
+ * that did not specify a subject at all.
+ */
+export function extractExplicitSubjectFromPrompt(prompt: string): string | null {
+  const match = prompt.match(/^\s*subject\s*:\s*([^\n]+)/i);
+  const subject = match?.[1]?.trim();
+  return subject || null;
+}
