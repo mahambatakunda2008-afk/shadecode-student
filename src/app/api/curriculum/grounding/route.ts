@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-grounding";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,13 @@ export async function GET(req: Request) {
     const subject = (url.searchParams.get("subject") || "").trim();
     const topic = (url.searchParams.get("topic") || "").trim();
     if (!subject || !topic) return NextResponse.json({ error: "subject and topic are required" }, { status: 400 });
-    const result = await resolveVerifiedCurriculumPromptContext(user.id, `Subject: ${subject}\nMaster this request: "${topic}"`);
+
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject);
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
+    }
+
+    const result = await resolveVerifiedCurriculumPromptContext(user.id, `Subject: ${subjectAccess.subject}\\nMaster this request: "${topic}"`);
     return NextResponse.json({ status: result.status, reason: result.reason, resolvedTopic: result.status === "resolved" ? result.resolvedTopic : undefined, promptContext: result.promptContext, pack: result.status === "resolved" ? result.pack : undefined }, { status: result.status === "blocked" ? 409 : 200 });
   } catch (error) {
     console.error("[api/curriculum/grounding] error:", error);
