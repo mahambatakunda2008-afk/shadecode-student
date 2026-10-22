@@ -172,11 +172,18 @@ export async function GET(req: Request) {
       const { data: lessonData, error: lessonError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).eq("id", lessonId).maybeSingle();
       if (lessonError) return NextResponse.json({ error: "Unable to load lesson." }, { status: 500 });
       if (!lessonData) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+      // A user-owned lesson can still belong to a stale or unselected subject.
+      // Never return its blocks merely because the caller knows its lesson ID.
+      if (!subjectById.has(lessonData.subject_id)) {
+        return NextResponse.json({ error: "This lesson is not available for your selected subjects." }, { status: 403 });
+      }
       const response: LearnDetailResponse = { lesson: toLearnLesson(lessonData as LearnLessonRow, subjectById) }; return NextResponse.json(response);
     }
     const { data: allLessonData, error: allLessonsError } = await supabase.from("learn_lessons").select("id, subject_id, topic, title, description, difficulty, progress, updated_at, blocks").eq("user_id", user.id).order("updated_at", { ascending: false });
     if (allLessonsError) return NextResponse.json({ subjects: buildSubjectTabs(subjects, []), lessons: [], summary });
-    const allLessons = (allLessonData ?? []) as LearnLessonRow[]; const filtered = subjectId === "all" ? allLessons : allLessons.filter(l => l.subject_id === subjectId);
+    // Exclude stale/unselected subject lessons even when the client requests "all".
+    const allLessons = ((allLessonData ?? []) as LearnLessonRow[]).filter(l => subjectById.has(l.subject_id));
+    const filtered = subjectId === "all" ? allLessons : subjects.some(subject => subject.id === subjectId) ? allLessons.filter(l => l.subject_id === subjectId) : [];
     const response: LearnListResponse = { subjects: buildSubjectTabs(subjects, allLessons), lessons: filtered.map(l => toLearnLesson(l, subjectById)), summary }; return NextResponse.json(response);
   } catch (err: any) {
     log.apiFailure({ route: "/api/learn", method: "GET", error: err.message || String(err), userId: auth?.user?.id }); return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
