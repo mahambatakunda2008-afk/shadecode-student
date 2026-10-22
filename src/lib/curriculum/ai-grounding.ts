@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { normalizeStoredCurriculumIdentities } from "./user-profile";
+import { extractExplicitSubjectFromPrompt, selectCurriculumIdentityForRequestedSubject } from "./subjectCurriculumScope";
 import { resolveSystemCurriculum } from "./system-resolver";
 import { objectiveVisibleAtLevel } from "./level-scope";
 import type { CurriculumKnowledgeItem } from "./knowledge";
@@ -49,12 +50,25 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
   const identities = normalizeStoredCurriculumIdentities(profile?.curriculum_subjects);
   if (!identities.length) return { status: "none", promptContext: "", reason: "No learner board, level and subject curriculum selection is configured." };
 
+  const explicitSubject = extractExplicitSubjectFromPrompt(prompt);
   const normalizedPrompt = prompt.toLowerCase();
-  const identity = identities.find((item) => {
-    const subject = (item.subjectName ?? item.subjectId).toLowerCase();
-    return subject.length >= 4 && normalizedPrompt.includes(subject);
-  }) ?? (identities.length === 1 ? identities[0] : null);
-  if (!identity) return { status: "blocked", promptContext: "", reason: "Select one of your configured subjects before Cortex applies syllabus-specific teaching." };
+  const identity = explicitSubject
+    ? selectCurriculumIdentityForRequestedSubject(identities, explicitSubject)
+    : identities.find((item) => {
+        const subjectName = (item.subjectName ?? "").toLowerCase();
+        const subjectId = item.subjectId.toLowerCase().replace(/-/g, " ");
+        return (subjectName.length >= 4 && normalizedPrompt.includes(subjectName)) ||
+          (subjectId.length >= 4 && normalizedPrompt.includes(subjectId));
+      }) ?? (identities.length === 1 ? identities[0] : null);
+  if (!identity) {
+    return {
+      status: "blocked",
+      promptContext: "",
+      reason: explicitSubject
+        ? `The requested subject "${explicitSubject}" is not in the learner's configured curriculum subjects. Select a matching subject before Cortex applies syllabus-specific teaching.`
+        : "Select one of your configured subjects before Cortex applies syllabus-specific teaching.",
+    };
+  }
 
   // Discover the current verified syllabus automatically. Older stored syllabus fields are only compatibility hints.
   const versionsResult = await supabase.from("curriculum_versions").select("*")
