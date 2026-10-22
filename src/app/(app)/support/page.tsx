@@ -33,7 +33,7 @@ export default function SupportShadecodePage() {
       </header>
 
       <section className="ssc-card p-5 sm:p-7">
-        <label htmlFor="support-amount" className="ssc-label">Choose your contribution (USD)</label>
+        <p className="ssc-label">Choose your contribution (USD)</p>
         <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {suggestedAmounts.map((suggested) => (
             <button
@@ -67,7 +67,7 @@ export default function SupportShadecodePage() {
               placeholder="Enter amount"
             />
           </div>
-          <p id="support-amount-help" className="mt-2 text-xs text-[var(--muted-foreground)]">Enter a positive amount up to $10,000. The final minimum, fees and supported currency will be confirmed when payment processing is configured.</p>
+          <p id="support-amount-help" className="mt-2 text-xs text-[var(--muted-foreground)]">Enter a positive amount up to $10,000. The minimum, fees and available currencies will be shown before any payment is submitted.</p>
           {!amountIsValid && <p role="alert" className="mt-2 text-sm text-[var(--danger)]">Enter a valid amount greater than $0 and no more than $10,000.</p>}
         </div>
 
