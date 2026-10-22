@@ -116,7 +116,7 @@ export default function QuizPage() {
           body: JSON.stringify({ quizId, answers: newAnswers.map(selectedIndex => ({ selectedIndex })) }),
         });
         const result = await response.json();
-        if (response.ok && result?.verified === true && Number.isInteger(result.correctCount) && Number.isInteger(result.questionCount)) {
+        if (response.ok && result?.verified === true && Number.isFinite(result.score) && result.score >= 0 && result.score <= 100 && Number.isInteger(result.correctCount) && result.correctCount >= 0 && Number.isInteger(result.questionCount) && result.questionCount === questions.length && result.correctCount <= result.questionCount) {
           if (Array.isArray(result.questions) && result.questions.length === questions.length) setQuestions(result.questions);
           setVerifiedResult({ score: result.score, correctCount: result.correctCount, questionCount: result.questionCount, verified: true, curriculumTracked: result.curriculumTracked === true, warning: typeof result.warning === "string" ? result.warning : undefined });
           const completion = buildQuizCompletionEvidence({
