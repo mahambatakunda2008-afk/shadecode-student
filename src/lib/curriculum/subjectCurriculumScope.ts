@@ -53,7 +53,7 @@ export function selectCurriculumIdentityForRequestedSubject(
  * that did not specify a subject at all.
  */
 export function extractExplicitSubjectFromPrompt(prompt: string): string | null {
-  const match = prompt.match(/^\s*subject\s*:\s*([^\n]+)/i);
+  const match = prompt.match(/(?:^|\n)\s*subject\s*:\s*([^\n]+)/i);
   const subject = match?.[1]?.trim();
   return subject || null;
 }
