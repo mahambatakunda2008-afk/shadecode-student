@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 let currentUser: { id: string } | null = { id: "u1" };
 let selectedSubjects: Array<{ id: string; name: string }> = [{ id: "math-id", name: "Mathematics" }];
 let lessonSubject = "Geography";
-const upsert = vi.fn();
-const resetLibraryCache = vi.fn();
+const { upsert, resetLibraryCache } = vi.hoisted(() => ({
+  upsert: vi.fn(),
+  resetLibraryCache: vi.fn(),
+}));
 
 vi.mock("@/lib/rate-limit/limiter", () => ({ applyRateLimit: async () => null, generalApiLimiter: {} }));
 vi.mock("@/lib/supabase/server", () => ({
