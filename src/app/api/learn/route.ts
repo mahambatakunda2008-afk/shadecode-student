@@ -209,10 +209,14 @@ export async function POST(req: Request) {
     }
     if (type === "course_save") {
       const draft = body.draft; if (!draft || !Array.isArray(draft.lessons) || !draft.lessons.length) return NextResponse.json({ error: "Invalid draft" }, { status: 400 });
-      const subjName = sanitizeLessonText((topic && topic.length <= 60 ? topic : (draft.title ?? `Course: ${topic}`)).toString()).slice(0, 255); let subjectId: string | null = null;
-      const { data: existing } = await supabase.from("subjects").select("id").eq("user_id", user.id).eq("name", subjName).maybeSingle();
-      if (existing?.id) subjectId = existing.id; else { const { data: insertedSub } = await supabase.from("subjects").insert({ user_id: user.id, name: sanitizeLessonText(subjName) }).select("id").single(); subjectId = insertedSub?.id ?? null; }
-      if (!subjectId) return NextResponse.json({ error: "Failed to resolve subject" }, { status: 500 });
+      // Course titles/topics are not academic subjects. Saving a course must use
+      // an explicitly selected learner subject and must never create a new subject.
+      const courseSubjectAccess = await resolveLearnerSubject(supabase, user.id, subject);
+      if (!courseSubjectAccess.ok) {
+        return NextResponse.json({ error: courseSubjectAccess.error }, { status: courseSubjectAccess.status });
+      }
+      const subjName = courseSubjectAccess.subject;
+      const subjectId = courseSubjectAccess.subjectId;
       const lessonsToInsert = draft.lessons.map((l: any) => ({ user_id: user.id, subject_id: subjectId, topic: sanitizeLessonText((l.topic ?? topic ?? l.title ?? "").toString().slice(0,500)), title: sanitizeLessonText((l.title ?? l.summary ?? "Untitled").toString().slice(0,255)), description: sanitizeLessonText((l.summary ?? "").toString().slice(0,1500)), difficulty: l.difficulty === "hard" ? "hard" : l.difficulty === "medium" ? "medium" : "easy", blocks: sanitizeLessonText(Array.isArray(l.blocks) ? l.blocks : [{ type: "text", content: l.summary ?? "" }]), progress: 0 }));
       const { data: insertedLessons, error: insertLessonsError } = await supabase.from("learn_lessons").insert(lessonsToInsert).select("id, title");
       if (insertLessonsError) return NextResponse.json({ success: false, error: `Failed to save lessons: ${insertLessonsError.message}` }, { status: 500 });
