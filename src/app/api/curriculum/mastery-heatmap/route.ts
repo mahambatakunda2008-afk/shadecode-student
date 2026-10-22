@@ -70,7 +70,7 @@ export async function GET() {
     ]);
 
     const progressByKey = new Map(progress.map(p => [`${p.curriculum_version_id}:${p.objective_key}`, p]));
-    const syllabi = versions.map(version => ({
+    const syllabi = allowedVersions.map(version => ({
       ...version,
       objectives: objectives.filter(o => o.curriculum_version_id === version.id).map(o => {
         const p = progressByKey.get(`${version.id}:${o.objective_key}`);
