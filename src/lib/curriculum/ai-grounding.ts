@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { normalizeStoredCurriculumIdentities } from "./user-profile";
-import { selectCurriculumIdentityForRequestedSubject } from "./subjectCurriculumScope";
+import { extractExplicitSubjectFromPrompt, selectCurriculumIdentityForRequestedSubject } from "./subjectCurriculumScope";
 import { resolveSystemCurriculum } from "./system-resolver";
 import { objectiveVisibleAtLevel } from "./level-scope";
 import type { CurriculumKnowledgeItem } from "./knowledge";
