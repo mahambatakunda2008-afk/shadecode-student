@@ -228,11 +228,25 @@ export async function GET(req: Request) {
     const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,mime_type,source_size_bytes,page_count,selected_page_start,selected_page_end,status,source_metadata,pages,learning_plan,progress,created_at,updated_at").eq("id", id).eq("user_id", auth.user.id).maybeSingle();
     if (error) return NextResponse.json({ error: "Couldn't load the paper session." }, { status: 500 });
     if (!data) return NextResponse.json({ error: "Paper session not found." }, { status: 404 });
-    return NextResponse.json({ ...data, learning_plan: safePlan(data.learning_plan as Plan) });
+    const plan = data.learning_plan as Plan;
+    if (typeof plan?.subject !== "string" || !plan.subject.trim()) {
+      return NextResponse.json({ error: "Paper session subject could not be verified.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    }
+    const access = await resolveLearnerSubject(auth.supabase, auth.user.id, plan.subject);
+    if (!access.ok) return NextResponse.json({ error: access.error, code: "SUBJECT_NOT_ALLOWED" }, { status: access.status });
+    return NextResponse.json({ ...data, learning_plan: safePlan({ ...plan, subject: access.subject }) });
   }
   const { data, error } = await auth.supabase.from("paper_learning_sessions").select("id,source_name,page_count,selected_page_start,selected_page_end,status,learning_plan,progress,created_at,updated_at").eq("user_id", auth.user.id).order("updated_at", { ascending: false }).limit(20);
   if (error) return NextResponse.json({ error: "Couldn't load paper sessions." }, { status: 500 });
-  return NextResponse.json({ sessions: (data ?? []).map(session => ({ ...session, learning_plan: safePlan(session.learning_plan as Plan) })) });
+  const sessions = [];
+  for (const session of data ?? []) {
+    const plan = session.learning_plan as Plan;
+    if (typeof plan?.subject !== "string" || !plan.subject.trim()) continue;
+    const access = await resolveLearnerSubject(auth.supabase, auth.user.id, plan.subject);
+    if (!access.ok) continue;
+    sessions.push({ ...session, learning_plan: safePlan({ ...plan, subject: access.subject }) });
+  }
+  return NextResponse.json({ sessions });
 }
 
 export async function POST(req: Request) {
