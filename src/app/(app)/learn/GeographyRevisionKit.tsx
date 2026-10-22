@@ -147,7 +147,7 @@ export default function GeographyRevisionKit() {
     <section className="rounded-3xl border border-[var(--card-border)] bg-[var(--surface)] p-5 sm:p-6" aria-labelledby="geography-kit-title">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]"><BookOpenCheck size={21} /></span>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]"><BookOpenCheck size={22} /></span>
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">AI-independent revision</p>
             <h2 id="geography-kit-title" className="mt-1 text-xl font-semibold">Geography case-study kit</h2>
@@ -173,7 +173,7 @@ export default function GeographyRevisionKit() {
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--card-border)] p-7 text-center">
           <p className="font-semibold">Start with the exact cases your teacher assigned.</p>
           <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">Create a blank card, enter verified details, and your notes stay on this device. You can add as many cases as you need, not just 24.</p>
-          <button type="button" onClick={addCase} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold"><Plus size={15} /> Create first case</button>
+          <button type="button" onClick={addCase} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-4 text-sm font-semibold"><Plus size={16} /> Create first case</button>
         </div>
       ) : view === "card" ? (
         <div className="mt-4">
@@ -196,9 +196,9 @@ export default function GeographyRevisionKit() {
             </div>)}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => downloadCase(selected)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold"><Download size={15} /> Export Markdown</button>
-            <button type="button" onClick={deleteCase} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-rose-500/30 px-3 text-sm font-semibold text-rose-600"><Trash2 size={15} /> Delete case</button>
-            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]"><Save size={13} /> Auto-saved locally</span>
+            <button type="button" onClick={() => downloadCase(selected)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold"><Download size={16} /> Export Markdown</button>
+            <button type="button" onClick={deleteCase} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-rose-500/30 px-3 text-sm font-semibold text-rose-600"><Trash2 size={16} /> Delete case</button>
+            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]"><Save size={14} /> Auto-saved locally</span>
           </div>
         </div>
       ) : (
@@ -213,7 +213,7 @@ export default function GeographyRevisionKit() {
               </button>
               <div className="mt-3 flex items-center justify-between gap-2">
                 <button type="button" onClick={() => moveCard(-1)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold"><ChevronLeft size={16} /> Previous</button>
-                <button type="button" onClick={() => { setCardIndex(0); setRevealed(false); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold"><RotateCcw size={15} /> Restart</button>
+                <button type="button" onClick={() => { setCardIndex(0); setRevealed(false); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold"><RotateCcw size={16} /> Restart</button>
                 <button type="button" onClick={() => moveCard(1)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--primary)] px-3 text-sm font-semibold text-[var(--primary-foreground)]">Next <ChevronRight size={16} /></button>
               </div>
               <p className="mt-3 text-xs leading-5 text-[var(--muted-foreground)]">Only populated fields with answers are turned into cards. Unknown facts are not generated. If you need to verify a fact, add CHECK in your notes and return to the case card.</p>
@@ -222,7 +222,7 @@ export default function GeographyRevisionKit() {
             <div className="rounded-2xl border border-dashed border-[var(--card-border)] p-6 text-center">
               <p className="font-semibold">No flashcards yet</p>
               <p className="mt-2 text-sm text-[var(--muted-foreground)]">Fill in some verified facts on the Case card tab first.</p>
-              <button type="button" onClick={() => setView("card")} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold">Edit case <ChevronLeft size={15} /></button>
+              <button type="button" onClick={() => setView("card")} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--card-border)] px-3 text-sm font-semibold">Edit case <ChevronLeft size={16} /></button>
             </div>
           )}
         </div>
