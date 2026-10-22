@@ -8,6 +8,7 @@ import { recordKeyedMastery, type MasteryClient } from '@/lib/topicMastery/recor
 import { matchGenerators } from '@/lib/exam/engine'
 import { generatorWeights } from '@/lib/learning/adaptive'
 import { recordSignalsServer } from '@/lib/learning/server'
+import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +45,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ se
     const block = plan?.blocks?.find((candidate) => candidate.id === blockId)
     const curriculum = block?.curriculum
     const subject = plan?.subject
+    if (!session) return NextResponse.json({ error: 'Learning session not found' }, { status: 404 })
+    if (!subject) return NextResponse.json({ error: 'This session has no academic subject.' }, { status: 403 })
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject)
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status })
     if (!block || block.interaction?.evaluationMode !== 'self_check' || !curriculum?.title || !curriculum.syllabusId || !curriculum.topicKey || !subject) {
       return NextResponse.json({ error: 'No practice question is available for this checkpoint', code: 'NO_PRACTICE' }, { status: 404 })
     }
