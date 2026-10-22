@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () =
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminRows === null ? null : ({ from: () => ({ select: () => ({ eq: () => ({ in: () => ({ limit: async () => ({ data: adminRows, error: null }) }) }) }) }) }),
 }));
-vi.mock("@/lib/academic/subjectAccess", () => ({ resolveLearnerSubject: async () => subjectResolution }));
+vi.mock("@/lib/academic/subjectAccess", () => ({ resolveLearnerSubject: async (_supabase: unknown, _userId: string, requested: unknown) => subjectResolution && (subjectResolution as { ok?: boolean }).ok === false ? subjectResolution : ({ ok: true, subject: String(requested), subjectId: "s1" }) }));
 vi.mock("@/lib/curriculum/ai-grounding", () => ({ resolveVerifiedCurriculumPromptContext: (...args: unknown[]) => { resolver(...args); return Promise.resolve(resolution); } }));
 
 import { GET } from "./route";
