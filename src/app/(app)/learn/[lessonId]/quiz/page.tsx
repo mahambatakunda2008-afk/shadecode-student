@@ -215,14 +215,14 @@ export default function QuizPage() {
             <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#c4dc87"} />
           </div>
           <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Quiz Complete</p>
-          <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
+          <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{verifiedResult ? `${pct}%` : "—"}</h1>
           <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{grade.label}</p>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24 }}>
             {[
               { val: `${correctCount}/${questions.length}`, label: "Correct",  color: "#34d399" },
-              { val: `+${earnedXP}`,                        label: "XP Earned", color: "#fbbf24" },
-              { val: `${questions.length - correctCount}`,  label: "Missed",   color: "var(--danger)" },
+              { val: verifiedResult ? `+${earnedXP}` : "—", label: "XP Earned", color: "#fbbf24" },
+              { val: verifiedResult ? `${questions.length - correctCount}` : "—", label: "Missed", color: "var(--danger)" },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.val}</p>
@@ -255,7 +255,7 @@ export default function QuizPage() {
                   {!isCorrect && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", minWidth: 64 }}>Correct:</span>
-                      <span style={{ fontSize: 13, color: "#34d399", fontWeight: 600 }}>{q.options[q.correctIndex]}</span>
+                      <span style={{ fontSize: 13, color: "#34d399", fontWeight: 600 }}>{q.correctIndex !== undefined ? q.options[q.correctIndex] : "Answer unavailable"}</span>
                     </div>
                   )}
                 </div>
