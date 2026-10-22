@@ -15,9 +15,9 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/subjects/resolveLearnerSubjects", () => ({
   resolveLearnerSubjects: async () => ({ subjects: selectedSubjects, onboardingComplete: true }),
   assertRequestedLearnerSubject: (subjects: Array<{ name: string }>, requested?: string | null) => {
-    const normalized = (requested ?? "").trim().toLowerCase().replace(/\\s+/g, " ");
+    const normalized = (requested ?? "").trim().toLowerCase().replace(/\s+/g, " ");
     if (!normalized || normalized === "all" || normalized === "general") return null;
-    return subjects.find((subject) => subject.name.trim().toLowerCase().replace(/\\s+/g, " ") === normalized) ?? null;
+    return subjects.find((subject) => subject.name.trim().toLowerCase().replace(/\s+/g, " ") === normalized) ?? null;
   },
 }));
 vi.mock("@/lib/library/store", () => ({ loadLibrary }));
