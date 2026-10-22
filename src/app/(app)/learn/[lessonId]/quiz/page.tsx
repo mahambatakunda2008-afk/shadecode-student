@@ -54,7 +54,7 @@ export default function QuizPage() {
   const [phase,       setPhase]       = useState<Phase>("loading");
   const [questions,   setQuestions]   = useState<QuizQuestion[]>([]);
   const [quizId, setQuizId] = useState<string>("");
-  const [verifiedResult, setVerifiedResult] = useState<{ score: number; correctCount: number; questionCount: number; verified: boolean; curriculumTracked: boolean } | null>(null);
+  const [verifiedResult, setVerifiedResult] = useState<{ score: number; correctCount: number; questionCount: number; verified: boolean; curriculumTracked: boolean; warning?: string } | null>(null);
   const [current,     setCurrent]     = useState(0);
   const [selected,    setSelected]    = useState<number | null>(null);
   const [answers,     setAnswers]     = useState<number[]>([]);
@@ -118,7 +118,7 @@ export default function QuizPage() {
         const result = await response.json();
         if (response.ok && result?.verified === true && Number.isInteger(result.correctCount) && Number.isInteger(result.questionCount)) {
           if (Array.isArray(result.questions) && result.questions.length === questions.length) setQuestions(result.questions);
-          setVerifiedResult({ score: result.score, correctCount: result.correctCount, questionCount: result.questionCount, verified: true, curriculumTracked: result.curriculumTracked === true });
+          setVerifiedResult({ score: result.score, correctCount: result.correctCount, questionCount: result.questionCount, verified: true, curriculumTracked: result.curriculumTracked === true, warning: typeof result.warning === "string" ? result.warning : undefined });
           const completion = buildQuizCompletionEvidence({
             quizAttemptId: quizAttemptIdRef.current,
             lessonId,
@@ -207,7 +207,7 @@ export default function QuizPage() {
           <ArrowLeft size={14} /> Back to lesson
         </Link>
 
-        {verifiedResult ? <p style={{ color: verifiedResult.curriculumTracked ? "#34d399" : "var(--muted-foreground)", fontSize: 12, margin: "0 0 14px" }}>{verifiedResult.curriculumTracked ? "Score verified and syllabus mastery updated." : "Score verified. This lesson is not linked to verified curriculum objectives, so syllabus mastery was not changed."}</p> : <p style={{ color: "var(--danger)", fontSize: 12, margin: "0 0 14px" }}>{errMsg || "Score not verified. Syllabus mastery was not updated."}</p>}
+        {verifiedResult ? <p style={{ color: verifiedResult.warning ? "var(--danger)" : verifiedResult.curriculumTracked ? "#34d399" : "var(--muted-foreground)", fontSize: 12, margin: "0 0 14px" }}>{verifiedResult.warning ?? (verifiedResult.curriculumTracked ? "Score verified and syllabus mastery updated." : "Score verified. This lesson is not linked to verified curriculum objectives, so syllabus mastery was not changed.")}</p> : <p style={{ color: "var(--danger)", fontSize: 12, margin: "0 0 14px" }}>{errMsg || "Score not verified. Syllabus mastery was not updated."}</p>}
 
         {/* Score hero */}
         <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), var(--card)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
