@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 let currentUser: { id: string } | null = { id: "u1" };
 let adminRows: Array<Record<string, unknown>> | null = null;
 let resolution: unknown;
+let subjectResolution: unknown = { ok: true, subject: "Physics", subjectId: "s1" };
 const resolver = vi.fn();
 
 vi.mock("@/lib/rate-limit/limiter", () => ({ applyRateLimit: async () => null, generalApiLimiter: {} }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: currentUser } }) } }) }));
+vi.mock("@/lib/academic/subjectAccess", () => ({ resolveLearnerSubject: async () => subjectResolution }));
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminRows === null ? null : ({ from: () => ({ select: () => ({ eq: () => ({ in: () => ({ limit: async () => ({ data: adminRows, error: null }) }) }) }) }) }),
 }));
@@ -24,11 +26,16 @@ const ROWS = [
 ];
 const resolved = (knowledge: unknown[]) => ({ status: "resolved", resolvedTopic: "Waves", pack: { curriculumId: "cv1", subject: "AS Level Physics", knowledge } });
 
-beforeEach(() => { currentUser = { id: "u1" }; adminRows = ROWS; resolver.mockReset(); resolution = resolved([{ kind: "learning_outcome", code: "outcome|7.1|1", title: "t", content: "c", topicCode: "7.1" }]); });
+beforeEach(() => { currentUser = { id: "u1" }; adminRows = ROWS; subjectResolution = { ok: true, subject: "Physics", subjectId: "s1" }; resolver.mockReset(); resolution = resolved([{ kind: "learning_outcome", code: "outcome|7.1|1", title: "t", content: "c", topicCode: "7.1" }]); });
 
 describe("GET /api/library/guide", () => {
   it("requires a topic", async () => { expect((await get("subject=Physics&topic=a")).status).toBe(400); });
   it("requires a signed-in learner", async () => { currentUser = null; expect((await get("subject=Physics&topic=Waves")).status).toBe(401); });
+  it("denies a subject the learner did not select", async () => {
+    subjectResolution = { ok: false, status: 403, error: "Not one of your subjects" };
+    expect((await get("subject=Geography&topic=Waves")).status).toBe(403);
+    expect(resolver).not.toHaveBeenCalled();
+  });
   it("404s when the learner has no verified syllabus for the topic", async () => {
     resolution = { status: "none", reason: "no curriculum" };
     expect((await get("subject=Physics&topic=Waves")).status).toBe(404);
