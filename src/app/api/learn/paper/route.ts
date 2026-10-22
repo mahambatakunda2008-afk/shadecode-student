@@ -9,6 +9,8 @@ import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { awardXPBySource } from "@/lib/xp/manager";
 import { applyQuestionCorrections, buildPaperSourceText, extractPdfPages, normalizePageRange, selectPaperQuestions, type PaperPage, type PaperQuestionCorrection } from "@/lib/learn/paperLearning";
 import { extractTopLevelQuestionsFromPages } from "@/lib/exam/question-extraction";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -258,6 +260,27 @@ export async function POST(req: Request) {
     const selectedPages = pages.slice(range.start - 1, range.end);
     // Cambridge prints the syllabus code (e.g. 9702/22) on the cover page, so scan the whole document, not only the selection.
     const paperScope = detectPaperScope(pages.map(page => page.text));
+    // Recognized Cambridge science/mathematics papers must match the learner's
+    // selected subjects before the source can be processed into a study session.
+    // Keep unrelated/general PDFs supported when no recognized syllabus code exists.
+    if (paperScope) {
+      const subjectBySyllabus: Record<string, string> = {
+        "cambridge-9700": "Biology",
+        "cambridge-9701": "Chemistry",
+        "cambridge-9702": "Physics",
+        "cambridge-9709": "Mathematics",
+      };
+      const paperSubject = subjectBySyllabus[paperScope.syllabusId];
+      if (paperSubject) {
+        const learner = await resolveLearnerSubjects(auth.supabase, auth.user.id);
+        if (learner.subjects.length === 0) {
+          return NextResponse.json({ error: "Select your subjects before using a Cambridge paper.", code: "SUBJECTS_REQUIRED" }, { status: 409 });
+        }
+        if (!isAllowedSubject(paperSubject, learner.subjects.map(subject => subject.name))) {
+          return NextResponse.json({ error: `This paper is for ${paperSubject}, which is not among your selected subjects.`, code: "SUBJECT_NOT_SELECTED" }, { status: 403 });
+        }
+      }
+    }
     const questions = extractTopLevelQuestionsFromPages(selectedPages);
     const inspectOnly = String(form.get("inspect") ?? "").toLowerCase() === "1" || String(form.get("inspect") ?? "").toLowerCase() === "true";
     if (inspectOnly) {
