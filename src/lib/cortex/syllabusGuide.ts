@@ -94,6 +94,8 @@ export function buildSyllabusGuide(input: {
   matchedTopicCodes: string[];
   /** Syllabus content_scope and learning_outcome items for the learner's verified syllabus. */
   items: GuideKnowledgeItem[];
+  /** Real worked examples/practice (from the question engine) to place before the exam note. Count toward the block floor. */
+  extraBlocks?: SyllabusGuideBlock[];
 }): SyllabusGuide | null {
   const all = collectSubsections(input.items);
   const matched = input.matchedTopicCodes.map(clean).filter(Boolean);
@@ -109,6 +111,7 @@ export function buildSyllabusGuide(input: {
   const subject = clean(input.subject) || "your subject";
   const topic = clean(input.topic) || chosen[0].title;
   const outcomeTotal = chosen.reduce((sum, s) => sum + s.outcomes.length, 0);
+  const extras = input.extraBlocks ?? [];
 
   const blocks: SyllabusGuideBlock[] = [];
   blocks.push({
@@ -118,7 +121,9 @@ export function buildSyllabusGuide(input: {
       `AI lesson generation is unavailable right now, so this guide is built directly from your official ${subject} syllabus instead. ` +
       `It lists exactly what the syllabus expects you to know for "${topic}" (${outcomeTotal} learning outcomes across ${chosen.length} subsections), ` +
       `with self-test prompts so you can check yourself. By the end, you should be able to do every outcome below without notes. ` +
-      `It has no worked examples: try generating the full lesson again later for those.`,
+      (extras.length
+        ? `It also includes worked examples and practice with answers, computed by the app, so the working is always correct.`
+        : `It has no worked examples: try generating the full lesson again later for those.`),
   });
 
   for (const section of chosen) {
@@ -143,6 +148,8 @@ export function buildSyllabusGuide(input: {
       content: `Cover your notes and try each of these, then check your answers against your textbook or class notes:\n` + prompts.map((p, i) => `${i + 1}. ${p}`).join("\n"),
     });
   }
+
+  blocks.push(...extras);
 
   blocks.push({
     type: "exam",
