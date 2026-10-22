@@ -150,3 +150,78 @@ A legacy `topic_mastery` row can have a positive `attempts` count while `exposur
 The branch now initializes the reducer's exposure from the stored attempt count when the richer exposure value is zero/missing. This is a narrow compatibility safeguard; it does not add a new table or scoring algorithm.
 
 **Verification status:** the source change has been committed to this PR branch, but automated tests, typecheck, lint, build, database replay, and browser checks have not been run from this connector. Do not merge or call the fix verified until those gates pass. A focused regression test should cover a legacy row with `attempts > 0` and `exposure = 0/null`, asserting that the next observation uses the historical 70/30 transition rather than resetting mastery to the latest evidence.
+
+
+## Product quality and market viability evaluation framework
+
+The proposed external assessment gives Shadecode Student an **8.1/10** overall score. Treat this as a hypothesis-generating review, not an independently verified product rating. The score is not yet backed by a reproducible benchmark, audited production behaviour, representative student research, competitor testing, or validated learning outcomes. Do not use it as an objective claim in marketing, investor materials, or school pitches without supporting evidence.
+
+### Separate the two evaluation lenses
+
+**Product quality** asks whether the software reliably helps learners:
+- Curriculum accuracy and syllabus coverage.
+- Correctness of explanations, marking, and feedback.
+- Quality of step-by-step diagnostics where the feature exists.
+- Reliability of lesson generation, saving, and recovery.
+- Offline behaviour and safe synchronization.
+- Accessibility, usability, performance, and low-bandwidth resilience.
+- Appropriate use of evidence in personalization.
+- Privacy, security, and student-data protection.
+
+**Market viability** asks whether the product can sustainably reach and retain users:
+- Evidence of a frequent, important learner problem.
+- Activation, successful first study session, retention, and referral.
+- Willingness and ability to pay, including affordability in Zimbabwe.
+- School buyer interest, procurement friction, and implementation costs.
+- Distribution channels and cost to acquire active users.
+- AI/model operating costs per successful learning outcome.
+- Differentiation supported by measured product performance.
+- Support burden, safeguarding, and institutional trust.
+
+Do not combine these into one score until both have defined weights and evidence.
+
+### Evidence standard for product comparisons
+
+Comparisons with ChatGPT, Gemini, Quizlet, and past-paper PDFs must use the same representative tasks, curricula, devices, connectivity conditions, and scoring rubric. Avoid unsupported blanket claims such as “generic AI always gives final answers” or “Shadecode analyzes handwritten working” unless those specific capabilities have been verified end-to-end. Offline PDFs and flashcards are genuinely useful alternatives; comparisons should recognize their strengths as well as their limitations.
+
+A capability statement must be tagged as one of:
+- **Verified:** source and tests or observed end-to-end behaviour support it.
+- **Partially verified:** some paths work, but important conditions or failure modes remain untested.
+- **Planned:** described in strategy or design, not established as working software.
+- **Unknown:** insufficient evidence to classify it.
+
+Architecture documentation alone does not prove a feature is production-ready.
+
+### Suggested weighted scorecard (proposed weights, not current ratings)
+
+| Dimension | Weight | Evidence needed |
+|---|---:|---|
+| Curriculum accuracy and verified coverage | 20% | Syllabus-to-topic audit, sourced content, independent marking checks |
+| Learning feedback and pedagogical quality | 15% | Blind evaluation of representative student attempts and feedback |
+| Reliability and data integrity | 20% | Generation completion, save/recovery, replay and sync tests |
+| Offline and low-bandwidth experience | 10% | Repeatable tests under offline, intermittent, and slow-network conditions |
+| Usability and accessibility | 10% | Student task testing, completion rates, accessibility checks |
+| Personalization quality | 10% | Evidence-to-intervention audit and measured follow-up performance |
+| Privacy, safety, and trust | 5% | Permission/RLS review, data minimization, policy and safeguarding checks |
+| Adoption and retention | 5% | Cohort-based activation and retention metrics |
+| Sustainable economics and distribution | 5% | Cost per successful session, user acquisition evidence, buyer validation |
+| **Total** | **100%** | |
+
+Rate each dimension only after collecting evidence, and publish the score with its sample size, test date, conditions, and limitations. If evidence is missing, mark it **Not yet rated** rather than assigning a flattering or punitive guess. The weights should be reviewed with student and school feedback; they are a starting proposal, not a validated standard.
+
+### Initial interpretation of the 8.1/10 claim
+
+- **Useful strategic hypotheses:** local curriculum relevance, low-bandwidth needs, evidence-based adaptation, and school integration could differentiate Shadecode if implemented and validated.
+- **Not yet established by the rating alone:** strong product-market fit, superior marking accuracy, full offline intelligence, robust handwriting diagnostics, a defensible moat, or school-scale readiness.
+- **Current priority:** reliability and independently verifiable learning utility come before claiming a high rating or building the market narrative around it.
+
+### Market validation sequence
+
+1. Recruit a small, clearly described cohort of target learners and run observed study tasks.
+2. Record successful activation, lesson completion, failure reasons, repeat use, and learner-reported usefulness.
+3. Compare Shadecode with realistic alternatives on matched syllabus questions and connectivity constraints.
+4. Interview school decision-makers about the actual workflow, procurement, privacy, teacher workload, and budget.
+5. Measure model and infrastructure cost per successfully completed learning task.
+6. Recalculate the scorecard from evidence, publishing unknowns and negative results as well as positive results.
+
+A school-licensing or telecom partnership is a hypothesis to validate, not an assumed solution. Do not pursue zero-rating or institutional integrations until buyer interest, economics, operational capacity, and privacy requirements are better understood.
