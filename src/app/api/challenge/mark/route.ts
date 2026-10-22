@@ -10,6 +10,7 @@ import { gradeForPercentage } from '@/lib/challenge/fromResult'
 import { signalsFromMarkedPaper } from '@/lib/learning/signals'
 import { recordSignalsServer } from '@/lib/learning/server'
 import type { ExamAnswer } from '@/lib/exam/types'
+import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,13 +40,20 @@ export async function POST(request: NextRequest) {
     if (!admin) return NextResponse.json({ error: 'Marking is temporarily unavailable. Please try again.', retryable: true }, { status: 503 })
 
     const [{ data: challenge }, { data: frozen }, { data: keyRow }] = await Promise.all([
-      supabase.from('challenges').select('percentage, challenger_id').eq('id', challengeId).maybeSingle(),
+      supabase.from('challenges').select('percentage, challenger_id, subject').eq('id', challengeId).maybeSingle(),
       supabase.from('challenge_questions').select('questions, marking').eq('challenge_id', challengeId).maybeSingle(),
       admin.from('challenge_answer_keys').select('key').eq('challenge_id', challengeId).maybeSingle(),
     ])
     const playSet = frozen ? sanitizeQuestions(frozen.questions) : null
     if (!challenge || !frozen || frozen.marking !== 'server' || !playSet || !keyRow) {
       return NextResponse.json({ error: 'This challenge is not available for server marking' }, { status: 404 })
+    }
+    if (typeof challenge.subject !== 'string' || !challenge.subject.trim()) {
+      return NextResponse.json({ error: 'Challenge subject could not be verified', code: 'SUBJECT_NOT_ALLOWED' }, { status: 403 })
+    }
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, challenge.subject)
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: 'SUBJECT_NOT_ALLOWED' }, { status: subjectAccess.status })
     }
 
     const answers: ExamAnswer[] = body.answers
