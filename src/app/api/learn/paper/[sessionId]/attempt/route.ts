@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { callAI } from "@/lib/ai";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
@@ -227,6 +228,8 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     }
 
     const plan = session.learning_plan as Plan;
+    const subjectAccess = await resolveLearnerSubject(auth.supabase, auth.user.id, plan.subject);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error }, { status: subjectAccess.status });
     const block = findBlock(plan, blockId);
     const selfCheck = block?.interaction?.evaluationMode === "self_check";
     if (!block?.interaction?.prompt || !block.interaction.rubric || !block.interaction.modelAnswer) {
