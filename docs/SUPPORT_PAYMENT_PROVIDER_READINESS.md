@@ -41,5 +41,15 @@ EcoCash Online Payments can collect from a customer's EcoCash wallet into a merc
 - Do not expose donor names or amounts publicly without explicit consent.
 - Keep payment status and receipts separate from learning progress.
 
-## Current decision
-**No live provider selected yet.** Paynow and EcoCash are candidates, not confirmed integrations. Settlement eligibility is a prerequisite, not a detail to guess around.
+## Current decision (updated 2026-10-22)
+The founder has a **personal EcoCash wallet**. The founder's sister is willing to help with a bank account, but merchant eligibility and settlement permission have not yet been confirmed.
+
+### Recommended next route: verify Paynow eligibility first
+1. Contact Paynow and ask whether Shadecode can onboard at its current stage and whether settlements may go to the sister's bank account with her explicit consent.
+2. Ask which identity/account holder must register as the merchant, what documents are required, and whether business registration is mandatory.
+3. Ask whether the approved Paynow integration can accept EcoCash payments as a customer payment method while settling to the approved bank account. Do not assume this is enabled by default.
+4. Do not enter the sister's bank details, submit identity documents, or configure live credentials until she has reviewed the provider's requirements and explicitly agreed to the exact arrangement.
+5. Keep direct EcoCash Online Payments as a later option unless/until an eligible EcoCash merchant account is available.
+
+### Current decision
+**Provider onboarding investigation: Paynow first; EcoCash Online Payments second. No live provider selected and no live checkout enabled.** A personal EcoCash wallet is not a merchant account. A willing relative's bank account is not automatically an eligible merchant settlement account. Provider approval and transparent consent are mandatory before implementation.
