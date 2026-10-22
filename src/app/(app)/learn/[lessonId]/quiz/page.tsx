@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
-import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
+import { buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -110,8 +110,6 @@ export default function QuizPage() {
       setSelected(null);
       setConfirmed(false);
     } else {
-      const finalCorrectCount = newAnswers.filter((a, i) => a === questions[i]?.correctIndex).length;
-      const finalPercentage = questions.length > 0 ? Math.round((finalCorrectCount / questions.length) * 100) : 0;
       try {
         const response = await fetch("/api/learn/quiz/submit", {
           method: "POST",
