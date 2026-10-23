@@ -18,6 +18,8 @@ describe("shared learning artifact cache keys", () => {
     expect(buildSharedArtifactCacheKey(base)).not.toBe(buildSharedArtifactCacheKey({ ...base, examBoard: "ZIMSEC" }));
     expect(buildSharedArtifactCacheKey(base)).not.toBe(buildSharedArtifactCacheKey({ ...base, level: "A Level" }));
     expect(buildSharedArtifactCacheKey(base)).not.toBe(buildSharedArtifactCacheKey({ ...base, difficulty: "hard" }));
+    expect(buildSharedArtifactCacheKey({ ...base, topic: "C++" })).not.toBe(buildSharedArtifactCacheKey({ ...base, topic: "C#" }));
+    expect(buildSharedArtifactCacheKey({ ...base, topic: "C" })).not.toBe(buildSharedArtifactCacheKey({ ...base, topic: "C++" }));
   });
 
   it("accepts substantial general educational content", () => {
