@@ -33,10 +33,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Shadecode Student" },
   icons: {
     icon: [
-      { url: "/icons/shadecode-student.svg", type: "image/svg+xml", sizes: "1024x1024" },
-      { url: "/icons/favicon.png", type: "image/png", sizes: "32x32" },
-      { url: "/icons/shadecode-student-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/shadecode-student-512.png", type: "image/png", sizes: "512x512" }
+      { url: "/icons/shadecode-student.svg", type: "image/svg+xml", sizes: "any" }
     ],
     apple: [
       { url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" },
@@ -71,7 +68,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icons/shadecode-student.svg" type="image/svg+xml" sizes="any" />
-        <link rel="icon" href="/icons/favicon.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
         <meta name="theme-color" content="#06111C" />
         <meta name="mobile-web-app-capable" content="yes" />
