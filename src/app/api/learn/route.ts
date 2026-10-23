@@ -504,7 +504,9 @@ export async function POST(req: Request) {
           try {
             const library = await loadLibrary(supabase as never);
             const publicLesson = recoverLesson(library.index, library.rows, effectiveSubject, request.topic);
-            if (publicLesson) {
+            // The legacy library has no reliable board/level metadata, and difficulty
+            // must match explicitly. Never relabel an easy lesson as hard (or vice versa).
+            if (publicLesson && publicLesson.difficulty?.trim().toLowerCase() === validDifficulty) {
               const publicBlocks = publicLesson.blocks as LessonBlock[];
               const score = lessonQualityScore(publicBlocks);
               const candidate = { title: publicLesson.title, blocks: publicBlocks };
