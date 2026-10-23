@@ -1,17 +1,13 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export interface AuthenticatedRequestClient {
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> | ReturnType<typeof createClient>;
-  user: User;
-}
 
 /**
  * Authenticate API recovery requests consistently with /api/learn:
  * prefer an explicit bearer token, then fall back to the SSR cookie session.
  * The returned bearer client carries the same token for RLS-protected queries.
  */
-export async function createAuthenticatedRequestClient(request: Request): Promise<AuthenticatedRequestClient | null> {
+export async function createAuthenticatedRequestClient(request: Request): Promise<{ supabase: any; user: User } | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) return null;
