@@ -14,7 +14,7 @@ Cache identity includes artifact type, normalized subject, normalized topic/requ
 
 ## Current first integration
 
-Lesson generation checks the shared cache at the start of a new cloud generation run. A hit still passes the normal lesson-quality validator and then goes through the ordinary authenticated save/finalization path for the requesting learner. It avoids the model call, not ownership, persistence, or XP accounting.
+Lesson generation checks the shared cache at the start of a new cloud generation run. If there is no exact cache hit, it may reuse an explicitly published public lesson-library entry when subject/topic coverage and the full lesson-quality gate pass. Legacy library entries are not reused when exam-board or level alignment cannot be established. Private learner lesson rows are never treated as shared content. A hit still goes through the ordinary authenticated save/finalization path for the requesting learner. It avoids the model call, not ownership, persistence, or XP accounting.
 
 Only lessons with a high quality score and no learner-memory context are eligible for publication. Obvious personal prompts, email addresses, phone numbers, and known personal-memory phrases are rejected. These checks are defense in depth, not a claim that arbitrary text can be perfectly anonymized.
 
