@@ -24,7 +24,8 @@ export async function GET(req: Request) {
     }
 
     const result = await resolveVerifiedCurriculumPromptContext(user.id, `Subject: ${subject}\nMaster this request: "${topic}"`);
-    if (result.status === "resolved" && result.pack && result.pack.subject.toLowerCase() !== subject.toLowerCase()) {
+    const normalizedPackSubject = result.status === "resolved" && result.pack ? result.pack.subject.trim().replace(/^(as|a)[ -]?level\\s+/i, "").toLowerCase() : "";
+    if (result.status === "resolved" && result.pack && normalizedPackSubject !== subject.toLowerCase()) {
       return NextResponse.json({ error: "The curriculum profile does not match your selected subject.", code: "CURRICULUM_SUBJECT_MISMATCH" }, { status: 409 });
     }
     return NextResponse.json({ status: result.status, reason: result.reason, resolvedTopic: result.status === "resolved" ? result.resolvedTopic : undefined, promptContext: result.promptContext, pack: result.status === "resolved" ? result.pack : undefined }, { status: result.status === "blocked" ? 409 : 200 });
