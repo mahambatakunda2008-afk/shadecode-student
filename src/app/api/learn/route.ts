@@ -18,7 +18,7 @@ import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
-import { findSharedLessonArtifact, isSafeToShareLesson, publishSharedLessonArtifact } from "@/lib/sharedArtifacts/cache";
+import { findSharedLessonArtifact, isExactLegacyDifficultyMatch, isSafeToShareLesson, publishSharedLessonArtifact } from "@/lib/sharedArtifacts/cache";
 import { loadLibrary } from "@/lib/library/store";
 import { recoverLesson } from "@/lib/library/recover";
 
@@ -506,7 +506,7 @@ export async function POST(req: Request) {
             const publicLesson = recoverLesson(library.index, library.rows, effectiveSubject, request.topic);
             // The legacy library has no reliable board/level metadata, and difficulty
             // must match explicitly. Never relabel an easy lesson as hard (or vice versa).
-            if (publicLesson && publicLesson.difficulty?.trim().toLowerCase() === validDifficulty) {
+            if (publicLesson && isExactLegacyDifficultyMatch(publicLesson.difficulty, validDifficulty)) {
               const publicBlocks = publicLesson.blocks as LessonBlock[];
               const score = lessonQualityScore(publicBlocks);
               const candidate = { title: publicLesson.title, blocks: publicBlocks };
