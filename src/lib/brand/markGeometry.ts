@@ -1,12 +1,12 @@
-/** Canonical folded-S ribbon geometry and gradient for brand consistency tests. */
-export const MARK_VIEWBOX = 1024;
-export const MARK_TRANSLATE = { x: 0, y: 0 } as const;
+/** Restored original Shadecode abstract mark geometry. */
+export const MARK_VIEWBOX = 600;
+export const MARK_TRANSLATE = { x: 25.5, y: 10.5 } as const;
 export const MARK_PATHS = [
-  "M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689",
-  "M674 333 C617 291 523 286 442 320 C368 351 341 408 359 455 C373 491 421 510 468 529",
-  "M514 578 C575 603 608 641 599 687 C590 730 545 754 493 755",
+  "M72.5 146.5 275.5 24.5 475.5 139.5 474.5 224.5 190.5 162.5 72.5 193.5Z",
+  "M72.5 193.5 477.5 326.5 477.5 389.5 72.5 266.5Z",
+  "M72.5 340.5 132.5 372.5 132.5 396.5 272.5 480.5 477.5 389.5 477.5 435.5 278.5 555.5 72.5 436.5Z",
 ] as const;
 export const MARK_GRADIENT = {
-  x1: 320, y1: 300, x2: 700, y2: 760,
-  stops: [[0, "#54DDEB"], [0.38, "#2588E8"], [0.72, "#465BE5"], [1, "#7761D8"]],
+  x1: 70, y1: 50, x2: 480, y2: 540,
+  stops: [[0, "#54DDEB"], [0.42, "#2588E8"], [0.76, "#465BE5"], [1, "#7761D8"]],
 } as const;
