@@ -8,7 +8,13 @@ create table if not exists public.lesson_quiz_sessions (
   created_at timestamptz not null default now(),
   expires_at timestamptz not null default (now() + interval '2 hours'),
   submitted_at timestamptz,
-  constraint lesson_quiz_sessions_expiry_check check (expires_at > created_at)
+  -- Save the verified result in the same atomic update that consumes the session.
+  -- A lost HTTP response can then be recovered without rescoring or double-counting.
+  result_payload jsonb,
+  mastery_status text not null default 'not_applicable'
+    check (mastery_status in ('not_applicable', 'pending', 'recorded', 'failed')),
+  constraint lesson_quiz_sessions_expiry_check check (expires_at > created_at),
+  constraint lesson_quiz_sessions_result_check check (submitted_at is null or result_payload is not null)
 );
 
 create index if not exists lesson_quiz_sessions_owner_idx
