@@ -3,6 +3,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -210,6 +212,12 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({ error: "Choose your subjects in onboarding before using Exam Hub.", code: "SUBJECT_NOT_ALLOWED" }, { status: 409 });
+    }
+    const selectedSubjects = learner.subjects.map((item) => item.name);
+
     const rateLimitResponse = await applyRateLimit(request, aiEndpointLimiter);
     if (rateLimitResponse) return rateLimitResponse;
 
@@ -222,6 +230,9 @@ export async function POST(request: Request) {
       const context = Array.isArray(body?.previousContext) ? body.previousContext.slice(-10) : [];
       const style = safeString(body?.explanationStyle, 80);
       if (question.length < 2) return NextResponse.json({ error: "A tutoring question is required." }, { status: 400 });
+      if (!isAllowedSubject(subject, selectedSubjects)) {
+        return NextResponse.json({ error: "Choose one of your selected subjects for Cortex tutoring.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+      }
 
       const prompt = `You are Cortex, a rigorous Socratic tutor inside Shadecode Student.
 Subject: ${subject || "General"}
@@ -259,10 +270,18 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
           .eq("id", sourcePaper.syllabus_id)
           .maybeSingle();
         if (syllabusError) throw syllabusError;
-        resolvedQuestionSubject = String(syllabus?.subject || subject || "").trim();
+        resolvedQuestionSubject = String(syllabus?.subject || "").trim();
         if (!resolvedQuestionSubject) {
           return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
         }
+        if (!isAllowedSubject(resolvedQuestionSubject, selectedSubjects)) {
+          return NextResponse.json({ error: "That paper is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+        }
+        if (subject && !isAllowedSubject(subject, selectedSubjects)) {
+          return NextResponse.json({ error: "Choose one of your selected subjects for Cortex question help.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+        }
+      } else if (!isAllowedSubject(subject, selectedSubjects)) {
+        return NextResponse.json({ error: "Choose one of your selected subjects for Cortex question help.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
       }
 
       const response = await generate(questionPrompt(resolvedQuestionSubject, question));
@@ -284,6 +303,23 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
     if (paperError) throw paperError;
     if (!paper) return NextResponse.json({ error: "Past paper not found." }, { status: 404 });
 
+    const { data: paperSyllabus, error: paperSyllabusError } = await supabase
+      .from("syllabi")
+      .select("id,subject,board")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+    if (paperSyllabusError) throw paperSyllabusError;
+    const analysisSubject = String(paperSyllabus?.subject || "").trim();
+    if (!analysisSubject) {
+      return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
+    }
+    if (!isAllowedSubject(analysisSubject, selectedSubjects)) {
+      return NextResponse.json({ error: "That paper is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    }
+    if (subject && !isAllowedSubject(subject, selectedSubjects)) {
+      return NextResponse.json({ error: "Choose one of your selected subjects for Cortex paper analysis.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    }
+
     const { data: questions, error: questionsError } = await supabase
       .from("exam_questions")
       .select("question_number,question_text,marks")
@@ -293,17 +329,6 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
       .limit(MAX_PAPER_QUESTIONS);
     if (questionsError) throw questionsError;
     if (!questions?.length) return NextResponse.json({ error: "This paper has not been indexed into individual questions yet." }, { status: 409 });
-
-    const { data: paperSyllabus, error: paperSyllabusError } = await supabase
-      .from("syllabi")
-      .select("id,subject,board")
-      .eq("id", paper.syllabus_id)
-      .maybeSingle();
-    if (paperSyllabusError) throw paperSyllabusError;
-    const analysisSubject = String(paperSyllabus?.subject || subject || "").trim();
-    if (!analysisSubject) {
-      return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
-    }
 
     const response = await generate(paperPrompt(analysisSubject, questions));
     const analysis = extractJson(response.text);

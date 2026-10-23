@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,11 @@ export async function GET(req: Request) {
         reason: "SUBJECT_REQUIRED",
         message: "Choose a subject before asking for the next curriculum objective.",
       });
+    }
+
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject.name, subject.id);
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ available: false, reason: "SUBJECT_NOT_ALLOWED", message: subjectAccess.error }, { status: subjectAccess.status });
     }
 
     const storedSubjects = Array.isArray(profile?.curriculum_subjects) ? profile.curriculum_subjects : [];

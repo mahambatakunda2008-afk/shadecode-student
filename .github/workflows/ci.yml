@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/exam-hub-subject-access, fix/library-subject-access-followup]
   pull_request:
-    branches: [main]
+    branches: [main, fix/exam-hub-subject-access]
 
 jobs:
   verify:

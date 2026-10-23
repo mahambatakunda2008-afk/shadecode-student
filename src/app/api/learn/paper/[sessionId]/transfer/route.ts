@@ -8,6 +8,7 @@ import { normalizeClientActionId } from "@/lib/learn/paperLearningIdempotency";
 import { canonicalLabel } from "@/lib/topicMastery/canonical";
 import { resolveCurriculumLink } from "@/lib/topicMastery/curriculumLink";
 import { readPaperScope } from "@/lib/topicMastery/paperScope";
+import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import type { PaperScope } from "@/lib/topicMastery/resolver";
 import { projectPaperSignal, VERDICT_SCORE } from "@/lib/topicMastery/paperSignal";
 
@@ -95,6 +96,10 @@ export async function POST(req: Request, context: { params: Promise<{ sessionId:
     const { data: session } = await auth.supabase.from("paper_learning_sessions").select("id,selected_page_start,selected_page_end,pages,learning_plan,source_metadata").eq("id", sessionId).eq("user_id", auth.user.id).maybeSingle();
     if (!session) return NextResponse.json({ error: "Learning session not found." }, { status: 404 });
     const plan = session.learning_plan as Plan;
+    if (!plan.subject?.trim()) return NextResponse.json({ error: "This paper session has no verified subject.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    const subjectAccess = await resolveLearnerSubject(auth.supabase, auth.user.id, plan.subject);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
+    plan.subject = subjectAccess.subject;
     const block = blockFor(plan, blockId);
     if (!block?.interaction?.prompt) return NextResponse.json({ error: "Checkpoint not found." }, { status: 404 });
     const pages = (session.pages as Array<{ pageNumber: number; text: string }>).filter(page => (block.sourcePages ?? []).includes(page.pageNumber));

@@ -6,6 +6,7 @@ import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveVerifiedCurriculumPromptContext } from '@/lib/curriculum/ai-grounding'
 import { buildSyllabusGuide, type GuideKnowledgeItem } from '@/lib/cortex/syllabusGuide'
 import { buildEnginePracticeBlocks, wrapPracticeLesson } from '@/lib/cortex/enginePractice'
+import { resolveLearnerSubject } from '@/lib/academic/subjectAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,18 +61,25 @@ export async function GET(request: NextRequest) {
   const params = new URL(request.url).searchParams
   const subject = (params.get('subject') ?? '').trim().slice(0, 60)
   const topic = (params.get('topic') ?? '').trim().slice(0, 200)
+  if (!subject) return NextResponse.json({ error: 'subject required' }, { status: 400 })
   if (topic.length < 2) return NextResponse.json({ error: 'topic required' }, { status: 400 })
 
   try {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
+
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject)
+    if (!subjectAccess.ok) {
+      return NextResponse.json({ error: subjectAccess.error, code: 'SUBJECT_NOT_ALLOWED' }, { status: subjectAccess.status })
+    }
+    const allowedSubject = subjectAccess.subject
 
     // Worked examples and practice from the question engine: independent of any syllabus data or AI provider.
-    const practice = buildEnginePracticeBlocks(subject, topic)
+    const practice = buildEnginePracticeBlocks(allowedSubject, topic)
 
     // Syllabus guide from the learner's verified syllabus, when one exists for this topic.
-    const guide = await tryBuildSyllabusGuide({ userId: user.id, subject, topic, extraBlocks: practice?.blocks })
+    const guide = await tryBuildSyllabusGuide({ userId: user.id, subject: allowedSubject, topic, extraBlocks: practice?.blocks })
     if (guide) return respond(guide)
 
     // No syllabus match (e.g. ZIMSEC, or no curriculum configured): a practice-only lesson still works.

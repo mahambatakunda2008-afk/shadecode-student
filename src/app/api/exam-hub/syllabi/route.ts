@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
 import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +26,9 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    const allowedNames = new Set(learner.subjects.map((subject) => subject.name.trim().toLowerCase()));
+    const selectedSubjects = learner.subjects.map((subject) => subject.name);
     let syllabi = (data ?? []).filter(
-      (syllabus) => typeof syllabus.subject === "string" && allowedNames.has(syllabus.subject.trim().toLowerCase())
+      (syllabus) => isAllowedSubject(syllabus.subject, selectedSubjects)
     );
 
     const { searchParams } = new URL(request.url);

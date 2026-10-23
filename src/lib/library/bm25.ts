@@ -68,11 +68,17 @@ export function qualityMultiplier(up: number, down: number): number {
   return 0.7 + 0.6 * approval;
 }
 
-/** Subjects match when they share a word, so "A Level Physics" finds a "Physics" lesson. */
+/**
+ * Match the whole subject identity, ignoring curriculum/qualification labels.
+ * A shared word is not enough: "Science" must not expose "Computer Science".
+ */
+const SUBJECT_QUALIFIERS = new Set(["a", "as", "o", "level", "levels", "igcse", "gcse", "cambridge", "international", "cie", "zimsec", "pearson", "edexcel", "advanced", "ordinary", "higher", "standard", "hl", "sl"]);
+const subjectIdentity = (value: string) => tokenize(value).filter((token) => !SUBJECT_QUALIFIERS.has(token)).join(" ");
 const subjectMatches = (docSubject: string | null, wanted: string) => {
   if (!docSubject) return false;
-  const have = new Set(tokenize(docSubject));
-  return tokenize(wanted).some((token) => have.has(token));
+  const have = subjectIdentity(docSubject);
+  const requested = subjectIdentity(wanted);
+  return Boolean(have && requested && have === requested);
 };
 
 export function search(index: Bm25Index, query: string, options: { subject?: string; limit?: number } = {}): SearchHit[] {

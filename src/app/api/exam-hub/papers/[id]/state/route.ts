@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isAllowedSubject } from "@/lib/academic/subjectContract";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 import { mergePaperScoreHistory, parsePaperStatePatch } from "@/lib/exam-hub/paperStatePatch";
 
 export const dynamic = "force-dynamic";
@@ -74,6 +76,37 @@ export async function POST(
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // State writes also affect Cortex's weak/strong subject memory. Verify the
+    // paper's syllabus before accepting scores or recording progress.
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json(
+        { error: "Choose your subjects in onboarding before using Exam Hub.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 409 },
+      );
+    }
+
+    const { data: paper, error: paperError } = await supabase
+      .from("past_papers")
+      .select("id, syllabus_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (paperError) throw paperError;
+    if (!paper) return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+
+    const { data: syllabus, error: syllabusError } = await supabase
+      .from("syllabi")
+      .select("id, subject")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+    if (syllabusError) throw syllabusError;
+    if (!syllabus || !isAllowedSubject(syllabus.subject, learner.subjects.map((subject) => subject.name))) {
+      return NextResponse.json(
+        { error: "That paper is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" },
+        { status: 403 },
+      );
     }
 
     let payload: unknown;

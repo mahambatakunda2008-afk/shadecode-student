@@ -15,6 +15,7 @@ import PaperStudyLauncher from "./PaperStudyLauncher";
 import LearnBrainStatus from "./LearnBrainStatus";
 import ShadeNetKnowledgeSearch from "./ShadeNetKnowledgeSearch";
 import GeographyRevisionKit from "./GeographyRevisionKit";
+import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
 
 const AUTH_TIMEOUT = 3_000;
 const LOCAL_TIMEOUT = 2_500;
@@ -275,7 +276,9 @@ export default function LearnPageResilient() {
           </div>
         </header>
 
-        <div className="mb-6"><GeographyRevisionKit /></div>
+        {subjects.some((item) => normalizeSubjectKey(item.name) === "geography") && (
+          <div className="mb-6"><GeographyRevisionKit /></div>
+        )}
 
         {(error || offline) && <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
           <AlertCircle size={20} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
@@ -351,7 +354,7 @@ export default function LearnPageResilient() {
           </aside>
         </div>
 
-        <div className="mt-6"><ShadeNetKnowledgeSearch /></div>
+        <div className="mt-6"><ShadeNetKnowledgeSearch subjects={subjects.map((item) => ({ id: item.id, name: item.name }))} /></div>
 
         {generationJob && <section className={`mt-6 rounded-[22px] border p-4 sm:p-5 ${generationJob.status === "failed" ? "border-rose-500/25 bg-rose-500/[0.045]" : "border-[var(--primary)]/30 bg-[var(--surface)] dark:bg-[var(--surface)]"}`} role={generationJob.status === "failed" ? "alert" : "status"} aria-live="polite">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">

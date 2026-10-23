@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAlgorithmExercise, getAssessmentTestCases } from "@/lib/comp-lab/algorithms/assessment";
+import { resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
+import { hasComputerScienceCurriculum } from "@/lib/academic/code-lab";
 
 export const dynamic = "force-dynamic";
 const MAX_CODE_LENGTH = 40_000;
@@ -8,7 +10,7 @@ const MAX_CODE_LENGTH = 40_000;
 async function requireUser() {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
-  return { user: error || !user ? null : user };
+  return { supabase, user: error || !user ? null : user };
 }
 
 /**
@@ -17,8 +19,16 @@ async function requireUser() {
  * cases are resolved server-side and are never accepted from the request body.
  */
 export async function POST(request: Request) {
-  const { user } = await requireUser();
+  const { supabase, user } = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const learner = await resolveLearnerSubjects(supabase, user.id);
+  if (!hasComputerScienceCurriculum(learner.subjects)) {
+    return NextResponse.json(
+      { error: "Comp Lab assessments are only available to learners enrolled in Computer Science or an equivalent computing subject.", code: "SUBJECT_NOT_ALLOWED" },
+      { status: 403 },
+    );
+  }
 
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
