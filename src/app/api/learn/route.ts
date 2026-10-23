@@ -535,13 +535,13 @@ export async function POST(req: Request) {
               if (lessonQualityFailures(candidate, request).failures.length > 0 || score < 60) continue;
               if (!isSafeToShareLesson(request.topic, {
                 title: candidate.title,
-                blocks: candidate.blocks as Array<Record<string, unknown>>,
+                blocks: candidate.blocks as unknown as Array<Record<string, unknown>>,
               })) continue;
               shared = {
                 id: String(prior.id ?? ""),
                 payload: { title: candidate.title, blocks: candidate.blocks },
                 qualityScore: score,
-                lesson: { title: candidate.title, blocks: candidate.blocks as Array<Record<string, unknown>> },
+                lesson: { title: candidate.title, blocks: candidate.blocks as unknown as Array<Record<string, unknown>> },
               };
               await publishSharedLessonArtifact(supabase, {
                 subject: effectiveSubject,
@@ -567,7 +567,7 @@ export async function POST(req: Request) {
         if (shared) {
           const sharedCandidate = {
             title: shared.lesson.title,
-            blocks: shared.lesson.blocks as LessonBlock[],
+            blocks: shared.lesson.blocks as unknown as LessonBlock[],
           };
           const sharedFailures = lessonQualityFailures(sharedCandidate, request).failures;
           const sharedScore = lessonQualityScore(sharedCandidate.blocks);
@@ -1071,7 +1071,7 @@ Return only valid JSON.`;
       level: typeof level === "string" ? level : null,
       examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
       goal: typeof goal === "string" ? goal : null,
-      lesson: { title: parsed.title, blocks: parsed.blocks as Array<Record<string, unknown>> },
+      lesson: { title: parsed.title, blocks: parsed.blocks as unknown as Array<Record<string, unknown>> },
       qualityScore: finalScore,
       shareable: usedDeterministicFallback || learnerMemoryContext.trim().length === 0,
     }).catch(() => false);
