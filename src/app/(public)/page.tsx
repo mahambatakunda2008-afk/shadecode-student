@@ -30,7 +30,7 @@ export default function PublicHomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/auth/login" className="hidden rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:text-white sm:inline-flex">Sign in</Link>
-            <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Get started <ArrowRight size={16} /></Link>
+            <Link href="/auth/signup" className="ssc-public-cta ssc-public-cta--primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">Get started <ArrowRight size={16} /></Link>
           </div>
         </div>
       </header>
@@ -44,7 +44,7 @@ export default function PublicHomePage() {
             <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">Study for your Cambridge &amp; ZIMSEC exams <span className="ssc-brand-gradient">with a plan that adapts to you.</span></h1>
             <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Practise exam-style questions, learn any topic with step-by-step lessons, and see exactly which topics to work on next. Free to start, and it works on your phone.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={18} /></Link>
+              <Link href="/auth/signup" className="ssc-public-cta ssc-public-cta--primary inline-flex items-center gap-2 rounded-xl px-5 py-3.5 font-semibold">Start studying free <ArrowRight size={18} /></Link>
               <a href="#intelligence" className="inline-flex items-center gap-2 rounded-[10px] border border-white/12 bg-transparent px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.05]">See how it works</a>
             </div>
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400"><span>Free to start</span><span>Works on any phone</span><span>Cambridge &amp; ZIMSEC</span><span>Exam practice &amp; lessons</span></div>
