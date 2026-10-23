@@ -181,6 +181,11 @@ export async function POST(req: Request) {
         await supabase.from("lesson_quiz_sessions").update({ mastery_status: "recorded" }).eq("id", quizId).eq("user_id", user.id);
         return NextResponse.json({ ...resultPayload, curriculumTracked: true });
       }
+      if (lookupError) {
+        // The evidence lookup is uncertain, so preserve the verified score and
+        // let a later result-recovery request reconcile it instead of retrying.
+        return NextResponse.json(responseForStoredResult(resultPayload, "pending"));
+      }
 
       // No committed evidence was found, so retry once. The unique index makes
       // this safe even if the first transaction was still completing.
