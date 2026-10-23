@@ -215,7 +215,7 @@ function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): Stru
   // Some model responses contain prose without markdown headings. Keep the
   // actual response available to the learner instead of returning an empty
   // lesson, while still letting the quality gate decide whether it is enough.
-  if (lesson.content.explanation.length === 0) {
+  if (lesson.content.explanation.length === 0 && sections.length === 0) {
     const fallbackText = lines.filter((line) => !/^#\s+/.test(line)).join("\n").trim();
     if (fallbackText) {
       lesson.content.explanation.push({ heading: "Explanation", content: fallbackText });
