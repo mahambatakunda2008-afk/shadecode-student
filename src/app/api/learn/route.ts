@@ -1087,7 +1087,7 @@ Return only valid JSON.`;
       goal: typeof goal === "string" ? goal : null,
       lesson: { title: parsed.title, blocks: parsed.blocks as unknown as Array<Record<string, unknown>> },
       qualityScore: finalScore,
-      shareable: usedDeterministicFallback || learnerMemoryContext.trim().length === 0,
+      shareable: learnerMemoryContext.trim().length === 0,
     }).catch(() => false);
 
     // The lesson row is durable. Memory and XP are secondary effects and cannot
