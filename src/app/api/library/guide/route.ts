@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveVerifiedCurriculumPromptContext } from '@/lib/curriculum/ai-grounding'
+import { assertRequestedLearnerSubject, resolveLearnerSubjects } from '@/lib/subjects/resolveLearnerSubjects'
 import { buildSyllabusGuide, type GuideKnowledgeItem } from '@/lib/cortex/syllabusGuide'
 
 export const dynamic = 'force-dynamic'
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No verified syllabus is available for this topic' }, { status: 404 })
     }
     const { pack } = resolved
+    if ((pack.subject || '').trim().toLowerCase() !== subject.toLowerCase()) {
+      return NextResponse.json({ error: 'The curriculum profile does not match your selected subject', code: 'CURRICULUM_SUBJECT_MISMATCH' }, { status: 409 })
+    }
 
     const topicItems: GuideKnowledgeItem[] = pack.knowledge.map((item) => ({
       kind: item.kind, code: item.code, title: item.title, content: item.content, topicCode: item.topicCode,
