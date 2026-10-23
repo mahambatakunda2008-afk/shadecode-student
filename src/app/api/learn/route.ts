@@ -18,6 +18,7 @@ import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
+import { findSharedLessonArtifact, publishSharedLessonArtifact } from "@/lib/sharedArtifacts/cache";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -416,6 +417,20 @@ export async function POST(req: Request) {
         savedId = inserted.id;
       }
 
+      if (generated.shareable === true) {
+        await publishSharedLessonArtifact(supabase, {
+          subject: effectiveSubject,
+          topic: request.topic,
+          difficulty: validDifficulty,
+          level: typeof level === "string" ? level : null,
+          examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
+          goal: typeof goal === "string" ? goal : null,
+          lesson: { title: persistableCandidate.title, blocks: persistableCandidate.blocks as Array<Record<string, unknown>> },
+          qualityScore: finalScore,
+          shareable: true,
+        }).catch(() => false);
+      }
+
       // The lesson is already durably saved at this point. Memory and XP are best-effort
       // side effects; neither may turn a successful save into a learner-visible generation failure.
       await runBestEffortSideEffects([
@@ -480,6 +495,67 @@ export async function POST(req: Request) {
         const partial = checkpoint.partial as Record<string, unknown>;
         if (Array.isArray(partial.blocks)) priorBlocks = partial.blocks as LessonBlock[];
       }
+      if (checkpointCompleted === 0 && generationSectionIndex === 0) {
+        const shared = await findSharedLessonArtifact(supabase, {
+          subject: effectiveSubject,
+          topic: request.topic,
+          difficulty: validDifficulty,
+          level: typeof level === "string" ? level : null,
+          examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
+          goal: typeof goal === "string" ? goal : null,
+        });
+        if (shared) {
+          const sharedCandidate = {
+            title: shared.lesson.title,
+            blocks: shared.lesson.blocks as LessonBlock[],
+          };
+          const sharedFailures = lessonQualityFailures(sharedCandidate, request).failures;
+          const sharedScore = lessonQualityScore(sharedCandidate.blocks);
+          if (sharedFailures.length === 0 && sharedScore >= 60) {
+            // The ordinary persist endpoint finalizes into this draft, so a cache hit
+            // still has the same lease-owned, per-learner save path as fresh generation.
+            const { data: existingDraft, error: draftLookupError } = await supabase
+              .from("learn_lessons").select("id").eq("id", durableJobId).eq("user_id", user.id).maybeSingle();
+            if (draftLookupError) {
+              return NextResponse.json({ error: "Unable to prepare the reused lesson for saving.", retryable: true }, { status: 503 });
+            }
+            if (!existingDraft) {
+              const { error: draftInsertError } = await supabase.from("learn_lessons").insert({
+                id: durableJobId,
+                user_id: user.id,
+                subject_id: resolvedSubject.id,
+                topic: sanitizeLessonText(request.topic.slice(0, 500)),
+                title: sanitizeLessonText(shared.lesson.title.slice(0, 255)),
+                description: "A verified shared lesson reused for this learner.",
+                difficulty: validDifficulty,
+                progress: 0,
+                blocks: [],
+              });
+              if (draftInsertError) {
+                return NextResponse.json({ error: "Unable to prepare the reused lesson for saving.", retryable: true }, { status: 503 });
+              }
+            }
+            console.info("[LEARN] reused verified shared lesson artifact", {
+              generationJobId: durableJobId,
+              subject: effectiveSubject,
+              topic: request.topic,
+              qualityScore: sharedScore,
+            });
+            return NextResponse.json({
+              sectionIndex: expectedSectionCount - 1,
+              sectionCount: expectedSectionCount,
+              title: shared.lesson.title,
+              blocks: shared.lesson.blocks,
+              partialBlocks: shared.lesson.blocks,
+              complete: true,
+              shareable: true,
+              sharedReuse: true,
+              qualityScore: sharedScore,
+            });
+          }
+        }
+      }
+
       if (checkpointCompleted >= expectedSectionCount) {
         const partial = checkpoint.partial && typeof checkpoint.partial === "object"
           ? checkpoint.partial as Record<string, unknown>
@@ -638,6 +714,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
               partialBlocks: deterministicFallback.blocks,
               complete: true,
               deterministicFallback: true,
+              shareable: true,
               providerUnavailable: true,
               fallbackReason: "provider_chain_exhausted",
             });
@@ -695,6 +772,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
             partialBlocks: deterministicFallback.blocks,
             complete: true,
             deterministicFallback: true,
+            shareable: true,
             fallbackReason: "section_repair_exhausted",
           });
         }
@@ -754,6 +832,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
         blocks: section.blocks,
         partialBlocks: currentBlocks,
         complete: generationSectionIndex + 1 >= generationSectionCount,
+        shareable: learnerMemoryContext.trim().length === 0,
       });
     }
 
@@ -925,6 +1004,18 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
+    await publishSharedLessonArtifact(supabase, {
+      subject: effectiveSubject,
+      topic: request.topic,
+      difficulty: validDifficulty,
+      level: typeof level === "string" ? level : null,
+      examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
+      goal: typeof goal === "string" ? goal : null,
+      lesson: { title: parsed.title, blocks: parsed.blocks as Array<Record<string, unknown>> },
+      qualityScore: finalScore,
+      shareable: usedDeterministicFallback || learnerMemoryContext.trim().length === 0,
+    }).catch(() => false);
+
     // The lesson row is durable. Memory and XP are secondary effects and cannot
     // turn a successful save into a failed request that invites duplicate work.
     await runBestEffortSideEffects([
