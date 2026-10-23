@@ -1,7 +1,7 @@
 # Examination-board coverage and expansion audit
 
 **Audit date:** 2026-10-23  
-**Status:** Repository/documentation audit; runtime coverage still requires a generated readiness report and learner-facing verification.
+**Status:** Read-only repository and live-schema/data audit. Learner-visible coverage and source readiness still require end-to-end verification.
 
 ## Purpose
 
@@ -12,9 +12,29 @@ Respond to the market limitation that Shadecode Student currently presents a nar
 - The repository README positions Shadecode Student around Cambridge and ZIMSEC learners.
 - The master roadmap marks both Cambridge and ZIMSEC as partial, with coverage still expanding.
 - The capability registry lists “Cambridge/ZIMSEC curriculum” as partial, not complete.
-- Curriculum infrastructure already models board, qualification, level, syllabus ID, subject ID, syllabus version, source authority, source documents, coverage checks, objectives, and readiness. The readiness-report script reads those records and reports blockers without promoting curriculum versions.
-- The repository includes curriculum ingestion, source-change detection, and a readiness report. This is a useful foundation for more boards, but infrastructure for a board is not proof that its subjects are ready for students.
-- The exact count of production-ready boards and subjects is **not established by this source audit**. Do not publish a precise coverage count until the readiness report and live product are checked.
+- Curriculum infrastructure models board, qualification, subject, syllabus ID/version, source documents, coverage checks, objectives, and readiness.
+- The active Shadecode Student Supabase project was queried read-only on 2026-10-23. Its curriculum tables currently contain **9 syllabus-version records across 2 board IDs**:
+  - **Cambridge:** 8 syllabus-version records, 5 stored as `verified` and 3 as `draft`.
+  - **ZIMSEC:** 1 syllabus-version record, stored as `draft`.
+- Stored version status is not equivalent to passing the repository's conservative readiness gate. A read-only SQL check applying the gate's key requirements found **all 9 records still have readiness blockers**. This is a diagnostic result, not a status change or an independent syllabus-content review.
+- Recorded curriculum objectives total 1,380 across these records, all currently marked `verified`. This does **not** establish that all required coverage dimensions, source extraction, whole-syllabus review evidence, assessment formats, past papers, mark schemes, or learner-facing workflows are complete.
+- The current database therefore confirms two board IDs, but does not support a claim that every Cambridge or ZIMSEC subject is production-ready. No third board is present in these curriculum-version records.
+
+## Current record inventory
+
+| Board | Qualification / subject examples | Stored version status | Audit interpretation |
+|---|---|---|---|
+| Cambridge | AS/A Level Biology 9700 (2025–2027) | Verified | Still fails at least one readiness-gate requirement; the document extraction status is recorded as manual. |
+| Cambridge | AS/A Level Chemistry 9701 (2025–2027) | Verified | No coverage-check rows recorded; stored status alone is insufficient. |
+| Cambridge | AS/A Level Mathematics 9709 (2026–2027) | Verified | Coverage checks exist but are not complete; verify the remaining blockers. |
+| Cambridge | AS/A Level Physics 9702 (2025–2027) | Verified | Coverage checks exist but are not complete; verify the remaining blockers. |
+| Cambridge | IGCSE Computer Science 0478 (2026–2028) | Verified | Some coverage dimensions remain incomplete; verify the remaining blockers. |
+| Cambridge | AS/A Level Computer Science 9618 (2027–2029) | Draft | Many coverage dimensions are recorded as missing. |
+| Cambridge | IGCSE 9–1 Computer Science 0984 (2026–2028) | Draft | Many coverage dimensions are recorded as missing. |
+| Cambridge | O Level Computer Science 2210 (2026–2028) | Draft | Many coverage dimensions are recorded as missing. |
+| ZIMSEC | O Level Computer Science 4021 (2024–2030) | Draft | Many coverage dimensions are recorded as missing. |
+
+This is a snapshot of database metadata, not an endorsement of syllabus completeness. The qualification/subject records above are the current rows found by the audit; this table should be regenerated after curriculum changes.
 
 ## Immediate audit procedure
 
@@ -40,11 +60,12 @@ For every returned board/qualification/subject/version, inspect:
 
 ### Phase 1: make current coverage honest and reliable
 
-1. Produce a board → qualification → level → subject → syllabus-version inventory from the readiness report.
-2. Compare the inventory with the curriculum picker and the actual Learn, Exam Hub and Exam Simulation routes.
-3. Fix mismatches between “listed”, “ingested”, “verified”, and “usable”.
-4. Keep Cambridge and ZIMSEC marked partial until the relevant subjects and user workflows pass the gates below.
-5. Preserve subject eligibility: a learner must not receive a subject or topic merely because another learner has it or because a generated lesson exists.
+1. Run and preserve the full JSON output of `npm run report:curriculum-readiness` in a trusted environment; the live query above was a focused diagnostic, not a substitute for the report's full blocker explanations.
+2. Fix the blockers in the strongest current curriculum candidates before adding a new board. Biology, Mathematics, Physics and IGCSE Computer Science 0478 have records stored as verified, but must still pass the readiness gate and app workflow checks.
+3. Complete the coverage inventory for every qualification/level/subject/syllabus version.
+4. Compare the inventory with the curriculum picker and the actual Learn, Exam Hub and Exam Simulation routes.
+5. Fix mismatches between “listed”, “ingested”, “verified”, and “usable”.
+6. Preserve subject eligibility: a learner must not receive a subject or topic merely because another learner has it or because a generated lesson exists.
 
 ### Phase 2: add one board through a repeatable adapter
 
