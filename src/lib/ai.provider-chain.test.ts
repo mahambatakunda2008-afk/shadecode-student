@@ -239,3 +239,125 @@ describe("callAI provider fallback chain", () => {
     });
   });
 });
+
+// Evidence (ai_usage_logs, 30 days): Cloudflare's successful calls were short (~289 tokens, 3.5-5.9s) while 273
+// failures were "This operation was aborted" at ~6s. A fixed per-provider cap cut healthy providers off mid-answer
+// for lesson-sized outputs. shareChainBudget is the opt-in fix; defaults must stay exactly as they were.
+describe("callAI shareChainBudget and Cloudflare diagnostics", () => {
+  const OPTIONS = { skipCurriculumGrounding: true, curriculumContext: "", maxChainMs: 4000, perProviderMaxMs: 1000 };
+  const slow = (ms: number, body: unknown) => new Promise<Response>(resolve => setTimeout(() => resolve(jsonResponse(body)), ms));
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.unstubAllEnvs();
+    for (const key of ["OLLAMA_BASE_URL", "AI_GATEWAY_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_AI_MODEL", "CLOUDFLARE_AI_FALLBACK_MODEL", "GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3", "OPENAI_API_KEY", "ALLOW_PAID_AI"]) {
+      vi.stubEnv(key, "");
+    }
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  const cfOk = (text: string) => ({ result: { response: text } });
+  const cfError = (status: number, code: number, message: string) => ({ ok: false, status, json: async () => ({ success: false, errors: [{ code, message }] }), text: async () => "" } as unknown as Response);
+
+  it("by default a slow provider is still cut off at its fixed cap (unchanged behaviour)", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    fetchMock.mockImplementation(() => slow(1500, cfOk("a complete lesson section from cloudflare")));
+    const { callAI } = await import("./ai");
+    expect(await callAI("teach me waves", 500, OPTIONS)).toBeNull();
+  }, 10000);
+
+  it("with shareChainBudget a healthy but slow provider gets the time it needs", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    fetchMock.mockImplementation(() => slow(1500, cfOk("a complete lesson section from cloudflare")));
+    const { callAI } = await import("./ai");
+    expect(await callAI("teach me waves", 500, { ...OPTIONS, shareChainBudget: true })).toBe("a complete lesson section from cloudflare");
+  }, 10000);
+
+  it("shares the remaining time between configured providers and still reaches the next one", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes("openrouter.ai")) return new Promise<Response>(() => {}); // hangs forever
+      if (url.includes("cloudflare.com")) return jsonResponse(cfOk("a lesson from cloudflare"));
+      throw new Error(`unexpected url: ${url}`);
+    });
+    const { callAI } = await import("./ai");
+    const startedAt = Date.now();
+    const result = await callAI("teach me waves", 500, { ...OPTIONS, shareChainBudget: true });
+    const elapsedMs = Date.now() - startedAt;
+    expect(result).toBe("a lesson from cloudflare");
+    // OpenRouter got an equal share (~2s of the 4s chain), not the fixed 1s, and the chain still finished in time.
+    expect(elapsedMs, `took ${elapsedMs}ms`).toBeGreaterThan(1800);
+    expect(elapsedMs, `took ${elapsedMs}ms`).toBeLessThan(3800);
+  }, 10000);
+
+  it("records Cloudflare's own reason for a failure, not just the status code", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    fetchMock.mockResolvedValue(cfError(429, 4006, "you have used up your daily free allocation of 10,000 neurons"));
+    const { callAI } = await import("./ai");
+    expect(await callAI("teach me waves", 500, OPTIONS)).toBeNull();
+    const { logAIUsage } = await import("@/lib/ai/tracker");
+    const logged = (logAIUsage as unknown as { mock: { calls: Array<[{ provider: string; errorMessage?: string }]> } }).mock.calls.map(([entry]) => entry).find(entry => entry.provider === "cloudflare");
+    expect(logged?.errorMessage).toMatch(/Cloudflare HTTP 429/);
+    expect(logged?.errorMessage).toMatch(/4006/);
+    expect(logged?.errorMessage).toMatch(/daily free allocation/);
+  });
+
+  it("still reports the status when Cloudflare returns no readable body", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    fetchMock.mockResolvedValue({ ok: false, status: 503, json: async () => { throw new Error("not json"); }, text: async () => "" } as unknown as Response);
+    const { callAI } = await import("./ai");
+    expect(await callAI("teach me waves", 500, OPTIONS)).toBeNull();
+    const { logAIUsage } = await import("@/lib/ai/tracker");
+    const entry = (logAIUsage as unknown as { mock: { calls: Array<[{ provider: string; errorMessage?: string }]> } }).mock.calls.map(([e]) => e).find(e => e.provider === "cloudflare");
+    expect(entry?.errorMessage).toBe("Cloudflare HTTP 503");
+  });
+
+  it("uses the default Cloudflare model unless one is configured", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    fetchMock.mockResolvedValue(jsonResponse(cfOk("a lesson from cloudflare")));
+    const { callAI } = await import("./ai");
+    await callAI("teach me waves", 500, OPTIONS);
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/ai\/run\/@cf\/meta\/llama-3\.3-70b-instruct-fp8-fast$/);
+  });
+
+  it("lets CLOUDFLARE_AI_MODEL pick a different model without a deploy", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    vi.stubEnv("CLOUDFLARE_AI_MODEL", "@cf/meta/llama-4-scout-17b-16e-instruct");
+    fetchMock.mockResolvedValue(jsonResponse(cfOk("a lesson from cloudflare")));
+    const { callAI } = await import("./ai");
+    await callAI("teach me waves", 500, OPTIONS);
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/ai\/run\/@cf\/meta\/llama-4-scout-17b-16e-instruct$/);
+  });
+
+  it("ignores a malformed CLOUDFLARE_AI_MODEL instead of putting it into the URL", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    vi.stubEnv("CLOUDFLARE_AI_MODEL", "../../other/endpoint?x=1");
+    fetchMock.mockResolvedValue(jsonResponse(cfOk("a lesson from cloudflare")));
+    const { callAI } = await import("./ai");
+    await callAI("teach me waves", 500, OPTIONS);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).not.toMatch(/other\/endpoint|\.\.|\?/);
+    expect(url).toMatch(/llama-3\.3-70b-instruct-fp8-fast$/);
+  });
+
+  it("tries CLOUDFLARE_AI_FALLBACK_MODEL only after the first model fails", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    vi.stubEnv("CLOUDFLARE_AI_FALLBACK_MODEL", "@cf/meta/llama-3.2-3b-instruct");
+    fetchMock.mockImplementation(async (url: string) => (String(url).endsWith("llama-3.2-3b-instruct") ? jsonResponse(cfOk("a lesson from the smaller model")) : cfError(429, 4006, "daily free allocation used")));
+    const { callAI } = await import("./ai");
+    expect(await callAI("teach me waves", 500, OPTIONS)).toBe("a lesson from the smaller model");
+    expect(fetchMock.mock.calls.map(([url]) => String(url).split("/ai/run/")[1])).toEqual(["@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/meta/llama-3.2-3b-instruct"]);
+  });
+
+  it("does not call the fallback model when the first one succeeds, and makes one call when none is configured", async () => {
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "cf-key");
+    vi.stubEnv("CLOUDFLARE_AI_FALLBACK_MODEL", "@cf/meta/llama-3.2-3b-instruct");
+    fetchMock.mockResolvedValue(jsonResponse(cfOk("a lesson from the first model")));
+    const { callAI } = await import("./ai");
+    expect(await callAI("teach me waves", 500, OPTIONS)).toBe("a lesson from the first model");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
