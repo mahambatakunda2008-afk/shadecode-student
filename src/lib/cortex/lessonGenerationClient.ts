@@ -81,11 +81,38 @@ async function fetchLibraryRecovery(subject: string, topic: string, endpoint = "
       headers,
       cache: "no-store",
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { error?: unknown; code?: unknown } | null;
+      console.info("[LEARN] recovery endpoint returned no lesson", {
+        endpoint,
+        status: response.status,
+        code: typeof payload?.code === "string" ? payload.code : undefined,
+        error: typeof payload?.error === "string" ? payload.error.slice(0, 240) : undefined,
+        subject,
+        topic,
+      });
+      return null;
+    }
     const data = (await response.json()) as { lesson?: { title?: string; blocks?: Array<Record<string, unknown>> } };
     const lesson = data.lesson;
-    return lesson?.title && Array.isArray(lesson.blocks) && lesson.blocks.length >= 4 ? { title: lesson.title, blocks: lesson.blocks } : null;
-  } catch {
+    if (lesson?.title && Array.isArray(lesson.blocks) && lesson.blocks.length >= 4) {
+      return { title: lesson.title, blocks: lesson.blocks };
+    }
+    console.info("[LEARN] recovery endpoint returned an unusable lesson payload", {
+      endpoint,
+      subject,
+      topic,
+      hasTitle: Boolean(lesson?.title),
+      blockCount: Array.isArray(lesson?.blocks) ? lesson.blocks.length : 0,
+    });
+    return null;
+  } catch (error) {
+    console.info("[LEARN] recovery endpoint request failed", {
+      endpoint,
+      subject,
+      topic,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   } finally {
     clearTimeout(timer);
