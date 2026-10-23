@@ -28,8 +28,18 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
 
-    // Same prompt shape the lesson generator uses, so identity and topic resolution behave identically.
-    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subject}\nmaster this request: "${topic}"`)
+    if (!subject) return NextResponse.json({ error: 'Choose one of your selected subjects' }, { status: 400 })
+
+    const learner = await resolveLearnerSubjects(supabase, user.id)
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({ error: 'Choose your subjects in onboarding before using a syllabus guide', code: 'SUBJECT_NOT_ALLOWED' }, { status: 409 })
+    }
+    if (!assertRequestedLearnerSubject(learner.subjects, subject)) {
+      return NextResponse.json({ error: 'That subject is not available for your selected subjects', code: 'SUBJECT_NOT_ALLOWED' }, { status: 403 })
+    }
+
+    // Same prompt shape the lesson generator uses, but only after canonical onboarding access is verified.
+    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subject}\\nmaster this request: "${topic}"`)
     if (resolved.status !== 'resolved' || !resolved.pack) {
       return NextResponse.json({ error: 'No verified syllabus is available for this topic' }, { status: 404 })
     }
