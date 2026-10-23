@@ -276,7 +276,16 @@ export default function Settings() {
       </section>
 
       <footer className="mt-6 flex flex-col gap-3 border-t border-[var(--card-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-[var(--muted-foreground)]">Your learning data and saved work stay connected to your account.</p>
+        <div className="grid gap-2">
+          <p className="text-sm text-[var(--muted-foreground)]">Your learning data and saved work stay connected to your account.</p>
+          <nav aria-label="Privacy and service information" className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <a href="/privacy.html" className="text-[var(--primary)] underline-offset-4 hover:underline">Privacy policy</a>
+            <a href="/terms.html" className="text-[var(--primary)] underline-offset-4 hover:underline">Terms of service</a>
+            <a href="/security.html" className="text-[var(--primary)] underline-offset-4 hover:underline">Security</a>
+            <a href="mailto:shadecodetech@gmail.com?subject=Shadecode%20Student%20data%20request" className="text-[var(--primary)] underline-offset-4 hover:underline">Request your data or deletion</a>
+          </nav>
+          <p className="max-w-2xl text-xs leading-5 text-[var(--muted-foreground)]">Data and deletion requests are handled by the team, not automatically completed by this link. Do not email your password.</p>
+        </div>
         <button type="button" onClick={() => void handleSignOut()} disabled={signingOut} className="ssc-button ssc-button-danger self-start">
           <LogOut size={18} aria-hidden="true" />
           {signingOut ? "Signing out…" : "Sign out"}
