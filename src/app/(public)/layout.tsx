@@ -16,6 +16,19 @@ export const metadata: Metadata = {
     "Learn, practise, and plan in one workspace. Shadecode Student helps Cambridge and ZIMSEC learners build understanding, practise exam-style questions, and organise study.",
   applicationName: "Shadecode Student",
   category: "education",
+  openGraph: {
+    type: "website",
+    siteName: "Shadecode Student",
+    title: "Shadecode Student | Your learning workspace",
+    description:
+      "Learn, practise, and plan in one workspace. Built for Cambridge and ZIMSEC learners.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Shadecode Student | Your learning workspace",
+    description:
+      "Learn, practise, and plan in one workspace. Built for Cambridge and ZIMSEC learners.",
+  },
 };
 
 export default async function PublicLayout({
