@@ -1,6 +1,6 @@
 {
   "name": "Shadecode Student",
-  "short_name": "Shadecode",
+  "short_name": "Shadecode Student",
   "id": "/",
   "description": "AI-powered learning platform for students. Study smarter. Live sharper.",
   "start_url": "/dashboard",
