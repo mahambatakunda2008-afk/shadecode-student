@@ -19,6 +19,8 @@ import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal 
 import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 import { findSharedLessonArtifact, isSafeToShareLesson, publishSharedLessonArtifact } from "@/lib/sharedArtifacts/cache";
+import { loadLibrary } from "@/lib/library/store";
+import { recoverLesson } from "@/lib/library/recover";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -505,62 +507,55 @@ export async function POST(req: Request) {
           goal: typeof goal === "string" ? goal : null,
         });
 
-        // Legacy completed lessons predate the shared cache. Reuse one only for a
-        // generic request with no board/level metadata, since old rows cannot prove
-        // curriculum alignment. Never share a row that fails the same quality/privacy gates.
+        // Reuse only lessons that have already entered the public, subject-scoped
+        // lesson library. Private learner lesson rows are never treated as shared content.
+        // Legacy library rows do not prove exam-board/level alignment, so only use them
+        // when the request itself does not specify either.
         if (!shared && !String(level ?? "").trim() && !String(body.examBoard ?? "").trim()) {
-          const { data: priorLessons, error: priorLessonsError } = await supabase
-            .from("learn_lessons")
-            .select("id, user_id, title, topic, difficulty, blocks, subjects!inner(name)")
-            .eq("topic", request.topic)
-            .eq("difficulty", validDifficulty)
-            .neq("user_id", user.id)
-            .limit(20);
-          if (!priorLessonsError && Array.isArray(priorLessons)) {
-            for (const prior of priorLessons as Array<Record<string, unknown>>) {
-              const related = prior.subjects;
-              const subjectName = related && typeof related === "object" && !Array.isArray(related)
-                ? (related as Record<string, unknown>).name
-                : null;
-              if (typeof subjectName !== "string" || normalizeSubjectKey(subjectName) !== normalizeSubjectKey(effectiveSubject)) continue;
-              if (typeof prior.title !== "string" || !Array.isArray(prior.blocks)) continue;
-              const priorBlocks = prior.blocks.filter((block): block is LessonBlock =>
-                Boolean(block) && typeof block === "object" &&
-                typeof (block as LessonBlock).type === "string" &&
-                typeof (block as LessonBlock).content === "string" &&
-                String((block as LessonBlock).content).trim().length >= 40
-              );
-              const candidate = { title: prior.title, blocks: priorBlocks };
-              const score = lessonQualityScore(priorBlocks);
-              if (lessonQualityFailures(candidate, request).failures.length > 0 || score < 60) continue;
-              if (!isSafeToShareLesson(request.topic, {
-                title: candidate.title,
-                blocks: candidate.blocks as unknown as Array<Record<string, unknown>>,
-              })) continue;
-              shared = {
-                id: String(prior.id ?? ""),
-                payload: { title: candidate.title, blocks: candidate.blocks },
-                qualityScore: score,
-                lesson: { title: candidate.title, blocks: candidate.blocks as unknown as Array<Record<string, unknown>> },
-              };
-              await publishSharedLessonArtifact(supabase, {
-                subject: effectiveSubject,
-                topic: request.topic,
-                difficulty: validDifficulty,
-                level: null,
-                examBoard: null,
-                goal: typeof goal === "string" ? goal : null,
-                lesson: shared.lesson,
-                qualityScore: score,
-                shareable: true,
-              }).catch(() => false);
-              console.info("[LEARN] reused a quality-checked legacy lesson from another learner", {
-                subject: effectiveSubject,
-                topic: request.topic,
-                qualityScore: score,
-              });
-              break;
+          try {
+            const library = await loadLibrary(supabase as never);
+            const publicLesson = recoverLesson(library.index, library.rows, effectiveSubject, request.topic);
+            if (publicLesson) {
+              const publicBlocks = publicLesson.blocks as LessonBlock[];
+              const score = lessonQualityScore(publicBlocks);
+              const candidate = { title: publicLesson.title, blocks: publicBlocks };
+              if (
+                lessonQualityFailures(candidate, request).failures.length === 0 &&
+                score >= 60 &&
+                isSafeToShareLesson(request.topic, {
+                  title: publicLesson.title,
+                  blocks: publicBlocks as unknown as Array<Record<string, unknown>>,
+                })
+              ) {
+                shared = {
+                  id: publicLesson.id,
+                  payload: { title: publicLesson.title, blocks: publicBlocks },
+                  qualityScore: score,
+                  lesson: { title: publicLesson.title, blocks: publicBlocks as unknown as Array<Record<string, unknown>> },
+                };
+                await publishSharedLessonArtifact(supabase, {
+                  subject: effectiveSubject,
+                  topic: request.topic,
+                  difficulty: validDifficulty,
+                  level: null,
+                  examBoard: null,
+                  goal: typeof goal === "string" ? goal : null,
+                  lesson: shared.lesson,
+                  qualityScore: score,
+                  shareable: true,
+                }).catch(() => false);
+                console.info("[LEARN] reused a quality-checked public lesson-library entry", {
+                  subject: effectiveSubject,
+                  topic: request.topic,
+                  qualityScore: score,
+                });
+              }
             }
+          } catch (error) {
+            // Shared-library availability is an optimization, not a hard dependency.
+            console.warn("[LEARN] public lesson reuse lookup skipped", {
+              error: error instanceof Error ? error.message : String(error),
+            });
           }
         }
 
