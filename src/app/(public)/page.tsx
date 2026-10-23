@@ -41,8 +41,8 @@ export default function PublicHomePage() {
           <div>
             <div className="mb-7"><BrandLockup /></div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={16} /> Study smarter. Live sharper.</div>
-            <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">Study for your Cambridge &amp; ZIMSEC exams <span className="ssc-brand-gradient">with a plan that adapts to you.</span></h1>
-            <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Practise exam-style questions, learn any topic with step-by-step lessons, and see exactly which topics to work on next. Free to start, and it works on your phone.</p>
+            <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">Make every study session count. <span className="ssc-brand-gradient">Learn, practise, and plan in one place.</span></h1>
+            <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Built with Cambridge and ZIMSEC students in mind. Work through lessons, practise exam-style questions, organise your study, and use available learning signals to choose a useful next step. Start free on your phone or computer.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/auth/signup" className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Start studying free <ArrowRight size={18} /></Link>
               <a href="#intelligence" className="inline-flex items-center gap-2 rounded-[10px] border border-white/12 bg-transparent px-5 py-3.5 font-medium text-white transition hover:bg-white/[0.05]">See how it works</a>
@@ -57,7 +57,7 @@ export default function PublicHomePage() {
                 <div className="flex items-center gap-3"><BrandMark className="h-9 w-9 text-[var(--brand-blue)]" aria-hidden="true" /><div><div className="font-[var(--font-brand)] text-xs tracking-[.14em] text-white">SHADECODE</div><div className="mt-1 font-[var(--font-brand)] text-[11px] tracking-[.25em] text-slate-500">CORTEX OS</div></div></div>
                 <span className="flex items-center gap-2 text-xs font-medium text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Learning state</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
+              <p className="pt-4 text-xs text-slate-500">Illustrative workspace preview</p><div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
               <div className="rounded-2xl border border-blue-400/15 bg-white/[0.03] p-4.5">
                 <div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.1em] text-blue-200">Next action</div><div className="mt-1.5 text-base font-semibold text-white">Practise mechanics</div></div><Zap className="text-[var(--brand-blue)]" size={22} /></div>
                 <p className="mt-2.5 text-sm leading-6 text-slate-400">Chosen from the learner's recent evidence, not a random prompt.</p>
