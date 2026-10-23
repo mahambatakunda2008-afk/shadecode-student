@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSharedArtifactCacheKey, isSafeToShareLesson } from "./cache";
+import { buildSharedArtifactCacheKey, isExactLegacyDifficultyMatch, isSafeToShareLesson } from "./cache";
 
 const lesson = {
   title: "Waves: describing and measuring wave motion",
@@ -9,6 +9,15 @@ const lesson = {
     content: "A wave transfers energy without overall transfer of matter. This explanation provides the key relationship and a clear example.",
   })),
 };
+
+describe("legacy lesson difficulty gate", () => {
+  it("requires explicit exact difficulty metadata", () => {
+    expect(isExactLegacyDifficultyMatch("Medium", "medium")).toBe(true);
+    expect(isExactLegacyDifficultyMatch("easy", "hard")).toBe(false);
+    expect(isExactLegacyDifficultyMatch(null, "medium")).toBe(false);
+    expect(isExactLegacyDifficultyMatch("", "medium")).toBe(false);
+  });
+});
 
 describe("shared learning artifact cache keys", () => {
   it("normalizes cosmetic differences while keeping subject, board, level and difficulty boundaries", () => {
