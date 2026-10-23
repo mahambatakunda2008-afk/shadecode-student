@@ -7,7 +7,11 @@ on:
       - polish-app-icon-centering-20261023
     paths:
       - "public/icons/shadecode-student.svg"
+      - "public/brand/**/*.svg"
+      - "src/app/icon.svg"
+      - "src/app/apple-icon.svg"
       - "scripts/generate-app-icons.py"
+      - "scripts/generate-brand-assets.mjs"
       - ".github/workflows/generate-app-icons.yml"
 
 permissions:
@@ -20,6 +24,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run generate:brand
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
