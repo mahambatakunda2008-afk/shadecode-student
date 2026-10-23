@@ -1,39 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
   <title id="title">Shadecode Student</title>
-  <desc id="desc">A smooth, folded S ribbon in layered blue, cyan and violet on deep navy.</desc>
+  <desc id="desc">A continuous folded S ribbon, centered on a deep navy field.</desc>
   <defs>
-    <linearGradient id="base" x1="300" y1="250" x2="730" y2="790" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#50F0F0"/><stop offset=".28" stop-color="#198CFF"/><stop offset=".62" stop-color="#465BFF"/><stop offset="1" stop-color="#9A64FF"/>
+    <linearGradient id="ribbon" x1="320" y1="300" x2="700" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54DDEB"/>
+      <stop offset=".38" stop-color="#2588E8"/>
+      <stop offset=".72" stop-color="#465BE5"/>
+      <stop offset="1" stop-color="#7761D8"/>
     </linearGradient>
-    <linearGradient id="foldA" x1="350" y1="340" x2="680" y2="680" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#B1FFFF"/><stop offset=".42" stop-color="#46C8FF"/><stop offset="1" stop-color="#566CFF"/>
+    <linearGradient id="fold" x1="360" y1="330" x2="620" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B1F4F3"/>
+      <stop offset="1" stop-color="#4CA8F4"/>
     </linearGradient>
-    <linearGradient id="foldB" x1="690" y1="360" x2="360" y2="700" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1872D9"/><stop offset=".55" stop-color="#344BDB"/><stop offset="1" stop-color="#6C49D8"/>
+    <linearGradient id="underfold" x1="600" y1="590" x2="450" y2="770" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3152C4"/>
+      <stop offset="1" stop-color="#6C55C6"/>
     </linearGradient>
-    <radialGradient id="bg" cx="32%" cy="16%" r="92%">
-      <stop stop-color="#102C4A"/><stop offset=".6" stop-color="#081A2D"/><stop offset="1" stop-color="#050F1B"/>
-    </radialGradient>
-    <radialGradient id="glow" cx="50%" cy="48%" r="43%">
-      <stop stop-color="#187BFF" stop-opacity=".18"/><stop offset="1" stop-color="#187BFF" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="18"/>
-    </filter>
   </defs>
-  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="230" fill="url(#glow)"/>
-  <rect x="4" y="4" width="1016" height="1016" rx="226" fill="none" stroke="#294866" stroke-opacity=".42" stroke-width="5"/>
+  <rect width="1024" height="1024" rx="224" fill="#081827"/>
+  <rect x="5" y="5" width="1014" height="1014" rx="220" fill="none" stroke="#1B354A" stroke-width="5"/>
   <path d="M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689"
-        fill="none" stroke="#000814" stroke-opacity=".55" stroke-width="118" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)"/>
-  <path d="M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689"
-        fill="none" stroke="url(#base)" stroke-width="112" stroke-linecap="round" stroke-linejoin="round"/>
+        fill="none" stroke="url(#ribbon)" stroke-width="116" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M674 333 C617 291 523 286 442 320 C368 351 341 408 359 455 C373 491 421 510 468 529"
-        fill="none" stroke="url(#foldA)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+        fill="none" stroke="url(#fold)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M514 578 C575 603 608 641 599 687 C590 730 545 754 493 755"
-        fill="none" stroke="url(#foldB)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M363 478 C399 516 454 535 511 557 C574 582 614 617 614 655"
-        fill="none" stroke="#A7F5FF" stroke-opacity=".62" stroke-width="8" stroke-linecap="round"/>
+        fill="none" stroke="url(#underfold)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M363 478 C399 516 454 535 511 557"
+        fill="none" stroke="#C4F6F4" stroke-opacity=".7" stroke-width="7" stroke-linecap="round"/>
   <path d="M392 704 C422 739 469 754 510 748"
-        fill="none" stroke="#C4B3FF" stroke-opacity=".58" stroke-width="8" stroke-linecap="round"/>
+        fill="none" stroke="#A7B7FF" stroke-opacity=".65" stroke-width="7" stroke-linecap="round"/>
 </svg>
