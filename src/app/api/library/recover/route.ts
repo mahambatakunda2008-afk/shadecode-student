@@ -1,6 +1,6 @@
 // src/app/api/library/recover/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createAuthenticatedRequestClient } from '@/lib/supabase/authenticated-request'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { loadLibrary } from '@/lib/library/store'
 import { recoverLesson } from '@/lib/library/recover'
@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
   if (topic.length < 2) return NextResponse.json({ error: 'topic required' }, { status: 400 })
 
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) return NextResponse.json({ error: 'Sign in to recover a lesson for your subjects' }, { status: 401 })
+    const auth = await createAuthenticatedRequestClient(request)
+    if (!auth) return NextResponse.json({ error: 'Sign in to recover a lesson for your subjects' }, { status: 401 })
+    const { supabase, user } = auth
 
     const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject)
     if (!subjectAccess.ok) {
