@@ -1,17 +1,21 @@
 // src/app/(public)/layout.tsx
 //
 // Layout for all PUBLIC routes: landing page, /auth/login, /auth/signup.
-// Intentionally minimal — no sidebar, no UserProvider, no auth context.
-// This ensures unauthenticated visitors never see any user-specific data.
+// Intentionally minimal: no sidebar, UserProvider, or auth context.
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Shadecode Student",
+  title: {
+    default: "Shadecode Student | Your learning workspace",
+    template: "%s | Shadecode Student",
+  },
   description:
-    "AI-powered learning platform for students. Study smarter with Cortex.",
+    "Learn, practise, and plan in one workspace. Shadecode Student helps Cambridge and ZIMSEC learners build understanding, practise exam-style questions, and organise study.",
+  applicationName: "Shadecode Student",
+  category: "education",
 };
 
 export default async function PublicLayout({
@@ -19,22 +23,17 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Already-logged-in visitors should never land back on the marketing
-  // page or a login/signup form -- send them straight to the app. This
-  // runs server-side (before any client bundle ships), so there's no
-  // flash of landing-page content for a returning, authenticated user.
-  // (app)/dashboard/layout.tsx already redirects to /onboarding if the
-  // user hasn't completed it, so this doesn't need to duplicate that
-  // check -- just "has a session -> send to /dashboard" is sufficient.
+  // Keep authenticated visitors inside the product, not on public auth pages.
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (user) {
     redirect("/dashboard");
   }
 
   return (
-    // Full-height, dark background — auth pages and landing use this as their canvas.
-    // No sidebar, no nav injection, no context providers here.
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased">
       {children}
     </div>
