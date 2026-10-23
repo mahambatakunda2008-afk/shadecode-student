@@ -50,10 +50,12 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
   if (!identities.length) return { status: "none", promptContext: "", reason: "No learner board, level and subject curriculum selection is configured." };
 
   const normalizedPrompt = prompt.toLowerCase();
+  // Never silently select the only configured identity: a stale single-subject profile
+  // must not override the subject the learner explicitly requested.
   const identity = identities.find((item) => {
     const subject = (item.subjectName ?? item.subjectId).toLowerCase();
     return subject.length >= 4 && normalizedPrompt.includes(subject);
-  }) ?? (identities.length === 1 ? identities[0] : null);
+  }) ?? null;
   if (!identity) return { status: "blocked", promptContext: "", reason: "Select one of your configured subjects before Cortex applies syllabus-specific teaching." };
 
   // Discover the current verified syllabus automatically. Older stored syllabus fields are only compatibility hints.
