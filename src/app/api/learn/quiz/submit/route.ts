@@ -45,10 +45,71 @@ export async function POST(req: Request) {
       .eq("id", quizId).eq("user_id", user.id).maybeSingle();
     if (sessionError || !session) return NextResponse.json({ error: "Quiz session not found" }, { status: 404 });
     if (session.submitted_at) {
-      if (session.result_payload && typeof session.result_payload === "object") {
-        return NextResponse.json(responseForStoredResult(session.result_payload as Record<string, any>, session.mastery_status ?? "pending"));
+      if (!session.result_payload || typeof session.result_payload !== "object") {
+        return NextResponse.json({ error: "This quiz was submitted but its result cannot be recovered. Please contact support.", code: "QUIZ_RESULT_UNAVAILABLE" }, { status: 409 });
       }
-      return NextResponse.json({ error: "This quiz was submitted but its result cannot be recovered. Please contact support.", code: "QUIZ_RESULT_UNAVAILABLE" }, { status: 409 });
+      const storedPayload = session.result_payload as Record<string, any>;
+      const storedMasteryStatus = session.mastery_status ?? "pending";
+      if (storedMasteryStatus === "pending" || storedMasteryStatus === "failed") {
+        // Reconcile after a prior request saved the score but could not confirm
+        // mastery persistence. Never retry while the evidence lookup itself is
+        // uncertain; the unique evidence index protects the RPC from duplicate
+        // attempts if a committed transaction's response was lost.
+        const findRecordedAttempt = () => supabase.from("learner_curriculum_assessment_attempts")
+          .select("id").eq("user_id", user.id)
+          .eq("evidence->>quizSessionId", quizId).maybeSingle();
+        const { data: recordedAttempt, error: lookupError } = await findRecordedAttempt();
+        if (lookupError) {
+          return NextResponse.json(responseForStoredResult(storedPayload, storedMasteryStatus));
+        }
+        if (recordedAttempt) {
+          await supabase.from("lesson_quiz_sessions").update({ mastery_status: "recorded" })
+            .eq("id", quizId).eq("user_id", user.id);
+          return NextResponse.json({ ...storedPayload, curriculumTracked: true });
+        }
+
+        const { data: storedLesson, error: storedLessonError } = await supabase.from("learn_lessons")
+          .select("id, curriculum_version_id, curriculum_objective_keys")
+          .eq("id", session.lesson_id).eq("user_id", user.id).maybeSingle();
+        const storedObjectives = Array.isArray(storedLesson?.curriculum_objective_keys)
+          ? storedLesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0) : [];
+        const validStoredScore = Number.isFinite(storedPayload.score) && Number.isFinite(storedPayload.correctCount)
+          && Number.isFinite(storedPayload.questionCount) && storedPayload.questionCount > 0;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (storedLessonError || !storedLesson?.curriculum_version_id || !storedObjectives.length
+          || !validStoredScore || !anonKey || !session.submitted_at) {
+          return NextResponse.json(responseForStoredResult(storedPayload, storedMasteryStatus));
+        }
+        const userScoped = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { autoRefreshToken: false, persistSession: false }
+        });
+        const retry = await userScoped.rpc("record_curriculum_assessment_result", {
+          p_user_id: user.id,
+          p_curriculum_version_id: storedLesson.curriculum_version_id,
+          p_objective_keys: storedObjectives,
+          p_score: storedPayload.score,
+          p_correct_count: storedPayload.correctCount,
+          p_question_count: storedPayload.questionCount,
+          p_lesson_id: storedLesson.id,
+          p_evidence: { source: "lesson_quiz", quizSessionId: quizId, submittedAt: session.submitted_at }
+        });
+        if (!retry.error) {
+          await supabase.from("lesson_quiz_sessions").update({ mastery_status: "recorded" })
+            .eq("id", quizId).eq("user_id", user.id);
+          return NextResponse.json({ ...storedPayload, curriculumTracked: true, mastery: retry.data });
+        }
+        const { data: afterRetryAttempt, error: afterRetryLookupError } = await findRecordedAttempt();
+        if (!afterRetryLookupError && afterRetryAttempt) {
+          await supabase.from("lesson_quiz_sessions").update({ mastery_status: "recorded" })
+            .eq("id", quizId).eq("user_id", user.id);
+          return NextResponse.json({ ...storedPayload, curriculumTracked: true });
+        }
+        await supabase.from("lesson_quiz_sessions").update({ mastery_status: "failed" })
+          .eq("id", quizId).eq("user_id", user.id);
+        return NextResponse.json(responseForStoredResult(storedPayload, "failed"));
+      }
+      return NextResponse.json(responseForStoredResult(storedPayload, storedMasteryStatus));
     }
     if (!session.expires_at || new Date(session.expires_at).getTime() <= Date.now()) {
       return NextResponse.json({ error: "This quiz has expired. Generate a new quiz to continue.", code: "QUIZ_EXPIRED" }, { status: 410 });
