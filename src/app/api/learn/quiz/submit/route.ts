@@ -14,6 +14,17 @@ function bearer(req: Request) {
   const value = req.headers.get("authorization");
   return value?.startsWith("Bearer ") ? value.slice(7).trim() || null : null;
 }
+
+function responseForStoredResult(payload: Record<string, any>, masteryStatus: string) {
+  if (masteryStatus === "recorded") return { ...payload, curriculumTracked: true, warning: undefined };
+  if (masteryStatus === "not_applicable") {
+    return { ...payload, curriculumTracked: false, reason: "CURRICULUM_UNVERIFIED",
+      message: "This quiz was marked against its server-owned answer key, but this lesson is not linked to verified curriculum objectives." };
+  }
+  return { ...payload, curriculumTracked: false,
+    warning: "Your score is verified and recoverable. Syllabus mastery could not be confirmed as saved, so it has not been reported as updated.",
+    retryable: false };
+}
 export async function POST(req: Request) {
   try {
     const limited = await applyRateLimit(req, aiEndpointLimiter);
@@ -30,10 +41,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "quizId and answers are required" }, { status: 400 });
     }
     const { data: session, error: sessionError } = await supabase.from("lesson_quiz_sessions")
-      .select("id, user_id, lesson_id, questions, expires_at, submitted_at")
+      .select("id, user_id, lesson_id, questions, expires_at, submitted_at, result_payload, mastery_status")
       .eq("id", quizId).eq("user_id", user.id).maybeSingle();
     if (sessionError || !session) return NextResponse.json({ error: "Quiz session not found" }, { status: 404 });
-    if (session.submitted_at) return NextResponse.json({ error: "This quiz has already been submitted", code: "QUIZ_ALREADY_SUBMITTED" }, { status: 409 });
+    if (session.submitted_at) {
+      if (session.result_payload && typeof session.result_payload === "object") {
+        return NextResponse.json(responseForStoredResult(session.result_payload as Record<string, any>, session.mastery_status ?? "pending"));
+      }
+      return NextResponse.json({ error: "This quiz was submitted but its result cannot be recovered. Please contact support.", code: "QUIZ_RESULT_UNAVAILABLE" }, { status: 409 });
+    }
     if (!session.expires_at || new Date(session.expires_at).getTime() <= Date.now()) {
       return NextResponse.json({ error: "This quiz has expired. Generate a new quiz to continue.", code: "QUIZ_EXPIRED" }, { status: 410 });
     }
@@ -51,18 +67,33 @@ export async function POST(req: Request) {
     if (!subjectRow?.name) return NextResponse.json({ error: "Lesson subject not found.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
     const subjectAccess = await resolveLearnerSubject(supabase, user.id, subjectRow.name, subjectRow.id);
     if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
-    const submittedAt = new Date().toISOString();
-    const { data: claimed, error: claimError } = await supabase.from("lesson_quiz_sessions")
-      .update({ submitted_at: submittedAt }).eq("id", quizId).eq("user_id", user.id)
-      .is("submitted_at", null).gt("expires_at", submittedAt).select("id").maybeSingle();
-    if (claimError || !claimed) return NextResponse.json({ error: "This quiz has expired or has already been submitted", code: "QUIZ_SESSION_UNAVAILABLE" }, { status: 409 });
     const objectiveKeys = Array.isArray(lesson.curriculum_objective_keys)
       ? lesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0) : [];
-    if (!lesson.curriculum_version_id || objectiveKeys.length === 0) {
-      return NextResponse.json({ verified: true, curriculumTracked: false, score, correctCount, questionCount, questions,
+    const canTrackCurriculum = Boolean(lesson.curriculum_version_id && objectiveKeys.length > 0);
+    const submittedAt = new Date().toISOString();
+    const resultPayload = {
+      verified: true, curriculumTracked: false, score, correctCount, questionCount, questions,
+      ...(!canTrackCurriculum ? {
         reason: "CURRICULUM_UNVERIFIED",
-        message: "This quiz was marked against its server-owned answer key, but no verified curriculum mastery was recorded." });
+        message: "This quiz was marked against its server-owned answer key, but no verified curriculum mastery was recorded."
+      } : {})
+    };
+    // Consume the session and save its verified score in one atomic update.
+    // Retries can recover this payload without rescoring or recording mastery twice.
+    const { data: claimed, error: claimError } = await supabase.from("lesson_quiz_sessions")
+      .update({ submitted_at: submittedAt, result_payload: resultPayload,
+        mastery_status: canTrackCurriculum ? "pending" : "not_applicable" })
+      .eq("id", quizId).eq("user_id", user.id)
+      .is("submitted_at", null).gt("expires_at", submittedAt).select("id").maybeSingle();
+    if (claimError || !claimed) {
+      const { data: latest } = await supabase.from("lesson_quiz_sessions")
+        .select("submitted_at, result_payload, mastery_status").eq("id", quizId).eq("user_id", user.id).maybeSingle();
+      if (latest?.submitted_at && latest.result_payload && typeof latest.result_payload === "object") {
+        return NextResponse.json(responseForStoredResult(latest.result_payload as Record<string, any>, latest.mastery_status ?? "pending"));
+      }
+      return NextResponse.json({ error: "This quiz has expired or is being submitted. Please retry to recover the result.", code: "QUIZ_SESSION_UNAVAILABLE", retryable: true }, { status: 409 });
     }
+    if (!canTrackCurriculum) return NextResponse.json(resultPayload);
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!anonKey) throw new Error("Missing Supabase public credentials.");
     const userScoped = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
@@ -77,16 +108,18 @@ export async function POST(req: Request) {
     });
     if (error) {
       console.error("Curriculum assessment recording error:", error);
-      // The quiz score is already verified and the session is consumed. Return the
-      // verified result as success, while clearly separating the mastery-save failure.
-      // A 500 here makes the client hide a valid score and incorrectly call it unverified.
-      return NextResponse.json({
-        verified: true, curriculumTracked: false, score, correctCount, questionCount, questions,
-        warning: "Your quiz score was verified, but syllabus mastery could not be saved. This attempt cannot be resubmitted.",
-        retryable: false,
-      });
+      await supabase.from("lesson_quiz_sessions").update({ mastery_status: "failed" }).eq("id", quizId).eq("user_id", user.id);
+      return NextResponse.json(responseForStoredResult(resultPayload, "failed"));
     }
-    return NextResponse.json({ verified: true, curriculumTracked: true, score, correctCount, questionCount, questions, mastery: data });
+    const { error: statusError } = await supabase.from("lesson_quiz_sessions")
+      .update({ mastery_status: "recorded" }).eq("id", quizId).eq("user_id", user.id);
+    if (statusError) {
+      // Do not replay the RPC automatically: if it committed before this status
+      // update failed, replaying could double-count mastery evidence.
+      console.error("Could not persist quiz mastery status:", statusError);
+      return NextResponse.json(responseForStoredResult(resultPayload, "pending"));
+    }
+    return NextResponse.json({ ...resultPayload, curriculumTracked: true, mastery: data });
   } catch (error) {
     console.error("Quiz submission error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
