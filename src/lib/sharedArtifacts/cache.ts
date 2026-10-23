@@ -29,6 +29,10 @@ function normalizeKeyText(value: string | null | undefined): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
+    // Preserve programming-language suffixes as words: C, C++, and C# are distinct topics.
+    .replace(/\+\+/g, " plus plus ")
+    .replace(/#/g, " sharp ")
+    .replace(/&/g, " and ")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .replace(/\s+/g, " ");
