@@ -419,19 +419,8 @@ export async function POST(req: Request) {
         savedId = inserted.id;
       }
 
-      if (generated.shareable === true) {
-        await publishSharedLessonArtifact(supabase, {
-          subject: effectiveSubject,
-          topic: request.topic,
-          difficulty: validDifficulty,
-          level: typeof level === "string" ? level : null,
-          examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
-          goal: typeof goal === "string" ? goal : null,
-          lesson: { title: persistableCandidate.title, blocks: persistableCandidate.blocks as Array<Record<string, unknown>> },
-          qualityScore: finalScore,
-          shareable: true,
-        }).catch(() => false);
-      }
+      // Do not publish from persist mode: the browser supplies generatedLesson and
+      // cannot be trusted to attest that content came from the server's model pipeline.
 
       // The lesson is already durably saved at this point. Memory and XP are best-effort
       // side effects; neither may turn a successful save into a learner-visible generation failure.
@@ -880,13 +869,43 @@ Repair only the defective section. Preserve correct material where possible. Do 
         }
       }
 
+      const sectionGenerationComplete = generationSectionIndex + 1 >= generationSectionCount;
+      if (sectionGenerationComplete && learnerMemoryContext.trim().length === 0) {
+        const sharedCandidate = { title: request.topic, blocks: currentBlocks };
+        const sharedFailures = lessonQualityFailures(sharedCandidate, request).failures;
+        const sharedScore = lessonQualityScore(currentBlocks);
+        if (
+          sharedFailures.length === 0 &&
+          sharedScore >= 60 &&
+          isSafeToShareLesson(request.topic, {
+            title: sharedCandidate.title,
+            blocks: sharedCandidate.blocks as unknown as Array<Record<string, unknown>>,
+          })
+        ) {
+          await publishSharedLessonArtifact(supabase, {
+            subject: effectiveSubject,
+            topic: request.topic,
+            difficulty: validDifficulty,
+            level: typeof level === "string" ? level : null,
+            examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
+            goal: typeof goal === "string" ? goal : null,
+            lesson: {
+              title: sharedCandidate.title,
+              blocks: sharedCandidate.blocks as unknown as Array<Record<string, unknown>>,
+            },
+            qualityScore: sharedScore,
+            shareable: true,
+          }).catch(() => false);
+        }
+      }
+
       return NextResponse.json({
         sectionIndex: generationSectionIndex,
         sectionCount: generationSectionCount,
         title: section.title,
         blocks: section.blocks,
         partialBlocks: currentBlocks,
-        complete: generationSectionIndex + 1 >= generationSectionCount,
+        complete: sectionGenerationComplete,
         shareable: learnerMemoryContext.trim().length === 0,
       });
     }
