@@ -5,6 +5,27 @@ import { getVerifiedCurriculumPromptContext } from "@/lib/curriculum/ai-groundin
 import { createCircuitBreaker, type CircuitBreaker } from "@/lib/aiCircuitBreaker";
 
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || "6a119f6052c02197d301e50f0d4a56cc";
+// Workers AI retires models over time, so the model must be changeable without a deploy. Only plain @cf/... ids
+// are accepted (the value goes into a URL path). The optional fallback is tried only if the first model fails
+// (for example a smaller model that stretches the free daily allowance when the larger one is exhausted).
+const CF_DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const CF_MODEL_ID = /^@cf\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
+const cfModelFromEnv = (value: string | undefined) => (value && CF_MODEL_ID.test(value.trim()) ? value.trim() : "");
+const CF_MODEL = cfModelFromEnv(process.env.CLOUDFLARE_AI_MODEL) || CF_DEFAULT_MODEL;
+const CF_FALLBACK_MODEL = cfModelFromEnv(process.env.CLOUDFLARE_AI_FALLBACK_MODEL);
+
+/** Cloudflare explains failures in the response body (e.g. daily free allocation used up); keep that reason. */
+async function cloudflareErrorMessage(res: Response): Promise<string> {
+  let detail = "";
+  try {
+    const body = (await res.json()) as { errors?: Array<{ code?: number | string; message?: string }> } | null;
+    const first = body?.errors?.[0];
+    if (first) detail = [first.code, String(first.message ?? "").slice(0, 160)].filter(Boolean).join(" ");
+  } catch {
+    // The body is optional; the status code alone is still reported.
+  }
+  return `Cloudflare HTTP ${res.status}${detail ? `: ${detail}` : ""}`;
+}
 const DEFAULT_MAX_CHAIN_MS = 28000;
 const DEFAULT_PER_PROVIDER_MAX_MS = 6500;
 const TELEMETRY_BUDGET_MS = 500;
@@ -38,6 +59,13 @@ export interface CallAIOptions {
   skipCurriculumGrounding?: boolean;
   /** Optional multimodal inputs. Only providers with verified media support receive these parts. */
   media?: Array<{ mimeType: string; data: string }>;
+  /**
+   * For long generations: let each configured first-class provider (Gateway, Groq, OpenRouter, Cloudflare)
+   * use an equal share of the remaining chain time, never less than perProviderMaxMs, instead of a fixed cap.
+   * A fixed cap aborts a healthy provider mid-answer (observed: Cloudflare calls cut off at ~6s while its
+   * short answers succeeded). Every attempt is still bounded by the hard timeout in tryProvider.
+   */
+  shareChainBudget?: boolean;
 }
 
 function fetchWithTimeout(url: string, options: RequestInit, timeout: number): Promise<Response> {
@@ -116,16 +144,31 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
   const remaining = () => Math.max(0, maxChainMs - (Date.now() - startedAt));
-  const providerTimeout = () => Math.min(perProviderMaxMs, remaining());
+  const shareable = new Set<string>();
+  if (options.shareChainBudget && !media.length) {
+    if (process.env.AI_GATEWAY_API_KEY) shareable.add("vercel-ai-gateway");
+    if (process.env.GROQ_API_KEY) shareable.add("groq");
+    if (process.env.OPENROUTER_API_KEY) shareable.add("openrouter");
+    if (process.env.CLOUDFLARE_API_TOKEN) shareable.add("cloudflare");
+  }
+  const attempted = new Set<string>();
+  const providerTimeout = (provider: string) => {
+    const fixed = Math.min(perProviderMaxMs, remaining());
+    // A provider's repeat attempt (e.g. a fallback model) and non-shareable providers keep the fixed cap.
+    if (!shareable.has(provider) || attempted.has(provider)) return fixed;
+    const waiting = [...shareable].filter(name => !attempted.has(name)).length || 1;
+    return Math.min(remaining(), Math.max(perProviderMaxMs, Math.floor(remaining() / waiting)));
+  };
   const canTry = () => remaining() >= 1000;
   // Grace period on top of the provider's declared budget before the hard race below gives up on it.
   const HARD_TIMEOUT_GRACE_MS = 250;
   async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
     if (!canTry()) return null;
     const breaker = providerBreaker(provider);
-    if (!breaker.shouldAttempt()) return null;
+    if (!breaker.shouldAttempt()) { attempted.add(provider); return null; }
     const startTime = Date.now();
-    const timeout = providerTimeout();
+    const timeout = providerTimeout(provider);
+    attempted.add(provider);
     // Hard race, independent of the request's own timeout/AbortController: some providers do not
     // reliably honor an AbortSignal once the response body starts streaming (observed in production
     // with OpenRouter: calls completed successfully after 30-49 seconds against a declared 6.5-9s
@@ -276,16 +319,20 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
   if (!media.length && process.env.CLOUDFLARE_API_TOKEN && canTry()) {
-    const text = await tryProvider("cloudflare", "llama-3.3-70b-instruct-fp8-fast", async timeout => {
-      const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`, {
-        method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
-      }, timeout);
-      if (!res.ok) throw new Error(`Cloudflare HTTP ${res.status}`);
-      const data = await res.json() as any;
-      return typeof data?.result?.response === "string" ? data.result.response : null;
-    });
-    if (text) return text;
+    const cloudflareModels = [CF_MODEL, CF_FALLBACK_MODEL].filter((model, index, all) => model && all.indexOf(model) === index);
+    for (const cloudflareModel of cloudflareModels) {
+      if (!canTry()) break;
+      const text = await tryProvider("cloudflare", cloudflareModel.replace(/^@cf\/[^/]+\//, ""), async timeout => {
+        const res = await fetchWithTimeout(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${cloudflareModel}`, {
+          method: "POST", headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
+        }, timeout);
+        if (!res.ok) throw new Error(await cloudflareErrorMessage(res));
+        const data = await res.json() as any;
+        return typeof data?.result?.response === "string" ? data.result.response : null;
+      });
+      if (text) return text;
+    }
   }
 
   // Direct Google fallback remains deliberately small and stable. Do not add
