@@ -87,6 +87,23 @@ begin
     raise exception 'No curriculum objectives supplied';
   end if;
 
+  -- Reject stale, unknown, blank, or unverified keys before inserting evidence.
+  -- Otherwise an attempt could be recorded while no objective progress changed.
+  if exists (
+    select 1
+    from unnest(p_objective_keys) as requested(objective_key)
+    where nullif(btrim(requested.objective_key), '') is null
+       or not exists (
+         select 1
+         from curriculum_objectives o
+         where o.curriculum_version_id = p_curriculum_version_id
+           and o.status = 'verified'
+           and o.objective_key = requested.objective_key
+       )
+  ) then
+    raise exception 'One or more curriculum objectives are not verified for this version';
+  end if;
+
   insert into learner_curriculum_assessment_attempts(
     user_id, lesson_id, curriculum_version_id, objective_keys,
     score, question_count, correct_count, evidence
