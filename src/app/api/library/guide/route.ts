@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Same prompt shape the lesson generator uses, but only after canonical onboarding access is verified.
-    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subject}\\nmaster this request: "${topic}"`)
+    const resolved = await resolveVerifiedCurriculumPromptContext(user.id, `${subject}\nmaster this request: "${topic}"`)
     if (resolved.status !== 'resolved' || !resolved.pack) {
       return NextResponse.json({ error: 'No verified syllabus is available for this topic' }, { status: 404 })
     }
