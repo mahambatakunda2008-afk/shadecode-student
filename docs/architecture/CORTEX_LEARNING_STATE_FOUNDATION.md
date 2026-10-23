@@ -187,6 +187,36 @@ Measure learning outcomes and system reliability, not just clicks:
 
 Do not claim the system improves learning until controlled product evidence supports that claim.
 
+
+## Initial repository audit (2026-10-23)
+
+This is an initial source/schema audit, not a claim that the production database has been independently inspected or that every migration is applied in every environment.
+
+### Existing stores to reuse
+
+The repository already contains several relevant persisted representations. Do not add a new generic evidence table until their ownership and semantics are reconciled:
+
+- `public.cortex_events` (migration `20260822190000_add_cortex_events_durable_store.sql`): durable per-user events with ID, type, source, JSON data, and timestamp; RLS restricts reads/inserts to the owner.
+- `public.learner_curriculum_assessment_attempts` and `public.learner_curriculum_objective_progress` (migration `20260910232000_curriculum_assessment_mastery.sql`): assessment attempts tied to a verified curriculum version and objective keys. The result RPC validates the authenticated learner and verified curriculum, but its existing score/progression semantics need review before being treated as the sole canonical mastery model.
+- `public.learning_signals` (migration `20261010120000_learning_signals.sql`): item/topic-level question, quiz, battle, deck, and self-check signals, including correctness, score, time, and mistake ID.
+- `public.learner_brain_events` (migration `20261011105604_learner_brain_memory.sql`): private per-user Learn events with server-mediated writes.
+- `public.lesson_library` (migration `20261010180000_lesson_library.sql`): shared educational content with aggregated votes, separate from personal learner evidence.
+- `src/lib/cortex/learningState.ts` and `src/lib/cortex/learningEvents.ts`: pure in-process state transition and event-to-observation helpers. These are not, by themselves, proof that every persisted source is normalized into the same learner state.
+- `src/lib/cortex/memory.ts`: a process-local question/answer cache. It must not be described as durable cross-session learner memory.
+
+### Risks to resolve before claiming adaptive learning
+
+1. **Several overlapping evidence stores exist.** Define a source-of-truth map and explicit adapters; do not silently count the same answer once from `cortex_events` and again from `learning_signals`.
+2. **The current mastery transition is a heuristic.** The shared 70/30 history/evidence transition is useful as a transparent baseline, but it is not a validated psychometric model. Store the algorithm version and avoid presenting the output as objectively measured mastery.
+3. **Unseen skills need explicit uncertainty.** The initial mastery value of 50 is a neutral placeholder. Ranking must not mistake it for observed weakness or measured performance.
+4. **Assistance context is not present in the small observation contract.** Before using a result as evidence of independent mastery, adapters must determine whether hints, worked solutions, or answer reveals were used. If that information is unavailable, label the evidence accordingly rather than guessing.
+5. **Cross-user content reuse and personal-state reuse are different.** Shared lesson-library content must pass curriculum, quality, and eligibility checks; personal events, votes, and learner state must remain private. A generated lesson's existence or progress threshold alone is not evidence that every student should receive it.
+6. **Durable evidence must survive derived-state failures.** Normalization and state derivation should be replayable from canonical source records and idempotent under retries.
+
+### Audit exit criteria
+
+Before introducing a new table or changing production persistence, complete a source map for Learn, Exam Sim, Math Checker, revision/practice, and the shared lesson library. For each source, record: canonical table/API, stable event identity, learner ownership enforcement, verified curriculum mapping, score provenance, assistance context, retry behavior, and current RLS/privileges. Resolve duplicates and missing semantics in adapters first.
+
 ## Definition of done
 
 The foundation is ready when existing records can be mapped to a canonical evidence contract, a deterministic state can be safely derived and explained, retries are idempotent, learner isolation is tested, and one student workflow shows a measurable benefit without compromising the current product's reliability.
