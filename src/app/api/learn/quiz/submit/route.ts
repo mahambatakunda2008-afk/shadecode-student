@@ -44,6 +44,15 @@ export async function POST(req: Request) {
       .select("id, user_id, lesson_id, questions, expires_at, submitted_at, result_payload, mastery_status")
       .eq("id", quizId).eq("user_id", user.id).maybeSingle();
     if (sessionError || !session) return NextResponse.json({ error: "Quiz session not found" }, { status: 404 });
+    const { data: lesson, error: lessonError } = await supabase.from("learn_lessons")
+      .select("id, subject_id, curriculum_version_id, curriculum_objective_keys")
+      .eq("id", session.lesson_id).eq("user_id", user.id).maybeSingle();
+    if (lessonError || !lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+    const { data: subjectRow, error: subjectError } = await supabase.from("subjects").select("id, name").eq("id", lesson.subject_id).eq("user_id", user.id).maybeSingle();
+    if (subjectError) return NextResponse.json({ error: "Could not verify lesson subject." }, { status: 500 });
+    if (!subjectRow?.name) return NextResponse.json({ error: "Lesson subject not found.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subjectRow.name, subjectRow.id);
+    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
     if (session.submitted_at) {
       if (!session.result_payload || typeof session.result_payload !== "object") {
         return NextResponse.json({ error: "This quiz was submitted but its result cannot be recovered. Please contact support.", code: "QUIZ_RESULT_UNAVAILABLE" }, { status: 409 });
@@ -119,15 +128,6 @@ export async function POST(req: Request) {
     const marked = markLessonQuiz(questions, answers);
     if (!marked) return NextResponse.json({ error: "Invalid answer selection or quiz answer key" }, { status: 400 });
     const { correctCount, questionCount, score } = marked;
-    const { data: lesson, error: lessonError } = await supabase.from("learn_lessons")
-      .select("id, subject_id, curriculum_version_id, curriculum_objective_keys")
-      .eq("id", session.lesson_id).eq("user_id", user.id).maybeSingle();
-    if (lessonError || !lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
-    const { data: subjectRow, error: subjectError } = await supabase.from("subjects").select("id, name").eq("id", lesson.subject_id).eq("user_id", user.id).maybeSingle();
-    if (subjectError) return NextResponse.json({ error: "Could not verify lesson subject." }, { status: 500 });
-    if (!subjectRow?.name) return NextResponse.json({ error: "Lesson subject not found.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
-    const subjectAccess = await resolveLearnerSubject(supabase, user.id, subjectRow.name, subjectRow.id);
-    if (!subjectAccess.ok) return NextResponse.json({ error: subjectAccess.error, code: "SUBJECT_NOT_ALLOWED" }, { status: subjectAccess.status });
     const objectiveKeys = Array.isArray(lesson.curriculum_objective_keys)
       ? lesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0) : [];
     const canTrackCurriculum = Boolean(lesson.curriculum_version_id && objectiveKeys.length > 0);
