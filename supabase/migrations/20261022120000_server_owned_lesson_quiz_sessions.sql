@@ -33,7 +33,7 @@ create policy learner_curriculum_assessment_attempts_select_own
 -- must be created through the guarded RPC below, never client-supplied scores.
 drop policy if exists learner_curriculum_assessment_attempts_insert_own on public.learner_curriculum_assessment_attempts;
 revoke all on public.learner_curriculum_assessment_attempts from anon, authenticated;
-grant select on public.learner_curriculum_assessment_attempts to authenticated;
+grant select on public.learner_curriculum_assessment_attempts to authenticated, service_role;
 
 create or replace function public.record_curriculum_assessment_result(
   p_user_id uuid,
