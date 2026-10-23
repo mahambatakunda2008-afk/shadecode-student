@@ -2,6 +2,16 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
 
+/** Legacy library rows can be reused only when difficulty is explicitly known and exact. */
+export function isExactLegacyDifficultyMatch(
+  storedDifficulty: string | null | undefined,
+  requestedDifficulty: string,
+): boolean {
+  return typeof storedDifficulty === "string" &&
+    storedDifficulty.trim().length > 0 &&
+    storedDifficulty.trim().toLowerCase() === requestedDifficulty.trim().toLowerCase();
+}
+
 export interface SharedArtifactKeyInput {
   artifactType: string;
   subject: string;
