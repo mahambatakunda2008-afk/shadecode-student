@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { parseCortexJson, validateCortexObject } from "@/lib/cortex/outputContract";
+import { assertRequestedLearnerSubject, resolveLearnerSubjects } from "@/lib/subjects/resolveLearnerSubjects";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -213,10 +214,19 @@ export async function POST(request: Request) {
     const rateLimitResponse = await applyRateLimit(request, aiEndpointLimiter);
     if (rateLimitResponse) return rateLimitResponse;
 
+    const learner = await resolveLearnerSubjects(supabase, user.id);
+    if (learner.subjects.length === 0) {
+      return NextResponse.json({ error: "Choose your subjects in onboarding before using Exam Hub.", code: "SUBJECT_NOT_ALLOWED" }, { status: 409 });
+    }
+
     const body = await request.json();
     const mode: "paper-analysis" | "tutor" | "question-help" = body?.mode === "paper-analysis" ? "paper-analysis" : body?.mode === "tutor" ? "tutor" : "question-help";
     const subject = safeString(body?.subject);
     if (mode === "tutor") {
+      if (!subject) return NextResponse.json({ error: "Choose one of your selected subjects." }, { status: 400 });
+      if (!assertRequestedLearnerSubject(learner.subjects, subject)) {
+        return NextResponse.json({ error: "That subject is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+      }
       const question = safeString(body?.question);
       const topic = safeString(body?.topic, 300);
       const context = Array.isArray(body?.previousContext) ? body.previousContext.slice(-10) : [];
@@ -261,7 +271,15 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
         if (syllabusError) throw syllabusError;
         resolvedQuestionSubject = String(syllabus?.subject || subject || "").trim();
         if (!resolvedQuestionSubject) {
-          return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
+          return NextResponse.json({ error: "The paper syllabus could not be resolved." }, { status: 409 });
+        }
+        if (!assertRequestedLearnerSubject(learner.subjects, resolvedQuestionSubject)) {
+          return NextResponse.json({ error: "This paper belongs to a subject you have not selected.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+        }
+      } else {
+        if (!resolvedQuestionSubject) return NextResponse.json({ error: "Choose one of your selected subjects." }, { status: 400 });
+        if (!assertRequestedLearnerSubject(learner.subjects, resolvedQuestionSubject)) {
+          return NextResponse.json({ error: "That subject is not available for your selected subjects.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
         }
       }
 
@@ -284,6 +302,20 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
     if (paperError) throw paperError;
     if (!paper) return NextResponse.json({ error: "Past paper not found." }, { status: 404 });
 
+    const { data: paperSyllabus, error: paperSyllabusError } = await supabase
+      .from("syllabi")
+      .select("id,subject,board")
+      .eq("id", paper.syllabus_id)
+      .maybeSingle();
+    if (paperSyllabusError) throw paperSyllabusError;
+    const analysisSubject = String(paperSyllabus?.subject || subject || "").trim();
+    if (!analysisSubject) {
+      return NextResponse.json({ error: "The paper syllabus could not be resolved." }, { status: 409 });
+    }
+    if (!assertRequestedLearnerSubject(learner.subjects, analysisSubject)) {
+      return NextResponse.json({ error: "This paper belongs to a subject you have not selected.", code: "SUBJECT_NOT_ALLOWED" }, { status: 403 });
+    }
+
     const { data: questions, error: questionsError } = await supabase
       .from("exam_questions")
       .select("question_number,question_text,marks")
@@ -293,17 +325,6 @@ Respond as a tutor, not a generic chatbot. Make the student think, but give enou
       .limit(MAX_PAPER_QUESTIONS);
     if (questionsError) throw questionsError;
     if (!questions?.length) return NextResponse.json({ error: "This paper has not been indexed into individual questions yet." }, { status: 409 });
-
-    const { data: paperSyllabus, error: paperSyllabusError } = await supabase
-      .from("syllabi")
-      .select("id,subject,board")
-      .eq("id", paper.syllabus_id)
-      .maybeSingle();
-    if (paperSyllabusError) throw paperSyllabusError;
-    const analysisSubject = String(paperSyllabus?.subject || subject || "").trim();
-    if (!analysisSubject) {
-      return NextResponse.json({ error: "The paper's syllabus could not be resolved." }, { status: 409 });
-    }
 
     const response = await generate(paperPrompt(analysisSubject, questions));
     const analysis = extractJson(response.text);
