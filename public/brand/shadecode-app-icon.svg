@@ -1,14 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-<title id="title">Shadecode Student</title><desc id="desc">Shadecode Student application icon</desc>
-<defs>
-<linearGradient id="g" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#00E5FF"/><stop offset=".28" stop-color="#00A8FF"/><stop offset=".58" stop-color="#245BFF"/><stop offset=".82" stop-color="#7A3CFF"/><stop offset="1" stop-color="#C135FF"/></linearGradient>
-<radialGradient id="bg" cx=".28" cy=".16" r=".9"><stop offset="0" stop-color="#102B4B"/><stop offset=".55" stop-color="#081A2D"/><stop offset="1" stop-color="#06111C"/></radialGradient>
-<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<rect width="1024" height="1024" rx="236" fill="url(#bg)"/>
-<rect x="3" y="3" width="1018" height="1018" rx="233" fill="none" stroke="#1B4B78" stroke-width="5" opacity=".72"/>
-<g transform="translate(175 176) scale(1.12)" fill="url(#g)" filter="url(#glow)">
-<path d="M72.5 146.5 275.5 24.5 475.5 139.5 474.5 224.5 190.5 162.5 72.5 193.5Z"/>
-<path d="M72.5 193.5 477.5 326.5 477.5 389.5 72.5 266.5Z"/>
-<path d="M72.5 340.5 132.5 372.5 132.5 396.5 272.5 480.5 477.5 389.5 477.5 435.5 278.5 555.5 72.5 436.5Z"/>
-</g></svg>
+  <title id="title">Shadecode Student</title>
+  <desc id="desc">A continuous folded S ribbon, centered on a deep navy field.</desc>
+  <defs>
+    <linearGradient id="ribbon" x1="320" y1="300" x2="700" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54DDEB"/>
+      <stop offset=".38" stop-color="#2588E8"/>
+      <stop offset=".72" stop-color="#465BE5"/>
+      <stop offset="1" stop-color="#7761D8"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="360" y1="330" x2="620" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B1F4F3"/>
+      <stop offset="1" stop-color="#4CA8F4"/>
+    </linearGradient>
+    <linearGradient id="underfold" x1="600" y1="590" x2="450" y2="770" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3152C4"/>
+      <stop offset="1" stop-color="#6C55C6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="#081827"/>
+  <rect x="5" y="5" width="1014" height="1014" rx="220" fill="none" stroke="#1B354A" stroke-width="5"/>
+  <path d="M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689"
+        fill="none" stroke="url(#ribbon)" stroke-width="116" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M674 333 C617 291 523 286 442 320 C368 351 341 408 359 455 C373 491 421 510 468 529"
+        fill="none" stroke="url(#fold)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M514 578 C575 603 608 641 599 687 C590 730 545 754 493 755"
+        fill="none" stroke="url(#underfold)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M363 478 C399 516 454 535 511 557"
+        fill="none" stroke="#C4F6F4" stroke-opacity=".7" stroke-width="7" stroke-linecap="round"/>
+  <path d="M392 704 C422 739 469 754 510 748"
+        fill="none" stroke="#A7B7FF" stroke-opacity=".65" stroke-width="7" stroke-linecap="round"/>
+</svg>
