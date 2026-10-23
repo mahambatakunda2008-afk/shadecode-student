@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Shadecode Student</title>
+  <desc id="desc">A smooth blue-violet ribbon forming an S and an open book, centered on a deep navy background.</desc>
+  <defs>
+    <linearGradient id="ribbon" x1="300" y1="300" x2="730" y2="750" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#39E5F5"/>
+      <stop offset=".34" stop-color="#168BFF"/>
+      <stop offset=".68" stop-color="#385BFF"/>
+      <stop offset="1" stop-color="#9A5BFF"/>
+    </linearGradient>
+    <linearGradient id="pages" x1="390" y1="500" x2="650" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A6F6FF"/>
+      <stop offset=".5" stop-color="#50C9FF"/>
+      <stop offset="1" stop-color="#8580FF"/>
+    </linearGradient>
+    <radialGradient id="background" cx="28%" cy="15%" r="92%">
+      <stop offset="0" stop-color="#102B4A"/>
+      <stop offset=".58" stop-color="#081A2D"/>
+      <stop offset="1" stop-color="#06111C"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="47%" r="42%">
+      <stop offset="0" stop-color="#176BFF" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#176BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="url(#background)"/>
+  <rect width="1024" height="1024" rx="230" fill="url(#halo)"/>
+  <rect x="4" y="4" width="1016" height="1016" rx="226" fill="none" stroke="#284D72" stroke-opacity=".48" stroke-width="5"/>
+  <g fill="none" stroke="url(#ribbon)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M650 346 C592 307 500 299 430 329 C358 360 334 425 365 475 C389 515 453 531 510 557 C575 587 614 626 603 676 C591 727 526 753 463 740 C420 731 390 710 369 685"/>
+  </g>
+  <path d="M385 504 C431 483 480 495 512 531 C544 495 593 483 639 504 L639 604 C589 584 544 596 512 633 C480 596 435 584 385 604 Z" fill="url(#pages)" stroke="#B4F3FF" stroke-opacity=".55" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M512 531 L512 633" fill="none" stroke="#E4FCFF" stroke-opacity=".9" stroke-width="8" stroke-linecap="round"/>
+</svg>
