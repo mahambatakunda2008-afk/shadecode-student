@@ -100,16 +100,43 @@ export async function POST(req: Request) {
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { autoRefreshToken: false, persistSession: false }
     });
-    const { data, error } = await userScoped.rpc("record_curriculum_assessment_result", {
+    const assessmentArgs = {
       p_user_id: user.id, p_curriculum_version_id: lesson.curriculum_version_id,
       p_objective_keys: objectiveKeys, p_score: score, p_correct_count: correctCount,
       p_question_count: questionCount, p_lesson_id: lesson.id,
       p_evidence: { source: "lesson_quiz", quizSessionId: quizId, submittedAt }
-    });
+    };
+    let { data, error } = await userScoped.rpc("record_curriculum_assessment_result", assessmentArgs);
     if (error) {
       console.error("Curriculum assessment recording error:", error);
-      await supabase.from("lesson_quiz_sessions").update({ mastery_status: "failed" }).eq("id", quizId).eq("user_id", user.id);
-      return NextResponse.json(responseForStoredResult(resultPayload, "failed"));
+      // The RPC is transactional, and the migration adds a unique evidence key
+      // per quiz session. If the first response was lost after commit, the row
+      // proves mastery and its progress updates committed atomically.
+      const findRecordedAttempt = () => supabase.from("learner_curriculum_assessment_attempts")
+        .select("id").eq("user_id", user.id)
+        .eq("evidence->>quizSessionId", quizId).maybeSingle();
+      let { data: recordedAttempt, error: lookupError } = await findRecordedAttempt();
+      if (!lookupError && recordedAttempt) {
+        await supabase.from("lesson_quiz_sessions").update({ mastery_status: "recorded" }).eq("id", quizId).eq("user_id", user.id);
+        return NextResponse.json({ ...resultPayload, curriculumTracked: true });
+      }
+
+      // No committed evidence was found, so retry once. The unique index makes
+      // this safe even if the first transaction was still completing.
+      const retry = await userScoped.rpc("record_curriculum_assessment_result", assessmentArgs);
+      if (!retry.error) {
+        data = retry.data;
+        error = null;
+      } else {
+        console.error("Curriculum assessment retry failed:", retry.error);
+        const { data: retryRecordedAttempt, error: retryLookupError } = await findRecordedAttempt();
+        if (!retryLookupError && retryRecordedAttempt) {
+          await supabase.from("lesson_quiz_sessions").update({ mastery_status: "recorded" }).eq("id", quizId).eq("user_id", user.id);
+          return NextResponse.json({ ...resultPayload, curriculumTracked: true });
+        }
+        await supabase.from("lesson_quiz_sessions").update({ mastery_status: "failed" }).eq("id", quizId).eq("user_id", user.id);
+        return NextResponse.json(responseForStoredResult(resultPayload, "failed"));
+      }
     }
     const { error: statusError } = await supabase.from("lesson_quiz_sessions")
       .update({ mastery_status: "recorded" }).eq("id", quizId).eq("user_id", user.id);
