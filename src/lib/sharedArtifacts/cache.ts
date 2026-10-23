@@ -65,6 +65,7 @@ export function isSafeToShareLesson(topic: string, payload: ShareableLessonPaylo
     ].join(" ")),
   ].join("\n");
 
+  if (/\b(my|me|i|we|our)\b/i.test(topic)) return false;
   if (/\b(my name is|my school is|my phone|my email|my address|my grades|my marks|my teacher|my classmate|i am called|i live at|i study at)\b/i.test(topic)) return false;
   if (/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(text)) return false;
   if (/(?:\+?\d[\d\s().-]{7,}\d)/.test(text)) return false;
@@ -120,6 +121,8 @@ export async function publishSharedArtifact(
     shareable: boolean;
   },
 ): Promise<boolean> {
+  // Enable each artifact type only after its own schema and safety validator exist.
+  if (input.artifactType !== "lesson") return false;
   if (!input.shareable || !Number.isFinite(input.qualityScore) || input.qualityScore < 60) return false;
   if (input.artifactType === "lesson") {
     const payload = input.payload as unknown as ShareableLessonPayload;
@@ -131,7 +134,7 @@ export async function publishSharedArtifact(
       artifact_type: normalizeKeyText(input.artifactType),
       cache_key: buildSharedArtifactCacheKey(input),
       subject_key: normalizeSubjectKey(input.subject),
-      topic_key: normalizeKeyText(input.topic),
+      topic_key: createHash("sha256").update(normalizeKeyText(input.topic)).digest("hex"),
       difficulty: normalizeKeyText(input.difficulty) || null,
       level_key: normalizeKeyText(input.level) || null,
       exam_board_key: normalizeKeyText(input.examBoard) || null,
