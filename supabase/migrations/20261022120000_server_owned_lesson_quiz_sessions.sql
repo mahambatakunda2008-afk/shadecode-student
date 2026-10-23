@@ -57,7 +57,10 @@ declare
   v_mastery numeric;
   v_result jsonb;
 begin
-  if auth.uid() is null or auth.uid() <> p_user_id then
+  -- This RPC is server-only. The API authenticates the learner and passes the
+  -- verified user ID; ordinary authenticated clients must not be able to submit
+  -- arbitrary scores directly through PostgREST.
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
     raise exception 'Unauthorized';
   end if;
 
@@ -167,8 +170,8 @@ begin
 end;
 $$;
 
-revoke all on function public.record_curriculum_assessment_result(uuid, uuid, text[], numeric, integer, integer, uuid, jsonb) from public;
-grant execute on function public.record_curriculum_assessment_result(uuid, uuid, text[], numeric, integer, integer, uuid, jsonb) to authenticated;
+revoke all on function public.record_curriculum_assessment_result(uuid, uuid, text[], numeric, integer, integer, uuid, jsonb) from public, anon, authenticated, service_role;
+grant execute on function public.record_curriculum_assessment_result(uuid, uuid, text[], numeric, integer, integer, uuid, jsonb) to service_role;
 
 
 -- The production migration history is missing the earlier curriculum assessment
