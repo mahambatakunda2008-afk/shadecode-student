@@ -11,6 +11,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminRows === null ? null : ({ from: () => ({ select: () => ({ eq: () => ({ in: () => ({ limit: async () => ({ data: adminRows, error: null }) }) }) }) }) }),
 }));
 vi.mock("@/lib/curriculum/ai-grounding", () => ({ resolveVerifiedCurriculumPromptContext: (...args: unknown[]) => { resolver(...args); return Promise.resolve(resolution); } }));
+vi.mock("@/lib/subjects/resolveLearnerSubjects", () => ({ resolveLearnerSubjects: async () => ({ subjects: [{ id: "s1", name: "Physics" }], onboardingComplete: true }), assertRequestedLearnerSubject: (subjects: Array<{ name: string }>, requested?: string | null) => subjects.find((subject) => subject.name.toLowerCase() === (requested ?? "").trim().toLowerCase()) ?? null }));
 
 import { GET } from "./route";
 
