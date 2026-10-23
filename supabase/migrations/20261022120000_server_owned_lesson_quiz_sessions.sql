@@ -17,6 +17,13 @@ create table if not exists public.lesson_quiz_sessions (
   constraint lesson_quiz_sessions_result_check check (submitted_at is null or result_payload is not null)
 );
 
+-- The curriculum RPC records attempts and mastery in one transaction. A unique
+-- session evidence key makes retrying after a lost response safe: a duplicate RPC
+-- fails before any mastery progress can be incremented twice.
+create unique index if not exists learner_curriculum_assessment_quiz_session_uidx
+  on public.learner_curriculum_assessment_attempts ((evidence->>'quizSessionId'))
+  where evidence->>'source' = 'lesson_quiz' and evidence ? 'quizSessionId';
+
 create index if not exists lesson_quiz_sessions_owner_idx
   on public.lesson_quiz_sessions(user_id, lesson_id, created_at desc);
 
