@@ -158,6 +158,35 @@ export default function QuizPage() {
     }
   }
 
+  async function recoverSubmission() {
+    if (!token || !quizId || answers.length !== questions.length || questions.length === 0) return;
+    setErrMsg("");
+    try {
+      const response = await fetch("/api/learn/quiz/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quizId, answers: answers.map(selectedIndex => ({ selectedIndex })) }),
+      });
+      const result = await response.json();
+      if (response.ok && result?.verified === true && Number.isFinite(result.score) &&
+          result.score >= 0 && result.score <= 100 && Number.isInteger(result.correctCount) &&
+          result.correctCount >= 0 && Number.isInteger(result.questionCount) &&
+          result.questionCount === questions.length && result.correctCount <= result.questionCount) {
+        if (Array.isArray(result.questions) && result.questions.length === questions.length) setQuestions(result.questions);
+        setVerifiedResult({
+          score: result.score, correctCount: result.correctCount, questionCount: result.questionCount,
+          verified: true, curriculumTracked: result.curriculumTracked === true,
+          warning: typeof result.warning === "string" ? result.warning : undefined,
+        });
+        setErrMsg("");
+      } else {
+        setErrMsg(result?.error ?? "The result is not recoverable yet. Please retry in a moment.");
+      }
+    } catch {
+      setErrMsg("Connection failed while recovering your result. Your answers are still available here; retry when connected.");
+    }
+  }
+
   const q             = questions[current];
   const correctCount  = verifiedResult?.correctCount ?? answers.filter((a, i) => a === questions[i]?.correctIndex).length;
   const pct           = verifiedResult?.score ?? (questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0);
@@ -278,6 +307,11 @@ export default function QuizPage() {
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
+          {!verifiedResult && answers.length === questions.length && questions.length > 0 && (
+            <button onClick={recoverSubmission} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+              Recover Result
+            </button>
+          )}
           <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={16} /> Retake
           </button>
