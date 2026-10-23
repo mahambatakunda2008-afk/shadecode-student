@@ -474,3 +474,35 @@ a:hover .shadecode-feature-icon__glyph { filter: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* Public conversion actions must remain visibly actionable on the dark landing page. */
+.ssc-public-cta {
+  min-height: 44px;
+  justify-content: center;
+  border: 1px solid transparent;
+  text-decoration: none;
+  line-height: 1.2;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.ssc-public-cta--primary {
+  color: #FFFFFF !important;
+  background: linear-gradient(112deg, #3157D5 0%, #4668DD 58%, #6657D9 100%) !important;
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 8px 22px rgba(49,87,213,.28);
+  -webkit-text-fill-color: #FFFFFF;
+}
+.ssc-public-cta--primary:hover {
+  color: #FFFFFF !important;
+  background: linear-gradient(112deg, #2548BD 0%, #3859C8 58%, #5848C8 100%) !important;
+  box-shadow: 0 10px 26px rgba(49,87,213,.36);
+  transform: translateY(-1px);
+}
+.ssc-public-cta:focus-visible {
+  outline: 3px solid #B8CAFA;
+  outline-offset: 3px;
+}
+.ssc-public-cta svg { flex-shrink: 0; }
+@media (hover: none) {
+  .ssc-public-cta:hover { transform: none; }
+}
