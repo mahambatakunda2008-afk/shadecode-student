@@ -363,8 +363,11 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
 
   // Text fallback order after Gateway: Groq (fast, free, independent vendor), then OpenRouter,
   // then Cloudflare, then stable Gemini models, then paid OpenAI only when explicitly enabled.
-  for (const key of geminiKeys) {
-    for (const model of geminiModels) {
+  // Rotate API keys before spending the whole chain budget on alternate model IDs for one key.
+  // Lesson sections have a 32s chain budget; key-major ordering could time out on key 1's three
+  // models before ever reaching keys 2-4, making the configured backup keys effectively useless.
+  for (const model of geminiModels) {
+    for (const key of geminiKeys) {
       if (!canTry()) break;
       const text = await callGemini(key, model);
       if (text) return text;
