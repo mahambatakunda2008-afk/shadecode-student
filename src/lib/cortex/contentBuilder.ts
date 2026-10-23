@@ -10,7 +10,7 @@
  * - Add metadata automatically
  */
 
-import { StructuredLesson, Section, createExplanationTemplate, TEMPLATE_PRESETS } from "./templates";
+import { StructuredLesson, Section } from "./templates";
 import { validateLessonStructure, sanitizeLesson } from "./validators";
 
 export interface ContentBuilderConfig {
@@ -98,107 +98,133 @@ export async function buildLessonContent(
  * A: Answer
  */
 function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): StructuredLesson {
+  // Start from the requested format's template. The previous implementation
+  // always created an explanation template, which silently discarded the
+  // practice/quiz template contract.
+  const lesson = JSON.parse(JSON.stringify(config.template)) as StructuredLesson;
   const lines = aiResponse.split("\n");
-  const lesson = createExplanationTemplate(config.topic, config.level);
+  const titleLine = lines.find((line) => /^#\s+/.test(line));
+  if (titleLine) lesson.title = titleLine.replace(/^#\s+/, "").trim();
 
-  let currentSection = 0;
-  let currentContent = "";
-  let currentHeading = "";
-  let inKeyPoints = false;
-  let inExamples = false;
-  let inPractice = false;
+  type ParsedSection = { heading: string; body: string[] };
+  const sections: ParsedSection[] = [];
+  let current: ParsedSection | null = null;
 
-  // Extract title from first heading
   for (const line of lines) {
-    if (line.startsWith("# ")) {
-      lesson.title = line.replace("# ", "").trim();
-      break;
-    }
-  }
-
-  // Parse sections
-  for (const line of lines) {
-    // Skip title line
-    if (line.startsWith("# ")) continue;
-
-    // Section heading
-    if (line.startsWith("## ")) {
-      const heading = line.replace("## ", "").trim().toLowerCase();
-
-      // Save previous section
-      if (currentContent.trim().length > 0) {
-        if (currentSection < lesson.content.explanation.length) {
-          lesson.content.explanation[currentSection].content = currentContent.trim();
-          currentSection++;
-        }
-      }
-
-      currentHeading = line.replace("## ", "").trim();
-      currentContent = "";
-
-      // Check what section this is
-      if (heading.includes("key point") || heading.includes("summary")) {
-        inKeyPoints = true;
-        inExamples = false;
-        inPractice = false;
-      } else if (heading.includes("example")) {
-        inKeyPoints = false;
-        inExamples = true;
-        inPractice = false;
-      } else if (heading.includes("practice") || heading.includes("exercise")) {
-        inKeyPoints = false;
-        inExamples = false;
-        inPractice = true;
-      } else {
-        inKeyPoints = false;
-        inExamples = false;
-        inPractice = false;
-
-        // Update section heading if within explanation
-        if (currentSection < lesson.content.explanation.length) {
-          lesson.content.explanation[currentSection].heading = currentHeading;
-        }
-      }
-
+    if (/^#\s+/.test(line)) continue;
+    const heading = line.match(/^##\s+(.+)$/);
+    if (heading) {
+      current = { heading: heading[1].trim(), body: [] };
+      sections.push(current);
       continue;
     }
+    if (!current) {
+      if (!line.trim()) continue;
+      current = { heading: "Core explanation", body: [] };
+      sections.push(current);
+    }
+    current.body.push(line);
+  }
 
-    // Sub-section (bulleted list)
-    if (line.startsWith("### ")) {
-      const subHeading = line.replace("### ", "").trim();
-      if (currentSection < lesson.content.explanation.length) {
-        lesson.content.explanation[currentSection].heading = subHeading;
+  lesson.content.explanation = [];
+  lesson.content.examples = [];
+  lesson.content.keyPoints = [];
+  lesson.content.practice = [];
+  if ("assessment" in lesson) lesson.assessment = [];
+
+  const normalize = (value: string) => value.replace(/\r/g, "").trim();
+  const bodyText = (section: ParsedSection) => normalize(section.body.join("\n"));
+  const bullets = (value: string) =>
+    value.split("\n")
+      .map((line) => line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.+)$/)?.[1]?.trim())
+      .filter((item): item is string => Boolean(item));
+
+  for (const section of sections) {
+    const heading = section.heading.toLowerCase();
+    const body = bodyText(section);
+    if (!body) continue;
+
+    if (/\b(key points?|takeaways|summary|main points)\b/.test(heading)) {
+      lesson.content.keyPoints.push(...bullets(body));
+      // A summary is useful explanatory material too, not just a bullet list.
+      if (/summary/.test(heading) && bullets(body).length === 0) {
+        lesson.content.explanation.push({ heading: section.heading, content: body });
       }
       continue;
     }
 
-    // Bullet point - key point
-    if (inKeyPoints && line.startsWith("- ")) {
-      const point = line.replace("- ", "").trim();
-      if (point.length > 0) {
-        lesson.content.keyPoints.push(point);
+    if (/\b(examples?|worked examples?)\b/.test(heading)) {
+      // Preserve actual generated example content. Split only when the model
+      // clearly labels separate examples; otherwise retain the full section.
+      const chunks = body.split(/(?=^\s*(?:#{1,3}\s*)?(?:worked\s+)?example\s*(?:\d+|[A-Z])?\s*[:.)-]?\s*$)/im)
+        .map(normalize)
+        .filter(Boolean);
+      const usableChunks = chunks.length ? chunks : [body];
+      for (let index = 0; index < usableChunks.length; index++) {
+        const chunk = usableChunks[index];
+        const chunkLines = chunk.split("\n");
+        const first = chunkLines[0]?.replace(/^#{1,3}\s*/, "").trim() ?? "";
+        const hasLabel = /^(worked\s+)?example\b/i.test(first);
+        lesson.content.examples.push({
+          title: hasLabel ? first : `Example ${index + 1}`,
+          description: hasLabel ? chunkLines.slice(1).join("\n").trim() || chunk : chunk,
+        });
       }
       continue;
     }
 
-    // Regular content
-    if (line.trim().length > 0) {
-      currentContent += line + "\n";
+    if (/\b(practice|exercises?|retrieval questions?|questions)\b/.test(heading)) {
+      // Only convert explicitly answered items into scoreable practice. Do not
+      // invent answer keys when the model supplies questions without answers.
+      const itemStarts = [...body.matchAll(/(?:^|\n)\s*(?:Q(?:uestion)?\s*\d*\s*[:.)-]|\d+[.)]\s+)/g)];
+      const chunks = itemStarts.length
+        ? itemStarts.map((match, index) => {
+            const begin = (match.index ?? 0) + (match[0].startsWith("\n") ? 1 : 0);
+            const next = itemStarts[index + 1];
+            return body.slice(begin, next?.index ?? body.length).trim();
+          })
+        : [];
+      for (let index = 0; index < chunks.length; index++) {
+        const chunk = chunks[index];
+        const answerMatch = chunk.match(/(?:^|\n)\s*(?:A(?:nswer)?|Correct answer)\s*[:.)-]\s*([\s\S]*?)(?=\n\s*(?:Explanation|Reasoning)\s*[:.)-]|$)/i);
+        const explanationMatch = chunk.match(/(?:^|\n)\s*(?:Explanation|Reasoning)\s*[:.)-]\s*([\s\S]*)$/i);
+        const question = chunk
+          .replace(/^\s*(?:Q(?:uestion)?\s*\d*\s*[:.)-]|\d+[.)]\s+)/i, "")
+          .split(/\n\s*(?:A(?:nswer)?|Correct answer|Explanation|Reasoning)\s*[:.)-]/i)[0]
+          .trim();
+        const correctAnswer = answerMatch?.[1]?.trim();
+        const explanation = explanationMatch?.[1]?.trim();
+        if (!question || !correctAnswer || !explanation) continue;
+        lesson.content.practice.push({
+          id: `practice-${lesson.content.practice.length + 1}`,
+          question,
+          type: "short_answer",
+          correctAnswer,
+          explanation,
+          difficulty: config.level === "beginner" ? "easy" : config.level === "advanced" ? "hard" : "medium",
+        });
+      }
+      continue;
+    }
+
+    lesson.content.explanation.push({ heading: section.heading, content: body });
+    // Collect clearly marked key points embedded in explanatory sections.
+    lesson.content.keyPoints.push(...bullets(body));
+  }
+
+  // Some model responses contain prose without markdown headings. Keep the
+  // actual response available to the learner instead of returning an empty
+  // lesson, while still letting the quality gate decide whether it is enough.
+  if (lesson.content.explanation.length === 0) {
+    const fallbackText = lines.filter((line) => !/^#\s+/.test(line)).join("\n").trim();
+    if (fallbackText) {
+      lesson.content.explanation.push({ heading: "Explanation", content: fallbackText });
     }
   }
 
-  // Save final section
-  if (currentContent.trim().length > 0 && currentSection < lesson.content.explanation.length) {
-    lesson.content.explanation[currentSection].content = currentContent.trim();
-  }
-
-  // Update metadata
+  lesson.content.keyPoints = [...new Set(lesson.content.keyPoints.filter(Boolean))];
   lesson.metadata.estimatedTime = estimateReadTime(aiResponse);
   lesson.metadata.objectives = generateObjectives(config.topic, config.level);
-
-  // Remove empty explanation sections
-  lesson.content.explanation = lesson.content.explanation.filter((s) => s.content.trim().length > 0);
-
   return lesson;
 }
 
