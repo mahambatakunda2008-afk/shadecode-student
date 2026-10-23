@@ -21,7 +21,7 @@ import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGene
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
-interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
+interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; shareable?: boolean; }
 function isLocalOnlyCompletion(value: { localOnly?: boolean; result?: unknown }): boolean {
   const result = value.result;
   if (result && typeof result === "object" && "localOnly" in result) {
@@ -553,6 +553,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
           title: validated.title,
           blocks: validated.blocks,
           verifiedCurriculumFallback: validated.offlineFallback === true,
+          shareable: validated.shareable === true,
         },
       }),
       cache: "no-store",
@@ -640,6 +641,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       ? String((persistedPartial as Record<string, unknown>).title)
       : request.topic || job.request.prompt;
     let assembledOfflineFallback = false;
+    let assembledShareable = persistedCompletedUnits === 0;
 
     const leaseId = generationLeaseId(job.id);
     for (let sectionIndex = persistedCompletedUnits; sectionIndex < sectionCount; sectionIndex += 1) {
@@ -705,6 +707,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
             assembledBlocks = sectionData.partialBlocks;
             if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
             assembledOfflineFallback = sectionData.deterministicFallback === true;
+        assembledShareable = sectionData.shareable === true;
             break;
           }
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
@@ -739,6 +742,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
         assembledBlocks = sectionData.partialBlocks;
         if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
         assembledOfflineFallback = sectionData.deterministicFallback === true;
+        assembledShareable = sectionData.shareable === true;
         break;
       }
 
@@ -747,6 +751,9 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       }
 
       if (typeof sectionData.title === "string" && sectionIndex === 0) assembledTitle = sectionData.title;
+      assembledShareable = sectionIndex === 0
+        ? sectionData.shareable === true
+        : assembledShareable && sectionData.shareable === true;
       assembledBlocks = Array.isArray(sectionData.partialBlocks)
         ? sectionData.partialBlocks
         : [...assembledBlocks, ...sectionData.blocks];
@@ -783,6 +790,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
       blocks: data.blocks,
       offlineFallback: assembledOfflineFallback,
       localModel: false,
+      shareable: assembledShareable,
     }, request);
     if (!result) throw new Error("The lesson service returned a lesson that failed the learning-quality checks.");
     updateGenerationJob(job.id, { status: "partial", progress: 92, partial: { title: result.title, blocks: result.blocks } });
