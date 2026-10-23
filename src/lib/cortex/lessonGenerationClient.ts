@@ -707,7 +707,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
             assembledBlocks = sectionData.partialBlocks;
             if (typeof sectionData.title === "string") assembledTitle = sectionData.title;
             assembledOfflineFallback = sectionData.deterministicFallback === true;
-        assembledShareable = sectionData.shareable === true;
+            assembledShareable = sectionData.shareable === true;
             break;
           }
           if (response.ok && Array.isArray(sectionData?.blocks) && sectionData.blocks.length >= 3) break;
