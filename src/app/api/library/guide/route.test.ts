@@ -8,6 +8,7 @@ const resolver = vi.fn();
 
 vi.mock("@/lib/rate-limit/limiter", () => ({ applyRateLimit: async () => null, generalApiLimiter: {} }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: currentUser } }) } }) }));
+vi.mock("@/lib/supabase/authenticated-request", () => ({ createAuthenticatedRequestClient: async () => currentUser ? ({ supabase: {}, user: currentUser }) : null }));
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => adminRows === null ? null : ({ from: () => ({ select: () => ({ eq: () => ({ in: () => ({ limit: async () => ({ data: adminRows, error: null }) }) }) }) }) }),
 }));
