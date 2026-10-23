@@ -156,7 +156,7 @@ function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): Stru
     if (/\b(examples?|worked examples?)\b/.test(heading)) {
       // Preserve actual generated example content. Split only when the model
       // clearly labels separate examples; otherwise retain the full section.
-      const chunks = body.split(/(?=^\s*(?:#{1,3}\s*)?(?:worked\s+)?example\s*(?:\d+|[A-Z])?\s*[:.)-]?\s*$)/im)
+      const chunks = body.split(/(?=^\s*(?:#{1,3}\s*)?(?:worked\s+)?example\s*(?:\d+|[A-Z])?\s*[:.)-]?\s*\S)/im)
         .map(normalize)
         .filter(Boolean);
       const usableChunks = chunks.length ? chunks : [body];
