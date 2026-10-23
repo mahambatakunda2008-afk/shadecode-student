@@ -84,16 +84,11 @@ export async function POST(req: Request) {
           ? storedLesson.curriculum_objective_keys.filter((key: unknown): key is string => typeof key === "string" && key.trim().length > 0) : [];
         const validStoredScore = Number.isFinite(storedPayload.score) && Number.isFinite(storedPayload.correctCount)
           && Number.isFinite(storedPayload.questionCount) && storedPayload.questionCount > 0;
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        if (storedLessonError || !storedLesson?.curriculum_version_id || !storedObjectives.length
-          || !validStoredScore || !anonKey || !session.submitted_at) {
+            if (storedLessonError || !storedLesson?.curriculum_version_id || !storedObjectives.length
+          || !validStoredScore || !session.submitted_at) {
           return NextResponse.json(responseForStoredResult(storedPayload, storedMasteryStatus));
         }
-        const userScoped = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
-          global: { headers: { Authorization: `Bearer ${token}` } },
-          auth: { autoRefreshToken: false, persistSession: false }
-        });
-        const retry = await userScoped.rpc("record_curriculum_assessment_result", {
+        const retry = await supabase.rpc("record_curriculum_assessment_result", {
           p_user_id: user.id,
           p_curriculum_version_id: storedLesson.curriculum_version_id,
           p_objective_keys: storedObjectives,
@@ -155,19 +150,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "This quiz has expired or is being submitted. Please retry to recover the result.", code: "QUIZ_SESSION_UNAVAILABLE", retryable: true }, { status: 409 });
     }
     if (!canTrackCurriculum) return NextResponse.json(resultPayload);
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!anonKey) throw new Error("Missing Supabase public credentials.");
-    const userScoped = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, anonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { autoRefreshToken: false, persistSession: false }
-    });
     const assessmentArgs = {
       p_user_id: user.id, p_curriculum_version_id: lesson.curriculum_version_id,
       p_objective_keys: objectiveKeys, p_score: score, p_correct_count: correctCount,
       p_question_count: questionCount, p_lesson_id: lesson.id,
       p_evidence: { source: "lesson_quiz", quizSessionId: quizId, submittedAt }
     };
-    let { data, error } = await userScoped.rpc("record_curriculum_assessment_result", assessmentArgs);
+    let { data, error } = await supabase.rpc("record_curriculum_assessment_result", assessmentArgs);
     if (error) {
       console.error("Curriculum assessment recording error:", error);
       // The RPC is transactional, and the migration adds a unique evidence key
@@ -189,7 +178,7 @@ export async function POST(req: Request) {
 
       // No committed evidence was found, so retry once. The unique index makes
       // this safe even if the first transaction was still completing.
-      const retry = await userScoped.rpc("record_curriculum_assessment_result", assessmentArgs);
+      const retry = await supabase.rpc("record_curriculum_assessment_result", assessmentArgs);
       if (!retry.error) {
         data = retry.data;
         error = null;
