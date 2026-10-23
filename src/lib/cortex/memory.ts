@@ -145,12 +145,13 @@ export class CortexMemory {
   search(question: string, userId?: string, limit: number = 5): MemoryEntry[] {
     const sanitizedQuestion = question.trim();
 
-    let results = this.entries;
-
-    // Filter by user if provided
-    if (userId) {
-      results = results.filter((entry) => entry.userId === userId);
+    // Fail closed: an unscoped search must never inspect another learner's cache.
+    // Keep the optional parameter for source compatibility, but require it at runtime.
+    if (!userId) {
+      return [];
     }
+
+    const results = this.entries.filter((entry) => entry.userId === userId);
 
     // Score and filter
     const scored = results
