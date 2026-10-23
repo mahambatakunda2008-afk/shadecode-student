@@ -1,6 +1,6 @@
 // src/app/api/library/guide/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createAuthenticatedRequestClient } from '@/lib/supabase/authenticated-request'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { resolveVerifiedCurriculumPromptContext } from '@/lib/curriculum/ai-grounding'
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
   if (topic.length < 2) return NextResponse.json({ error: 'topic required' }, { status: 400 })
 
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
+    const auth = await createAuthenticatedRequestClient(request)
+    if (!auth) return NextResponse.json({ error: 'Sign in to use a syllabus guide' }, { status: 401 })
+    const { supabase, user } = auth
 
     const subjectAccess = await resolveLearnerSubject(supabase, user.id, subject)
     if (!subjectAccess.ok) {
