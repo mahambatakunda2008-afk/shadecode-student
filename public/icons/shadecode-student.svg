@@ -1,34 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
   <title id="title">Shadecode Student</title>
-  <desc id="desc">A smooth blue-violet ribbon forming an S and an open book, centered on a deep navy background.</desc>
+  <desc id="desc">A smooth, folded S ribbon in layered blue, cyan and violet on deep navy.</desc>
   <defs>
-    <linearGradient id="ribbon" x1="300" y1="300" x2="730" y2="750" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#39E5F5"/>
-      <stop offset=".34" stop-color="#168BFF"/>
-      <stop offset=".68" stop-color="#385BFF"/>
-      <stop offset="1" stop-color="#9A5BFF"/>
+    <linearGradient id="base" x1="300" y1="250" x2="730" y2="790" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#50F0F0"/><stop offset=".28" stop-color="#198CFF"/><stop offset=".62" stop-color="#465BFF"/><stop offset="1" stop-color="#9A64FF"/>
     </linearGradient>
-    <linearGradient id="pages" x1="390" y1="500" x2="650" y2="640" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A6F6FF"/>
-      <stop offset=".5" stop-color="#50C9FF"/>
-      <stop offset="1" stop-color="#8580FF"/>
+    <linearGradient id="foldA" x1="350" y1="340" x2="680" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B1FFFF"/><stop offset=".42" stop-color="#46C8FF"/><stop offset="1" stop-color="#566CFF"/>
     </linearGradient>
-    <radialGradient id="background" cx="28%" cy="15%" r="92%">
-      <stop offset="0" stop-color="#102B4A"/>
-      <stop offset=".58" stop-color="#081A2D"/>
-      <stop offset="1" stop-color="#06111C"/>
+    <linearGradient id="foldB" x1="690" y1="360" x2="360" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1872D9"/><stop offset=".55" stop-color="#344BDB"/><stop offset="1" stop-color="#6C49D8"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="32%" cy="16%" r="92%">
+      <stop stop-color="#102C4A"/><stop offset=".6" stop-color="#081A2D"/><stop offset="1" stop-color="#050F1B"/>
     </radialGradient>
-    <radialGradient id="halo" cx="50%" cy="47%" r="42%">
-      <stop offset="0" stop-color="#176BFF" stop-opacity=".16"/>
-      <stop offset="1" stop-color="#176BFF" stop-opacity="0"/>
+    <radialGradient id="glow" cx="50%" cy="48%" r="43%">
+      <stop stop-color="#187BFF" stop-opacity=".18"/><stop offset="1" stop-color="#187BFF" stop-opacity="0"/>
     </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
   </defs>
-  <rect width="1024" height="1024" rx="230" fill="url(#background)"/>
-  <rect width="1024" height="1024" rx="230" fill="url(#halo)"/>
-  <rect x="4" y="4" width="1016" height="1016" rx="226" fill="none" stroke="#284D72" stroke-opacity=".48" stroke-width="5"/>
-  <g fill="none" stroke="url(#ribbon)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M650 346 C592 307 500 299 430 329 C358 360 334 425 365 475 C389 515 453 531 510 557 C575 587 614 626 603 676 C591 727 526 753 463 740 C420 731 390 710 369 685"/>
-  </g>
-  <path d="M385 504 C431 483 480 495 512 531 C544 495 593 483 639 504 L639 604 C589 584 544 596 512 633 C480 596 435 584 385 604 Z" fill="url(#pages)" stroke="#B4F3FF" stroke-opacity=".55" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M512 531 L512 633" fill="none" stroke="#E4FCFF" stroke-opacity=".9" stroke-width="8" stroke-linecap="round"/>
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="230" fill="url(#glow)"/>
+  <rect x="4" y="4" width="1016" height="1016" rx="226" fill="none" stroke="#294866" stroke-opacity=".42" stroke-width="5"/>
+  <path d="M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689"
+        fill="none" stroke="#000814" stroke-opacity=".55" stroke-width="118" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)"/>
+  <path d="M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689"
+        fill="none" stroke="url(#base)" stroke-width="112" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M674 333 C617 291 523 286 442 320 C368 351 341 408 359 455 C373 491 421 510 468 529"
+        fill="none" stroke="url(#foldA)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M514 578 C575 603 608 641 599 687 C590 730 545 754 493 755"
+        fill="none" stroke="url(#foldB)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M363 478 C399 516 454 535 511 557 C574 582 614 617 614 655"
+        fill="none" stroke="#A7F5FF" stroke-opacity=".62" stroke-width="8" stroke-linecap="round"/>
+  <path d="M392 704 C422 739 469 754 510 748"
+        fill="none" stroke="#C4B3FF" stroke-opacity=".58" stroke-width="8" stroke-linecap="round"/>
 </svg>
