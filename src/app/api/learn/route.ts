@@ -18,7 +18,7 @@ import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
 import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
-import { findSharedLessonArtifact, publishSharedLessonArtifact } from "@/lib/sharedArtifacts/cache";
+import { findSharedLessonArtifact, isSafeToShareLesson, publishSharedLessonArtifact } from "@/lib/sharedArtifacts/cache";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -496,7 +496,7 @@ export async function POST(req: Request) {
         if (Array.isArray(partial.blocks)) priorBlocks = partial.blocks as LessonBlock[];
       }
       if (checkpointCompleted === 0 && generationSectionIndex === 0) {
-        const shared = await findSharedLessonArtifact(supabase, {
+        let shared = await findSharedLessonArtifact(supabase, {
           subject: effectiveSubject,
           topic: request.topic,
           difficulty: validDifficulty,
@@ -504,6 +504,66 @@ export async function POST(req: Request) {
           examBoard: typeof body.examBoard === "string" ? body.examBoard : null,
           goal: typeof goal === "string" ? goal : null,
         });
+
+        // Legacy completed lessons predate the shared cache. Reuse one only for a
+        // generic request with no board/level metadata, since old rows cannot prove
+        // curriculum alignment. Never share a row that fails the same quality/privacy gates.
+        if (!shared && !String(level ?? "").trim() && !String(body.examBoard ?? "").trim()) {
+          const { data: priorLessons, error: priorLessonsError } = await supabase
+            .from("learn_lessons")
+            .select("id, user_id, title, topic, difficulty, blocks, subjects!inner(name)")
+            .eq("topic", request.topic)
+            .eq("difficulty", validDifficulty)
+            .neq("user_id", user.id)
+            .limit(20);
+          if (!priorLessonsError && Array.isArray(priorLessons)) {
+            for (const prior of priorLessons as Array<Record<string, unknown>>) {
+              const related = prior.subjects;
+              const subjectName = related && typeof related === "object" && !Array.isArray(related)
+                ? (related as Record<string, unknown>).name
+                : null;
+              if (typeof subjectName !== "string" || normalizeSubjectKey(subjectName) !== normalizeSubjectKey(effectiveSubject)) continue;
+              if (typeof prior.title !== "string" || !Array.isArray(prior.blocks)) continue;
+              const priorBlocks = prior.blocks.filter((block): block is LessonBlock =>
+                Boolean(block) && typeof block === "object" &&
+                typeof (block as LessonBlock).type === "string" &&
+                typeof (block as LessonBlock).content === "string" &&
+                String((block as LessonBlock).content).trim().length >= 40
+              );
+              const candidate = { title: prior.title, blocks: priorBlocks };
+              const score = lessonQualityScore(priorBlocks);
+              if (lessonQualityFailures(candidate, request).failures.length > 0 || score < 60) continue;
+              if (!isSafeToShareLesson(request.topic, {
+                title: candidate.title,
+                blocks: candidate.blocks as Array<Record<string, unknown>>,
+              })) continue;
+              shared = {
+                id: String(prior.id ?? ""),
+                payload: { title: candidate.title, blocks: candidate.blocks },
+                qualityScore: score,
+                lesson: { title: candidate.title, blocks: candidate.blocks as Array<Record<string, unknown>> },
+              };
+              await publishSharedLessonArtifact(supabase, {
+                subject: effectiveSubject,
+                topic: request.topic,
+                difficulty: validDifficulty,
+                level: null,
+                examBoard: null,
+                goal: typeof goal === "string" ? goal : null,
+                lesson: shared.lesson,
+                qualityScore: score,
+                shareable: true,
+              }).catch(() => false);
+              console.info("[LEARN] reused a quality-checked legacy lesson from another learner", {
+                subject: effectiveSubject,
+                topic: request.topic,
+                qualityScore: score,
+              });
+              break;
+            }
+          }
+        }
+
         if (shared) {
           const sharedCandidate = {
             title: shared.lesson.title,
