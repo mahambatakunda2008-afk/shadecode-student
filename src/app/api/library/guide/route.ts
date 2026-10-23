@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No verified syllabus is available for this topic' }, { status: 404 })
     }
     const { pack } = resolved
-    if ((pack.subject || '').trim().toLowerCase() !== subject.toLowerCase()) {
+    const normalizedPackSubject = (pack.subject || '').trim().replace(/^(as|a)[ -]?level\\s+/i, '').toLowerCase()
+    if (normalizedPackSubject !== subject.toLowerCase()) {
       return NextResponse.json({ error: 'The curriculum profile does not match your selected subject', code: 'CURRICULUM_SUBJECT_MISMATCH' }, { status: 409 })
     }
 
