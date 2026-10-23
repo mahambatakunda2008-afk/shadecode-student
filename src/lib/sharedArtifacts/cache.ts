@@ -92,11 +92,15 @@ export async function findSharedArtifact(
     // Missing migration/table or a temporary database issue must not prevent normal generation.
     if (error || !data || !data.payload || typeof data.payload !== "object") return null;
 
-    void client.from("shared_learning_artifacts")
-      .update({ use_count: Math.max(0, Number(data.use_count) || 0) + 1 })
-      .eq("id", data.id)
-      .then(() => undefined)
-      .catch(() => undefined);
+    void (async () => {
+      try {
+        await client.from("shared_learning_artifacts")
+          .update({ use_count: Math.max(0, Number(data.use_count) || 0) + 1 })
+          .eq("id", data.id);
+      } catch {
+        // Usage telemetry is best-effort; a hit remains usable if it cannot be counted.
+      }
+    })();
 
     return {
       id: String(data.id),
