@@ -37,6 +37,8 @@ Underneath them is **Cortex OS**, a shared learning-intelligence layer for learn
 
 **Master scope and live progress:** `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md` is the authoritative matrix for all discussed workstreams, including Cortex, Learning, Assessment, Creation, Engagement, Primary, Student, Campus, Teacher/School, Parent, Knowledge, Offline/Local-first, Trust/Platform and Business. It is broader than the three-experience architecture.
 
+**Execution register and growth plan:** `docs/MASTER_WORK_REGISTER_AND_GROWTH_PLAN_2026-10-24.md` consolidates current execution priorities, verification rules, privacy-respecting sharing, honest reviews, owned educational content, outreach, and measurement. It supplements the strategic roadmap; it does not replace architecture or implementation evidence.
+
 See `docs/PRODUCT_VISION_2026-09-01.md`, `docs/PRIMARY_DISCOVERY_V1.md` and `docs/architecture/PLATFORM_BOUNDARIES.md` for the product and architecture records.
 
 ## Canonical learning evidence
