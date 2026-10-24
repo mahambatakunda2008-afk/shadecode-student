@@ -1,7 +1,7 @@
 # Challenge-table authorization remediation plan
 
 **Status:** Proposed only. No SQL has been applied to the connected production database.
-**Observed:** Live metadata inspection on 2026-10-23 showed broad direct table grants to `anon` and `authenticated` on `ai_anomalies`, `challenge_attempts`, `challenge_answer_keys`, and `challenges`, including `TRUNCATE`; an authenticated `ALL` policy on `ai_anomalies` with unconditional predicates; and a public row-read policy on `challenge_attempts`.
+**Observed:** Live metadata inspection on 2026-10-23 and re-verification on 2026-10-24 showed broad direct table grants to `anon` and `authenticated` on `ai_anomalies`, `challenge_attempts`, `challenge_answer_keys`, and `challenges`, including `TRUNCATE`; an authenticated `ALL` policy on `ai_anomalies` with unconditional predicates; and a public row-read policy on `challenge_attempts`.
 
 ## Required target state
 
@@ -34,13 +34,21 @@ No browser role should have `TRUNCATE`, `REFERENCES`, or `TRIGGER` privileges on
 - Never expose the service-role key to browser code.
 
 ### `ai_anomalies`
-- `src/app/api/admin/ai-anomalies/route.ts` checks the authenticated user's admin role before creating a service-role client. The actual analysis shown in the inspected portion reads `ai_usage_logs`; no direct `ai_anomalies` consumer was confirmed in this route.
-- The live policy named `Admins can manage ai_anomalies` reportedly grants `ALL` to `authenticated` with unconditional `USING (true)` and `WITH CHECK (true)`. The name does not make it admin-only. Remove browser access unless a concrete, tested user-facing use case is found.
+- `src/app/api/admin/ai-anomalies/route.ts` checks the authenticated user's admin role before creating a service-role client. The inspected analysis route reads `ai_usage_logs`; no direct `ai_anomalies` consumer was confirmed in that route.
+- The live policy named `Admins can manage ai_anomalies` grants `ALL` to `authenticated` with unconditional `USING (true)` and `WITH CHECK (true)`. The name does not make it admin-only. Remove browser access unless a concrete, tested user-facing use case is found.
+
+## Re-verified live database findings (read-only, 2026-10-24)
+
+- `pg_policies` confirms the unconditional `ai_anomalies` policy, public `SELECT` on raw `challenge_attempts`, and `INSERT` policies that permit `user_id IS NULL` on attempts and `challenger_id IS NULL` on challenges.
+- Effective table privilege checks still report `anon` and `authenticated` have `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, and `TRIGGER` on all four target tables. This is a privilege metadata result, not proof every operation is reachable through PostgREST; RLS can still block some row operations. `TRUNCATE` is not controlled by RLS.
+- The Supabase security advisor also flags `apply_lesson_vote()` and `publish_lesson_to_library()` as SECURITY DEFINER trigger functions executable by `anon` and `authenticated`. Their inspected definitions return `trigger`, so they are intended as trigger handlers, not browser RPC endpoints. Review/revoke direct execute grants as a separate migration, and test lesson voting and library publishing triggers afterward. Do not confuse this separate finding with the challenge-table fix.
+- The same advisor reports leaked-password protection disabled. This is an Auth configuration follow-up, not a table-policy migration.
+- A fresh Supabase branch listing returned no development branches. Do not apply a permission migration to production as a substitute for missing development validation.
 
 ## Important implementation caveats
 
 - A privilege check run through an administrative SQL connection is not the same as a real request using anon/authenticated API keys. Confirm effective grants and RLS with disposable test identities.
-- Table privileges may be inherited through grants, default privileges, or role membership. Verify all three; do not rely only on a policy listing. In particular, `TRUNCATE` is not controlled by row-level security.
+- Table privileges may be inherited through grants, default privileges, or role membership. Verify all three; do not rely only on a policy listing.
 - Challenge preview metadata must remain shareable without leaking private linkage IDs, arbitrary future columns, raw attempt rows, or answer keys.
 - Challenge subject checks must remain enforced on authenticated question retrieval and marking. Do not weaken these while changing table policies.
 - Mixed verified and self-reported challenge attempts must be clearly distinguished anywhere results are displayed or used for ranking.
@@ -55,7 +63,8 @@ No browser role should have `TRUNCATE`, `REFERENCES`, or `TRIGGER` privileges on
 6. Verify no browser role can truncate the tables or execute unneeded update/delete operations.
 7. Verify self-reported attempts cannot be presented as server-verified and a failed insert cannot be reported as a successful saved attempt.
 8. Apply a reviewed migration in development, run the authenticated learner flow, and re-run the privilege/policy snapshot.
-9. Only after all checks pass should the migration be considered for production. Keep a rollback plan and preserve challenge history.
+9. Review the trigger-function execute grants separately; verify lesson vote counters and lesson-library publishing still work.
+10. Only after all checks pass should the migration be considered for production. Keep a rollback plan and preserve challenge history.
 
 ## Scope
 
