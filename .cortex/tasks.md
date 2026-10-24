@@ -330,6 +330,14 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 
 ---
 
+
+### Offline architecture invariant (reaffirmed 2026-10-24)
+- [ ] Do not equate PWA/service-worker caching with genuine offline support. Cache API is for static assets, not the source of truth for learner data.
+- [ ] Reconcile the four overlapping offline/sync mechanisms identified in `docs/audits/2026-08-24-offline-sync-architecture-audit.md`; decide and implement one coordinated local-first mutation/sync contract before expanding offline features.
+- [ ] Use durable, learner/device-scoped local persistence and explicit sync/conflict/recovery states; ensure account switching cannot leak local data.
+- [ ] Test real offline workflows: airplane mode, reload/reopen, queued mutations, reconnect/idempotency, conflicts, storage exhaustion, backup/export and recovery. Be honest about actions that require network/server/model access.
+- [ ] Do not label cached outputs as local AI. Offline AI claims require actual local inference; otherwise offer verified local teaching/practice capability and explain limitations.
+
 ## 📋 Cortex Rules
 
 1. Always open a PR — never push directly to main.
