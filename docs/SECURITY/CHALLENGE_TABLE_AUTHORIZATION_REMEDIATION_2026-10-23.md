@@ -1,7 +1,7 @@
 # Challenge-table authorization remediation plan
 
 **Status:** Proposed only. No SQL has been applied to the connected production database.
-**Observed:** Live metadata inspection on 2026-10-23 showed broad direct table grants to `anon` and `authenticated` on four tables, including `TRUNCATE`; an authenticated `ALL` policy on `ai_anomalies` with unconditional predicates; and a public row-read policy on `challenge_attempts`.
+**Observed:** Live metadata inspection on 2026-10-23 showed broad direct table grants to `anon` and `authenticated` on `ai_anomalies`, `challenge_attempts`, `challenge_answer_keys`, and `challenges`, including `TRUNCATE`; an authenticated `ALL` policy on `ai_anomalies` with unconditional predicates; and a public row-read policy on `challenge_attempts`.
 
 ## Required target state
 
@@ -14,26 +14,48 @@
 
 No browser role should have `TRUNCATE`, `REFERENCES`, or `TRIGGER` privileges on these tables. The application must not depend on direct client-side writes to internal AI anomaly or answer-key tables.
 
+## Code-path trace (main, reviewed 2026-10-24)
+
+### `challenges`
+- `src/app/api/challenge/route.ts` POST requires an authenticated user, reads the caller's `exam_results` row, resolves the learner's allowed subject, and inserts a challenge with `challenger_id = user.id`. It freezes the question set into `challenge_questions`; deterministic answer keys are written through the service-role admin client.
+- The same route's GET requires sign-in, selects `*` from `challenges`, then checks the subject against the caller's enrolled subjects. Prefer an explicit column list to reduce accidental field exposure.
+- `src/app/challenge/[id]/page.tsx` uses the session client and selects `*` to render the public challenge preview and metadata. This route is intentionally shareable without sign-in. Its intended public projection is the score-card fields represented by the local `Challenge` interface, not arbitrary future columns.
+- Therefore, removing public challenge reads outright will break shared links. Keep a narrow, reviewed public preview path and test it with a real anonymous request.
+
+### `challenge_attempts`
+- `src/app/api/challenge/attempt/route.ts` requires sign-in, reads the challenge's comparison percentage from the database, and inserts the authenticated user's ID. However, for legacy/client-marked challenges, the submitted percentage and scores still come from the request body. Treat these as **unverified/self-reported** results, not server-verified scores.
+- That route logs insert errors but still returns `{ won }`; a failed insert can therefore look successful to the client. Fix the response semantics separately: return a failure/retryable response when persistence fails, and distinguish verified from self-reported results.
+- `src/app/api/challenge/mark/route.ts` is the stronger path for deterministic frozen papers: it loads the answer key through the service-role client, computes the score on the server, and records `verified: true`. It skips recording the challenger's own practice run.
+- `src/app/(app)/leaderboard/page.tsx` reads `profiles`, not `challenge_attempts`. Do not preserve public raw attempt access on the assumption that this page needs it. Search any other consumers before changing policy.
+
+### `challenge_answer_keys`
+- The only confirmed consumer in the traced routes is the server-side challenge creation route (insert via admin client) and marking route (select via admin client).
+- Migration `20261009120000_battle_server_side_marking.sql` enables RLS and defines no browser policies, but that is not enough if direct table grants remain broad. Revoke unnecessary browser privileges as well as ensuring RLS denies browser access.
+- Never expose the service-role key to browser code.
+
+### `ai_anomalies`
+- `src/app/api/admin/ai-anomalies/route.ts` checks the authenticated user's admin role before creating a service-role client. The actual analysis shown in the inspected portion reads `ai_usage_logs`; no direct `ai_anomalies` consumer was confirmed in this route.
+- The live policy named `Admins can manage ai_anomalies` reportedly grants `ALL` to `authenticated` with unconditional `USING (true)` and `WITH CHECK (true)`. The name does not make it admin-only. Remove browser access unless a concrete, tested user-facing use case is found.
+
 ## Important implementation caveats
 
-- `challenge_attempts` is currently publicly readable under RLS and includes learner identity/performance fields. Removing raw public reads may affect a leaderboard or other UI. Search and verify all consumers before applying a policy change. If public rankings are required, create a separately reviewed sanitized view/RPC that exposes only intended display data and aggregate results.
-- Shared challenge URLs currently read challenge records for score-card previews. Preserve this workflow without exposing unrelated columns or private linkage identifiers. The current page selects `*` server-side; review whether a public projection is more appropriate.
-- The challenge creation API uses the authenticated server client to insert a challenge and reads the result owned by the current user. Keep the owner check enforced in RLS, not just in route code.
-- The attempt submission route requires sign-in and writes the authenticated user's ID. Its insert policy should reject null and forged `user_id` values.
-- The server marking route writes `challenge_answer_keys` using a service-role client. Never move the service-role key into a browser bundle.
-- A privilege check run through an administrative SQL connection is not the same as a real request using anon/authenticated API keys. Confirm effective grants and RLS with disposable test identities before and after the migration.
-- Table privileges may also be inherited through grants, default privileges, or role membership. Verify all three; do not rely only on a policy listing.
+- A privilege check run through an administrative SQL connection is not the same as a real request using anon/authenticated API keys. Confirm effective grants and RLS with disposable test identities.
+- Table privileges may be inherited through grants, default privileges, or role membership. Verify all three; do not rely only on a policy listing. In particular, `TRUNCATE` is not controlled by row-level security.
+- Challenge preview metadata must remain shareable without leaking private linkage IDs, arbitrary future columns, raw attempt rows, or answer keys.
+- Challenge subject checks must remain enforced on authenticated question retrieval and marking. Do not weaken these while changing table policies.
+- Mixed verified and self-reported challenge attempts must be clearly distinguished anywhere results are displayed or used for ranking.
 
 ## Required pre-merge checks
 
-1. Trace all code references to the four tables and document expected reads/writes.
+1. Trace all table references across the repository, including generated types, components, server routes, tests, and SQL functions.
 2. In a development Supabase project, test with anonymous, learner A, learner B, and server-side identities.
-3. Assert that anonymous and ordinary learners cannot read or mutate AI anomaly rows or answer keys.
+3. Assert anonymous and ordinary learners cannot read or mutate AI anomaly rows or answer keys.
 4. Assert learner A cannot read learner B's attempts; null/forged user IDs are rejected; public raw attempt reads are denied.
-5. Verify challenge creation, public challenge preview, challenge acceptance, attempt submission, server marking, and retry behavior still work.
+5. Verify challenge creation, public challenge preview, challenge acceptance, attempt submission, server marking, self-practice, and retry behavior still work.
 6. Verify no browser role can truncate the tables or execute unneeded update/delete operations.
-7. Apply a reviewed migration in development, run the authenticated learner flow, and re-run the privilege/policy snapshot.
-8. Only after all checks pass should the migration be considered for production. Keep a rollback plan and preserve challenge history.
+7. Verify self-reported attempts cannot be presented as server-verified and a failed insert cannot be reported as a successful saved attempt.
+8. Apply a reviewed migration in development, run the authenticated learner flow, and re-run the privilege/policy snapshot.
+9. Only after all checks pass should the migration be considered for production. Keep a rollback plan and preserve challenge history.
 
 ## Scope
 
