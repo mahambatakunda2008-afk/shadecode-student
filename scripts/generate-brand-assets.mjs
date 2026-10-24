@@ -61,7 +61,7 @@ async function writeAsset(sourceName, size, outputName) {
   }
 
   await writeAsset(sources.dark, 32, "favicon.png");
-  await writeAsset(sources.light, 180, "apple-touch-icon.png");
+  await writeAsset(sources.dark, 180, "apple-touch-icon.png");
 
   rmSync(tempDir, { recursive: true, force: true });
   console.log(`Generated Shadecode Student raster brand assets in ${outputDir}`);

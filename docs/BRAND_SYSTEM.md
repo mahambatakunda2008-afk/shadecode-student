@@ -1,75 +1,60 @@
-# Shadecode Student Brand System v3
+# Shadecode Student Brand System
 
-`docs/SHADECODE_STUDENT_BRAND.md` is the detailed source of truth. This file is the concise engineering reference.
+This document describes the restored original Shadecode Student identity.
 
 ## Core identity
 
-The Shadecode Student symbol is the **S-shaped interlocking mark shown in the supplied neon branding references**. The primary master treatment is a transparent cyan-to-blue-to-violet gradient. The symbol itself is the recognition anchor; the gradient is part of the product identity, not a decorative afterthought.
+- **Symbol:** the original three-part abstract geometric mark, with softened joins and the original silhouette.
+- **App tile:** deep navy, with a quiet border.
+- **Accent:** cyan-to-blue-to-violet gradient, preserving the product's current colour identity.
+- **Wordmark:** clear SHADECODE / STUDENT lockup. Keep the mark itself free of text.
+- **Overall feel:** precise, calm, modern, premium. No book/pages or unrelated replacement symbols.
 
-### Primary gradient
-
-- Cyan: `#00E5FF`
-- Electric blue: `#00A8FF`
-- Royal blue: `#245BFF`
-- Violet: `#7A3CFF`
-- Magenta violet: `#C135FF`
-
-The gradient should read cyan-first and violet-last, matching the supplied references. Do not add glow, bevels, shadows, outlines, perspective, or 3D effects to the master vector.
-
-## Assets
-
-- `public/brand/shadecode-icon-master.svg` — canonical transparent neon master mark.
-- `public/brand/shadecode-app-icon.svg` — transparent application mark.
-- `public/brand/shadecode-app-icon-dark.svg` — neon mark on Shadecode Ink.
-- `public/brand/shadecode-app-icon-light.svg` — neon mark on a light tile.
-- `public/brand/shadecode-app-icon-maskable.svg` — adaptive/maskable safe-area icon.
-- `public/brand/shadecode-mark.svg` — canonical transparent inline mark.
-- `public/brand/shadecode-mark-white.svg` — white one-color production mark.
-- `public/brand/shadecode-mark-reversed.svg` — white reversed mark.
-- `public/brand/shadecode-student-logo.svg` — product lockup with gradient S/CODE treatment.
-- `src/components/brand/BrandMark.tsx` — canonical inline gradient mark.
-- `src/components/brand/BrandLockup.tsx` — canonical product lockup.
-- `src/app/icon.svg` — framework favicon/application icon.
-- `src/app/apple-icon.svg` — framework Apple icon.
-
-## Color tokens
+## Current palette
 
 | Token | Value | Role |
 | --- | --- | --- |
-| Neon Cyan | `#00E5FF` | gradient start, primary recognition |
-| Electric Blue | `#00A8FF` | gradient transition |
-| Royal Blue | `#245BFF` | gradient body |
-| Shadecode Violet | `#7A3CFF` | gradient transition |
-| Shadecode Magenta | `#C135FF` | gradient end |
-| Shadecode Ink | `#06111C` | dark background and app-icon tile |
-| Shadecode Surface | `#0B1724` | dark cards/navigation |
-| Text | `#F8FAFC` | primary light text |
+| Shadecode Ink | `#081827` | App-icon field |
+| Deep border | `#1B354A` | Quiet icon edge |
+| Ribbon cyan | `#54DDEB` | Gradient start |
+| Ribbon blue | `#2588E8` | Gradient transition |
+| Ribbon royal blue | `#465BE5` | Gradient transition |
+| Ribbon violet | `#7761D8` | Gradient end |
+| Primary text | `#F8FAFC` | Text on dark surfaces |
+| Secondary text | `#CBD5E1` | Supporting text on dark surfaces |
+| CTA blue | `#3157D5` | Primary action background |
+| CTA violet | `#6657D9` | Primary action gradient end |
 
-Semantic colors remain separate from brand recognition.
+Keep semantic UI colours separate from brand colours. Never rely on a gradient alone to communicate success, warning, error, or selection.
 
-## Typography
+## Canonical assets
 
-- **Michroma**: brand wordmark and selected brand labels only.
-- **Space Grotesk**: headings, navigation, controls, data/UI display.
-- **Inter**: body copy, forms, tables, long-form reading.
+- `public/brand/shadecode-icon-master.svg` — canonical original abstract mark.
+- `public/brand/shadecode-app-icon.svg` — primary icon tile.
+- `public/brand/shadecode-app-icon-dark.svg` — dark icon tile.
+- `public/brand/shadecode-app-icon-light.svg` — light icon tile.
+- `public/brand/shadecode-app-icon-maskable.svg` — adaptive icon with safe area.
+- `public/brand/shadecode-mark.svg` — transparent gradient mark.
+- `public/brand/shadecode-mark-white.svg` and `shadecode-mark-reversed.svg` — monochrome mark.
+- `public/brand/shadecode-student-logo.svg` — product lockup.
+- `src/components/brand/BrandMark.tsx` — shared in-product logo component.
+- `src/app/icon.svg` and `src/app/apple-icon.svg` — framework icon routes.
+- `public/manifest.json` and `src/app/layout.tsx` — browser and install metadata.
+
+## Button and contrast rules
+
+1. Primary actions must be visually distinct from the surface behind them.
+2. On dark surfaces, primary CTAs use the blue-violet action treatment with readable white text.
+3. Keep hover and keyboard-focus states visible; focus must not depend on colour alone.
+4. Keep touch targets comfortably usable on mobile.
+5. Secondary and destructive actions must not visually compete with the primary action.
+6. Check contrast in both themes and at mobile and desktop widths.
 
 ## Engineering rules
 
-1. The standalone icon contains no text.
-2. The supplied S geometry is the canonical geometry.
-3. The transparent neon gradient is the primary brand treatment.
-4. Use the dark tile when a platform requires a complete icon container.
-5. Use the maskable asset for adaptive PWA/Android contexts and preserve its safe area.
-6. Use the white mark for dark one-color physical production and constrained monochrome contexts.
-7. Never stretch, skew, bevel, outline, shadow, or perspective-transform the master mark.
-8. Do not add effects that change the silhouette of the supplied S.
-9. Preserve clear space around the symbol.
-10. At tiny sizes, use the symbol alone and retain strong cyan-led contrast.
-11. Never use the brand gradient as the only indicator of success, warning, error, or other semantic state.
-12. Keep semantic UI colors independent from the identity gradient.
-
-## Placement
-
-Use the canonical identity consistently across favicon, PWA/install surfaces, navigation, loading/offline states, empty states, results, exam sharing, notifications, onboarding, social cards, documentation, merchandise, signage, clothing, buildings, laptops, phones, and device branding.
-
-**The S is the identity. The neon gradient is the recognition treatment. Typography carries the product personality.**
+1. The React `BrandMark`, standalone SVGs, app icon, favicon, maskable icon, and raster assets must depict the same original abstract identity.
+2. The original three-part geometry is the source of truth. Preserve its silhouette and proportions; use rounded joins only to soften overly sharp edges.
+3. Preserve the safe area for maskable icons.
+4. Do not replace the original mark with a folded-S redesign, a book, or another unrelated symbol.
+5. Check shared components before declaring a branding update complete: page-specific icon files alone do not update logos inside modules.
+6. Do not claim the production site has changed until a successful deployment is confirmed.
