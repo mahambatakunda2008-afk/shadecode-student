@@ -90,7 +90,7 @@ export default function SupportShadecodePage() {
       </section>
 
       <section className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--card-border)] p-4">
-        <ShieldCheck size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--primary)]" />
+        <ShieldCheck size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--primary)]" />
         <p className="text-sm leading-6 text-[var(--muted-foreground)]">
           Safety promise: Shadecode will never ask for your EcoCash PIN or store card security details. Contributions will never buy XP, marks, rankings, or access to core learning features.
         </p>

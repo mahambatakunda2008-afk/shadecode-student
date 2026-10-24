@@ -1,4 +1,5 @@
 import type { LessonQualityBlock } from "./lessonQuality";
+import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
 
 type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
 
@@ -341,6 +342,9 @@ const SUBJECT_ALIASES: Record<string, string> = {
   physics: "physics",
 };
 
+// Hand-written theory lessons live in their own file; the original small curated set stays below.
+const ALL_FALLBACK_LESSONS: Record<string, FallbackLesson> = { ...FALLBACK_LESSONS, ...THEORY_LESSONS };
+
 function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/['’]/g, "").replace(/\s+/g, " ");
 }
@@ -371,18 +375,21 @@ function normalizeTopic(value: string): string {
 export function buildDeterministicLessonFallback(subject: string, topic: string): FallbackLesson | null {
   const normalizedSubject = normalizeSubject(subject);
   const normalizedTopic = normalizeTopic(topic);
-  const exact = FALLBACK_LESSONS[`${normalizedSubject}|${normalizedTopic}`];
+  const exact = ALL_FALLBACK_LESSONS[`${normalizedSubject}|${normalizedTopic}`];
   if (exact) return exact;
 
   // Match a curated topic when the learner adds a natural-language request,
   // syllabus code, or exam phrasing around the topic. Never broaden the
   // subject match: a Physics lesson must not leak into another subject.
-  for (const [key, lesson] of Object.entries(FALLBACK_LESSONS)) {
+  for (const [key, lesson] of Object.entries(ALL_FALLBACK_LESSONS)) {
     const separator = key.indexOf("|");
     const knownSubject = key.slice(0, separator);
     const knownTopic = key.slice(separator + 1);
     if (knownSubject !== normalizedSubject) continue;
     if (normalizedTopic === knownTopic || normalizedTopic.startsWith(`${knownTopic} `) || normalizedTopic.endsWith(` ${knownTopic}`) || normalizedTopic.includes(` ${knownTopic} `)) {
+      // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
+      // not what the lesson teaches: skip it rather than serve the wrong lesson.
+      if (THEORY_EXCLUSIONS[key]?.test(normalizedTopic)) continue;
       return lesson;
     }
   }
