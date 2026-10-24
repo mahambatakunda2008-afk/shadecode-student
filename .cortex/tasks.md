@@ -29,6 +29,14 @@ Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile
 - [ ] Anonymous friend path: WhatsApp recipient can take the battle without signup, then is prompted to claim the result (RLS currently allows attempt inserts for authenticated users only)
 - [ ] Past Paper Battle v2: real past-paper questions via Exam Hub where licensing allows
 - [ ] Weekly class and school leagues; streak-save challenges; progress and achievement cards as shareable artifacts
+- [ ] **Sustainable self-growth (issue #478):** audit existing Past Paper Battle/share cards, Insights, SEO, feedback, and analytics before adding new systems.
+- [ ] Add contextual, user-initiated share actions for useful resources, completed practice, milestones, and challenge results; use native share sheet with SMS/WhatsApp/social fallbacks.
+- [ ] Keep messages editable and user-controlled; never auto-send, scrape/upload contacts by default, or put private learner data in shared URLs.
+- [ ] Add privacy-respecting referral attribution and measure referral activation/retention rather than clicks alone.
+- [ ] Add voluntary, dismissible, frequency-limited requests for honest reviews after meaningful experiences; no positive-sentiment gating, prohibited incentives, fake reviews, astroturfing, or coercion.
+- [ ] Audit existing Insights/blog and extend it where sensible; publish useful, source-backed educational resources with editorial/correction standards and contextual CTAs.
+- [ ] Establish community-rule-compliant outreach and growth metrics: share intent, referred activation, retained referrals, organic discovery, and first useful action.
+- [ ] Follow docs/MASTER_WORK_REGISTER_AND_GROWTH_PLAN_2026-10-24.md; verify actual product behavior before marking these tasks complete.
 
 **A2. Generation that cannot fail (shipped 2026-10-08/09; see docs/EXAM_GENERATION_QA_V2.md)**
 - Context: AI providers returned 0 of 29 calls over 7 days (Gemini 503/6s aborts, OpenRouter free-tier timeouts, Cloudflare empty). Do not depend on models for core practice.
