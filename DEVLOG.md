@@ -1,3 +1,13 @@
+## 2026-10-25 (implementation pass 1) — Added opt-in glass surface foundation
+
+- Added semantic glass tokens to `src/app/globals.css` for light and dark themes: translucent/strong surfaces, border, highlight, shadow, blur and saturation.
+- Added opt-in `.ssc-glass-surface` and `.ssc-glass-surface--strong` primitives. Existing cards/pages are unchanged, so the first pass does not unexpectedly make dense learning content translucent.
+- Added fallback styling when backdrop-filter is unavailable, a reduced-transparency preference override, and a lower blur value on mobile.
+- Commit: `71797e3e2bab5ef353b36c4f82128016ad41eade`.
+- **Validation not yet run:** no local full verify, automated browser check, or visual preview inspection in this pass. Next step is a controlled application to one high-value shared surface, followed by verification before broader rollout.
+
+---
+
 ## 2026-10-25 — Glass-inspired visual system documented; floating controls simplified
 
 - Design brief: `docs/GLASS_INSPIRED_VISUAL_EXPERIENCE.md`.
