@@ -130,7 +130,7 @@ function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): Stru
   lesson.content.examples = [];
   lesson.content.keyPoints = [];
   lesson.content.practice = [];
-  if ("assessment" in lesson) lesson.assessment = [];
+  if ("assessment" in lesson && !( "type" in lesson && lesson.type === "quiz")) lesson.assessment = [];
 
   const normalize = (value: string) => value.replace(/\r/g, "").trim();
   const bodyText = (section: ParsedSection) => normalize(section.body.join("\n"));
@@ -168,6 +168,38 @@ function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): Stru
         lesson.content.examples.push({
           title: hasLabel ? first : `Example ${index + 1}`,
           description: hasLabel ? chunkLines.slice(1).join("\n").trim() || chunk : chunk,
+        });
+      }
+      continue;
+    }
+
+    if ("type" in lesson && lesson.type === "quiz" && /\\b(questions?|assessment|quiz)\\b/.test(heading)) {
+      const starts = [...body.matchAll(/(?:^|\\n)\\s*(?:Q(?:uestion)?\\s*\\d+\\s*[:.)-]|\\d+[.)]\\s+)/gi)];
+      const chunks = starts.map((match, index) => {
+        const begin = (match.index ?? 0) + (match[0].startsWith("\\n") ? 1 : 0);
+        return body.slice(begin, starts[index + 1]?.index ?? body.length).trim();
+      });
+      for (const chunk of chunks) {
+        const question = chunk.replace(/^\\s*(?:Q(?:uestion)?\\s*\\d+\\s*[:.)-]|\\d+[.)]\\s+)/i, "")
+          .split(/\\n\\s*(?:Options?|Correct answer|Answer|Solution|Explanation)\\s*[:.)-]/i)[0]
+          .trim();
+        const optionLines = [...chunk.matchAll(/(?:^|\\n)\\s*([A-H])[.)]\\s+(.+?)(?=\\n|$)/gi)];
+        const options = optionLines.map((m) => m[2].trim());
+        const answerMatch = chunk.match(/(?:^|\\n)\\s*(?:Correct answer|Answer)\\s*[:.)-]\\s*([A-H])(?:\\b|$)/i);
+        const answerTextMatch = chunk.match(/(?:^|\\n)\\s*(?:Correct answer|Answer)\\s*[:.)-]\\s*([^\\n]+)/i);
+        const answerLetter = answerMatch?.[1]?.toUpperCase();
+        const correctAnswer = answerLetter && options.length
+          ? options[answerLetter.charCodeAt(0) - 65] ?? answerLetter
+          : answerTextMatch?.[1]?.trim();
+        if (!question || !correctAnswer) continue;
+        lesson.assessment = lesson.assessment ?? [];
+        lesson.assessment.push({
+          id: `assessment-${lesson.assessment.length + 1}`,
+          question,
+          type: options.length >= 2 ? "multiple_choice" : "short_answer",
+          ...(options.length >= 2 ? { options } : {}),
+          correctAnswer,
+          maxPoints: 1,
         });
       }
       continue;
