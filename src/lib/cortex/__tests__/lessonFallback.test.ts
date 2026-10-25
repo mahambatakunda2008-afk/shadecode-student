@@ -33,6 +33,18 @@ describe("deterministic lesson recovery", () => {
     expect(lesson?.blocks.some((block) => block.title === "Exam-style question with full working")).toBe(true);
   });
 
+  it("includes real visual blocks in authored lessons where diagrams materially help", () => {
+    const coordinate = buildDeterministicLessonFallback("Mathematics", "Coordinate Geometry");
+    const waves = buildDeterministicLessonFallback("Physics 9702 AS Level", "Waves");
+    const forces = buildDeterministicLessonFallback("Physics", "Newton's laws of motion");
+    const roots = buildDeterministicLessonFallback("Mathematics", "Numerical solution of equations");
+
+    expect(coordinate?.blocks.some((block) => block.type === "diagram" && block.content === "coordinate-plane")).toBe(true);
+    expect(waves?.blocks.some((block) => block.type === "diagram" && block.content === "wave-shape")).toBe(true);
+    expect(forces?.blocks.some((block) => block.type === "diagram" && block.content === "force-pairs")).toBe(true);
+    expect(roots?.blocks.some((block) => block.type === "diagram" && block.content === "root-bracket")).toBe(true);
+  });
+
   it("never crosses subject boundaries when a topic name overlaps", () => {
     expect(buildDeterministicLessonFallback("Computer Science", "Waves")).toBeNull();
     expect(buildDeterministicLessonFallback("Chemistry", "Waves")).toBeNull();
