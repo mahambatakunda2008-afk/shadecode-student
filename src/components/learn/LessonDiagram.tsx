@@ -61,7 +61,7 @@ function UnitCircle() {
 function BinaryPlaceValues() {
   const powers = [7,6,5,4,3,2,1,0];
   const bits = [1,0,1,1,0,1,1,0];
-  return <svg viewBox="0 0 560 210" role="img" aria-label="Binary place value table showing powers of two and the example bits 10110101" className="lesson-diagram-svg">
+  return <svg viewBox="0 0 560 210" role="img" aria-label="Binary place value table showing powers of two and the example bits 10110110" className="lesson-diagram-svg">
     <text x="24" y="28" fontSize="14" fill="currentColor">Place value</text>
     {powers.map((p,i)=><g key={p}>
       <rect x={20+i*65} y="42" width="60" height="48" rx="7" fill={colors.fill} stroke={colors.line}/>
