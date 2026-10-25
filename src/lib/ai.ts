@@ -344,7 +344,11 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
   const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
 
+  // A 503 is a model-capacity signal, not usually an API-key-specific failure.
+  // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
+  const unavailableGeminiModels = new Set<string>();
   async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
+    if (unavailableGeminiModels.has(model)) return null;
     return tryProvider("gemini", model, async timeout => {
       const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
         method: "POST",
@@ -359,7 +363,11 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
         }),
       }, timeout);
-      if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+      if (!res.ok) {
+        const detail = (await res.text().catch(() => "")).slice(0, 300);
+        if (res.status === 503) unavailableGeminiModels.add(model);
+        throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
+      }
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
     }, `gemini:${model}:key-${keyIndex + 1}`);
