@@ -10,15 +10,15 @@ Effective table privilege checks returned SELECT, INSERT, UPDATE, DELETE and TRU
 
 Migration: `supabase/migrations/20261025170000_harden_challenge_table_grants.sql`
 
-- Revoke all direct browser-role table privileges on `ai_anomalies`, `challenge_answer_keys`, and `challenge_attempts`; grant the required privileges to `service_role`.
+- Revoke direct browser-role table privileges on `ai_anomalies`, `challenge_answer_keys`, and `challenge_attempts`; grant the required privileges to `service_role`.
 - Remove the unconditional authenticated `ai_anomalies` policy and public raw-attempt read/insert policies.
-- Revoke all browser-role privileges on `challenges`, then grant column-level SELECT only for the approved public preview and API projection. Do not expose `result_id` through browser table reads.
-- Allow authenticated INSERT only when `challenger_id = auth.uid()`; retain public SELECT RLS for shareable challenge links.
+- Revoke all browser-role privileges on `challenges`, then grant column-level SELECT only for the approved preview/API projection. Do not expose `result_id` through browser table reads.
+- Challenge creation and mutations are server-owned. The server route validates the authenticated user, saved result ownership and selected subject before writing challenge rows through the admin client. There is no browser INSERT grant on `challenges`.
 
 Server routes in the PR:
-- `src/app/api/challenge/attempt/route.ts` now writes self-reported legacy attempts through the admin client, records `verified=false`, and returns a retryable error if persistence fails. It still does not turn client-supplied scores into verified scores.
+- `src/app/api/challenge/attempt/route.ts` writes self-reported legacy attempts through the admin client, records `verified=false`, and returns a retryable error if persistence fails. It does not turn client-supplied scores into verified scores.
 - `src/app/api/challenge/mark/route.ts` writes server-marked attempts through the admin client and returns a retryable error if persistence fails.
-- `src/app/api/challenge/route.ts` uses server-side access for duplicate detection because `result_id` is no longer exposed to browser roles, and returns only an explicit approved field list.
+- `src/app/api/challenge/route.ts` uses server-side access for duplicate detection and challenge creation because `result_id` is private, and returns only an explicit approved field list.
 - `src/app/challenge/[id]/page.tsx` selects only the columns needed for the public challenge preview.
 
 ## Required validation before merge or production
