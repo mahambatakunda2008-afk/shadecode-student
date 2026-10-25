@@ -7,7 +7,18 @@
 
 
 
-### 2026-10-06 Product roadmap (grouped; ordered by Activation > Retention > Virality > Offline > UX > AI)
+#### 2026-10-25 Glass visual system follow-up
+
+Quality bar: preserve existing flows; WCAG 2.2 AA; mobile-first at 360px; reduced-motion/transparency support; low-data and low-power graceful fallback; visual claims require rendered-preview inspection.
+
+- [x] Document visual direction in `docs/GLASS_INSPIRED_VISUAL_EXPERIENCE.md`.
+- [x] Add light/dark semantic glass tokens and opt-in `.ssc-glass-surface` primitives in `src/app/globals.css`; do not globally alter cards yet.
+- [ ] Audit app shell/navigation and choose one appropriate shared surface for the first live application; do not apply glass to long-form reading or dense study content.
+- [ ] Apply the glass primitive to the chosen surface and inspect light/dark contrast, mobile overlap/safe areas, and low-power fallback.
+- [ ] Run repository verification/CI and inspect the deployed preview at 360px and desktop before expanding the rollout.
+- [ ] Verify feedback remains reachable through a contextual non-floating entry point.
+
+## 2026-10-06 Product roadmap (grouped; ordered by Activation > Retention > Virality > Offline > UX > AI)
 
 Quality bar for every item: WCAG 2.2 AA, keyboard + screen-reader usable, mobile-first at 360px, no layout shift, server-authoritative for anything scored or shared, unit tests for logic, and an honest empty state instead of fabricated data.
 
