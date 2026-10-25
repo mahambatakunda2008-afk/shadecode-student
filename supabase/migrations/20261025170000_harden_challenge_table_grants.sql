@@ -1,8 +1,7 @@
 -- Least-privilege boundary for challenge data.
 -- Browser roles must never access private answer keys, raw attempt rows, or AI anomaly records.
 -- All mutations to those tables go through authenticated server routes using service_role.
--- This migration intentionally preserves anonymous read access to the narrow challenge preview,
--- and authenticated creation of challenges owned by auth.uid().
+-- This migration preserves a column-limited public challenge preview and authenticated owned creation.
 
 begin;
 
@@ -21,10 +20,11 @@ drop policy if exists "Service role full access ai_anomalies" on public.ai_anoma
 drop policy if exists "Public read attempts" on public.challenge_attempts;
 drop policy if exists "Auth users insert attempts" on public.challenge_attempts;
 
--- Challenges are intentionally shareable. Keep read-only access for the preview card,
--- but remove all other browser privileges and disallow anonymous/forged-owner inserts.
+-- Challenges are shareable, but browser roles may read only the reviewed preview/API projection.
 revoke all privileges on table public.challenges from public, anon, authenticated;
-grant select on table public.challenges to anon, authenticated;
+grant select (id, challenger_id, challenger_name, subject, topic, difficulty, question_count,
+              percentage, total_score, max_score, time_taken, grade, created_at)
+  on table public.challenges to anon, authenticated;
 grant insert on table public.challenges to authenticated;
 
 drop policy if exists "Auth users create challenges" on public.challenges;
