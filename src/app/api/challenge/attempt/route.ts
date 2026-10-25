@@ -1,6 +1,7 @@
 // src/app/api/challenge/attempt/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { applyRateLimit, generalApiLimiter } from '@/lib/rate-limit/limiter'
 import { didWin, validateAttempt } from '@/lib/challenge/attempt'
 import { gradeForPercentage } from '@/lib/challenge/fromResult'
@@ -35,6 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: subjectAccess.error, code: 'SUBJECT_NOT_ALLOWED' }, { status: subjectAccess.status })
     }
 
+    const admin = createSupabaseAdminClient()
+    if (!admin) {
+      return NextResponse.json({ error: 'Attempt saving is temporarily unavailable. Please try again.', retryable: true }, { status: 503 })
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('username, display_name')
@@ -44,7 +50,8 @@ export async function POST(request: NextRequest) {
 
     const won = didWin(attempt.percentage, Number(challenge.percentage))
 
-    const { error } = await supabase
+    // Raw attempts are server-owned. Do not return a successful result unless persistence succeeds.
+    const { error: saveError } = await admin
       .from('challenge_attempts')
       .insert({
         challenge_id: attempt.challengeId,
@@ -56,11 +63,15 @@ export async function POST(request: NextRequest) {
         time_taken:  attempt.timeTaken ?? 0,
         grade:       attempt.grade ?? gradeForPercentage(attempt.percentage),
         won,
+        verified: false,
       })
 
-    if (error) console.error('[challenge/attempt POST]', error)
-    // Non-fatal — return result regardless
-    return NextResponse.json({ won })
+    if (saveError) {
+      console.error('[challenge/attempt POST save]', saveError)
+      return NextResponse.json({ error: 'Your attempt could not be saved. Please retry.', retryable: true }, { status: 503 })
+    }
+
+    return NextResponse.json({ won, saved: true, verified: false })
   } catch (err) {
     console.error('[challenge/attempt POST]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
