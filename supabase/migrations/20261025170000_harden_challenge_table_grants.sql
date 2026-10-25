@@ -17,12 +17,15 @@ drop policy if exists "Service role full access ai_anomalies" on public.ai_anoma
 drop policy if exists "Public read attempts" on public.challenge_attempts;
 drop policy if exists "Auth users insert attempts" on public.challenge_attempts;
 
--- Challenges are shareable, but browser roles can read only the reviewed projection.
--- All challenge creation and mutations must pass through authenticated server routes.
+-- Challenges are shareable, but public visitors only receive score-card fields.
+-- The internal challenger_id column is available only to authenticated app flows.
 revoke all privileges on table public.challenges from public, anon, authenticated;
+grant select (id, challenger_name, subject, topic, difficulty, question_count,
+              percentage, total_score, max_score, time_taken, grade, created_at)
+  on table public.challenges to anon;
 grant select (id, challenger_id, challenger_name, subject, topic, difficulty, question_count,
               percentage, total_score, max_score, time_taken, grade, created_at)
-  on table public.challenges to anon, authenticated;
+  on table public.challenges to authenticated;
 
 drop policy if exists "Auth users create challenges" on public.challenges;
 drop policy if exists "Public read challenges" on public.challenges;
