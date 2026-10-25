@@ -60,7 +60,7 @@ function UnitCircle() {
 }
 function BinaryPlaceValues() {
   const powers = [7,6,5,4,3,2,1,0];
-  const bits = [1,0,1,1,0,1,0,1];
+  const bits = [1,0,1,1,0,1,1,0];
   return <svg viewBox="0 0 560 210" role="img" aria-label="Binary place value table showing powers of two and the example bits 10110101" className="lesson-diagram-svg">
     <text x="24" y="28" fontSize="14" fill="currentColor">Place value</text>
     {powers.map((p,i)=><g key={p}>
@@ -69,8 +69,8 @@ function BinaryPlaceValues() {
       <rect x={20+i*65} y="100" width="60" height="40" rx="7" fill={bits[i] ? "#ffedd5" : "transparent"} stroke={bits[i] ? colors.point : colors.muted}/>
       <text x={50+i*65} y="126" textAnchor="middle" fontSize="17" fill={bits[i] ? "#7c2d12" : "currentColor"} fontWeight="700">{bits[i]}</text>
     </g>)}
-    <text x="24" y="166" fontSize="13" fill={colors.muted}>Binary number: 10110101₂</text>
-    <text x="24" y="190" fontSize="13" fill="currentColor">128 + 32 + 16 + 4 + 1 = 181₁₀</text>
+    <text x="24" y="166" fontSize="13" fill={colors.muted}>Binary number: 10110110₂</text>
+    <text x="24" y="190" fontSize="13" fill="currentColor">128 + 32 + 16 + 4 + 2 = 182₁₀</text>
   </svg>;
 }
 
