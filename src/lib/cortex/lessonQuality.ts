@@ -74,13 +74,15 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const tokens = topicTokens(request);
 
   const diagramBlocks = normalized.filter(block => block.normalizedType === "diagram");
-  const supportedDiagrams = new Set(["coordinate-plane", "wave-shape", "force-pairs", "root-bracket"]);
+  const supportedDiagrams = new Set(["coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values"]);
   if (diagramBlocks.some(block => !supportedDiagrams.has(block.content.trim()))) failures.push("unsupported-diagram");
   const topicLower = request.topic.toLowerCase();
   const requiredDiagram = /coordinate geometry|gradient|straight.line equation/.test(topicLower) ? "coordinate-plane"
     : /\bwaves?\b|amplitude|wavelength/.test(topicLower) ? "wave-shape"
     : /newton.s laws|newton.s third law|action.reaction/.test(topicLower) ? "force-pairs"
-    : /numerical solution|bisection|root.bracketing/.test(topicLower) ? "root-bracket" : null;
+    : /numerical solution|bisection|root.bracketing/.test(topicLower) ? "root-bracket"
+    : /trigonometric identities|trigonometry/.test(topicLower) ? "unit-circle"
+    : /binary number systems|binary conversion/.test(topicLower) ? "binary-place-values" : null;
   if (request.intent === "teach" && requiredDiagram && !diagramBlocks.some(block => block.content.trim() === requiredDiagram)) {
     failures.push("missing-relevant-diagram");
   }
