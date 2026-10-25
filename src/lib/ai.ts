@@ -337,7 +337,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
 
   // Direct Google fallback remains deliberately small and stable. Do not add
   // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
-  const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY_4].filter(Boolean) as string[];
+  // Try the newest explicitly configured backup first; it is intended to recover when older keys hit quota or model pressure.\n  const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
   const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
 
   async function callGemini(key: string, model: string): Promise<string | null> {
@@ -354,7 +354,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
           }],
           generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
         }),
-      }, Math.min(timeout, 6500));
+      }, Math.min(timeout, 3000));
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
