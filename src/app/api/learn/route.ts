@@ -896,7 +896,10 @@ Return only valid JSON.`;
     if (durableJobId) {
       const { data: updated, error } = await supabase.from("learn_lessons")
         .update(lessonRow).eq("id", durableJobId).eq("user_id", user.id).select("id").maybeSingle();
-      savedId = updated?.id ?? durableJobId;
+      // A requested update is not proof of persistence: maybeSingle() can return null
+      // without an error when no user-owned row matched. Never report a durable ID
+      // unless the database confirms that the row was actually updated.
+      savedId = updated?.id ?? null;
       saveError = error;
     } else {
       const { data: inserted, error } = await supabase.from("learn_lessons").insert(lessonRow).select("id").single();
