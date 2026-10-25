@@ -364,7 +364,8 @@ export async function POST(req: Request) {
             ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
             : `A deep ${validDifficulty} lesson on ${request.topic}`,
           p_difficulty: validDifficulty,
-          p_progress: 100,
+          // Generation completion is not learner completion. Start at 0%; progress advances as the student studies.
+          p_progress: 0,
           p_completed_units: generationSectionCount,
           p_total_units: generationSectionCount,
           p_blocks: persistableCandidate.blocks,
