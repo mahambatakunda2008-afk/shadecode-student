@@ -42,6 +42,38 @@ function ForcePairs() {
     <text x="260" y="230" textAnchor="middle" fontSize="13" fill="currentColor">Equal magnitude • opposite directions • different objects</text>
   </svg>;
 }
+function UnitCircle() {
+  return <svg viewBox="0 0 520 300" role="img" aria-label="Unit circle showing a point at angle theta with horizontal coordinate cosine theta and vertical coordinate sine theta" className="lesson-diagram-svg">
+    <circle cx="255" cy="145" r="95" fill="none" stroke={colors.line} strokeWidth="3"/>
+    <path d="M115 145 H395 M255 265 V25" stroke={colors.axis} strokeWidth="1.5"/>
+    <path d="M350 145 L320 88" stroke={colors.point} strokeWidth="2.5"/>
+    <path d="M350 145 V145 H320 V88" stroke={colors.muted} strokeWidth="1.8" strokeDasharray="5 4" fill="none"/>
+    <path d="M286 145 A31 31 0 0 0 270 118" stroke={colors.point} strokeWidth="2" fill="none"/>
+    <circle cx="320" cy="88" r="5" fill={colors.point}/>
+    <text x="287" y="124" fontSize="14" fill={colors.point}>θ</text>
+    <text x="326" y="82" fontSize="13" fill="currentColor">(cos θ, sin θ)</text>
+    <text x="331" y="164" fontSize="13" fill={colors.muted}>cos θ</text>
+    <text x="263" y="106" fontSize="13" fill={colors.muted}>sin θ</text>
+    <text x="400" y="139" fontSize="13" fill="currentColor">x</text><text x="263" y="22" fontSize="13" fill="currentColor">y</text>
+    <text x="255" y="288" textAnchor="middle" fontSize="13" fill={colors.muted}>For a unit circle: x² + y² = 1</text>
+  </svg>;
+}
+function BinaryPlaceValues() {
+  const powers = [7,6,5,4,3,2,1,0];
+  const bits = [1,0,1,1,0,1,0,1];
+  return <svg viewBox="0 0 560 210" role="img" aria-label="Binary place value table showing powers of two and the example bits 10110101" className="lesson-diagram-svg">
+    <text x="24" y="28" fontSize="14" fill="currentColor">Place value</text>
+    {powers.map((p,i)=><g key={p}>
+      <rect x={20+i*65} y="42" width="60" height="48" rx="7" fill={colors.fill} stroke={colors.line}/>
+      <text x={50+i*65} y="71" textAnchor="middle" fontSize="14" fill="#134e4a">{2**p}</text>
+      <rect x={20+i*65} y="100" width="60" height="40" rx="7" fill={bits[i] ? "#ffedd5" : "transparent"} stroke={bits[i] ? colors.point : colors.muted}/>
+      <text x={50+i*65} y="126" textAnchor="middle" fontSize="17" fill={bits[i] ? "#7c2d12" : "currentColor"} fontWeight="700">{bits[i]}</text>
+    </g>)}
+    <text x="24" y="166" fontSize="13" fill={colors.muted}>Binary number: 10110101₂</text>
+    <text x="24" y="190" fontSize="13" fill="currentColor">128 + 32 + 16 + 4 + 1 = 181₁₀</text>
+  </svg>;
+}
+
 function RootBracket() {
   const f = (x:number) => x*x*x-x-2;
   const pts = Array.from({length:101},(_,i)=>{const x=1+i/100;const y=f(x);const px=50+i*4.2;const py=178-y*23;return `${i===0?"M":"L"}${px.toFixed(1)},${py.toFixed(1)}`;}).join(" ");
@@ -61,7 +93,7 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "coordinate-plane": graphic = <CoordinatePlane />; break;
     case "wave-shape": graphic = <Waves />; break;
     case "force-pairs": graphic = <ForcePairs />; break;
-    case "root-bracket": graphic = <RootBracket />; break;
+    case "root-bracket": graphic = <RootBracket />; break;\n    case "unit-circle": graphic = <UnitCircle />; break;\n    case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     default: return <div className="lesson-diagram-fallback">Visual aid: {title || kind}. Use the labelled relationships in the section above to interpret the diagram.</div>;
   }
   return <figure className="lesson-diagram"><div className="lesson-diagram-frame">{graphic}</div>{title && <figcaption>{title}</figcaption>}</figure>;
