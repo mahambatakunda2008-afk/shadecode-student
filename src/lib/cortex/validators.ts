@@ -62,8 +62,32 @@ export function validateLessonStructure(lesson: any): ValidationResult {
     });
     score -= 30;
   } else {
-    // Validate content sections
-    if (!Array.isArray(lesson.content.explanation) || lesson.content.explanation.length === 0) {
+    // Quiz templates are assessment-first and legitimately have no explanation sections.
+    const isQuiz = lesson.type === "quiz";
+    if (isQuiz) {
+      if (!Array.isArray(lesson.assessment) || lesson.assessment.length === 0) {
+        errors.push({ field: "assessment", error: "At least one valid assessment item is required for a quiz", severity: "error" });
+        score -= 15;
+      } else {
+        lesson.assessment.forEach((item: any, index: number) => {
+          if (!item.question || typeof item.question !== "string" || !item.question.trim()) {
+            errors.push({ field: `assessment[${index}].question`, error: "Assessment question is required", severity: "error" });
+            score -= 5;
+          }
+          if (!item.correctAnswer || typeof item.correctAnswer !== "string" || !item.correctAnswer.trim()) {
+            errors.push({ field: `assessment[${index}].correctAnswer`, error: "Assessment answer is required", severity: "error" });
+            score -= 5;
+          }
+          if (item.type === "multiple_choice" && (!Array.isArray(item.options) || item.options.length < 2)) {
+            errors.push({ field: `assessment[${index}].options`, error: "Multiple-choice assessments require at least two options", severity: "error" });
+            score -= 5;
+          }
+        });
+      }
+    }
+
+    // Validate content sections. Explanation is required for lessons, not quiz-only templates.
+    if (!isQuiz && (!Array.isArray(lesson.content.explanation) || lesson.content.explanation.length === 0)) {
       errors.push({
         field: "content.explanation",
         error: "At least one explanation section is required",
@@ -322,6 +346,13 @@ export function sanitizeLesson(lesson: StructuredLesson): StructuredLesson {
         explanation: sanitizeContent(p.explanation),
       })),
     },
+    assessment: lesson.assessment?.map((item) => ({
+      ...item,
+      question: sanitizeContent(item.question),
+      options: item.options?.map((option) => sanitizeContent(option)),
+      correctAnswer: sanitizeContent(item.correctAnswer),
+      rubric: item.rubric ? sanitizeContent(item.rubric) : undefined,
+    })),
   };
 }
 
