@@ -78,7 +78,7 @@ describe("buildLessonContent", () => {
         "A) metre",
         "C) hertz",
         "Answer: C",
-      ].join("\\n"),
+      ].join("\n"),
       { template: createQuizTemplate("Frequency", "beginner"), topic: "Frequency", level: "beginner" },
     );
 
