@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildDeterministicLessonFallback } from "../lessonFallback";
+import { lessonQualityFailures } from "../lessonQuality";
 
 describe("deterministic lesson recovery", () => {
   it("returns a substantial authored Physics waves lesson when providers are unavailable", () => {
@@ -43,6 +44,27 @@ describe("deterministic lesson recovery", () => {
     expect(waves?.blocks.some((block) => block.type === "diagram" && block.content === "wave-shape")).toBe(true);
     expect(forces?.blocks.some((block) => block.type === "diagram" && block.content === "force-pairs")).toBe(true);
     expect(roots?.blocks.some((block) => block.type === "diagram" && block.content === "root-bracket")).toBe(true);
+  });
+
+  it("requires the relevant supported visual for visual-first teaching topics", () => {
+    const request = {
+      intent: "teach" as const,
+      subject: "Mathematics",
+      topic: "Coordinate Geometry",
+      prompt: "Teach coordinate geometry",
+      requestedParts: [],
+    };
+    const blocks = [
+      { type: "objective", title: "Objective", content: "Learn coordinate geometry." },
+      { type: "concept", title: "Gradient", content: "Gradient describes the slope of a line." },
+      { type: "example", title: "Worked example", content: "Given: A(1,2) and B(3,4). Step 1: calculate the gradient. Answer: 1." },
+      { type: "checkpoint", title: "Try it", content: "Question: Find the gradient of a line through two points. Think: subtract y-values and x-values." },
+      { type: "summary", title: "Summary", content: "You should now be able to calculate a gradient." },
+    ];
+
+    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks }, request)).toContain("missing-relevant-diagram");
+    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Visualise gradient", content: "coordinate-plane" }] }, request)).not.toContain("missing-relevant-diagram");
+    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Unverified visual", content: "made-up-chart" }] }, request)).toContain("unsupported-diagram");
   });
 
   it("never crosses subject boundaries when a topic name overlaps", () => {
