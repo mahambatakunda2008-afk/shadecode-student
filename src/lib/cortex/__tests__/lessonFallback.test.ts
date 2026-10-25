@@ -39,11 +39,15 @@ describe("deterministic lesson recovery", () => {
     const waves = buildDeterministicLessonFallback("Physics 9702 AS Level", "Waves");
     const forces = buildDeterministicLessonFallback("Physics", "Newton's laws of motion");
     const roots = buildDeterministicLessonFallback("Mathematics", "Numerical solution of equations");
+    const trig = buildDeterministicLessonFallback("Mathematics", "Trigonometric identities");
+    const binary = buildDeterministicLessonFallback("Computer Science", "Binary number systems");
 
     expect(coordinate?.blocks.some((block) => block.type === "diagram" && block.content === "coordinate-plane")).toBe(true);
     expect(waves?.blocks.some((block) => block.type === "diagram" && block.content === "wave-shape")).toBe(true);
     expect(forces?.blocks.some((block) => block.type === "diagram" && block.content === "force-pairs")).toBe(true);
     expect(roots?.blocks.some((block) => block.type === "diagram" && block.content === "root-bracket")).toBe(true);
+    expect(trig?.blocks.some((block) => block.type === "diagram" && block.content === "unit-circle")).toBe(true);
+    expect(binary?.blocks.some((block) => block.type === "diagram" && block.content === "binary-place-values")).toBe(true);
   });
 
   it("requires the relevant supported visual for visual-first teaching topics", () => {
