@@ -346,7 +346,9 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
   // Try the newest explicitly configured backup first; it is intended to recover when older keys hit quota or model pressure.
   const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
+  // 3.7 is retired and automatically routes to 3.8, so it is not an independent fallback.
+  // Flash-Lite is a distinct high-throughput option when the main Flash models are saturated.
+  const geminiModels = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"];
 
   // A 503 is a model-capacity signal, not usually an API-key-specific failure.
   // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
