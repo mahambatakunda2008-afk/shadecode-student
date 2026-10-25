@@ -146,6 +146,7 @@ Never commit secrets. Environment requirements belong in deployment configuratio
 - `docs/GROWTH_FEEDBACK_REPOSITORY_AUDIT_2026-10-18.md` — source audit plus verified production feedback schema/RLS observations and feedback abuse-control remediation status
 - `docs/DB_MIGRATION_DRIFT_AUDIT_2026-10-19.md` — read-only comparison of production Supabase migration ledger and tracked SQL files, with a safe reconciliation procedure
 - `docs/FEEDBACK_PILOT_KIT_2026-10-19.md` — practical two-week student pilot kit with recruitment, participant guidance, metrics and honest-review guardrails
+- `docs/ADOPTION_SWOT_ZIMBABWE_AFRICA_2026-10-25.md` — adoption SWOT, positioning, low-data/cost hypotheses, pilot gates and first growth metrics for Zimbabwe and African learners
 - `docs/PRODUCT_VISION_2026-09-01.md` — expanded product vision and platform direction
 - `docs/PRIMARY_DISCOVERY_V1.md` — Primary Discovery first implementation contract
 - `docs/architecture/PLATFORM_BOUNDARIES.md` — shared platform and experience ownership
