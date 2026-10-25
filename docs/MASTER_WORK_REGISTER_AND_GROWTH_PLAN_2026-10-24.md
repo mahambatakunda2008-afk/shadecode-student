@@ -14,6 +14,20 @@
 6. Never claim curriculum coverage, learning outcomes, privacy compliance, or product capability without evidence.
 7. Growth must be consent-based and useful: no contact scraping, unsolicited mass messaging, fake reviews, review gating, astroturfing, or coercive review prompts.
 
+## Architecture invariant: genuine offline capability, not a cache illusion
+
+**Offline must not be defined as “the website shell and a few pages were cached.”** Shadecode should progressively work as a local-first application with durable, user-scoped local data, explicit sync, and honest capability boundaries.
+
+- The Service Worker / Cache API is for static assets and safe shell resources only. It is not the source of truth for lessons, progress, mastery, answers, or learner memory.
+- Use durable IndexedDB/local-first storage for explicitly supported offline data and operations, scoped by authenticated learner/device and protected against cross-account leakage. Preserve user work across reloads and offline sessions.
+- Define one coordinated mutation log and sync contract: operation IDs/idempotency, ordering/version conflicts, retries with backoff, deletion/tombstone handling, account switching, and visible pending/synced/conflict states. Consolidate overlapping queues before expanding offline scope.
+- Distinguish data that is available offline from actions that genuinely require a server, network, or model. Never pretend a server-side save, referral attribution, public review, or cloud generation succeeded while offline.
+- Where practical, support real local computation and local teaching/practice packs. A local model is an optional capability only when the device can run it reliably; do not call static cached output “AI working offline.”
+- On reconnect, sync safely and idempotently; do not silently overwrite newer work or duplicate lesson/progress events. Provide export/backup and recovery paths.
+- Offline acceptance must test airplane mode, reload/reopen, queued writes, account switching, reconnect, conflicts, storage exhaustion, and recovery on a real supported device/browser. Measure the actual offline workflows, not just service-worker cache hits.
+
+The existing audit at `docs/audits/2026-08-24-offline-sync-architecture-audit.md` found four overlapping/uncoordinated mechanisms and a built-but-unreachable encrypted local-first operation log. Resolve that architecture deliberately; do not add another cache/queue beside it.
+
 ## Priority 0: Establish current truth
 
 - [ ] Read `docs/MASTER_SHADECODE_ROADMAP_2026-09-01.md`, `.cortex/tasks.md`, the active handoff, relevant audits, and open issue/PR state.
