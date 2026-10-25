@@ -69,6 +69,24 @@ describe("buildLessonContent", () => {
     expect(result.lesson?.assessment?.[1].correctAnswer).toBe("hertz");
   });
 
+  it("maps quiz answer letters to their labelled options, not array positions", async () => {
+    const result = await buildLessonContent(
+      [
+        "# Frequency quiz",
+        "## Questions",
+        "Q1: What is the SI unit of frequency?",
+        "A) metre",
+        "C) hertz",
+        "Answer: C",
+      ].join("\\n"),
+      { template: createQuizTemplate("Frequency", "beginner"), topic: "Frequency", level: "beginner" },
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.lesson?.assessment?.[0].options).toEqual(["metre", "hertz"]);
+    expect(result.lesson?.assessment?.[0].correctAnswer).toBe("hertz");
+  });
+
   it("does not invent practice answers when a response only contains questions", async () => {
     const result = await buildLessonContent(
       "# Short quiz\n## Questions\nQ1: What is wave speed?",
