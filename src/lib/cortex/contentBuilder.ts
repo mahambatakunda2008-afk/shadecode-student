@@ -184,12 +184,16 @@ function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): Stru
           .split(/\n\s*(?:(?:Options?|Correct answer|Answer|Solution|Explanation)\s*[:.)-]|[A-H][.)]\s+)/i)[0]
           .trim();
         const optionLines = [...chunk.matchAll(/(?:^|\n)\s*([A-H])[.)]\s+(.+?)(?=\n|$)/gi)];
-        const options = optionLines.map((m) => m[2].trim());
+        const optionEntries = optionLines.map((match) => ({
+          label: match[1].toUpperCase(),
+          text: match[2].trim(),
+        }));
+        const options = optionEntries.map((option) => option.text);
         const answerMatch = chunk.match(/(?:^|\n)\s*(?:Correct answer|Answer)\s*[:.)-]\s*([A-H])(?:\b|$)/i);
         const answerTextMatch = chunk.match(/(?:^|\n)\s*(?:Correct answer|Answer)\s*[:.)-]\s*([^\n]+)/i);
         const answerLetter = answerMatch?.[1]?.toUpperCase();
-        const correctAnswer = answerLetter && options.length
-          ? options[answerLetter.charCodeAt(0) - 65] ?? answerLetter
+        const correctAnswer = answerLetter && optionEntries.length
+          ? optionEntries.find((option) => option.label === answerLetter)?.text ?? answerLetter
           : answerTextMatch?.[1]?.trim();
         if (!question || !correctAnswer) continue;
         lesson.assessment = lesson.assessment ?? [];
