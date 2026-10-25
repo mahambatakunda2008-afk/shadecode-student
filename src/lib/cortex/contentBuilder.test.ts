@@ -43,6 +43,32 @@ describe("buildLessonContent", () => {
     expect(result.lesson?.content.practice[0].explanation).toContain("v = 4 × 3 = 12 m/s");
   });
 
+  it("parses and validates an assessment-first multiple-choice quiz", async () => {
+    const result = await buildLessonContent(
+      [
+        "# Waves quiz",
+        "## Questions",
+        "Q1: What is the relationship between wave speed, frequency and wavelength?",
+        "A) v = f / lambda",
+        "B) v = f lambda",
+        "C) v = lambda / f",
+        "Correct answer: B",
+        "Q2: What is the SI unit of frequency?",
+        "A) metre",
+        "B) second",
+        "C) hertz",
+        "Answer: C",
+      ].join("\\n"),
+      { template: createQuizTemplate("Waves", "beginner"), topic: "Waves", level: "beginner" },
+    );
+    expect(result.success).toBe(true);
+    expect(result.lesson?.type).toBe("quiz");
+    expect(result.lesson?.content.explanation).toHaveLength(0);
+    expect(result.lesson?.assessment).toHaveLength(2);
+    expect(result.lesson?.assessment?.[0].correctAnswer).toBe("v = f lambda");
+    expect(result.lesson?.assessment?.[1].correctAnswer).toBe("hertz");
+  });
+
   it("does not invent practice answers when a response only contains questions", async () => {
     const result = await buildLessonContent(
       "# Short quiz\n## Questions\nQ1: What is wave speed?",
