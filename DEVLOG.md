@@ -1,3 +1,16 @@
+## 2026-10-25 — Glass-inspired visual system documented; floating controls simplified
+
+- Design brief: `docs/GLASS_INSPIRED_VISUAL_EXPERIENCE.md`.
+- PR #482: `https://github.com/mahambatakunda2008-afk/shadecode-student/pull/482`.
+- Removed the persistent floating feedback bubble that overlapped the primary Cortex launcher; the feedback dialog/event hook remains.
+- Made Ask Cortex compact, translucent, and visible on mobile as well as desktop. Mobile positioning accounts for the safe-area inset and bottom navigation.
+- Removed the global mobile CSS rule that had hidden the Cortex launcher.
+- The PR's latest Vercel preview comment reports deployment READY, but this is not a substitute for checking the rendered interface on an actual narrow screen.
+- **Not yet complete:** the wider glass-inspired visual system is documented, not applied platform-wide. Next: audit existing tokens/components and implement reusable, restrained surface tokens without compromising contrast, performance, or the established UI.
+- **Verification boundary:** no local `npm run verify`, automated browser test, or manual visual QA has been performed in this pass. Do not claim the UI is fully validated until those gates are completed.
+
+---
+
 ## 2026-10-06 — Microsoft-grade UI/UX evolution merged into main
 
 PR #359 is now merged into `main` as merge commit `d6c8d3c7621aeddcce67f43a4f462503cfef6282`.
