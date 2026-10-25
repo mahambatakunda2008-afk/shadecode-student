@@ -29,8 +29,8 @@ describe("deterministic lesson recovery", () => {
     expect(lesson?.blocks.length).toBeGreaterThanOrEqual(14);
     expect(lesson?.blocks.some((block) => block.title === "Distance formula")).toBe(true);
     expect(lesson?.blocks.some((block) => block.content.includes("$m = \\frac{y_2-y_1}{x_2-x_1}$"))).toBe(true);
-    expect(lesson?.blocks.some((block) => block.content.includes("Practice set with answers"))).toBe(true);
-    expect(lesson?.blocks.some((block) => block.content.includes("Exam-style question with full working"))).toBe(true);
+    expect(lesson?.blocks.some((block) => block.title === "Practice set with answers")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.title === "Exam-style question with full working")).toBe(true);
   });
 
   it("never crosses subject boundaries when a topic name overlaps", () => {
