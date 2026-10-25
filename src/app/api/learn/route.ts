@@ -6,7 +6,6 @@ import type { LearnDetailResponse, LearnLesson, LearnListResponse, LearnSubject,
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
 import { learnCoursePreviewSchema, learnGenerateLessonSchema, validateRequestBody } from "@/lib/validation/schemas";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
-import { awardXPBySource } from "@/lib/xp/manager";
 import { normalizeSubjectKey, normalizeSubjectNames } from "@/lib/academic/subjectContract";
 import { resolveLearnerSubject } from "@/lib/academic/subjectAccess";
 import { log } from "@/lib/observability";
@@ -428,7 +427,6 @@ export async function POST(req: Request) {
           outcome: "saved",
           difficulty: validDifficulty,
         }),
-        awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
       ], (error) => {
         console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
           error: error instanceof Error ? error.message : String(error),
