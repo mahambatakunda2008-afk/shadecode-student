@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('challenges')
-    .select('*')
+    .select('id, challenger_id, challenger_name, subject, topic, difficulty, question_count, percentage, total_score, max_score, time_taken, grade, created_at')
     .eq('id', id)
     .single()
 
