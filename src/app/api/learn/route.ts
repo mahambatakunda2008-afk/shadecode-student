@@ -935,11 +935,10 @@ Return only valid JSON.`;
         outcome: "saved",
         difficulty: validDifficulty,
       }),
-      awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
     ], (error, index) => {
       console.warn(index === 0
         ? "[LEARN] lesson saved but completion signal could not be recorded"
-        : "[LEARN] lesson saved but generation XP could not be awarded", {
+        : "[LEARN] lesson saved but a secondary side effect failed", {
         lessonId: savedId,
         error: error instanceof Error ? error.message : String(error),
       });
