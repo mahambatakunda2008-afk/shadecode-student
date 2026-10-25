@@ -72,6 +72,10 @@ function extractObject(raw: string): string | null {
   return null;
 }
 
+const SUPPORTED_LESSON_DIAGRAMS = new Set([
+  "coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values",
+]);
+
 function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | null {
   const candidate = extractObject(raw);
   if (!candidate) return null;
@@ -81,7 +85,9 @@ function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | nu
     const blocks = value.blocks.filter((block): block is LessonBlock => {
       if (!block || typeof block !== "object") return false;
       const item = block as LessonBlock;
-      return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 30;
+      if (typeof item.type !== "string" || typeof item.content !== "string") return false;
+      if (item.type.trim().toLowerCase() === "diagram") return SUPPORTED_LESSON_DIAGRAMS.has(item.content.trim());
+      return item.content.trim().length >= 30;
     }).slice(0, 24);
     return blocks.length >= 8 ? { title: value.title.trim().slice(0, 255), blocks: normalizeLessonBlocks(blocks) } : null;
   } catch { return null; }
