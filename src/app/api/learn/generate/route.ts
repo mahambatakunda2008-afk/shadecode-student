@@ -4,7 +4,6 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
-import { awardXPBySource } from "@/lib/xp/manager";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt } from "@/lib/learn/contentQuality";
@@ -239,7 +238,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "The lesson was generated but could not be saved." }, { status: 500 });
     }
 
-    await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: generationRequest.difficulty });
     return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, subject: authorizedSubject, subjectId });
   } catch (error) {
     log.apiFailure({ route: "/api/learn/generate", method: "POST", error: error instanceof Error ? error.message : String(error), userId: auth?.user.id });
