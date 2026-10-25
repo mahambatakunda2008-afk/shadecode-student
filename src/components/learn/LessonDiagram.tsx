@@ -94,7 +94,8 @@ export default function LessonDiagram({ kind, title }: Props) {
     case "wave-shape": graphic = <Waves />; break;
     case "force-pairs": graphic = <ForcePairs />; break;
     case "root-bracket": graphic = <RootBracket />; break;
-    case "unit-circle": graphic = <UnitCircle />; break;\n    case "binary-place-values": graphic = <BinaryPlaceValues />; break;
+    case "unit-circle": graphic = <UnitCircle />; break;
+    case "binary-place-values": graphic = <BinaryPlaceValues />; break;
     default: return <div className="lesson-diagram-fallback">Visual aid: {title || kind}. Use the labelled relationships in the section above to interpret the diagram.</div>;
   }
   return <figure className="lesson-diagram"><div className="lesson-diagram-frame">{graphic}</div>{title && <figcaption>{title}</figcaption>}</figure>;
