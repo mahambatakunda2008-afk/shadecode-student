@@ -796,7 +796,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     let raw: string | null = null;
     try {
       raw = await executeCortexText(prompt, 5000, { operation: "lesson.generate_deep", userId: user.id,
-        maxChainMs: 24000, perProviderMaxMs: 6500,
+        maxChainMs: 24000, perProviderMaxMs: 6500, shareChainBudget: true,
         recovery: { hasCheckpoint: Boolean(durableJobId), supportsRepair: false },
       });
     } catch (error) {
@@ -822,7 +822,7 @@ REPAIR PASS: ${repairAttempt + 1}
 Do not rewrite good material just for variety. Fix the named defects. Preserve accurate explanations, examples and reasoning. The repaired lesson must be internally coherent and must pass the quality gate, not merely contain more blocks.
 Return only valid JSON.`;
           const repaired = await executeCortexText(repairPrompt, 4600, { operation: "lesson.repair_targeted", userId: user.id,
-            maxChainMs: 16000, perProviderMaxMs: 6000,
+            maxChainMs: 16000, perProviderMaxMs: 6000, shareChainBudget: true,
             recovery: { hasCheckpoint: Boolean(durableJobId), supportsRepair: true },
           });
           const repairedParsed = repaired ? safeParseJSON(repaired) : null;
