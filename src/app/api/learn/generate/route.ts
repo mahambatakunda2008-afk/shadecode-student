@@ -73,7 +73,7 @@ function extractObject(raw: string): string | null {
 }
 
 const SUPPORTED_LESSON_DIAGRAMS = new Set([
-  "coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values",
+  "coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values", "particle-model", "cell-structure", "flowchart", "series-circuit",
 ]);
 
 function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | null {
@@ -126,7 +126,7 @@ PRESENTATION
 This is a learning interface, not an essay. Keep blocks purposeful and scannable. Use short lines, explicit reasoning, worked steps, checkpoints, misconceptions, synthesis and curiosity. Do not pad the lesson merely to hit a number.
 
 VISUAL TEACHING
-When a visual materially improves understanding, include a dedicated block with type "diagram". Its content MUST be exactly one supported diagram key: "coordinate-plane" for coordinate geometry/gradient, "wave-shape" for wave amplitude/wavelength, "force-pairs" for Newton's third-law pairs, "root-bracket" for numerical root bracketing, "unit-circle" for trigonometric identities, or "binary-place-values" for binary number systems. Give the block a descriptive title. Do not emit unsupported diagram keys or claim a diagram exists when it does not. The lesson must still explain the visual in words and label what the learner should notice. If none of these diagrams fits the topic, do not force one.
+When a visual materially improves understanding, include a dedicated block with type "diagram". Its content MUST be exactly one supported diagram key: "coordinate-plane" for coordinate geometry/gradient, "wave-shape" for wave amplitude/wavelength, "force-pairs" for Newton's third-law pairs, "root-bracket" for numerical root bracketing, "unit-circle" for trigonometric identities, "binary-place-values" for binary number systems, "particle-model" for states of matter/particle theory, "cell-structure" for cell biology, "flowchart" for algorithms, or "series-circuit" for simple series circuits. Give the block a descriptive title. Do not emit unsupported diagram keys or claim a diagram exists when it does not. The lesson must still explain the visual in words and label what the learner should notice. If none of these diagrams fits the topic, do not force one.
 
 ${buildPresentationGuidance(request.subject || "General", request.topic)}
 
