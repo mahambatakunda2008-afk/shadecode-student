@@ -62,7 +62,7 @@ describe("buildLessonContent", () => {
       { template: createQuizTemplate("Waves", "beginner"), topic: "Waves", level: "beginner" },
     );
     expect(result.success).toBe(true);
-    expect(result.lesson?.type).toBe("quiz");
+    expect(result.lesson && "type" in result.lesson ? result.lesson.type : undefined).toBe("quiz");
     expect(result.lesson?.content.explanation).toHaveLength(0);
     expect(result.lesson?.assessment).toHaveLength(2);
     expect(result.lesson?.assessment?.[0].correctAnswer).toBe("v = f lambda");
