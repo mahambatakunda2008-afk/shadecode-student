@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'result_id required' }, { status: 400 })
     }
 
-    // Everything the challenge advertises comes from the learner's own saved result (RLS: own rows only).
     const { data: resultRow } = await supabase
       .from('exam_results')
       .select('subject, topic, difficulty, score, total_questions, correct_answers, time_taken')
@@ -49,41 +48,44 @@ export async function POST(request: NextRequest) {
     }
 
     let challenger_name: string | null = null
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, display_name')
-        .eq('id', user.id)
-        .single()
-      challenger_name = profile?.username ?? profile?.display_name ?? null
-    }
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', user.id)
+      .single()
+    challenger_name = profile?.username ?? profile?.display_name ?? null
 
-    // One challenge per result: a repeat tap returns the same link instead of spawning duplicates.
-    const { data: existing } = await supabase
-      .from('challenges')
-      .select('id')
-      .eq('result_id', result_id)
-      .eq('challenger_id', user.id)
-      .maybeSingle()
-    if (existing) {
-      return NextResponse.json({ id: existing.id, challengeUrl: `/challenge/${existing.id}`, frozen: true })
+    const admin = createSupabaseAdminClient()
+
+    // result_id is intentionally not granted to browser roles. Use the server client
+    // for duplicate detection so the private linkage ID does not need to be exposed.
+    if (admin) {
+      const { data: existing } = await admin
+        .from('challenges')
+        .select('id')
+        .eq('result_id', result_id)
+        .eq('challenger_id', user.id)
+        .maybeSingle()
+      if (existing) {
+        return NextResponse.json({ id: existing.id, challengeUrl: `/challenge/${existing.id}`, frozen: true })
+      }
     }
 
     const { data, error } = await supabase
       .from('challenges')
       .insert({
         result_id,
-        challenger_id:  user.id,
+        challenger_id: user.id,
         challenger_name,
-        subject:        fields.subject,
-        topic:          fields.topic,
-        difficulty:     fields.difficulty,
+        subject: fields.subject,
+        topic: fields.topic,
+        difficulty: fields.difficulty,
         question_count: fields.question_count,
-        percentage:     fields.percentage,
-        total_score:    fields.total_score,
-        max_score:      fields.max_score,
-        time_taken:     fields.time_taken,
-        grade:          fields.grade,
+        percentage: fields.percentage,
+        total_score: fields.total_score,
+        max_score: fields.max_score,
+        time_taken: fields.time_taken,
+        grade: fields.grade,
       })
       .select('id')
       .single()
@@ -94,7 +96,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Freeze the exact questions the challenger sat so the opponent answers the same set.
-    // Failure is non-fatal: the challenge still works as a same-subject duel.
     let frozen = false
     {
       const { data: sat } = await supabase
@@ -104,11 +105,8 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
       const questions = sat ? sanitizeQuestions(sat.questions) : null
       if (questions) {
-        // Deterministic papers are frozen as a keyless play set; the key stays server-side so the
-        // opponent's score is marked by the server and cannot be forged. Other papers stay self-reported.
         let playSet = questions
         let marking: 'server' | 'client' = 'client'
-        const admin = createSupabaseAdminClient()
         if (admin && isDeterministicPaper(questions)) {
           const split = splitPaper(questions)
           const { error: keyError } = await admin.from('challenge_answer_keys').insert({ challenge_id: data.id, key: split.key })
@@ -122,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      id:           data.id,
+      id: data.id,
       challengeUrl: `/challenge/${data.id}`,
       frozen,
     })
