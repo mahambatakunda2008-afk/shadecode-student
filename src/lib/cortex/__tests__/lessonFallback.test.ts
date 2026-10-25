@@ -69,6 +69,19 @@ describe("deterministic lesson recovery", () => {
     expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks }, request).failures).toContain("missing-relevant-diagram");
     expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Visualise gradient", content: "coordinate-plane" }] }, request).failures).not.toContain("missing-relevant-diagram");
     expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Unverified visual", content: "made-up-chart" }] }, request).failures).toContain("unsupported-diagram");
+
+    const visualCases = [
+      { subject: "Chemistry 9701", topic: "States of matter", key: "particle-model" },
+      { subject: "Biology", topic: "Plant cell structure", key: "cell-structure" },
+      { subject: "Computer Science 9618", topic: "Flowcharts and algorithms", key: "flowchart" },
+      { subject: "Physics 9702", topic: "Series circuits", key: "series-circuit" },
+    ];
+    for (const visualCase of visualCases) {
+      const subjectRequest = { ...request, subject: visualCase.subject, topic: visualCase.topic };
+      expect(lessonQualityFailures({ title: visualCase.topic, blocks }, subjectRequest).failures).toContain("missing-relevant-diagram");
+      const withVisual = [...blocks, { type: "diagram", title: "Relevant visual", content: visualCase.key }];
+      expect(lessonQualityFailures({ title: visualCase.topic, blocks: withVisual }, subjectRequest).failures).not.toContain("missing-relevant-diagram");
+    }
   });
 
   it("never crosses subject boundaries when a topic name overlaps", () => {
