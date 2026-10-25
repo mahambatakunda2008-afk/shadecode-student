@@ -58,7 +58,7 @@ describe("buildLessonContent", () => {
         "B) second",
         "C) hertz",
         "Answer: C",
-      ].join("\\n"),
+      ].join("\n"),
       { template: createQuizTemplate("Waves", "beginner"), topic: "Waves", level: "beginner" },
     );
     expect(result.success).toBe(true);
