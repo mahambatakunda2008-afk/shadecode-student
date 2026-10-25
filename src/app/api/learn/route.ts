@@ -16,7 +16,6 @@ import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/le
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
-import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export const dynamic = "force-dynamic";
@@ -416,23 +415,6 @@ export async function POST(req: Request) {
         }
         savedId = inserted.id;
       }
-
-      // The lesson is already durably saved at this point. Memory and XP are best-effort
-      // side effects; neither may turn a successful save into a learner-visible generation failure.
-      await runBestEffortSideEffects([
-        rememberLearnerSignal(supabase, user.id, {
-          subject: effectiveSubject,
-          topic: request.topic,
-          topic_key: learnerTopicKey,
-          event_type: "lesson_completed",
-          outcome: "saved",
-          difficulty: validDifficulty,
-        }),
-      ], (error) => {
-        console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      });
 
       return NextResponse.json({
         id: savedId,
@@ -925,25 +907,6 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
-    // The lesson row is durable. Memory and XP are secondary effects and cannot
-    // turn a successful save into a failed request that invites duplicate work.
-    await runBestEffortSideEffects([
-      rememberLearnerSignal(supabase, user.id, {
-        subject: effectiveSubject,
-        topic: request.topic,
-        topic_key: learnerTopicKey,
-        event_type: "lesson_completed",
-        outcome: "saved",
-        difficulty: validDifficulty,
-      }),
-    ], (error, index) => {
-      console.warn(index === 0
-        ? "[LEARN] lesson saved but completion signal could not be recorded"
-        : "[LEARN] lesson saved but a secondary side effect failed", {
-        lessonId: savedId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
     return NextResponse.json({
       id: savedId,
       title: sanitizeLessonText(parsed.title),
