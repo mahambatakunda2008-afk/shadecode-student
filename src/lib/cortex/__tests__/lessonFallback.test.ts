@@ -66,9 +66,9 @@ describe("deterministic lesson recovery", () => {
       { type: "summary", title: "Summary", content: "You should now be able to calculate a gradient." },
     ];
 
-    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks }, request)).toContain("missing-relevant-diagram");
-    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Visualise gradient", content: "coordinate-plane" }] }, request)).not.toContain("missing-relevant-diagram");
-    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Unverified visual", content: "made-up-chart" }] }, request)).toContain("unsupported-diagram");
+    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks }, request).failures).toContain("missing-relevant-diagram");
+    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Visualise gradient", content: "coordinate-plane" }] }, request).failures).not.toContain("missing-relevant-diagram");
+    expect(lessonQualityFailures({ title: "Coordinate Geometry", blocks: [...blocks, { type: "diagram", title: "Unverified visual", content: "made-up-chart" }] }, request).failures).toContain("unsupported-diagram");
   });
 
   it("never crosses subject boundaries when a topic name overlaps", () => {
