@@ -150,6 +150,9 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (process.env.GROQ_API_KEY) shareable.add("groq");
     if (process.env.OPENROUTER_API_KEY) shareable.add("openrouter");
     if (process.env.CLOUDFLARE_API_TOKEN) shareable.add("cloudflare");
+    // Gemini is also a long-generation provider. Giving it only the short default cap
+    // meant a valid section response could be aborted even when chain time remained.
+    if (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY_3 || process.env.GEMINI_API_KEY_4) shareable.add("gemini");
   }
   const attempted = new Set<string>();
   const providerTimeout = (provider: string) => {
