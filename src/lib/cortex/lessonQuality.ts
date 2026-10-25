@@ -73,6 +73,18 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const has = (...names: string[]) => names.some(name => types.has(name));
   const tokens = topicTokens(request);
 
+  const diagramBlocks = normalized.filter(block => block.normalizedType === "diagram");
+  const supportedDiagrams = new Set(["coordinate-plane", "wave-shape", "force-pairs", "root-bracket"]);
+  if (diagramBlocks.some(block => !supportedDiagrams.has(block.content.trim()))) failures.push("unsupported-diagram");
+  const topicLower = request.topic.toLowerCase();
+  const requiredDiagram = /coordinate geometry|gradient|straight.line equation/.test(topicLower) ? "coordinate-plane"
+    : /\bwaves?\b|amplitude|wavelength/.test(topicLower) ? "wave-shape"
+    : /newton.s laws|newton.s third law|action.reaction/.test(topicLower) ? "force-pairs"
+    : /numerical solution|bisection|root.bracketing/.test(topicLower) ? "root-bracket" : null;
+  if (request.intent === "teach" && requiredDiagram && !diagramBlocks.some(block => block.content.trim() === requiredDiagram)) {
+    failures.push("missing-relevant-diagram");
+  }
+
   const broadOrDeep = request.broadTopic || request.depth === "deep";
   if (normalized.length > (broadOrDeep ? 24 : 18)) failures.push("too-many-blocks");
   if (normalized.length < 4) failures.push("insufficient-structure");
