@@ -173,20 +173,20 @@ function parseAIResponse(aiResponse: string, config: ContentBuilderConfig): Stru
       continue;
     }
 
-    if ("type" in lesson && lesson.type === "quiz" && /\\b(questions?|assessment|quiz)\\b/.test(heading)) {
-      const starts = [...body.matchAll(/(?:^|\\n)\\s*(?:Q(?:uestion)?\\s*\\d+\\s*[:.)-]|\\d+[.)]\\s+)/gi)];
+    if ("type" in lesson && lesson.type === "quiz" && /\b(questions?|assessment|quiz)\b/.test(heading)) {
+      const starts = [...body.matchAll(/(?:^|\n)\s*(?:Q(?:uestion)?\s*\d+\s*[:.)-]|\d+[.)]\s+)/gi)];
       const chunks = starts.map((match, index) => {
-        const begin = (match.index ?? 0) + (match[0].startsWith("\\n") ? 1 : 0);
+        const begin = (match.index ?? 0) + (match[0].startsWith("\n") ? 1 : 0);
         return body.slice(begin, starts[index + 1]?.index ?? body.length).trim();
       });
       for (const chunk of chunks) {
-        const question = chunk.replace(/^\\s*(?:Q(?:uestion)?\\s*\\d+\\s*[:.)-]|\\d+[.)]\\s+)/i, "")
-          .split(/\\n\\s*(?:Options?|Correct answer|Answer|Solution|Explanation)\\s*[:.)-]/i)[0]
+        const question = chunk.replace(/^\s*(?:Q(?:uestion)?\s*\d+\s*[:.)-]|\d+[.)]\s+)/i, "")
+          .split(/\n\s*(?:(?:Options?|Correct answer|Answer|Solution|Explanation)\s*[:.)-]|[A-H][.)]\s+)/i)[0]
           .trim();
-        const optionLines = [...chunk.matchAll(/(?:^|\\n)\\s*([A-H])[.)]\\s+(.+?)(?=\\n|$)/gi)];
+        const optionLines = [...chunk.matchAll(/(?:^|\n)\s*([A-H])[.)]\s+(.+?)(?=\n|$)/gi)];
         const options = optionLines.map((m) => m[2].trim());
-        const answerMatch = chunk.match(/(?:^|\\n)\\s*(?:Correct answer|Answer)\\s*[:.)-]\\s*([A-H])(?:\\b|$)/i);
-        const answerTextMatch = chunk.match(/(?:^|\\n)\\s*(?:Correct answer|Answer)\\s*[:.)-]\\s*([^\\n]+)/i);
+        const answerMatch = chunk.match(/(?:^|\n)\s*(?:Correct answer|Answer)\s*[:.)-]\s*([A-H])(?:\b|$)/i);
+        const answerTextMatch = chunk.match(/(?:^|\n)\s*(?:Correct answer|Answer)\s*[:.)-]\s*([^\n]+)/i);
         const answerLetter = answerMatch?.[1]?.toUpperCase();
         const correctAnswer = answerLetter && options.length
           ? options[answerLetter.charCodeAt(0) - 65] ?? answerLetter
