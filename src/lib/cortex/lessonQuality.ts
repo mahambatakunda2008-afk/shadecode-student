@@ -52,7 +52,9 @@ function topicTokens(request: LessonQualityRequest) {
 
 function hasTopicSignal(block: { title?: string; content: string }, tokens: string[]) {
   const text = `${block.title ?? ""} ${block.content}`.toLowerCase();
-  return tokens.some(token => text.includes(token));
+  return tokens.some(token => text.includes(token)
+    || (token.endsWith("s") && token.length > 4 && text.includes(token.slice(0, -1)))
+    || (!token.endsWith("s") && token.length > 4 && text.includes(`${token}s`)));
 }
 
 function hasAnswerLeak(content: string) {
