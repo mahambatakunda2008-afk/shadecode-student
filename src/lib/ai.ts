@@ -162,9 +162,9 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const canTry = () => remaining() >= 1000;
   // Grace period on top of the provider's declared budget before the hard race below gives up on it.
   const HARD_TIMEOUT_GRACE_MS = 250;
-  async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
+  async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>, breakerScope = provider): Promise<string | null> {
     if (!canTry()) return null;
-    const breaker = providerBreaker(provider);
+    const breaker = providerBreaker(breakerScope);
     if (!breaker.shouldAttempt()) { attempted.add(provider); return null; }
     const startTime = Date.now();
     const timeout = providerTimeout(provider);
@@ -341,7 +341,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
   const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
 
-  async function callGemini(key: string, model: string): Promise<string | null> {
+  async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
     return tryProvider("gemini", model, async timeout => {
       const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
         method: "POST",
@@ -359,7 +359,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
-    });
+    }, `gemini:${model}:key-${keyIndex + 1}`);
   }
 
   // Text fallback order after Gateway: Groq (fast, free, independent vendor), then OpenRouter,
@@ -370,7 +370,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   for (const model of geminiModels) {
     for (const key of geminiKeys) {
       if (!canTry()) break;
-      const text = await callGemini(key, model);
+      const text = await callGemini(key, model, geminiKeys.indexOf(key));
       if (text) return text;
     }
     if (!canTry()) break;
