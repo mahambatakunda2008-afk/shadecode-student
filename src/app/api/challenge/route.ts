@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
-
     if (!user) return NextResponse.json({ error: 'Sign in to create a challenge' }, { status: 401 })
 
     const body = await request.json()
@@ -47,31 +46,30 @@ export async function POST(request: NextRequest) {
       fields.subject = canonicalSubject.name
     }
 
-    let challenger_name: string | null = null
+    // Challenge rows contain a score and a private result linkage. Keep writes server-only.
+    const admin = createSupabaseAdminClient()
+    if (!admin) {
+      return NextResponse.json({ error: 'Challenge creation is temporarily unavailable. Please retry.', retryable: true }, { status: 503 })
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('username, display_name')
       .eq('id', user.id)
       .single()
-    challenger_name = profile?.username ?? profile?.display_name ?? null
+    const challenger_name = profile?.username ?? profile?.display_name ?? null
 
-    const admin = createSupabaseAdminClient()
-
-    // result_id is intentionally not granted to browser roles. Use the server client
-    // for duplicate detection so the private linkage ID does not need to be exposed.
-    if (admin) {
-      const { data: existing } = await admin
-        .from('challenges')
-        .select('id')
-        .eq('result_id', result_id)
-        .eq('challenger_id', user.id)
-        .maybeSingle()
-      if (existing) {
-        return NextResponse.json({ id: existing.id, challengeUrl: `/challenge/${existing.id}`, frozen: true })
-      }
+    const { data: existing } = await admin
+      .from('challenges')
+      .select('id')
+      .eq('result_id', result_id)
+      .eq('challenger_id', user.id)
+      .maybeSingle()
+    if (existing) {
+      return NextResponse.json({ id: existing.id, challengeUrl: `/challenge/${existing.id}`, frozen: true })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('challenges')
       .insert({
         result_id,
@@ -90,7 +88,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .single()
 
-    if (error) {
+    if (error || !data) {
       console.error('[challenge/POST]', error)
       return NextResponse.json({ error: 'Failed to create challenge' }, { status: 500 })
     }
@@ -107,7 +105,7 @@ export async function POST(request: NextRequest) {
       if (questions) {
         let playSet = questions
         let marking: 'server' | 'client' = 'client'
-        if (admin && isDeterministicPaper(questions)) {
+        if (isDeterministicPaper(questions)) {
           const split = splitPaper(questions)
           const { error: keyError } = await admin.from('challenge_answer_keys').insert({ challenge_id: data.id, key: split.key })
           if (keyError) console.error('[challenge/POST key]', keyError)
