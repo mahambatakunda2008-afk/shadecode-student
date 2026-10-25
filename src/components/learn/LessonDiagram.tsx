@@ -46,14 +46,14 @@ function UnitCircle() {
   return <svg viewBox="0 0 520 300" role="img" aria-label="Unit circle showing a point at angle theta with horizontal coordinate cosine theta and vertical coordinate sine theta" className="lesson-diagram-svg">
     <circle cx="255" cy="145" r="95" fill="none" stroke={colors.line} strokeWidth="3"/>
     <path d="M115 145 H395 M255 265 V25" stroke={colors.axis} strokeWidth="1.5"/>
-    <path d="M350 145 L320 88" stroke={colors.point} strokeWidth="2.5"/>
-    <path d="M350 145 V145 H320 V88" stroke={colors.muted} strokeWidth="1.8" strokeDasharray="5 4" fill="none"/>
-    <path d="M286 145 A31 31 0 0 0 270 118" stroke={colors.point} strokeWidth="2" fill="none"/>
+    <path d="M255 145 L320 88" stroke={colors.point} strokeWidth="2.5"/>
+    <path d="M255 145 H320 V88" stroke={colors.muted} strokeWidth="1.8" strokeDasharray="5 4" fill="none"/>
+    <path d="M286 145 A31 31 0 0 0 277 119" stroke={colors.point} strokeWidth="2" fill="none"/>
     <circle cx="320" cy="88" r="5" fill={colors.point}/>
     <text x="287" y="124" fontSize="14" fill={colors.point}>θ</text>
     <text x="326" y="82" fontSize="13" fill="currentColor">(cos θ, sin θ)</text>
-    <text x="331" y="164" fontSize="13" fill={colors.muted}>cos θ</text>
-    <text x="263" y="106" fontSize="13" fill={colors.muted}>sin θ</text>
+    <text x="281" y="164" fontSize="13" fill={colors.muted}>cos θ</text>
+    <text x="326" y="120" fontSize="13" fill={colors.muted}>sin θ</text>
     <text x="400" y="139" fontSize="13" fill="currentColor">x</text><text x="263" y="22" fontSize="13" fill="currentColor">y</text>
     <text x="255" y="288" textAnchor="middle" fontSize="13" fill={colors.muted}>For a unit circle: x² + y² = 1</text>
   </svg>;
