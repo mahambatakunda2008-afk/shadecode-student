@@ -926,9 +926,32 @@ Return only valid JSON.`;
 
 export async function PATCH(req: Request) {
   try {
-    const auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { supabase, user } = auth; const { lessonId, progress } = await req.json(); if (!lessonId || typeof progress !== "number") return NextResponse.json({ error: "Missing lessonId or progress" }, { status: 400 });
-    const clamped = Math.min(100, Math.max(0, Math.round(progress))); const { error } = await supabase.from("learn_lessons").update({ progress: clamped, updated_at: new Date().toISOString() }).eq("id", lessonId).eq("user_id", user.id);
-    if (error) return NextResponse.json({ error: "Failed to update progress" }, { status: 500 }); if (clamped === 100) await awardXPBySource(user.id, "lesson_completion"); return NextResponse.json({ success: true, progress: clamped });
-  } catch { return NextResponse.json({ error: "Something went wrong" }, { status: 500 }); }
+    const auth = await authenticateRequest(req);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { supabase, user } = auth;
+    const { lessonId, progress } = await req.json();
+    if (typeof lessonId !== "string" || !lessonId.trim() || typeof progress !== "number" || !Number.isFinite(progress)) {
+      return NextResponse.json({ error: "Missing or invalid lessonId or progress" }, { status: 400 });
+    }
+
+    const clamped = Math.min(100, Math.max(0, Math.round(progress)));
+    const { data: updated, error } = await supabase
+      .from("learn_lessons")
+      .update({ progress: clamped, updated_at: new Date().toISOString() })
+      .eq("id", lessonId)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) return NextResponse.json({ error: "Failed to update progress" }, { status: 500 });
+    // PostgREST can return no error when RLS/user scoping matches zero rows.
+    // Never report progress saved or award completion XP without a confirmed row.
+    if (!updated?.id) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+
+    if (clamped === 100) await awardXPBySource(user.id, "lesson_completion");
+    return NextResponse.json({ success: true, lessonId: updated.id, progress: clamped });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
 }
