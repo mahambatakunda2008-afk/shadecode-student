@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import type { AcademicExperience } from "@/lib/academic/experience";
 import type { ShadecodeFeatureName } from "@/components/brand/ShadecodeFeatureIcon";
+import { hasComputerScienceCurriculum } from "@/lib/academic/code-lab";
 
 export interface NavItem {
   href: string;
@@ -193,11 +194,21 @@ export function getExperienceNavGroups(
         ? school
         : beyond;
 
+  // Code Lab is a subject-specific workspace, not a universal navigation item.
+  // Use canonical profile subjects as well as curriculum metadata, because the
+  // per-user subject catalog can lag behind profile changes.
+  const hasComputingSubject = hasComputerScienceCurriculum([
+    _curriculumSubjects,
+    _profileSubjects,
+  ]);
+
   return groups
     .map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp",
+        (item) =>
+          (experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp") &&
+          (item.href !== NAV_ITEMS.compLab.href || hasComputingSubject),
       ),
     }))
     .filter((group) => group.items.length > 0);
