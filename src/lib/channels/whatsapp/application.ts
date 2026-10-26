@@ -6,6 +6,8 @@ import { resolveChannelIdentity } from "@/lib/platform/channel-identity-store";
 import { CortexCore } from "@/lib/cortex/core";
 import type { ParsedWhatsAppTextEvent } from "@/lib/channels/whatsapp/webhook";
 import { inactiveWhatsAppResponse, unlinkedWhatsAppResponse } from "@/lib/channels/whatsapp/response";
+import { bestSnippet, search as searchLessonLibrary } from "@/lib/library/bm25";
+import { loadLibrary } from "@/lib/library/store";
 
 export interface WhatsAppApplicationResult {
   event: ParsedWhatsAppTextEvent;
@@ -14,6 +16,7 @@ export interface WhatsAppApplicationResult {
 }
 
 const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH"]);
+const LIBRARY_COMMAND = /^FIND\\s+(.+)$/i;
 
 function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -75,7 +78,7 @@ export async function dispatchWhatsAppTextEvent(event: ParsedWhatsAppTextEvent):
       event,
       userId: identity.userId,
       response: {
-        text: "I’m connected to your Shadecode account. Try `LEARN algebra`, `LEARN Mathematics: quadratic functions`, `EXPLAIN photosynthesis`, or `HELP`.",
+        text: "I’m connected to your Shadecode account. Try `FIND momentum`, `LEARN algebra`, `LEARN Mathematics: quadratic functions`, `EXPLAIN photosynthesis`, or `HELP`.",
         metadata: { status: "authenticated", role: identity.role, channel: "whatsapp" },
       },
     };
@@ -94,8 +97,8 @@ export async function dispatchWhatsAppTextEvent(event: ParsedWhatsAppTextEvent):
     };
   }
 
-  const selectedSubject = findSubject(resolved.subjects, request.requestedSubject);
-  if (request.requestedSubject && !selectedSubject) {
+  const requestedSubject = request?.requestedSubject;\n  const selectedSubject = findSubject(resolved.subjects, requestedSubject);
+  if (requestedSubject && !selectedSubject) {
     return { event, userId: identity.userId, response: subjectRequiredResponse(resolved.subjects) };
   }
 
