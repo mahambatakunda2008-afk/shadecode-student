@@ -39,7 +39,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
-    const body = (await request.json().catch(() => ({}))) as GenerateLessonRequest;
+    const body = (await request.json().catch(() => ({}))) as GenerateLessonRequest & { learningMode?: string };
+    if (body.learningMode === "classic") {
+      return NextResponse.json({
+        success: false,
+        error: "Classic mode does not use generative AI. Switch to Cortex AI or open an existing lesson or study resource.",
+        code: "CLASSIC_MODE_AI_DISABLED",
+      }, { status: 403 });
+    }
     const requestedSubject = typeof body.subject === "string" ? body.subject.trim() : "";
     const topic = typeof body.topic === "string" ? body.topic.trim() : "";
     const level = body.level ?? "intermediate";
