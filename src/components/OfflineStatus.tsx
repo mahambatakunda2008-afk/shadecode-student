@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CloudOff, Wifi } from "lucide-react";
+import { Wifi } from "lucide-react";
 
 export default function OfflineStatus() {
   const [online, setOnline] = useState(true);
@@ -23,7 +23,10 @@ export default function OfflineStatus() {
     };
   }, []);
 
-  if (!visible) return null;
+  // While offline, OfflineShell (root layout) already shows the offline/sync state at this same position
+  // and owns the sync controls. Showing both stacked them on top of each other, so this component only
+  // confirms the return to a working connection.
+  if (!visible || !online) return null;
 
   return (
     <div
@@ -32,8 +35,8 @@ export default function OfflineStatus() {
       className="fixed left-1/2 top-3 z-[10000] flex -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--foreground)] shadow-[var(--shadow-lg)]"
       style={{ paddingTop: "max(8px, env(safe-area-inset-top, 0px))" }}
     >
-      {online ? <Wifi className="h-3.5 w-3.5 text-[var(--success)]" /> : <CloudOff className="h-3.5 w-3.5 text-[var(--warning)]" />}
-      <span>{online ? "Back online" : "Offline mode · saved work stays on this device"}</span>
+      <Wifi className="h-3.5 w-3.5 text-[var(--success)]" aria-hidden="true" />
+      <span>Back online</span>
     </div>
   );
 }
