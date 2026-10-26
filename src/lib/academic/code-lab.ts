@@ -4,27 +4,39 @@ function normalizeSubjectValue(value: unknown): string {
     .toLowerCase()
     .replace(/[()\[\]{}]/g, " ")
     .replace(/[._/]+/g, " ")
+    .replace(/[-–—]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+const COMPUTER_SCIENCE_CODES = new Set(["9618", "0478", "0984", "2210", "4021"]);
+
 function matchesComputerScience(value: unknown): boolean {
   const normalized = normalizeSubjectValue(value);
+  if (!normalized) return false;
+
+  // Subject names can arrive with the board/code before or after the name.
+  // Keep this tied to recognized computing subjects rather than unlocking for
+  // any arbitrary subject that happens to contain a number.
+  const words = normalized.split(" ");
+  const hasRecognizedCode = words.some((word) => COMPUTER_SCIENCE_CODES.has(word));
+  const hasComputingName = /\b(computer science|computing science|computer studies|computing studies)\b/.test(normalized);
+
   return normalized === "cs" ||
     normalized === "computer science" ||
     normalized.startsWith("computer science ") ||
-    normalized.startsWith("computer science-") ||
     normalized === "computing science" ||
     normalized === "computer studies" ||
-    normalized === "computing studies";
+    normalized === "computing studies" ||
+    (hasRecognizedCode && hasComputingName) ||
+    /^cs\s+(9618|0478|0984|2210|4021)$/.test(normalized);
 }
 
 /**
  * Code Lab is unlocked by the learner's actual computing subject metadata.
  *
- * Deliberately does not hard-code examination-board subject codes. Boards can
- * reuse, change, or assign different numeric codes, while the canonical
- * subject identity remains the source of truth.
+ * Subject labels differ across exam boards and profile/catalog representations,
+ * so recognize the common Cambridge and ZIMSEC identifiers alongside names.
  */
 export function isComputerScienceCurriculumSubject(subject: unknown): boolean {
   if (typeof subject === "string" || typeof subject === "number") return matchesComputerScience(subject);
@@ -37,7 +49,8 @@ export function isComputerScienceCurriculumSubject(subject: unknown): boolean {
     item.subjectTitle, item.subject_title,
     item.subjectLabel, item.subject_label,
     item.name, item.title, item.label,
-    item.subject,
+    item.subject, item.code, item.subjectCode, item.subject_code,
+    item.syllabusCode, item.syllabus_code,
   ];
   if (directValues.some(matchesComputerScience)) return true;
 
