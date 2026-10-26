@@ -19,6 +19,7 @@ import { buildLocalSectionRequirements } from "@/lib/cortex/localLessonPlan";
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { shouldUseFastVerifiedCurriculumRecovery } from "@/lib/cortex/lessonGenerationPolicy";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
+import { getLearningMode } from "@/lib/learningMode";
 
 export interface LessonGenerationInput { prompt: string; subject: string; difficulty: "easy" | "medium" | "hard"; goal: string; level?: string; examBoard?: string; }
 interface LessonGenerationResult { id: string; title: string; blocks: Array<Record<string, unknown>>; offlineFallback?: boolean; localModel?: boolean; localOnly?: boolean; }
@@ -806,6 +807,36 @@ async function runJob(
       error: "Cortex is selecting the best available generation lane…",
     });
     const online = isBrowser() ? navigator.onLine : false;
+    const classicMode = getLearningMode() === "classic";
+
+    // Classic mode deliberately avoids cloud and browser-local generative models.
+    // It can use authored lessons, verified curriculum recovery, and shared study resources.
+    if (classicMode) {
+      let classicLesson = buildDeterministicLessonFallback(job.request.subject, job.request.prompt);
+      if (!classicLesson && online) {
+        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/recover", 6000, token);
+      }
+      if (!classicLesson && online) {
+        classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/guide", 9000, token);
+      }
+      if (!classicLesson) {
+        throw new Error("Classic mode does not use generative AI. No verified lesson or shared study guide is available for this topic yet. Switch to Cortex AI to request a newly generated lesson, or use your curriculum and past papers.");
+      }
+      const classicResult: LessonGenerationResult = {
+        id: job.id,
+        title: classicLesson.title,
+        blocks: classicLesson.blocks,
+        offlineFallback: true,
+        localModel: false,
+      };
+      const finished = token && online
+        ? await persistGeneratedLesson(job, classicResult, token, generationLeaseId(job.id))
+        : await saveLocalResult(job, classicResult);
+      if (token && online && !isLocalOnlyCompletion(finished)) {
+        await syncCompletedGenerationBestEffort(token, (getGenerationJob(job.id) ?? finished) as GenerationJob);
+      }
+      return getGenerationJobs().find(item => item.id === job.id) ?? finished;
+    }
 
     // "available" is the initial UI state, not proof that this device can run WebGPU.
     // Probe the actual adapter before selecting a local lane; otherwise an unsupported
@@ -1025,7 +1056,7 @@ async function runJob(
 
     // Cortex recovery policy selects exactly one safe recovery lane. The browser
     // runner executes that decision, but never invents a generic whole-job retry.
-    if (recoveryPolicy.action === "resume_checkpoint" && allowCheckpointResume) {
+    if (recoveryPolicy.action === "resume_checkpoint" && allowCheckpointResume && !classicMode) {
       // A checkpoint recovery is a bounded continuation, not a whole-job retry.
       // Re-enter the same durable job exactly once so tryCloudLesson/tryLocalModel
       // starts from completedUnits already stored in job.partial.
@@ -1069,7 +1100,7 @@ async function runJob(
       }
     }
 
-    if (recoveryPolicy.action === "use_warm_local" && isBrowser() && navigator.onLine && ["ready", "loading"].includes(getBrowserLocalModelStatus().status)) {
+    if (!classicMode && recoveryPolicy.action === "use_warm_local" && isBrowser() && navigator.onLine && ["ready", "loading"].includes(getBrowserLocalModelStatus().status)) {
       try {
         updateGenerationJob(job.id, { status: "generating", progress: Math.max(40, Math.min(55, getGenerationJob(job.id)?.progress ?? 40)), error: "Cloud generation is unavailable. Cortex is using the warm browser-local model." });
         localModelAttempted = true;
