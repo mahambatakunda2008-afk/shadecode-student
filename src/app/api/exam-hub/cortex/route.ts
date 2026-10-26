@@ -222,6 +222,12 @@ export async function POST(request: Request) {
     if (rateLimitResponse) return rateLimitResponse;
 
     const body = await request.json();
+    if (body?.learningMode === "classic") {
+      return NextResponse.json({
+        error: "Classic mode does not use generative AI for tutoring or paper analysis. Use the existing paper, mark scheme and saved study resources, or switch to Cortex AI.",
+        code: "CLASSIC_MODE_AI_DISABLED",
+      }, { status: 403 });
+    }
     const mode: "paper-analysis" | "tutor" | "question-help" = body?.mode === "paper-analysis" ? "paper-analysis" : body?.mode === "tutor" ? "tutor" : "question-help";
     const subject = safeString(body?.subject);
     if (mode === "tutor") {
