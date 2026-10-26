@@ -15,17 +15,12 @@ export interface WhatsAppApplicationResult {
   userId: string | null;
 }
 
-const LEARNING_COMMANDS = new Set(["LEARN", "EXPLAIN", "TEACH"]);
-const LIBRARY_COMMAND = /^FIND\\s+(.+)$/i;
-
 function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function parseLearningRequest(text: string): { type: "learn"; topic: string; requestedSubject?: string } | null {
-  const trimmed = text.trim();
-  if (!trimmed) return null;
-  const match = trimmed.match(/^(LEARN|EXPLAIN|TEACH)\s+(.+)$/i);
+  const match = text.trim().match(/^(LEARN|EXPLAIN|TEACH)\s+(.+)$/i);
   if (!match) return null;
 
   const remainder = match[2].trim();
@@ -51,7 +46,7 @@ function findSubject(subjects: LearnerSubject[], requested?: string) {
 
 function subjectRequiredResponse(subjects: LearnerSubject[]): ChannelResponse {
   return {
-    text: `Choose the subject for this question. Your subjects are: ${subjects.map((subject) => subject.name).join(", ")}. Example: \`LEARN Mathematics: quadratic functions\`.`,
+    text: `Choose the subject for this request. Your subjects are: ${subjects.map((subject) => subject.name).join(", ")}. Example: \`LEARN Mathematics: quadratic functions\` or \`FIND Mathematics: vectors\`.`,
     metadata: { status: "subject_required", subjects: subjects.map((subject) => subject.name) },
   };
 }
@@ -61,24 +56,26 @@ export async function dispatchWhatsAppTextEvent(event: ParsedWhatsAppTextEvent):
   if (!identity) return { event, userId: null, response: unlinkedWhatsAppResponse() };
   if (identity.status !== "active") return { event, userId: identity.userId, response: inactiveWhatsAppResponse(identity.status) };
 
-  if (normalize(event.text) === "help") {
+  const text = event.text.trim();
+  if (normalize(text) === "help") {
     return {
       event,
       userId: identity.userId,
       response: {
-        text: "Shadecode WhatsApp commands:\n\n• LEARN <topic>\n• LEARN <subject>: <topic>\n• EXPLAIN <topic>\n• TEACH <topic>\n\nExample: LEARN Mathematics: quadratic functions",
+        text: "Shadecode WhatsApp commands:\n\n• FIND <topic> (search saved lesson resources)\n• FIND <subject>: <topic>\n• LEARN <topic>\n• LEARN <subject>: <topic>\n• EXPLAIN <topic>\n• TEACH <topic>\n\nExamples: FIND momentum | LEARN Mathematics: quadratic functions",
         metadata: { status: "help", role: identity.role, channel: "whatsapp" },
       },
     };
   }
 
-  const request = parseLearningRequest(event.text);
-  if (!request) {
+  const findMatch = text.match(/^FIND\s+(.+)$/i);
+  const request = parseLearningRequest(text);
+  if (!findMatch && !request) {
     return {
       event,
       userId: identity.userId,
       response: {
-        text: "I’m connected to your Shadecode account. Try `FIND momentum`, `LEARN algebra`, `LEARN Mathematics: quadratic functions`, `EXPLAIN photosynthesis`, or `HELP`.",
+        text: "I’m connected to your Shadecode account. Try FIND momentum, LEARN algebra, LEARN Mathematics: quadratic functions, EXPLAIN photosynthesis, or HELP.",
         metadata: { status: "authenticated", role: identity.role, channel: "whatsapp" },
       },
     };
@@ -97,7 +94,11 @@ export async function dispatchWhatsAppTextEvent(event: ParsedWhatsAppTextEvent):
     };
   }
 
-  const requestedSubject = request?.requestedSubject;\n  const selectedSubject = findSubject(resolved.subjects, requestedSubject);
+  const rawRequest = (findMatch?.[1] ?? "").trim();
+  const colonIndex = rawRequest.indexOf(":");
+  const requestedSubject = request?.requestedSubject ?? (findMatch && colonIndex > 0 ? rawRequest.slice(0, colonIndex).trim() : undefined);
+  const query = findMatch ? (colonIndex > 0 ? rawRequest.slice(colonIndex + 1).trim() : rawRequest).slice(0, 120) : "";
+  const selectedSubject = findSubject(resolved.subjects, requestedSubject);
   if (requestedSubject && !selectedSubject) {
     return { event, userId: identity.userId, response: subjectRequiredResponse(resolved.subjects) };
   }
@@ -107,6 +108,48 @@ export async function dispatchWhatsAppTextEvent(event: ParsedWhatsAppTextEvent):
   }
 
   const subject = selectedSubject ?? resolved.subjects[0];
+
+  if (findMatch) {
+    if (!query) {
+      return { event, userId: identity.userId, response: { text: "Tell me what to search for, for example FIND Mathematics: vectors.", metadata: { status: "query_required" } } };
+    }
+
+    const library = await loadLibrary(supabase as never);
+    const hits = searchLessonLibrary(library.index, query, { subject: subject.name, limit: 3 });
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://shadecodestudent.vercel.app")).replace(/\/$/, "");
+
+    if (!hits.length) {
+      return {
+        event,
+        userId: identity.userId,
+        response: {
+          text: `I couldn't find a matching saved lesson for "${query}" in your ${subject.name} library yet. That's a content gap, not proof the topic is unsupported. Try another keyword or use Student to ask Cortex.`,
+          metadata: { status: "library_no_match", channel: "whatsapp", subject: subject.name, query },
+        },
+      };
+    }
+
+    const lines = hits.flatMap((hit, index) => {
+      const row = library.rows.get(hit.id);
+      if (!row) return [];
+      const snippet = bestSnippet(row.blocks, query);
+      return [`${index + 1}. ${row.title}\n${snippet?.text ? `${snippet.text}\n` : ""}${baseUrl}/learn/${encodeURIComponent(row.id)}`];
+    });
+
+    return {
+      event,
+      userId: identity.userId,
+      response: {
+        text: `Found these existing ${subject.name} resources for "${query}":\n\n${lines.join("\n\n")}\n\nThese are library matches, not a claim that the resource is an official past paper or examiner-approved.`,
+        metadata: { status: "library_results", channel: "whatsapp", subject: subject.name, count: lines.length },
+      },
+    };
+  }
+
+  if (!request) {
+    return { event, userId: identity.userId, response: { text: "Try FIND <topic> to search saved resources, or LEARN <topic> for Cortex study help.", metadata: { status: "command_required", channel: "whatsapp" } } };
+  }
+
   const result = await CortexCore({
     userId: identity.userId,
     type: request.type,
