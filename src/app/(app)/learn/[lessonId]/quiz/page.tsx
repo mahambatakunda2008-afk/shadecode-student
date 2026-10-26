@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { emitLearningEvent } from "@/lib/intelligence/emitLearningEvent";
-import { buildQuizQuestionEvidence, buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
+import { buildQuizCompletionEvidence } from "@/lib/intelligence/quizEvidence";
 import {
   ArrowLeft, CheckCircle2, XCircle, Sparkles,
   ArrowRight, RotateCcw, Trophy, Brain,
@@ -15,7 +15,7 @@ interface QuizQuestion {
   id: number;
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
   explanation: string;
 }
 
@@ -53,6 +53,8 @@ export default function QuizPage() {
 
   const [phase,       setPhase]       = useState<Phase>("loading");
   const [questions,   setQuestions]   = useState<QuizQuestion[]>([]);
+  const [quizId, setQuizId] = useState<string>("");
+  const [verifiedResult, setVerifiedResult] = useState<{ score: number; correctCount: number; questionCount: number; verified: boolean; curriculumTracked: boolean; warning?: string } | null>(null);
   const [current,     setCurrent]     = useState(0);
   const [selected,    setSelected]    = useState<number | null>(null);
   const [answers,     setAnswers]     = useState<number[]>([]);
@@ -83,7 +85,7 @@ export default function QuizPage() {
           body: JSON.stringify({ lessonId }),
         });
         const qd = await qr.json();
-        if (qd?.questions?.length) { setQuestions(qd.questions); setPhase("quiz"); }
+        if (qd?.questions?.length && typeof qd.quizId === "string") { setQuestions(qd.questions); setQuizId(qd.quizId); setPhase("quiz"); }
         else { setErrMsg("Couldn't generate quiz questions. Please try again."); setPhase("error"); }
       } catch { setErrMsg("Something went wrong. Please try again."); setPhase("error"); }
     })();
@@ -95,19 +97,10 @@ export default function QuizPage() {
 
     const q = questions[current];
     if (!q) return;
-    const result = {
-      questionId: q.id,
-      correct: selected === q.correctIndex,
-      score: selected === q.correctIndex ? 100 : 0,
-      maxScore: 100,
-      percentage: selected === q.correctIndex ? 100 : 0,
-      questionIndex: current,
-    };
-    const [event] = buildQuizQuestionEvidence(quizAttemptIdRef.current, lessonId, [result]);
-    if (event) void emitLearningEvent(event);
+    // Answer keys stay server-side during the quiz. Feedback is revealed after submission.
   }
 
-  function next() {
+  async function next() {
     if (selected === null) return;
     const newAnswers = [...answers, selected];
     setAnswers(newAnswers);
@@ -116,28 +109,87 @@ export default function QuizPage() {
       setSelected(null);
       setConfirmed(false);
     } else {
-      const finalCorrectCount = newAnswers.filter((a, i) => a === questions[i]?.correctIndex).length;
-      const finalPercentage = questions.length > 0 ? Math.round((finalCorrectCount / questions.length) * 100) : 0;
-      const completion = buildQuizCompletionEvidence({
-        quizAttemptId: quizAttemptIdRef.current,
-        lessonId,
-        percentage: finalPercentage,
-        questionCount: questions.length,
-        correctCount: finalCorrectCount,
-      });
-      void emitLearningEvent(completion);
+      try {
+        const response = await fetch("/api/learn/quiz/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ quizId, answers: newAnswers.map(selectedIndex => ({ selectedIndex })) }),
+        });
+        const result = await response.json();
+        if (response.ok && result?.verified === true && Number.isFinite(result.score) && result.score >= 0 && result.score <= 100 && Number.isInteger(result.correctCount) && result.correctCount >= 0 && Number.isInteger(result.questionCount) && result.questionCount === questions.length && result.correctCount <= result.questionCount) {
+          if (Array.isArray(result.questions) && result.questions.length === questions.length) setQuestions(result.questions);
+          setVerifiedResult({ score: result.score, correctCount: result.correctCount, questionCount: result.questionCount, verified: true, curriculumTracked: result.curriculumTracked === true, warning: typeof result.warning === "string" ? result.warning : undefined });
+          const completion = buildQuizCompletionEvidence({
+            quizAttemptId: quizAttemptIdRef.current,
+            lessonId,
+            percentage: result.score,
+            questionCount: result.questionCount,
+            correctCount: result.correctCount,
+          });
+          void emitLearningEvent(completion);
+        } else {
+          setVerifiedResult(null);
+          setErrMsg(result?.error ?? "Your answers were recorded locally, but the score could not be verified. Syllabus mastery was not updated.");
+        }
+      } catch {
+        setVerifiedResult(null);
+        setErrMsg("The score could not be verified because the connection failed. Syllabus mastery was not updated.");
+      }
       setPhase("results");
     }
   }
 
-  function restart() {
-    quizAttemptIdRef.current = createQuizAttemptId();
-    setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
+  async function restart() {
+    if (!token) return;
+    setPhase("generating");
+    try {
+      const response = await fetch("/api/learn/quiz", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lessonId }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.questions?.length || typeof data.quizId !== "string") throw new Error(data?.error ?? "Could not create a new quiz.");
+      quizAttemptIdRef.current = createQuizAttemptId();
+      setQuizId(data.quizId); setQuestions(data.questions); setVerifiedResult(null); setErrMsg("");
+      setCurrent(0); setSelected(null); setAnswers([]); setConfirmed(false); setPhase("quiz");
+    } catch (error) {
+      setErrMsg(error instanceof Error ? error.message : "Could not create a new quiz.");
+      setPhase("error");
+    }
+  }
+
+  async function recoverSubmission() {
+    if (!token || !quizId || answers.length !== questions.length || questions.length === 0) return;
+    setErrMsg("");
+    try {
+      const response = await fetch("/api/learn/quiz/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quizId, answers: answers.map(selectedIndex => ({ selectedIndex })) }),
+      });
+      const result = await response.json();
+      if (response.ok && result?.verified === true && Number.isFinite(result.score) &&
+          result.score >= 0 && result.score <= 100 && Number.isInteger(result.correctCount) &&
+          result.correctCount >= 0 && Number.isInteger(result.questionCount) &&
+          result.questionCount === questions.length && result.correctCount <= result.questionCount) {
+        if (Array.isArray(result.questions) && result.questions.length === questions.length) setQuestions(result.questions);
+        setVerifiedResult({
+          score: result.score, correctCount: result.correctCount, questionCount: result.questionCount,
+          verified: true, curriculumTracked: result.curriculumTracked === true,
+          warning: typeof result.warning === "string" ? result.warning : undefined,
+        });
+        setErrMsg("");
+      } else {
+        setErrMsg(result?.error ?? "The result is not recoverable yet. Please retry in a moment.");
+      }
+    } catch {
+      setErrMsg("Connection failed while recovering your result. Your answers are still available here; retry when connected.");
+    }
   }
 
   const q             = questions[current];
-  const correctCount  = answers.filter((a, i) => a === questions[i]?.correctIndex).length;
-  const pct           = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+  const correctCount  = verifiedResult?.correctCount ?? answers.filter((a, i) => a === questions[i]?.correctIndex).length;
+  const pct           = verifiedResult?.score ?? (questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0);
   const grade         = gradeInfo(pct);
   const earnedXP      = xpForScore(correctCount, questions.length);
 
@@ -184,20 +236,22 @@ export default function QuizPage() {
           <ArrowLeft size={14} /> Back to lesson
         </Link>
 
+        {verifiedResult ? <p style={{ color: verifiedResult.warning ? "var(--danger)" : verifiedResult.curriculumTracked ? "#34d399" : "var(--muted-foreground)", fontSize: 12, margin: "0 0 14px" }}>{verifiedResult.warning ?? (verifiedResult.curriculumTracked ? "Score verified and syllabus mastery updated." : "Score verified. This lesson is not linked to verified curriculum objectives, so syllabus mastery was not changed.")}</p> : <p style={{ color: "var(--danger)", fontSize: 12, margin: "0 0 14px" }}>{errMsg || "Score not verified. Syllabus mastery was not updated."}</p>}
+
         {/* Score hero */}
         <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), var(--card)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
           <div style={{ width: 68, height: 68, borderRadius: "50%", background: pct >= 80 ? "rgba(251,191,36,0.15)" : "rgba(113,140,83,0.15)", border: `2px solid ${pct >= 80 ? "rgba(251,191,36,0.35)" : "rgba(139,92,246,0.35)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
             <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#c4dc87"} />
           </div>
-          <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Quiz Complete</p>
-          <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
-          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{grade.label}</p>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{verifiedResult ? "Quiz Complete" : "Answers Submitted"}</p>
+          <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{verifiedResult ? `${pct}%` : "—"}</h1>
+          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{verifiedResult ? grade.label : "Awaiting verification"}</p>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 24 }}>
             {[
-              { val: `${correctCount}/${questions.length}`, label: "Correct",  color: "#34d399" },
-              { val: `+${earnedXP}`,                        label: "XP Earned", color: "#fbbf24" },
-              { val: `${questions.length - correctCount}`,  label: "Missed",   color: "var(--danger)" },
+              { val: verifiedResult ? `${correctCount}/${questions.length}` : "—", label: "Correct", color: "#34d399" },
+              { val: verifiedResult ? `+${earnedXP}` : "—", label: "XP Earned", color: "#fbbf24" },
+              { val: verifiedResult ? `${questions.length - correctCount}` : "—", label: "Missed", color: "var(--danger)" },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.val}</p>
@@ -207,6 +261,8 @@ export default function QuizPage() {
           </div>
         </div>
 
+        {verifiedResult ? (
+          <>
         {/* Per-question breakdown */}
         <h3 style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>
           Question Breakdown
@@ -230,7 +286,7 @@ export default function QuizPage() {
                   {!isCorrect && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", minWidth: 64 }}>Correct:</span>
-                      <span style={{ fontSize: 13, color: "#34d399", fontWeight: 600 }}>{q.options[q.correctIndex]}</span>
+                      <span style={{ fontSize: 13, color: "#34d399", fontWeight: 600 }}>{q.correctIndex !== undefined ? q.options[q.correctIndex] : "Answer unavailable"}</span>
                     </div>
                   )}
                 </div>
@@ -246,8 +302,16 @@ export default function QuizPage() {
           })}
         </div>
 
+          </>
+        ) : <p style={{ color: "var(--muted-foreground)", fontSize: 13, margin: "0 0 24px" }}>Answer review is unavailable because the server could not verify this attempt.</p>}
+
         {/* Actions */}
         <div style={{ display: "flex", gap: 10 }}>
+          {!verifiedResult && answers.length === questions.length && questions.length > 0 && (
+            <button onClick={recoverSubmission} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+              Recover Result
+            </button>
+          )}
           <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             <RotateCcw size={16} /> Retake
           </button>
@@ -262,7 +326,7 @@ export default function QuizPage() {
   // ── Quiz ─────────────────────────────────────────────────────────────────
 
   if (!q) return null;
-  const isCorrectAnswer = selected === q.correctIndex;
+  const isCorrectAnswer = q.correctIndex !== undefined && selected === q.correctIndex;
   const progressPct     = (current / questions.length) * 100;
 
   return (
@@ -309,8 +373,9 @@ export default function QuizPage() {
               let color  = "var(--muted-foreground)";
 
               if (confirmed) {
-                if (i === q.correctIndex)                             { bg = "rgba(52,211,153,0.12)";  border = "rgba(52,211,153,0.4)";  color = "#34d399"; }
-                else if (i === selected && selected !== q.correctIndex) { bg = "rgba(248,113,113,0.12)"; border = "rgba(248,113,113,0.4)"; color = "var(--danger)"; }
+                if (q.correctIndex !== undefined && i === q.correctIndex) { bg = "rgba(52,211,153,0.12)"; border = "rgba(52,211,153,0.4)"; color = "#34d399"; }
+                else if (q.correctIndex !== undefined && i === selected && selected !== q.correctIndex) { bg = "rgba(248,113,113,0.12)"; border = "rgba(248,113,113,0.4)"; color = "var(--danger)"; }
+                else if (i === selected) { bg = "rgba(113,140,83,0.15)"; border = "rgba(113,140,83,0.5)"; color = "#c4dc87"; }
               } else if (selected === i) {
                 bg = "rgba(113,140,83,0.15)"; border = "rgba(113,140,83,0.5)"; color = "#c4dc87";
               }
@@ -322,8 +387,8 @@ export default function QuizPage() {
                     {["A", "B", "C", "D"][i]}
                   </div>
                   <span style={{ fontSize: 14, lineHeight: 1.5, fontWeight: (selected === i || (confirmed && i === q.correctIndex)) ? 600 : 400 }}>{opt}</span>
-                  {confirmed && i === q.correctIndex && <CheckCircle2 size={16} color="#34d399" style={{ marginLeft: "auto", flexShrink: 0 }} />}
-                  {confirmed && i === selected && selected !== q.correctIndex && <XCircle size={16} color="var(--danger)" style={{ marginLeft: "auto", flexShrink: 0 }} />}
+                  {confirmed && q.correctIndex !== undefined && i === q.correctIndex && <CheckCircle2 size={16} color="#34d399" style={{ marginLeft: "auto", flexShrink: 0 }} />}
+                  {confirmed && q.correctIndex !== undefined && i === selected && selected !== q.correctIndex && <XCircle size={16} color="var(--danger)" style={{ marginLeft: "auto", flexShrink: 0 }} />}
                 </button>
               );
             })}
@@ -331,11 +396,13 @@ export default function QuizPage() {
 
           {/* Explanation after confirm */}
           {confirmed && (
-            <div style={{ borderRadius: 14, padding: "14px 16px", background: isCorrectAnswer ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)", border: `1px solid ${isCorrectAnswer ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, marginBottom: 20, animation: "fadeUp .2s ease" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: isCorrectAnswer ? "#34d399" : "var(--danger)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
-                {isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
+            <div style={{ borderRadius: 14, padding: "14px 16px", background: q.correctIndex === undefined ? "var(--surface-2)" : isCorrectAnswer ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)", border: `1px solid ${q.correctIndex === undefined ? "var(--card-border)" : isCorrectAnswer ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, marginBottom: 20, animation: "fadeUp .2s ease" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: q.correctIndex === undefined ? "var(--muted-foreground)" : isCorrectAnswer ? "#34d399" : "var(--danger)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
+                {q.correctIndex === undefined ? "Answer saved" : isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
               </p>
-              <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{q.explanation}</p>
+              <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>
+                {q.correctIndex === undefined ? "The correct answer and explanation will appear in your results after the final question." : q.explanation}
+              </p>
             </div>
           )}
 
@@ -356,7 +423,8 @@ export default function QuizPage() {
           <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 24 }}>
             {questions.map((_, i) => {
               let bg = "var(--card-border)";
-              if (i < answers.length) bg = answers[i] === questions[i].correctIndex ? "#34d399" : "var(--danger)";
+              if (i < answers.length && questions[i]?.correctIndex !== undefined) bg = answers[i] === questions[i].correctIndex ? "#34d399" : "var(--danger)";
+              else if (i < answers.length) bg = "var(--muted-foreground)";
               else if (i === current) bg = "#718c53";
               return <div key={i} style={{ width: i === current ? 22 : 8, height: 8, borderRadius: 999, background: bg, transition: "all .3s" }} />;
             })}
