@@ -226,6 +226,12 @@ export async function POST(req: Request) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
+    if (body?.learningMode === "classic") {
+      return NextResponse.json({
+        error: "Classic mode does not use generative AI for new lesson creation. Switch to Cortex AI or use available saved and verified resources.",
+        code: "CLASSIC_MODE_AI_DISABLED",
+      }, { status: 403 });
+    }
     const resolved = resolveLessonRequest({ prompt: body.prompt ?? body.topic ?? "", subject: body.subject, topic: body.topic, level: body.level, difficulty: body.difficulty, goal: body.goal, examBoard: body.examBoard });
     if (!resolved.prompt || resolved.prompt.length < 2) return NextResponse.json({ error: "Tell Cortex what you want to learn." }, { status: 400 });
     if (!resolved.subject) return NextResponse.json({ error: "Choose a subject so Cortex does not have to guess from a short prompt." }, { status: 400 });
