@@ -207,8 +207,9 @@ export function getExperienceNavGroups(
       ...group,
       items: group.items.filter(
         (item) =>
-          (experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp") &&
-          (item.href !== NAV_ITEMS.compLab.href || hasComputingSubject),
+          item.href === NAV_ITEMS.compLab.href
+            ? hasComputingSubject
+            : experience.allowedRoutes.includes(item.href) || item.href === "/whatsapp",
       ),
     }))
     .filter((group) => group.items.length > 0);
