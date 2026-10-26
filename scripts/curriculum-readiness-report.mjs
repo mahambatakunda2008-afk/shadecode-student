@@ -29,12 +29,13 @@ async function readTable(table, columns = "*") {
   }
 }
 
-const [versions, documents, coverage, objectives, sources] = await Promise.all([
+const [versions, documents, coverage, objectives, sources, ingestionRuns] = await Promise.all([
   readTable("curriculum_versions"),
   readTable("curriculum_documents"),
   readTable("curriculum_coverage_checks"),
   readTable("curriculum_objectives"),
   readTable("curriculum_sources"),
+  readTable("curriculum_ingestion_runs"),
 ]);
 
 const documentsById = new Map(documents.map((row) => [row.id, row]));
@@ -52,12 +53,27 @@ for (const row of objectives) {
   if (row.status === "verified") summary.verified += 1;
   objectivesByVersion.set(row.curriculum_version_id, summary);
 }
+const runsBySource = new Map();
+for (const run of ingestionRuns) {
+  const list = runsBySource.get(run.source_id) ?? [];
+  list.push(run);
+  runsBySource.set(run.source_id, list);
+}
+for (const runs of runsBySource.values()) {
+  runs.sort((a, b) => Date.parse(b.started_at ?? "") - Date.parse(a.started_at ?? ""));
+}
 
 const results = versions.map((version) => {
   const document = documentsById.get(version.source_document_id) ?? null;
   const source = document ? sourcesById.get(document.source_id) ?? null : null;
+  const sourceRuns = source ? runsBySource.get(source.id) ?? [] : [];
+  const latestRun = sourceRuns[0] ?? null;
   const coverageChecks = coverageByVersion.get(version.id) ?? [];
   const objectiveSummary = objectivesByVersion.get(version.id) ?? { total: 0, verified: 0 };
+  const expectedCoverageDimensions = Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)
+    && version.provenance.coveragePolicy.expectedDimensions > 0
+    ? version.provenance.coveragePolicy.expectedDimensions
+    : 29;
   const readiness = evaluateCurriculumReadiness({
     versionStatus: version.status,
     sourceDocumentId: version.source_document_id,
@@ -70,10 +86,7 @@ const results = versions.map((version) => {
       status: document.status,
     } : null,
     coverageChecks,
-    expectedCoverageDimensions: Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)
-      && version.provenance.coveragePolicy.expectedDimensions > 0
-      ? version.provenance.coveragePolicy.expectedDimensions
-      : 29,
+    expectedCoverageDimensions,
     objectiveCount: objectiveSummary.total,
     verifiedObjectiveCount: objectiveSummary.verified,
     provenance: version.provenance ?? {},
@@ -85,15 +98,20 @@ const results = versions.map((version) => {
     syllabusId: version.syllabus_id,
     syllabusVersion: version.syllabus_version,
     storedStatus: version.status,
-    expectedCoverageDimensions: Number.isInteger(version.provenance?.coveragePolicy?.expectedDimensions)
-      && version.provenance.coveragePolicy.expectedDimensions > 0
-      ? version.provenance.coveragePolicy.expectedDimensions
-      : 29,
+    expectedCoverageDimensions,
     sourceUrl: document?.url ?? source?.url ?? null,
     sourceAuthority: source?.authority ?? null,
     sourceAutoPromote: source?.auto_promote ?? null,
     documentStatus: document?.status ?? null,
     extractionStatus: document?.extraction_status ?? null,
+    ingestion: {
+      runsRecorded: sourceRuns.length,
+      failedRuns: sourceRuns.filter((run) => run.status === "failed").length,
+      latestStatus: latestRun?.status ?? null,
+      latestStartedAt: latestRun?.started_at ?? null,
+      latestCompletedAt: latestRun?.completed_at ?? null,
+      latestError: latestRun?.error ?? null,
+    },
     ...readiness,
   };
 }).sort((a, b) => `${a.board}/${a.syllabusId}/${a.syllabusVersion}`.localeCompare(`${b.board}/${b.syllabusId}/${b.syllabusVersion}`));
@@ -108,6 +126,9 @@ const report = {
     blocked: results.filter((row) => !row.ready).length,
     documentsWithoutText: documents.filter((row) => !row.extracted_text?.trim()).length,
     sourcesWithAutoPromote: sources.filter((row) => row.auto_promote === true).length,
+    ingestionRuns: ingestionRuns.length,
+    failedIngestionRuns: ingestionRuns.filter((run) => run.status === "failed").length,
+    sourcesWithoutIngestionRuns: sources.filter((source) => !(runsBySource.get(source.id)?.length)).length,
   },
   versions: results,
 };
