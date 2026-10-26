@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, BrainCircuit, Check, Sparkles } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import { getLearningMode, setLearningMode, type LearningMode } from "@/lib/learningMode";
 
 export function LearningModeCard() {
@@ -35,31 +35,27 @@ export function LearningModeCard() {
           </p>
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <button type="button" aria-pressed={mode === "classic"} onClick={() => choose("classic")}
-          className="ssc-card-interactive flex min-h-36 flex-col items-start gap-3 p-4 text-left"
-          style={{ borderColor: mode === "classic" ? "var(--primary)" : "var(--card-border)" }}>
-          <span className="flex w-full items-center justify-between gap-3">
-            <span className="flex items-center gap-2 font-semibold"><BookOpen size={19} aria-hidden="true" /> Classic</span>
-            {mode === "classic" && <Check size={18} aria-hidden="true" className="text-[var(--primary)]" />}
-          </span>
-          <span className="text-sm leading-5 text-[var(--muted-foreground)]">
-            Traditional study tools, saved lessons, curriculum resources, practice and past papers. No generative AI for lesson creation.
-          </span>
-          <span className="mt-auto rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold">AI generation off</span>
-        </button>
-        <button type="button" aria-pressed={mode === "ai"} onClick={() => choose("ai")}
-          className="ssc-card-interactive flex min-h-36 flex-col items-start gap-3 p-4 text-left"
-          style={{ borderColor: mode === "ai" ? "var(--primary)" : "var(--card-border)" }}>
-          <span className="flex w-full items-center justify-between gap-3">
-            <span className="flex items-center gap-2 font-semibold"><Sparkles size={19} aria-hidden="true" /> Cortex AI</span>
-            {mode === "ai" && <Check size={18} aria-hidden="true" className="text-[var(--primary)]" />}
-          </span>
-          <span className="text-sm leading-5 text-[var(--muted-foreground)]">
-            Opt in to AI-assisted lesson generation. Saved lessons, curriculum resources and practice tools remain available.
-          </span>
-          <span className="mt-auto rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold">AI generation on</span>
-        </button>
+      <div className="flex flex-col gap-4 rounded-2xl border border-[var(--card-border)] bg-[var(--surface-2)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold">{mode === "ai" ? "Cortex AI is on" : "Classic mode is on"}</p>
+          <p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">
+            {mode === "ai" ? "New lessons may use AI generation." : "New lessons use available saved or verified resources, without generative AI."}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 self-start sm:self-center">
+          <span className={`text-sm font-semibold ${mode === "classic" ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>Classic</span>
+          <button
+            type="button"
+            role="switch"
+            aria-label="Enable Cortex AI"
+            aria-checked={mode === "ai"}
+            onClick={() => choose(mode === "ai" ? "classic" : "ai")}
+            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 ${mode === "ai" ? "border-[var(--primary)] bg-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--surface)]"}`}
+          >
+            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${mode === "ai" ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+          <span className={`text-sm font-semibold ${mode === "ai" ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>Cortex AI</span>
+        </div>
       </div>
       <p role="status" aria-live="polite" className="mt-3 text-sm text-[var(--muted-foreground)]">
         Current choice: <strong className="text-[var(--foreground)]">{mode === "ai" ? "Cortex AI" : "Classic"}</strong>.
