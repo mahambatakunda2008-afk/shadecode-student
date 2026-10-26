@@ -4,7 +4,6 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { executeCortexText } from "@/lib/cortex/runtime/execution";
 import { applyRateLimit, aiEndpointLimiter } from "@/lib/rate-limit/limiter";
-import { awardXPBySource } from "@/lib/xp/manager";
 import { resolveLessonRequest, buildResolvedLessonPrompt } from "@/lib/cortex/lessonRequest";
 import { lessonQualityFailures } from "@/lib/cortex/lessonQuality";
 import { buildDeepLessonPrompt, buildLessonRepairPrompt } from "@/lib/learn/contentQuality";
@@ -73,6 +72,10 @@ function extractObject(raw: string): string | null {
   return null;
 }
 
+const SUPPORTED_LESSON_DIAGRAMS = new Set([
+  "coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values", "particle-model", "cell-structure", "flowchart", "series-circuit",
+]);
+
 function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | null {
   const candidate = extractObject(raw);
   if (!candidate) return null;
@@ -82,7 +85,9 @@ function parseLesson(raw: string): { title: string; blocks: LessonBlock[] } | nu
     const blocks = value.blocks.filter((block): block is LessonBlock => {
       if (!block || typeof block !== "object") return false;
       const item = block as LessonBlock;
-      return typeof item.type === "string" && typeof item.content === "string" && item.content.trim().length >= 30;
+      if (typeof item.type !== "string" || typeof item.content !== "string") return false;
+      if (item.type.trim().toLowerCase() === "diagram") return SUPPORTED_LESSON_DIAGRAMS.has(item.content.trim());
+      return item.content.trim().length >= 30;
     }).slice(0, 24);
     return blocks.length >= 8 ? { title: value.title.trim().slice(0, 255), blocks: normalizeLessonBlocks(blocks) } : null;
   } catch { return null; }
@@ -120,6 +125,9 @@ The exact learner request remains the authority for intent. For a broad topic, u
 PRESENTATION
 This is a learning interface, not an essay. Keep blocks purposeful and scannable. Use short lines, explicit reasoning, worked steps, checkpoints, misconceptions, synthesis and curiosity. Do not pad the lesson merely to hit a number.
 
+VISUAL TEACHING
+When a visual materially improves understanding, include a dedicated block with type "diagram". Its content MUST be exactly one supported diagram key: "coordinate-plane" for coordinate geometry/gradient, "wave-shape" for wave amplitude/wavelength, "force-pairs" for Newton's third-law pairs, "root-bracket" for numerical root bracketing, "unit-circle" for trigonometric identities, "binary-place-values" for binary number systems, "particle-model" for states of matter/particle theory, "cell-structure" for cell biology, "flowchart" for algorithms, or "series-circuit" for simple series circuits. Give the block a descriptive title. Do not emit unsupported diagram keys or claim a diagram exists when it does not. The lesson must still explain the visual in words and label what the learner should notice. If none of these diagrams fits the topic, do not force one.
+
 ${buildPresentationGuidance(request.subject || "General", request.topic)}
 
 MATH NOTATION
@@ -127,7 +135,7 @@ Any mathematical expression must use single-dollar LaTeX delimiters. Never use c
 
 OUTPUT
 Return ONLY JSON:
-{"title":"specific title that names the actual topic and learning outcome","blocks":[{"type":"objective|map|prior|concept|definition|structure|mechanism|formula|example|comparison|checkpoint|misconception|application|exam|mistake|synthesis|curiosity|summary|practice|next","title":"short content-specific heading","content":"substantive student-facing content"}]}`;
+{"title":"specific title that names the actual topic and learning outcome","blocks":[{"type":"diagram|objective|map|prior|concept|definition|structure|mechanism|formula|example|comparison|checkpoint|misconception|application|exam|mistake|synthesis|curiosity|summary|practice|next","title":"short content-specific heading","content":"substantive student-facing content"}]}`;
   }
 
   const context = buildResolvedLessonPrompt(request);
@@ -150,6 +158,9 @@ CORE RULES
 PRESENTATION
 Use 8-14 purposeful blocks for standard requests. Use short scannable lines. Worked examples use Given:, Method:, Step 1:, Step 2:, Answer:. Checkpoints use Question: and Think:. Avoid wall-of-text paragraphs and artificial template headings.
 
+VISUAL TEACHING
+When a visual materially improves understanding, include a dedicated block with type "diagram". Its content MUST be exactly one supported diagram key: "coordinate-plane" for coordinate geometry/gradient, "wave-shape" for wave amplitude/wavelength, "force-pairs" for Newton's third-law pairs, "root-bracket" for numerical root bracketing, "unit-circle" for trigonometric identities, "binary-place-values" for binary number systems, "particle-model" for states of matter/particle theory, "cell-structure" for cell biology, "flowchart" for algorithms, or "series-circuit" for simple series circuits. Give the block a descriptive title. Do not emit unsupported diagram keys or claim a diagram exists when it does not. The lesson must still explain the visual in words and label what the learner should notice. If none of these diagrams fits the topic, do not force one.
+
 ${buildPresentationGuidance(request.subject, request.topic)}
 
 MATH NOTATION
@@ -157,7 +168,7 @@ Any mathematical expression must use single-dollar LaTeX delimiters. Never use c
 
 OUTPUT
 Return ONLY JSON:
-{"title":"specific title that names the actual topic and learning outcome","blocks":[{"type":"objective|prior|concept|definition|formula|example|checkpoint|comparison|misconception|exam|application|mistake|practice|summary|tip","title":"short content-specific heading","content":"substantive student-facing content"}]}`;
+{"title":"specific title that names the actual topic and learning outcome","blocks":[{"type":"diagram|objective|prior|concept|definition|formula|example|checkpoint|comparison|misconception|exam|application|mistake|practice|summary|tip","title":"short content-specific heading","content":"substantive student-facing content"}]}`;
 }
 
 // Combined ceiling for primary + repair, leaving margin under the route's maxDuration (60s) for
@@ -239,7 +250,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "The lesson was generated but could not be saved." }, { status: 500 });
     }
 
-    await awardXPBySource(auth.user.id, "lesson_generation", { difficulty: generationRequest.difficulty });
     return NextResponse.json({ id: inserted.id, title: parsed.title, blocks: parsed.blocks, subject: authorizedSubject, subjectId });
   } catch (error) {
     log.apiFailure({ route: "/api/learn/generate", method: "POST", error: error instanceof Error ? error.message : String(error), userId: auth?.user.id });

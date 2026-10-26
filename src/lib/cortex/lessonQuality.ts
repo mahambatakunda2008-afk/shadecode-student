@@ -52,7 +52,9 @@ function topicTokens(request: LessonQualityRequest) {
 
 function hasTopicSignal(block: { title?: string; content: string }, tokens: string[]) {
   const text = `${block.title ?? ""} ${block.content}`.toLowerCase();
-  return tokens.some(token => text.includes(token));
+  return tokens.some(token => text.includes(token)
+    || (token.endsWith("s") && token.length > 4 && text.includes(token.slice(0, -1)))
+    || (!token.endsWith("s") && token.length > 4 && text.includes(`${token}s`)));
 }
 
 function hasAnswerLeak(content: string) {
@@ -72,6 +74,25 @@ export function lessonQualityFailures(lesson: { blocks: LessonQualityBlock[]; ti
   const failures: string[] = [];
   const has = (...names: string[]) => names.some(name => types.has(name));
   const tokens = topicTokens(request);
+
+  const diagramBlocks = normalized.filter(block => block.normalizedType === "diagram");
+  const supportedDiagrams = new Set(["coordinate-plane", "wave-shape", "force-pairs", "root-bracket", "unit-circle", "binary-place-values", "particle-model", "cell-structure", "flowchart", "series-circuit"]);
+  if (diagramBlocks.some(block => !supportedDiagrams.has(block.content.trim()))) failures.push("unsupported-diagram");
+  const topicLower = request.topic.toLowerCase();
+  const subjectLower = request.subject.toLowerCase();
+  const requiredDiagram = /coordinate geometry|gradient|straight.line equation/.test(topicLower) ? "coordinate-plane"
+    : /\bwaves?\b|amplitude|wavelength/.test(topicLower) ? "wave-shape"
+    : /newton.s laws|newton.s third law|action.reaction/.test(topicLower) ? "force-pairs"
+    : /numerical solution|bisection|root.bracketing/.test(topicLower) ? "root-bracket"
+    : /trigonometric identities|trigonometry/.test(topicLower) ? "unit-circle"
+    : /binary number systems|binary conversion/.test(topicLower) ? "binary-place-values"
+    : /biology/.test(subjectLower) && /cell|organelles|plant cell|animal cell/.test(topicLower) ? "cell-structure"
+    : /chemistry/.test(subjectLower) && /particle theory|states of matter|particle model|diffusion/.test(topicLower) ? "particle-model"
+    : /computer science/.test(subjectLower) && /algorithm|flowchart|selection|iteration|pseudocode/.test(topicLower) ? "flowchart"
+    : /physics/.test(subjectLower) && /series circuit|electric circuit|circuit diagrams|ohm.s law|resistance in series|current electricity/.test(topicLower) ? "series-circuit" : null;
+  if (request.intent === "teach" && requiredDiagram && !diagramBlocks.some(block => block.content.trim() === requiredDiagram)) {
+    failures.push("missing-relevant-diagram");
+  }
 
   const broadOrDeep = request.broadTopic || request.depth === "deep";
   if (normalized.length > (broadOrDeep ? 24 : 18)) failures.push("too-many-blocks");

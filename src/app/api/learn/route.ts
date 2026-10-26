@@ -16,7 +16,6 @@ import { lessonQualityFailures, normalizeLessonBlockType } from "@/lib/cortex/le
 import { buildDeterministicLessonFallback } from "@/lib/cortex/lessonFallback";
 import { sanitizeLessonText } from "@/lib/cortex/sanitizeLessonText";
 import { buildLearnerBrainContext, normalizeLearnerTopic, rememberLearnerSignal } from "@/lib/learn/learnerBrain";
-import { runBestEffortSideEffects } from "@/lib/learn/runBestEffortSideEffects";
 import { buildPresentationGuidance } from "@/lib/learn/presentationGuidance";
 
 export const dynamic = "force-dynamic";
@@ -364,7 +363,8 @@ export async function POST(req: Request) {
             ? `Curated curriculum recovery lesson on ${request.topic}. This lesson uses authored material while AI generation is unavailable.`
             : `A deep ${validDifficulty} lesson on ${request.topic}`,
           p_difficulty: validDifficulty,
-          p_progress: 100,
+          // Generation completion is not learner completion. Start at 0%; progress advances as the student studies.
+          p_progress: 0,
           p_completed_units: generationSectionCount,
           p_total_units: generationSectionCount,
           p_blocks: persistableCandidate.blocks,
@@ -415,24 +415,6 @@ export async function POST(req: Request) {
         }
         savedId = inserted.id;
       }
-
-      // The lesson is already durably saved at this point. Memory and XP are best-effort
-      // side effects; neither may turn a successful save into a learner-visible generation failure.
-      await runBestEffortSideEffects([
-        rememberLearnerSignal(supabase, user.id, {
-          subject: effectiveSubject,
-          topic: request.topic,
-          topic_key: learnerTopicKey,
-          event_type: "lesson_completed",
-          outcome: "saved",
-          difficulty: validDifficulty,
-        }),
-        awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
-      ], (error) => {
-        console.warn("[LEARN] post-save side effect failed; lesson remains complete", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      });
 
       return NextResponse.json({
         id: savedId,
@@ -796,7 +778,7 @@ Repair only the defective section. Preserve correct material where possible. Do 
     let raw: string | null = null;
     try {
       raw = await executeCortexText(prompt, 5000, { operation: "lesson.generate_deep", userId: user.id,
-        maxChainMs: 24000, perProviderMaxMs: 6500,
+        maxChainMs: 24000, perProviderMaxMs: 6500, shareChainBudget: true,
         recovery: { hasCheckpoint: Boolean(durableJobId), supportsRepair: false },
       });
     } catch (error) {
@@ -822,7 +804,7 @@ REPAIR PASS: ${repairAttempt + 1}
 Do not rewrite good material just for variety. Fix the named defects. Preserve accurate explanations, examples and reasoning. The repaired lesson must be internally coherent and must pass the quality gate, not merely contain more blocks.
 Return only valid JSON.`;
           const repaired = await executeCortexText(repairPrompt, 4600, { operation: "lesson.repair_targeted", userId: user.id,
-            maxChainMs: 16000, perProviderMaxMs: 6000,
+            maxChainMs: 16000, perProviderMaxMs: 6000, shareChainBudget: true,
             recovery: { hasCheckpoint: Boolean(durableJobId), supportsRepair: true },
           });
           const repairedParsed = repaired ? safeParseJSON(repaired) : null;
@@ -914,7 +896,10 @@ Return only valid JSON.`;
     if (durableJobId) {
       const { data: updated, error } = await supabase.from("learn_lessons")
         .update(lessonRow).eq("id", durableJobId).eq("user_id", user.id).select("id").maybeSingle();
-      savedId = updated?.id ?? durableJobId;
+      // A requested update is not proof of persistence: maybeSingle() can return null
+      // without an error when no user-owned row matched. Never report a durable ID
+      // unless the database confirms that the row was actually updated.
+      savedId = updated?.id ?? null;
       saveError = error;
     } else {
       const { data: inserted, error } = await supabase.from("learn_lessons").insert(lessonRow).select("id").single();
@@ -925,26 +910,6 @@ Return only valid JSON.`;
       log.lessonGenerationFailed({ userId: user.id, subject: effectiveSubject, topic, difficulty: validDifficulty, error: `Failed to save lesson: ${saveError?.message || "no lesson id"}` });
       return NextResponse.json({ error: "The lesson was generated but could not be saved. Cortex will retry safely.", retryable: true }, { status: 500 });
     }
-    // The lesson row is durable. Memory and XP are secondary effects and cannot
-    // turn a successful save into a failed request that invites duplicate work.
-    await runBestEffortSideEffects([
-      rememberLearnerSignal(supabase, user.id, {
-        subject: effectiveSubject,
-        topic: request.topic,
-        topic_key: learnerTopicKey,
-        event_type: "lesson_completed",
-        outcome: "saved",
-        difficulty: validDifficulty,
-      }),
-      awardXPBySource(user.id, "lesson_generation", { difficulty: validDifficulty }),
-    ], (error, index) => {
-      console.warn(index === 0
-        ? "[LEARN] lesson saved but completion signal could not be recorded"
-        : "[LEARN] lesson saved but generation XP could not be awarded", {
-        lessonId: savedId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
     return NextResponse.json({
       id: savedId,
       title: sanitizeLessonText(parsed.title),
@@ -961,9 +926,32 @@ Return only valid JSON.`;
 
 export async function PATCH(req: Request) {
   try {
-    const auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { supabase, user } = auth; const { lessonId, progress } = await req.json(); if (!lessonId || typeof progress !== "number") return NextResponse.json({ error: "Missing lessonId or progress" }, { status: 400 });
-    const clamped = Math.min(100, Math.max(0, Math.round(progress))); const { error } = await supabase.from("learn_lessons").update({ progress: clamped, updated_at: new Date().toISOString() }).eq("id", lessonId).eq("user_id", user.id);
-    if (error) return NextResponse.json({ error: "Failed to update progress" }, { status: 500 }); if (clamped === 100) await awardXPBySource(user.id, "lesson_completion"); return NextResponse.json({ success: true, progress: clamped });
-  } catch { return NextResponse.json({ error: "Something went wrong" }, { status: 500 }); }
+    const auth = await authenticateRequest(req);
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { supabase, user } = auth;
+    const { lessonId, progress } = await req.json();
+    if (typeof lessonId !== "string" || !lessonId.trim() || typeof progress !== "number" || !Number.isFinite(progress)) {
+      return NextResponse.json({ error: "Missing or invalid lessonId or progress" }, { status: 400 });
+    }
+
+    const clamped = Math.min(100, Math.max(0, Math.round(progress)));
+    const { data: updated, error } = await supabase
+      .from("learn_lessons")
+      .update({ progress: clamped, updated_at: new Date().toISOString() })
+      .eq("id", lessonId)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) return NextResponse.json({ error: "Failed to update progress" }, { status: 500 });
+    // PostgREST can return no error when RLS/user scoping matches zero rows.
+    // Never report progress saved or award completion XP without a confirmed row.
+    if (!updated?.id) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+
+    if (clamped === 100) await awardXPBySource(user.id, "lesson_completion");
+    return NextResponse.json({ success: true, lessonId: updated.id, progress: clamped });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
 }

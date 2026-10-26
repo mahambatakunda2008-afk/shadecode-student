@@ -83,6 +83,21 @@ function resetTimedOutEngine(message: string) {
   console.warn("[CORTEX] browser-local model exceeded its time budget", { message });
 }
 
+function resetUnloadedEngine(message: string) {
+  // WebLLM can leave a worker engine alive but internally unloaded. Reusing that
+  // resolved enginePromise makes every later request fail with ModelNotLoadedError.
+  worker?.terminate();
+  worker = null;
+  enginePromise = null;
+  publish("available", 0);
+  console.warn("[CORTEX] browser-local engine will be re-created after an unloaded-model error", { message });
+}
+
+function isModelNotLoadedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /ModelNotLoadedError|model not loaded before trying to complete|MLCEngine\.reload/i.test(message);
+}
+
 export function getBrowserLocalModelStatus() {
   return { status, progress: loadProgress, modelId: LOCAL_MODEL_ID };
 }
@@ -207,7 +222,8 @@ export async function generateBrowserLocal(
   context?: CortexContext,
   options?: { maxTokens?: number; json?: boolean },
 ) {
-  const engine = await loadEngine();
+  let engine = await loadEngine();
+  let recoveredUnloadedEngine = false;
   const system =
     "You are Cortex, an educational reasoning engine inside Shadecode Student. " +
     "Teach accurately, deeply, and step-by-step. Respect the learner's curriculum and context. " +
@@ -221,26 +237,49 @@ export async function generateBrowserLocal(
       ? prompt
       : `Your previous response was not valid JSON. Repair it and return ONLY one valid JSON object matching the exact schema requested in the task. Do not add markdown fences, commentary, or prose outside the JSON.\n\nPREVIOUS RESPONSE:\n${lastText.slice(0, 12000)}\n\nORIGINAL TASK:\n${prompt}`;
 
+    const request = {
+      messages: [
+        { role: "system" as const, content: system },
+        { role: "user" as const, content: userPrompt },
+      ],
+      temperature: attempt === 0 ? 0.25 : 0.1,
+      max_tokens: options?.maxTokens ?? 900,
+      // Do not pass response_format: { type: "json_object" } to WebLLM.
+      // Its grammar matcher currently fails during initialization in some browsers.
+      // JSON is requested in the prompt and validated locally below instead.
+    };
     let result: Awaited<ReturnType<typeof engine.chat.completions.create>>;
     try {
       result = await withTimeout(
-        engine.chat.completions.create({
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: attempt === 0 ? 0.25 : 0.1,
-          max_tokens: options?.maxTokens ?? 900,
-          ...(options?.json ? { response_format: { type: "json_object" as const } } : {}),
-        }),
+        engine.chat.completions.create(request),
         INFERENCE_TIMEOUT_MS,
         "Browser-local inference exceeded 90 seconds. Cortex will leave this lane and use recovery instead.",
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes("exceeded 90 seconds")) {
         resetTimedOutEngine("inference timeout");
+        throw error;
       }
-      throw error;
+
+      if (isModelNotLoadedError(error) && !recoveredUnloadedEngine) {
+        recoveredUnloadedEngine = true;
+        resetUnloadedEngine("ModelNotLoadedError");
+        engine = await loadEngine();
+        try {
+          result = await withTimeout(
+            engine.chat.completions.create(request),
+            INFERENCE_TIMEOUT_MS,
+            "Browser-local inference exceeded 90 seconds after model recovery. Cortex will leave this lane and use recovery instead.",
+          );
+        } catch (retryError) {
+          if (retryError instanceof Error && retryError.message.includes("exceeded 90 seconds")) {
+            resetTimedOutEngine("inference timeout after model recovery");
+          }
+          throw retryError;
+        }
+      } else {
+        throw error;
+      }
     }
 
     lastText = result.choices?.[0]?.message?.content?.trim() ?? "";

@@ -61,9 +61,9 @@ export interface CallAIOptions {
   media?: Array<{ mimeType: string; data: string }>;
   /**
    * For long generations: let each configured first-class provider (Gateway, Groq, OpenRouter, Cloudflare)
-   * use an equal share of the remaining chain time, never less than perProviderMaxMs, instead of a fixed cap.
-   * A fixed cap aborts a healthy provider mid-answer (observed: Cloudflare calls cut off at ~6s while its
-   * short answers succeeded). Every attempt is still bounded by the hard timeout in tryProvider.
+   * use a fair share of the remaining chain time, capped so one slow provider cannot consume the whole
+   * chain. Gemini keeps the normal per-provider cap because recent lesson telemetry showed repeated
+   * aborts and no successful lesson responses across many attempts. Every attempt is hard-bounded.
    */
   shareChainBudget?: boolean;
 }
@@ -150,21 +150,28 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (process.env.GROQ_API_KEY) shareable.add("groq");
     if (process.env.OPENROUTER_API_KEY) shareable.add("openrouter");
     if (process.env.CLOUDFLARE_API_TOKEN) shareable.add("cloudflare");
+    // Keep direct Gemini outside the shared-budget pool until it demonstrates reliable lesson
+    // success. Recent production telemetry recorded 0 successful lesson responses across 64 attempts;
+    // a slow Gemini request must not consume the time reserved for other providers or repair.
   }
   const attempted = new Set<string>();
+  const SHAREABLE_PROVIDER_MAX_MS = 10000;
   const providerTimeout = (provider: string) => {
     const fixed = Math.min(perProviderMaxMs, remaining());
     // A provider's repeat attempt (e.g. a fallback model) and non-shareable providers keep the fixed cap.
     if (!shareable.has(provider) || attempted.has(provider)) return fixed;
     const waiting = [...shareable].filter(name => !attempted.has(name)).length || 1;
-    return Math.min(remaining(), Math.max(perProviderMaxMs, Math.floor(remaining() / waiting)));
+    const fairShare = Math.max(perProviderMaxMs, Math.floor(remaining() / waiting));
+    // Keep room for the next independent provider. A 32s chain must not give one slow call 15-20s
+    // while the remaining providers receive only crumbs.
+    return Math.min(remaining(), SHAREABLE_PROVIDER_MAX_MS, fairShare);
   };
   const canTry = () => remaining() >= 1000;
   // Grace period on top of the provider's declared budget before the hard race below gives up on it.
   const HARD_TIMEOUT_GRACE_MS = 250;
-  async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>): Promise<string | null> {
+  async function tryProvider(provider: string, model: string, request: (timeout: number) => Promise<string | null>, breakerScope = provider): Promise<string | null> {
     if (!canTry()) return null;
-    const breaker = providerBreaker(provider);
+    const breaker = providerBreaker(breakerScope);
     if (!breaker.shouldAttempt()) { attempted.add(provider); return null; }
     const startTime = Date.now();
     const timeout = providerTimeout(provider);
@@ -337,28 +344,49 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
 
   // Direct Google fallback remains deliberately small and stable. Do not add
   // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
-  const geminiKeys = [process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY_4].filter(Boolean) as string[];
-  const geminiModels = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
+  // Try the newest explicitly configured backup first; it is intended to recover when older keys hit quota or model pressure.
+  const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
+  // 3.7 is retired and automatically routes to 3.8, so it is not an independent fallback.
+  // Flash-Lite is a distinct high-throughput option when the main Flash models are saturated.
+  const geminiModels = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"];
 
-  async function callGemini(key: string, model: string): Promise<string | null> {
+  // A 503 is a model-capacity signal, not usually an API-key-specific failure.
+  // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
+  const unavailableGeminiModels = new Set<string>();
+  async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
+    if (unavailableGeminiModels.has(model)) return null;
     return tryProvider("gemini", model, async timeout => {
-      const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: groundedPrompt },
-              ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
-            ],
-          }],
-          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
-        }),
-      }, Math.min(timeout, 6500));
-      if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+      let res: Response;
+      try {
+        res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: groundedPrompt },
+                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+              ],
+            }],
+            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
+          }),
+        }, timeout);
+      } catch (error) {
+        // An aborted request is not proof the key is bad, but retrying the same slow model with
+        // every backup key wastes this request's entire budget. Try a different model instead.
+        if (error instanceof Error && (error.name === "AbortError" || /timeout|aborted/i.test(error.message))) {
+          unavailableGeminiModels.add(model);
+        }
+        throw error;
+      }
+      if (!res.ok) {
+        const detail = (await res.text().catch(() => "")).slice(0, 300);
+        if (res.status === 503) unavailableGeminiModels.add(model);
+        throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
+      }
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
-    });
+    }, `gemini:${model}:key-${keyIndex + 1}`);
   }
 
   // Text fallback order after Gateway: Groq (fast, free, independent vendor), then OpenRouter,
@@ -369,7 +397,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   for (const model of geminiModels) {
     for (const key of geminiKeys) {
       if (!canTry()) break;
-      const text = await callGemini(key, model);
+      const text = await callGemini(key, model, geminiKeys.indexOf(key));
       if (text) return text;
     }
     if (!canTry()) break;

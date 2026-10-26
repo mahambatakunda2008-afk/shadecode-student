@@ -13,6 +13,7 @@ import {
   Music, Palette,
 } from "lucide-react";
 import SocraticTutor from "@/components/SocraticTutor";
+import LessonDiagram from "@/components/learn/LessonDiagram";
 import { downloadManager } from "@/lib/offline/downloadManager";
 import { offlineStorage } from "@/lib/offline/storage";
 import { useAchievementsContext } from "@/contexts/AchievementsContext";
@@ -45,9 +46,9 @@ const THEMES: Record<string, Theme> = {
 const DIFF: Record<string, { label: string; text: string }> = {
   easy: { label: "Guided", text: "var(--primary)" }, medium: { label: "Standard", text: "var(--text-secondary)" }, hard: { label: "Challenge", text: "var(--accent)" },
 };
-const FLOW = new Set(["objective", "map", "prior", "concept", "definition", "structure", "mechanism", "formula", "math", "example", "exam", "summary", "application", "comparison", "synthesis", "curiosity", "practice", "next"]);
+const FLOW = new Set(["diagram", "objective", "map", "prior", "concept", "definition", "structure", "mechanism", "formula", "math", "example", "exam", "summary", "application", "comparison", "synthesis", "curiosity", "practice", "next"]);
 const LABELS: Record<string, string> = {
-  objective: "Learning objectives", map: "The big picture", prior: "Before you begin", concept: "Core idea", definition: "Key definitions",
+  diagram: "Visual explanation", objective: "Learning objectives", map: "The big picture", prior: "Before you begin", concept: "Core idea", definition: "Key definitions",
   structure: "Structure and patterns", mechanism: "How it works",
   synthesis: "Put it together", curiosity: "Go deeper", next: "Where to go next",
   formula: "Formula / method", math: "Formula / method", example: "Worked example", application: "Apply it",
@@ -162,7 +163,7 @@ function LessonUnit({ block, number, id }: { block: LessonBlock; number: number;
   return (
     <section className="lesson-unit" id={id} tabIndex={-1} aria-labelledby={`${id}-title`}>
       <div className="unit-kicker"><span>{String(number).padStart(2, "0")}</span><span id={`${id}-title`}>{heading}</span></div>
-      <div className="unit-body">{renderStructured(block.content, block.type)}</div>
+      <div className="unit-body">{block.type === "diagram" ? <LessonDiagram kind={block.content} title={block.title} /> : renderStructured(block.content, block.type)}</div>
     </section>
   );
 }
@@ -307,6 +308,7 @@ export default function LessonDetailPage() {
     <div className="lesson-page" style={{ "--lesson-accent": t.hex, "--lesson-soft": t.bg, "--lesson-border": t.border } as React.CSSProperties}>
       <style>{`
         .lesson-page{min-height:100vh;background:var(--background);color:var(--foreground)}
+        .lesson-diagram{margin:8px 0 4px}.lesson-diagram-frame{border:1px solid var(--lesson-border);border-radius:16px;padding:clamp(8px,2vw,18px);background:color-mix(in srgb,var(--lesson-soft) 35%,var(--background));overflow:hidden}.lesson-diagram-svg{display:block;width:100%;height:auto;max-height:360px;color:var(--foreground)}.lesson-diagram figcaption{font-size:12px;color:var(--text-secondary);margin-top:8px;text-align:center}.lesson-diagram-fallback{padding:16px;border:1px dashed var(--lesson-border);border-radius:12px;color:var(--text-secondary)}
         .lesson-shell{width:min(860px,100%);margin:auto;padding:24px 18px 72px}
         .lesson-back{display:inline-flex;align-items:center;gap:7px;color:var(--muted-foreground);font-size:13px;text-decoration:none;margin-bottom:22px}
         .lesson-hero{border:1px solid var(--border-subtle);border-radius:20px;background:var(--surface-raised);overflow:hidden;margin-bottom:28px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
