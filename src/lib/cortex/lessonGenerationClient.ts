@@ -812,7 +812,7 @@ async function runJob(
     // Classic mode deliberately avoids cloud and browser-local generative models.
     // It can use authored lessons, verified curriculum recovery, and shared study resources.
     if (classicMode) {
-      let classicLesson: { title: string; blocks: Array<Record<string, unknown>> } | null = buildDeterministicLessonFallback(job.request.subject, job.request.prompt);
+      let classicLesson: { title: string; blocks: Array<Record<string, unknown>> } | null = buildDeterministicLessonFallback(job.request.subject, job.request.prompt) as { title: string; blocks: Array<Record<string, unknown>> } | null;
       if (!classicLesson && online) {
         classicLesson = await fetchLibraryRecovery(job.request.subject, job.request.prompt, "/api/library/recover", 6000, token);
       }
