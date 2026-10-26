@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // The challenger practising their own paper is marked but never recorded as a battle.
     if (user.id !== challenge.challenger_id) {
       const { data: profile } = await supabase.from('profiles').select('username, display_name').eq('id', user.id).maybeSingle()
-      const { error } = await supabase.from('challenge_attempts').insert({
+      const { error: saveError } = await admin.from('challenge_attempts').insert({
         challenge_id: challengeId,
         user_id: user.id,
         user_name: profile?.username ?? profile?.display_name ?? 'A student',
@@ -83,14 +83,17 @@ export async function POST(request: NextRequest) {
         won,
         verified: true,
       })
-      if (error) console.error('[challenge/mark insert]', error)
+      if (saveError) {
+        console.error('[challenge/mark save]', saveError)
+        return NextResponse.json({ error: 'Your marked attempt could not be saved. Please retry.', retryable: true }, { status: 503 })
+      }
     }
 
-    // Learning loop: each question's outcome, with the key's generator id and any diagnosed mistake.
+    // Learning signals are recorded only after any required battle attempt was saved.
     const keyById = new Map((keyRow.key as KeyEntry[]).map((entry) => [entry.id, entry]))
     await recordSignalsServer(supabase, user.id, signalsFromMarkedPaper(playSet.map((question) => ({ ...question, ...keyById.get(question.id) })) as never, marked.results, 'battle'))
 
-    return NextResponse.json({ ...marked, won, verified: true })
+    return NextResponse.json({ ...marked, won, verified: true, saved: user.id === challenge.challenger_id ? false : true })
   } catch (error) {
     console.error('[challenge/mark]', error)
     return NextResponse.json({ error: 'Marking failed. Please try again.', retryable: true }, { status: 500 })
