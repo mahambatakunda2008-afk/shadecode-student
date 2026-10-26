@@ -58,6 +58,12 @@ export async function POST(req: Request) {
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
+  if (body?.learningMode === "classic") {
+    return NextResponse.json({
+      error: "Classic mode does not use generative AI to create new revision packs. Use existing revision resources or switch to Cortex AI.",
+      code: "CLASSIC_MODE_AI_DISABLED",
+    }, { status: 403 });
+  }
 
   const validation = validateRequestBody(body, generateRevisionSchema);
   if (!validation.success || !validation.data) {
