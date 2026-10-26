@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-10-26  
 **Scope:** Repository architecture for preloaded educational content, lesson reuse, Classic mode, curriculum alignment, and offline access.  
-**Evidence boundary:** This audit inspects the checked-in repository and migration definitions. It does not query production Supabase row counts, run the app, or verify a live deployment. Counts and runtime availability must not be inferred from schema or source files alone.
+**Evidence boundary:** Repository files and a read-only query against the active production Supabase project were inspected. The database counts below are live query results; this audit does not run the app or verify a live deployment.
 
 ## Executive finding
 
@@ -65,6 +65,57 @@ The target should be a layered system:
 5. **Learner state:** progress, mistakes, retention, mastery and next actions remain separate from the canonical content asset.
 6. **Offline packs:** explicit subject/topic downloads with asset manifests, checksums/versioning, storage estimates, resumable downloads, and clear stale-content handling.
 7. **Optional AI:** fills genuine gaps or personalizes teaching; it is not the database of record for curriculum coverage.
+
+
+## Read-only production inventory (2026-10-26)
+
+The active Supabase project `shadecode-student` was queried read-only. These are actual row counts at audit time, not estimates:
+
+| Production table | Rows | What this does and does not tell us |
+|---|---:|---|
+| `lesson_library` | 25 | Shared reusable lessons currently available through the library table. |
+| `learn_lessons` | 130 | Learner lesson records, including records not necessarily eligible for publication. |
+| `curriculum_objectives` | 1,380 | Structured curriculum objectives, not 1,380 finished lessons. |
+| `curriculum_knowledge` | 1,708 | Structured knowledge records, not necessarily complete student-facing lessons. |
+| `curriculum_versions` | 9 | Versioned curriculum records, with mixed verification states. |
+| `curriculum_documents` | 9 | Source-document records; count alone does not imply complete extraction or approval. |
+| `past_papers` | 58 | Paper records; count alone does not establish complete paper availability or rights for every syllabus. |
+
+### Current shared lesson library by subject
+
+| Subject label | Shared lessons | Lessons with at least 8 blocks |
+|---|---:|---:|
+| Computer Science | 8 | 5 |
+| Physics | 7 | 3 |
+| Mathematics | 6 | 2 |
+| Biology | 3 | 0 |
+| Accounting | 1 | 1 |
+| **Total** | **25** | **11** |
+
+This is a small shared catalogue, and the block count is only a rough structural indicator, not a quality or syllabus-coverage score. No exact board/version mapping is established by this aggregate.
+
+### Curriculum versions returned by production
+
+| Board | Qualification / syllabus | Version | Status | Objectives | Knowledge rows |
+|---|---|---|---|---:|---:|
+| Cambridge | AS & A Level Biology 9700 | 2025-2027 | verified | 259 | 278 |
+| Cambridge | AS & A Level Chemistry 9701 | 2025-2027 | verified | 388 | 606 |
+| Cambridge | IGCSE Computer Science 0478 | 2026-2028 | verified | 68 | 75 |
+| Cambridge | AS & A Level Mathematics 9709 | 2026-2027 | verified | 159 | 235 |
+| Cambridge | AS & A Level Physics 9702 | 2025-2027 | verified | 325 | 514 |
+| Cambridge | IGCSE Computer Science 0984 | 2026-2028 | draft | 10 | 0 |
+| Cambridge | O Level Computer Science 2210 | 2026-2028 | draft | 10 | 0 |
+| Cambridge | AS & A Level Computer Science 9618 | 2027-2029 | draft | 20 | 0 |
+| ZIMSEC | O Level Computer Science 4021 | 2024-2030 | draft | 141 | 0 |
+
+Important: these are database status values and row counts, not independent proof that the source evidence is complete. The prior repository audit notes evidence-state conflicts for some Cambridge packs. Do not interpret a `verified` status label as proof that complete reviewed lessons exist for all objectives.
+
+### What this proves
+
+- The gap is not simply “no curriculum data”: there are thousands of curriculum objective/knowledge records.
+- The key gap is the **conversion and publication of those records into reviewed, student-facing learning assets**, linked to exact curriculum identity.
+- The current shared library has 25 lessons across five subject labels. Only 11 have at least eight blocks, and block count does not establish quality.
+- A useful next step is a traceable content pipeline from verified objective → authored/reviewed lesson asset → practice and exam components → offline pack, with coverage reports that measure actual published assets.
 
 ## Execution sequence
 
