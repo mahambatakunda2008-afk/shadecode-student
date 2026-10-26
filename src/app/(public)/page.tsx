@@ -21,7 +21,7 @@ const faqs = [["What is Shadecode Student?", "A personal learning system that br
 export default function PublicHomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   return (
-    <main className="min-h-screen overflow-hidden bg-[var(--brand-ink)] text-slate-100">
+    <main className="min-h-screen overflow-x-clip bg-[var(--brand-ink)] text-slate-100">
       <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[var(--brand-ink)]/96">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Shadecode Student home"><BrandLockup compact /></Link>
@@ -29,8 +29,8 @@ export default function PublicHomePage() {
             {[["#intelligence", "Intelligence"], ["#features", "Features"], ["#platform", "Platform"], ["#future", "Direction"], ["#faq", "FAQ"]].map(([href, label]) => <a key={href} href={href} className="text-sm font-medium text-slate-400 transition hover:text-white">{label}</a>)}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/auth/login" className="hidden rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:text-white sm:inline-flex">Sign in</Link>
-            <Link href="/auth/signup" className="ssc-public-cta ssc-public-cta--primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">Get started <ArrowRight size={16} /></Link>
+            <Link href="/auth/login" className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-medium text-slate-300 transition hover:text-white sm:border sm:border-white/10 sm:px-3.5 sm:hover:border-white/20">Sign in</Link>
+            <Link href="/auth/signup" className="ssc-public-cta ssc-public-cta--primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">Get started <ArrowRight size={16} className="hidden sm:block" aria-hidden="true" /></Link>
           </div>
         </div>
       </header>
@@ -39,7 +39,7 @@ export default function PublicHomePage() {
         
         <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 pb-24 pt-16 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-32 lg:pt-24">
           <div>
-            <div className="mb-7"><BrandLockup /></div>
+            <div className="mb-7 hidden lg:block"><BrandLockup /></div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-sm font-semibold tracking-wide text-slate-200"><Sparkles size={16} /> Study smarter. Live sharper.</div>
             <h1 className="max-w-3xl font-[var(--font-display)] text-5xl font-semibold leading-[1.02] tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">Study for your Cambridge &amp; ZIMSEC exams <span className="ssc-brand-gradient">with a plan that adapts to you.</span></h1>
             <p className="mt-7 max-w-2xl text-[17px] leading-7 text-slate-300 sm:text-lg">Practise exam-style questions, learn any topic with step-by-step lessons, and see exactly which topics to work on next. Free to start, and it works on your phone.</p>

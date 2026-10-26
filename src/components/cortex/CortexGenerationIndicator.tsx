@@ -30,7 +30,7 @@ export default function CortexGenerationIndicator() {
     : `Cortex is building ${count} things`;
 
   return (
-    <div className="pointer-events-none fixed bottom-[88px] right-4 z-[10000] md:bottom-5" role="status" aria-live="polite">
+    <div className="ssc-above-nav pointer-events-none fixed right-4 z-[10000] md:bottom-5" role="status" aria-live="polite">
       <div className="ssc-surface-raised flex items-center gap-3 rounded-2xl px-3.5 py-3 shadow-lg">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--surface-sunken)] text-[var(--primary)]">
           <BrainCircuit className="h-4.5 w-4.5" />
