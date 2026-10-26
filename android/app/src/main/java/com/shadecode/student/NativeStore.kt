@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.flow.first
 
 private val Context.nativeStore by preferencesDataStore(name = "shadecode_native")
@@ -13,6 +15,7 @@ class NativeStore(private val context: Context) {
     private val refreshToken = stringPreferencesKey("refresh_token")
     private val userId = stringPreferencesKey("user_id")
     private val email = stringPreferencesKey("email")
+    private val cachedProfile = stringPreferencesKey("cached_profile")
 
     fun context(): Context = context
 
@@ -35,6 +38,39 @@ class NativeStore(private val context: Context) {
             userId = user,
             email = prefs[email].orEmpty(),
         )
+    }
+
+    suspend fun saveProfile(profile: NativeProfile) {
+        val encoded = JSONObject()
+            .put("id", profile.id)
+            .put("email", profile.email)
+            .put("displayName", profile.displayName)
+            .put("studyLevel", profile.studyLevel)
+            .put("subjects", JSONArray(profile.subjects))
+            .put("onboardingCompleted", profile.onboardingCompleted)
+            .toString()
+        context.nativeStore.edit { it[cachedProfile] = encoded }
+    }
+
+    suspend fun readProfile(): NativeProfile? {
+        val encoded = context.nativeStore.data.first()[cachedProfile] ?: return null
+        return runCatching {
+            val json = JSONObject(encoded)
+            val subjectsJson = json.optJSONArray("subjects") ?: JSONArray()
+            val subjects = buildList {
+                for (index in 0 until subjectsJson.length()) {
+                    subjectsJson.optString(index).takeIf { it.isNotBlank() }?.let(::add)
+                }
+            }
+            NativeProfile(
+                id = json.getString("id"),
+                email = json.optString("email"),
+                displayName = json.optString("displayName").ifBlank { "Student" },
+                studyLevel = json.optString("studyLevel").ifBlank { "upper-secondary" },
+                subjects = subjects,
+                onboardingCompleted = json.optBoolean("onboardingCompleted", false),
+            )
+        }.getOrNull()
     }
 
     suspend fun clearSession() {
