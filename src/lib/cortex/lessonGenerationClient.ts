@@ -799,6 +799,7 @@ async function runJob(
   if (runningJobId && runningJobId !== job.id) return getGenerationJobs().find(item => item.id === runningJobId) ?? job;
   runningJobId = job.id; saveActiveId(job.id); updateGenerationJob(job.id, { status: "warming", progress: 5, error: undefined });
   let localModelAttempted = false;
+  const classicMode = getLearningMode() === "classic";
   try {
     rememberLocalTopic(job.request.prompt);
     updateGenerationJob(job.id, {
@@ -807,7 +808,6 @@ async function runJob(
       error: "Cortex is selecting the best available generation lane…",
     });
     const online = isBrowser() ? navigator.onLine : false;
-    const classicMode = getLearningMode() === "classic";
 
     // Classic mode deliberately avoids cloud and browser-local generative models.
     // It can use authored lessons, verified curriculum recovery, and shared study resources.
