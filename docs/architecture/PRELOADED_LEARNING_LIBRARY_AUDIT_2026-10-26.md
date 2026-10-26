@@ -130,6 +130,21 @@ Do not automatically relabel, merge, or delete these entries from title heuristi
 - The current shared library has 25 lessons across five subject labels. Only 11 have at least eight blocks, and block count does not establish quality.
 - A useful next step is a traceable content pipeline from verified objective → authored/reviewed lesson asset → practice and exam components → offline pack, with coverage reports that measure actual published assets.
 
+
+## Implementation checkpoint: canonical asset schema and retrieval route
+
+Following the inventory, an additive schema has been committed and applied to the active production Supabase project:
+
+- Migration file: `supabase/migrations/20261026180000_published_learning_assets.sql`
+- Table: `public.published_learning_assets`
+- Retrieval route: `src/app/api/library/published/route.ts`
+
+The table is deliberately separate from `lesson_library`. It requires a curriculum-version foreign key, asset key and version, asset type, topic key, content, provenance, quality-check metadata, and an explicit review state. The only reader policy exposes assets marked approved and published; no client write policy is created. The route independently authenticates the learner, checks their configured subject access, resolves a verified curriculum, and queries only approved/published assets for that exact curriculum version. It reports an honest content gap when none exists; it does not generate substitute content.
+
+**Production verification:** the table exists after migration and a read-only query returned 0 total assets, 0 approved/published assets, and 0 drafts. This is expected for a new canonical table. It is an important warning: the new pipeline is infrastructure, not yet a populated catalogue. Existing 25 shared lessons were not automatically copied because their curriculum identity and academic review status are not sufficiently trustworthy.
+
+**Remaining work before learner-facing rollout:** build a trusted author/review/publish workflow, reconcile existing lesson source records, create reviewed assets linked to exact objective keys, add integration tests for subject access and curriculum matching, and connect the published-asset endpoint to Learn UI. Do not claim the content library is complete until a coverage report demonstrates it.
+
 ## Execution sequence
 
 ### P0: Establish a trustworthy inventory
