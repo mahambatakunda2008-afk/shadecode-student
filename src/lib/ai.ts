@@ -150,9 +150,13 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (process.env.GROQ_API_KEY) shareable.add("groq");
     if (process.env.OPENROUTER_API_KEY) shareable.add("openrouter");
     if (process.env.CLOUDFLARE_API_TOKEN) shareable.add("cloudflare");
-    // Keep direct Gemini outside the shared-budget pool until it demonstrates reliable lesson
-    // success. Recent production telemetry recorded 0 successful lesson responses across 64 attempts;
-    // a slow Gemini request must not consume the time reserved for other providers or repair.
+    // Reserve a fair slice for direct Gemini too. It is currently the last fallback, so leaving it
+    // outside the shared pool lets earlier providers consume nearly the entire lesson budget before
+    // the newly prioritized Flash-Lite model is reached. Keep each Gemini call hard-bounded; the
+    // model/key circuit still skips unavailable models and the remaining chain can continue. 
+    if (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY_3 || process.env.GEMINI_API_KEY_4) {
+      shareable.add("gemini");
+    }
   }
   const attempted = new Set<string>();
   const SHAREABLE_PROVIDER_MAX_MS = 10000;
