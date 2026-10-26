@@ -23,6 +23,7 @@ import { useUser } from "@/contexts/UserContext";
 import { ResetOnboarding } from "@/components/settings/ResetOnboarding";
 import { ShadeNetSettingsCard } from "@/components/settings/ShadeNetSettingsCard";
 import { WhatsAppSettingsCard } from "@/components/settings/WhatsAppSettingsCard";
+import { LearningModeCard } from "@/components/settings/LearningModeCard";
 import { getAcademicExperience, normalizeStudyLevel } from "@/lib/academic/experience";
 import { ShadecodeFeatureIcon } from "@/components/brand/ShadecodeFeatureIcon";
 
@@ -258,6 +259,8 @@ export default function Settings() {
           </div>
         </div>
       </section>
+
+      <section aria-label="Learning mode" className="mt-4"><LearningModeCard /></section>
 
       <section aria-label="Connected tools" className="mt-4 grid gap-4">
         <WhatsAppSettingsCard />
