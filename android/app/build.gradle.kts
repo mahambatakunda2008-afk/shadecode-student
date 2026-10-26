@@ -15,6 +15,12 @@ val ciVersionName = System.getenv("ANDROID_VERSION_NAME")?.takeIf { it.isNotBlan
 val supabaseUrl = System.getenv("NEXT_PUBLIC_SUPABASE_URL") ?: ""
 val supabaseAnonKey = System.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ?: ""
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 android {
     namespace = "com.shadecode.student"
     compileSdk = 35
@@ -46,7 +52,7 @@ android {
     }
 
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
-    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
+
 
     signingConfigs {
         if (hasReleaseSigning) {
