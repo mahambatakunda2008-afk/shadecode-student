@@ -1,0 +1,133 @@
+{
+  "asset_key": "physics-9702-physical-quantities-units",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Physical quantities and units",
+  "subject_id": "physics",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9702",
+    "syllabus_version": "2025-2027",
+    "expected_topic_key": "1",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Physics 9702 syllabus, 2025-2027: https://www.cambridgeinternational.org/Images/664565-2025-2027-syllabus.pdf"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft authored for editorial review; exact objective-key mapping must be confirmed against the active curriculum records before import."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Express physical quantities using numerical values and appropriate units.",
+      "Use SI base units and common prefixes.",
+      "Check equations for dimensional consistency.",
+      "Distinguish systematic and random errors, accuracy and precision.",
+      "Resolve vectors into perpendicular components."
+    ],
+    "sections": [
+      {
+        "heading": "Physical quantities and units",
+        "body": "A measured physical quantity is expressed as a numerical value and a unit. A number without a unit can be ambiguous. Include units in final answers unless the question explicitly says otherwise."
+      },
+      {
+        "heading": "SI units and prefixes",
+        "body": "Common SI base units include kilogram (kg), metre (m), second (s), ampere (A) and kelvin (K). Prefixes include pico (p, 10^-12), nano (n, 10^-9), micro (μ, 10^-6), milli (m, 10^-3), centi (c, 10^-2), kilo (k, 10^3), mega (M, 10^6), giga (G, 10^9) and tera (T, 10^12). Prefix symbols are case-sensitive."
+      },
+      {
+        "heading": "Derived units and dimensional checks",
+        "body": "Speed has unit m s^-1, acceleration has unit m s^-2 and force has unit kg m s^-2 (the newton). Replace quantities with base-unit expressions to check that both sides of an equation have matching dimensions. This can disprove an equation but cannot prove that it is physically correct."
+      },
+      {
+        "heading": "Errors and uncertainty",
+        "body": "A systematic error shifts readings consistently; a random error causes unpredictable variation. Accuracy is closeness to an accepted value; precision is closeness of repeated readings to one another. For multiplication or division, percentage uncertainties are commonly added. For addition or subtraction, absolute uncertainties are commonly added. Follow the conventions required by the question."
+      },
+      {
+        "heading": "Scalars and vectors",
+        "body": "A scalar has magnitude only. A vector has magnitude and direction. For a vector of magnitude V at angle θ above the positive horizontal, Vx = V cos θ and Vy = V sin θ. Check the axis from which the angle is measured and use signs to represent direction."
+      }
+    ],
+    "worked_examples": [
+      {
+        "prompt": "Convert 3.6 ms into seconds.",
+        "steps": [
+          "The prefix milli means 10^-3.",
+          "3.6 ms = 3.6 × 10^-3 s."
+        ],
+        "answer": "0.0036 s",
+        "common_error": "Do not confuse m (milli) with M (mega)."
+      },
+      {
+        "prompt": "Check whether v = u + at is dimensionally consistent.",
+        "steps": [
+          "v and u both have unit m s^-1.",
+          "a has unit m s^-2 and t has unit s, so at has unit m s^-1.",
+          "All terms have matching dimensions."
+        ],
+        "answer": "Dimensionally consistent, but this does not prove the equation is physically correct."
+      },
+      {
+        "prompt": "A vector of magnitude 10 N acts at 30° above the horizontal. Find its components.",
+        "steps": [
+          "Horizontal component = 10 cos 30° = 8.66 N.",
+          "Vertical component = 10 sin 30° = 5.0 N.",
+          "Both components are positive because the vector points right and upwards."
+        ],
+        "answer": "8.7 N horizontally and 5.0 N vertically, to 2 significant figures."
+      }
+    ],
+    "practice": [
+      {
+        "question": "Express 4.7 μs in seconds.",
+        "answer": "4.7 × 10^-6 s",
+        "mark_points": ["Correct prefix conversion", "Unit included"]
+      },
+      {
+        "question": "Give the SI base units of force.",
+        "answer": "kg m s^-2",
+        "mark_points": ["Uses F = ma", "Combines base units correctly"]
+      },
+      {
+        "question": "For x = ab, a has percentage uncertainty 2% and b has percentage uncertainty 3%. Estimate the percentage uncertainty in x.",
+        "answer": "5%, using the usual addition rule for percentage uncertainties in a product.",
+        "mark_points": ["Recognises multiplication rule", "Adds percentage uncertainties"]
+      }
+    ],
+    "visual_tasks": [
+      {
+        "type": "vector_components",
+        "instruction": "Draw a vector pointing up and to the right. From its origin draw perpendicular horizontal and vertical component arrows. Label θ from the positive horizontal axis and label the components V cos θ and V sin θ.",
+        "expected_features": ["Perpendicular component arrows", "Angle measured from horizontal", "Correct component labels"]
+      }
+    ],
+    "common_mistakes": [
+      "Omitting units from numerical answers.",
+      "Confusing milli (m) with mega (M).",
+      "Treating dimensional consistency as proof of an equation.",
+      "Confusing accuracy with precision.",
+      "Ignoring signs when resolving vector components."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What is the difference between a base unit and a derived unit?",
+        "Why can a dimensional check disprove an equation but not prove it?",
+        "How do systematic and random errors differ?",
+        "Which uncertainty rule is commonly used for multiplication?",
+        "If θ is measured from the horizontal, which component uses cosine?"
+      ],
+      "answers": [
+        "A base unit corresponds to a base quantity; a derived unit is formed from base units.",
+        "An equation can have matching dimensions and still describe the wrong physical relationship.",
+        "Systematic errors bias readings consistently; random errors cause unpredictable scatter.",
+        "Add percentage or fractional uncertainties.",
+        "The horizontal component uses cosine."
+      ]
+    }
+  }
+}
