@@ -84,11 +84,17 @@ export function BottomNav() {
 
   useEffect(() => {
     if (!open) return;
+    const trigger = moreTriggerRef.current;
+    closeMenuRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      // Return focus to the control that opened the sheet so keyboard and screen-reader users keep their place.
+      trigger?.focus();
+    };
   }, [open]);
 
   const anyMoreActive = moreItems.some(({ href }) => isRouteActive(pathname, href));
@@ -188,6 +194,8 @@ export function BottomNav() {
         {moreItems.length > 0 && (
           <button
             type="button"
+            ref={moreTriggerRef}
+            aria-haspopup="dialog"
             aria-label={"Open " + moreTitle}
             aria-expanded={open}
             onClick={() => setOpen(true)}
@@ -232,7 +240,7 @@ export function BottomNav() {
             className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={() => setOpen(false)}
           />
-          <section className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-[24px] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))] shadow-[var(--shadow-lg)]">
+          <section className="absolute inset-x-0 bottom-0 max-h-[78dvh] overflow-y-auto rounded-t-[24px] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))] shadow-[var(--shadow-lg)]">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
@@ -242,11 +250,12 @@ export function BottomNav() {
               </div>
               <button
                 type="button"
+                ref={closeMenuRef}
                 aria-label="Close"
                 onClick={() => setOpen(false)}
-                className="ssc-icon-button"
+                className="ssc-icon-button text-lg leading-none"
               >
-                ×
+                <span aria-hidden="true">×</span>
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">

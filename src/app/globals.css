@@ -326,6 +326,13 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spaci
   .h-screen { height: 100dvh; }
 }
 
+/* Fixed elements that must clear the mobile bottom navigation (install prompt, status toasts, etc.).
+   The offset is only non-zero while a bottom nav is actually mounted, so public pages and desktop are unaffected. */
+:root { --bottom-nav-offset: 0px; }
+@media (max-width: 767px) { body:has(.ssc-bottom-nav) { --bottom-nav-offset: 4.5rem; } }
+.ssc-above-nav { bottom: calc(var(--bottom-nav-offset) + env(safe-area-inset-bottom, 0px) + 0.75rem); }
+@media (min-width: 768px) { .ssc-above-nav { bottom: 1.25rem; } }
+
 /* Touch devices: 44px minimum targets, and no hover lift that sticks after a tap. */
 @media (pointer: coarse) {
   .ssc-button { min-height: 44px; }

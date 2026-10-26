@@ -58,18 +58,26 @@ export default function PWAInstallPrompt() {
   if (!showPrompt || !deferredPrompt) return null;
 
   return (
-    <div role="dialog" aria-label="Install Shadecode Student" style={{ position: "fixed", bottom: 20, left: 20, right: 20, maxWidth: 400, margin: "0 auto", background: "#0B1724", border: "1px solid rgba(34,211,238,0.22)", borderRadius: 16, padding: 20, boxShadow: "0 18px 60px rgba(0,0,0,0.45)", zIndex: 1000, animation: "slideUp 0.3s ease-out" }}>
-      <button onClick={handleDismiss} aria-label="Dismiss install prompt" style={{ position: "absolute", top: 12, right: 12, background: "transparent", border: "none", color: "#9fb2bc", cursor: "pointer", padding: 4, borderRadius: 4 }}><X size={16} /></button>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        <div style={{ position: "relative", width: 48, height: 48, borderRadius: 14, background: "#06111C", border: "1px solid rgba(36,91,255,0.48)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 28px rgba(36,91,255,0.16)", overflow: "hidden" }}>
-          <span aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, #00E5FF 0%, #00A8FF 28%, #245BFF 58%, #7A3CFF 82%, #C135FF 100%)", opacity: 0.12 }} />
-          <BrandMark width={27} height={27} aria-hidden="true" style={{ position: "relative" }} />
+    <div
+      role="dialog"
+      aria-label="Install Shadecode Student"
+      className="ssc-above-nav fixed inset-x-3 z-[9990] mx-auto max-w-[400px] animate-[ssc-page-in_260ms_var(--ease-premium)_both] rounded-2xl border border-[var(--card-border)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]"
+    >
+      <button type="button" onClick={handleDismiss} aria-label="Dismiss install prompt" className="ssc-icon-button absolute right-2 top-2 !h-9 !w-9 border-transparent bg-transparent text-[var(--muted-foreground)] shadow-none">
+        <X size={16} aria-hidden="true" />
+      </button>
+      <div className="mb-3 flex items-center gap-3 pr-8">
+        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[var(--card-border)] bg-[var(--surface-2)]">
+          <span aria-hidden="true" className="absolute inset-0 opacity-[0.12]" style={{ background: "var(--brand-gradient)" }} />
+          <BrandMark className="relative h-8 w-8" aria-hidden="true" />
         </div>
-        <div><h3 style={{ fontSize: 16, fontWeight: 400, color: "#fff", margin: "0 0 4px", fontFamily: "var(--font-brand), sans-serif" }}>Install Shadecode Student</h3><p style={{ fontSize: 12, color: "#9fb2bc", margin: 0 }}>Put your learning workspace on your phone. Reopen it like an app and keep saved study work available when your connection drops.</p></div>
+        <div className="min-w-0">
+          <h3 className="ssc-brand-heading mb-1 text-base font-normal text-[var(--foreground)]">Install Shadecode Student</h3>
+          <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">Put your learning workspace on your phone. Reopen it like an app and keep saved study work available when your connection drops.</p>
+        </div>
       </div>
-      <button onClick={handleInstall} style={{ width: "100%", padding: "12px", borderRadius: 10, background: "#22D3EE", border: "none", color: "#06111C", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-brand), sans-serif" }}>Install App</button>
-      <a href="/download" style={{ display: "block", marginTop: 10, textAlign: "center", color: "#67E8F9", fontSize: 12, textDecoration: "none" }}>See every install option →</a>
-      <style jsx>{`@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+      <button type="button" onClick={handleInstall} className="ssc-button w-full">Install App</button>
+      <a href="/download" className="mt-2.5 block text-center text-xs font-medium text-[var(--primary)] hover:underline">See every install option →</a>
     </div>
   );
 }

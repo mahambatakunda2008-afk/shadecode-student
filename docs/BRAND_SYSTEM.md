@@ -1,14 +1,14 @@
 # Shadecode Student Brand System
 
-This document describes the restored original Shadecode Student identity.
+This document describes the current Shadecode Student identity: the smooth folded-S mark.
 
 ## Core identity
 
-- **Symbol:** the original three-part abstract geometric mark, with softened joins and the original silhouette.
+- **Symbol:** a smooth folded S: one continuous ribbon with a lighter fold highlight and a deeper under-fold. Direction set by the product owner; it replaces the earlier angular three-band mark.
 - **App tile:** deep navy, with a quiet border.
 - **Accent:** cyan-to-blue-to-violet gradient, preserving the product's current colour identity.
 - **Wordmark:** clear SHADECODE / STUDENT lockup. Keep the mark itself free of text.
-- **Overall feel:** precise, calm, modern, premium. No book/pages or unrelated replacement symbols.
+- **Overall feel:** precise, calm, modern, premium. No book/pages or other unrelated symbols.
 
 ## Current palette
 
@@ -29,17 +29,25 @@ Keep semantic UI colours separate from brand colours. Never rely on a gradient a
 
 ## Canonical assets
 
-- `public/brand/shadecode-icon-master.svg` — canonical original abstract mark.
-- `public/brand/shadecode-app-icon.svg` — primary icon tile.
-- `public/brand/shadecode-app-icon-dark.svg` — dark icon tile.
-- `public/brand/shadecode-app-icon-light.svg` — light icon tile.
-- `public/brand/shadecode-app-icon-maskable.svg` — adaptive icon with safe area.
-- `public/brand/shadecode-mark.svg` — transparent gradient mark.
-- `public/brand/shadecode-mark-white.svg` and `shadecode-mark-reversed.svg` — monochrome mark.
+**Single source of truth: `src/lib/brand/markGeometry.json`.** Every file below is generated from it
+(`npm run generate:brand`, which also runs on `predev` and `prebuild`). Edit the JSON, never the outputs.
+
+- `src/lib/brand/markGeometry.ts` — typed access to the geometry for React and share-card code.
+- `src/components/brand/BrandMark.tsx` — shared in-product mark (unique gradient ids per instance).
+- `src/lib/og/OgBrandMark.tsx` — mark for generated share-card images.
+- `public/brand/shadecode-icon-master.svg` — transparent master mark on a 1024 canvas.
+- `public/brand/shadecode-mark.svg` — transparent gradient mark, square crop.
+- `public/brand/shadecode-mark-white.svg` / `shadecode-mark-reversed.svg` — flat single-colour ribbon (white / ink).
+- `public/brand/shadecode-app-icon.svg`, `-dark.svg`, `-light.svg` — rounded icon tiles.
+- `public/brand/shadecode-app-icon-fullbleed.svg` — full-bleed square used for iOS icons.
+- `public/brand/shadecode-app-icon-maskable.svg` — full-bleed adaptive icon with safe area.
 - `public/brand/shadecode-student-logo.svg` — product lockup.
-- `src/components/brand/BrandMark.tsx` — shared in-product logo component.
-- `src/app/icon.svg` and `src/app/apple-icon.svg` — framework icon routes.
-- `public/manifest.json` and `src/app/layout.tsx` — browser and install metadata.
+- `public/icons/*.png` — raster set (16–1024, dark, light, maskable, `apple-touch-icon.png`, `favicon.png`).
+- `public/icons/shadecode-student.svg`, `public/favicon.svg`, `src/app/icon.svg` — tile SVGs for the manifest, legacy favicon and Next icon route.
+- `public/og-image.png` — static social image. Not generated: re-composite the tile if the mark changes.
+- `public/manifest.json` and `src/app/layout.tsx` — install and browser metadata. Icons are declared once, in `layout.tsx` metadata.
+
+Note: Next.js does not support SVG for `apple-icon`, so there is no `src/app/apple-icon.svg`; iOS uses `public/icons/apple-touch-icon.png`.
 
 ## Button and contrast rules
 
@@ -52,9 +60,9 @@ Keep semantic UI colours separate from brand colours. Never rely on a gradient a
 
 ## Engineering rules
 
-1. The React `BrandMark`, standalone SVGs, app icon, favicon, maskable icon, and raster assets must depict the same original abstract identity.
-2. The original three-part geometry is the source of truth. Preserve its silhouette and proportions; use rounded joins only to soften overly sharp edges.
-3. Preserve the safe area for maskable icons.
-4. Do not replace the original mark with a folded-S redesign, a book, or another unrelated symbol.
+1. The React `BrandMark`, standalone SVGs, app icon, favicon, maskable icon and raster assets must all depict the same folded-S mark. `src/lib/brand/markGeometry.test.ts` enforces this and fails if the retired angular mark reappears.
+2. Change the mark only in `markGeometry.json`, then run `npm run generate:brand` and commit the regenerated assets.
+3. iOS and maskable icons must be opaque, full-bleed squares; keep the glyph inside the maskable safe area.
+4. Do not use a book/pages symbol or another unrelated replacement.
 5. Check shared components before declaring a branding update complete: page-specific icon files alone do not update logos inside modules.
 6. Do not claim the production site has changed until a successful deployment is confirmed.
