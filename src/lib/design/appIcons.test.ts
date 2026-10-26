@@ -25,3 +25,17 @@ describe("iOS home-screen icons", () => {
     expect(pngInfo("shadecode-student-maskable-512.png")).toMatchObject({ width: 512, height: 512 });
   });
 });
+
+describe("generated icon set", () => {
+  it("ships the 16/32/48 favicon sizes and the full-bleed iOS and maskable variants", () => {
+    for (const [file, size] of [["shadecode-student-16.png", 16], ["shadecode-student-32.png", 32], ["shadecode-student-48.png", 48], ["shadecode-student-maskable-192.png", 192], ["shadecode-student-maskable-1024.png", 1024], ["favicon.png", 32]] as const) {
+      expect(pngInfo(file)).toMatchObject({ width: size, height: size });
+    }
+  });
+  it("keeps maskable icons opaque so launcher masks never reveal transparency", () => {
+    for (const file of ["shadecode-student-maskable-192.png", "shadecode-student-maskable-512.png", "shadecode-student-maskable-1024.png"]) {
+      expect(pngInfo(file).colorType).toBe(2);
+    }
+  });
+});
+
