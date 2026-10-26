@@ -6,7 +6,8 @@ This is a **native Android client**, implemented with Kotlin and Jetpack Compose
 
 - **Web:** Next.js app at https://shadecodestudent.vercel.app
 - **Android:** native Compose screens, Supabase Auth/REST, Room local database, DataStore session/profile cache, WorkManager sync, and native Cortex runtime components.
-- **Offline:** after a learner has signed in and their subjects/lessons have synced at least once, cached subjects, cached lesson content, local lesson progress, and supported on-device Cortex flows can remain available without a connection. New accounts still need internet for initial authentication. Cloud AI, remote updates, and cross-device sync require connectivity.
+- **Offline:** after a learner has signed in and their subjects/lessons have synced at least once, cached subjects, cached lesson content, local lesson progress, supported on-device Cortex flows, and the image-to-text extraction workflow can remain available without a connection. New accounts still need internet for initial authentication. Cloud AI, remote updates, and cross-device sync require connectivity.
+- **Snap & Extract:** the native app includes an image picker and bundled on-device Latin OCR. Extracted text is editable and can be copied/shared; spacing cleanup and phrase redaction operate on a text copy. It does not yet interpret graphs/diagrams, translate offline, process audio/video, or redact original image pixels. OCR must be reviewed before exam use.
 - **Package:** `com.shadecode.student`
 
 Offline does **not** mean every web feature is already implemented in the Android client. The native app currently has a smaller feature surface than the web app. Native feature parity, comprehensive offline content packs, robust conflict resolution, and an iOS SwiftUI client remain explicit work items.
