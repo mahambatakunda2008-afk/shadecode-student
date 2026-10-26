@@ -15,6 +15,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
+    if (body?.learningMode === "classic") {
+      return NextResponse.json({
+        error: "Classic mode does not use generative AI for solving or checking new work. Switch to Cortex AI or use your saved notes and worked examples.",
+        code: "CLASSIC_MODE_AI_DISABLED",
+      }, { status: 403 });
+    }
     const { action, problem, subject, subjectId, studentAnswer } = body;
 
     if (!problem || !subject) {
