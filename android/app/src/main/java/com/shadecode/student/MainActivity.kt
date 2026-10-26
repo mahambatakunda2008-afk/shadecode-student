@@ -1,9 +1,15 @@
 package com.shadecode.student
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -57,6 +64,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 private val ShadeBackground = Color(0xFF06111C)
 private val ShadeSurface = Color(0xFF0B1E2D)
@@ -152,13 +162,15 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             NavigationBarItem(selected == 0, { selected = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
             NavigationBarItem(selected == 1, { selected = 1 }, icon = { Icon(Icons.Default.Book, null) }, label = { Text("Learn") })
             NavigationBarItem(selected == 2, { selected = 2 }, icon = { Icon(Icons.Default.PlayArrow, null) }, label = { Text("Practice") })
-            NavigationBarItem(selected == 3, { selected = 3 }, icon = { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
+            NavigationBarItem(selected == 3, { selected = 3 }, icon = { Icon(Icons.Default.DocumentScanner, null) }, label = { Text("Extract") })
+            NavigationBarItem(selected == 4, { selected = 4 }, icon = { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
         }
     }) { padding ->
         when (selected) {
             0 -> DashboardScreen(padding, profile, subjects, loading, error)
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
             2 -> NativePracticeScreen(padding, subjects, database)
+            3 -> SnapExtractScreen(padding)
             else -> ProfileNativeScreen(padding, profile) {
                 scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
             }
@@ -334,5 +346,177 @@ private fun ProfileNativeScreen(padding: PaddingValues, profile: NativeProfile?,
         Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(18.dp))
         Text(profile?.displayName ?: "Student", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(profile?.email ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp)); Text("Study level: ${profile?.studyLevel ?: "Not set"}"); Spacer(Modifier.height(24.dp)); TextButton(onClick = onSignOut) { Text("Sign out") }
+    }
+}
+
+
+@Composable
+private fun SnapExtractScreen(padding: PaddingValues) {
+    val context = LocalContext.current
+    var selectedImage by remember { mutableStateOf<Uri?>(null) }
+    var rawOcr by remember { mutableStateOf("") }
+    var editableText by remember { mutableStateOf("") }
+    var redactionTerms by remember { mutableStateOf("") }
+    var processing by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("Choose an image. OCR runs on this device and does not upload it.") }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            selectedImage = uri
+            rawOcr = ""
+            editableText = ""
+            processing = true
+            message = "Reading image locally…"
+            try {
+                val image = InputImage.fromFilePath(context, uri)
+                val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                recognizer.process(image)
+                    .addOnSuccessListener { result ->
+                        rawOcr = result.text
+                        editableText = result.text
+                        message = if (result.text.isBlank()) {
+                            "No readable text found. This OCR pass does not interpret diagrams or graphs."
+                        } else {
+                            "Extracted locally. Check equations, handwriting, tables and diagram labels before relying on them."
+                        }
+                        processing = false
+                        recognizer.close()
+                    }
+                    .addOnFailureListener { error ->
+                        message = "Could not read this image: ${error.localizedMessage ?: "OCR failed"}"
+                        processing = false
+                        recognizer.close()
+                    }
+            } catch (error: Exception) {
+                message = "Could not open image: ${error.localizedMessage ?: "unsupported image"}"
+                processing = false
+            }
+        }
+    }
+
+    val redactedPreview = remember(editableText, redactionTerms) {
+        redactionTerms.split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .fold(editableText) { text, term ->
+                text.replace(Regex(Regex.escape(term), RegexOption.IGNORE_CASE), "[REDACTED]")
+            }
+    }
+
+    fun copyText(value: String) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("Shadecode extracted text", value))
+        message = "Copied the selected text representation. The source image was not changed."
+    }
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            Spacer(Modifier.height(18.dp))
+            Text("Snap & Extract", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("Snipping Tool-inspired capture, local OCR and text cleanup.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp)) {
+                    Text("1. Import an image", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (selectedImage == null) "Screenshots, photos and scanned pages are supported as OCR input."
+                        else "Selected image: ${selectedImage?.lastPathSegment ?: "image"}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Button(onClick = { imagePicker.launch("image/*") }, enabled = !processing, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (processing) "Extracting locally…" else "Choose image")
+                    }
+                    if (processing) { Spacer(Modifier.height(8.dp)); CircularProgressIndicator(Modifier.size(24.dp)) }
+                }
+            }
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp)) {
+                    Text("2. Review and edit", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = editableText,
+                        onValueChange = { editableText = it },
+                        label = { Text("Extracted text") },
+                        placeholder = { Text("OCR text appears here. You can edit it.") },
+                        modifier = Modifier.fillMaxWidth().height(240.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { editableText = rawOcr; message = "Restored the original OCR output." }, enabled = rawOcr.isNotEmpty()) { Text("Restore OCR") }
+                        TextButton(
+                            onClick = {
+                                editableText = editableText
+                                    .replace(Regex("[ \\t]+"), " ")
+                                    .replace(Regex("\\n{3,}"), "\\n\\n")
+                                    .trim()
+                                message = "Whitespace cleanup applied. Review the result; mathematical meaning was not corrected."
+                            },
+                            enabled = editableText.isNotBlank(),
+                        ) { Text("Clean spacing") }
+                    }
+                    Button(onClick = { copyText(editableText) }, enabled = editableText.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                        Text("Copy extracted text")
+                    }
+                    TextButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, editableText)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Share extracted text"))
+                        },
+                        enabled = editableText.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Share extracted text") }
+                }
+            }
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp)) {
+                    Text("3. Redact text before sharing", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Enter exact names or phrases separated by commas. This creates a redacted text copy only; it does not erase pixels or redact the original image.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = redactionTerms,
+                        onValueChange = { redactionTerms = it },
+                        label = { Text("Phrases to redact") },
+                        placeholder = { Text("e.g. student name, phone number") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text("Redacted preview", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        if (redactedPreview.isBlank()) "The redacted text preview will appear here."
+                        else redactedPreview,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = { copyText(redactedPreview) },
+                        enabled = editableText.isNotBlank() && redactionTerms.split(",").any { it.trim().isNotEmpty() },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Copy redacted text") }
+                }
+            }
+        }
+        item {
+            Text(
+                "Local-first privacy: the selected image is processed on this device. This first version extracts text only; it does not yet understand graphs/diagrams, translate offline, transcribe audio/video, or redact source-image pixels. Always check OCR output before using it for exam work.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
