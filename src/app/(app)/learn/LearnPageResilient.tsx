@@ -298,9 +298,19 @@ export default function LearnPageResilient() {
             <p className="text-sm font-semibold">{learningMode === "ai" ? "Cortex AI mode" : "Classic mode"}</p>
             <p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{learningMode === "ai" ? "AI-assisted lesson generation is enabled." : "Traditional study mode. Generative AI lesson creation is off."}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" aria-pressed={learningMode === "classic"} onClick={() => chooseLearningMode("classic")} className={`min-h-10 rounded-xl border px-3 text-sm font-semibold ${learningMode === "classic" ? "border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--surface-2)]"}`}>Classic</button>
-            <button type="button" aria-pressed={learningMode === "ai"} onClick={() => chooseLearningMode("ai")} className={`min-h-10 rounded-xl border px-3 text-sm font-semibold ${learningMode === "ai" ? "border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--surface-2)]"}`}>Cortex AI</button>
+          <div className="flex items-center gap-3 self-start sm:self-center">
+            <span className={`text-sm font-semibold ${learningMode === "classic" ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>Classic</span>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Enable Cortex AI"
+              aria-checked={learningMode === "ai"}
+              onClick={() => chooseLearningMode(learningMode === "ai" ? "classic" : "ai")}
+              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 ${learningMode === "ai" ? "border-[var(--primary)] bg-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--surface-2)]"}`}
+            >
+              <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${learningMode === "ai" ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+            <span className={`text-sm font-semibold ${learningMode === "ai" ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>Cortex AI</span>
           </div>
         </section>
 
