@@ -1,6 +1,6 @@
 package com.shadecode.student
 
-import com.google.mlkit.genai.prompt.FeatureStatus
+import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -85,7 +85,7 @@ Use 8-12 purposeful blocks. Keep the output under 3000 tokens.
 """.trimIndent()
 
                 val response = model.generateContent(prompt)
-                val raw = response.text?.trim().orEmpty()
+                val raw = response.candidates.firstOrNull()?.text?.trim().orEmpty()
                 parseLesson(raw, safeTopic)?.also { lesson ->
                     lessonCache[key] = lesson
                     while (lessonCache.size > 8) lessonCache.remove(lessonCache.entries.first().key)
