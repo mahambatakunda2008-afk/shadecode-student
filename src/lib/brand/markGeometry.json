@@ -1,0 +1,22 @@
+{
+  "name": "Shadecode folded S",
+  "glyphBounds": { "x": 274, "y": 233, "width": 464, "height": 591 },
+  "glyphCenter": { "x": 506, "y": 528.5 },
+  "inlineViewBox": "196 218 620 620",
+  "gradients": [
+    { "id": "ribbon", "x1": 320, "y1": 300, "x2": 700, "y2": 760, "stops": [[0, "#54DDEB"], [0.38, "#2588E8"], [0.72, "#465BE5"], [1, "#7761D8"]] },
+    { "id": "fold", "x1": 360, "y1": 330, "x2": 620, "y2": 560, "stops": [[0, "#B1F4F3"], [1, "#4CA8F4"]] },
+    { "id": "underfold", "x1": 600, "y1": 590, "x2": 450, "y2": 770, "stops": [[0, "#3152C4"], [1, "#6C55C6"]] }
+  ],
+  "strokes": [
+    { "role": "ribbon", "width": 116, "gradient": "ribbon", "d": "M680 340 C620 285 515 276 426 316 C338 355 310 428 350 485 C382 530 445 548 511 574 C581 602 625 642 614 694 C601 752 528 782 451 757 C413 744 383 720 361 689" },
+    { "role": "fold", "width": 30, "gradient": "fold", "d": "M674 333 C617 291 523 286 442 320 C368 351 341 408 359 455 C373 491 421 510 468 529" },
+    { "role": "underfold", "width": 32, "gradient": "underfold", "d": "M514 578 C575 603 608 641 599 687 C590 730 545 754 493 755" },
+    { "role": "sheen", "width": 7, "color": "#C4F6F4", "opacity": 0.7, "d": "M363 478 C399 516 454 535 511 557" },
+    { "role": "sheen", "width": 7, "color": "#A7B7FF", "opacity": 0.55, "d": "M392 704 C422 739 469 754 510 748" }
+  ],
+  "tile": {
+    "dark": { "bg": "#081827", "border": "#1B354A", "rasterBg": "#081827" },
+    "light": { "bg": "#F3F6FA", "border": "#D5DEE8", "rasterBg": "#F3F6FA" }
+  }
+}

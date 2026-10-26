@@ -1,29 +1,47 @@
 import { useId, type SVGProps } from "react";
+import { MARK_GRADIENTS, MARK_STROKES, MARK_VIEWBOX } from "@/lib/brand/markGeometry";
 
 export type BrandMarkProps = SVGProps<SVGSVGElement> & { title?: string };
 
-/** Original Shadecode abstract mark, restored from the repository's August 2026 brand source. */
+/** Shadecode folded-S mark. Geometry comes from `@/lib/brand/markGeometry` (single source of truth). */
 export function BrandMark({ title = "Shadecode Student", className, ...props }: BrandMarkProps) {
-  // Every mark needs its own SVG paint-server ID. A shared hard-coded gradient ID
-  // can resolve to a different SVG instance on pages with multiple brand marks.
-  const gradientId = `shadecode-brand-mark-gradient-${useId().replace(/:/g, "")}`;
+  // Each instance needs its own SVG paint-server IDs: shared hard-coded IDs can resolve
+  // to a different SVG instance on pages that render several marks.
+  const base = `shadecode-mark-${useId().replace(/:/g, "")}`;
+  const ref = (id: string) => `url(#${base}-${id})`;
   return (
-    <svg viewBox="0 0 600 600" aria-hidden={title ? undefined : true} role={title ? "img" : undefined}
-      aria-label={title || undefined} className={className} focusable="false" preserveAspectRatio="xMidYMid meet" {...props}>
+    <svg
+      viewBox={MARK_VIEWBOX}
+      aria-hidden={title ? undefined : true}
+      role={title ? "img" : undefined}
+      aria-label={title || undefined}
+      className={className}
+      focusable="false"
+      preserveAspectRatio="xMidYMid meet"
+      {...props}
+    >
       {title ? <title>{title}</title> : null}
       <defs>
-        <linearGradient id={gradientId} x1="70" y1="50" x2="480" y2="540" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#54DDEB" />
-          <stop offset="0.42" stopColor="#2588E8" />
-          <stop offset="0.76" stopColor="#465BE5" />
-          <stop offset="1" stopColor="#7761D8" />
-        </linearGradient>
+        {MARK_GRADIENTS.map((g) => (
+          <linearGradient key={g.id} id={`${base}-${g.id}`} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} gradientUnits="userSpaceOnUse">
+            {g.stops.map(([offset, color]) => (
+              <stop key={offset} offset={offset} stopColor={color} />
+            ))}
+          </linearGradient>
+        ))}
       </defs>
-      <g fill={`url(#${gradientId})`} stroke={`url(#${gradientId})`} strokeWidth="5" strokeLinejoin="round" strokeLinecap="round" transform="translate(25.5 10.5)">
-        <path d="M72.5 146.5 275.5 24.5 475.5 139.5 474.5 224.5 190.5 162.5 72.5 193.5Z" />
-        <path d="M72.5 193.5 477.5 326.5 477.5 389.5 72.5 266.5Z" />
-        <path d="M72.5 340.5 132.5 372.5 132.5 396.5 272.5 480.5 477.5 389.5 477.5 435.5 278.5 555.5 72.5 436.5Z" />
-      </g>
+      {MARK_STROKES.map((s) => (
+        <path
+          key={s.d}
+          d={s.d}
+          fill="none"
+          stroke={s.gradient ? ref(s.gradient) : s.color}
+          strokeOpacity={s.opacity}
+          strokeWidth={s.width}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
     </svg>
   );
 }

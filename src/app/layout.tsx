@@ -68,11 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/icons/favicon.png" type="image/png" sizes="32x32" />
-        <link rel="alternate icon" href="/icons/shadecode-student.svg" type="image/svg+xml" sizes="any" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
-        <meta name="theme-color" content="#06111C" />
+        {/* Manifest, icons, apple-touch-icon and theme-color are emitted once from `metadata` / `viewport` above. */}
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${michroma.variable} antialiased`}>
