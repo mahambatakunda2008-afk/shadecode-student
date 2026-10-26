@@ -91,6 +91,8 @@ dependencies {
     implementation("androidx.room:room-ktx:2.7.0")
     implementation("androidx.work:work-runtime-ktx:2.10.1")
     implementation("com.google.mlkit:genai-prompt:1.0.0-beta4")
+    // Bundled Latin text-recognition model: image OCR runs on-device after installation.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
     ksp("androidx.room:room-compiler:2.7.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
