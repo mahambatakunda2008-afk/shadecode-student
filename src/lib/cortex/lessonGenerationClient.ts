@@ -541,6 +541,7 @@ async function persistGeneratedLesson(job: GenerationJob<LessonGenerationInput>,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         type: "lesson",
+        learningMode: getLearningMode(),
         generationMode: "persist",
         generationJobId: job.id,
         generationLeaseId: effectiveLeaseId,
@@ -682,6 +683,7 @@ async function tryCloudLesson(job: GenerationJob<LessonGenerationInput>, token: 
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
               type: "lesson",
+              learningMode: getLearningMode(),
               generationMode: "section",
               generationSectionIndex: sectionIndex,
               generationSectionCount: sectionCount,
