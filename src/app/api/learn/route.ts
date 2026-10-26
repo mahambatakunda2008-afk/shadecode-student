@@ -189,12 +189,14 @@ export async function POST(req: Request) {
     auth = await authenticateRequest(req); if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { supabase, user } = auth; const body = sanitizeLessonText(await req.json()); const { type, subject, topic, difficulty, goal, level, generationJobId } = body;
     if (type === "course_preview") {
+      if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course preview.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
       const validation = validateRequestBody({ topic, goal, level }, learnCoursePreviewSchema); if (!validation.success) return NextResponse.json({ error: "Validation failed", details: validation.details?.issues.map((e: any) => ({ field: e.path.join('.'), message: e.message })) }, { status: 400 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
       try { const token = getBearerToken(req); if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const { generateCourseDraft } = await import("@/lib/cortex/generateCourse"); return NextResponse.json({ success: true, draft: await generateCourseDraft(token, { topic, goal, level }) }); }
       catch (e: any) { log.cortexFailure({ userId: user.id, stage: "course_preview", error: e.message || String(e) }); return NextResponse.json({ error: "Course preview failed" }, { status: 500 }); }
     }
     if (type === "course") {
+      if (body.learningMode === "classic") return NextResponse.json({ error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new course.", code: "CLASSIC_MODE_AI_DISABLED" }, { status: 403 });
       if (!topic || !goal) return NextResponse.json({ error: "Missing topic or goal" }, { status: 400 });
       try { const token = getBearerToken(req); if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const { generateCourseForUser } = await import("@/lib/cortex/generateCourse"); return NextResponse.json({ success: true, course: await generateCourseForUser(token, { topic, goal, level }) }); }
       catch (e: any) { log.cortexFailure({ userId: user.id, stage: "course_generation", error: e.message || String(e) }); return NextResponse.json({ error: "Course generation failed" }, { status: 500 }); }
@@ -280,6 +282,9 @@ export async function POST(req: Request) {
 
     const durableJobId = generationJobId && /^[0-9a-f-]{36}$/i.test(String(generationJobId)) ? String(generationJobId) : null;
     const generationMode = body.generationMode === "section" || body.generationMode === "persist" ? body.generationMode : "complete";
+    if (body.learningMode === "classic" && generationMode !== "persist") {
+      return NextResponse.json({ error: "Classic mode does not use generative AI for lesson creation. Switch to Cortex AI to generate a new lesson.", code: "CLASSIC_MODE_AI_DISABLED", retryable: false }, { status: 403 });
+    }
     const generationLeaseId = typeof body.generationLeaseId === "string" && /^[0-9a-f-]{36}$/i.test(body.generationLeaseId)
       ? body.generationLeaseId
       : null;
