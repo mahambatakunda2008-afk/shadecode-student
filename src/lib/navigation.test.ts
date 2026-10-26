@@ -48,3 +48,39 @@ describe("subject-aware Code Lab navigation", () => {
     expect(hrefs(groups)).not.toContain("/comp-lab");
   });
 });
+
+
+describe("Comp Lab visibility across learner experiences", () => {
+  it("keeps Comp Lab available to a primary learner who studies computing", () => {
+    const primaryExperience = {
+      family: "foundation",
+      allowedRoutes: ["/dashboard", "/learn", "/settings"],
+    } as unknown as AcademicExperience;
+
+    expect(
+      hrefs(getExperienceNavGroups(primaryExperience, [], ["Computer Science"])),
+    ).toContain("/comp-lab");
+  });
+
+  it("recognizes board-prefixed and syllabus-coded Computer Science labels", () => {
+    expect(
+      hrefs(getExperienceNavGroups(schoolExperience, [], ["9618 Computer Science"])),
+    ).toContain("/comp-lab");
+
+    expect(
+      hrefs(getExperienceNavGroups(schoolExperience, [], ["Computer Science 0478"])),
+    ).toContain("/comp-lab");
+  });
+
+  it("recognizes a syllabus code supplied as structured metadata", () => {
+    expect(
+      hrefs(
+        getExperienceNavGroups(
+          schoolExperience,
+          [{ subject_name: "Computer Science", syllabus_code: "9618" }],
+          [],
+        ),
+      ),
+    ).toContain("/comp-lab");
+  });
+});
