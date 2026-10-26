@@ -15,6 +15,10 @@ function matchesComputerScience(value: unknown): boolean {
   const normalized = normalizeSubjectValue(value);
   if (!normalized) return false;
 
+  // A recognized syllabus code is sufficient when the profile/catalog stores
+  // only the code, rather than a combined label such as "9618 Computer Science".
+  if (COMPUTER_SCIENCE_CODES.has(normalized)) return true;
+
   // Subject names can arrive with the board/code before or after the name.
   // Keep this tied to recognized computing subjects rather than unlocking for
   // any arbitrary subject that happens to contain a number.
