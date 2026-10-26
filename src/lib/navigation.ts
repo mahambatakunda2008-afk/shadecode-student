@@ -202,7 +202,16 @@ export function getExperienceNavGroups(
     _profileSubjects,
   ]);
 
-  return groups
+  // Keep Comp Lab discoverable for computing learners in every experience
+  // family, including foundation profiles whose default groups omit it.
+  const groupsWithCompLab =
+    hasComputingSubject && !groups.some((group) =>
+      group.items.some((item) => item.href === NAV_ITEMS.compLab.href),
+    )
+      ? [...groups, { group: "Comp Lab", items: [NAV_ITEMS.compLab] }]
+      : groups;
+
+  return groupsWithCompLab
     .map((group) => ({
       ...group,
       items: group.items.filter(
