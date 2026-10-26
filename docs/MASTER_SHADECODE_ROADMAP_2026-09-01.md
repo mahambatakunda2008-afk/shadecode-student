@@ -138,7 +138,7 @@ Status is conservative. A screen, API or prototype is not automatically a shippe
 | Biology-aware tutoring | 🟡 | Partial generic/curriculum capability. |
 | Practical simulator | ⚪ | Planned. |
 | Measurement / uncertainty lab | ⚪ | Planned. |
-| Snap & Learn | 🔵 | Product direction defined; multimodal workflow remains. |
+| Snap & Learn / Snap & Extract | 🟡 | Native Android now has bundled on-device image OCR, editable text, spacing cleanup, and phrase redaction for the text representation. Graph/diagram semantics, structured tables/equations, offline translation, PDF image OCR, audio/video, local artifact library, and irreversible visual redaction remain incomplete. See `docs/architecture/SNAP_AND_EXTRACT_LOCAL_FIRST_2026-10-26.md`. |
 | Diagram understanding | ⚪ | Planned. |
 
 ## E. Creation / Projects / Research
