@@ -129,9 +129,11 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val scope = rememberCoroutineScope()
     LaunchedEffect(session.accessToken) {
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
+        profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
         try {
             val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
             profile = loaded
+            withContext(Dispatchers.IO) { sessionStore.saveProfile(loaded) }
             val remoteSubjects = withContext(Dispatchers.IO) { api.loadSubjects(session, loaded) }
             // Do not erase cached subjects when the server returns an empty list.
             // An empty response can mean subject rows have not synced yet.
