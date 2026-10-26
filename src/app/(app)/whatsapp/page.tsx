@@ -12,7 +12,7 @@ const capabilities = [
   { icon: Bell, title: "Stay on track", text: "Receive useful study reminders and learning updates." },
 ];
 
-const commands = ["HELP", "LEARN Biology: cell structure", "EXPLAIN Physics: momentum", "TEACH Mathematics: differentiation"];
+const commands = ["HELP", "FIND momentum", "LEARN Biology: cell structure", "EXPLAIN Physics: momentum", "TEACH Mathematics: differentiation"];
 
 type Status = { connected: boolean; status: "active" | "blocked" | "unlinked"; phone: string | null; whatsappNumber: string | null };
 
