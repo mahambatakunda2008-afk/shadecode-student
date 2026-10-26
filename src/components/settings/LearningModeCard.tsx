@@ -31,7 +31,7 @@ export function LearningModeCard() {
         <div>
           <h2 id="learning-mode-heading" className="text-xl font-semibold">Choose your learning mode</h2>
           <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-            You decide whether Shadecode uses generative AI. You can switch modes at any time.
+            Choose whether new lessons can be generated with generative AI. You can switch modes at any time.
           </p>
         </div>
       </div>
@@ -56,14 +56,14 @@ export function LearningModeCard() {
             {mode === "ai" && <Check size={18} aria-hidden="true" className="text-[var(--primary)]" />}
           </span>
           <span className="text-sm leading-5 text-[var(--muted-foreground)]">
-            Opt in to AI-assisted lesson generation and adaptive explanations, with verified and saved resources still available.
+            Opt in to AI-assisted lesson generation. Saved lessons, curriculum resources and practice tools remain available.
           </span>
           <span className="mt-auto rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold">AI generation on</span>
         </button>
       </div>
       <p role="status" aria-live="polite" className="mt-3 text-sm text-[var(--muted-foreground)]">
         Current choice: <strong className="text-[var(--foreground)]">{mode === "ai" ? "Cortex AI" : "Classic"}</strong>.
-        {" "}This preference is stored on this device for now.
+        {" "}This preference is stored on this device for now and currently controls lesson generation.
       </p>
     </section>
   );
