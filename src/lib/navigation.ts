@@ -58,7 +58,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   examSim: { href: "/exam-sim", label: "Exam Sim", icon: ClipboardCheck, feature: "exam-sim" },
   mathChecker: { href: "/math-checker", label: "Math Checker", icon: Calculator, feature: "math-checker" },
   learn: { href: "/learn", label: "Learn", icon: BookOpen, feature: "learn" },
-  compLab: { href: "/comp-lab", label: "Code Lab", icon: Code2, feature: "code-lab" },
+  compLab: { href: "/comp-lab", label: "Comp Lab", icon: Code2, feature: "code-lab" },
   curriculum: { href: "/curriculum", label: "Courses", icon: BookOpen, feature: "courses" },
   workmate: { href: "/workmate", label: "Workmate", icon: BriefcaseBusiness, feature: "workmate" },
   projects: { href: "/projects", label: "Projects", icon: FolderKanban, feature: "projects" },
