@@ -110,6 +110,19 @@ This is a small shared catalogue, and the block count is only a rough structural
 
 Important: these are database status values and row counts, not independent proof that the source evidence is complete. The prior repository audit notes evidence-state conflicts for some Cambridge packs. Do not interpret a `verified` status label as proof that complete reviewed lessons exist for all objectives.
 
+
+### Asset-level inspection: current library is not yet ready to be treated as a curated catalogue
+
+A read-only query of all 25 current library entries found these concrete metadata/content issues:
+
+- **23 of 25 entries have a null `topic` field.** The strict recovery matcher depends on title/topic tokens, so reliable topic matching is weakened.
+- **Duplicate titles exist:** `Packet Switching` appears twice with 5 and 9 blocks; `Terminal Velocity` appears twice with 5 and 8 blocks. These need deduplication or an explicit distinction between asset variants.
+- **Potential subject misclassification:** `Advanced Trigonometry for A-Level` is stored under `Computer Science`. This must be checked against the source lesson before any bulk subject migration or publication.
+- Only one current entry is titled as an explicitly worked-practice asset (`Worked practice: Coordinate Geometry`) and one explicitly named `Waves: describing, measuring, and explaining wave motion`; title counts do not establish complete exam-component coverage.
+- Most current entries were created on 2026-10-13; one Mathematics asset is dated 2026-10-25 and the Waves asset 2026-10-20. The recent dates do not establish review or source verification.
+
+Do not automatically relabel, merge, or delete these entries from title heuristics alone. Resolve each against its source lesson and curriculum identity, preserve provenance, and make any cleanup idempotent.
+
 ### What this proves
 
 - The gap is not simply “no curriculum data”: there are thousands of curriculum objective/knowledge records.
