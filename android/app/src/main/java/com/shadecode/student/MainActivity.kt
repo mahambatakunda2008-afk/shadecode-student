@@ -456,7 +456,7 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                             onClick = {
                                 editableText = editableText
                                     .replace(Regex("[ \\t]+"), " ")
-                                    .replace(Regex("\\n{3,}"), "\\n\\n")
+                                    .replace(Regex("\\n{3,}"), "\n\n")
                                     .trim()
                                 message = "Whitespace cleanup applied. Review the result; mathematical meaning was not corrected."
                             },
