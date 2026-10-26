@@ -112,22 +112,3 @@ abstract class NativeDatabase : RoomDatabase() {
         fun appContext(): Context = requireNotNull(applicationContext) { "Native database has not been initialized." }
     }
 }
-
-class NativeSubjectRepository(private val database: NativeDatabase) {
-    suspend fun cached(): List<NativeSubjectEntity> = database.subjects().all()
-
-    suspend fun replaceFromProfile(profile: NativeProfile) {
-        val subjects = profile.subjects
-            .map { it.trim() }
-            .filter { it.isNotBlank() && !it.equals("general", ignoreCase = true) }
-            .distinctBy { normalize(it) }
-            .map { subject ->
-                val normalized = normalize(subject)
-                NativeSubjectEntity("profile:${profile.id}:$normalized", subject, normalized)
-            }
-        database.subjects().clear()
-        if (subjects.isNotEmpty()) database.subjects().replaceAll(subjects)
-    }
-
-    private fun normalize(value: String): String = value.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
-}
