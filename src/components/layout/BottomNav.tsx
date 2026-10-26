@@ -52,7 +52,7 @@ export function BottomNav() {
 
   const primaryLabel = (href: string, fallback: string) => {
     if (href === "/dashboard") return "Home";
-    if (href === "/comp-lab") return "Code Lab";
+    if (href === "/comp-lab") return "Comp Lab";
     if (family === "foundation" && href === "/achievements") return "Milestones";
     if (family === "beyond-school" && href === "/curriculum") return "Courses";
     return fallback;
