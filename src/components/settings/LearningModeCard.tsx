@@ -26,7 +26,7 @@ export function LearningModeCard() {
     <section className="ssc-card p-5 sm:p-6" aria-labelledby="learning-mode-heading">
       <div className="mb-4 flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-glow)] text-[var(--primary)]">
-          <BrainCircuit size={21} aria-hidden="true" />
+          <BrainCircuit size={22} aria-hidden="true" />
         </span>
         <div>
           <h2 id="learning-mode-heading" className="text-xl font-semibold">Choose your learning mode</h2>
