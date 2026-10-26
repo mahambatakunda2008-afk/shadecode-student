@@ -130,10 +130,19 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     LaunchedEffect(session.accessToken) {
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
         try {
-            val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }; profile = loaded
+            val loaded = withContext(Dispatchers.IO) { api.loadProfile(session) }
+            profile = loaded
             val remoteSubjects = withContext(Dispatchers.IO) { api.loadSubjects(session, loaded) }
-            withContext(Dispatchers.IO) { database.subjects().clear(); if (remoteSubjects.isNotEmpty()) database.subjects().replaceAll(remoteSubjects) }
-            subjects = withContext(Dispatchers.IO) { database.subjects().all() }; error = null
+            // Do not erase cached subjects when the server returns an empty list.
+            // An empty response can mean subject rows have not synced yet.
+            if (remoteSubjects.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    database.subjects().clear()
+                    database.subjects().replaceAll(remoteSubjects)
+                }
+            }
+            subjects = withContext(Dispatchers.IO) { database.subjects().all() }
+            error = null
         } catch (e: Exception) { error = e.message ?: "Could not refresh your profile." } finally { loading = false }
     }
     Scaffold(containerColor = ShadeBackground, bottomBar = {
