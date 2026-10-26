@@ -83,4 +83,20 @@ describe("Comp Lab visibility across learner experiences", () => {
       ),
     ).toContain("/comp-lab");
   });
+
+  it("recognizes a syllabus code when it is the only saved subject value", () => {
+    expect(
+      hrefs(getExperienceNavGroups(schoolExperience, [], ["9618"])),
+    ).toContain("/comp-lab");
+
+    expect(
+      hrefs(
+        getExperienceNavGroups(
+          schoolExperience,
+          [{ subject_code: "4021" }],
+          [],
+        ),
+      ),
+    ).toContain("/comp-lab");
+  });
 });
