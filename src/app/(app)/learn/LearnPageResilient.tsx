@@ -16,6 +16,7 @@ import LearnBrainStatus from "./LearnBrainStatus";
 import ShadeNetKnowledgeSearch from "./ShadeNetKnowledgeSearch";
 import GeographyRevisionKit from "./GeographyRevisionKit";
 import { normalizeSubjectKey } from "@/lib/academic/subjectContract";
+import { getLearningMode, setLearningMode, type LearningMode } from "@/lib/learningMode";
 
 const AUTH_TIMEOUT = 3_000;
 const LOCAL_TIMEOUT = 2_500;
@@ -70,7 +71,23 @@ export default function LearnPageResilient() {
   const [mode, setMode] = useState<Mode>("guided");
   const [generationJob, setGenerationJob] = useState<LessonJob | null>(null);
   const [showAllLessons, setShowAllLessons] = useState(false);
+  const [learningMode, setLearningModeState] = useState<LearningMode>("classic");
   const openedJobRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setLearningModeState(getLearningMode());
+    const sync = (event: Event) => {
+      const selected = (event as CustomEvent<LearningMode>).detail;
+      setLearningModeState(selected === "ai" ? "ai" : getLearningMode());
+    };
+    window.addEventListener("shadecode:learning-mode-change", sync);
+    return () => window.removeEventListener("shadecode:learning-mode-change", sync);
+  }, []);
+
+  const chooseLearningMode = (next: LearningMode) => {
+    setLearningMode(next);
+    setLearningModeState(next);
+  };
 
   useEffect(() => {
     setOffline(!navigator.onLine);
@@ -275,6 +292,17 @@ export default function LearnPageResilient() {
             <PaperStudyLauncher />
           </div>
         </header>
+
+        <section className="mb-6 flex flex-col gap-3 rounded-2xl border border-[var(--card-border)] bg-[var(--surface)] p-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Learning mode">
+          <div>
+            <p className="text-sm font-semibold">{learningMode === "ai" ? "Cortex AI mode" : "Classic mode"}</p>
+            <p className="mt-1 text-sm leading-5 text-[var(--muted-foreground)]">{learningMode === "ai" ? "AI-assisted lesson generation is enabled." : "Traditional study mode. Generative AI lesson creation is off."}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" aria-pressed={learningMode === "classic"} onClick={() => chooseLearningMode("classic")} className={`min-h-10 rounded-xl border px-3 text-sm font-semibold ${learningMode === "classic" ? "border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--surface-2)]"}`}>Classic</button>
+            <button type="button" aria-pressed={learningMode === "ai"} onClick={() => chooseLearningMode("ai")} className={`min-h-10 rounded-xl border px-3 text-sm font-semibold ${learningMode === "ai" ? "border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]" : "border-[var(--card-border)] bg-[var(--surface-2)]"}`}>Cortex AI</button>
+          </div>
+        </section>
 
         {subjects.some((item) => normalizeSubjectKey(item.name) === "geography") && (
           <div className="mb-6"><GeographyRevisionKit /></div>
