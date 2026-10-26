@@ -13,6 +13,12 @@ export async function POST(request: Request) {
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json().catch(() => null);
+    if (body?.learningMode === "classic") {
+      return NextResponse.json({
+        error: "Classic mode does not use generative AI. Switch to Cortex AI to generate a new exam, or use saved papers and existing practice questions.",
+        code: "CLASSIC_MODE_AI_DISABLED",
+      }, { status: 403 });
+    }
     const requestedSubject = typeof body?.subject === "string" ? body.subject.trim() : "";
     const topics = Array.isArray(body?.topics) ? body.topics.filter((topic: unknown): topic is string => typeof topic === "string" && topic.trim().length > 0) : [];
     const difficulty = body?.difficulty === "easy" || body?.difficulty === "hard" ? body.difficulty : "medium";
