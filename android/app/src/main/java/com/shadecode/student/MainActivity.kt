@@ -395,21 +395,18 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                             }
                             processing = false
                         }
-                        activeRecognizer.compareAndSet(recognizer, null)
-                        recognizer.close()
+                        if (activeRecognizer.compareAndSet(recognizer, null)) recognizer.close()
                     }
                     .addOnFailureListener { error ->
                         if (screenActive.get()) {
                             message = "Could not read this image: ${error.localizedMessage ?: "OCR failed"}"
                             processing = false
                         }
-                        activeRecognizer.compareAndSet(recognizer, null)
-                        recognizer.close()
+                        if (activeRecognizer.compareAndSet(recognizer, null)) recognizer.close()
                     }
             } catch (error: Exception) {
                 recognizerToClose?.let {
-                    activeRecognizer.compareAndSet(it, null)
-                    it.close()
+                    if (activeRecognizer.compareAndSet(it, null)) it.close()
                 }
                 if (screenActive.get()) {
                     message = "Could not open image: ${error.localizedMessage ?: "unsupported image"}"
