@@ -157,3 +157,18 @@ The current Android profile editor allows editing the existing study-level field
 - [x] Corrected initial sync so an intentionally empty subject profile clears stale local subject rows, while a temporarily empty remote catalog does not erase cached subjects for a profile that still selects subjects.
 - [ ] Verify these changes with Android CI and manual device testing.
 - [ ] Focus session history, interruption-safe persistence, notifications/background timing, and sync with the web Focus module remain unimplemented.
+
+### Follow-up slice: offline task and timetable synchronization (2026-10-27)
+
+- [x] Cache task and timetable snapshots in account-scoped Android DataStore keys.
+- [x] Queue task creation and task completion when a retryable network failure prevents a server write.
+- [x] Reconcile a locally created task ID to its server ID after queued creation succeeds, including updating queued completion operations.
+- [x] Queue timetable replacement after retryable network failures; keep the locally saved timetable visible and tell the learner that sync is queued.
+- [x] Re-read the pending-operation queue after each operation so ID reconciliation is applied before the next queued operation is executed.
+- [x] Append a follow-up WorkManager job rather than replacing an active sync job.
+- [ ] Confirm the latest Android and web CI runs pass after these synchronization changes.
+- [ ] Test offline task creation, task completion, timetable save, account switching, token refresh, reconnect and duplicate/retry behavior on a real or representative Android device.
+- [ ] Add explicit idempotency/conflict handling. A connection loss after a server write but before its response may still cause a retry to duplicate a task.
+- [ ] Extend queued offline behavior to other mutation-capable modules only after each API and conflict contract has been reviewed.
+
+The queue currently covers task creation, task completion and timetable replacement only. This is not a claim that the entire app works offline, and a successful CI build alone would not prove reliable background sync on a device.
