@@ -109,11 +109,16 @@ export default function SubjectsPage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || "Could not add this subject.");
+      // The write succeeded. Refresh the canonical lesson-facing list, but don't
+      // report a failed add if this follow-up read alone is temporarily unavailable.
       const refreshed = await fetch("/api/learn", { headers: { Authorization: "Bearer " + session.access_token } });
-      if (!refreshed.ok) throw new Error("Subject saved, but the list could not refresh. Reload this page.");
-      const data = await refreshed.json();
-      setSubjects(data.subjects ?? []);
-      setAddSuccess(String(payload.subject) + " added to your study space.");
+      if (refreshed.ok) {
+        const data = await refreshed.json();
+        setSubjects(data.subjects ?? []);
+        setAddSuccess(String(payload.subject) + " added to your study space.");
+      } else {
+        setAddSuccess(String(payload.subject) + " saved. The list may take a moment to refresh.");
+      }
       setSubjectQuery("");
     } catch (e) {
       setAddError(e instanceof Error ? e.message : "Could not add this subject.");
@@ -137,11 +142,17 @@ export default function SubjectsPage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || "Could not remove this subject.");
+      // Removing the profile selection is the successful mutation. A failed
+      // follow-up read must not turn that success into a misleading failure state.
       const refreshed = await fetch("/api/learn", { headers: { Authorization: "Bearer " + session.access_token } });
-      if (!refreshed.ok) throw new Error("Subject removed, but the list could not refresh. Reload this page.");
-      const data = await refreshed.json();
-      setSubjects(data.subjects ?? []);
-      setAddSuccess(String(payload.removed ?? subject.name) + " removed from active subjects. Existing work is preserved.");
+      if (refreshed.ok) {
+        const data = await refreshed.json();
+        setSubjects(data.subjects ?? []);
+        setAddSuccess(String(payload.removed ?? subject.name) + " removed from active subjects. Existing work is preserved.");
+      } else {
+        setSubjects(current => current.filter(item => item.id !== subject.id));
+        setAddSuccess(String(payload.removed ?? subject.name) + " removed. Existing work is preserved; refresh the page to sync the list.");
+      }
     } catch (e) {
       setAddError(e instanceof Error ? e.message : "Could not remove this subject.");
     } finally { setRemovingSubject(null); }
