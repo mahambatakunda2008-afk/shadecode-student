@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
     const requestedSubject = typeof body?.subject === "string" ? body.subject.trim() : "";
-    const topics = Array.isArray(body?.topics) ? body.topics.filter((v: unknown): v is string => typeof v === "string" && v.trim()).slice(0, 12) : [];
+    const topics = Array.isArray(body?.topics) ? body.topics.filter((v: unknown): v is string => typeof v === "string" && Boolean(v.trim())).slice(0, 12) : [];
     const difficulty = body?.difficulty === "easy" || body?.difficulty === "hard" ? body.difficulty : "medium";
     const count = Number.isFinite(Number(body?.questionCount)) ? Math.max(5, Math.min(20, Math.round(Number(body.questionCount)))) : 10;
     if (!requestedSubject) return NextResponse.json({ error: "Choose a subject first." }, { status: 400 });
