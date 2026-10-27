@@ -215,3 +215,12 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - **Scoring is intentionally self-assessed.** No AI-generated mark is treated as authoritative, no official score is stored, and no XP is awarded from this PDF workflow.
 - Timer duration currently defaults to 60 minutes and is not yet configurable per syllabus/paper. The PDF is viewed externally rather than rendered inline. Diagrams and question-specific structured answer inputs are not yet part of this workspace.
 - Test required before marking complete: download QP + mark scheme, start attempt, enter notes, force-stop/relaunch, enable airplane mode, reopen paper and notes, finish attempt, confirm the timer and notes restore correctly, then switch accounts and verify isolation.
+
+
+### Crash-safe timed attempts update (2026-10-27)
+
+- Timed past-paper attempts now persist a wall-clock deadline and running/paused state, not only a decrementing counter.
+- Reopening an active attempt recalculates remaining time from its saved deadline, so force-stop, process death, device sleep, or time spent outside the screen no longer silently resets elapsed time.
+- Pause captures the remaining seconds and clears the deadline; resume creates a fresh deadline. Returning to the catalogue leaves an active timer running, matching a real timed attempt.
+- Expired attempts reopen as finished while retaining local answer notes. The timer/notes remain device-local and account-scoped.
+- Still requires Android build confirmation and real-device checks for force-stop/relaunch, pause/resume, account isolation, and offline PDF opening. This is not yet a signed production release.
