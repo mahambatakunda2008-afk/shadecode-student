@@ -15,7 +15,7 @@ const GOAL_LABEL_TO_LEARNING_GOAL: Record<string, LearningGoal> = {
 
 const SUBJECT_ID_TO_INTEREST: Record<string, SubjectInterest> = {
   "additional-mathematics": "mathematics", "further-mathematics": "mathematics", statistics: "mathematics", "quantitative-methods": "mathematics", "technical-mathematics": "mathematics",
-  "english-language": "english", "english-literature": "english", "reading-writing": "english", "academic-writing": "english", communication: "english", "early-literacy": "english",
+  "english-language": "english", "english-literature": "english", "reading-writing": "english", "academic-writing": "english", communication: "english",
   "integrated-science": "science", "general-science": "science", "applied-science": "science", "environmental-science": "science", "earth-science": "science", astronomy: "science", agriculture: "science",
   "business-studies": "business", "business-management": "business", commerce: "business", entrepreneurship: "business", finance: "accounting", marketing: "business",
   ict: "computer_science", computing: "computer_science", programming: "coding", "software-development": "coding", "digital-literacy": "computer_science", "design-technology": "computer_science",
