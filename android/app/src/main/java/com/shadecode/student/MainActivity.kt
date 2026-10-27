@@ -4,12 +4,14 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +59,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -356,6 +361,7 @@ private fun ProfileNativeScreen(padding: PaddingValues, profile: NativeProfile?,
 private fun SnapExtractScreen(padding: PaddingValues) {
     val context = LocalContext.current
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
+    var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
     var rawOcr by remember { mutableStateOf("") }
     var editableText by remember { mutableStateOf("") }
     var redactionTerms by remember { mutableStateOf("") }
@@ -368,6 +374,21 @@ private fun SnapExtractScreen(padding: PaddingValues) {
         onDispose {
             screenActive.set(false)
             activeRecognizer.getAndSet(null)?.close()
+        }
+    }
+    LaunchedEffect(selectedImage) {
+        val uri = selectedImage ?: run { imagePreview = null; return@LaunchedEffect }
+        imagePreview = withContext(Dispatchers.IO) {
+            try {
+                val resolver = context.contentResolver
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
+                var sampleSize = 1
+                while (bounds.outWidth / sampleSize > 1200 || bounds.outHeight / sampleSize > 1200) sampleSize *= 2
+                val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options)?.asImageBitmap() }
+            } catch (_: Exception) { null }
         }
     }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -450,6 +471,19 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                         else "Image selected. OCR is processed locally; the source image is not uploaded.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    imagePreview?.let { preview ->
+                        Spacer(Modifier.height(12.dp))
+                        Image(
+                            bitmap = preview,
+                            contentDescription = "Preview of the selected source image",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxWidth().height(220.dp),
+                        )
+                    }
+                    if (selectedImage != null && imagePreview == null && !processing) {
+                        Spacer(Modifier.height(6.dp))
+                        Text("Preview unavailable, but you can still retry OCR or choose another image.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = { imagePicker.launch("image/*") }, enabled = !processing, modifier = Modifier.fillMaxWidth()) {
                         Text(if (processing) "Extracting locally…" else "Choose image")
