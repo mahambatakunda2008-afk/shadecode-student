@@ -41,6 +41,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var year by remember { mutableStateOf<Int?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var status by remember { mutableStateOf<String?>(null) }
     var openingPaperId by remember { mutableStateOf<String?>(null) }
     var downloadingPaperId by remember { mutableStateOf<String?>(null) }
     var offlinePapers by remember(session.userId) { mutableStateOf(NativeOfflinePaperStore.list(context, session.userId)) }
@@ -54,6 +55,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
         Spacer(Modifier.height(10.dp))
         if(loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
+        status?.let { Text(it,color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodySmall) }
         LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=24.dp)) {
             if (offlinePapers.isNotEmpty()) {
                 item {
