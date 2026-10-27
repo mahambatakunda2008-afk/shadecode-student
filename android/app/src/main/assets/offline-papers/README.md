@@ -29,6 +29,8 @@ For each authorized PDF, add it beneath this directory and add an object to `ind
 ## Pack admission rules
 
 - Do not bundle a paper merely because its PDF can be downloaded publicly.
+- Cambridge International's official guidance says it does not grant permission to publish past papers on websites and does not grant permission for electronic publication of complete papers/questions/mark schemes. See [Cambridge reproduction FAQ](https://help.cambridgeinternational.org/hc/en-gb/articles/203544371-Can-I-reproduce-Cambridge-past-examination-papers-on-the-school-s-website-my-website) and [permission FAQ](https://help.cambridgeinternational.org/hc/en-gb/articles/115004418469-How-do-I-apply-for-permission-to-use-Cambridge-copyright-material). Do not bundle Cambridge papers based on the assumption that public access permits redistribution.
+- ZIMSEC redistribution terms have not yet been verified for Shadecode's intended distribution model. Keep ZIMSEC papers out of the APK until the rights position is documented.
 - Keep the source and permission/licence record in the project’s release evidence.
 - Use the required attribution exactly.
 - Calculate SHA-256 from the final PDF bytes. The importer rejects missing metadata, invalid paths, non-PDF files, oversized files and checksum mismatches.
