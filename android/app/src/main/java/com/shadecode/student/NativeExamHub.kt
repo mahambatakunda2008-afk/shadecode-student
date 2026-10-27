@@ -52,6 +52,15 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var attemptFinished by remember(session.userId) { mutableStateOf(false) }
     val attemptPrefs = remember(session.userId) { context.getSharedPreferences("past_paper_attempts_v1", android.content.Context.MODE_PRIVATE) }
     fun load(block:suspend ()->Unit) { loading=true; error=null; scope.launch { try { block() } catch(e:Exception) { error=e.message ?: "Could not load papers." } finally { loading=false } } }
+    fun beginAttempt(paper: NativeExamPaper) {
+        activeAttempt = paper
+        val key = "${session.userId}:${paper.id}"
+        attemptNotes = attemptPrefs.getString("notes_$key", "").orEmpty()
+        attemptSeconds = attemptPrefs.getInt("seconds_$key", 3600).coerceAtLeast(0)
+        attemptFinished = attemptPrefs.getBoolean("finished_$key", false)
+        attemptRunning = !attemptFinished && attemptSeconds > 0
+        status = "Attempt opened. Your notes are saved locally."
+    }
     LaunchedEffect(session.userId) {
         offlinePapers = withContext(Dispatchers.IO) { NativeOfflinePaperStore.importBundled(context, session.userId) }
     }
@@ -151,6 +160,11 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                     offlinePapers = NativeOfflinePaperStore.list(context, session.userId)
                                 }) { Text("Remove") }
                             }
+                            if (saved.kind.lowercase() in listOf("qp", "question_paper", "question-paper")) {
+                                OutlinedButton(onClick = {
+                                    beginAttempt(NativeExamPaper(saved.id, saved.level, saved.session, saved.year, saved.paperNumber, saved.variant, saved.kind, "", null))
+                                }, modifier=Modifier.fillMaxWidth()) { Text("Start offline timed attempt") }
+                            }
                         }
                     }
                 }
@@ -192,15 +206,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             isSaved = saved,
                             isOpening = openingPaperId == paper.id,
                             isDownloading = downloadingPaperId == paper.id,
-                            onStartAttempt = {
-                                activeAttempt = paper
-                                val key = "${session.userId}:${paper.id}"
-                                attemptNotes = attemptPrefs.getString("notes_$key", "").orEmpty()
-                                attemptSeconds = attemptPrefs.getInt("seconds_$key", 3600).coerceAtLeast(0)
-                                attemptFinished = attemptPrefs.getBoolean("finished_$key", false)
-                                attemptRunning = !attemptFinished && attemptSeconds > 0
-                                status = "Attempt opened. Your notes are saved locally."
-                            },
+                            onStartAttempt = { beginAttempt(paper) },
                             onOpen = {
                                 val cached = NativeOfflinePaperStore.find(context, session.userId, paper.id)
                                 if (cached != null) {
