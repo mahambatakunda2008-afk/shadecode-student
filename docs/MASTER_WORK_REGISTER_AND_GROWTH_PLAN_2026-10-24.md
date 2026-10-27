@@ -174,3 +174,19 @@ A work item is **Verified complete** only when:
 ## Subject management and learner personalisation
 
 The focused implementation register is `docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md`. It tracks the web subject picker/API, central catalogue, per-learner curriculum profile, adaptive learning, Android alignment, and acceptance evidence. The initial API route is committed but **not yet verified end-to-end**; the web picker UI and deployment verification remain outstanding. Do not mark this work complete until the focused register's acceptance criteria are satisfied.
+
+
+## 2026-10-27 subject-management decision and execution gate
+
+The user explicitly requires broad subject support and personalization across learner level, selected subjects, qualification/board/syllabus, goals, demonstrated ability and learning history, with web and native Android aligned. The deliverable is a shared subject/curriculum contract and real subject-management workflow, not a Mathematics/Physics-only display or a larger hard-coded list.
+
+The complete requirements, proposed taxonomy, implementation sequence, test matrix and current status are maintained in docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md. Cortex execution items are mirrored in .cortex/tasks.md.
+
+Current truth as of 2026-10-27:
+- The web subject page currently renders the learner's existing subject rows and lacks an add-subject UI.
+- Onboarding subjects are hard-coded by study level and are not a complete central catalogue.
+- Initial API route src/app/api/subjects/route.ts exists in commit fbd3b388f3ec714939eb9842677046da9b7c6ae2, but schema/RLS/trigger semantics and end-to-end behavior are not verified.
+- Native Android Snap & Extract work does not automatically change the web app.
+- Web subject management, the central catalogue, edit-after-onboarding curriculum context, learning personalization integration, Android alignment and deployed acceptance tests remain open.
+
+Execution gate: first audit the subject/profile data source of truth and the committed endpoint, then implement and test the web flow. Do not claim the web app changed until the intended commit is deployed and the add/duplicate/persist/relogin/remove and cross-account isolation journeys are verified. Catalogue presence must not be represented as verified curriculum or content coverage.
