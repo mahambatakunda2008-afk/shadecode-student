@@ -160,6 +160,14 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         }
         if (focusRemaining == 0) focusRunning = false
     }
+
+    LaunchedEffect(focusRemaining) {
+        if (focusRemaining == 0 && !focusCompletionHandled) {
+            focusCompletionHandled = true
+            focusRunning = false
+            focusStatus = "Session complete. Saving progress…"
+        }
+    }
     LaunchedEffect(session.accessToken) {
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
         profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
