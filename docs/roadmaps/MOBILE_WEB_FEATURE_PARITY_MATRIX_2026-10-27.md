@@ -146,3 +146,13 @@ Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not app
 - **Web CI:** passed for the same commit: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40505226226.
 - **Scope warning:** the “More Shadecode tools” card opens the existing web modules in the browser. It is a bridge, not native feature parity. Native Exam Hub, Exam Simulation, Math Checker, Code Lab, Project Studio, and other linked modules remain open work.
 - **Release state:** PR #489 remains open. No physical-device smoke test, signed production APK/AAB, or production release is claimed. Before release, validate the APK on the target Android device and verify account/session handling when opening web modules.
+
+
+## Native Exam Hub build result (2026-10-27)
+
+- Native Compose Exam Hub is implemented in the feature branch: subject-filtered syllabus browsing, level/session/year facets, paper listing, and authenticated paper-open requests.
+- Android CI passed for commit `bfda64a19c3764462c2bb6c2e14b0d098f9f6980`: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40575436582
+- Commit-matched debug preview artifact: `shadecode-student-android-debug-210`, artifact ID `12767004581`, 39,733,920 bytes, expires 2026-11-10. Archive digest: `sha256:3e5a097848ccc182d886e19c828ea9de1d2255d39fd112531ca2409ef9ef5e7f`.
+- Web CI passed: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40575436616.
+- Paper API source checks authentication and learner subject access, then creates a short-lived signed URL. Production schema/storage/RLS behavior still needs real-account verification.
+- Still open: physical-device testing, paper viewer/download/offline handling, native Exam Simulation, Math Checker, remaining parity work, production signing and AAB. This is a debug preview, not a production release.
