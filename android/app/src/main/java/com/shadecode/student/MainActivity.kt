@@ -383,6 +383,7 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                 Text(if (loading) "Syncing your academic profile…" else if (error != null) "Offline mode: using your last saved subjects." else "Your subjects and learning context are connected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } }
+        item { NativeCortexInsightsCard(session) }
         item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
         if (subjects.isEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         else items(subjects) { SubjectRow(it.name) }
