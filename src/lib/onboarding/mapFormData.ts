@@ -36,6 +36,8 @@ export interface OnboardingApiPayload {
   study_level: StudyLevel;
   learning_goal: LearningGoal;
   subject_interests: SubjectInterest[];
+  /** Full learner-selected subject names, independent of recommendation-interest enums. */
+  selected_subjects: string[];
   goals: string[];
   display_name?: string;
   daily_goal_minutes?: number;
@@ -56,7 +58,41 @@ export interface OnboardingApiPayload {
 }
 
 function slug(value: string): string { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
-function subjectLabel(subjectId: string): string { return subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+const SUBJECT_ID_TO_LABEL: Record<string, string> = {
+  maths: "Mathematics", mathematics: "Mathematics", english: "English", literature: "English Literature",
+  science: "Science", "computer-science": "Computer Science", ict: "ICT", programming: "Programming",
+  "early-literacy": "Early Literacy", "early-numeracy": "Early Numeracy", discovery: "My World & Discovery",
+  creative: "Creative Expression", movement: "Movement & Wellbeing", "social-studies": "Social Studies",
+  "art-design": "Art and Design", art: "Art and Design", "design-technology": "Design and Technology",
+  "food-nutrition": "Food and Nutrition", "physical-education": "Physical Education",
+  "family-religious-studies": "Family and Religious Studies", "religious-studies": "Religious Studies",
+  "heritage-studies": "Heritage Studies", "environmental-management": "Environmental Management",
+  "global-perspectives": "Global Perspectives", "technical-graphics": "Technical Graphics",
+  "fashion-textiles": "Fashion and Textiles", "building-studies": "Building Studies",
+  "sport-science": "Sport Science", "additional-mathematics": "Additional Mathematics",
+  "further-mathematics": "Further Mathematics", "combined-science": "Combined Science",
+  "environmental-science": "Environmental Science", "agricultural-science": "Agricultural Science",
+  "travel-tourism": "Travel and Tourism", "data-science": "Data Science", "public-health": "Public Health",
+  "media-studies": "Media Studies", "project-management": "Project Management",
+  "human-resources": "Human Resources", "customer-service": "Customer Service",
+  "automotive-technology": "Automotive Technology", "electrical-technology": "Electrical Technology",
+  "food-preparation": "Food Preparation and Nutrition", woodwork: "Woodwork", metalwork: "Metalwork",
+  shona: "Shona", ndebele: "Ndebele", french: "French", portuguese: "Portuguese", spanish: "Spanish",
+  chinese: "Chinese", engineering: "Engineering", networking: "Computer Networking",
+  cybersecurity: "Cybersecurity", construction: "Construction", plumbing: "Plumbing",
+  welding: "Welding and Fabrication", hospitality: "Hospitality", tourism: "Tourism", finance: "Finance",
+  marketing: "Marketing", management: "Management", law: "Law", psychology: "Psychology",
+  sociology: "Sociology", politics: "Politics and Governance", education: "Education", medicine: "Medicine",
+  nursing: "Nursing", architecture: "Architecture", design: "Design", sales: "Sales",
+  healthcare: "Healthcare", languages: "Languages", agriculture: "Agriculture", accounting: "Accounting",
+  economics: "Economics", business: "Business Studies", history: "History", geography: "Geography",
+  physics: "Physics", chemistry: "Chemistry", biology: "Biology", commerce: "Commerce",
+  entrepreneurship: "Entrepreneurship", statistics: "Statistics", electronics: "Electronics",
+  "environmental-science": "Environmental Science", "combined-science": "Combined Science",
+};
+function subjectLabel(subjectId: string): string {
+  return SUBJECT_ID_TO_LABEL[subjectId] ?? subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 function boardIdFor(value: string): string { const id = slug(value); return id === "cambridge-international" ? "cambridge" : id; }
 
 function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): OnboardingCurriculumSubject[] {
@@ -104,7 +140,7 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
   const subject_interests = (form.subjects ?? []).map((subject) => SUBJECT_ID_TO_INTEREST[subject]).filter((subject): subject is SubjectInterest => Boolean(subject));
 
   return {
-    education_level, study_level, learning_goal, subject_interests, goals,
+    education_level, study_level, learning_goal, subject_interests, selected_subjects: (form.subjects ?? []).map(subjectLabel), goals,
     display_name: form.displayName?.trim() || undefined,
     daily_goal_minutes: Number.isFinite(form.dailyGoalMinutes) ? form.dailyGoalMinutes : 30,
     study_style: form.studyStyle === "structured" ? "structured" : "flexible",

@@ -19,6 +19,23 @@ function normalizeSubstage(value: unknown): string | null {
   return normalized.slice(0, 80);
 }
 
+function normalizeSelectedSubjects(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const subjects: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const name = item.trim().replace(/\s+/g, " ");
+    if (!name || name.length > 80 || !/[\p{L}\p{N}]/u.test(name)) continue;
+    const key = name.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    subjects.push(name);
+    if (subjects.length >= 40) break;
+  }
+  return subjects;
+}
+
 function normalizeCurriculumAnswers(body: Record<string, unknown>) {
   const value = body.curriculum_profile;
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -67,11 +84,18 @@ export async function POST(request: NextRequest) {
 
     const exactCurriculumSubjects = normalizeStoredCurriculumIdentities(body.curriculum_subjects);
     const curriculumAnswers = normalizeCurriculumAnswers(body);
+    // Keep the learner's full selected-subject list separate from the small,
+    // enum-backed interests used by recommendation models. Unknown-to-the-
+    // recommender subjects must not disappear from the canonical profile.
+    const selectedSubjects = normalizeSelectedSubjects(body.selected_subjects);
+    const canonicalSubjects = selectedSubjects.length
+      ? selectedSubjects
+      : Array.isArray(body.subject_interests) ? body.subject_interests : [];
     const profilePayload: Record<string, unknown> = {
       id: user.id,
       display_name: typeof body.display_name === "string" ? body.display_name.trim() || null : null,
       study_level: studyLevel,
-      subjects: Array.isArray(body.subject_interests) ? body.subject_interests : [],
+      subjects: canonicalSubjects,
       daily_goal_minutes: Number.isFinite(body.daily_goal_minutes) ? Math.max(10, Math.min(240, Number(body.daily_goal_minutes))) : 30,
       study_style: body.study_style === "structured" ? "structured" : "flexible",
       education_stage: substage,
