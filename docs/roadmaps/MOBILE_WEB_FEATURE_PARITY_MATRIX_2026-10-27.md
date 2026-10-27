@@ -13,7 +13,8 @@
 - Native timetable reader added in commit `ace4b81da4d5aad3d4933c7aaa5415298e4d1266`; the broader build on commit `0fb5af0a7d583b095574b6169d342bbeea3be2ad` passed CI. This verifies the timetable reader compiles in that source snapshot, but not its behavior on a physical device.
 - Native Cortex Insights card added to the dashboard in commits `fb1f8b97d243ff072f6dd9fc6b983eec357e38d6` and `a917e99f12e3f03c02e92c0172305ea74572bd5c`. It reads the signed-in learner's own `cortex_insights` rows through Supabase RLS, shows loading/empty/error states, and supports refresh. The build for this addition is queued/pending at the time of this update; do not call it build-verified until CI succeeds.
 - Latest Android CI for the Cortex Insights card: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40493545430
-- The timetable reader remains read-only. Native timetable editing/generation, durable offline queue and retry, device testing, signed production APK/AAB, and broad feature parity remain open.
+- Native timetable generation and saving are now implemented in `MainActivity.kt` and `NativeApi.kt`: learners can select their configured subjects, choose a start time/session length/break length, generate a schedule locally, and save it through the existing `replace_own_timetable` authenticated RPC. This preserves the server-side atomic replacement and RLS ownership contract. The CI build for this latest change is pending; physical-device behavior is not yet verified.
+- Remaining timetable gaps include editing individual generated slots, choosing dates/recurrence, and durable offline queue/retry. Device testing, signed production APK/AAB, and broad feature parity remain open.
 - Successful debug APK artifact from the earlier profile/tasks/focus build is available until its stated expiry through the GitHub Actions run page: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40490647026
 
 
