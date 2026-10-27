@@ -278,9 +278,14 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
     var tasks by remember { mutableStateOf<List<NativeTask>>(emptyList()) }
     var taskTitle by remember { mutableStateOf("") }
     var taskDescription by remember { mutableStateOf("") }
+    var selectedTaskSubjectId by remember { mutableStateOf<String?>(null) }
     var tasksLoading by remember { mutableStateOf(false) }
     var taskMessage by remember { mutableStateOf<String?>(null) }
     val taskScope = rememberCoroutineScope()
+
+    LaunchedEffect(subjects) {
+        if (selectedTaskSubjectId == null || subjects.none { it.id == selectedTaskSubjectId }) selectedTaskSubjectId = subjects.firstOrNull()?.id
+    }
 
     LaunchedEffect(session.accessToken) {
         tasksLoading = true
