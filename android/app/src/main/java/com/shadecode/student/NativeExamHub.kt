@@ -123,16 +123,16 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             confirmButton = {
                 TextButton(onClick = {
                     showStarterPackPrompt = false
-                    context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE).edit().putBoolean("prompted_${session.userId}", true).apply()
                     val connectivity = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                     val network = connectivity.activeNetwork
                     val caps = connectivity.getNetworkCapabilities(network)
                     val unmetered = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true ||
                         caps?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true
                     if (!unmetered) {
-                        status = "Starter pack paused: connect to Wi-Fi or Ethernet, then download papers from Exam Hub."
+                        status = "Starter pack paused: connect to Wi-Fi or Ethernet, then open Exam Hub again to try."
                         return@TextButton
                     }
+                    context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE).edit().putBoolean("prompted_${session.userId}", true).apply()
                     if (starterPackBusy) return@TextButton
                     starterPackBusy = true
                     scope.launch {
