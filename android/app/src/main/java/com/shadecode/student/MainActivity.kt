@@ -563,6 +563,7 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
             }
         } }
         item { NativeCortexInsightsCard(session) }
+        item { MoreShadecodeToolsCard(context) }
         item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
         if (subjects.isEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         else items(subjects) { SubjectRow(it.name) }
@@ -693,6 +694,51 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                     taskMessage?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
+        }
+    }
+}
+
+private data class NativeToolLink(val title: String, val path: String, val description: String)
+
+@Composable
+private fun MoreShadecodeToolsCard(context: Context) {
+    val links = listOf(
+        NativeToolLink("Exam Hub", "/exam-hub", "Past papers and exam resources"),
+        NativeToolLink("Exam Simulation", "/exam-sim", "Timed exam practice"),
+        NativeToolLink("Math Checker", "/math-checker", "Work through maths problems"),
+        NativeToolLink("Code Lab", "/code-lab", "Programming practice"),
+        NativeToolLink("Projects", "/projects", "Build and explore projects"),
+        NativeToolLink("Careers", "/careers", "Explore study and career paths"),
+        NativeToolLink("Focus", "/focus", "Open the full focus workspace"),
+        NativeToolLink("Achievements", "/achievements", "Review milestones and progress"),
+        NativeToolLink("Insights", "/insights", "Explore learning analytics"),
+        NativeToolLink("Curriculum", "/curriculum", "Browse curriculum resources"),
+    )
+    var message by remember { mutableStateOf<String?>(null) }
+    Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(22.dp)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("More Shadecode tools", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("These modules open in your browser for now. Native versions are being built in stages, and your signed-in web session may need to be restored there.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            links.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pair.forEach { link ->
+                        OutlinedButton(
+                            onClick = {
+                                val target = Uri.parse(BuildConfig.APP_BASE_URL.trimEnd('/') + link.path)
+                                try {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                    message = null
+                                } catch (_: Exception) {
+                                    message = "Could not open ${link.title}. Check that a browser is installed."
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) { Text(link.title, maxLines = 1) }
+                    }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+            message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         }
     }
 }
