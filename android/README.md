@@ -10,7 +10,7 @@ This is a **native Android client**, implemented with Kotlin and Jetpack Compose
 - **Snap & Extract:** the native app includes an image picker, a memory-conscious source preview, and bundled on-device Latin OCR. Extracted text is editable and can be copied/shared; raw OCR and edited text can be saved to a private app-local library (up to 20 recent extracts, with a per-text size limit). The library can be searched offline by title or text content. Deleting an extract removes its local text record. Source images are not copied into that library, and saved source URIs may no longer be readable later. Spacing cleanup and phrase redaction operate on a text copy. It does not yet interpret graphs/diagrams, translate offline, process audio/video, or redact original image pixels. OCR must be reviewed before exam use.
 - **Package:** `com.shadecode.student`
 
-Offline does **not** mean every web feature is already implemented in the Android client. The native app currently has a smaller feature surface than the web app. Native feature parity, bundled offline past-paper packs, robust conflict resolution, and an iOS SwiftUI client remain explicit work items. Downloaded past papers are saved privately on-device and can be reopened offline; no real board paper is bundled until redistribution permission/licensing is documented.
+Offline does **not** mean every web feature is already implemented in the Android client. The native app currently has a smaller feature surface than the web app. Native feature parity, robust conflict resolution, and an iOS SwiftUI client remain explicit work items. The Android client now has an opt-in first-visit starter-pack flow for papers already available through the authorized catalogue; this is not a claim that complete papers are bundled with the APK or that redistribution rights are granted. Downloaded past papers are saved privately on-device and can be reopened offline; no real board paper is bundled until redistribution permission/licensing is documented.
 
 ## Build locally
 
@@ -34,7 +34,7 @@ cd android
 ./gradlew assembleDebug
 ```
 
-The Android release workflow can produce an APK for installation/testing and an AAB for Google Play.
+The Android release workflow always produces an unsigned debug APK for preview/testing. Once the persistent signing secrets are configured, it also builds a signed release APK and Play Store AAB, generates a SHA-256 checksum manifest, and attaches these files to a tagged GitHub release. The signed path has not yet been verified by a production-signed build.
 
 ## Production signing
 
