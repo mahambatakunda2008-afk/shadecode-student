@@ -45,9 +45,29 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var openingPaperId by remember { mutableStateOf<String?>(null) }
     var downloadingPaperId by remember { mutableStateOf<String?>(null) }
     var offlinePapers by remember(session.userId) { mutableStateOf(NativeOfflinePaperStore.list(context, session.userId)) }
+    var activeAttempt by remember(session.userId) { mutableStateOf<NativeExamPaper?>(null) }
+    var attemptNotes by remember(session.userId) { mutableStateOf("") }
+    var attemptSeconds by remember(session.userId) { mutableIntStateOf(3600) }
+    var attemptRunning by remember(session.userId) { mutableStateOf(false) }
+    var attemptFinished by remember(session.userId) { mutableStateOf(false) }
+    val attemptPrefs = remember(session.userId) { context.getSharedPreferences("past_paper_attempts_v1", android.content.Context.MODE_PRIVATE) }
     fun load(block:suspend ()->Unit) { loading=true; error=null; scope.launch { try { block() } catch(e:Exception) { error=e.message ?: "Could not load papers." } finally { loading=false } } }
     LaunchedEffect(session.userId) {
         offlinePapers = withContext(Dispatchers.IO) { NativeOfflinePaperStore.importBundled(context, session.userId) }
+    }
+    LaunchedEffect(activeAttempt?.id, attemptRunning, attemptSeconds) {
+        val active = activeAttempt ?: return@LaunchedEffect
+        val key = "${session.userId}:${active.id}"
+        attemptPrefs.edit().putString("notes_$key", attemptNotes).putInt("seconds_$key", attemptSeconds)
+            .putBoolean("finished_$key", attemptFinished).apply()
+        if (attemptRunning && attemptSeconds > 0) {
+            kotlinx.coroutines.delay(1000)
+            attemptSeconds = (attemptSeconds - 1).coerceAtLeast(0)
+            if (attemptSeconds == 0) {
+                attemptRunning = false
+                status = "Time is up. Your answer notes have been saved on this device."
+            }
+        }
     }
     LaunchedEffect(session.userId,subjects) { load { syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) } } }
     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal=16.dp, vertical=12.dp)) {
@@ -60,6 +80,52 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
         error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
         status?.let { Text(it,color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodySmall) }
         LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=24.dp)) {
+            if (activeAttempt != null) {
+                item {
+                    val active = activeAttempt!!
+                    val matchingMarkScheme = papers.firstOrNull { it.kind.lowercase() in listOf("ms", "mark_scheme", "mark-scheme") && it.paperNumber == active.paperNumber && it.variant == active.variant }
+                    Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(18.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                            Text("Past-paper attempt", style=MaterialTheme.typography.headlineSmall, fontWeight=FontWeight.Bold)
+                            Text("${syllabus?.subject ?: "Exam"} · ${active.level} · ${active.session} ${active.year}", color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Paper ${active.paperNumber} / ${active.variant}", style=MaterialTheme.typography.titleMedium)
+                            Text("Time remaining: ${attemptSeconds / 60}:${(attemptSeconds % 60).toString().padStart(2, '0')}", style=MaterialTheme.typography.headlineSmall, color=if (attemptSeconds < 60) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { attemptRunning = !attemptRunning && attemptSeconds > 0 && !attemptFinished }, enabled = attemptSeconds > 0 && !attemptFinished) { Text(if (attemptRunning) "Pause timer" else "Resume timer") }
+                                OutlinedButton(onClick = { attemptRunning = false; attemptFinished = true; status = "Attempt finished. Notes are saved locally; review them against the mark scheme." }) { Text(if (attemptFinished) "Finished" else "Finish attempt") }
+                            }
+                            Text("Open the PDF, then return here to write your answers. Notes save automatically on this device.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = {
+                                    val cached = NativeOfflinePaperStore.find(context, session.userId, active.id)
+                                    if (cached != null) {
+                                        try { val uri = NativeOfflinePaperStore.openUri(context, cached); context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                                        catch (e: Exception) { error = e.message ?: "Could not open saved paper." }
+                                    } else scope.launch {
+                                        openingPaperId = active.id
+                                        try { val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, active.id) }; context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                                        catch (e: Exception) { error = e.message ?: "Could not open paper. Download it first for offline use." }
+                                        finally { openingPaperId = null }
+                                    }
+                                }) { Text("Open question paper") }
+                                if (matchingMarkScheme != null) OutlinedButton(onClick = {
+                                    val cached = NativeOfflinePaperStore.find(context, session.userId, matchingMarkScheme.id)
+                                    if (cached != null) {
+                                        try { val uri = NativeOfflinePaperStore.openUri(context, cached); context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                                        catch (e: Exception) { error = e.message ?: "Could not open mark scheme." }
+                                    } else scope.launch {
+                                        try { val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, matchingMarkScheme.id) }; context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                                        catch (e: Exception) { error = e.message ?: "Could not open mark scheme." }
+                                    }
+                                }) { Text("Mark scheme") }
+                            }
+                            OutlinedTextField(value=attemptNotes, onValueChange={ attemptNotes=it }, modifier=Modifier.fillMaxWidth().heightIn(min=220.dp), label={ Text("Answer sheet / working") }, placeholder={ Text("Write answers, working and question numbers here…") }, minLines=8)
+                            Text("Self-mark against the official mark scheme. This version does not automatically grade PDFs or award XP.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            OutlinedButton(onClick={ activeAttempt=null; attemptRunning=false }) { Text("Return to paper catalogue") }
+                        }
+                    }
+                }
+            }
             if (offlinePapers.isNotEmpty()) {
                 item {
                     Text("Available offline on this device", style=MaterialTheme.typography.titleLarge, fontWeight=FontWeight.Bold)
@@ -124,6 +190,15 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             isSaved = saved,
                             isOpening = openingPaperId == paper.id,
                             isDownloading = downloadingPaperId == paper.id,
+                            onStartAttempt = {
+                                activeAttempt = paper
+                                val key = "${session.userId}:${paper.id}"
+                                attemptNotes = attemptPrefs.getString("notes_$key", "").orEmpty()
+                                attemptSeconds = attemptPrefs.getInt("seconds_$key", 3600).coerceAtLeast(0)
+                                attemptFinished = attemptPrefs.getBoolean("finished_$key", false)
+                                attemptRunning = !attemptFinished && attemptSeconds > 0
+                                status = "Attempt opened. Your notes are saved locally."
+                            },
                             onOpen = {
                                 val cached = NativeOfflinePaperStore.find(context, session.userId, paper.id)
                                 if (cached != null) {
@@ -194,6 +269,7 @@ private fun NativeExamPaperCard(
     isDownloading: Boolean,
     onOpen: () -> Unit,
     onDownload: () -> Unit,
+    onStartAttempt: () -> Unit,
 ) {
     Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(7.dp)) {
@@ -206,6 +282,9 @@ private fun NativeExamPaperCard(
                 OutlinedButton(onClick=onDownload, enabled=!isSaved && !isDownloading && !isOpening) {
                     Text(when { isDownloading -> "Downloading…"; isSaved -> "Saved offline"; else -> "Download for offline" })
                 }
+            }
+            if (title.contains("Question Paper")) {
+                OutlinedButton(onClick=onStartAttempt, modifier=Modifier.fillMaxWidth()) { Text("Start timed attempt") }
             }
             if (isSaved) Text("Stored on this device. No connection needed to reopen it.", style=MaterialTheme.typography.labelSmall, color=MaterialTheme.colorScheme.primary)
         }
