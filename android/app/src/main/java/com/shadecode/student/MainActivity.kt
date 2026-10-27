@@ -610,7 +610,7 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                                     editableText = artifact.editedText
                                     redactionTerms = ""
                                     message = "Loaded saved text. The original source image was not saved."
-                                }) { Text("Open") }
+                                }, enabled = !processing) { Text("Open") }
                                 TextButton(onClick = {
                                     scope.launch {
                                         val deleted = withContext(Dispatchers.IO) { extractStore.delete(artifact.id) }
