@@ -1,5 +1,6 @@
 import type { OnboardingFormData, StudyLevel } from "@/types";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
+import { SUBJECT_CATALOG } from "@/lib/subjects/catalog";
 
 const STUDY_LEVEL_TO_EDUCATION: Record<StudyLevel, EducationLevel> = {
   "early-childhood": "basic", primary: "basic", "lower-secondary": "secondary", "upper-secondary": "secondary",
@@ -42,6 +43,7 @@ export interface OnboardingApiPayload {
   study_level: StudyLevel;
   learning_goal: LearningGoal;
   subject_interests: SubjectInterest[];
+  subjects: string[];
   goals: string[];
   display_name?: string;
   daily_goal_minutes?: number;
@@ -102,6 +104,14 @@ function buildCurriculumAnswers(form: Partial<OnboardingFormData>): Record<strin
   return hasAnswer ? answers : undefined;
 }
 
+function canonicalSelectedSubjectName(subjectId: string): string {
+  const normalized = slug(subjectId);
+  const entry = SUBJECT_CATALOG.find(subject =>
+    [subject.id, subject.name, ...(subject.aliases ?? [])].some(value => slug(value) === normalized)
+  );
+  return entry?.name ?? subjectLabel(subjectId);
+}
+
 export function mapOnboardingFormData(form: Partial<OnboardingFormData>): OnboardingApiPayload {
   const study_level = (form.studyLevel ?? "upper-secondary") as StudyLevel;
   const education_level = STUDY_LEVEL_TO_EDUCATION[study_level] ?? "secondary";
@@ -110,7 +120,8 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
   const subject_interests = (form.subjects ?? []).map((subject) => SUBJECT_ID_TO_INTEREST[subject]).filter((subject): subject is SubjectInterest => Boolean(subject));
 
   return {
-    education_level, study_level, learning_goal, subject_interests, goals,
+    education_level, study_level, learning_goal, subject_interests,
+    subjects: (form.subjects ?? []).map(canonicalSelectedSubjectName), goals,
     display_name: form.displayName?.trim() || undefined,
     daily_goal_minutes: Number.isFinite(form.dailyGoalMinutes) ? form.dailyGoalMinutes : 30,
     study_style: form.studyStyle === "structured" ? "structured" : "flexible",
