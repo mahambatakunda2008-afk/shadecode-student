@@ -48,7 +48,8 @@ Do not claim a chart or diagram is semantically understood merely because OCR fo
 
 ### Stage 2: structured image extraction
 - [Partial] A private app-local Android library now stores raw OCR and edited text, supports open/update/delete, caps the library at 20 recent extracts, and limits each saved text representation to 120,000 characters.
-- [Incomplete] Source images are not copied into the library; stored source URIs are informational and may expire. The current library is not yet searchable and does not yet store region geometry or structured document blocks.
+- [Partial] The local library now has an offline search field that matches extract titles, edited text, and raw OCR text without a network request. Search is case-insensitive and filters the current local collection.
+- [Incomplete] Source images are not copied into the library; stored source URIs are informational and may expire. The library does not yet store region geometry or structured document blocks.
 - Region boxes, reading order, table reconstruction, equation-preserving text, graph/diagram classification and source-to-output traceability remain future work.
 - Confidence and low-confidence review queue remain future work.
 
