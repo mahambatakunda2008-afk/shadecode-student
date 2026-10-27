@@ -104,3 +104,29 @@ The work is not complete until a new and existing learner can:
 ## Release status rule
 
 Until CI artifacts, signing and device testing are inspected, release status is **not verified**. A successful code commit alone is not a release. A CI-built debug APK is a preview artifact; production distribution requires signing and appropriate release-channel checks.
+
+
+## Additional requirement: full web-to-mobile capability parity
+
+The user explicitly requires the mobile release to include the capabilities of the web version, not only a minimal native shell. The authoritative cross-platform acceptance contract is now documented in [MOBILE_WEB_FEATURE_PARITY_MATRIX_2026-10-27.md](./MOBILE_WEB_FEATURE_PARITY_MATRIX_2026-10-27.md).
+
+This requirement means **feature parity with native mobile interactions**, not copying desktop layouts or embedding the website in a WebView. Preserve the Kotlin/Jetpack Compose Android client and reuse the existing authenticated API/data contracts. The parity scope includes, at minimum, Cortex/insights, Learn, Exam Hub and Exam Simulation, Math Checker and subject tools, tasks/timetable/focus, analytics/history, XP/achievements/challenges/leaderboards, Code Lab, Project Studio, careers, settings/trust, and durable offline storage/sync where each feature's real implementation permits it.
+
+### Required execution order
+
+1. Inspect current Android source, web routes/components, API contracts, Android CI/release workflow, current main SHA, and release artifacts before changing feature code.
+2. Make subject/profile contracts canonical and shared: all relevant subjects and education stages, multiple selected subjects, board/qualification/syllabus only when known, and explicit content-readiness status. The native UI must not hard-code Mathematics and Physics as the only subjects.
+3. Implement and verify native profile/subject management, then parity-critical learning workflows in vertical slices.
+4. Treat offline as a per-capability contract. Saved data, local computation, queued mutations and network-only AI must be clearly distinguished; account-scoped data and idempotent sync are mandatory.
+5. Test web and Android against the same scenarios and data semantics. Keep a capability **Partial** until both clients' behavior and acceptance evidence are verified.
+6. Build the Android artifact from the exact intended commit; verify workflow `head_sha`, signing, install/upgrade and real-device smoke tests before publishing.
+
+### Status correction
+
+- [x] Record the explicit full-feature parity requirement and acceptance matrix.
+- [ ] Audit current native implementation against the matrix; no parity claim until source-level evidence is collected.
+- [ ] Implement missing native capabilities in prioritized vertical slices.
+- [ ] Verify shared subject/profile changes across web and Android.
+- [ ] Pass CI and real-device release gates; publish a commit-matched artifact only after verification.
+
+This documentation commit is not a mobile feature implementation, a successful Android build, or a release. Those remain open work items.
