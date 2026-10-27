@@ -294,14 +294,25 @@ private fun NativeTimetableScreen(
     var duration by remember(session.userId) { mutableStateOf("60") }
     var breakDuration by remember(session.userId) { mutableStateOf("10") }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current.applicationContext
+    val store = remember(context) { NativeStore(context) }
 
     LaunchedEffect(session.accessToken) {
         loading = true
+        val cached = withContext(Dispatchers.IO) { store.readTimetable(session.userId) }
+        if (cached.isNotEmpty()) {
+            slots = cached
+            message = "Showing your last saved timetable while we check for updates."
+        }
         try {
-            slots = withContext(Dispatchers.IO) { api.loadTimetable(session) }
+            val latest = withContext(Dispatchers.IO) { api.loadTimetable(session) }
+            slots = latest
+            withContext(Dispatchers.IO) { store.saveTimetable(session.userId, latest) }
             error = null
+            message = null
         } catch (e: Exception) {
             error = e.message ?: "Could not load your timetable."
+            if (cached.isNotEmpty()) message = "Offline: showing the last timetable saved on this device. Changes may need syncing."
         } finally {
             loading = false
         }
@@ -351,6 +362,7 @@ private fun NativeTimetableScreen(
         slots = generated
         error = null
         message = "Schedule generated on this device. Save it to sync across Shadecode."
+        scope.launch { withContext(Dispatchers.IO) { store.saveTimetable(session.userId, generated) } }
     }
 
     LazyColumn(
@@ -417,11 +429,14 @@ private fun NativeTimetableScreen(
                                 error = null
                                 message = null
                                 try {
+                                    withContext(Dispatchers.IO) { store.saveTimetable(session.userId, slots) }
                                     withContext(Dispatchers.IO) { api.saveTimetable(session, slots) }
                                     slots = withContext(Dispatchers.IO) { api.loadTimetable(session) }
+                                    withContext(Dispatchers.IO) { store.saveTimetable(session.userId, slots) }
                                     message = "Timetable saved and synced to your Shadecode account."
                                 } catch (e: Exception) {
-                                    error = e.message ?: "Could not save timetable. Your previous saved timetable should remain intact."
+                                    withContext(Dispatchers.IO) { store.saveTimetable(session.userId, slots) }
+                                    error = "Could not sync the timetable. Your generated schedule remains saved on this device. Reconnect and tap Save and sync timetable."
                                 } finally {
                                     saving = false
                                 }
@@ -478,6 +493,8 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
     var tasksLoading by remember { mutableStateOf(false) }
     var taskMessage by remember { mutableStateOf<String?>(null) }
     val taskScope = rememberCoroutineScope()
+    val context = LocalContext.current.applicationContext
+    val store = remember(context) { NativeStore(context) }
 
     LaunchedEffect(subjects) {
         if (selectedTaskSubjectId == null || subjects.none { it.id == selectedTaskSubjectId }) selectedTaskSubjectId = subjects.firstOrNull()?.id
@@ -485,11 +502,22 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
 
     LaunchedEffect(session.accessToken) {
         tasksLoading = true
+        val cached = withContext(Dispatchers.IO) { store.readTasks(session.userId) }
+        if (cached.isNotEmpty()) {
+            tasks = cached
+            taskMessage = "Showing tasks last saved on this device."
+        }
         try {
-            tasks = withContext(Dispatchers.IO) { api.loadTasks(session) }
+            val latest = withContext(Dispatchers.IO) { api.loadTasks(session) }
+            tasks = latest
+            withContext(Dispatchers.IO) { store.saveTasks(session.userId, latest) }
             taskMessage = null
         } catch (_: Exception) {
-            taskMessage = "Tasks could not sync. Your other study tools remain available."
+            taskMessage = if (cached.isNotEmpty()) {
+                "Offline: showing cached tasks. New changes require a connection."
+            } else {
+                "Tasks could not sync. Your other study tools remain available."
+            }
         } finally {
             tasksLoading = false
         }
@@ -564,9 +592,10 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                                     try {
                                         val created = withContext(Dispatchers.IO) { api.createTask(session, title, taskDescription, selectedTaskSubjectId.orEmpty()) }
                                         tasks = (tasks + created).sortedBy { it.dueDate.orEmpty() }
+                                        withContext(Dispatchers.IO) { store.saveTasks(session.userId, tasks) }
                                         taskTitle = ""
                                         taskDescription = ""
-                                        taskMessage = "Task saved."
+                                        taskMessage = "Task saved and synced."
                                     } catch (_: Exception) {
                                         taskMessage = "Task could not be saved. Check your connection and permissions."
                                     }
@@ -588,7 +617,8 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                                         taskScope.launch {
                                             try {
                                                 withContext(Dispatchers.IO) { api.completeTask(session, task.id) }
-                                                taskMessage = "Task completed."
+                                                withContext(Dispatchers.IO) { store.saveTasks(session.userId, tasks) }
+                                                taskMessage = "Task completed and synced."
                                             } catch (_: Exception) {
                                                 tasks = tasks.map { if (it.id == task.id) it.copy(completed = false) else it }
                                                 taskMessage = "Could not complete this task. Try again when connected."
