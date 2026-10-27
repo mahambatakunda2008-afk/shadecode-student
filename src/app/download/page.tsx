@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, ExternalLink, MonitorSmartphone, ShieldCheck, Smartphone, WifiOff } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, ExternalLink, MonitorSmartphone, ShieldCheck, Smartphone, WifiOff } from "lucide-react";
 import { BrandLockup } from "@/components/brand/BrandLockup";
 
 export default function DownloadPage() {
