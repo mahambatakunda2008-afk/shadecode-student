@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { normalizeSubjectNames, normalizeSubjectKey } from "@/lib/academic/subjectContract";
 import { SUBJECT_CATALOG } from "@/lib/subjects/catalog";
 
@@ -17,7 +18,24 @@ function subjectMatches(a: string, b: string): boolean {
   return normalizeSubjectKey(canonicalSubjectName(a)) === normalizeSubjectKey(canonicalSubjectName(b));
 }
 
-async function getAuthenticatedUser() {
+async function getAuthenticatedUser(request: NextRequest) {
+  // Browser and native clients may authenticate with an explicit bearer token.
+  // Honour it for both identity verification and RLS-protected database queries;
+  // otherwise fall back to the server-managed Supabase session cookies.
+  const authorization = request.headers.get("authorization") ?? "";
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (bearer && url && anonKey) {
+    const supabase = createSupabaseClient(url, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${bearer}` } },
+    });
+    const { data: { user }, error } = await supabase.auth.getUser(bearer);
+    return { supabase, user: error ? null : user };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   return { supabase, user: error ? null : user };
@@ -25,7 +43,7 @@ async function getAuthenticatedUser() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user } = await getAuthenticatedUser();
+    const { supabase, user } = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json().catch(() => null) as { subject?: unknown } | null;
