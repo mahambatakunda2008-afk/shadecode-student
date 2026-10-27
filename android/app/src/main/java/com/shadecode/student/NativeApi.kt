@@ -93,6 +93,23 @@ class NativeApi {
         return result
     }
 
+    /** Persist a completed native focus session through the same server route used by the web app. */
+    fun completeFocusSession(session: NativeSession, durationMinutes: Int, mode: String, xpEarned: Int): JSONObject {
+        require(durationMinutes in 1..120) { "Focus duration must be between 1 and 120 minutes." }
+        val body = JSONObject()
+            .put("durationMinutes", durationMinutes)
+            .put("mode", mode.take(40))
+            .put("xpEarned", xpEarned.coerceIn(0, 200))
+        val response = request(
+            "POST",
+            "/api/focus/complete",
+            body.toString(),
+            accessToken = session.accessToken,
+            urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+        )
+        return JSONObject(response)
+    }
+
     fun updateLessonProgress(session: NativeSession, lessonId: String, progress: Float) {
         val percentage = kotlin.math.round(progress.coerceIn(0f, 1f) * 100f).toInt()
         request("PATCH", "/rest/v1/learn_lessons?id=eq.$lessonId&user_id=eq.${session.userId}", JSONObject().put("progress", percentage).toString(), session.accessToken, "return=minimal")
@@ -104,8 +121,8 @@ class NativeApi {
         return NativeSession(json.getString("access_token"), json.optString("refresh_token"), user.getString("id"), user.optString("email", fallbackEmail))
     }
 
-    private fun request(method: String, path: String, body: String? = null, accessToken: String? = null, prefer: String? = null): String {
-        val connection = (URL(baseUrl + path).openConnection() as HttpURLConnection).apply {
+    private fun request(method: String, path: String, body: String? = null, accessToken: String? = null, prefer: String? = null, urlBase: String = baseUrl): String {
+        val connection = (URL(urlBase + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 10_000; readTimeout = 10_000
             setRequestProperty("apikey", anonKey); setRequestProperty("Authorization", "Bearer ${accessToken ?: anonKey}")
             setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
