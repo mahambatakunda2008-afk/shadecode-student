@@ -377,11 +377,11 @@ Source of truth: docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGIS
 - [x] Document the requested outcome, current limitations, planned architecture, subject taxonomy, cross-platform requirement and acceptance matrix in the focused work register.
 - [ ] P0: Finish audit and test of src/app/api/subjects/route.ts (original commit fbd3b388f3ec714939eb9842677046da9b7c6ae2; latest implementation includes alias-aware add and non-destructive active-selection removal). Schema/trigger constraints are documented, but CI and end-to-end behavior are not yet verified.
 - [x] Initial web subject management UI committed in src/app/(app)/subjects/page.tsx: searchable grouped catalogue, add/custom subject, and remove-from-active-selection controls. End-to-end behavior remains unverified.
-- [ ] P0: Confirm subject choices persist across refresh/relogin and flow into Learn without cross-account leakage or duplicate rows.
+- [ ] P0: Confirm subject choices persist across refresh/relogin and flow into Learn without cross-account leakage or duplicate rows. Initial add/remove controls are committed; actual account-based testing remains open.
 - [x] Initial central catalogue committed at src/lib/subjects/catalog.ts with stable IDs, aliases, categories and pathway metadata; completeness and curriculum mapping remain open.
 - [ ] P1: Expand breadth across mathematics, sciences, languages, humanities/social sciences, business/commerce, computing/technology, creative/practical fields and custom course/subject entries.
 - [ ] P1: Separate selectable subjects from curriculum-mapped, curriculum-verified, published-content-ready and tool-supported status. Do not imply full syllabus coverage merely because a subject appears.
-- [ ] P1: Support per-subject exam board, qualification, syllabus code and version; allow edits after onboarding; preserve unresolved values rather than guessing.
+- [ ] P1: Verify the initial per-subject curriculum editor and resolver end-to-end. The editor now captures board, qualification, level, optional syllabus code and version after onboarding; explicit code/version mismatches block instead of silently falling back. Confirm identifiers against verified database records. Global learner-level/goals/language preferences editing remains open.
 - [ ] P2: Define a shared learner-context contract used by web and native Android for study level, subjects, per-subject curriculum, goals, language and learning preferences.
 - [ ] P2: Wire level-appropriate teaching and adaptive difficulty to demonstrated mastery, recurring errors and prerequisites; keep memory private and learner-scoped.
 - [ ] P2: Gate subject-specific modules/tools appropriately and avoid showing fake lesson counts or unsupported curriculum claims.
