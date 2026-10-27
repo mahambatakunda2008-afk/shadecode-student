@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -209,10 +210,12 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             NavigationBarItem(selected == 2, { selected = 2 }, icon = { Icon(Icons.Default.PlayArrow, null) }, label = { Text("Practice") })
             NavigationBarItem(selected == 3, { selected = 3 }, icon = { Icon(Icons.Default.DocumentScanner, null) }, label = { Text("Extract") })
             NavigationBarItem(selected == 4, { selected = 4 }, icon = { Icon(Icons.Default.Person, null) }, label = { Text("Profile") })
+            NavigationBarItem(selected == 5, { selected = 5 }, icon = { Icon(Icons.Default.DateRange, null) }, label = { Text("Plan") })
         }
     }) { padding ->
         when (selected) {
             0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error)
+            5 -> NativeTimetableScreen(padding, session, api)
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
             2 -> NativePracticeScreen(
                 padding = padding,
@@ -270,6 +273,76 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                     scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun NativeTimetableScreen(padding: PaddingValues, session: NativeSession, api: NativeApi) {
+    var slots by remember(session.userId) { mutableStateOf<List<NativeTimetableSlot>>(emptyList()) }
+    var loading by remember(session.userId) { mutableStateOf(true) }
+    var error by remember(session.userId) { mutableStateOf<String?>(null) }
+    LaunchedEffect(session.accessToken) {
+        loading = true
+        try {
+            slots = withContext(Dispatchers.IO) { api.loadTimetable(session) }
+            error = null
+        } catch (e: Exception) {
+            error = e.message ?: "Could not load your timetable."
+        } finally {
+            loading = false
+        }
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(top = 18.dp, bottom = 24.dp),
+    ) {
+        item {
+            Text("Your study plan", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text("The timetable shared with your Shadecode web account.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (loading) item { CircularProgressIndicator() }
+        error?.let { message ->
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Couldn't refresh timetable", fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(4.dp))
+                        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+        if (!loading && error == null && slots.isEmpty()) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Your timetable is empty", fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Create or generate your timetable on the web version. It will appear here when saved.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+        items(slots, key = { it.id }) { slot ->
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface)) {
+                Row(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.width(94.dp)) {
+                        Text(slot.startTime.take(5), fontWeight = FontWeight.Bold, color = ShadePrimary)
+                        Text(slot.endTime.take(5), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(slot.subject, fontWeight = FontWeight.SemiBold)
+                        Text(if (slot.isBreak) "Break" else "Study session", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
     }
 }
