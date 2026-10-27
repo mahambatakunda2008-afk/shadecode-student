@@ -148,6 +148,8 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     var focusDuration by remember { mutableStateOf(25 * 60) }
     var focusRemaining by remember { mutableStateOf(25 * 60) }
     var focusRunning by remember { mutableStateOf(false) }
+    var focusCompletionHandled by remember { mutableStateOf(false) }
+    var focusStatus by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     // Keep the countdown above tab navigation so learners can move into Learn without losing the sprint.
