@@ -96,6 +96,66 @@ class NativeApi {
         return result
     }
 
+    fun loadTasks(session: NativeSession): List<NativeTask> {
+        val rows = request(
+            "GET",
+            "/rest/v1/tasks?select=id,title,description,due_date,completed,completed_at,updated_at&user_id=eq.${session.userId}&order=due_date.asc.nullslast&limit=100",
+            accessToken = session.accessToken,
+        )
+        val array = JSONArray(rows)
+        return buildList {
+            for (i in 0 until array.length()) {
+                val row = array.getJSONObject(i)
+                add(
+                    NativeTask(
+                        id = row.getString("id"),
+                        title = row.optString("title"),
+                        description = row.optString("description"),
+                        dueDate = row.optString("due_date").takeIf { it.isNotBlank() && it != "null" },
+                        completed = row.optBoolean("completed", false),
+                    )
+                )
+            }
+        }
+    }
+
+    fun createTask(session: NativeSession, title: String, description: String = ""): NativeTask {
+        require(title.trim().isNotEmpty()) { "Enter a task title." }
+        val body = JSONObject()
+            .put("user_id", session.userId)
+            .put("title", title.trim().take(180))
+            .put("description", description.trim().take(2000))
+            .put("completed", false)
+            .put("updated_at", java.time.Instant.now().toString())
+        val response = request(
+            "POST",
+            "/rest/v1/tasks",
+            body.toString(),
+            accessToken = session.accessToken,
+            prefer = "return=representation",
+        )
+        val rows = JSONArray(response)
+        if (rows.length() == 0) throw IllegalStateException("Task was not saved.")
+        val row = rows.getJSONObject(0)
+        return NativeTask(
+            id = row.getString("id"),
+            title = row.optString("title"),
+            description = row.optString("description"),
+            dueDate = row.optString("due_date").takeIf { it.isNotBlank() && it != "null" },
+            completed = row.optBoolean("completed", false),
+        )
+    }
+
+    fun completeTask(session: NativeSession, taskId: String) {
+        request(
+            "PUT",
+            "/api/tasks/$taskId/complete",
+            "{}",
+            accessToken = session.accessToken,
+            urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+        )
+    }
+
     /** Persist a completed native focus session through the same server route used by the web app. */
     fun completeFocusSession(session: NativeSession, durationMinutes: Int, mode: String, xpEarned: Int): JSONObject {
         require(durationMinutes in 1..120) { "Focus duration must be between 1 and 120 minutes." }
@@ -144,6 +204,8 @@ class NativeApi {
         } finally { connection.disconnect() }
     }
 }
+
+data class NativeTask(val id: String, val title: String, val description: String, val dueDate: String?, val completed: Boolean)
 
 data class NativeSession(val accessToken: String, val refreshToken: String, val userId: String, val email: String)
 
