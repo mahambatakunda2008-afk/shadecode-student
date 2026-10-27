@@ -47,9 +47,10 @@ Do not claim a chart or diagram is semantically understood merely because OCR fo
 - State clearly that OCR can misread handwriting, formulae, tables and diagrams; this stage does not semantically interpret charts/diagrams or redact source-image pixels.
 
 ### Stage 2: structured image extraction
-- Region boxes, reading order, table reconstruction, equation-preserving text, graph/diagram classification and source-to-output traceability.
-- Local persistence, searchable artifact library and deletion controls.
-- Confidence and low-confidence review queue.
+- [Partial] A private app-local Android library now stores raw OCR and edited text, supports open/update/delete, caps the library at 20 recent extracts, and limits each saved text representation to 120,000 characters.
+- [Incomplete] Source images are not copied into the library; stored source URIs are informational and may expire. The current library is not yet searchable and does not yet store region geometry or structured document blocks.
+- Region boxes, reading order, table reconstruction, equation-preserving text, graph/diagram classification and source-to-output traceability remain future work.
+- Confidence and low-confidence review queue remain future work.
 
 ### Stage 3: local document and learning workflows
 - PDF page extraction and mixed text/image pages; reuse existing positioned-PDF structure code where appropriate rather than creating a duplicate parser.
@@ -84,6 +85,7 @@ Do not claim a chart or diagram is semantically understood merely because OCR fo
 
 - User picks an image and obtains editable OCR text with no network connection.
 - Raw OCR remains recoverable after cleanup or redaction preview.
+- Saved extracts can be reopened, updated and deleted after leaving the Extract screen; app-local text records survive process restarts, and the library applies explicit count and per-item size limits.
 - Phrase redaction replaces all matching occurrences in the derived text and makes the change visible before copying/sharing.
 - No automatic claim of equation, graph, diagram or table correctness.
 - The feature is labelled local image text extraction, not complete document intelligence.
