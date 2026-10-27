@@ -12,6 +12,7 @@ val releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
 val hasReleaseSigning = listOf(releaseKeystorePath, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }
 val ciVersionCode = System.getenv("ANDROID_VERSION_CODE")?.toIntOrNull() ?: 1
 val ciVersionName = System.getenv("ANDROID_VERSION_NAME")?.takeIf { it.isNotBlank() } ?: "0.2.0"
+val appBaseUrl = System.getenv("SHADECODE_APP_URL") ?: "https://shadecodestudent.vercel.app"
 val supabaseUrl = System.getenv("NEXT_PUBLIC_SUPABASE_URL") ?: ""
 val supabaseAnonKey = System.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ?: ""
 
@@ -33,6 +34,7 @@ android {
         versionName = ciVersionName
         buildConfigField("String", "SUPABASE_URL", "\"${supabaseUrl.replace("\"", "\\\"")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${supabaseAnonKey.replace("\"", "\\\"")}\"")
+        buildConfigField("String", "APP_BASE_URL", "\"${appBaseUrl.trimEnd('/')}\"")
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild {
             cmake {
