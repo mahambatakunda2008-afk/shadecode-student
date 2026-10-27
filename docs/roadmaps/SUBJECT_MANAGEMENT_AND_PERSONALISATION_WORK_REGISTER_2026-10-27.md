@@ -183,10 +183,10 @@ The recent Snap & Extract work is in the native Android codebase. It does not au
 
 ### Current status snapshot
 
-- The web /subjects page currently only renders the learner's returned subject rows; no usable add-subject UI is present in the inspected source.
+- The web /subjects page originally only rendered the learner's returned subject rows. A searchable catalogue, add/custom-subject controls and non-destructive remove-from-active-selection controls are now committed; end-to-end behavior is still unverified.
 - Onboarding choices remain hard-coded in src/components/onboarding/steps/SubjectStep.tsx; the list is level-dependent and incomplete as a universal catalogue.
 - An initial authenticated POST route was committed at src/app/api/subjects/route.ts in commit fbd3b388f3ec714939eb9842677046da9b7c6ae2. It has not yet been schema/RLS audited or tested end-to-end.
-- The web page, central catalogue, edit-after-onboarding profile flow, curriculum resolution, personalization integration, Android alignment, and deployed acceptance tests remain incomplete.
+- The central catalogue and initial web subject-management UI are now implemented in source. The per-subject curriculum editor is also committed. Curriculum resolution, global profile editing, full personalization integration, Android alignment, and deployed acceptance tests remain incomplete.
 - Do not announce a web fix until a deployed web test demonstrates it.
 
 
@@ -218,3 +218,16 @@ The recent Snap & Extract work is in the native Android codebase. It does not au
 ### Important scope boundary
 
 This first pass makes the subject list manageable and broadens selectable choices. It does not magically add verified lessons, official syllabus coverage, assessment banks, or subject-specific tools for every catalogue entry. Curriculum and content readiness must remain independently verified.
+
+
+## Per-subject curriculum editor progress (2026-10-27)
+
+- [x] Added src/components/subjects/CurriculumProfileEditor.tsx and connected it to the web Subjects page.
+- [x] A learner can configure board, qualification, education level, and an optional syllabus code/version independently for each active subject, using the existing authenticated GET/PATCH API at /api/curriculum/profile.
+- [x] The editor does not silently assume Cambridge. The board must be explicitly selected for a new curriculum identity.
+- [x] The default level follows the learner's stored study level where a reasonable mapping exists, but the learner can change it for each subject.
+- [x] Updated curriculum grounding so an explicit syllabus code/version that does not match a verified curriculum returns a blocked/unresolved result rather than silently falling back to another version.
+- [ ] Verify the editor against actual curriculum_versions identifiers for board, qualification, subject and version; UI selection is not proof that a matching verified record exists.
+- [ ] Latest CI for the current source changes is running; no pass is claimed until the exact current commit completes.
+- [ ] The profile editor currently configures per-subject curriculum identity. Editing the learner's global study level, goals, language and learning preferences in one unified profile workflow remains open.
+- [ ] End-to-end verification of adding/removing subjects, configuring curriculum, and generating a correctly scoped lesson remains open.
