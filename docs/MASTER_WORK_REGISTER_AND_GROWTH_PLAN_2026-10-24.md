@@ -224,3 +224,18 @@ The web Subjects page now also includes a per-subject curriculum editor for boar
 - [ ] Verify content/curriculum truth labels and ensure selectable subjects are not presented as verified syllabus coverage or available lesson content.
 
 **Release rule:** source commits and documentation are progress, not proof of a working deployed journey. Keep status **In progress** until the exact commit has green relevant CI and the end-to-end acceptance evidence above is recorded.
+
+### Onboarding now uses the central catalogue (2026-10-27)
+
+Following the prior subject-management status above, onboarding has been updated to use the same central catalogue instead of a second hard-coded per-level list:
+
+- [x] Shared catalogue now includes canonical early-childhood learning areas.
+- [x] Onboarding subject choices are searchable and grouped by category.
+- [x] Subjects tagged for the learner's pathway are prioritized; a learner can browse all catalogue subjects rather than having non-default subjects silently hidden.
+- [x] Canonical catalogue IDs are mapped into the existing onboarding subject-interest payload.
+- [ ] CI/type-check confirmation for the latest commit.
+- [ ] Verify legacy ID compatibility and full signup → profile → Learn persistence.
+- [ ] Verify per-subject syllabus codes remain attached to the correct canonical subject after selection changes.
+- [ ] Complete deployed web testing and adaptive learning integration.
+
+Source commits: `a8981ad735d2df1102930e1d94b72508c10c84dd`, `d5f9e5a741da8490d337b116a2be9aa7d168356a`, `9c1e4473b30cb72589723101dccf083a6035a1a8`. Focused checklist: `docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md`. Cortex checklist: `.cortex/tasks.md`.
