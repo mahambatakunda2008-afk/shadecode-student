@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -359,6 +361,15 @@ private fun SnapExtractScreen(padding: PaddingValues) {
     var redactionTerms by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("Choose an image. OCR runs on this device and does not upload it.") }
+    val screenActive = remember { AtomicBoolean(true) }
+    val activeRecognizer = remember { AtomicReference<com.google.mlkit.vision.text.TextRecognizer?>(null) }
+    DisposableEffect(Unit) {
+        screenActive.set(true)
+        onDispose {
+            screenActive.set(false)
+            activeRecognizer.getAndSet(null)?.close()
+        }
+    }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             selectedImage = uri
@@ -371,27 +382,39 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                 val image = InputImage.fromFilePath(context, uri)
                 val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
                 recognizerToClose = recognizer
+                activeRecognizer.getAndSet(recognizer)?.close()
                 recognizer.process(image)
                     .addOnSuccessListener { result ->
-                        rawOcr = result.text
-                        editableText = result.text
-                        message = if (result.text.isBlank()) {
-                            "No readable text found. This OCR pass does not interpret diagrams or graphs."
-                        } else {
-                            "Extracted locally. Check equations, handwriting, tables and diagram labels before relying on them."
+                        if (screenActive.get()) {
+                            rawOcr = result.text
+                            editableText = result.text
+                            message = if (result.text.isBlank()) {
+                                "No readable text found. This OCR pass does not interpret diagrams or graphs."
+                            } else {
+                                "Extracted locally. Check equations, handwriting, tables and diagram labels before relying on them."
+                            }
+                            processing = false
                         }
-                        processing = false
+                        activeRecognizer.compareAndSet(recognizer, null)
                         recognizer.close()
                     }
                     .addOnFailureListener { error ->
-                        message = "Could not read this image: ${error.localizedMessage ?: "OCR failed"}"
-                        processing = false
+                        if (screenActive.get()) {
+                            message = "Could not read this image: ${error.localizedMessage ?: "OCR failed"}"
+                            processing = false
+                        }
+                        activeRecognizer.compareAndSet(recognizer, null)
                         recognizer.close()
                     }
             } catch (error: Exception) {
-                recognizerToClose?.close()
-                message = "Could not open image: ${error.localizedMessage ?: "unsupported image"}"
-                processing = false
+                recognizerToClose?.let {
+                    activeRecognizer.compareAndSet(it, null)
+                    it.close()
+                }
+                if (screenActive.get()) {
+                    message = "Could not open image: ${error.localizedMessage ?: "unsupported image"}"
+                    processing = false
+                }
             }
         }
     }
@@ -427,7 +450,7 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         if (selectedImage == null) "Screenshots, photos and scanned pages are supported as OCR input."
-                        else "Selected image: ${selectedImage?.lastPathSegment ?: "image"}",
+                        else "Image selected. OCR is processed locally; the source image is not uploaded.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
