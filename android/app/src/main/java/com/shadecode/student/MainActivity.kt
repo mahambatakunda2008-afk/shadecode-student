@@ -202,17 +202,26 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                 focusRunning = focusRunning,
                 onFocusDurationSelected = { seconds ->
                     focusRunning = false
+                    focusCompletionHandled = false
+                    focusStatus = null
                     focusDuration = seconds
                     focusRemaining = seconds
                 },
                 onFocusToggle = {
-                    if (focusRemaining == 0) focusRemaining = focusDuration
+                    if (focusRemaining == 0) {
+                        focusRemaining = focusDuration
+                        focusCompletionHandled = false
+                        focusStatus = null
+                    }
                     focusRunning = !focusRunning
                 },
                 onFocusReset = {
                     focusRunning = false
+                    focusCompletionHandled = false
+                    focusStatus = null
                     focusRemaining = focusDuration
                 },
+                focusStatus = focusStatus,
             )
             3 -> SnapExtractScreen(padding)
             else -> ProfileNativeScreen(
