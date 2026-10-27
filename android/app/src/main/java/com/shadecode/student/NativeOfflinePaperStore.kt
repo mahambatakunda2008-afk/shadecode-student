@@ -70,9 +70,9 @@ object NativeOfflinePaperStore {
     }
 
     fun delete(context: Context, userId: String, paperId: String) {
-        val all = list(context, userId).filterNot { it.id == paperId }
-        all.firstOrNull { it.id == paperId }?.let { file(context, it)?.delete() }
-        writeIndex(context, userId, all)
+        val current = list(context, userId)
+        current.firstOrNull { it.id == paperId }?.let { file(context, it)?.delete() }
+        writeIndex(context, userId, current.filterNot { it.id == paperId })
     }
 
     fun download(
