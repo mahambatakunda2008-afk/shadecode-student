@@ -96,6 +96,29 @@ class NativeApi {
         return result
     }
 
+    fun loadTimetable(session: NativeSession): List<NativeTimetableSlot> {
+        val rows = request(
+            "GET",
+            "/rest/v1/timetable?select=id,subject,start_time,end_time,is_break&user_id=eq.${session.userId}&order=start_time.asc&limit=200",
+            accessToken = session.accessToken,
+        )
+        val array = JSONArray(rows)
+        return buildList {
+            for (i in 0 until array.length()) {
+                val row = array.getJSONObject(i)
+                add(
+                    NativeTimetableSlot(
+                        id = row.optString("id", "$i"),
+                        subject = row.optString("subject").ifBlank { if (row.optBoolean("is_break")) "Break" else "Study session" },
+                        startTime = row.optString("start_time"),
+                        endTime = row.optString("end_time"),
+                        isBreak = row.optBoolean("is_break", false),
+                    )
+                )
+            }
+        }
+    }
+
     fun loadTasks(session: NativeSession): List<NativeTask> {
         val rows = request(
             "GET",
@@ -213,3 +236,5 @@ data class NativeTask(val id: String, val subjectId: String, val title: String, 
 data class NativeSession(val accessToken: String, val refreshToken: String, val userId: String, val email: String)
 
 data class NativeProfile(val id: String, val email: String, val displayName: String, val studyLevel: String, val subjects: List<String>, val onboardingCompleted: Boolean)
+
+data class NativeTimetableSlot(val id: String, val subject: String, val startTime: String, val endTime: String, val isBreak: Boolean)
