@@ -153,12 +153,13 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             profile = loaded
             withContext(Dispatchers.IO) { sessionStore.saveProfile(loaded) }
             val remoteSubjects = withContext(Dispatchers.IO) { api.loadSubjects(session, loaded) }
-            // Do not erase cached subjects when the server returns an empty list.
-            // An empty response can mean subject rows have not synced yet.
-            if (remoteSubjects.isNotEmpty()) {
+            // An explicitly empty profile is authoritative: remove stale cached subjects.
+            // If the profile still selects subjects but the catalog has not synced yet,
+            // preserve the offline cache until the next successful refresh.
+            if (loaded.subjects.isEmpty() || remoteSubjects.isNotEmpty()) {
                 withContext(Dispatchers.IO) {
                     database.subjects().clear()
-                    database.subjects().replaceAll(remoteSubjects)
+                    if (remoteSubjects.isNotEmpty()) database.subjects().replaceAll(remoteSubjects)
                 }
             }
             subjects = withContext(Dispatchers.IO) { database.subjects().all() }
