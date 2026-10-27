@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const nextSubjects = existing ? current : [...current, subjectName];
 
     if (!existing) {
-      const { error: saveProfileError } = await supabase.from("profiles").upsert({ id: user.id, subjects: nextSubjects }, { onConflict: "id" });
+      const { error: saveProfileError } = await supabase.from("profiles").update({ subjects: nextSubjects }).eq("id", user.id);
       if (saveProfileError) return NextResponse.json({ error: "Could not save this subject to your profile." }, { status: 500 });
 
       const { data: subjectRows, error: subjectReadError } = await supabase.from("subjects").select("id, name").eq("user_id", user.id);
