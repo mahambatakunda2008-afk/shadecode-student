@@ -104,3 +104,117 @@ The work is not complete until a new and existing learner can:
 ## Release status rule
 
 Until CI artifacts, signing and device testing are inspected, release status is **not verified**. A successful code commit alone is not a release. A CI-built debug APK is a preview artifact; production distribution requires signing and appropriate release-channel checks.
+
+
+## Additional requirement: full web-to-mobile capability parity
+
+The user explicitly requires the mobile release to include the capabilities of the web version, not only a minimal native shell. The authoritative cross-platform acceptance contract is now documented in [MOBILE_WEB_FEATURE_PARITY_MATRIX_2026-10-27.md](./MOBILE_WEB_FEATURE_PARITY_MATRIX_2026-10-27.md).
+
+This requirement means **feature parity with native mobile interactions**, not copying desktop layouts or embedding the website in a WebView. Preserve the Kotlin/Jetpack Compose Android client and reuse the existing authenticated API/data contracts. The parity scope includes, at minimum, Cortex/insights, Learn, Exam Hub and Exam Simulation, Math Checker and subject tools, tasks/timetable/focus, analytics/history, XP/achievements/challenges/leaderboards, Code Lab, Project Studio, careers, settings/trust, and durable offline storage/sync where each feature's real implementation permits it.
+
+### Required execution order
+
+1. Inspect current Android source, web routes/components, API contracts, Android CI/release workflow, current main SHA, and release artifacts before changing feature code.
+2. Make subject/profile contracts canonical and shared: all relevant subjects and education stages, multiple selected subjects, board/qualification/syllabus only when known, and explicit content-readiness status. The native UI must not hard-code Mathematics and Physics as the only subjects.
+3. Implement and verify native profile/subject management, then parity-critical learning workflows in vertical slices.
+4. Treat offline as a per-capability contract. Saved data, local computation, queued mutations and network-only AI must be clearly distinguished; account-scoped data and idempotent sync are mandatory.
+5. Test web and Android against the same scenarios and data semantics. Keep a capability **Partial** until both clients' behavior and acceptance evidence are verified.
+6. Build the Android artifact from the exact intended commit; verify workflow `head_sha`, signing, install/upgrade and real-device smoke tests before publishing.
+
+### Status correction
+
+- [x] Record the explicit full-feature parity requirement and acceptance matrix.
+- [ ] Audit current native implementation against the matrix; no parity claim until source-level evidence is collected.
+- [ ] Implement missing native capabilities in prioritized vertical slices.
+- [ ] Verify shared subject/profile changes across web and Android.
+- [ ] Pass CI and real-device release gates; publish a commit-matched artifact only after verification.
+
+This documentation commit is not a mobile feature implementation, a successful Android build, or a release. Those remain open work items.
+
+
+## Native Android implementation slice added on 2026-10-27
+
+The feature-parity branch now contains an initial native profile/subject-management slice. This is implementation in source, **not yet verified by a successful Android build or device test**.
+
+- [x] Added `NativeSubjectCatalog.kt`, a searchable starter catalogue spanning quantitative subjects, sciences, languages, humanities, business, computing, creative/practical and higher-education areas. The catalogue is explicitly not a claim of complete syllabus/content coverage.
+- [x] Added a native profile editor in the existing Profile tab: editable display name and study-level field, searchable subject checkboxes, add custom subject, remove selected subjects, and save/error/loading feedback.
+- [x] Added authenticated `PATCH /rest/v1/profiles?id=eq.<current user>` for learner-editable fields only. The existing profile-to-subject-catalog database trigger remains the catalog synchronization mechanism.
+- [x] Improved Android subject name/code matching so profile codes such as `maths` and `computer-science` can match the canonical display names used in the subjects catalog.
+- [x] Kept profile cache updates after a successful remote save and refreshes the local subject list after the save.
+- [x] Added Android workflow pull-request triggers for changes to Android sources/workflow, so future PRs can compile the native app before merge.
+- [ ] Confirm the new Android workflow runs for this PR and inspect the actual Gradle/Kotlin build result.
+- [ ] Fix any compile/test failures revealed by CI.
+- [ ] Verify save/add/remove/refresh/relogin behavior against the live Supabase schema and RLS with a test account.
+- [ ] Expand profile semantics to board, qualification, syllabus/version, goals, and per-subject curriculum identity only after matching the canonical web profile contract.
+- [ ] Implement and verify remaining web feature parity slices: Cortex insights, Exam Hub/Simulation, Math Checker/subject-specific tools, tasks/timetable/focus, analytics/engagement, Code Lab, Project Studio, careers, privacy controls, and robust offline synchronization.
+
+The current Android profile editor allows editing the existing study-level field, but it is not yet a complete academic profile editor. The current native app still does not have full web feature parity, and this branch must not be released as if it does.
+
+
+### Follow-up slice: focus timer and cache correctness
+
+- [x] Added a local 15/25/45-minute focus timer to the native Practice workspace with start, pause, reset, and completion feedback.
+- [x] Corrected initial sync so an intentionally empty subject profile clears stale local subject rows, while a temporarily empty remote catalog does not erase cached subjects for a profile that still selects subjects.
+- [ ] Verify these changes with Android CI and manual device testing.
+- [ ] Focus session history, interruption-safe persistence, notifications/background timing, and sync with the web Focus module remain unimplemented.
+
+### Follow-up slice: offline task and timetable synchronization (2026-10-27)
+
+- [x] Cache task and timetable snapshots in account-scoped Android DataStore keys.
+- [x] Queue task creation and task completion when a retryable network failure prevents a server write.
+- [x] Reconcile a locally created task ID to its server ID after queued creation succeeds, including updating queued completion operations.
+- [x] Queue timetable replacement after retryable network failures; keep the locally saved timetable visible and tell the learner that sync is queued.
+- [x] Re-read the pending-operation queue after each operation so ID reconciliation is applied before the next queued operation is executed.
+- [x] Append a follow-up WorkManager job rather than replacing an active sync job.
+- [ ] Confirm the latest Android and web CI runs pass after these synchronization changes.
+- [ ] Test offline task creation, task completion, timetable save, account switching, token refresh, reconnect and duplicate/retry behavior on a real or representative Android device.
+- [ ] Add explicit idempotency/conflict handling. A connection loss after a server write but before its response may still cause a retry to duplicate a task.
+- [ ] Extend queued offline behavior to other mutation-capable modules only after each API and conflict contract has been reviewed.
+
+The queue currently covers task creation, task completion and timetable replacement only. This is not a claim that the entire app works offline, and a successful CI build alone would not prove reliable background sync on a device.
+
+## Android release continuation update: 2026-10-27
+
+### Exam Simulation recovery change
+- Implemented `NativeExamAttemptStore.kt` for private, device-local, per-account recovery of an unfinished native exam.
+- `NativeExamSimulation.kt` now restores the saved paper/questions, answer map, selected subject, remaining time and taking state when the screen is recreated or reopened.
+- The screen writes recovery checkpoints as the paper, answers and timer state change. A recovered attempt that has reached zero seconds remains submittable for marking.
+- The stored attempt is not uploaded by this recovery mechanism. It uses Android private app preferences keyed by the authenticated Supabase user ID.
+- **Not yet verified:** fresh Android compilation, force-stop/process-death recovery on a real device, persistence across an app update, and recovery behaviour after logout/re-login. Treat this as implemented code awaiting verification, not a release-certified feature.
+
+### Current CI evidence
+- Android workflow run 256 ([run details](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772124)) was cancelled before project validation/build after further branch updates; it produced no artifact for the latest code.
+- Web CI run 4315 ([run details](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772129)) completed successfully, but it does not compile the Kotlin Android client.
+- The current branch head is newer than the cancelled Android run. A successful Android build for the latest head is still required.
+- The older debug APK must not be represented as containing this recovery change. Use only an artifact whose workflow run head SHA matches the final tested commit.
+- Offline bundled-paper manifest remains intentionally empty (`android/app/src/main/assets/offline-papers/index.json` is `[]`) pending documented redistribution rights. Online downloads saved by Exam Hub remain a separate path.
+
+### Verification update: Android debug build completed (2026-10-27)
+- [x] Android workflow run 260 completed successfully for branch head `a5fc1aac7a0a774b8cc21ac06a5e5ee73266d293`.
+- [x] Gradle project validation and `:app:assembleDebug` passed; the workflow uploaded artifact `shadecode-student-android-debug-260`.
+- [x] The artifact metadata confirms it was built from the same head SHA above. Its ZIP contains `ShadecodeStudent-debug.apk`.
+- [x] The first-run setup screen is wired into `StudentShell` when the saved learner profile has not completed onboarding. It captures display name, study level and subject selection, saves the profile through the authenticated API, and refreshes the subject cache.
+- [ ] This is a **debug APK**, not a signed production build. Release-signing preparation was skipped because no Android signing secret was available to this workflow.
+- [ ] Install and test on a physical Android device, including fresh account onboarding, account switching, offline paper access, and exam recovery after force-stop. CI success proves compilation and artifact upload, not real-device behaviour or complete feature parity.
+- [ ] Continue the next implementation slice: test the downloaded past-paper attempt workflow on a real device, especially process death, expired deadlines, pause/resume, offline PDF opening and account switching. Source inspection confirms the past-paper workspace already persists a deadline and recomputes remaining time when an attempt is reopened; this still needs device verification.
+
+### Past-paper retry usability fix (2026-10-27)
+- [x] Added an explicit **Start a fresh attempt** action after a timed past-paper attempt has finished or expired.
+- [x] Added a confirmation step that warns the learner that the saved answer notes and timer for that paper/account will be cleared; the downloaded PDF itself is preserved.
+- [ ] Verify the Kotlin/Android build for commit `429960cd09745d3762cc63cf91dd1b1d0fcf8bd8`.
+- [ ] Verify completed/expired attempts can be restarted, the timer starts only when requested, notes persist while an attempt is active, and cancel leaves existing work untouched.
+
+
+
+### App distribution and in-app discovery (2026-10-27)
+- [x] Added a visible **Get the app** path to the public landing page, including a mobile-visible hero CTA.
+- [x] Added `/download` with browser-supported PWA installation, manual home-screen instructions, release-announcement link, and clear offline limitations.
+- [x] Added a dismissible, inline installation notice to the authenticated web app so existing users can find the installation options without a floating overlay.
+- [x] Avoided publishing a stale Actions artifact as a public download. Workflow artifacts expire and are not a stable public release channel.
+- [ ] Publish the dedicated Android download only after a commit-matched APK is built, installation/security checks pass, and a production signing key is configured. The page deliberately does not advertise an unsigned debug APK as a production release.
+- [ ] Validate browser installability (manifest, service worker, icons and HTTPS) across Chrome Android and desktop browsers; confirm the fallback instructions are clear on iOS Safari.
+- [ ] Once a signed release exists, change the Android card on `/download` into a direct versioned download with checksum, version/release notes, minimum Android version and update guidance. Keep the PWA install path available as the low-friction option.
+
+- [x] Kept the dedicated install-prompt event handler in the shared PWA installer instead of adding another competing `beforeinstallprompt` listener to the download page.
+- [x] Removed the duplicate install-prompt listener from service-worker registration; it now handles service-worker lifecycle and sign-out cache clearing only.
+- [x] Reduced past-paper countdown polling from four times per second to once per second. Remaining time still derives from the saved wall-clock deadline, and this change awaits Android CI/device verification.

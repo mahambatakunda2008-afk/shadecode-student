@@ -2,6 +2,12 @@ name: Android App
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "android/**"
+      - "public/brand/**"
+      - "scripts/generate-brand-assets.mjs"
+      - ".github/workflows/android.yml"
   push:
     branches: [main]
     tags:
@@ -14,6 +20,11 @@ on:
 
 permissions:
   contents: write
+
+# Keep only the newest Android build active for a branch while code is changing.
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   ANDROID_VERSION_CODE: ${{ github.run_number }}

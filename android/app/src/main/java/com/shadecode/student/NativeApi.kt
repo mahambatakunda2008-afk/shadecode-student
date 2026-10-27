@@ -35,16 +35,48 @@ class NativeApi {
         if (profile.subjects.isEmpty()) return emptyList()
         val rows = request("GET", "/rest/v1/subjects?select=id,name&user_id=eq.${session.userId}&order=name.asc", accessToken = session.accessToken)
         val array = JSONArray(rows)
-        val allowed = profile.subjects.map { it.trim().lowercase() }.toSet()
+        val allowed = profile.subjects.flatMap { code ->
+            val label = NativeSubjectCatalog.labelFor(code)
+            val mappedLabel = when {
+                code.equals("maths", true) || code.equals("mathematics", true) -> "Mathematics"
+                code.equals("computer-science", true) || code.equals("computer_science", true) || code.equals("coding", true) -> "Computer Science"
+                code.equals("english", true) && profile.studyLevel.equals("a-level", true) -> "English Language"
+                code.equals("business", true) && profile.studyLevel.equals("lower-secondary", true) -> "Business Studies"
+                else -> label
+            }
+            listOf(code, label, mappedLabel)
+        }.map { normalizeSubjectKey(it) }.toSet()
         val result = mutableListOf<NativeSubjectEntity>()
         for (i in 0 until array.length()) {
             val row = array.getJSONObject(i)
             val name = row.optString("name").trim()
-            if (name.isBlank() || name.equals("general", ignoreCase = true) || name.lowercase() !in allowed) continue
-            result += NativeSubjectEntity(row.getString("id"), name, name.lowercase())
+            if (name.isBlank() || name.equals("general", ignoreCase = true) || normalizeSubjectKey(name) !in allowed) continue
+            result += NativeSubjectEntity(row.getString("id"), name, normalizeSubjectKey(name))
         }
         return result
     }
+
+    /** Update only learner-editable profile fields; the database trigger synchronizes the subject catalog. */
+    fun saveLearnerProfile(session: NativeSession, profile: NativeProfile) {
+        val body = JSONObject()
+            .put("display_name", profile.displayName.trim().ifBlank { "Student" })
+            .put("study_level", profile.studyLevel.trim().ifBlank { "upper-secondary" })
+            .put("subjects", JSONArray(profile.subjects.map { NativeSubjectCatalog.codeFor(it) }.distinct()))
+            .put("onboarding_completed", true)
+        val response = request(
+            "PATCH",
+            "/rest/v1/profiles?id=eq.${session.userId}",
+            body.toString(),
+            accessToken = session.accessToken,
+            prefer = "return=representation",
+        )
+        if (JSONArray(response).length() == 0) {
+            throw IllegalStateException("Profile was not updated. Please sign in again and retry.")
+        }
+    }
+
+    private fun normalizeSubjectKey(value: String): String =
+        value.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
 
     fun loadLessons(session: NativeSession, subjectId: String): List<NativeLessonEntity> {
         val rows = request("GET", "/rest/v1/learn_lessons?select=id,subject_id,topic,title,description,difficulty,blocks,progress,updated_at&user_id=eq.${session.userId}&subject_id=eq.$subjectId&order=updated_at.desc&limit=100", accessToken = session.accessToken)
@@ -64,9 +96,196 @@ class NativeApi {
         return result
     }
 
+    /** Atomically replace the authenticated learner's timetable using the existing RLS-protected RPC. */
+    fun saveTimetable(session: NativeSession, slots: List<NativeTimetableSlot>) {
+        require(slots.isNotEmpty() && slots.size <= 100) { "Generate between 1 and 100 timetable slots." }
+        val payload = JSONArray()
+        slots.forEach { slot ->
+            payload.put(
+                JSONObject()
+                    .put("subject", slot.subject.trim().take(120))
+                    .put("start_time", slot.startTime.take(5))
+                    .put("end_time", slot.endTime.take(5))
+                    .put("is_break", slot.isBreak)
+            )
+        }
+        request(
+            "POST",
+            "/rest/v1/rpc/replace_own_timetable",
+            JSONObject().put("p_slots", payload).toString(),
+            accessToken = session.accessToken,
+            prefer = "return=minimal",
+        )
+    }
+
+    fun loadTimetable(session: NativeSession): List<NativeTimetableSlot> {
+        val rows = request(
+            "GET",
+            "/rest/v1/timetable?select=id,subject,start_time,end_time,is_break&user_id=eq.${session.userId}&order=start_time.asc&limit=200",
+            accessToken = session.accessToken,
+        )
+        val array = JSONArray(rows)
+        return buildList {
+            for (i in 0 until array.length()) {
+                val row = array.getJSONObject(i)
+                add(
+                    NativeTimetableSlot(
+                        id = row.optString("id", "$i"),
+                        subject = row.optString("subject").ifBlank { if (row.optBoolean("is_break")) "Break" else "Study session" },
+                        startTime = row.optString("start_time"),
+                        endTime = row.optString("end_time"),
+                        isBreak = row.optBoolean("is_break", false),
+                    )
+                )
+            }
+        }
+    }
+
+    fun loadTasks(session: NativeSession): List<NativeTask> {
+        val rows = request(
+            "GET",
+            "/rest/v1/tasks?select=id,subject_id,title,description,due_date,completed,completed_at,updated_at&user_id=eq.${session.userId}&order=due_date.asc.nullslast&limit=100",
+            accessToken = session.accessToken,
+        )
+        val array = JSONArray(rows)
+        return buildList {
+            for (i in 0 until array.length()) {
+                val row = array.getJSONObject(i)
+                add(
+                    NativeTask(
+                        id = row.getString("id"),
+                        subjectId = row.optString("subject_id"),
+                        title = row.optString("title"),
+                        description = row.optString("description"),
+                        dueDate = row.optString("due_date").takeIf { it.isNotBlank() && it != "null" },
+                        completed = row.optBoolean("completed", false),
+                    )
+                )
+            }
+        }
+    }
+
+    fun createTask(session: NativeSession, title: String, description: String = "", linkedSubjectId: String = ""): NativeTask {
+        require(title.trim().isNotEmpty()) { "Enter a task title." }
+        val body = JSONObject()
+            .put("user_id", session.userId)
+            .put("subject_id", linkedSubjectId)
+            .put("title", title.trim().take(180))
+            .put("description", description.trim().take(2000))
+            .put("completed", false)
+            .put("updated_at", java.time.Instant.now().toString())
+        val response = request(
+            "POST",
+            "/rest/v1/tasks",
+            body.toString(),
+            accessToken = session.accessToken,
+            prefer = "return=representation",
+        )
+        val rows = JSONArray(response)
+        if (rows.length() == 0) throw IllegalStateException("Task was not saved.")
+        val row = rows.getJSONObject(0)
+        return NativeTask(
+            id = row.getString("id"),
+            subjectId = row.optString("subject_id"),
+            title = row.optString("title"),
+            description = row.optString("description"),
+            dueDate = row.optString("due_date").takeIf { it.isNotBlank() && it != "null" },
+            completed = row.optBoolean("completed", false),
+        )
+    }
+
+    fun completeTask(session: NativeSession, taskId: String) {
+        request(
+            "PUT",
+            "/api/tasks/$taskId/complete",
+            "{}",
+            accessToken = session.accessToken,
+            urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+        )
+    }
+
+    /** Persist a completed native focus session through the same server route used by the web app. */
+    fun completeFocusSession(session: NativeSession, durationMinutes: Int, mode: String, xpEarned: Int): JSONObject {
+        require(durationMinutes in 1..120) { "Focus duration must be between 1 and 120 minutes." }
+        val body = JSONObject()
+            .put("durationMinutes", durationMinutes)
+            .put("mode", mode.take(40))
+            .put("xpEarned", xpEarned.coerceIn(0, 200))
+        val response = request(
+            "POST",
+            "/api/focus/complete",
+            body.toString(),
+            accessToken = session.accessToken,
+            urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+        )
+        return JSONObject(response)
+    }
+
     fun updateLessonProgress(session: NativeSession, lessonId: String, progress: Float) {
         val percentage = kotlin.math.round(progress.coerceIn(0f, 1f) * 100f).toInt()
         request("PATCH", "/rest/v1/learn_lessons?id=eq.$lessonId&user_id=eq.${session.userId}", JSONObject().put("progress", percentage).toString(), session.accessToken, "return=minimal")
+    }
+
+    fun createSignedExamPaperUrl(session: NativeSession, paperId: String): String {
+        require(paperId.matches(Regex("[0-9a-fA-F-]{36}"))) { "Invalid paper identifier." }
+        val response = JSONObject(
+            request(
+                "GET",
+                "/api/native/exam-hub/papers/${java.net.URLEncoder.encode(paperId, "UTF-8")}",
+                accessToken = session.accessToken,
+                urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+            )
+        )
+        val signedUrl = response.optString("signedUrl")
+        if (signedUrl.isBlank()) throw IllegalStateException(response.optString("error").ifBlank { "Could not open this paper." })
+        return if (signedUrl.startsWith("https://") || signedUrl.startsWith("http://")) signedUrl
+        else baseUrl.trimEnd('/') + "/" + signedUrl.trimStart('/')
+    }
+
+    fun loadExamSyllabi(session: NativeSession, allowedSubjects: List<String>): List<NativeExamSyllabus> {
+        if (allowedSubjects.isEmpty()) return emptyList()
+        val rows = JSONArray(request("GET", "/rest/v1/syllabi?select=id,subject,board,levels&order=subject.asc", accessToken = session.accessToken))
+        val allowed = allowedSubjects.map { normalizeSubjectKey(it) }.toSet()
+        return buildList {
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                val subject = row.optString("subject").trim()
+                val key = normalizeSubjectKey(subject)
+                if (subject.isBlank() || allowed.none { it == key || it.contains(key) || key.contains(it) }) continue
+                val levels = mutableListOf<String>()
+                row.optJSONArray("levels")?.let { values -> for (j in 0 until values.length()) levels += values.optString(j) }
+                add(NativeExamSyllabus(row.getString("id"), subject, row.optString("board"), levels))
+            }
+        }
+    }
+
+    fun loadExamPaperFacets(session: NativeSession, syllabusId: String, level: String? = null): NativeExamFacets {
+        val query = "/rest/v1/past_papers?select=level,session,year&syllabus_id=eq.${java.net.URLEncoder.encode(syllabusId, "UTF-8")}" +
+            (if (level.isNullOrBlank()) "" else "&level=eq.${java.net.URLEncoder.encode(level, "UTF-8")}") + "&limit=1000"
+        val rows = JSONArray(request("GET", query, accessToken = session.accessToken))
+        val levels = linkedSetOf<String>(); val sessions = linkedSetOf<String>(); val years = linkedSetOf<Int>()
+        for (i in 0 until rows.length()) {
+            val row = rows.getJSONObject(i)
+            row.optString("level").takeIf { it.isNotBlank() }?.let(levels::add)
+            row.optString("session").takeIf { it.isNotBlank() }?.let(sessions::add)
+            if (!row.isNull("year")) years += row.optInt("year")
+        }
+        return NativeExamFacets(levels.sorted(), sessions.sorted(), years.sortedDescending())
+    }
+
+    fun loadExamPapers(session: NativeSession, syllabusId: String, level: String, examSession: String, year: Int): List<NativeExamPaper> {
+        val query = "/rest/v1/past_papers?select=id,level,session,year,paper_number,variant,kind,file_path,source_url" +
+            "&syllabus_id=eq.${java.net.URLEncoder.encode(syllabusId, "UTF-8")}" +
+            "&level=eq.${java.net.URLEncoder.encode(level, "UTF-8")}" +
+            "&session=eq.${java.net.URLEncoder.encode(examSession, "UTF-8")}" +
+            "&year=eq.$year&order=paper_number.asc,variant.asc,kind.asc&limit=100"
+        val rows = JSONArray(request("GET", query, accessToken = session.accessToken))
+        return buildList {
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                add(NativeExamPaper(row.getString("id"), row.optString("level"), row.optString("session"), row.optInt("year"), row.optInt("paper_number"), row.optInt("variant"), row.optString("kind"), row.optString("file_path"), row.optString("source_url").takeIf { it.startsWith("http") }))
+            }
+        }
     }
 
     private fun sessionFromAuthResponse(response: String, fallbackEmail: String): NativeSession {
@@ -75,8 +294,46 @@ class NativeApi {
         return NativeSession(json.getString("access_token"), json.optString("refresh_token"), user.getString("id"), user.optString("email", fallbackEmail))
     }
 
-    private fun request(method: String, path: String, body: String? = null, accessToken: String? = null, prefer: String? = null): String {
-        val connection = (URL(baseUrl + path).openConnection() as HttpURLConnection).apply {
+    fun generateNativeExam(session: NativeSession, subject: String, count: Int, difficulty: String): JSONObject {
+        val body = JSONObject().put("subject", subject).put("questionCount", count).put("difficulty", difficulty)
+        return JSONObject(requestApp("POST", "/api/native/exam-sim/generate", body.toString(), session.accessToken))
+    }
+
+    fun markNativeExam(session: NativeSession, subject: String, subjectId: String?, questions: JSONArray, answers: JSONObject): JSONObject {
+        val body = JSONObject().put("subject", subject).put("questions", questions).put("answers", answers)
+        if (!subjectId.isNullOrBlank()) body.put("subjectId", subjectId)
+        return JSONObject(requestApp("POST", "/api/native/exam-sim/mark", body.toString(), session.accessToken))
+    }
+
+    private fun requestApp(method: String, path: String, body: String, accessToken: String): String {
+        val appBase = BuildConfig.APP_BASE_URL.trimEnd('/')
+        require(appBase.startsWith("https://")) { "The Shadecode app URL is not configured for secure exam requests." }
+        val connection = (URL(appBase + path).openConnection() as HttpURLConnection).apply {
+            requestMethod = method
+            connectTimeout = 15_000
+            readTimeout = 50_000
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Authorization", "Bearer $accessToken")
+            doOutput = true
+        }
+        try {
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) {
+                val message = runCatching { JSONObject(text).optString("error").ifBlank { JSONObject(text).optString("message") } }.getOrNull()
+                throw IllegalStateException(message?.ifBlank { null } ?: "Exam request failed ($code)")
+            }
+            return text
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun request(method: String, path: String, body: String? = null, accessToken: String? = null, prefer: String? = null, urlBase: String = baseUrl): String {
+        val connection = (URL(urlBase + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 10_000; readTimeout = 10_000
             setRequestProperty("apikey", anonKey); setRequestProperty("Authorization", "Bearer ${accessToken ?: anonKey}")
             setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
@@ -96,6 +353,14 @@ class NativeApi {
     }
 }
 
+data class NativeTask(val id: String, val subjectId: String, val title: String, val description: String, val dueDate: String?, val completed: Boolean)
+
 data class NativeSession(val accessToken: String, val refreshToken: String, val userId: String, val email: String)
 
 data class NativeProfile(val id: String, val email: String, val displayName: String, val studyLevel: String, val subjects: List<String>, val onboardingCompleted: Boolean)
+
+data class NativeTimetableSlot(val id: String, val subject: String, val startTime: String, val endTime: String, val isBreak: Boolean)
+
+data class NativeExamSyllabus(val id:String,val subject:String,val board:String,val levels:List<String>)
+data class NativeExamFacets(val levels:List<String>,val sessions:List<String>,val years:List<Int>)
+data class NativeExamPaper(val id:String,val level:String,val session:String,val year:Int,val paperNumber:Int,val variant:Int,val kind:String,val filePath:String,val sourceUrl:String?)

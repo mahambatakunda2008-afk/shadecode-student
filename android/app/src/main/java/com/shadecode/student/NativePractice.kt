@@ -75,6 +75,13 @@ fun NativePracticeScreen(
     padding: androidx.compose.foundation.layout.PaddingValues,
     subjects: List<NativeSubjectEntity>,
     database: NativeDatabase,
+    focusDuration: Int,
+    focusRemaining: Int,
+    focusRunning: Boolean,
+    onFocusDurationSelected: (Int) -> Unit,
+    onFocusToggle: () -> Unit,
+    onFocusReset: () -> Unit,
+    focusStatus: String?,
 ) {
     var selectedSubject by remember { mutableStateOf<String?>(null) }
     var lessons by remember { mutableStateOf<List<NativeLessonEntity>>(emptyList()) }
@@ -107,6 +114,38 @@ fun NativePracticeScreen(
             Spacer(Modifier.height(18.dp))
             Text("Practice", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text("Practice from your actual saved lessons, not a generic question bank.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp)) {
+                    Text("Focus session", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("A quiet timer for a single study sprint. Keep this screen open while you work.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("%02d:%02d".format(focusRemaining / 60, focusRemaining % 60), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(5, 15, 25, 45).forEach { minutes ->
+                            OutlinedButton(
+                                onClick = { onFocusDurationSelected(minutes * 60) },
+                                enabled = !focusRunning,
+                                modifier = Modifier.weight(1f),
+                            ) { Text("${minutes} min") }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onFocusToggle,
+                            enabled = focusRemaining > 0 || !focusRunning,
+                            modifier = Modifier.weight(1f),
+                        ) { Text(if (focusRunning) "Pause" else if (focusRemaining == 0) "Start again" else "Start focus") }
+                        OutlinedButton(
+                            onClick = onFocusReset,
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Reset") }
+                    }
+                    if (focusRemaining == 0) Text("Session complete. Take a short break before the next sprint.", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
+                    focusStatus?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp)) }
+                }
+            }
         }
         if (subjects.isEmpty()) {
             item { Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Text("No subjects are configured for this account yet. Complete onboarding first.", Modifier.padding(20.dp)) } }
