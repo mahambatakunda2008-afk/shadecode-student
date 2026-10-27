@@ -252,3 +252,18 @@ This first pass makes the subject list manageable and broadens selectable choice
 ### CI correction note (2026-10-27)
 
 The first CI run for the new canonical onboarding-interest mappings failed TypeScript checking because three object keys duplicated legacy mappings (`early-literacy`, `early-numeracy`, and `discovery`). Those duplicate entries were removed in commit `2d1036cd12f21cd9acd75ec24e4df0d16e35bf8c`. The follow-up CI run is queued; this correction is not marked verified until that run completes.
+
+
+### Critical onboarding persistence correction (2026-10-27)
+
+A source audit found that onboarding was storing broad subject_interests in profiles.subjects, instead of persisting the learner's actual selected subjects. This could collapse distinct selections into generic interests and contribute to an incomplete Subjects page.
+
+- [x] mapOnboardingFormData now sends a separate canonical subjects array, using the central catalogue's display names, while retaining subject_interests for recommendations.
+- [x] /api/onboarding/complete now persists the selected subject array to profiles.subjects, normalizes aliases, and keeps a compatibility fallback for older clients that do not send subjects.
+- [x] Added mapper tests for canonical subject names and legacy aliases in src/lib/onboarding/mapFormData.test.ts.
+- [x] Fixed duplicate TypeScript object keys found by CI, including the remaining duplicate early-literacy mapping. Latest source fix: be989e0a11ad7f5ab56fe7108901acf84190fd7a.
+- [ ] Confirm the CI run for the latest source commit passes typecheck, tests and build.
+- [ ] Verify the onboarding-complete endpoint against profile-subject sync triggers and confirm /api/learn returns the selected subjects after signup, refresh and relogin.
+- [ ] Verify old accounts and older clients continue to behave safely; no production data migration or destructive cleanup is implied by this code change.
+
+This is a code-level correction, not yet proof of a live production fix. CI and account-based end-to-end verification remain release gates.
