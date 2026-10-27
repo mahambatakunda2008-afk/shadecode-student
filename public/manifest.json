@@ -18,34 +18,10 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/shadecode-student.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/shadecode-student-192.png",
+      "src": "/icons/shadecode-student-exact.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/icons/shadecode-student-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/shadecode-student-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/shadecode-student-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "screenshots": [
@@ -102,7 +78,7 @@
       "url": "/dashboard",
       "icons": [
         {
-          "src": "/icons/shadecode-student-192.png",
+          "src": "/icons/shadecode-student-exact.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -114,7 +90,7 @@
       "url": "/learn",
       "icons": [
         {
-          "src": "/icons/shadecode-student-192.png",
+          "src": "/icons/shadecode-student-exact.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -126,7 +102,7 @@
       "url": "/exam-sim",
       "icons": [
         {
-          "src": "/icons/shadecode-student-192.png",
+          "src": "/icons/shadecode-student-exact.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -138,7 +114,7 @@
       "url": "/exam-hub",
       "icons": [
         {
-          "src": "/icons/shadecode-student-192.png",
+          "src": "/icons/shadecode-student-exact.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -150,7 +126,7 @@
       "url": "/focus",
       "icons": [
         {
-          "src": "/icons/shadecode-student-192.png",
+          "src": "/icons/shadecode-student-exact.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -162,7 +138,7 @@
       "url": "/math-checker",
       "icons": [
         {
-          "src": "/icons/shadecode-student-192.png",
+          "src": "/icons/shadecode-student-exact.png",
           "sizes": "192x192",
           "type": "image/png"
         }
