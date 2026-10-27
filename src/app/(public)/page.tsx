@@ -55,7 +55,7 @@ export default function PublicHomePage() {
             <div className="relative rounded-[18px] border border-white/10 bg-[var(--brand-surface)] p-5 shadow-xl shadow-black/30">
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
                 <div className="flex items-center gap-3"><BrandMark className="h-9 w-9 text-[var(--brand-blue)]" aria-hidden="true" /><div><div className="font-[var(--font-brand)] text-xs tracking-[.14em] text-white">SHADECODE</div><div className="mt-1 font-[var(--font-brand)] text-[11px] tracking-[.25em] text-slate-500">CORTEX OS</div></div></div>
-                <span className="flex items-center gap-2 text-xs font-medium text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Learning state</span>
+                <span className="flex items-center gap-2 text-xs font-medium text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true" /> Example preview</span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-4"><Metric label="Today" value="Learn" /><Metric label="Focus" value="3 tasks" /><Metric label="State" value="Updating" /></div>
               <div className="rounded-2xl border border-blue-400/15 bg-white/[0.03] p-4.5">
