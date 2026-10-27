@@ -190,11 +190,9 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
                         profile = updated
                         try {
                             val remoteSubjects = withContext(Dispatchers.IO) { api.loadSubjects(session, updated) }
-                            if (remoteSubjects.isNotEmpty()) {
-                                withContext(Dispatchers.IO) {
-                                    database.subjects().clear()
-                                    database.subjects().replaceAll(remoteSubjects)
-                                }
+                            withContext(Dispatchers.IO) {
+                                database.subjects().clear()
+                                if (remoteSubjects.isNotEmpty()) database.subjects().replaceAll(remoteSubjects)
                             }
                             subjects = withContext(Dispatchers.IO) { database.subjects().all() }
                         } catch (e: Exception) {
