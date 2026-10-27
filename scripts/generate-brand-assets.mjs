@@ -1,6 +1,6 @@
 /**
  * Generates every Shadecode Student brand asset (SVG + PNG) from ONE source:
- * src/lib/brand/markGeometry.json (the folded-S mark). Runs on predev/prebuild.
+ * src/lib/brand/markGeometry.json (the layered mark). Runs on predev/prebuild.
  * Do not hand-edit the generated files; edit the JSON and re-run `npm run generate:brand`.
  */
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -30,16 +30,17 @@ function defs(prefix) {
   return `<defs>${grads.join("")}</defs>`;
 }
 
-/** Glyph strokes in the 1024 design space. `flat` renders the ribbon only in one colour. */
-function strokes(prefix, flat) {
-  return geo.strokes
-    .filter((s) => !flat || s.role === "ribbon")
-    .map((s) => {
-      const paint = flat ? flat : s.gradient ? `url(#${prefix}-${s.gradient})` : s.color;
-      const op = !flat && s.opacity ? ` stroke-opacity="${s.opacity}"` : "";
-      return `<path d="${s.d}" fill="none" stroke="${paint}"${op} stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    })
-    .join("");
+/** Layered glyph shapes. `flat` renders all three layers in one colour, without depth effects. */
+function shapes(prefix, flat) {
+  const dp = geo.depth;
+  const [top, middle, bottom] = geo.layers;
+  const layer = (l) =>
+    flat
+      ? `<path d="${l.d}" fill="${flat}"/>`
+      : `<path d="${l.d}" fill="url(#${prefix}-${geo.gradients[0].id})" stroke="${dp.edgeColor}" stroke-opacity="${dp.edgeOpacity}" stroke-width="${dp.edgeWidth}" stroke-linejoin="round"/>`;
+  const shadow = (l) => (flat ? "" : `<path d="${l.d}" fill="${dp.shadowColor}" fill-opacity="${dp.shadowOpacity}" transform="translate(0 ${dp.shadowDy})"/>`);
+  // Back to front: each upper layer casts a soft shadow onto the layers beneath it.
+  return layer(bottom) + shadow(middle) + layer(middle) + shadow(top) + layer(top);
 }
 
 /** Centre the glyph on (cx, cy) of the 1024 canvas at the given scale. */
@@ -55,16 +56,16 @@ function tileSvg({ theme = "dark", rounded = true, scale = 1.12 }) {
   const rx = rounded ? 224 : 0;
   const bg = `<rect width="1024" height="1024" rx="${rx}" fill="${t.bg}"/>`;
   const border = rounded ? `<rect x="5" y="5" width="1014" height="1014" rx="220" fill="none" stroke="${t.border}" stroke-width="5"/>` : "";
-  return `${svgOpen("0 0 1024 1024")}${defs("sc")}${bg}${border}${place(scale)}${strokes("sc")}</g></svg>\n`;
+  return `${svgOpen("0 0 1024 1024")}${defs("sc")}${bg}${border}${place(scale)}${shapes("sc")}</g></svg>\n`;
 }
 
-const markSvg = (flat) => `${svgOpen(geo.inlineViewBox)}${flat ? "" : defs("sc")}${strokes("sc", flat)}</svg>\n`;
-const masterSvg = () => `${svgOpen("0 0 1024 1024")}${defs("sc")}${place(1.1)}${strokes("sc")}</g></svg>\n`;
+const markSvg = (flat) => `${svgOpen(geo.inlineViewBox)}${flat ? "" : defs("sc")}${shapes("sc", flat)}</svg>\n`;
+const masterSvg = () => `${svgOpen("0 0 1024 1024")}${defs("sc")}${place(1.1)}${shapes("sc")}</g></svg>\n`;
 
 function logoSvg() {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" role="img" aria-labelledby="title desc"><title id="title">${TITLE}</title><desc id="desc">Shadecode Student folded-S mark with wordmark.</desc>` +
-    `${defs("sc")}<g transform="translate(110 120) scale(.33) translate(${-C.x} ${-C.y})">${strokes("sc")}</g>` +
+    `${defs("sc")}<g transform="translate(110 120) scale(.33) translate(${-C.x} ${-C.y})">${shapes("sc")}</g>` +
     `<text x="245" y="113" font-family="Arial,Helvetica,sans-serif" font-size="64" font-weight="650" letter-spacing="1" fill="#F8FAFC">SHADECODE</text>` +
     `<text x="249" y="166" font-family="Arial,Helvetica,sans-serif" font-size="26" font-weight="500" letter-spacing="9" fill="#CBD5E1">STUDENT</text></svg>\n`
   );

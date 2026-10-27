@@ -1,14 +1,13 @@
 import { useId, type SVGProps } from "react";
-import { MARK_GRADIENTS, MARK_STROKES, MARK_VIEWBOX } from "@/lib/brand/markGeometry";
+import { MARK_DEPTH, MARK_GRADIENTS, MARK_VIEWBOX, markDrawOrder } from "@/lib/brand/markGeometry";
 
 export type BrandMarkProps = SVGProps<SVGSVGElement> & { title?: string };
 
-/** Shadecode folded-S mark. Geometry comes from `@/lib/brand/markGeometry` (single source of truth). */
+/** Shadecode layered mark. Geometry comes from `@/lib/brand/markGeometry` (single source of truth). */
 export function BrandMark({ title = "Shadecode Student", className, ...props }: BrandMarkProps) {
   // Each instance needs its own SVG paint-server IDs: shared hard-coded IDs can resolve
   // to a different SVG instance on pages that render several marks.
   const base = `shadecode-mark-${useId().replace(/:/g, "")}`;
-  const ref = (id: string) => `url(#${base}-${id})`;
   return (
     <svg
       viewBox={MARK_VIEWBOX}
@@ -30,18 +29,21 @@ export function BrandMark({ title = "Shadecode Student", className, ...props }: 
           </linearGradient>
         ))}
       </defs>
-      {MARK_STROKES.map((s) => (
-        <path
-          key={s.d}
-          d={s.d}
-          fill="none"
-          stroke={s.gradient ? ref(s.gradient) : s.color}
-          strokeOpacity={s.opacity}
-          strokeWidth={s.width}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
+      {markDrawOrder().map((item) =>
+        item.kind === "shadow" ? (
+          <path key={item.key} d={item.d} fill={MARK_DEPTH.shadowColor} fillOpacity={MARK_DEPTH.shadowOpacity} transform={`translate(0 ${MARK_DEPTH.shadowDy})`} />
+        ) : (
+          <path
+            key={item.key}
+            d={item.d}
+            fill={`url(#${base}-${MARK_GRADIENTS[0].id})`}
+            stroke={MARK_DEPTH.edgeColor}
+            strokeOpacity={MARK_DEPTH.edgeOpacity}
+            strokeWidth={MARK_DEPTH.edgeWidth}
+            strokeLinejoin="round"
+          />
+        ),
+      )}
     </svg>
   );
 }

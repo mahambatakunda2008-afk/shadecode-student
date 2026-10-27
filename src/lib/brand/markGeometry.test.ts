@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { MARK_COLORS, MARK_PATHS, MARK_RIBBON } from "./markGeometry";
+import { MARK_COLORS, MARK_PATHS } from "./markGeometry";
 
 const root = process.cwd();
 const read = (rel: string) => readFileSync(path.join(root, rel), "utf8");
@@ -22,8 +22,8 @@ const fullMarkSvgs = [
 ];
 const flatMarkSvgs = ["public/brand/shadecode-mark-white.svg", "public/brand/shadecode-mark-reversed.svg"];
 
-/** First path of the retired angular three-band mark. It must never come back. */
-const LEGACY_MARK_PATH = "M72.5 146.5 275.5 24.5";
+/** Retired variants that must never ship: the curvy "folded S" ribbon, and the unrounded sharp-corner polygon. */
+const RETIRED_MARK_PATHS = ["M680 340 C620 285", "M72.5 146.5 275.5 24.5"];
 
 describe("brand mark has a single canonical geometry", () => {
   for (const file of fullMarkSvgs) {
@@ -34,8 +34,9 @@ describe("brand mark has a single canonical geometry", () => {
     });
   }
   for (const file of flatMarkSvgs) {
-    it(`${file} uses the canonical ribbon`, () => {
-      expect(read(file)).toContain(MARK_RIBBON.d);
+    it(`${file} uses all three canonical layers`, () => {
+      const text = read(file);
+      for (const d of MARK_PATHS) expect(text).toContain(d);
     });
   }
   it("React brand mark renders from the shared geometry, not private paths", () => {
@@ -43,14 +44,14 @@ describe("brand mark has a single canonical geometry", () => {
     expect(text).toContain("@/lib/brand/markGeometry");
     expect(text).not.toContain('d="M');
   });
-  it("no source, public asset or doc-linked file still ships the retired angular mark", () => {
+  it("no source or public asset ships a retired mark variant", () => {
     const dirs = ["src", "public/brand", "public/icons"];
     const walk = (dir: string): string[] =>
       readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => {
         const rel = path.posix.join(dir, e.name);
         return e.isDirectory() ? walk(rel) : /\.(svg|tsx?|css)$/.test(e.name) ? [rel] : [];
       });
-    const offenders = [...dirs.flatMap(walk), "public/favicon.svg"].filter((f) => read(f).includes(LEGACY_MARK_PATH) && !f.endsWith("markGeometry.test.ts"));
+    const offenders = [...dirs.flatMap(walk), "public/favicon.svg"].filter((f) => RETIRED_MARK_PATHS.some((r) => read(f).includes(r)) && !f.endsWith("markGeometry.test.ts"));
     expect(offenders).toEqual([]);
   });
 });
