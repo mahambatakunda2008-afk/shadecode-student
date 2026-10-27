@@ -97,7 +97,7 @@ fun NativeExamSimulationScreen(
                         buildMap { val keys = objectJson.keys(); while (keys.hasNext()) { val key = keys.next(); put(key, objectJson.optString(key)) } }
                     }
                     selectedSubject = saved.subject
-                    secondsLeft = saved.secondsLeft.coerceAtLeast(0)
+                    secondsLeft = (saved.secondsLeft - (if (saved.savedAt > 0L) ((System.currentTimeMillis() - saved.savedAt).coerceAtLeast(0L) / 1000L).toInt() else 0)).coerceAtLeast(0)
                     taking = saved.taking
                     status = "Recovered your unfinished exam on this device."
                 }
