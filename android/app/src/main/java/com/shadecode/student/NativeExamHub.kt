@@ -46,6 +46,9 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var downloadingPaperId by remember { mutableStateOf<String?>(null) }
     var offlinePapers by remember(session.userId) { mutableStateOf(NativeOfflinePaperStore.list(context, session.userId)) }
     fun load(block:suspend ()->Unit) { loading=true; error=null; scope.launch { try { block() } catch(e:Exception) { error=e.message ?: "Could not load papers." } finally { loading=false } } }
+    LaunchedEffect(session.userId) {
+        offlinePapers = withContext(Dispatchers.IO) { NativeOfflinePaperStore.importBundled(context, session.userId) }
+    }
     LaunchedEffect(session.userId,subjects) { load { syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) } } }
     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal=16.dp, vertical=12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween) {
