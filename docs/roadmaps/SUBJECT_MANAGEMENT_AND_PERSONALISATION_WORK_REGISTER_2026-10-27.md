@@ -247,3 +247,8 @@ This first pass makes the subject list manageable and broadens selectable choice
 - [ ] Validate search and category groups on small screens and with keyboard/screen-reader navigation.
 
 **Latest source commits for this slice:** catalogue foundation entries `a8981ad735d2df1102930e1d94b72508c10c84dd`; central-catalogue onboarding `d5f9e5a741da8490d337b116a2be9aa7d168356a`; canonical subject-interest mapping `9c1e4473b30cb72589723101dccf083a6035a1a8`. CI is in progress for the latest commit at the time of this update.
+
+
+### CI correction note (2026-10-27)
+
+The first CI run for the new canonical onboarding-interest mappings failed TypeScript checking because three object keys duplicated legacy mappings (`early-literacy`, `early-numeracy`, and `discovery`). Those duplicate entries were removed in commit `2d1036cd12f21cd9acd75ec24e4df0d16e35bf8c`. The follow-up CI run is queued; this correction is not marked verified until that run completes.
