@@ -59,6 +59,69 @@ object NativeOfflinePaperStore {
     fun find(context: Context, userId: String, paperId: String): SavedPaper? =
         list(context, userId).firstOrNull { it.id == paperId }
 
+    /**
+     * Imports the build-time pack manifest. The APK can contain only papers with documented
+     * redistribution rights; every entry must include a SHA-256 checksum and provenance.
+     */
+    fun importBundled(context: Context, userId: String): List<SavedPaper> {
+        if (userId.isBlank()) return emptyList()
+        val manifestText = runCatching {
+            context.assets.open("offline-papers/index.json").bufferedReader().use { it.readText() }
+        }.getOrNull() ?: return list(context, userId)
+        val entries = runCatching { JSONArray(manifestText) }.getOrNull() ?: return list(context, userId)
+        val saved = list(context, userId).toMutableList()
+        for (i in 0 until entries.length()) {
+            val entry = entries.optJSONObject(i) ?: continue
+            val id = entry.optString("id")
+            val assetPath = entry.optString("assetPath")
+            val expectedHash = entry.optString("sha256").lowercase()
+            val licence = entry.optString("licence").trim()
+            val source = entry.optString("source").trim()
+            val attribution = entry.optString("attribution").trim()
+            if (id.isBlank() || licence.isBlank() || source.isBlank() || attribution.isBlank()) continue
+            if (!assetPath.matches(Regex("offline-papers/[A-Za-z0-9._/-]+\\.pdf")) || assetPath.contains("..")) continue
+            if (!expectedHash.matches(Regex("[a-f0-9]{64}"))) continue
+            if (saved.any { it.id == id }) continue
+            val fileName = digest("$userId:$id") + ".pdf"
+            val target = File(root(context), fileName)
+            val temp = File(root(context), fileName + ".part")
+            try {
+                context.assets.open(assetPath).use { input ->
+                    FileOutputStream(temp).use { output ->
+                        input.copyTo(output)
+                        output.fd.sync()
+                    }
+                }
+                if (!temp.isFile || temp.length() <= 5 || temp.length() > MAX_PAPER_BYTES) {
+                    temp.delete()
+                    continue
+                }
+                val header = temp.inputStream().use { input -> ByteArray(5).also { input.read(it) } }
+                if (String(header, Charsets.US_ASCII) != "%PDF-" || hashFile(temp) != expectedHash) {
+                    temp.delete()
+                    continue
+                }
+                if (!temp.renameTo(target)) {
+                    temp.copyTo(target, overwrite = true)
+                    temp.delete()
+                }
+                val paper = SavedPaper(
+                    id = id,
+                    title = entry.optString("title").ifBlank { "Paper ${entry.optInt("paperNumber")} / ${entry.optInt("variant")}" },
+                    subject = entry.optString("subject"), board = entry.optString("board"), level = entry.optString("level"),
+                    session = entry.optString("session"), year = entry.optInt("year"),
+                    paperNumber = entry.optInt("paperNumber"), variant = entry.optInt("variant"), kind = entry.optString("kind"),
+                    fileName = fileName, bytes = target.length(), savedAt = System.currentTimeMillis(), userId = userId,
+                )
+                saved += paper
+            } catch (_: Exception) {
+                temp.delete()
+            }
+        }
+        writeIndex(context, userId, saved)
+        return list(context, userId)
+    }
+
     fun file(context: Context, paper: SavedPaper): File? {
         if (!paper.fileName.matches(Regex("[a-f0-9]{64}\\.pdf"))) return null
         return File(root(context), paper.fileName).takeIf { it.isFile && it.length() > 5 }
@@ -157,6 +220,19 @@ object NativeOfflinePaperStore {
 
     private fun digest(value: String): String = MessageDigest.getInstance("SHA-256")
         .digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+
+    private fun hashFile(file: File): String {
+        val md = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                md.update(buffer, 0, count)
+            }
+        }
+        return md.digest().joinToString("") { "%02x".format(it) }
+    }
 
     private const val MAX_PAPER_BYTES = 50L * 1024L * 1024L
 }
