@@ -402,6 +402,8 @@ private fun SnapExtractScreen(padding: PaddingValues) {
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             selectedImage = uri
+            activeArtifactId = null
+            artifactTitle = ""
             rawOcr = ""
             editableText = ""
             processing = true
