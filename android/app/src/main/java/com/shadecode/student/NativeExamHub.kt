@@ -83,7 +83,20 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                     item { Text("Papers · ${examSession} ${year}",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold) }
                     items(papers) { paper ->
                         val kind=when(paper.kind) { "qp"->"Question Paper"; "ms"->"Mark Scheme"; "in"->"Insert"; "gt"->"Grade Thresholds"; else->paper.kind.uppercase() }
-                        ExamCatalogCard("Paper ${paper.paperNumber} / ${paper.variant} · $kind", if (openingPaperId == paper.id) "Preparing secure paper link…" else "${paper.level} · ${paper.session} ${paper.year}") {\n                            scope.launch {\n                                openingPaperId = paper.id\n                                error = null\n                                try {\n                                    val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, paper.id) }\n                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))\n                                } catch (e: Exception) {\n                                    error = e.message ?: "Could not open this paper. Check your connection and try again."\n                                } finally {\n                                    openingPaperId = null\n                                }\n                            }\n                        }
+                        ExamCatalogCard("Paper ${paper.paperNumber} / ${paper.variant} · $kind", if (openingPaperId == paper.id) "Preparing secure paper link…" else "${paper.level} · ${paper.session} ${paper.year}") {
+                            scope.launch {
+                                openingPaperId = paper.id
+                                error = null
+                                try {
+                                    val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, paper.id) }
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Could not open this paper. Check your connection and try again."
+                                } finally {
+                                    openingPaperId = null
+                                }
+                            }
+                        }
                     }
                     if(!loading && papers.isEmpty() && error==null) item { Text("No papers are available for this selection yet.",color=MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
