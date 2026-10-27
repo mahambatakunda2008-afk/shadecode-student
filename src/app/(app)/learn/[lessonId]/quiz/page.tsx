@@ -31,10 +31,10 @@ function xpForScore(correct: number, total: number): number {
 }
 
 function gradeInfo(pct: number) {
-  if (pct === 100) return { label: "Perfect! 🎯",       color: "#fbbf24" };
-  if (pct >= 80)   return { label: "Excellent! 🔥",     color: "#34d399" };
-  if (pct >= 60)   return { label: "Good job 👍",       color: "#60a5fa" };
-  if (pct >= 40)   return { label: "Keep going 📚",     color: "#c4dc87" };
+  if (pct === 100) return { label: "Perfect! 🎯",       color: "var(--warning)" };
+  if (pct >= 80)   return { label: "Excellent! 🔥",     color: "var(--success)" };
+  if (pct >= 60)   return { label: "Good job 👍",       color: "var(--info)" };
+  if (pct >= 40)   return { label: "Keep going 📚",     color: "var(--primary)" };
   return               { label: "Review needed 🔁",  color: "var(--danger)" };
 }
 
@@ -141,25 +141,27 @@ export default function QuizPage() {
   const grade         = gradeInfo(pct);
   const earnedXP      = xpForScore(correctCount, questions.length);
 
+  // ── Shared presentation ───────────────────────────────────────────────────
+  // Tokens only (no hard-coded palette) so the quiz matches the rest of the app in both themes.
+  const backLink = "inline-flex min-h-11 items-center gap-1.5 text-[13px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]";
+  const eyebrow = "text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--muted-foreground)]";
+  const good = "border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[var(--success-soft)]";
+  const bad = "border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)]";
+
   // ── Loading / Generating ─────────────────────────────────────────────────
 
   if (phase === "loading" || phase === "generating") return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-      <div style={{ position: "relative", width: 56, height: 56 }}>
-        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid rgba(113,140,83,0.15)" }} />
-        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid transparent", borderTopColor: "#8b5cf6", animation: "spin 0.9s linear infinite" }} />
-        <div style={{ position: "absolute", inset: 10, borderRadius: "50%", background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Brain size={18} color="#c4dc87" />
+    <div role="status" aria-live="polite" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--background)]">
+      <div className="relative h-14 w-14">
+        <div className="absolute inset-0 rounded-full border-[3px] border-[var(--primary-glow)]" />
+        <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-[color:var(--primary)]" />
+        <div className="absolute inset-2.5 flex items-center justify-center rounded-full bg-[var(--primary-glow)]">
+          <Brain size={18} className="text-[var(--primary)]" aria-hidden="true" />
         </div>
       </div>
-      <div style={{ textAlign: "center" }}>
-        <p style={{ color: "var(--foreground)", fontSize: 15, fontWeight: 600, margin: 0 }}>
-          {phase === "generating" ? "Building your quiz…" : "Loading…"}
-        </p>
-        <p style={{ color: "var(--muted-foreground)", fontSize: 12, margin: "4px 0 0", animation: "pulse 1.5s ease infinite" }}>
-          Analysing lesson content
-        </p>
+      <div className="text-center">
+        <p className="text-[15px] font-semibold text-[var(--foreground)]">{phase === "generating" ? "Building your quiz…" : "Loading…"}</p>
+        <p className="mt-1 animate-pulse text-xs text-[var(--muted-foreground)]">Analysing lesson content</p>
       </div>
     </div>
   );
@@ -167,79 +169,79 @@ export default function QuizPage() {
   // ── Error ────────────────────────────────────────────────────────────────
 
   if (phase === "error") return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "24px" }}>
-      <p style={{ color: "var(--danger)", fontSize: 14, textAlign: "center" }}>{errMsg}</p>
-      <Link href={`/learn/${lessonId}`} style={{ color: "#c4dc87", fontSize: 13, textDecoration: "none" }}>← Back to lesson</Link>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--background)] p-6">
+      <p role="alert" className="text-center text-sm text-[var(--danger)]">{errMsg}</p>
+      <Link href={`/learn/${lessonId}`} className="ssc-button ssc-button-secondary">← Back to lesson</Link>
     </div>
   );
 
   // ── Results ──────────────────────────────────────────────────────────────
 
   if (phase === "results") return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
-      <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}} @keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}`}</style>
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 16px 64px" }}>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <div className="mx-auto max-w-[680px] px-4 pb-16 pt-6 sm:pt-8">
 
-        <Link href={`/learn/${lessonId}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none", marginBottom: 28 }}>
-          <ArrowLeft size={14} /> Back to lesson
+        <Link href={`/learn/${lessonId}`} className={`${backLink} mb-5`}>
+          <ArrowLeft size={14} aria-hidden="true" /> Back to lesson
         </Link>
 
         {/* Score hero */}
-        <div style={{ borderRadius: 22, border: "1px solid var(--card-border)", background: "radial-gradient(ellipse at 60% 0%, rgba(139,92,246,0.18) 0%, transparent 60%), var(--card)", padding: "36px 24px", textAlign: "center", marginBottom: 24, animation: "fadeUp .4s ease" }}>
-          <div style={{ width: 68, height: 68, borderRadius: "50%", background: pct >= 80 ? "rgba(251,191,36,0.15)" : "rgba(113,140,83,0.15)", border: `2px solid ${pct >= 80 ? "rgba(251,191,36,0.35)" : "rgba(139,92,246,0.35)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", animation: "pop .5s ease .2s both" }}>
-            <Trophy size={30} color={pct >= 80 ? "#fbbf24" : "#c4dc87"} />
-          </div>
-          <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Quiz Complete</p>
-          <h1 style={{ fontSize: 52, fontWeight: 900, color: grade.color, margin: "0 0 4px", lineHeight: 1 }}>{pct}%</h1>
-          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: "0 0 24px" }}>{grade.label}</p>
+        <div className="relative mb-6 animate-[ssc-page-in_400ms_ease_both] overflow-hidden rounded-[22px] border border-[var(--card-border)] bg-[var(--card)] px-6 py-9 text-center">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_60%_0%,var(--primary-glow),transparent_60%)]" />
+          <div className="relative">
+            <div className={`mx-auto mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full border-2 ${pct >= 80 ? "border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] text-[var(--warning)]" : "border-[color-mix(in_srgb,var(--primary)_40%,transparent)] bg-[var(--primary-glow)] text-[var(--primary)]"}`}>
+              <Trophy size={30} aria-hidden="true" />
+            </div>
+            <p className={`${eyebrow} mb-1`}>Quiz Complete</p>
+            <h1 className="mb-1 text-5xl font-black leading-none sm:text-[52px]" style={{ color: grade.color }}>{pct}%</h1>
+            <p className="mb-6 text-lg font-bold">{grade.label}</p>
 
-          <div style={{ display: "flex", justifyContent: "center", gap: 24 }}>
-            {[
-              { val: `${correctCount}/${questions.length}`, label: "Correct",  color: "#34d399" },
-              { val: `+${earnedXP}`,                        label: "XP Earned", color: "#fbbf24" },
-              { val: `${questions.length - correctCount}`,  label: "Missed",   color: "var(--danger)" },
-            ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center" }}>
-                <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.val}</p>
-                <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "3px 0 0" }}>{s.label}</p>
-              </div>
-            ))}
+            <div className="flex justify-center gap-6">
+              {[
+                { val: `${correctCount}/${questions.length}`, label: "Correct",   color: "var(--success)" },
+                { val: `+${earnedXP}`,                        label: "XP Earned", color: "var(--warning)" },
+                { val: `${questions.length - correctCount}`,  label: "Missed",    color: "var(--danger)" },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <p className="text-2xl font-extrabold leading-none" style={{ color: stat.color }}>{stat.val}</p>
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Per-question breakdown */}
-        <h3 style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>
-          Question Breakdown
-        </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
-          {questions.map((q, i) => {
+        <h2 className={`${eyebrow} mb-3`}>Question Breakdown</h2>
+        <div className="mb-7 flex flex-col gap-3">
+          {questions.map((question, i) => {
             const userAns   = answers[i];
-            const isCorrect = userAns === q.correctIndex;
+            const isCorrect = userAns === question.correctIndex;
             return (
-              <div key={q.id} style={{ borderRadius: 16, border: `1px solid ${isCorrect ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, background: isCorrect ? "rgba(52,211,153,0.05)" : "rgba(248,113,113,0.05)", padding: "16px 18px", animation: `fadeUp .3s ease ${i * 0.07}s both` }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
-                  {isCorrect ? <CheckCircle2 size={16} color="#34d399" style={{ flexShrink: 0, marginTop: 2 }} /> : <XCircle size={16} color="var(--danger)" style={{ flexShrink: 0, marginTop: 2 }} />}
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", margin: 0, lineHeight: 1.5 }}>Q{i + 1}. {q.question}</p>
+              <div key={question.id} className={`animate-[ssc-page-in_300ms_ease_both] rounded-2xl border p-4 ${isCorrect ? good : bad}`} style={{ animationDelay: `${i * 0.07}s` }}>
+                <div className="mb-3 flex items-start gap-2.5">
+                  {isCorrect
+                    ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--success)]" aria-label="Correct" />
+                    : <XCircle size={16} className="mt-0.5 shrink-0 text-[var(--danger)]" aria-label="Incorrect" />}
+                  <p className="text-sm font-semibold leading-normal">Q{i + 1}. {question.question}</p>
                 </div>
 
-                <div style={{ paddingLeft: 26, display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", minWidth: 64 }}>Your ans:</span>
-                    <span style={{ fontSize: 13, color: isCorrect ? "#34d399" : "var(--danger)", fontWeight: 600 }}>{q.options[userAns] ?? "No answer"}</span>
+                <div className="mb-3 flex flex-col gap-1.5 pl-[26px]">
+                  <div className="flex items-baseline gap-2">
+                    <span className="min-w-16 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted-foreground)]">Your ans:</span>
+                    <span className={`text-[13px] font-semibold ${isCorrect ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{question.options[userAns] ?? "No answer"}</span>
                   </div>
                   {!isCorrect && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em", minWidth: 64 }}>Correct:</span>
-                      <span style={{ fontSize: 13, color: "#34d399", fontWeight: 600 }}>{q.options[q.correctIndex]}</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="min-w-16 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted-foreground)]">Correct:</span>
+                      <span className="text-[13px] font-semibold text-[var(--success)]">{question.options[question.correctIndex]}</span>
                     </div>
                   )}
                 </div>
 
-                <div style={{ paddingLeft: 26 }}>
-                  <div style={{ background: "var(--surface-2)", borderRadius: 10, padding: "10px 14px" }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 5px" }}>Explanation</p>
-                    <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{q.explanation}</p>
-                  </div>
+                <div className="ml-[26px] rounded-[10px] bg-[var(--surface-2)] px-3.5 py-2.5">
+                  <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--muted-foreground)]">Explanation</p>
+                  <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">{question.explanation}</p>
                 </div>
               </div>
             );
@@ -247,12 +249,12 @@ export default function QuizPage() {
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={restart} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-            <RotateCcw size={16} /> Retake
+        <div className="flex gap-2.5">
+          <button type="button" onClick={restart} className="ssc-button ssc-button-secondary min-h-12 flex-1 font-semibold">
+            <RotateCcw size={16} aria-hidden="true" /> Retake
           </button>
-          <Link href={`/learn/${lessonId}`} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #718c53, #536943)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-            Back to Lesson <ArrowRight size={16} />
+          <Link href={`/learn/${lessonId}`} className="ssc-button min-h-12 flex-1 font-semibold">
+            Back to Lesson <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -266,64 +268,62 @@ export default function QuizPage() {
   const progressPct     = (current / questions.length) * 100;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
-      <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes spin   { to{transform:rotate(360deg)} }
-        .opt-btn:hover:not(:disabled) { border-color: rgba(139,92,246,0.4) !important; background: rgba(139,92,246,0.08) !important; }
-        .confirm-btn:not(:disabled):hover { filter: brightness(1.1); }
-      `}</style>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
 
       {/* Sticky progress header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--background)", borderBottom: "1px solid var(--card-border)", padding: "14px 16px" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <Link href={`/learn/${lessonId}`} style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--muted-foreground)", fontSize: 13, textDecoration: "none" }}>
-              <ArrowLeft size={14} /> Lesson
+      <div className="sticky top-0 z-10 border-b border-[var(--card-border)] bg-[var(--background)] px-4 py-3.5">
+        <div className="mx-auto max-w-[680px]">
+          <div className="mb-2 flex items-center justify-between">
+            <Link href={`/learn/${lessonId}`} className={backLink}>
+              <ArrowLeft size={14} aria-hidden="true" /> Lesson
             </Link>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Sparkles size={14} color="#c4dc87" />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted-foreground)" }}>{current + 1} / {questions.length}</span>
+            <div className="flex items-center gap-1.5 text-[var(--muted-foreground)]">
+              <Sparkles size={14} className="text-[var(--primary)]" aria-hidden="true" />
+              <span className="text-[13px] font-semibold">{current + 1} / {questions.length}</span>
             </div>
           </div>
-          <div style={{ height: 4, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg, #718c53, #536943)", borderRadius: 999, transition: "width .4s ease" }} />
+          <div role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPct)} className="h-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
+            <div className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-[400ms]" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 16px 48px" }}>
-        <div key={current} style={{ animation: "fadeUp .25s ease" }}>
+      <div className="mx-auto max-w-[680px] px-4 pb-12 pt-7">
+        <div key={current} className="animate-[ssc-page-in_250ms_ease_both]">
 
           {/* Question */}
-          <div style={{ marginBottom: 24 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 10px" }}>Question {current + 1}</p>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", margin: 0, lineHeight: 1.55 }}>{q.question}</h2>
+          <div className="mb-6">
+            <p className={`${eyebrow} mb-2.5`}>Question {current + 1}</p>
+            <h1 className="text-lg font-bold leading-relaxed">{q.question}</h1>
           </div>
 
           {/* Options */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+          <div role="radiogroup" aria-label="Answer options" className="mb-5 flex flex-col gap-2.5">
             {q.options.map((opt, i) => {
-              let bg     = "var(--card-border)";
-              let border = "var(--card-border)";
-              let color  = "var(--muted-foreground)";
-
-              if (confirmed) {
-                if (i === q.correctIndex)                             { bg = "rgba(52,211,153,0.12)";  border = "rgba(52,211,153,0.4)";  color = "#34d399"; }
-                else if (i === selected && selected !== q.correctIndex) { bg = "rgba(248,113,113,0.12)"; border = "rgba(248,113,113,0.4)"; color = "var(--danger)"; }
-              } else if (selected === i) {
-                bg = "rgba(113,140,83,0.15)"; border = "rgba(113,140,83,0.5)"; color = "#c4dc87";
-              }
-
+              const isRight = confirmed && i === q.correctIndex;
+              const isWrong = confirmed && i === selected && selected !== q.correctIndex;
+              const tone = isRight
+                ? "border-[color-mix(in_srgb,var(--success)_45%,transparent)] bg-[var(--success-soft)] text-[var(--success)]"
+                : isWrong
+                  ? "border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[var(--danger-soft)] text-[var(--danger)]"
+                  : selected === i
+                    ? "border-[color-mix(in_srgb,var(--primary)_55%,transparent)] bg-[var(--primary-glow)] text-[var(--primary)]"
+                    : "border-[var(--card-border)] bg-[var(--surface-2)] text-[var(--muted-foreground)] enabled:hover:border-[color-mix(in_srgb,var(--primary)_40%,transparent)] enabled:hover:bg-[var(--primary-glow)]";
               return (
-                <button key={i} className="opt-btn" disabled={confirmed} onClick={() => setSelected(i)}
-                  style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 14, border: `1px solid ${border}`, background: bg, color, cursor: confirmed ? "default" : "pointer", textAlign: "left", transition: "all .15s", animation: `fadeUp .2s ease ${i * 0.05}s both` }}>
-                  <div style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 12, fontWeight: 700, color }}>
-                    {["A", "B", "C", "D"][i]}
-                  </div>
-                  <span style={{ fontSize: 14, lineHeight: 1.5, fontWeight: (selected === i || (confirmed && i === q.correctIndex)) ? 600 : 400 }}>{opt}</span>
-                  {confirmed && i === q.correctIndex && <CheckCircle2 size={16} color="#34d399" style={{ marginLeft: "auto", flexShrink: 0 }} />}
-                  {confirmed && i === selected && selected !== q.correctIndex && <XCircle size={16} color="var(--danger)" style={{ marginLeft: "auto", flexShrink: 0 }} />}
+                <button
+                  key={i}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected === i}
+                  disabled={confirmed}
+                  onClick={() => setSelected(i)}
+                  className={`flex min-h-[52px] w-full animate-[ssc-page-in_200ms_ease_both] items-center gap-3.5 rounded-[14px] border px-4 py-3.5 text-left transition-colors enabled:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--primary)] ${tone}`}
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                >
+                  <span aria-hidden="true" className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border border-current text-xs font-bold">{["A", "B", "C", "D"][i]}</span>
+                  <span className={`text-sm leading-normal ${selected === i || isRight ? "font-semibold" : "font-normal"}`}>{opt}</span>
+                  {isRight && <CheckCircle2 size={16} className="ml-auto shrink-0" aria-label="Correct answer" />}
+                  {isWrong && <XCircle size={16} className="ml-auto shrink-0" aria-label="Your answer, incorrect" />}
                 </button>
               );
             })}
@@ -331,34 +331,32 @@ export default function QuizPage() {
 
           {/* Explanation after confirm */}
           {confirmed && (
-            <div style={{ borderRadius: 14, padding: "14px 16px", background: isCorrectAnswer ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)", border: `1px solid ${isCorrectAnswer ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`, marginBottom: 20, animation: "fadeUp .2s ease" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: isCorrectAnswer ? "#34d399" : "var(--danger)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
+            <div role="status" aria-live="polite" className={`mb-5 animate-[ssc-page-in_200ms_ease_both] rounded-[14px] border px-4 py-3.5 ${isCorrectAnswer ? good : bad}`}>
+              <p className={`mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] ${isCorrectAnswer ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
                 {isCorrectAnswer ? "✓ Correct!" : "✗ Incorrect"}
               </p>
-              <p style={{ fontSize: 14, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.65 }}>{q.explanation}</p>
+              <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{q.explanation}</p>
             </div>
           )}
 
           {/* Action button */}
           {!confirmed ? (
-            <button onClick={confirm} disabled={selected === null} className="confirm-btn"
-              style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: selected !== null ? "linear-gradient(135deg, #718c53, #536943)" : "var(--card-border)", border: "none", color: selected !== null ? "#fff" : "var(--muted-foreground)", fontSize: 14, fontWeight: 700, cursor: selected !== null ? "pointer" : "not-allowed", transition: "all .15s", boxShadow: selected !== null ? "0 0 20px rgba(64,90,50,0.22)" : "none" }}>
+            <button type="button" onClick={confirm} disabled={selected === null} className="ssc-button min-h-12 w-full font-bold">
               Confirm Answer
             </button>
           ) : (
-            <button onClick={next}
-              style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: "linear-gradient(135deg, #718c53, #536943)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 0 20px rgba(64,90,50,0.22)" }}>
-              {current < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={16} />
+            <button type="button" onClick={next} className="ssc-button min-h-12 w-full font-bold">
+              {current < questions.length - 1 ? "Next Question" : "See Results"} <ArrowRight size={16} aria-hidden="true" />
             </button>
           )}
 
-          {/* Progress dots */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 24 }}>
+          {/* Progress dots (decorative: the progressbar above carries the semantics) */}
+          <div aria-hidden="true" className="mt-6 flex justify-center gap-1.5">
             {questions.map((_, i) => {
-              let bg = "var(--card-border)";
-              if (i < answers.length) bg = answers[i] === questions[i].correctIndex ? "#34d399" : "var(--danger)";
-              else if (i === current) bg = "#718c53";
-              return <div key={i} style={{ width: i === current ? 22 : 8, height: 8, borderRadius: 999, background: bg, transition: "all .3s" }} />;
+              const dot = i < answers.length
+                ? (answers[i] === questions[i].correctIndex ? "bg-[var(--success)]" : "bg-[var(--danger)]")
+                : i === current ? "bg-[var(--primary)]" : "bg-[var(--card-border)]";
+              return <div key={i} className={`h-2 rounded-full transition-all duration-300 ${i === current ? "w-[22px]" : "w-2"} ${dot}`} />;
             })}
           </div>
         </div>
