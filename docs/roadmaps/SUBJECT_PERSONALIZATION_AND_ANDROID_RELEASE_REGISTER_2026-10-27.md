@@ -204,3 +204,13 @@ The queue currently covers task creation, task completion and timetable replacem
 - [ ] Verify the Kotlin/Android build for commit `429960cd09745d3762cc63cf91dd1b1d0fcf8bd8`.
 - [ ] Verify completed/expired attempts can be restarted, the timer starts only when requested, notes persist while an attempt is active, and cancel leaves existing work untouched.
 
+
+
+### App distribution and in-app discovery (2026-10-27)
+- [x] Added a visible **Get the app** path to the public landing page, including a mobile-visible hero CTA.
+- [x] Added `/download` with browser-supported PWA installation, manual home-screen instructions, release-announcement link, and clear offline limitations.
+- [x] Added a dismissible, inline installation notice to the authenticated web app so existing users can find the installation options without a floating overlay.
+- [x] Avoided publishing a stale Actions artifact as a public download. Workflow artifacts expire and are not a stable public release channel.
+- [ ] Publish the dedicated Android download only after a commit-matched APK is built, installation/security checks pass, and a production signing key is configured. The page deliberately does not advertise an unsigned debug APK as a production release.
+- [ ] Validate browser installability (manifest, service worker, icons and HTTPS) across Chrome Android and desktop browsers; confirm the fallback instructions are clear on iOS Safari.
+- [ ] Once a signed release exists, change the Android card on `/download` into a direct versioned download with checksum, version/release notes, minimum Android version and update guidance. Keep the PWA install path available as the low-friction option.
