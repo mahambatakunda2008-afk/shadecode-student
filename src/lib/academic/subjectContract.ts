@@ -4,11 +4,11 @@ export function normalizeSubjectKey(value: unknown): string {
     .trim()
     .toLowerCase()
     .replace(/&/g, "and")
-    // Preserve letters and numbers from every writing system, not only ASCII.\n    .replace(/[^\\p{L}\\p{N}]+/gu, " ")
+    // Preserve letters and numbers from every writing system, not only ASCII.
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
-
 export function isGeneralSubject(value: unknown): boolean {
   return normalizeSubjectKey(value) === "general";
 }
