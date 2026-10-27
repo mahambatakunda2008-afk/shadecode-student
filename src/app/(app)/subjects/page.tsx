@@ -52,6 +52,7 @@ export default function SubjectsPage() {
   const [addingSubject, setAddingSubject] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
+  const [removingSubject, setRemovingSubject] = useState<string | null>(null);
   const [studyLevel, setStudyLevel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -116,6 +117,33 @@ export default function SubjectsPage() {
     } catch (e) {
       setAddError(e instanceof Error ? e.message : "Could not add this subject.");
     } finally { setAddingSubject(null); }
+  };
+
+  const removeSubject = async (subject: Subject) => {
+    const confirmed = window.confirm(
+      `Remove ${subject.name} from your active subjects? Existing lessons and progress will be preserved.`
+    );
+    if (!confirmed) return;
+    setRemovingSubject(subject.id); setAddError(null); setAddSuccess(null);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { router.push("/login"); return; }
+      const response = await fetch("/api/subjects", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+        body: JSON.stringify({ subjectId: subject.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || "Could not remove this subject.");
+      const refreshed = await fetch("/api/learn", { headers: { Authorization: "Bearer " + session.access_token } });
+      if (!refreshed.ok) throw new Error("Subject removed, but the list could not refresh. Reload this page.");
+      const data = await refreshed.json();
+      setSubjects(data.subjects ?? []);
+      setAddSuccess(String(payload.removed ?? subject.name) + " removed from active subjects. Existing work is preserved.");
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : "Could not remove this subject.");
+    } finally { setRemovingSubject(null); }
   };
 
   // ── Loading ─────────────────────────────────────────────────────────────────
@@ -270,6 +298,16 @@ export default function SubjectsPage() {
                     >
                       <ChevronRight size={14} color="var(--muted-foreground)" />
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => void removeSubject(s)}
+                      disabled={Boolean(removingSubject) || Boolean(addingSubject)}
+                      aria-label={`Remove ${s.name} from active subjects`}
+                      title="Remove from active subjects (keeps existing work)"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "9px 10px", borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--card-border)", color: "var(--muted-foreground)", cursor: removingSubject || addingSubject ? "wait" : "pointer", opacity: removingSubject === s.id ? .55 : 1 }}
+                    >
+                      {removingSubject === s.id ? <span style={{ fontSize: 10 }}>…</span> : <X size={14} />}
+                    </button>
                   </div>
                 </div>
               );
