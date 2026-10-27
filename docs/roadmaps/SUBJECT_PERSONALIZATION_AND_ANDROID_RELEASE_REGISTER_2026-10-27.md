@@ -247,3 +247,11 @@ The queue currently covers task creation, task completion and timetable replacem
 - Updated `android/README.md` to distinguish the opt-in first-visit offline starter pack from papers bundled in the APK, and to document checksum generation as part of the signed-release workflow.
 - PR #492 and PR #493 are merged. Current `main` has release checksum automation and the subject search normalization fix. Latest web production deployment still points to `107cf10a691ad5739a0e14f3f515a7091baca13a`; Vercel has reported a build-rate-limit status for newer commits, so do not assume the newest code is live.
 - Latest documentation commit at the time of this entry: `9f8f261594513ac99f3d729c6fcc08e52bb92f48` (Android README clarification). Subsequent documentation changes may advance `main`.
+
+## Progress update: 2026-10-28
+
+- Fixed the Subjects page so a successful add/remove is not incorrectly presented as a failed mutation when only the follow-up list refresh fails. Removal falls back to updating the visible local list while preserving historical subject rows.
+- Confirmed the previous subject-mutation fix's CI run passed typecheck, lint, tests and production build; its Vercel production deployment reached READY and was assigned the `shadecodestudent.vercel.app` alias.
+- Fixed subject-key normalization to preserve letters and numbers from non-ASCII writing systems instead of stripping everything outside ASCII. Added regression coverage for accented Latin and Chinese subject names.
+- Latest Unicode regression-test commit is queued for CI and a new Vercel deployment. Do not call the Unicode fix production-live until that exact commit reaches READY.
+- Remaining verification: authenticated browser tests for add/remove, duplicate submissions and profile persistence; database trigger/RLS and cross-device race behavior; real Android device smoke tests; signed APK/AAB and release verification after signing credentials are configured.
