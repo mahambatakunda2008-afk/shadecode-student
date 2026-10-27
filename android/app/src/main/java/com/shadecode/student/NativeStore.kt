@@ -73,6 +73,83 @@ class NativeStore(private val context: Context) {
         }.getOrNull()
     }
 
+    /** Cache task snapshots per account so offline reads never cross learner boundaries. */
+    suspend fun saveTasks(accountId: String, tasks: List<NativeTask>) {
+        val encoded = JSONArray()
+        tasks.forEach { task ->
+            encoded.put(
+                JSONObject()
+                    .put("id", task.id)
+                    .put("subjectId", task.subjectId)
+                    .put("title", task.title)
+                    .put("description", task.description)
+                    .put("dueDate", task.dueDate ?: JSONObject.NULL)
+                    .put("completed", task.completed),
+            )
+        }
+        context.nativeStore.edit { it[stringPreferencesKey("cached_tasks_$accountId")] = encoded.toString() }
+    }
+
+    suspend fun readTasks(accountId: String): List<NativeTask> {
+        val encoded = context.nativeStore.data.first()[stringPreferencesKey("cached_tasks_$accountId")] ?: return emptyList()
+        return runCatching {
+            val rows = JSONArray(encoded)
+            buildList {
+                for (index in 0 until rows.length()) {
+                    val row = rows.getJSONObject(index)
+                    val due = row.optString("dueDate").takeIf { it.isNotBlank() && it != "null" }
+                    add(
+                        NativeTask(
+                            id = row.getString("id"),
+                            subjectId = row.optString("subjectId"),
+                            title = row.optString("title"),
+                            description = row.optString("description"),
+                            dueDate = due,
+                            completed = row.optBoolean("completed", false),
+                        ),
+                    )
+                }
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    /** Cache timetable snapshots separately for each signed-in learner. */
+    suspend fun saveTimetable(accountId: String, slots: List<NativeTimetableSlot>) {
+        val encoded = JSONArray()
+        slots.forEach { slot ->
+            encoded.put(
+                JSONObject()
+                    .put("id", slot.id)
+                    .put("subject", slot.subject)
+                    .put("startTime", slot.startTime)
+                    .put("endTime", slot.endTime)
+                    .put("isBreak", slot.isBreak),
+            )
+        }
+        context.nativeStore.edit { it[stringPreferencesKey("cached_timetable_$accountId")] = encoded.toString() }
+    }
+
+    suspend fun readTimetable(accountId: String): List<NativeTimetableSlot> {
+        val encoded = context.nativeStore.data.first()[stringPreferencesKey("cached_timetable_$accountId")] ?: return emptyList()
+        return runCatching {
+            val rows = JSONArray(encoded)
+            buildList {
+                for (index in 0 until rows.length()) {
+                    val row = rows.getJSONObject(index)
+                    add(
+                        NativeTimetableSlot(
+                            id = row.optString("id", "$index"),
+                            subject = row.optString("subject", "Study session"),
+                            startTime = row.optString("startTime"),
+                            endTime = row.optString("endTime"),
+                            isBreak = row.optBoolean("isBreak", false),
+                        ),
+                    )
+                }
+            }
+        }.getOrDefault(emptyList())
+    }
+
     suspend fun clearSession() {
         context.nativeStore.edit { it.clear() }
     }
