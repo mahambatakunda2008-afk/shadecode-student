@@ -1,0 +1,109 @@
+# Shadecode Student: Web-to-Mobile Feature Parity Matrix
+
+**Last reviewed:** 2026-10-27  
+**Status:** Execution contract; this document does not claim parity has been implemented.  
+**Native target:** Kotlin + Jetpack Compose Android app, package `com.shadecode.student`.  
+**Web reference:** the existing Next.js application and its production APIs.  
+**Principle:** mobile must deliver the meaningful capabilities of the web product, not merely login, Home, Learn, Practice and Profile screens. Native UX may differ where touch, small screens, local storage or device capabilities make that better. The underlying learner, curriculum, progress and authorization semantics must remain consistent.
+
+## 1. Parity rules
+
+1. **Feature parity, not pixel parity.** Adapt the interaction for a phone while preserving the capability, inputs, outputs, saved state and recovery paths.
+2. **One learning system.** Reuse existing authenticated APIs, Supabase data contracts, canonical learning events and Cortex routing. Do not create a separate Android-only source of truth for learner progress or subject identity.
+3. **Native means native.** The Android client remains Kotlin/Compose, not a WebView wrapper around the website.
+4. **All supported subjects, not two hard-coded subjects.** Use a shared, searchable catalogue and learner-specific selections. Do not claim full syllabus content merely because a catalogue item can be selected.
+5. **Offline claims must be exact.** Each capability must say whether it works offline, works with previously synced content, queues changes, or requires network/AI. No fake successful saves or fake offline AI.
+6. **Private by default.** Cache and sync data by authenticated learner; isolate account switches; never put private learner content in cross-user shared caches.
+7. **Progressive exposure is allowed.** A feature may be hidden when irrelevant to a learner's selected stage/subjects, but must not be omitted from the mobile product merely because it is absent from the initial navigation.
+8. **Evidence before status.** A screen or API is not parity. Each row must be exercised on a real or representative Android environment and linked to test/build evidence before being marked verified.
+
+## 2. Feature parity matrix
+
+The Android README states that the native app currently has a smaller surface than the web app. Therefore, all entries below are targets until native implementation and verification evidence are recorded.
+
+| Capability area | Required mobile capability | Cross-platform/data contract | Offline expectation | Release acceptance |
+|---|---|---|---|---|
+| Identity and onboarding | Sign up/sign in, session recovery, onboarding, stage and goal selection | Supabase Auth and canonical learner profile | Existing session/profile readable from safe local cache; first sign-in needs network | New and returning users can authenticate; expired sessions recover without losing local work |
+| Academic profile and subjects | Search/add/remove subjects, multiple stages/boards/qualifications, syllabus/version when verified, edit goals and preferences | Stable shared subject IDs and the same profile semantics as web | Previously synced selections remain visible; edits queue only where safe and visibly pending | Web edit appears on Android and vice versa after sync; removing a subject preserves historical work |
+| Home and next actions | Personalized dashboard, tasks, timetable, streaks, XP/level, achievements, daily challenge and recommendations where supported | Existing learner state, canonical events and server-authoritative scoring | Cached dashboard state can be read; queued actions are clearly marked | No fabricated XP, streaks or mastery; refreshed state reconciles correctly |
+| Cortex / learning intelligence | Learner insights, weak areas, recommendations and relevant learning history | Existing Cortex APIs, event contracts and mastery semantics | Show previously synced insights with a timestamp; explain when fresh analysis needs network | No invented insights; authenticated and learner-scoped results |
+| Learn / lessons | Browse/search lessons, generate or retrieve lessons, structured explanations, examples, practice, answers/feedback, resume and save | Existing lesson/Cortex routes and curriculum metadata | Saved lessons and progress remain usable; generation may require cloud unless a genuine local capability exists | Generate/retrieve → save → close/reopen → practice → recover works; failures do not trap progress |
+| Exam Hub / past papers | Browse supported papers/questions, filters, source/provenance, topic mapping and mark schemes where available | Existing question/paper sources and syllabus identifiers | Downloaded/saved material is available offline; new remote resources require network | Subject/board filters are correct; unknown provenance/coverage is disclosed |
+| Exam Simulation | Timed exam, question navigation, typed working, answer input, diagram/canvas tools where relevant, submission, marking, results and resume/recovery | Existing exam APIs and server-authoritative marking/score persistence | Downloaded or locally available exams can be attempted offline only where supported; sync result safely later | Timer and answers survive interruption; no duplicate submission or false cloud-save success |
+| Math Checker / working tools | Enter or capture a problem, show steps/checking, math rendering, calculator and typed working | Existing Math Checker/Cortex routes and deterministic math tools | Deterministic/local tools where available; cloud explanation clearly requires network | Accurate input/error handling; no silent loss of work |
+| Subject-specific practicals | Appropriate diagrams, graphs, sketches, tables, practical/experimental workflows and subject tools | Curriculum and assessment format must drive available tools | Saved resources and locally implemented tools remain available offline | Do not force geography/science/computing tools on unrelated subjects; do not replace required visual exam work with text-only output |
+| Computer Science / Code Lab | Pseudocode, algorithms, Python, console programming, web development, databases/SQL, projects and practical-exam pathways where supported | Board-agnostic capability model with board-specific pathways; shared saved work | Local editor/project work remains accessible; remote execution/collaboration is labelled | Code and projects persist; unsupported execution is not presented as working |
+| Math/handwriting and capture | Snap & Extract/OCR and math capture where supported; editable extraction and correction | Native device APIs may differ, but saved learning artifacts and privacy rules remain compatible | Local OCR/extracts and local library are offline; network-only interpretation is labelled | OCR limitations disclosed; account data never leaks between users |
+| Focus and study organization | Focus sessions, tasks, timetable, reminders where implemented, revision planning | Same learner-owned tasks and schedules | Read cached schedule and record supported local actions; explicit sync state | Time-zone/date behavior, interruption recovery and sync are checked |
+| Analytics and history | Progress, performance, topic mastery, trends and past results | Canonical learning events and existing authoritative stores | Display cached history with freshness indicator | No mismatched totals or fabricated mastery; account-scoped |
+| Engagement | XP, levels, streaks, achievements, leaderboards, challenges and sharing where implemented | Server-authoritative rules; user-initiated share actions | Local progress can queue only under defined idempotent rules; leaderboards need network | No client-side score manipulation, duplicate awards or automatic messaging |
+| Project Studio and creation | Project plans, milestones, evidence, drafts, document assembly and recovery where supported | Existing project/data contracts and provenance/integrity rules | Drafts and saved evidence are durable locally only when storage supports it; sync conflicts visible | Reopen and recover drafts; never fabricate evidence or overwrite newer versions silently |
+| Careers and broader learning | Careers explorer and education pathways relevant to learner stage | Shared profile and supported data sources | Previously saved content may be readable offline | Recommendations disclose limits and do not appear as guaranteed outcomes |
+| Settings, privacy and trust | Profile/preferences, privacy/terms, data export/deletion entry points when implemented, support/feedback | Same account controls, server-side authorization and privacy promises | Settings may be cached read-only; destructive/account actions require secure confirmation and often network | No false claim that export/deletion completed; authorization tested |
+| Offline storage and sync | Local database, saved content, progress, pending mutations, retries, conflict and account-switch handling | One coordinated sync contract; idempotency and versioning; no parallel uncoordinated queues | Must survive airplane mode, app restart, reconnect and account switch for explicitly supported workflows | Test airplane mode, reload/reopen, storage pressure, retries, conflict, logout/login and reconnect |
+| Accessibility and mobile UX | Touch targets, keyboard/input behavior, screen readers, text scaling, contrast, small-screen layouts, safe areas and no unwanted floating UI | Same design tokens and product identity where practical | Core cached workflows remain navigable offline | Test small and large phones, landscape where relevant, keyboard open, font scaling and navigation |
+| Release and updates | Versioned APK, reproducible build, release notes, checksums where practical, update instructions and canonical download page; AAB for Play when signed/configured | Artifacts tied to exact source commit and existing GitHub release workflow | App launches without update service; stale-version messaging is honest | Match workflow `head_sha` to source commit; verify signing, installation, update path and device smoke test |
+
+## 3. Subject-aware mobile navigation
+
+The app must not show a fixed Mathematics/Physics-only list. The primary learning surface should be assembled from the learner's stage, selected subjects and actual feature/content readiness:
+
+- **My subjects:** selected subjects, search/add/manage, visible coverage state.
+- **Continue learning:** resume recent lessons, practice, papers and projects.
+- **Study plan:** next actions, timetable and tasks.
+- **Tools:** contextual tools only when relevant to the learner's selected subject or activity.
+- **Cortex:** insights and recommendations, with evidence/freshness context.
+- **Profile:** stage, board, qualification, syllabus/version when verified, goals and preferences.
+
+This is a conceptual information architecture, not a mandate to replace the existing native UI wholesale. Preserve working navigation and improve it incrementally.
+
+## 4. Shared capability registry
+
+Maintain separate fields for:
+
+- web implementation status and evidence;
+- Android implementation status and evidence;
+- offline behavior;
+- relevant education stages, subjects and curriculum coverage;
+- API/data contract;
+- automated tests and manual device test evidence;
+- release/version first verified.
+
+Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not applicable**. A web-only feature must remain visibly **Partial** for cross-platform parity. Do not mark a whole area Verified because its landing screen exists.
+
+## 5. Release gates
+
+### Gate A: source and CI
+- Confirm the exact source commit and inspect current Android workflow.
+- Run the web quality gates relevant to changed shared contracts: lint, typecheck, tests and production build.
+- Run Android unit/compile/build checks and inspect failures.
+- Build artifacts from the exact commit being considered for release.
+
+### Gate B: parity-critical workflows
+- Auth/session/profile and multi-subject onboarding.
+- Add/remove subject, reload and cross-client profile synchronization.
+- Learn: generate/retrieve, save, reopen, practice and failure recovery.
+- Exam Simulation: input, typed working/canvas where supported, interruption and result persistence.
+- Offline: cached content, local progress, app restart, reconnect, retry and account switching.
+- Privacy/RLS and learner data isolation.
+- Main navigation, accessibility, screen sizes and app identity.
+
+### Gate C: distribution
+- Verify artifact workflow `head_sha` equals the intended source commit.
+- Confirm signed release credentials before calling an APK production-ready.
+- Debug/unsigned APKs must be labelled preview/testing only.
+- Test installation and upgrade on a real Android device; record device/OS and outcome.
+- Publish GitHub Release/download page only for a verified artifact.
+- Report Play Store submission separately; never imply it happened automatically.
+
+## 6. Work sequence
+
+1. Reconcile the native source tree, active Android workflow, latest main commit, CI, release artifacts and current open PRs.
+2. Audit the existing web feature surface against this matrix; distinguish live/verified from partial and planned.
+3. Stabilize the canonical learner profile and shared subject catalogue before duplicating profile semantics in Android.
+4. Complete native subject management and profile editing, then verify cross-client sync.
+5. Deliver parity in vertical slices: Learn/Cortex, Exam Hub/Simulation, Math/subject tools, study organization/analytics/engagement, projects/careers/settings.
+6. Finish local-first behavior and explicit per-feature offline contracts; consolidate rather than add a new queue.
+7. Run release gates, produce a commit-matched artifact, test on device, then publish with honest release notes.
+
+**Current truth:** Native Android is a real Kotlin/Compose project, but the existing Android README explicitly says feature parity is incomplete. This matrix is the contract for closing that gap, not evidence that the gap has already been closed.
