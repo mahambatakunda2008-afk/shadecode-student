@@ -207,7 +207,7 @@ class NativeApi {
     }
 }
 
-data class NativeTask(val id: String, val title: String, val description: String, val dueDate: String?, val completed: Boolean)
+data class NativeTask(val id: String, val subjectId: String, val title: String, val description: String, val dueDate: String?, val completed: Boolean)
 
 data class NativeSession(val accessToken: String, val refreshToken: String, val userId: String, val email: String)
 
