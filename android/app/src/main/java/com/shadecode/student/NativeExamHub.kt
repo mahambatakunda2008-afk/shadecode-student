@@ -118,10 +118,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                 showStarterPackPrompt = false
                 context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE).edit().putBoolean("prompted_${session.userId}", true).apply()
             },
-            properties = androidx.compose.ui.window.DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
@@ -149,7 +146,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                         }
                                         Column(Modifier.weight(1f)) {
                                             Text(subject.name, fontWeight = FontWeight.Medium)
-                                            Text(subject.level.ifBlank { "Your selected level" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("Selected subject", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                 }
