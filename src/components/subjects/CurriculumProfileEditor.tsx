@@ -108,7 +108,7 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
     setDrafts(current => ({
       ...current,
       [subject.id]: {
-        boardId: existing?.boardId ?? "cambridge",
+        boardId: existing?.boardId ?? "",
         qualificationId: existing?.qualificationId ?? "",
         level: existing?.level ?? defaultCurriculumLevel,
       },
@@ -206,7 +206,7 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
                   <label className="grid gap-1.5 text-xs font-medium text-[var(--muted-foreground)]">
                     Exam board
                     <select className={fieldClass} value={draft.boardId} onChange={event => setDrafts(current => ({ ...current, [subject.id]: { ...draft, boardId: event.target.value } }))}>
-                      {BOARDS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                      <option value="">Choose board…</option>{BOARDS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                     </select>
                   </label>
                   <label className="grid gap-1.5 text-xs font-medium text-[var(--muted-foreground)]">
