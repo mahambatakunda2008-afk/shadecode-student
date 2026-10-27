@@ -49,6 +49,7 @@ fun NativeExamSimulationScreen(
     api: NativeApi,
     subjects: List<NativeSubjectEntity>,
     onBack: () -> Unit,
+    onBrowsePastPapers: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
@@ -151,7 +152,11 @@ fun NativeExamSimulationScreen(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Set up your paper", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("Questions are generated through the authenticated Cortex service. If it cannot produce a valid paper, no placeholder paper is substituted.")
+                    Text("Use the existing past-paper library first. Cortex-generated questions are optional and may fail while the AI service is unavailable.")
+                    OutlinedButton(onClick = onBrowsePastPapers, modifier = Modifier.fillMaxWidth()) {
+                        Text("Start with a real past paper")
+                    }
+                    Text("Past papers use published exam questions. Choose the matching subject, board, level and year in Exam Hub.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text("Subject", fontWeight = FontWeight.Medium)
                     subjects.forEach { item ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
