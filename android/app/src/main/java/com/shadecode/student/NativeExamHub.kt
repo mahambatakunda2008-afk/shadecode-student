@@ -94,7 +94,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
 
 @Composable
 private fun ExamCatalogCard(title:String,detail:String,onClick:()->Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(14.dp),colors=CardDefaults.cardColors(containerColor=ShadeSurface)) {
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(14.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
             Text(title,fontWeight=FontWeight.SemiBold)
             Text(detail,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
