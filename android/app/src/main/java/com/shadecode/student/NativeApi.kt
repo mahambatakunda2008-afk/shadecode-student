@@ -226,6 +226,52 @@ class NativeApi {
         request("PATCH", "/rest/v1/learn_lessons?id=eq.$lessonId&user_id=eq.${session.userId}", JSONObject().put("progress", percentage).toString(), session.accessToken, "return=minimal")
     }
 
+    fun loadExamSyllabi(session: NativeSession, allowedSubjects: List<String>): List<NativeExamSyllabus> {
+        if (allowedSubjects.isEmpty()) return emptyList()
+        val rows = JSONArray(request("GET", "/rest/v1/syllabi?select=id,subject,board,levels&order=subject.asc", accessToken = session.accessToken))
+        val allowed = allowedSubjects.map { normalizeSubjectKey(it) }.toSet()
+        return buildList {
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                val subject = row.optString("subject").trim()
+                val key = normalizeSubjectKey(subject)
+                if (subject.isBlank() || allowed.none { it == key || it.contains(key) || key.contains(it) }) continue
+                val levels = mutableListOf<String>()
+                row.optJSONArray("levels")?.let { values -> for (j in 0 until values.length()) levels += values.optString(j) }
+                add(NativeExamSyllabus(row.getString("id"), subject, row.optString("board"), levels))
+            }
+        }
+    }
+
+    fun loadExamPaperFacets(session: NativeSession, syllabusId: String, level: String? = null): NativeExamFacets {
+        val query = "/rest/v1/past_papers?select=level,session,year&syllabus_id=eq.${java.net.URLEncoder.encode(syllabusId, "UTF-8")}" +
+            (if (level.isNullOrBlank()) "" else "&level=eq.${java.net.URLEncoder.encode(level, "UTF-8")}") + "&limit=1000"
+        val rows = JSONArray(request("GET", query, accessToken = session.accessToken))
+        val levels = linkedSetOf<String>(); val sessions = linkedSetOf<String>(); val years = linkedSetOf<Int>()
+        for (i in 0 until rows.length()) {
+            val row = rows.getJSONObject(i)
+            row.optString("level").takeIf { it.isNotBlank() }?.let(levels::add)
+            row.optString("session").takeIf { it.isNotBlank() }?.let(sessions::add)
+            if (!row.isNull("year")) years += row.optInt("year")
+        }
+        return NativeExamFacets(levels.sorted(), sessions.sorted(), years.sortedDescending())
+    }
+
+    fun loadExamPapers(session: NativeSession, syllabusId: String, level: String, examSession: String, year: Int): List<NativeExamPaper> {
+        val query = "/rest/v1/past_papers?select=id,level,session,year,paper_number,variant,kind,file_path,source_url" +
+            "&syllabus_id=eq.${java.net.URLEncoder.encode(syllabusId, "UTF-8")}" +
+            "&level=eq.${java.net.URLEncoder.encode(level, "UTF-8")}" +
+            "&session=eq.${java.net.URLEncoder.encode(examSession, "UTF-8")}" +
+            "&year=eq.$year&order=paper_number.asc,variant.asc,kind.asc&limit=100"
+        val rows = JSONArray(request("GET", query, accessToken = session.accessToken))
+        return buildList {
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                add(NativeExamPaper(row.getString("id"), row.optString("level"), row.optString("session"), row.optInt("year"), row.optInt("paper_number"), row.optInt("variant"), row.optString("kind"), row.optString("file_path"), row.optString("source_url").takeIf { it.startsWith("http") }))
+            }
+        }
+    }
+
     private fun sessionFromAuthResponse(response: String, fallbackEmail: String): NativeSession {
         val json = JSONObject(response)
         val user = json.optJSONObject("user") ?: error("Supabase did not return a user.")
@@ -260,3 +306,7 @@ data class NativeSession(val accessToken: String, val refreshToken: String, val 
 data class NativeProfile(val id: String, val email: String, val displayName: String, val studyLevel: String, val subjects: List<String>, val onboardingCompleted: Boolean)
 
 data class NativeTimetableSlot(val id: String, val subject: String, val startTime: String, val endTime: String, val isBreak: Boolean)
+
+data class NativeExamSyllabus(val id:String,val subject:String,val board:String,val levels:List<String>)
+data class NativeExamFacets(val levels:List<String>,val sessions:List<String>,val years:List<Int>)
+data class NativeExamPaper(val id:String,val level:String,val session:String,val year:Int,val paperNumber:Int,val variant:Int,val kind:String,val filePath:String,val sourceUrl:String?)
