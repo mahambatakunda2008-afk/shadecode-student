@@ -137,3 +137,12 @@ Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not app
 - **Web CI:** run https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40495697478 completed successfully for the same source commit.
 - **Native offline cache: In progress, not yet build-verified.** New account-scoped DataStore snapshots are being added for tasks and timetable. This is cached read access and local persistence for generated schedules, not yet a durable mutation queue or full offline sync. Do not describe offline task creation/completion as supported.
 - **Release state:** PR #489 remains open. No physical-device smoke test, signed production APK/AAB, or production release is claimed.
+
+
+## Android build evidence update (2026-10-27, browser-bridge commit)
+
+- **Android CI: Passed** for commit `af498aa005a6e223c94b261f23559d23e2b9769a`. Run: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40505226580. Project validation, debug APK build, and artifact upload succeeded.
+- **Latest debug artifact:** `shadecode-student-android-debug-201`, artifact ID `12734633191`, 39,688,369 bytes, expires 2026-11-10. Workflow archive digest: `sha256:e09d6cc6760f6da2a9b0f7ad582f42f4d6ade17fda23977f112b51cb7becb5c6`. This is the archive digest, not an APK-internal checksum.
+- **Web CI:** passed for the same commit: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40505226226.
+- **Scope warning:** the “More Shadecode tools” card opens the existing web modules in the browser. It is a bridge, not native feature parity. Native Exam Hub, Exam Simulation, Math Checker, Code Lab, Project Studio, and other linked modules remain open work.
+- **Release state:** PR #489 remains open. No physical-device smoke test, signed production APK/AAB, or production release is claimed. Before release, validate the APK on the target Android device and verify account/session handling when opening web modules.
