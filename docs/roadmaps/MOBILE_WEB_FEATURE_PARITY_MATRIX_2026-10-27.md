@@ -19,6 +19,14 @@
 - Successful debug APK artifact from the earlier profile/tasks/focus build is available until its stated expiry through the GitHub Actions run page: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40490647026
 
 
+### Native first-launch setup screen (implementation added; build/device verification pending)
+
+- After sign-in, accounts that have not completed onboarding are routed to a dedicated native setup experience instead of the normal app shell.
+- Setup collects display name, study stage (Primary through university/TVET/independent study), and a searchable catalogue of subjects across maths, sciences, languages, humanities, business, computing, creative/practical and professional areas.
+- Requires a study stage and at least one subject. Saves through the authenticated profile update and then refreshes the local subject cache. Existing accounts that already completed onboarding continue to the normal shell.
+- This is the app's first-launch setup screen, not a replacement for Android's system package-installer UI. The Android OS controls its own install confirmation screen.
+- Source: `android/app/src/main/java/com/shadecode/student/MainActivity.kt`. CI/build and device testing must confirm the setup-to-shell transition and account persistence.
+
 ### First-visit offline starter pack (source implementation; CI/device verification pending)
 
 - On the first visit to Exam Hub for each signed-in account, the native app offers a full-screen offline study setup screen showing the user's selected subjects and a clear opt-in to download an offline starter pack. It does not silently consume data during installation or on mobile data.
