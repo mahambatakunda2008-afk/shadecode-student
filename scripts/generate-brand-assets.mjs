@@ -56,7 +56,9 @@ const svgOpen = (viewBox, extra = "") =>
 function tileSvg({ theme = "dark", rounded = true, scale = 1.12 }) {
   const t = geo.tile[theme];
   const rx = rounded ? 224 : 0;
-  const bg = `<rect width="1024" height="1024" rx="${rx}" fill="${t.bg}"/>`;
+  // Dark tile gets a subtle vertical depth gradient (bg -> bg2); the light tile stays flat.
+  const tileGrad = t.bg2 ? `<linearGradient id="sc-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.bg}"/><stop offset="1" stop-color="${t.bg2}"/></linearGradient>` : "";
+  const bg = `${tileGrad ? `<defs>${tileGrad}</defs>` : ""}<rect width="1024" height="1024" rx="${rx}" fill="${t.bg2 ? "url(#sc-tile)" : t.bg}"/>`;
   const border = rounded ? `<rect x="5" y="5" width="1014" height="1014" rx="220" fill="none" stroke="${t.border}" stroke-width="5"/>` : "";
   return `${svgOpen("0 0 1024 1024")}${defs("sc")}${bg}${border}${place(scale)}${shapes("sc")}</g></svg>\n`;
 }

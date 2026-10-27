@@ -4,7 +4,7 @@ This document describes the current Shadecode Student identity: the original lay
 
 ## Core identity
 
-- **Symbol:** the original three-piece mark, rebuilt as three overlapping sheets: same roof-peak and V silhouette, softened corners, with the two edge notches kept on alternating sides. Each upper sheet casts soft shadows onto the sheet beneath it and lower sheets are tinted darker, so the pieces read as a stack. Flat single-colour variants (white/ink) keep the original gapped silhouette. A curvy "folded S" and the earlier gapped, flat-looking version were both rejected; do not reintroduce them.
+- **Symbol:** the original three-piece S with its roof-peak and V silhouette and open S-shaped gaps, now joined into one continuous strip at the two bends, with all corners softened. Layering is shown only where pieces overlap at the joins, using soft cast shadows and a faint edge line; nothing is shaded or filled in the gaps. Flat single-colour variants (white/ink) use the same joined shape. A curvy "folded S", gapped separate pieces, and filled/shaded-gap variants were all rejected; do not reintroduce them.
 - **App tile:** deep navy, with a quiet border.
 - **Accent:** cyan-to-blue-to-violet gradient, preserving the product's current colour identity.
 - **Wordmark:** clear SHADECODE / STUDENT lockup. Keep the mark itself free of text.
