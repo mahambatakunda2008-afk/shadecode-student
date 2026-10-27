@@ -211,7 +211,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         }
     }) { padding ->
         when (selected) {
-            0 -> DashboardScreen(padding, profile, subjects, loading, error)
+            0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error)
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
             2 -> NativePracticeScreen(
                 padding = padding,
@@ -274,7 +274,26 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
 }
 
 @Composable
-private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, subjects: List<NativeSubjectEntity>, loading: Boolean, error: String?) {
+private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api: NativeApi, profile: NativeProfile?, subjects: List<NativeSubjectEntity>, loading: Boolean, error: String?) {
+    var tasks by remember { mutableStateOf<List<NativeTask>>(emptyList()) }
+    var taskTitle by remember { mutableStateOf("") }
+    var taskDescription by remember { mutableStateOf("") }
+    var tasksLoading by remember { mutableStateOf(false) }
+    var taskMessage by remember { mutableStateOf<String?>(null) }
+    val taskScope = rememberCoroutineScope()
+
+    LaunchedEffect(session.accessToken) {
+        tasksLoading = true
+        try {
+            tasks = withContext(Dispatchers.IO) { api.loadTasks(session) }
+            taskMessage = null
+        } catch (_: Exception) {
+            taskMessage = "Tasks could not sync. Your other study tools remain available."
+        } finally {
+            tasksLoading = false
+        }
+    }
+
     LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Spacer(Modifier.height(18.dp)); Text("Good to see you.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -288,6 +307,83 @@ private fun DashboardScreen(padding: PaddingValues, profile: NativeProfile?, sub
         item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
         if (subjects.isEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         else items(subjects) { SubjectRow(it.name) }
+
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("My tasks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Keep the next small step visible. Tasks are shared with your Shadecode account.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = taskTitle,
+                        onValueChange = { taskTitle = it; taskMessage = null },
+                        label = { Text("New task") },
+                        placeholder = { Text("e.g. Finish Physics wave questions") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = taskDescription,
+                        onValueChange = { taskDescription = it },
+                        label = { Text("Notes (optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        maxLines = 3,
+                    )
+                    Button(
+                        onClick = {
+                            val title = taskTitle.trim()
+                            if (title.isEmpty()) {
+                                taskMessage = "Enter a task title first."
+                            } else {
+                                taskScope.launch {
+                                    try {
+                                        val created = withContext(Dispatchers.IO) { api.createTask(session, title, taskDescription) }
+                                        tasks = (tasks + created).sortedBy { it.dueDate.orEmpty() }
+                                        taskTitle = ""
+                                        taskDescription = ""
+                                        taskMessage = "Task saved."
+                                    } catch (_: Exception) {
+                                        taskMessage = "Task could not be saved. Check your connection and permissions."
+                                    }
+                                }
+                            }
+                        },
+                        enabled = taskTitle.isNotBlank() && !tasksLoading,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Add task") }
+                    if (tasksLoading) Text("Loading tasks…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (tasks.isEmpty() && !tasksLoading) Text("No tasks yet. Add one small next step above.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    tasks.forEach { task ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = task.completed,
+                                onCheckedChange = { checked ->
+                                    if (checked && !task.completed) {
+                                        tasks = tasks.map { if (it.id == task.id) it.copy(completed = true) else it }
+                                        taskScope.launch {
+                                            try {
+                                                withContext(Dispatchers.IO) { api.completeTask(session, task.id) }
+                                                taskMessage = "Task completed."
+                                            } catch (_: Exception) {
+                                                tasks = tasks.map { if (it.id == task.id) it.copy(completed = false) else it }
+                                                taskMessage = "Could not complete this task. Try again when connected."
+                                            }
+                                        }
+                                    }
+                                },
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(task.title, fontWeight = FontWeight.SemiBold)
+                                if (task.description.isNotBlank()) Text(task.description, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                if (task.dueDate != null) Text("Due " + task.dueDate.take(10), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                    taskMessage?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+            }
+        }
     }
 }
 
