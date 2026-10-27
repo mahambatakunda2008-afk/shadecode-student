@@ -360,6 +360,14 @@ private fun ProfileNativeScreen(padding: PaddingValues, profile: NativeProfile?,
 @Composable
 private fun SnapExtractScreen(padding: PaddingValues) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val extractStore = remember { NativeExtractStore(context) }
+    var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
+    var activeArtifactId by remember { mutableStateOf<String?>(null) }
+    var artifactTitle by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+    }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
     var rawOcr by remember { mutableStateOf("") }
@@ -534,6 +542,80 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                         enabled = editableText.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Share extracted text") }
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = artifactTitle,
+                        onValueChange = { artifactTitle = it },
+                        label = { Text("Name this extract (optional)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (rawOcr.isBlank() && editableText.isBlank()) {
+                                message = "Extract or enter some text before saving."
+                            } else {
+                                scope.launch {
+                                    try {
+                                        val saved = withContext(Dispatchers.IO) {
+                                            extractStore.save(activeArtifactId, artifactTitle, rawOcr, editableText, selectedImage)
+                                        }
+                                        activeArtifactId = saved.id
+                                        artifactTitle = saved.title
+                                        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+                                        message = "Saved privately on this device. Source images are not copied into the library."
+                                    } catch (error: Exception) {
+                                        message = error.message ?: "Could not save this extract."
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !processing && (rawOcr.isNotBlank() || editableText.isNotBlank()),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(if (activeArtifactId == null) "Save to this device" else "Update saved extract") }
+                }
+            }
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface), shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp)) {
+                    Text("Saved extracts on this device", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Private to this app on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(8.dp))
+                    if (savedArtifacts.isEmpty()) {
+                        Text("Nothing saved yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        savedArtifacts.forEach { artifact ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(artifact.title, fontWeight = FontWeight.SemiBold)
+                                    Text(artifact.editedText.lineSequence().firstOrNull().orEmpty().take(90).ifBlank { "Empty text extract" }, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                }
+                                TextButton(onClick = {
+                                    activeArtifactId = artifact.id
+                                    artifactTitle = artifact.title
+                                    rawOcr = artifact.rawOcr
+                                    editableText = artifact.editedText
+                                    redactionTerms = ""
+                                    message = "Loaded saved text. The original source image was not saved."
+                                }) { Text("Open") }
+                                TextButton(onClick = {
+                                    scope.launch {
+                                        val deleted = withContext(Dispatchers.IO) { extractStore.delete(artifact.id) }
+                                        savedArtifacts = withContext(Dispatchers.IO) { extractStore.list() }
+                                        if (activeArtifactId == artifact.id) activeArtifactId = null
+                                        message = if (deleted) "Saved extract deleted from this device." else "Could not delete that extract."
+                                    }
+                                }) { Text("Delete") }
+                            }
+                        }
+                    }
                 }
             }
         }
