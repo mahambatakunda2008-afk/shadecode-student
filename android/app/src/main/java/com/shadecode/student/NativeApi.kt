@@ -99,7 +99,7 @@ class NativeApi {
     fun loadTasks(session: NativeSession): List<NativeTask> {
         val rows = request(
             "GET",
-            "/rest/v1/tasks?select=id,title,description,due_date,completed,completed_at,updated_at&user_id=eq.${session.userId}&order=due_date.asc.nullslast&limit=100",
+            "/rest/v1/tasks?select=id,subject_id,title,description,due_date,completed,completed_at,updated_at&user_id=eq.${session.userId}&order=due_date.asc.nullslast&limit=100",
             accessToken = session.accessToken,
         )
         val array = JSONArray(rows)
@@ -109,6 +109,7 @@ class NativeApi {
                 add(
                     NativeTask(
                         id = row.getString("id"),
+                        subjectId = row.optString("subject_id"),
                         title = row.optString("title"),
                         description = row.optString("description"),
                         dueDate = row.optString("due_date").takeIf { it.isNotBlank() && it != "null" },
@@ -139,6 +140,7 @@ class NativeApi {
         val row = rows.getJSONObject(0)
         return NativeTask(
             id = row.getString("id"),
+            subjectId = row.optString("subject_id"),
             title = row.optString("title"),
             description = row.optString("description"),
             dueDate = row.optString("due_date").takeIf { it.isNotBlank() && it != "null" },
