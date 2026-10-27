@@ -156,3 +156,12 @@ Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not app
 - Web CI passed: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40575436616.
 - Paper API source checks authentication and learner subject access, then creates a short-lived signed URL. Production schema/storage/RLS behavior still needs real-account verification.
 - Still open: physical-device testing, paper viewer/download/offline handling, native Exam Simulation, Math Checker, remaining parity work, production signing and AAB. This is a debug preview, not a production release.
+
+
+## Exam Simulation fallback update (2026-10-27)
+
+- The user clarified that Cortex generation is currently failing and Exam Simulation must use existing past papers instead of depending on new AI-generated questions. Existing papers are already indexed in `syllabi` and `past_papers`, with secure opening through the native Exam Hub.
+- The native Exam Simulation setup now offers **Start with a real past paper**, which routes the learner into Exam Hub's existing subject → level → session → year → paper selection flow. This provides a real-paper escape route when Cortex generation is unavailable; it does not claim the paper has been imported into the native timer/answer workspace yet.
+- Fixed the native marking route's bearer-token whitespace parser while updating the fallback.
+- Web CI run 40577624099 passed before these latest UI/API commits. Android CI run 40577624101 was still running when this entry was written; re-check it against the latest branch head before calling these changes build-verified.
+- Remaining required work: make past-paper question papers the primary Exam Simulation source inside the simulation workspace, preserve timer/answers/resume, link the corresponding mark scheme, and only use Cortex for optional feedback when available. Do not record an authoritative score from client-supplied or unverified answers. Physical-device and production-runtime checks remain open.
