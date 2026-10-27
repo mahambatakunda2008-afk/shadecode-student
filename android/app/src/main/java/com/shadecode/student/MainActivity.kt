@@ -600,6 +600,10 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                                     Text(artifact.editedText.lineSequence().firstOrNull().orEmpty().take(90).ifBlank { "Empty text extract" }, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                                 }
                                 TextButton(onClick = {
+                                    // A saved text artifact has no persisted image. Clear any image
+                                    // selected in the current session so it cannot be mistaken for
+                                    // this artifact's source or accidentally saved against it.
+                                    selectedImage = null
                                     activeArtifactId = artifact.id
                                     artifactTitle = artifact.title
                                     rawOcr = artifact.rawOcr
