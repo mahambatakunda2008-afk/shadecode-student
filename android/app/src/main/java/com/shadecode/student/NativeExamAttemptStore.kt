@@ -15,6 +15,7 @@ object NativeExamAttemptStore {
         val answersJson: String,
         val secondsLeft: Int,
         val taking: Boolean,
+        val savedAt: Long,
     )
 
     private fun prefs(context: Context) =
@@ -34,6 +35,7 @@ object NativeExamAttemptStore {
                 answersJson = json.optString("answersJson", "{}"),
                 secondsLeft = json.optInt("secondsLeft", 0),
                 taking = json.optBoolean("taking", false),
+                savedAt = json.optLong("savedAt", 0L),
             )
         }.getOrNull()
     }
