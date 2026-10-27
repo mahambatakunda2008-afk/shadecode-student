@@ -130,3 +130,22 @@ This requirement means **feature parity with native mobile interactions**, not c
 - [ ] Pass CI and real-device release gates; publish a commit-matched artifact only after verification.
 
 This documentation commit is not a mobile feature implementation, a successful Android build, or a release. Those remain open work items.
+
+
+## Native Android implementation slice added on 2026-10-27
+
+The feature-parity branch now contains an initial native profile/subject-management slice. This is implementation in source, **not yet verified by a successful Android build or device test**.
+
+- [x] Added `NativeSubjectCatalog.kt`, a searchable starter catalogue spanning quantitative subjects, sciences, languages, humanities, business, computing, creative/practical and higher-education areas. The catalogue is explicitly not a claim of complete syllabus/content coverage.
+- [x] Added a native profile editor in the existing Profile tab: editable display name and study-level field, searchable subject checkboxes, add custom subject, remove selected subjects, and save/error/loading feedback.
+- [x] Added authenticated `PATCH /rest/v1/profiles?id=eq.<current user>` for learner-editable fields only. The existing profile-to-subject-catalog database trigger remains the catalog synchronization mechanism.
+- [x] Improved Android subject name/code matching so profile codes such as `maths` and `computer-science` can match the canonical display names used in the subjects catalog.
+- [x] Kept profile cache updates after a successful remote save and refreshes the local subject list after the save.
+- [x] Added Android workflow pull-request triggers for changes to Android sources/workflow, so future PRs can compile the native app before merge.
+- [ ] Confirm the new Android workflow runs for this PR and inspect the actual Gradle/Kotlin build result.
+- [ ] Fix any compile/test failures revealed by CI.
+- [ ] Verify save/add/remove/refresh/relogin behavior against the live Supabase schema and RLS with a test account.
+- [ ] Expand profile semantics to board, qualification, syllabus/version, goals, and per-subject curriculum identity only after matching the canonical web profile contract.
+- [ ] Implement and verify remaining web feature parity slices: Cortex insights, Exam Hub/Simulation, Math Checker/subject-specific tools, tasks/timetable/focus, analytics/engagement, Code Lab, Project Studio, careers, privacy controls, and robust offline synchronization.
+
+The current Android profile editor allows editing the existing study-level field, but it is not yet a complete academic profile editor. The current native app still does not have full web feature parity, and this branch must not be released as if it does.
