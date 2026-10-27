@@ -363,6 +363,7 @@ private fun SnapExtractScreen(padding: PaddingValues) {
     val scope = rememberCoroutineScope()
     val extractStore = remember { NativeExtractStore(context) }
     var savedArtifacts by remember { mutableStateOf<List<NativeExtractArtifact>>(emptyList()) }
+    var artifactSearch by remember { mutableStateOf("") }
     var activeArtifactId by remember { mutableStateOf<String?>(null) }
     var artifactTitle by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -454,6 +455,15 @@ private fun SnapExtractScreen(padding: PaddingValues) {
             .fold(editableText) { text, term ->
                 text.replace(Regex(Regex.escape(term), RegexOption.IGNORE_CASE), "[REDACTED]")
             }
+    }
+
+    val filteredArtifacts = remember(savedArtifacts, artifactSearch) {
+        val query = artifactSearch.trim()
+        if (query.isBlank()) savedArtifacts else savedArtifacts.filter { artifact ->
+            artifact.title.contains(query, ignoreCase = true) ||
+                artifact.editedText.contains(query, ignoreCase = true) ||
+                artifact.rawOcr.contains(query, ignoreCase = true)
+        }
     }
 
     fun copyText(value: String) {
@@ -586,10 +596,21 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                     Spacer(Modifier.height(6.dp))
                     Text("Private to this app on this device. Up to 20 recent extracts are kept; older ones are removed automatically. Source images are not stored.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = artifactSearch,
+                        onValueChange = { artifactSearch = it },
+                        label = { Text("Search saved extracts") },
+                        placeholder = { Text("Search titles or extracted text") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
                     if (savedArtifacts.isEmpty()) {
                         Text("Nothing saved yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else if (filteredArtifacts.isEmpty()) {
+                        Text("No saved extracts match that search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        savedArtifacts.forEach { artifact ->
+                        filteredArtifacts.forEach { artifact ->
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
