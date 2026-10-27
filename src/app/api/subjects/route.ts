@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { supabase, user } = await getAuthenticatedUser();
+    const { supabase, user } = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json().catch(() => null) as { subjectId?: unknown } | null;
