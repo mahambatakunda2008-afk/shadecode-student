@@ -165,7 +165,19 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         if (focusRemaining == 0 && !focusCompletionHandled) {
             focusCompletionHandled = true
             focusRunning = false
+            val minutes = (focusDuration / 60).coerceIn(1, 120)
+            val earnedXp = if (minutes == 5 || minutes == 15) 0 else kotlin.math.round(minutes * 0.5).toInt()
             focusStatus = "Session complete. Saving progress…"
+            scope.launch {
+                try {
+                    val result = withContext(Dispatchers.IO) {
+                        api.completeFocusSession(session, minutes, minutes.toString() + " min", earnedXp)
+                    }
+                    focusStatus = if (result.optBoolean("persisted", false)) "Session saved. XP awarded: " + result.optInt("xpAwarded", earnedXp) else "Session finished. Sync is pending."
+                } catch (_: Exception) {
+                    focusStatus = "Session finished, but sync failed. Check your connection."
+                }
+            }
         }
     }
     LaunchedEffect(session.accessToken) {
