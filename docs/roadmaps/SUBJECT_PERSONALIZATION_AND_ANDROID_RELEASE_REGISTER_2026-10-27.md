@@ -232,3 +232,11 @@ The queue currently covers task creation, task completion and timetable replacem
 - [ ] Trigger a fresh Android workflow on `main` after signing is configured, then verify signed APK and AAB artifacts, package/version metadata, checksum, install/upgrade behaviour, and Play Console requirements.
 - [ ] Complete real-device checks for onboarding, account isolation, downloaded-paper offline access, timer/process-death recovery, and web-to-native account continuity before publishing a public Android APK.
 - [ ] Do not bundle complete Cambridge or ZIMSEC papers until redistribution rights and attribution requirements are confirmed. Keep the bundled-paper manifest empty meanwhile.
+
+## Execution update: 2026-10-28
+
+- Merged PR #492, commit `282baa70aa40121fedca471c1a45e2f85c5f2985`: signed Android APK and AAB releases now generate a SHA-256 manifest, upload it as a CI artifact, and attach it to tagged GitHub releases. This workflow addition has not yet been validated by a signed release because signing credentials are intentionally deferred.
+- Merged PR #493, commit `ec940bcbbea3f49335a68c807b617501d952500b`: fixed over-escaped regular expressions in the web Subjects page's search/duplicate normalizer. Source inspection confirms the intended Unicode letter/number and whitespace patterns. Authenticated end-to-end scenarios and automated CI still need verification.
+- The current GitHub commit-status integration reports a Vercel status failure pointing to a Vercel build-rate-limit/upgrade page. Treat this as a deployment-capacity blocker, not evidence that application tests failed. Do not claim the newest web commit has deployed until a production deployment with the exact source SHA is observed.
+- Android production signing remains intentionally pending. Do not publish the existing debug artifact as the production app. After credentials are configured, build from the then-current `main` SHA, verify the signed APK/AAB and checksum manifest, and perform real-device smoke tests before public distribution.
+
