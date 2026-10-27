@@ -101,7 +101,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                 status = "Time is up. Your answer notes have been saved on this device."
                 break
             }
-            kotlinx.coroutines.delay(250L)
+            kotlinx.coroutines.delay(1_000L)
         }
     }
     LaunchedEffect(session.userId,subjects) {
