@@ -182,14 +182,15 @@ The user explicitly requires broad subject support and personalization across le
 
 The complete requirements, proposed taxonomy, implementation sequence, test matrix and current status are maintained in docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md. Cortex execution items are mirrored in .cortex/tasks.md.
 
-Current truth as of 2026-10-27:
-- The web subject page currently renders the learner's existing subject rows and lacks an add-subject UI.
-- Onboarding subjects are hard-coded by study level and are not a complete central catalogue.
-- Initial API route src/app/api/subjects/route.ts exists in commit fbd3b388f3ec714939eb9842677046da9b7c6ae2, but schema/RLS/trigger semantics and end-to-end behavior are not verified.
+Current truth as of 2026-10-27 (superseded by the detailed progress notes below):
+- The initial web Subjects page had no add-subject UI; a searchable grouped picker, custom subject entry, add/remove-from-active-selection controls and a central selectable catalogue have since been committed.
+- A per-subject curriculum editor has also been committed for board, qualification, level, and optional syllabus code/version.
+- The implementation is in source, but CI, schema/RLS/trigger behavior, deployed browser flows, concurrency and account isolation remain unverified. Do not state that it is live or complete without evidence.
+- Onboarding still uses a separate hard-coded per-level list; replacing it with the central catalogue and shared learner-profile contract remains open.
 - Native Android Snap & Extract work does not automatically change the web app.
-- Web subject management, the central catalogue, edit-after-onboarding curriculum context, learning personalization integration, Android alignment and deployed acceptance tests remain open.
+- Full global profile editing, adaptive personalization, subject-specific module integration, Android parity and deployed acceptance tests remain open.
 
-Execution gate: first audit the subject/profile data source of truth and the committed endpoint, then implement and test the web flow. Do not claim the web app changed until the intended commit is deployed and the add/duplicate/persist/relogin/remove and cross-account isolation journeys are verified. Catalogue presence must not be represented as verified curriculum or content coverage.
+Execution gate: verify the exact commit and audit profile/subjects source-of-truth behavior before release. Test add/duplicate/persist/relogin/remove, per-subject curriculum resolution and cross-account isolation. Catalogue presence must not be represented as verified curriculum or content coverage.
 
 
 ### Subject-management implementation progress (2026-10-27)
@@ -202,3 +203,24 @@ A first web implementation is now committed: the searchable grouped picker uses 
 ### Per-subject curriculum settings (2026-10-27)
 
 The web Subjects page now also includes a per-subject curriculum editor for board, qualification, level, and optional syllabus code/version. Explicit requested versions that do not match verified curriculum data are blocked instead of silently substituted. This is still in progress: the current source commit must pass CI, the identifiers must be verified against actual curriculum records, and the full signed-in browser flow must be tested. A unified global learner profile editor, adaptive mastery personalization and Android parity remain open.
+
+
+## Cross-platform subject management and learner personalisation: current execution record (2026-10-27)
+
+**Canonical detailed register:** `docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md`. The Cortex execution checklist is mirrored in `.cortex/tasks.md`. These documents record the full user-requested scope, initial subject taxonomy, per-subject curriculum requirements, adaptive-learning contract, privacy constraints, Android alignment, acceptance matrix, and evidence gates.
+
+### Source status (not a release claim)
+- [x] Central selectable subject catalogue and catalogue invariant tests committed.
+- [x] Web Subjects page updated in source with searchable categories, catalogued/custom subject addition, non-destructive removal from active selection, and per-subject curriculum editor.
+- [x] Authenticated subject API supports add/remove against the learner's profile selection; existing subject rows are intentionally preserved to avoid breaking lesson/task references.
+- [x] Curriculum editor requires an explicit board and blocks explicit syllabus-code/version mismatches rather than silently substituting another version.
+- [ ] Confirm latest exact-commit CI and tests.
+- [ ] Review real schema, RLS, sync triggers, concurrency and partial-failure behavior.
+- [ ] Test deployed web add/duplicate/refresh/relogin/remove and per-subject curriculum paths with account-isolation checks.
+- [ ] Replace duplicated onboarding subject lists with the shared catalogue.
+- [ ] Build one unified global learner profile editor for level, goals, language, preferences, programme/year and other relevant context.
+- [ ] Wire learner level, per-subject curriculum, demonstrated mastery, misconceptions and goals into Learn, assessment, revision and subject-specific tools.
+- [ ] Align Android subject selection, profile persistence and offline/sync behavior with the same contract.
+- [ ] Verify content/curriculum truth labels and ensure selectable subjects are not presented as verified syllabus coverage or available lesson content.
+
+**Release rule:** source commits and documentation are progress, not proof of a working deployed journey. Keep status **In progress** until the exact commit has green relevant CI and the end-to-end acceptance evidence above is recorded.
