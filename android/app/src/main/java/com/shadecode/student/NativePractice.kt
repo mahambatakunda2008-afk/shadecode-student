@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -83,6 +84,17 @@ fun NativePracticeScreen(
     var selectedOption by remember { mutableStateOf<Int?>(null) }
     var revealed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+    var focusDuration by remember { mutableStateOf(25 * 60) }
+    var focusRemaining by remember { mutableStateOf(25 * 60) }
+    var focusRunning by remember { mutableStateOf(false) }
+
+    LaunchedEffect(focusRunning) {
+        while (focusRunning && focusRemaining > 0) {
+            delay(1_000)
+            if (focusRunning && focusRemaining > 0) focusRemaining -= 1
+        }
+        if (focusRemaining == 0) focusRunning = false
+    }
 
     LaunchedEffect(subjects) {
         if (selectedSubject == null || subjects.none { it.id == selectedSubject }) selectedSubject = subjects.firstOrNull()?.id
@@ -107,6 +119,37 @@ fun NativePracticeScreen(
             Spacer(Modifier.height(18.dp))
             Text("Practice", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text("Practice from your actual saved lessons, not a generic question bank.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp)) {
+                    Text("Focus session", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("A quiet timer for a single study sprint. Keep this screen open while you work.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("%02d:%02d".format(focusRemaining / 60, focusRemaining % 60), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(15, 25, 45).forEach { minutes ->
+                            OutlinedButton(
+                                onClick = { focusRunning = false; focusDuration = minutes * 60; focusRemaining = minutes * 60 },
+                                enabled = !focusRunning,
+                                modifier = Modifier.weight(1f),
+                            ) { Text("${minutes} min") }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { if (focusRemaining == 0) focusRemaining = focusDuration; focusRunning = !focusRunning },
+                            enabled = focusRemaining > 0 || !focusRunning,
+                            modifier = Modifier.weight(1f),
+                        ) { Text(if (focusRunning) "Pause" else if (focusRemaining == 0) "Start again" else "Start focus") }
+                        OutlinedButton(
+                            onClick = { focusRunning = false; focusRemaining = focusDuration },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Reset") }
+                    }
+                    if (focusRemaining == 0) Text("Session complete. Take a short break before the next sprint.", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
+                }
+            }
         }
         if (subjects.isEmpty()) {
             item { Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Text("No subjects are configured for this account yet. Complete onboarding first.", Modifier.padding(20.dp)) } }
