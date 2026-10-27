@@ -152,6 +152,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val api = remember { NativeApi() }; val database = remember { NativeDatabase.get(sessionStore.context()) }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }; var subjects by remember { mutableStateOf<List<NativeSubjectEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }; var error by remember { mutableStateOf<String?>(null) }; var selected by remember { mutableStateOf(0) }
+    var showExamHub by remember { mutableStateOf(false) }
     var focusDuration by remember { mutableStateOf(25 * 60) }
     var focusRemaining by remember { mutableStateOf(25 * 60) }
     var focusRunning by remember { mutableStateOf(false) }
@@ -209,7 +210,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         } catch (e: Exception) { error = e.message ?: "Could not refresh your profile." } finally { loading = false }
     }
     Scaffold(containerColor = ShadeBackground, bottomBar = {
-        NavigationBar(containerColor = ShadeSurface) {
+        if (!showExamHub) NavigationBar(containerColor = ShadeSurface) {
             NavigationBarItem(selected == 0, { selected = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
             NavigationBarItem(selected == 1, { selected = 1 }, icon = { Icon(Icons.Default.Book, null) }, label = { Text("Learn") })
             NavigationBarItem(selected == 2, { selected = 2 }, icon = { Icon(Icons.Default.PlayArrow, null) }, label = { Text("Practice") })
@@ -218,8 +219,10 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             NavigationBarItem(selected == 5, { selected = 5 }, icon = { Icon(Icons.Default.DateRange, null) }, label = { Text("Plan") })
         }
     }) { padding ->
-        when (selected) {
-            0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error)
+        if (showExamHub) {
+            NativeExamHubScreen(padding, session, api, subjects, onBack = { showExamHub = false })
+        } else when (selected) {
+            0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error, onOpenExamHub = { showExamHub = true })
             5 -> NativeTimetableScreen(padding, session, api, subjects)
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
             2 -> NativePracticeScreen(
@@ -514,7 +517,7 @@ private fun NativeTimetableScreen(
 }
 
 @Composable
-private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api: NativeApi, profile: NativeProfile?, subjects: List<NativeSubjectEntity>, loading: Boolean, error: String?) {
+private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api: NativeApi, profile: NativeProfile?, subjects: List<NativeSubjectEntity>, loading: Boolean, error: String?, onOpenExamHub: () -> Unit) {
     var tasks by remember { mutableStateOf<List<NativeTask>>(emptyList()) }
     var taskTitle by remember { mutableStateOf("") }
     var taskDescription by remember { mutableStateOf("") }
@@ -563,6 +566,7 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
             }
         } }
         item { NativeCortexInsightsCard(session) }
+        item { NativeExamHubEntryCard(subjects, onOpenExamHub) }
         item { MoreShadecodeToolsCard(context) }
         item { Text("My subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
         if (subjects.isEmpty()) item { Text("No subjects selected yet. Complete onboarding to start learning.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
