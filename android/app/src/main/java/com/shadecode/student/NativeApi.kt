@@ -120,7 +120,7 @@ class NativeApi {
         }
     }
 
-    fun createTask(session: NativeSession, title: String, description: String = ""): NativeTask {
+    fun createTask(session: NativeSession, title: String, description: String = "", linkedSubjectId: String = ""): NativeTask {
         require(title.trim().isNotEmpty()) { "Enter a task title." }
         val body = JSONObject()
             .put("user_id", session.userId)
