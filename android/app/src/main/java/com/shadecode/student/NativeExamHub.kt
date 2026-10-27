@@ -101,6 +101,32 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                     if(!loading && papers.isEmpty() && error==null) item { Text("No papers are available for this selection yet.",color=MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
+
+            item {
+                Spacer(Modifier.height(12.dp))
+                Text("More learning resources", style=MaterialTheme.typography.headlineSmall, fontWeight=FontWeight.Bold)
+                Text("Extra sources from the web. Availability, syllabus alignment and reuse rights differ by provider, so check each source before relying on it for an exam.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+            }
+            item { ExternalLearningResourceCard("Cambridge International Resource Centre", "Official syllabus pages, selected past papers, specimen papers, examiner reports and published resources.", "https://www.cambridgeinternational.org/resource-centre/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("ZIMSEC syllabuses", "Official Zimbabwe syllabuses across many subjects and levels.", "https://www5.zimsec.co.zw/syllabi/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("ZIMSEC specimen papers", "Official specimen papers for Grade 7, O Level and A Level.", "https://www5.zimsec.co.zw/specimen-papers/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("ZIMSEC past-paper downloads", "Official published exam paper downloads. Check the individual item and subject before using.", "https://www5.zimsec.co.zw/download-category/o-level/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("Zimfundi", "Zimbabwe-focused O Level and A Level notes, syllabus topics, past papers and marking schemes. Third-party source, not the exam board.", "https://zimfundi.co.zw/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("PhET interactive simulations", "Free interactive mathematics and science simulations, useful for practical understanding and virtual experiments.", "https://phet.colorado.edu/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("Khan Academy", "Free lessons, practice questions and videos across maths, science, humanities and other subjects.", "https://www.khanacademy.org/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("CK-12", "Free digital textbooks, adaptive practice and interactive STEM learning resources.", "https://www.ck12.org/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            item { ExternalLearningResourceCard("OpenStax", "Free, peer-reviewed textbooks in many subjects. Some content is licensed CC BY-NC-SA, so commercial reuse requires care.", "https://openstax.org/subjects") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+        }
+    }
+}
+
+@Composable
+private fun ExternalLearningResourceCard(title:String, detail:String, url:String, onOpen:(String)->Unit) {
+    Card(Modifier.fillMaxWidth().clickable { onOpen(url) },shape=RoundedCornerShape(14.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(15.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+            Text(title,fontWeight=FontWeight.SemiBold)
+            Text(detail,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Open resource ↗",style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.primary)
         }
     }
 }
