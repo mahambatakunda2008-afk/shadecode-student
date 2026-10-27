@@ -2,6 +2,7 @@ package com.shadecode.student
 
 import android.content.Context
 import android.net.Uri
+import android.util.AtomicFile
 import org.json.JSONObject
 import java.io.File
 import java.util.UUID
@@ -53,13 +54,15 @@ class NativeExtractStore(context: Context) {
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
         )
-        val target = fileFor(artifact.id)
-        val temporary = File(directory, artifact.id + ".json.tmp")
+        val atomicFile = AtomicFile(fileFor(artifact.id))
+        val output = atomicFile.startWrite()
         try {
-            temporary.writeText(encode(artifact))
-            if (target.exists() && !target.delete()) error("Could not replace the saved extract.")
-            if (!temporary.renameTo(target)) error("Could not finish saving the extract.")
-        } finally { if (temporary.exists()) temporary.delete() }
+            output.write(encode(artifact).toByteArray(Charsets.UTF_8))
+            atomicFile.finishWrite(output)
+        } catch (error: Exception) {
+            atomicFile.failWrite(output)
+            throw error
+        }
         list().drop(maxArtifacts).forEach { old -> fileFor(old.id).delete() }
         return artifact
     }
