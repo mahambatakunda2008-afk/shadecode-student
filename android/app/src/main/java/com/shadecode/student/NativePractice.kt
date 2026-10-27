@@ -122,7 +122,7 @@ fun NativePracticeScreen(
                     Text("A quiet timer for a single study sprint. Keep this screen open while you work.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("%02d:%02d".format(focusRemaining / 60, focusRemaining % 60), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(15, 25, 45).forEach { minutes ->
+                        listOf(5, 15, 25, 45).forEach { minutes ->
                             OutlinedButton(
                                 onClick = { onFocusDurationSelected(minutes * 60) },
                                 enabled = !focusRunning,
