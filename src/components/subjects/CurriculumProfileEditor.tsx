@@ -100,7 +100,7 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
     return result;
   }, [identities]);
 
-  const defaultCurriculumLevel: CurriculumLevel = studyLevel === "primary" || studyLevel === "early-childhood" ? "primary" : studyLevel === "lower-secondary" ? "lower_secondary" : studyLevel === "upper-secondary" ? "o_level" : studyLevel === "a-level" ? "as_level" : studyLevel === "university" ? "university" : studyLevel === "tvet" ? "technical" : studyLevel === "professional" ? "vocational" : "o_level";
+  const defaultCurriculumLevel: CurriculumLevel = studyLevel === "primary" || studyLevel === "early-childhood" ? "primary" : studyLevel === "lower-secondary" ? "lower_secondary" : studyLevel === "upper-secondary" ? "o_level" : studyLevel === "a-level" ? "a_level" : studyLevel === "university" ? "university" : studyLevel === "tvet" ? "technical" : studyLevel === "professional" ? "vocational" : "o_level";
 
   const beginEdit = (subject: SubjectOption) => {
     const existing = identityBySubject.get(key(subject.name)) ??
