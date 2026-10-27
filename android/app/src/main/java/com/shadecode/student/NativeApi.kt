@@ -63,13 +63,16 @@ class NativeApi {
             .put("study_level", profile.studyLevel.trim().ifBlank { "upper-secondary" })
             .put("subjects", JSONArray(profile.subjects.map { NativeSubjectCatalog.codeFor(it) }.distinct()))
             .put("onboarding_completed", true)
-        request(
+        val response = request(
             "PATCH",
             "/rest/v1/profiles?id=eq.${session.userId}",
             body.toString(),
             accessToken = session.accessToken,
-            prefer = "return=minimal",
+            prefer = "return=representation",
         )
+        if (JSONArray(response).length() == 0) {
+            throw IllegalStateException("Profile was not updated. Please sign in again and retry.")
+        }
     }
 
     private fun normalizeSubjectKey(value: String): String =
