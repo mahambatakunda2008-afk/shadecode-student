@@ -98,7 +98,7 @@ fun NativeExamSimulationScreen(
                     }
                     selectedSubject = saved.subject
                     secondsLeft = saved.secondsLeft.coerceAtLeast(0)
-                    taking = saved.taking && secondsLeft > 0
+                    taking = saved.taking
                     status = "Recovered your unfinished exam on this device."
                 }
             }
