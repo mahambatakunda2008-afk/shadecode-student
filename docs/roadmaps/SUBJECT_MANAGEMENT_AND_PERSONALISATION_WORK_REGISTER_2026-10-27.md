@@ -199,3 +199,22 @@ The recent Snap & Extract work is in the native Android codebase. It does not au
 - The initial POST route now uses an authenticated server Supabase client and updates only the signed-in user's profiles row. However, it still needs review for concurrent array updates, the exact custom-subject representation, duplicate/race behavior with the trigger and unique index, and API tests. This is not yet a verified implementation.
 - Relevant code already exists for post-onboarding curriculum editing: src/app/api/curriculum/profile/route.ts exposes authenticated GET/PATCH for exact curriculum identities stored on profiles.curriculum_subjects. The new UI should reuse this contract where it fits rather than inventing a parallel curriculum-profile API.
 - Existing onboarding persists several related but distinct stores: profiles (canonical learner profile and subject IDs), user_profiles (education level/subject interests), academic_contexts (tertiary/programme details), learning_paths, and profiles.curriculum_subjects (exact per-subject curriculum identities). The broader work must define how these stay aligned instead of silently assuming they are one table.
+
+
+## Implementation progress update (2026-10-27, source changes committed; verification pending)
+
+- [x] Added central selectable catalogue at src/lib/subjects/catalog.ts with canonical IDs, categories, aliases and pathway metadata across the main subject families. The catalogue deliberately does not assert verified syllabus or lesson coverage.
+- [x] Connected the web subject picker in src/app/(app)/subjects/page.tsx to the central catalogue, searchable by name/alias. Entries associated with the learner's current study level are sorted first; other subjects remain selectable.
+- [x] The web picker supports adding catalogued subjects and a custom subject name, with save/error feedback and a refresh from /api/learn after successful writes.
+- [x] Added an active-subject removal control. It asks for confirmation and describes that existing work is preserved.
+- [x] Extended src/app/api/subjects/route.ts with authenticated DELETE behavior. It removes the selection from the signed-in learner's canonical profile array but intentionally does not delete the subjects row, because existing lesson/task records may reference its UUID. /api/learn filters the visible list using the profile selection.
+- [x] Canonicalized common catalogue aliases in the add/remove route to reduce duplicate subject selections.
+- [x] Added src/lib/subjects/catalog.test.ts to test stable IDs/names, breadth across pathways/categories, aliases, and separation between selectable status and verified-content claims.
+- [ ] CI for the latest commit and the new test have not yet been confirmed passing.
+- [ ] The add/remove flow has not been exercised against production schema/RLS or a deployed account; concurrency, trigger behavior and account isolation still need validation.
+- [ ] Profile/curriculum editing and full adaptive personalization are not implemented by these UI changes. They remain later stages in this register.
+- [ ] The web change is not declared live until the exact commit is deployed and checked in the browser.
+
+### Important scope boundary
+
+This first pass makes the subject list manageable and broadens selectable choices. It does not magically add verified lessons, official syllabus coverage, assessment banks, or subject-specific tools for every catalogue entry. Curriculum and content readiness must remain independently verified.
