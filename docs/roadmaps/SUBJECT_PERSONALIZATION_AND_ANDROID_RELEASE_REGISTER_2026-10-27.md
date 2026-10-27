@@ -183,7 +183,8 @@ The queue currently covers task creation, task completion and timetable replacem
 - **Not yet verified:** fresh Android compilation, force-stop/process-death recovery on a real device, persistence across an app update, and recovery behaviour after logout/re-login. Treat this as implemented code awaiting verification, not a release-certified feature.
 
 ### Current CI evidence
-- Latest observed Android workflow run: [run 256](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772124), still in progress at the last check.
-- Latest observed web CI run: [run 4315](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772129), still in progress at the last check.
+- Android workflow run 256 ([run details](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772124)) was cancelled before project validation/build after further branch updates; it produced no artifact for the latest code.
+- Web CI run 4315 ([run details](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772129)) completed successfully, but it does not compile the Kotlin Android client.
+- The current branch head is newer than the cancelled Android run. A successful Android build for the latest head is still required.
 - The older debug APK must not be represented as containing this recovery change. Use only an artifact whose workflow run head SHA matches the final tested commit.
 - Offline bundled-paper manifest remains intentionally empty (`android/app/src/main/assets/offline-papers/index.json` is `[]`) pending documented redistribution rights. Online downloads saved by Exam Hub remain a separate path.
