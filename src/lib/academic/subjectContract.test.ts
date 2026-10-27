@@ -13,6 +13,13 @@ describe("subject contract", () => {
     expect(normalizeSubjectKey("Computer & Science")).toBe("computer and science");
   });
 
+  it("preserves subject names from non-ASCII writing systems", () => {
+    expect(normalizeSubjectKey("Français")).toBe("français");
+    expect(normalizeSubjectKey("中文")).toBe("中文");
+    expect(normalizeSubjectNames(["中文", "中文"])).toEqual(["中文"]);
+    expect(isAllowedSubject("中文", ["中文", "Mathematics"])).toBe(true);
+  });
+
   it("never treats General as a learner subject", () => {
     expect(isGeneralSubject("General")).toBe(true);
     expect(isAllowedSubject("General", ["Mathematics", "Physics"])).toBe(false);
