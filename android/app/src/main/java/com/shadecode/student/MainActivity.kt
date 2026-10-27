@@ -441,7 +441,31 @@ private fun NativeTimetableScreen(
                                     message = "Timetable saved and synced to your Shadecode account."
                                 } catch (e: Exception) {
                                     withContext(Dispatchers.IO) { store.saveTimetable(session.userId, slots) }
-                                    error = "Could not sync the timetable. Your generated schedule remains saved on this device. Reconnect and tap Save and sync timetable."
+                                    if (isRetryableSyncFailure(e)) {
+                                        withContext(Dispatchers.IO) {
+                                            val queuedSlots = org.json.JSONArray()
+                                            slots.forEach { slot ->
+                                                queuedSlots.put(
+                                                    org.json.JSONObject()
+                                                        .put("id", slot.id)
+                                                        .put("subject", slot.subject)
+                                                        .put("startTime", slot.startTime)
+                                                        .put("endTime", slot.endTime)
+                                                        .put("isBreak", slot.isBreak),
+                                                )
+                                            }
+                                            store.enqueuePendingOperation(
+                                                session.userId,
+                                                "timetable_replace",
+                                                org.json.JSONObject().put("slots", queuedSlots),
+                                            )
+                                        }
+                                        NativeSyncWorker.schedule(context)
+                                        error = null
+                                        message = "Timetable saved on this device. Sync is queued for when your connection returns."
+                                    } else {
+                                        error = "Could not sync the timetable. Your local copy is safe, but the server rejected the change. Check your access and try again."
+                                    }
                                 } finally {
                                     saving = false
                                 }
