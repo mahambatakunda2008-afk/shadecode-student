@@ -214,3 +214,7 @@ The queue currently covers task creation, task completion and timetable replacem
 - [ ] Publish the dedicated Android download only after a commit-matched APK is built, installation/security checks pass, and a production signing key is configured. The page deliberately does not advertise an unsigned debug APK as a production release.
 - [ ] Validate browser installability (manifest, service worker, icons and HTTPS) across Chrome Android and desktop browsers; confirm the fallback instructions are clear on iOS Safari.
 - [ ] Once a signed release exists, change the Android card on `/download` into a direct versioned download with checksum, version/release notes, minimum Android version and update guidance. Keep the PWA install path available as the low-friction option.
+
+- [x] Kept the dedicated install-prompt event handler in the shared PWA installer instead of adding another competing `beforeinstallprompt` listener to the download page.
+- [x] Removed the duplicate install-prompt listener from service-worker registration; it now handles service-worker lifecycle and sign-out cache clearing only.
+- [x] Reduced past-paper countdown polling from four times per second to once per second. Remaining time still derives from the saved wall-clock deadline, and this change awaits Android CI/device verification.
