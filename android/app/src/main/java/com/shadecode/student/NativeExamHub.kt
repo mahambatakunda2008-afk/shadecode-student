@@ -94,7 +94,19 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             if (activeAttempt != null) {
                 item {
                     val active = activeAttempt!!
-                    val matchingMarkScheme = papers.firstOrNull { it.kind.lowercase() in listOf("ms", "mark_scheme", "mark-scheme") && it.paperNumber == active.paperNumber && it.variant == active.variant }
+                    val matchingMarkScheme = papers.firstOrNull {
+                        it.kind.lowercase() in listOf("ms", "mark_scheme", "mark-scheme") &&
+                            it.paperNumber == active.paperNumber && it.variant == active.variant &&
+                            it.year == active.year && it.session.equals(active.session, ignoreCase = true) &&
+                            it.level.equals(active.level, ignoreCase = true)
+                    }
+                    val matchingOfflineMarkScheme = offlinePapers.firstOrNull {
+                        it.kind.lowercase() in listOf("ms", "mark_scheme", "mark-scheme") &&
+                            it.paperNumber == active.paperNumber && it.variant == active.variant &&
+                            it.year == active.year && it.session.equals(active.session, ignoreCase = true) &&
+                            it.level.equals(active.level, ignoreCase = true)
+                    }
+                    val matchingMarkSchemeId = matchingMarkScheme?.id ?: matchingOfflineMarkScheme?.id
                     Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(18.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) {
                             Text("Past-paper attempt", style=MaterialTheme.typography.headlineSmall, fontWeight=FontWeight.Bold)
@@ -119,14 +131,16 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                         finally { openingPaperId = null }
                                     }
                                 }) { Text("Open question paper") }
-                                if (matchingMarkScheme != null) OutlinedButton(onClick = {
-                                    val cached = NativeOfflinePaperStore.find(context, session.userId, matchingMarkScheme.id)
+                                if (matchingMarkSchemeId != null) OutlinedButton(onClick = {
+                                    val cached = NativeOfflinePaperStore.find(context, session.userId, matchingMarkSchemeId)
                                     if (cached != null) {
                                         try { val uri = NativeOfflinePaperStore.openUri(context, cached); context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                                        catch (e: Exception) { error = e.message ?: "Could not open mark scheme." }
-                                    } else scope.launch {
+                                        catch (e: Exception) { error = e.message ?: "Could not open saved mark scheme." }
+                                    } else if (matchingMarkScheme != null) scope.launch {
                                         try { val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, matchingMarkScheme.id) }; context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                                         catch (e: Exception) { error = e.message ?: "Could not open mark scheme." }
+                                    } else {
+                                        error = "This mark scheme is not available offline. Connect to the internet to download it."
                                     }
                                 }) { Text("Mark scheme") }
                             }
