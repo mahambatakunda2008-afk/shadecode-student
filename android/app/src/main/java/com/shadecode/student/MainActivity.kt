@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
@@ -144,7 +145,19 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     val api = remember { NativeApi() }; val database = remember { NativeDatabase.get(sessionStore.context()) }
     var profile by remember { mutableStateOf<NativeProfile?>(null) }; var subjects by remember { mutableStateOf<List<NativeSubjectEntity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }; var error by remember { mutableStateOf<String?>(null) }; var selected by remember { mutableStateOf(0) }
+    var focusDuration by remember { mutableStateOf(25 * 60) }
+    var focusRemaining by remember { mutableStateOf(25 * 60) }
+    var focusRunning by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    // Keep the countdown above tab navigation so learners can move into Learn without losing the sprint.
+    LaunchedEffect(focusRunning) {
+        while (focusRunning && focusRemaining > 0) {
+            delay(1_000)
+            if (focusRunning && focusRemaining > 0) focusRemaining -= 1
+        }
+        if (focusRemaining == 0) focusRunning = false
+    }
     LaunchedEffect(session.accessToken) {
         subjects = withContext(Dispatchers.IO) { database.subjects().all() }
         profile = withContext(Dispatchers.IO) { sessionStore.readProfile() }
@@ -178,7 +191,27 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         when (selected) {
             0 -> DashboardScreen(padding, profile, subjects, loading, error)
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
-            2 -> NativePracticeScreen(padding, subjects, database)
+            2 -> NativePracticeScreen(
+                padding = padding,
+                subjects = subjects,
+                database = database,
+                focusDuration = focusDuration,
+                focusRemaining = focusRemaining,
+                focusRunning = focusRunning,
+                onFocusDurationSelected = { seconds ->
+                    focusRunning = false
+                    focusDuration = seconds
+                    focusRemaining = seconds
+                },
+                onFocusToggle = {
+                    if (focusRemaining == 0) focusRemaining = focusDuration
+                    focusRunning = !focusRunning
+                },
+                onFocusReset = {
+                    focusRunning = false
+                    focusRemaining = focusDuration
+                },
+            )
             3 -> SnapExtractScreen(padding)
             else -> ProfileNativeScreen(
                 padding = padding,
