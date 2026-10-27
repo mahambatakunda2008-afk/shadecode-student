@@ -48,6 +48,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var activeAttempt by remember(session.userId) { mutableStateOf<NativeExamPaper?>(null) }
     var attemptNotes by remember(session.userId) { mutableStateOf("") }
     var attemptSeconds by remember(session.userId) { mutableIntStateOf(3600) }
+    var attemptDurationMinutes by remember(session.userId) { mutableIntStateOf(60) }
     var attemptRunning by remember(session.userId) { mutableStateOf(false) }
     var attemptFinished by remember(session.userId) { mutableStateOf(false) }
     val attemptPrefs = remember(session.userId) { context.getSharedPreferences("past_paper_attempts_v1", android.content.Context.MODE_PRIVATE) }
@@ -56,7 +57,9 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
         activeAttempt = paper
         val key = "${session.userId}:${paper.id}"
         attemptNotes = attemptPrefs.getString("notes_$key", "").orEmpty()
-        attemptSeconds = attemptPrefs.getInt("seconds_$key", 3600).coerceAtLeast(0)
+        val savedSecondsKey = "seconds_$key"
+        attemptDurationMinutes = attemptPrefs.getInt("duration_$key", attemptDurationMinutes).coerceIn(15, 240)
+        attemptSeconds = attemptPrefs.getInt(savedSecondsKey, attemptDurationMinutes * 60).coerceAtLeast(0)
         attemptFinished = attemptPrefs.getBoolean("finished_$key", false)
         attemptRunning = !attemptFinished && attemptSeconds > 0
         status = "Attempt opened. Your notes are saved locally."
@@ -68,6 +71,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
         val active = activeAttempt ?: return@LaunchedEffect
         val key = "${session.userId}:${active.id}"
         attemptPrefs.edit().putString("notes_$key", attemptNotes).putInt("seconds_$key", attemptSeconds)
+            .putInt("duration_$key", attemptDurationMinutes)
             .putBoolean("finished_$key", attemptFinished).apply()
     }
     LaunchedEffect(activeAttempt?.id, attemptRunning, attemptFinished) {
@@ -87,6 +91,20 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             OutlinedButton(onClick=onBack) { Text("Back") }
         }
         Spacer(Modifier.height(10.dp))
+        if (activeAttempt == null) {
+            Text("Timed attempt length", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(30, 60, 90, 120).forEach { minutes ->
+                    FilterChip(
+                        selected = attemptDurationMinutes == minutes,
+                        onClick = { attemptDurationMinutes = minutes },
+                        label = { Text("${minutes} min") }
+                    )
+                }
+            }
+            Text("New attempts use this duration. Existing attempts keep their saved timer.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+        }
         if(loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
         status?.let { Text(it,color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodySmall) }
