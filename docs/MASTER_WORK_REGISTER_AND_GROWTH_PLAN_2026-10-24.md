@@ -190,3 +190,10 @@ Current truth as of 2026-10-27:
 - Web subject management, the central catalogue, edit-after-onboarding curriculum context, learning personalization integration, Android alignment and deployed acceptance tests remain open.
 
 Execution gate: first audit the subject/profile data source of truth and the committed endpoint, then implement and test the web flow. Do not claim the web app changed until the intended commit is deployed and the add/duplicate/persist/relogin/remove and cross-account isolation journeys are verified. Catalogue presence must not be represented as verified curriculum or content coverage.
+
+
+### Subject-management implementation progress (2026-10-27)
+
+A first web implementation is now committed: the searchable grouped picker uses the central catalogue, supports catalogued/custom subject additions, and has a non-destructive remove-from-active-selection action. The authenticated API updates the profile selection and preserves existing subject rows so lesson/task references are not destroyed. A catalogue invariant test was added.
+
+**Status remains In progress, not Verified complete.** Latest CI is pending at the time of this note. The deployed browser journey, schema/RLS behavior, trigger reconciliation, concurrency, cross-account isolation and persistence across relogin still need evidence. The catalogue means a subject can be selected, not that its syllabus, content, lessons or tools are verified and ready. Full curriculum-profile editing, adaptive learning and Android parity remain open.
