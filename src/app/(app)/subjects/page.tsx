@@ -206,7 +206,7 @@ export default function SubjectsPage() {
             <Plus size={20} color="var(--primary)" aria-hidden="true" />
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid var(--card-border)", borderRadius: 11, padding: "0 12px", background: "var(--background)" }}>
-            <Search size={17} color="var(--muted-foreground)" aria-hidden="true" />
+            <Search size={18} color="var(--muted-foreground)" aria-hidden="true" />
             <input value={subjectQuery} onChange={event => { setSubjectQuery(event.target.value); setAddError(null); setAddSuccess(null); }} placeholder="Find a subject, e.g. Biology or Web Development" aria-label="Search subject catalogue" style={{ flex: 1, minWidth: 0, padding: "12px 0", border: 0, outline: "none", background: "transparent", color: "var(--foreground)", fontSize: 13 }} />
             {subjectQuery && <button type="button" onClick={() => setSubjectQuery("")} aria-label="Clear search" style={{ border: 0, background: "transparent", color: "var(--muted-foreground)", cursor: "pointer" }}><X size={16} /></button>}
           </label>
@@ -217,7 +217,7 @@ export default function SubjectsPage() {
               <h3 style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", letterSpacing: ".04em" }}>{group.group}</h3>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {group.items.map(name => <button key={name} type="button" onClick={() => void addSubject(name)} disabled={Boolean(addingSubject)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--card-border)", borderRadius: 999, padding: "8px 11px", background: "var(--surface-2)", color: "var(--foreground)", fontSize: 12, cursor: addingSubject ? "wait" : "pointer", opacity: addingSubject && addingSubject !== name ? .55 : 1 }}>
-                  <Plus size={13} aria-hidden="true" />{addingSubject === name ? "Adding…" : name}
+                  <Plus size={14} aria-hidden="true" />{addingSubject === name ? "Adding…" : name}
                 </button>)}
               </div>
             </div>)}
