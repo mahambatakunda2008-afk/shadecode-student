@@ -150,7 +150,100 @@ class NativeStore(private val context: Context) {
         }.getOrDefault(emptyList())
     }
 
+
+    /** Durable, account-scoped queue for changes created while the network is unavailable. */
+    suspend fun enqueuePendingOperation(accountId: String, operation: String, payload: JSONObject): NativePendingOperation {
+        val item = NativePendingOperation(
+            id = java.util.UUID.randomUUID().toString(),
+            accountId = accountId,
+            operation = operation,
+            payload = payload.toString(),
+            createdAt = System.currentTimeMillis(),
+        )
+        val key = stringPreferencesKey("pending_native_sync_$accountId")
+        context.nativeStore.edit { prefs ->
+            val rows = runCatching { JSONArray(prefs[key].orEmpty()) }.getOrDefault(JSONArray())
+            rows.put(
+                JSONObject()
+                    .put("id", item.id)
+                    .put("accountId", item.accountId)
+                    .put("operation", item.operation)
+                    .put("payload", item.payload)
+                    .put("createdAt", item.createdAt),
+            )
+            prefs[key] = rows.toString()
+        }
+        return item
+    }
+
+    suspend fun pendingOperations(accountId: String): List<NativePendingOperation> {
+        val key = stringPreferencesKey("pending_native_sync_$accountId")
+        val encoded = context.nativeStore.data.first()[key] ?: return emptyList()
+        return runCatching {
+            val rows = JSONArray(encoded)
+            buildList {
+                for (index in 0 until rows.length()) {
+                    val row = rows.getJSONObject(index)
+                    add(
+                        NativePendingOperation(
+                            id = row.getString("id"),
+                            accountId = row.optString("accountId", accountId),
+                            operation = row.getString("operation"),
+                            payload = row.optString("payload", "{}"),
+                            createdAt = row.optLong("createdAt"),
+                        ),
+                    )
+                }
+            }.sortedBy { it.createdAt }
+        }.getOrDefault(emptyList())
+    }
+
+    suspend fun removePendingOperation(accountId: String, operationId: String) {
+        val key = stringPreferencesKey("pending_native_sync_$accountId")
+        context.nativeStore.edit { prefs ->
+            val rows = runCatching { JSONArray(prefs[key].orEmpty()) }.getOrDefault(JSONArray())
+            val kept = JSONArray()
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                if (row.optString("id") != operationId) kept.put(row)
+            }
+            prefs[key] = kept.toString()
+        }
+    }
+
+    /** Replace an optimistic local task ID after the server accepts an offline-created task. */
+    suspend fun reconcileCachedTask(accountId: String, localId: String, remoteTask: NativeTask) {
+        val tasks = readTasks(accountId)
+        saveTasks(accountId, tasks.map { if (it.id == localId) remoteTask.copy(completed = it.completed) else it })
+        val key = stringPreferencesKey("pending_native_sync_$accountId")
+        context.nativeStore.edit { prefs ->
+            val rows = runCatching { JSONArray(prefs[key].orEmpty()) }.getOrDefault(JSONArray())
+            val updated = JSONArray()
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                if (row.optString("operation") == "task_complete") {
+                    val payload = runCatching { JSONObject(row.optString("payload", "{}")) }.getOrDefault(JSONObject())
+                    if (payload.optString("taskId") == localId) {
+                        payload.put("taskId", remoteTask.id)
+                        row.put("payload", payload.toString())
+                    }
+                }
+                updated.put(row)
+            }
+            prefs[key] = updated.toString()
+        }
+    }
+
     suspend fun clearSession() {
         context.nativeStore.edit { it.clear() }
     }
 }
+
+
+data class NativePendingOperation(
+    val id: String,
+    val accountId: String,
+    val operation: String,
+    val payload: String,
+    val createdAt: Long,
+)
