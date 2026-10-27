@@ -6,6 +6,16 @@
 **Web reference:** the existing Next.js application and its production APIs.  
 **Principle:** mobile must deliver the meaningful capabilities of the web product, not merely login, Home, Learn, Practice and Profile screens. Native UX may differ where touch, small screens, local storage or device capabilities make that better. The underlying learner, curriculum, progress and authorization semantics must remain consistent.
 
+## Current implementation evidence (2026-10-27)
+
+- Android CI passed for commit `458d6e82cdac7254ee2c59ff200e8ec33abbfa56`; the workflow uploaded debug APK artifact `shadecode-student-android-debug-180`. This proves that commit built, not that the app has been tested on a physical phone or is a production release.
+- The verified build includes the native learner subject/profile editor, task workspace and focus-session completion sync.
+- A native timetable reader is now added in commit `ace4b81da4d5aad3d4933c7aaa5415298e4d1266`. Its Android build is pending; do not treat the timetable as build-verified until that run succeeds.
+- The timetable reader currently displays saved slots from the learner's existing `timetable` rows. Native timetable editing/generation, offline cache/queue, device testing, signed production APK/AAB, and broader feature parity remain open.
+- Current CI run for timetable commit: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40492016389
+- Successful debug APK artifact is available from run 180 until its stated expiry through the GitHub Actions run page: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40490647026
+
+
 ## 1. Parity rules
 
 1. **Feature parity, not pixel parity.** Adapt the interaction for a phone while preserving the capability, inputs, outputs, saved state and recovery paths.
