@@ -197,3 +197,8 @@ Execution gate: first audit the subject/profile data source of truth and the com
 A first web implementation is now committed: the searchable grouped picker uses the central catalogue, supports catalogued/custom subject additions, and has a non-destructive remove-from-active-selection action. The authenticated API updates the profile selection and preserves existing subject rows so lesson/task references are not destroyed. A catalogue invariant test was added.
 
 **Status remains In progress, not Verified complete.** Latest CI is pending at the time of this note. The deployed browser journey, schema/RLS behavior, trigger reconciliation, concurrency, cross-account isolation and persistence across relogin still need evidence. The catalogue means a subject can be selected, not that its syllabus, content, lessons or tools are verified and ready. Full curriculum-profile editing, adaptive learning and Android parity remain open.
+
+
+### Per-subject curriculum settings (2026-10-27)
+
+The web Subjects page now also includes a per-subject curriculum editor for board, qualification, level, and optional syllabus code/version. Explicit requested versions that do not match verified curriculum data are blocked instead of silently substituted. This is still in progress: the current source commit must pass CI, the identifiers must be verified against actual curriculum records, and the full signed-in browser flow must be tested. A unified global learner profile editor, adaptive mastery personalization and Android parity remain open.
