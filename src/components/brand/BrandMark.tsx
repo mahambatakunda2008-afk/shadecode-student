@@ -31,7 +31,9 @@ export function BrandMark({ title = "Shadecode Student", className, ...props }: 
       </defs>
       {markDrawOrder().map((item) =>
         item.kind === "shadow" ? (
-          <path key={item.key} d={item.d} fill={MARK_DEPTH.shadowColor} fillOpacity={MARK_DEPTH.shadowOpacity} transform={`translate(0 ${MARK_DEPTH.shadowDy})`} />
+          <path key={item.key} d={item.d} fill={MARK_DEPTH.shadowColor} fillOpacity={item.opacity} transform={`translate(0 ${item.dy})`} />
+        ) : item.kind === "tint" ? (
+          <path key={item.key} d={item.d} fill={MARK_DEPTH.tintColor} fillOpacity={item.opacity} />
         ) : (
           <path
             key={item.key}

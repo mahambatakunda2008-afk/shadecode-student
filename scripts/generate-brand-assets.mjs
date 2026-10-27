@@ -30,17 +30,19 @@ function defs(prefix) {
   return `<defs>${grads.join("")}</defs>`;
 }
 
-/** Layered glyph shapes. `flat` renders all three layers in one colour, without depth effects. */
+/** Layered glyph. Full colour = overlapping sheets with shadows and tints; `flat` = original gapped silhouette in one colour. */
 function shapes(prefix, flat) {
   const dp = geo.depth;
-  const [top, middle, bottom] = geo.layers;
-  const layer = (l) =>
-    flat
-      ? `<path d="${l.d}" fill="${flat}"/>`
-      : `<path d="${l.d}" fill="url(#${prefix}-${geo.gradients[0].id})" stroke="${dp.edgeColor}" stroke-opacity="${dp.edgeOpacity}" stroke-width="${dp.edgeWidth}" stroke-linejoin="round"/>`;
-  const shadow = (l) => (flat ? "" : `<path d="${l.d}" fill="${dp.shadowColor}" fill-opacity="${dp.shadowOpacity}" transform="translate(0 ${dp.shadowDy})"/>`);
-  // Back to front: each upper layer casts a soft shadow onto the layers beneath it.
-  return layer(bottom) + shadow(middle) + layer(middle) + shadow(top) + layer(top);
+  const order = [...geo.layers].reverse(); // bottom, middle, top
+  if (flat) return geo.layers.map((l) => `<path d="${l.flatD}" fill="${flat}"/>`).join("");
+  return order
+    .map((l, i) => {
+      const shadows = i === 0 ? "" : dp.shadows.map((s) => `<path d="${l.d}" fill="${dp.shadowColor}" fill-opacity="${s.opacity}" transform="translate(0 ${s.dy})"/>`).join("");
+      const face = `<path d="${l.d}" fill="url(#${prefix}-${geo.gradients[0].id})" stroke="${dp.edgeColor}" stroke-opacity="${dp.edgeOpacity}" stroke-width="${dp.edgeWidth}" stroke-linejoin="round"/>`;
+      const tint = l.tint > 0 ? `<path d="${l.d}" fill="${dp.tintColor}" fill-opacity="${l.tint}"/>` : "";
+      return shadows + face + tint;
+    })
+    .join("");
 }
 
 /** Centre the glyph on (cx, cy) of the 1024 canvas at the given scale. */
