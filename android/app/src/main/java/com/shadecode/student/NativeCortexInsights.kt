@@ -101,7 +101,7 @@ fun NativeCortexInsightsCard(session: NativeSession) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = ShadeSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -131,7 +131,7 @@ fun NativeCortexInsightsCard(session: NativeSession) {
                 insights.take(4).forEach { insight ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = ShadeBackground),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(insight.text, style = MaterialTheme.typography.bodyMedium)
