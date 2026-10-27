@@ -24,8 +24,11 @@ class NativeSyncWorker(
         var session = store.readSession() ?: return@withContext Result.success()
         val api = NativeApi()
 
-        // Task creation is queued before completion of that task; keep this order intact.
-        for (item in store.pendingOperations(session.userId)) {
+        // Re-read the durable queue after each operation. Creating a queued task can
+        // rewrite a later completion's local ID to its server ID, so a stale snapshot
+        // must never be used for the next operation.
+        while (true) {
+            val item = store.pendingOperations(session.userId).firstOrNull() ?: break
             try {
                 executePendingOperation(item, session, api, store)
                 store.removePendingOperation(session.userId, item.id)
@@ -133,7 +136,7 @@ class NativeSyncWorker(
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 UNIQUE_WORK,
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
                 request,
             )
         }
