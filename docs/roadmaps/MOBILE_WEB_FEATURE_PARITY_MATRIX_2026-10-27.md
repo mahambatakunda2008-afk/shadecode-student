@@ -127,3 +127,12 @@ Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not app
 - **Native focus timer: Partial.** A local 15/25/45-minute focus sprint timer is now available in the Practice workspace. It is a timer only; it does not yet sync focus sessions or statistics with the web Focus module.
 - **Offline subject cache removal: corrected in source.** When a learner removes every subject from the profile, the native client now clears stale cached subjects. If subjects remain selected but the remote catalog is temporarily empty, the client preserves cached subjects to avoid accidental data loss.
 - **Build/release: pending.** Do not treat these source changes as a release until the Android workflow succeeds and the artifact is checked against its source commit. Real-device verification remains required.
+
+
+## Android build evidence update (2026-10-27)
+
+- **Android CI: Verified for source commit** `ca79e8e9c2f143f215aed9ec9a3b911a611a05be`. Run: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40495697345. The Android project validation and installable debug APK build both succeeded.
+- **Debug artifact:** `shadecode-student-android-debug-190`, artifact ID `12730548795`, 39,665,719 bytes, expires 2026-11-10. Workflow artifact digest: `sha256:cf99587d365a0fa759b73ab00091876fee44729f1d9abaaf104f3ead97475cb7`. This digest is for the downloaded artifact archive, not the APK inside it.
+- **Web CI:** run https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40495697478 completed successfully for the same source commit.
+- **Native offline cache: In progress, not yet build-verified.** New account-scoped DataStore snapshots are being added for tasks and timetable. This is cached read access and local persistence for generated schedules, not yet a durable mutation queue or full offline sync. Do not describe offline task creation/completion as supported.
+- **Release state:** PR #489 remains open. No physical-device smoke test, signed production APK/AAB, or production release is claimed.
