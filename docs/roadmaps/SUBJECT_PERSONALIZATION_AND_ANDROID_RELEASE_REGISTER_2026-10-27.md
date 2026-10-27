@@ -149,3 +149,11 @@ The feature-parity branch now contains an initial native profile/subject-managem
 - [ ] Implement and verify remaining web feature parity slices: Cortex insights, Exam Hub/Simulation, Math Checker/subject-specific tools, tasks/timetable/focus, analytics/engagement, Code Lab, Project Studio, careers, privacy controls, and robust offline synchronization.
 
 The current Android profile editor allows editing the existing study-level field, but it is not yet a complete academic profile editor. The current native app still does not have full web feature parity, and this branch must not be released as if it does.
+
+
+### Follow-up slice: focus timer and cache correctness
+
+- [x] Added a local 15/25/45-minute focus timer to the native Practice workspace with start, pause, reset, and completion feedback.
+- [x] Corrected initial sync so an intentionally empty subject profile clears stale local subject rows, while a temporarily empty remote catalog does not erase cached subjects for a profile that still selects subjects.
+- [ ] Verify these changes with Android CI and manual device testing.
+- [ ] Focus session history, interruption-safe persistence, notifications/background timing, and sync with the web Focus module remain unimplemented.
