@@ -215,7 +215,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
     }) { padding ->
         when (selected) {
             0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error)
-            5 -> NativeTimetableScreen(padding, session, api)
+            5 -> NativeTimetableScreen(padding, session, api, subjects)
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
             2 -> NativePracticeScreen(
                 padding = padding,
@@ -278,10 +278,23 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
 }
 
 @Composable
-private fun NativeTimetableScreen(padding: PaddingValues, session: NativeSession, api: NativeApi) {
+private fun NativeTimetableScreen(
+    padding: PaddingValues,
+    session: NativeSession,
+    api: NativeApi,
+    subjects: List<NativeSubjectEntity>,
+) {
     var slots by remember(session.userId) { mutableStateOf<List<NativeTimetableSlot>>(emptyList()) }
     var loading by remember(session.userId) { mutableStateOf(true) }
+    var saving by remember(session.userId) { mutableStateOf(false) }
     var error by remember(session.userId) { mutableStateOf<String?>(null) }
+    var message by remember(session.userId) { mutableStateOf<String?>(null) }
+    var selectedSubjects by remember(session.userId) { mutableStateOf<List<String>>(emptyList()) }
+    var startTime by remember(session.userId) { mutableStateOf("08:00") }
+    var duration by remember(session.userId) { mutableStateOf("60") }
+    var breakDuration by remember(session.userId) { mutableStateOf("10") }
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(session.accessToken) {
         loading = true
         try {
@@ -293,6 +306,53 @@ private fun NativeTimetableScreen(padding: PaddingValues, session: NativeSession
             loading = false
         }
     }
+    LaunchedEffect(subjects) {
+        if (selectedSubjects.isEmpty() && subjects.isNotEmpty()) {
+            selectedSubjects = subjects.take(4).map { it.name }
+        } else {
+            selectedSubjects = selectedSubjects.filter { selected -> subjects.any { it.name == selected } }
+        }
+    }
+
+    fun makeSchedule() {
+        val length = duration.toIntOrNull()
+        val breakLength = breakDuration.toIntOrNull()
+        val timeParts = startTime.split(":")
+        val startHour = timeParts.getOrNull(0)?.toIntOrNull()
+        val startMinute = timeParts.getOrNull(1)?.toIntOrNull()
+        if (selectedSubjects.isEmpty()) {
+            error = "Choose at least one subject."
+            return
+        }
+        if (length == null || length !in 1..240 || breakLength == null || breakLength !in 1..60) {
+            error = "Study length must be 1–240 minutes and breaks must be 1–60 minutes."
+            return
+        }
+        if (startHour == null || startHour !in 0..23 || startMinute == null || startMinute !in 0..59 || !startTime.matches(Regex("\\d{2}:\\d{2}"))) {
+            error = "Enter a start time in 24-hour HH:MM format, for example 08:00."
+            return
+        }
+        var cursor = startHour * 60 + startMinute
+        val generated = mutableListOf<NativeTimetableSlot>()
+        fun format(total: Int): String {
+            val normalized = ((total % 1440) + 1440) % 1440
+            return "%02d:%02d".format(normalized / 60, normalized % 60)
+        }
+        selectedSubjects.forEachIndexed { index, subject ->
+            val end = cursor + length
+            generated += NativeTimetableSlot("local-study-$index", subject, format(cursor), format(end), false)
+            cursor = end
+            if (index < selectedSubjects.lastIndex) {
+                val breakEnd = cursor + breakLength
+                generated += NativeTimetableSlot("local-break-$index", "Break", format(cursor), format(breakEnd), true)
+                cursor = breakEnd
+            }
+        }
+        slots = generated
+        error = null
+        message = "Schedule generated on this device. Save it to sync across Shadecode."
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -301,17 +361,78 @@ private fun NativeTimetableScreen(padding: PaddingValues, session: NativeSession
         item {
             Text("Your study plan", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            Text("The timetable shared with your Shadecode web account.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Build a timetable around the subjects you actually study. Saving replaces your current timetable atomically.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (loading) item { CircularProgressIndicator() }
-        error?.let { message ->
-            item {
-                Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Couldn't refresh timetable", fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(4.dp))
-                        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Choose subjects", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (subjects.isEmpty()) {
+                        Text("Add your subjects in Profile before generating a timetable.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        subjects.forEach { subject ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = selectedSubjects.contains(subject.name),
+                                    onCheckedChange = { checked ->
+                                        selectedSubjects = if (checked) selectedSubjects + subject.name else selectedSubjects - subject.name
+                                        message = null
+                                    },
+                                )
+                                Text(subject.name)
+                            }
+                        }
                     }
+                    OutlinedTextField(
+                        value = startTime,
+                        onValueChange = { startTime = it; error = null },
+                        label = { Text("Start time (24-hour)") },
+                        placeholder = { Text("08:00") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = duration,
+                            onValueChange = { duration = it.filter(Char::isDigit).take(3); error = null },
+                            label = { Text("Study minutes") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedTextField(
+                            value = breakDuration,
+                            onValueChange = { breakDuration = it.filter(Char::isDigit).take(2); error = null },
+                            label = { Text("Break minutes") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Button(onClick = { makeSchedule() }, modifier = Modifier.fillMaxWidth(), enabled = subjects.isNotEmpty()) {
+                        Text("Generate timetable")
+                    }
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                saving = true
+                                error = null
+                                message = null
+                                try {
+                                    withContext(Dispatchers.IO) { api.saveTimetable(session, slots) }
+                                    slots = withContext(Dispatchers.IO) { api.loadTimetable(session) }
+                                    message = "Timetable saved and synced to your Shadecode account."
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Could not save timetable. Your previous saved timetable should remain intact."
+                                } finally {
+                                    saving = false
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = slots.isNotEmpty() && !loading && !saving,
+                    ) { Text(if (saving) "Saving…" else "Save and sync timetable") }
+                    if (loading) CircularProgressIndicator()
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
                 }
             }
         }
@@ -321,11 +442,12 @@ private fun NativeTimetableScreen(padding: PaddingValues, session: NativeSession
                     Column(Modifier.padding(16.dp)) {
                         Text("Your timetable is empty", fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(4.dp))
-                        Text("Create or generate your timetable on the web version. It will appear here when saved.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Choose subjects above and generate your first schedule.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
+        item { Text("Schedule", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         items(slots, key = { it.id }) { slot ->
             Card(colors = CardDefaults.cardColors(containerColor = ShadeSurface)) {
                 Row(
