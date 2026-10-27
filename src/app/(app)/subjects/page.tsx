@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { SUBJECT_CATALOG, SUBJECT_CATEGORIES } from "@/lib/subjects/catalog";
 import {
   ArrowLeft, BookOpen, Zap, Dna, Globe, FlaskConical,
   Calculator, Brain, Code2, TrendingUp, Languages, Music,
@@ -51,12 +52,16 @@ export default function SubjectsPage() {
   const [addingSubject, setAddingSubject] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
+  const [studyLevel, setStudyLevel] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const sb = createClient();
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { router.push("/login"); return; }
+
+      const { data: learnerProfile } = await sb.from("profiles").select("study_level").eq("id", session.user.id).maybeSingle();
+      setStudyLevel(typeof learnerProfile?.study_level === "string" ? learnerProfile.study_level : null);
 
       try {
         const r = await fetch("/api/learn", {
@@ -74,18 +79,20 @@ export default function SubjectsPage() {
   }, []);
 
 
-  const subjectCatalogue: { group: string; items: string[] }[] = [
-    { group: "Mathematics & sciences", items: ["Mathematics", "Additional Mathematics", "Further Mathematics", "Statistics", "Numeracy", "Physics", "Chemistry", "Biology", "Integrated Science", "Combined Science", "Environmental Science", "Agriculture", "Computer Science", "ICT", "Programming", "Electronics"] },
-    { group: "Languages & literature", items: ["English Language", "English Literature", "Shona", "Ndebele", "French", "Portuguese", "Spanish", "Chinese", "Other Language", "Literature in English", "Communication Skills"] },
-    { group: "Humanities & social sciences", items: ["Geography", "History", "Religious Studies", "Sociology", "Psychology", "Global Perspectives", "Government", "Citizenship", "Social Studies", "Philosophy"] },
-    { group: "Business & commerce", items: ["Business Studies", "Economics", "Accounting", "Commerce", "Entrepreneurship", "Finance", "Marketing", "Management", "Travel and Tourism"] },
-    { group: "Creative, practical & technical", items: ["Art and Design", "Music", "Design and Technology", "Food and Nutrition", "Physical Education", "Sport Science", "Engineering", "Electrical Technology", "Building Studies", "Agricultural Science", "Fashion and Textiles", "Media Studies"] },
-    { group: "University, TVET & professional", items: ["Data Science", "Artificial Intelligence", "Web Development", "Cybersecurity", "Networking", "Software Engineering", "Nursing", "Public Health", "Law", "Education", "Project Management", "Research Methods"] },
-  ];
-  const existingKeys = new Set(subjects.map(subject => subject.name.trim().toLowerCase()));
-  const matchingCatalogue = subjectCatalogue.map(group => ({
-    ...group,
-    items: group.items.filter(name => name.toLowerCase().includes(subjectQuery.trim().toLowerCase()) && !existingKeys.has(name.toLowerCase())),
+  const normalizeLabel = (value: string) => value.trim().toLocaleLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").replace(/\\s+/g, " ");
+  const existingKeys = new Set(subjects.map(subject => normalizeLabel(subject.name)));
+  const matchingCatalogue = SUBJECT_CATEGORIES.map(group => ({
+    group,
+    items: SUBJECT_CATALOG
+      .filter(entry => entry.category === group)
+      .filter(entry => {
+        const labels = [entry.name, ...(entry.aliases ?? [])].map(normalizeLabel);
+        return labels.every(label => !existingKeys.has(label)) &&
+          (entry.name.toLocaleLowerCase().includes(subjectQuery.trim().toLocaleLowerCase()) ||
+           (entry.aliases ?? []).some(alias => alias.toLocaleLowerCase().includes(subjectQuery.trim().toLocaleLowerCase())));
+      })
+      .sort((a, b) => Number(b.pathways.includes(studyLevel ?? "")) - Number(a.pathways.includes(studyLevel ?? "")))
+      .map(entry => entry.name),
   })).filter(group => group.items.length > 0);
   const addSubject = async (name: string) => {
     setAddingSubject(name); setAddError(null); setAddSuccess(null);
@@ -190,7 +197,7 @@ export default function SubjectsPage() {
           <form onSubmit={event => { event.preventDefault(); if (subjectQuery.trim()) void addSubject(subjectQuery.trim()); }} style={{ display: "flex", gap: 8, marginTop: 15 }}>
             <button type="submit" disabled={!subjectQuery.trim() || Boolean(addingSubject)} className="gen-btn" style={{ border: "1px solid var(--card-border)", borderRadius: 10, padding: "9px 13px", background: "var(--primary-glow)", color: "var(--foreground)", fontSize: 12, fontWeight: 650, cursor: "pointer" }}>Add custom subject</button>
           </form>
-          <p style={{ margin: "10px 0 0", fontSize: 11, lineHeight: 1.5, color: "var(--muted-foreground)" }}>Adding a subject makes it part of your profile and learning workspace. Verified syllabus coverage and generated content may vary by subject, board and level.</p>
+          <p style={{ margin: "10px 0 0", fontSize: 11, lineHeight: 1.5, color: "var(--muted-foreground)" }}>The catalogue is a starting point, not a guarantee that every syllabus or lesson is verified. Subjects commonly associated with your current level appear first, but you can still choose other subjects.</p>
         </section>
 
         {/* ── Error ── */}
