@@ -117,6 +117,157 @@ private fun ShadecodeStudentNative(context: Context) {
 }
 
 @Composable
+private fun NativeSetupScreen(
+    session: NativeSession,
+    profile: NativeProfile,
+    api: NativeApi,
+    sessionStore: NativeStore,
+    onComplete: (NativeProfile) -> Unit,
+    onSignOut: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var displayName by remember(profile.id) { mutableStateOf(profile.displayName.takeUnless { it == "Student" }.orEmpty()) }
+    var studyLevel by remember(profile.id) { mutableStateOf(profile.studyLevel.takeUnless { it == "upper-secondary" }.orEmpty()) }
+    var selectedCodes by remember(profile.id) { mutableStateOf(profile.subjects.map { NativeSubjectCatalog.codeFor(it) }.toSet()) }
+    var search by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val filtered = remember(search) {
+        NativeSubjectCatalog.all.distinctBy { it.code }.filter {
+            search.isBlank() || it.label.contains(search, true) || it.group.contains(search, true)
+        }
+    }
+    val stages = listOf("Primary", "Lower secondary", "O Level", "AS Level", "A Level", "University", "TVET / Polytechnic", "Independent study")
+    val stageCodes = mapOf(
+        "Primary" to "primary", "Lower secondary" to "lower-secondary", "O Level" to "o-level",
+        "AS Level" to "as-level", "A Level" to "a-level", "University" to "university",
+        "TVET / Polytechnic" to "tvet", "Independent study" to "independent"
+    )
+
+    Column(Modifier.fillMaxSize().background(ShadeBackground).navigationBarsPadding()) {
+        Column(Modifier.fillMaxWidth().background(ShadeSurface).padding(horizontal = 24.dp, vertical = 22.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.size(48.dp).background(ShadePrimary.copy(alpha = 0.14f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
+                    Text("S", color = ShadePrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                }
+                Column {
+                    Text("SHADECODE STUDENT", style = MaterialTheme.typography.labelLarge, color = ShadePrimary, fontWeight = FontWeight.Bold)
+                    Text("Let’s set up your space", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text("A few details help Cortex shape your learning workspace around your real subjects and study level.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                repeat(3) { index ->
+                    Box(Modifier.weight(1f).height(4.dp).background(if (index < 3) ShadePrimary else ShadeSurface, RoundedCornerShape(8.dp)))
+                }
+            }
+        }
+        LazyColumn(
+            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = 18.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item {
+                Text("01 · YOU", color = ShadePrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text("What should we call you?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                OutlinedTextField(
+                    value = displayName, onValueChange = { displayName = it; error = null },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Your name") },
+                    placeholder = { Text("Name or nickname") }
+                )
+            }
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text("02 · YOUR STAGE", color = ShadePrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text("Where are you studying?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Choose the closest match. You can change it later in Profile.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+                stages.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        row.forEach { stage ->
+                            val code = stageCodes.getValue(stage)
+                            val selected = studyLevel.equals(code, true)
+                            androidx.compose.material3.FilterChip(
+                                selected = selected,
+                                onClick = { studyLevel = code; error = null },
+                                label = { Text(stage) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text("03 · YOUR SUBJECTS", color = ShadePrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text("Build your subject list", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("${selectedCodes.size} selected · Search across sciences, languages, humanities, business, technology and more.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = search, onValueChange = { search = it },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Search all subjects") }
+                )
+            }
+            items(filtered, key = { it.code }) { option ->
+                Row(
+                    Modifier.fillMaxWidth().background(ShadeSurface, RoundedCornerShape(14.dp)).padding(horizontal = 10.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = option.code in selectedCodes,
+                        onCheckedChange = { checked ->
+                            selectedCodes = if (checked) selectedCodes + option.code else selectedCodes - option.code
+                            error = null
+                        }
+                    )
+                    Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+                        Text(option.label, fontWeight = FontWeight.SemiBold)
+                        Text(option.group, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            item {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                Button(
+                    onClick = {
+                        if (studyLevel.isBlank()) { error = "Choose your study level to continue."; return@Button }
+                        if (selectedCodes.isEmpty()) { error = "Choose at least one subject. You can add more later."; return@Button }
+                        val updated = profile.copy(
+                            displayName = displayName.trim().ifBlank { "Student" },
+                            studyLevel = studyLevel,
+                            subjects = selectedCodes.toList().sorted(),
+                            onboardingCompleted = true,
+                        )
+                        saving = true
+                        error = null
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { api.saveLearnerProfile(session, updated) }
+                                withContext(Dispatchers.IO) { sessionStore.saveProfile(updated) }
+                                onComplete(updated)
+                            } catch (e: Exception) {
+                                error = e.message ?: "Setup could not be saved. Check your connection and try again."
+                            } finally {
+                                saving = false
+                            }
+                        }
+                    },
+                    enabled = !saving,
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                ) {
+                    if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    else Text("Build my learning space")
+                }
+                TextButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text("Sign out") }
+                Text("Subject selection personalizes the workspace. It does not mean every syllabus or topic is already verified.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
 private fun LoginScreen(onSignedIn: (NativeSession) -> Unit, sessionStore: NativeStore) {
     val scope = rememberCoroutineScope(); val api = remember { NativeApi() }
     var email by remember { mutableStateOf("") }; var password by remember { mutableStateOf("") }
@@ -210,7 +361,33 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             error = null
         } catch (e: Exception) { error = e.message ?: "Could not refresh your profile." } finally { loading = false }
     }
-    Scaffold(containerColor = ShadeBackground, bottomBar = {
+    if (!loading && profile != null && !profile!!.onboardingCompleted) {
+        NativeSetupScreen(
+            session = session,
+            profile = profile!!,
+            api = api,
+            sessionStore = sessionStore,
+            onComplete = { updated ->
+                profile = updated
+                scope.launch {
+                    try {
+                        val refreshed = withContext(Dispatchers.IO) { api.loadSubjects(session, updated) }
+                        withContext(Dispatchers.IO) {
+                            database.subjects().clear()
+                            if (refreshed.isNotEmpty()) database.subjects().replaceAll(refreshed)
+                        }
+                        subjects = withContext(Dispatchers.IO) { database.subjects().all() }
+                    } catch (_: Exception) {
+                        // The setup is saved; the normal shell can refresh the subject cache later.
+                    }
+                }
+            },
+            onSignOut = onSignOut,
+        )
+        return
+    }
+
+        Scaffold(containerColor = ShadeBackground, bottomBar = {
         if (!showExamHub && !showExamSimulation) NavigationBar(containerColor = ShadeSurface) {
             NavigationBarItem(selected == 0, { selected = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Home") })
             NavigationBarItem(selected == 1, { selected = 1 }, icon = { Icon(Icons.Default.Book, null) }, label = { Text("Learn") })
