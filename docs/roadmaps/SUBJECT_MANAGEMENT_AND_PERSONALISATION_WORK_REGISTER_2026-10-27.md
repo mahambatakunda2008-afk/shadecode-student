@@ -188,3 +188,14 @@ The recent Snap & Extract work is in the native Android codebase. It does not au
 - An initial authenticated POST route was committed at src/app/api/subjects/route.ts in commit fbd3b388f3ec714939eb9842677046da9b7c6ae2. It has not yet been schema/RLS audited or tested end-to-end.
 - The web page, central catalogue, edit-after-onboarding profile flow, curriculum resolution, personalization integration, Android alignment, and deployed acceptance tests remain incomplete.
 - Do not announce a web fix until a deployed web test demonstrates it.
+
+
+### Schema/source-of-truth findings from the first audit (2026-10-27)
+
+- Migration 20260916104000_sync_profile_subjects_to_subject_catalog.sql explicitly declares the selected-subject array on public.profiles as the canonical source and uses a trigger to synchronize it into public.subjects for modules that need subject UUIDs.
+- The trigger maps known onboarding IDs to display labels and falls back to title-casing other values. It inserts missing subject rows and removes the legacy General row, but the inspected trigger does not delete stale subject rows when a subject is removed from the profile.
+- Migration 20260926180000_canonicalize_subject_names.sql adds a unique index on (user_id, lower(trim(name))) and rewires existing learn_lessons/tasks references to the earliest duplicate row before deleting duplicate catalog rows.
+- Therefore, add/remove must not treat public.profiles.subjects and public.subjects as unrelated competing sources of truth. Add must preserve the profile array contract and rely on or safely reconcile the trigger-created row. Remove requires an explicit safe plan for existing lesson/task foreign-key references and stale catalog rows; do not blindly delete a subject row.
+- The initial POST route now uses an authenticated server Supabase client and updates only the signed-in user's profiles row. However, it still needs review for concurrent array updates, the exact custom-subject representation, duplicate/race behavior with the trigger and unique index, and API tests. This is not yet a verified implementation.
+- Relevant code already exists for post-onboarding curriculum editing: src/app/api/curriculum/profile/route.ts exposes authenticated GET/PATCH for exact curriculum identities stored on profiles.curriculum_subjects. The new UI should reuse this contract where it fits rather than inventing a parallel curriculum-profile API.
+- Existing onboarding persists several related but distinct stores: profiles (canonical learner profile and subject IDs), user_profiles (education level/subject interests), academic_contexts (tertiary/programme details), learning_paths, and profiles.curriculum_subjects (exact per-subject curriculum identities). The broader work must define how these stay aligned instead of silently assuming they are one table.
