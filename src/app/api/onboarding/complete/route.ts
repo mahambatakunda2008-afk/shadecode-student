@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initializeLearningPath } from "@/lib/learning-path";
 import { normalizeStoredCurriculumIdentities } from "@/lib/curriculum/user-profile";
+import { normalizeSubjectNames, normalizeSubjectKey } from "@/lib/academic/subjectContract";
+import { SUBJECT_CATALOG } from "@/lib/subjects/catalog";
 import type { EducationLevel, LearningGoal, SubjectInterest } from "@/types/onboarding";
 import type { StudyLevel } from "@/types";
 
@@ -17,6 +19,20 @@ function normalizeSubstage(value: unknown): string | null {
   const normalized = value.trim().toLowerCase();
   if (!normalized) return null;
   return normalized.slice(0, 80);
+}
+
+function normalizeSelectedSubjects(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const names = value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0 && item.trim().length <= 100)
+    .map(item => {
+      const key = normalizeSubjectKey(item);
+      const entry = SUBJECT_CATALOG.find(subject =>
+        [subject.id, subject.name, ...(subject.aliases ?? [])].some(label => normalizeSubjectKey(label) === key)
+      );
+      return entry?.name ?? item.trim().replace(/\\s+/g, " ");
+    });
+  return normalizeSubjectNames(names).slice(0, 100);
 }
 
 function normalizeCurriculumAnswers(body: Record<string, unknown>) {
@@ -71,7 +87,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       display_name: typeof body.display_name === "string" ? body.display_name.trim() || null : null,
       study_level: studyLevel,
-      subjects: Array.isArray(body.subject_interests) ? body.subject_interests : [],
+      // Formal subject selections and broad recommendation interests are separate concepts.\n      // Older clients did not send `subjects`, so retain a compatibility fallback for them.\n      subjects: Array.isArray(body.subjects)\n        ? normalizeSelectedSubjects(body.subjects)\n        : normalizeSelectedSubjects(body.subject_interests),
       daily_goal_minutes: Number.isFinite(body.daily_goal_minutes) ? Math.max(10, Math.min(240, Number(body.daily_goal_minutes))) : 30,
       study_style: body.study_style === "structured" ? "structured" : "flexible",
       education_stage: substage,
