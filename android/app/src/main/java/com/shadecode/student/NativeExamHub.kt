@@ -55,18 +55,20 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     LaunchedEffect(session.userId) {
         offlinePapers = withContext(Dispatchers.IO) { NativeOfflinePaperStore.importBundled(context, session.userId) }
     }
-    LaunchedEffect(activeAttempt?.id, attemptRunning, attemptSeconds) {
+    LaunchedEffect(activeAttempt?.id, attemptNotes, attemptSeconds, attemptFinished) {
         val active = activeAttempt ?: return@LaunchedEffect
         val key = "${session.userId}:${active.id}"
         attemptPrefs.edit().putString("notes_$key", attemptNotes).putInt("seconds_$key", attemptSeconds)
             .putBoolean("finished_$key", attemptFinished).apply()
-        if (attemptRunning && attemptSeconds > 0) {
+    }
+    LaunchedEffect(activeAttempt?.id, attemptRunning, attemptFinished) {
+        while (attemptRunning && !attemptFinished && attemptSeconds > 0) {
             kotlinx.coroutines.delay(1000)
             attemptSeconds = (attemptSeconds - 1).coerceAtLeast(0)
-            if (attemptSeconds == 0) {
-                attemptRunning = false
-                status = "Time is up. Your answer notes have been saved on this device."
-            }
+        }
+        if (attemptSeconds == 0 && attemptRunning) {
+            attemptRunning = false
+            status = "Time is up. Your answer notes have been saved on this device."
         }
     }
     LaunchedEffect(session.userId,subjects) { load { syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) } } }
