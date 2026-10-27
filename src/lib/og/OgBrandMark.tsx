@@ -10,7 +10,7 @@ export function OgBrandMark({ size, color }: { size: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox={MARK_VIEWBOX} xmlns="http://www.w3.org/2000/svg">
       {color ? (
-        MARK_LAYERS.map((l) => <path key={l.role} d={l.flatD} fill={color} />)
+        MARK_LAYERS.map((l) => <path key={l.role} d={l.d} fill={color} />)
       ) : (
         <>
           <defs>
@@ -22,9 +22,7 @@ export function OgBrandMark({ size, color }: { size: number; color?: string }) {
           </defs>
           {markDrawOrder().map((item) =>
             item.kind === "shadow" ? (
-              <path key={item.key} d={item.d} fill={MARK_DEPTH.shadowColor} fillOpacity={item.opacity} transform={`translate(0 ${item.dy})`} />
-            ) : item.kind === "tint" ? (
-              <path key={item.key} d={item.d} fill={MARK_DEPTH.tintColor} fillOpacity={item.opacity} />
+              <path key={item.key} d={item.d} fill={MARK_DEPTH.shadowColor} fillOpacity={MARK_DEPTH.shadowOpacity} transform={`translate(0 ${MARK_DEPTH.shadowDy})`} />
             ) : (
               <path key={item.key} d={item.d} fill={`url(#${gradientId})`} stroke={MARK_DEPTH.edgeColor} strokeOpacity={MARK_DEPTH.edgeOpacity} strokeWidth={MARK_DEPTH.edgeWidth} strokeLinejoin="round" />
             ),

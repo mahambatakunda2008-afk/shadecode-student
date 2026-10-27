@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { MARK_COLORS, MARK_FLAT_PATHS, MARK_PATHS } from "./markGeometry";
+import { MARK_COLORS, MARK_PATHS } from "./markGeometry";
 
 const root = process.cwd();
 const read = (rel: string) => readFileSync(path.join(root, rel), "utf8");
@@ -34,9 +34,9 @@ describe("brand mark has a single canonical geometry", () => {
     });
   }
   for (const file of flatMarkSvgs) {
-    it(`${file} uses the canonical flat silhouette`, () => {
+    it(`${file} uses all three canonical layers`, () => {
       const text = read(file);
-      for (const d of MARK_FLAT_PATHS) expect(text).toContain(d);
+      for (const d of MARK_PATHS) expect(text).toContain(d);
     });
   }
   it("React brand mark renders from the shared geometry, not private paths", () => {
