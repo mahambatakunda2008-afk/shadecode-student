@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const token = (request.headers.get("authorization") || "").replace(/^Bearer\\s+/i, "");
+  const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token || token === request.headers.get("authorization")) {
     return NextResponse.json({ error: "Sign in to mark your exam." }, { status: 401 });
   }
