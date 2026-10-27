@@ -4,7 +4,7 @@ export function normalizeSubjectKey(value: unknown): string {
     .trim()
     .toLowerCase()
     .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, " ")
+    // Preserve letters and numbers from every writing system, not only ASCII.\n    .replace(/[^\\p{L}\\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
