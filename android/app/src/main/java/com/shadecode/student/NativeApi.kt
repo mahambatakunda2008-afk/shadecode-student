@@ -124,6 +124,7 @@ class NativeApi {
         require(title.trim().isNotEmpty()) { "Enter a task title." }
         val body = JSONObject()
             .put("user_id", session.userId)
+            .put("subject_id", linkedSubjectId)
             .put("title", title.trim().take(180))
             .put("description", description.trim().take(2000))
             .put("completed", false)
