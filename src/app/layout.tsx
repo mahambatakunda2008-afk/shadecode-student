@@ -14,6 +14,7 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import InAppSurvey from "@/components/traction/InAppSurvey";
 import TractionBootstrap from "@/components/traction/TractionBootstrap";
 import StudentWebMCP from "@/components/webmcp/StudentWebMCP";
+import { IosStandaloneSafeArea } from "@/components/layout/IosStandaloneSafeArea";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${michroma.variable} antialiased`}>
+        <IosStandaloneSafeArea />
         <ThemeContextProvider>
           <MuiThemeProvider>
             <BandwidthProvider>

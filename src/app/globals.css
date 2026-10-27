@@ -371,3 +371,14 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spaci
     display: none !important;
   }
 }
+
+/* Installed iOS PWA only (class set by IosStandaloneSafeArea together with viewport-fit=cover).
+   Content starts below the status bar, a dark scrim keeps the translucent status bar legible in every theme,
+   viewport-height utilities subtract the inset so pages never gain a phantom scrollbar, sticky headers stick
+   below the status bar, and bottom sheets clear the home indicator. If iOS reports 0 insets these are all no-ops. */
+html.ios-standalone body { padding-top: env(safe-area-inset-top, 0px); }
+html.ios-standalone body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top, 0px); background: #06111C; z-index: 9996; pointer-events: none; }
+html.ios-standalone .h-screen { height: calc(100dvh - env(safe-area-inset-top, 0px)); }
+html.ios-standalone .min-h-screen { min-height: calc(100dvh - env(safe-area-inset-top, 0px)); }
+html.ios-standalone [class~="sticky"][class~="top-0"] { top: env(safe-area-inset-top, 0px); }
+html.ios-standalone .fixed.inset-0.items-end { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
