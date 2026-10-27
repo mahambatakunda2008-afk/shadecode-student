@@ -55,6 +55,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var attemptRunning by remember(session.userId) { mutableStateOf(false) }
     var attemptDeadlineMillis by remember(session.userId) { mutableLongStateOf(0L) }
     var attemptFinished by remember(session.userId) { mutableStateOf(false) }
+    var showRestartAttemptConfirm by remember(session.userId) { mutableStateOf(false) }
     var showStarterPackPrompt by remember(session.userId) { mutableStateOf(false) }
     var starterPackBusy by remember(session.userId) { mutableStateOf(false) }
     val attemptPrefs = remember(session.userId) { context.getSharedPreferences("past_paper_attempts_v1", android.content.Context.MODE_PRIVATE) }
@@ -349,6 +350,42 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             }
                             OutlinedTextField(value=attemptNotes, onValueChange={ attemptNotes=it }, modifier=Modifier.fillMaxWidth().heightIn(min=220.dp), label={ Text("Answer sheet / working") }, placeholder={ Text("Write answers, working and question numbers here…") }, minLines=8)
                             Text("Self-mark against the official mark scheme. This version does not automatically grade PDFs or award XP.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (attemptFinished) {
+                                OutlinedButton(
+                                    onClick = { showRestartAttemptConfirm = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text("Start a fresh attempt") }
+                            }
+                            if (showRestartAttemptConfirm) {
+                                AlertDialog(
+                                    onDismissRequest = { showRestartAttemptConfirm = false },
+                                    title = { Text("Start a fresh attempt?") },
+                                    text = { Text("This clears the saved answer notes and timer for this paper on this account. Downloaded PDFs are not affected.") },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            val key = "${session.userId}:${active.id}"
+                                            attemptPrefs.edit()
+                                                .remove("notes_$key")
+                                                .remove("seconds_$key")
+                                                .remove("duration_$key")
+                                                .remove("finished_$key")
+                                                .remove("running_$key")
+                                                .remove("deadline_$key")
+                                                .apply()
+                                            attemptNotes = ""
+                                            attemptSeconds = attemptDurationMinutes * 60
+                                            attemptFinished = false
+                                            attemptRunning = false
+                                            attemptDeadlineMillis = 0L
+                                            showRestartAttemptConfirm = false
+                                            status = "Fresh attempt ready. Start the timer when you are ready."
+                                        }) { Text("Clear and restart") }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showRestartAttemptConfirm = false }) { Text("Cancel") }
+                                    },
+                                )
+                            }
                             OutlinedButton(onClick={ activeAttempt=null }) { Text("Return to paper catalogue") }
                             Text("Timer uses a saved wall-clock deadline, so closing and reopening the app will not reset elapsed time. Pause it if you want it stopped.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
