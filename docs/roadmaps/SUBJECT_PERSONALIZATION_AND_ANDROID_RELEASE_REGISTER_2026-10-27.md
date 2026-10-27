@@ -31,10 +31,10 @@ A catalogue entry only means a subject can be selected. It does not prove that a
 ## Known current implementation findings
 
 - The web onboarding subject picker is already stage-aware, but its hard-coded lists are incomplete.
-- The web Subjects page displays the current user's subjects returned by `/api/learn`; it does not yet provide a complete searchable catalogue or robust add/remove/manage workflow.
+- The web Subjects page now includes a searchable catalogue, add-subject action (including custom names), removal that preserves historical work, and a curriculum profile editor. This is implemented in source, but authenticated browser scenarios and automated CI must pass before calling the complete user journey verified.
 - The settings page supports basic identity and preferences, but it is not yet a complete academic-profile editor.
 - The onboarding mapper carries study level, subject interests and optional curriculum details. Exact curriculum subject rows are only produced when required board/qualification/level/version and subject-code data are available; unknown syllabus codes should not be guessed.
-- A subject-management API route was started on 2026-10-27 at `src/app/api/subjects/route.ts`. It needs review against the actual schema and full integration with the Subjects UI before being considered complete. Do not claim the user-facing add-subject journey is done until tested.
+- Subject management is integrated through `src/app/api/subjects/route.ts` and `src/app/(app)/subjects/page.tsx`. The API scopes writes to the authenticated learner and removes a subject from the active profile without deleting the subject row. Review duplicate/race behavior and test profile persistence, RLS, add/remove and refresh before considering the workflow verified.
 - Android Snap & Extract work is native-only. It does not automatically appear in the web app. Cross-platform features must be implemented in the relevant client(s).
 - Native Snap & Extract currently supports local image import, bundled on-device Latin OCR, editable/raw OCR, text cleanup, phrase redaction in the text representation, copy/share, and a private app-local saved-text library with local search. It does not yet perform source-image pixel redaction, full diagram understanding, structured table/equation extraction, or source-image archival.
 - An APK from an older workflow is not proof of the latest source. Only use an artifact when its workflow run's `head_sha` matches the source commit being released.
@@ -240,3 +240,10 @@ The queue currently covers task creation, task completion and timetable replacem
 - The current GitHub commit-status integration reports a Vercel status failure pointing to a Vercel build-rate-limit/upgrade page. Treat this as a deployment-capacity blocker, not evidence that application tests failed. Do not claim the newest web commit has deployed until a production deployment with the exact source SHA is observed.
 - Android production signing remains intentionally pending. Do not publish the existing debug artifact as the production app. After credentials are configured, build from the then-current `main` SHA, verify the signed APK/AAB and checksum manifest, and perform real-device smoke tests before public distribution.
 
+
+
+## Documentation reconciliation (2026-10-28)
+
+- Updated `android/README.md` to distinguish the opt-in first-visit offline starter pack from papers bundled in the APK, and to document checksum generation as part of the signed-release workflow.
+- PR #492 and PR #493 are merged. Current `main` has release checksum automation and the subject search normalization fix. Latest web production deployment still points to `107cf10a691ad5739a0e14f3f515a7091baca13a`; Vercel has reported a build-rate-limit status for newer commits, so do not assume the newest code is live.
+- Latest documentation commit at the time of this entry: `9f8f261594513ac99f3d729c6fcc08e52bb92f48` (Android README clarification). Subsequent documentation changes may advance `main`.
