@@ -59,7 +59,7 @@ function subjectIdentity(subject: SubjectOption): string {
 
 const fieldClass = "w-full rounded-xl border border-[var(--card-border)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]";
 
-export function CurriculumProfileEditor({ subjects }: { subjects: SubjectOption[] }) {
+export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: SubjectOption[]; studyLevel?: string | null }) {
   const [identities, setIdentities] = useState<CurriculumIdentity[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -100,6 +100,8 @@ export function CurriculumProfileEditor({ subjects }: { subjects: SubjectOption[
     return result;
   }, [identities]);
 
+  const defaultCurriculumLevel: CurriculumLevel = studyLevel === "primary" || studyLevel === "early-childhood" ? "primary" : studyLevel === "lower-secondary" ? "lower_secondary" : studyLevel === "upper-secondary" ? "o_level" : studyLevel === "a-level" ? "as_level" : studyLevel === "university" ? "university" : studyLevel === "tvet" ? "technical" : studyLevel === "professional" ? "vocational" : "o_level";
+
   const beginEdit = (subject: SubjectOption) => {
     const existing = identityBySubject.get(key(subject.name)) ??
       identities.find(item => key(item.subjectId) === key(subjectIdentity(subject)));
@@ -108,7 +110,7 @@ export function CurriculumProfileEditor({ subjects }: { subjects: SubjectOption[
       [subject.id]: {
         boardId: existing?.boardId ?? "cambridge",
         qualificationId: existing?.qualificationId ?? "",
-        level: existing?.level ?? "as_level",
+        level: existing?.level ?? defaultCurriculumLevel,
       },
     }));
     setEditing(subject.id);
@@ -118,7 +120,8 @@ export function CurriculumProfileEditor({ subjects }: { subjects: SubjectOption[
 
   const save = async (subject: SubjectOption) => {
     const draft = drafts[subject.id];
-    if (!draft?.boardId || !draft.qualificationId.trim()) {
+    const qualificationId = slug(draft?.qualificationId ?? "");
+    if (!draft?.boardId || !qualificationId) {
       setError("Choose an exam board and enter the qualification for this subject.");
       return;
     }
@@ -135,7 +138,7 @@ export function CurriculumProfileEditor({ subjects }: { subjects: SubjectOption[
       const nextIdentity: CurriculumIdentity = {
         ...(previous ?? {}),
         boardId: draft.boardId,
-        qualificationId: draft.qualificationId.trim(),
+        qualificationId,
         level: draft.level,
         subjectId,
         subjectName: subject.name,
