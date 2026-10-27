@@ -131,12 +131,29 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Generate release checksums
+        if: env.HAS_ANDROID_SIGNING == 'true'
+        working-directory: .
+        run: |
+          cd dist/android
+          sha256sum ShadecodeStudent-Android.apk ShadecodeStudent-Android.aab > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
       - name: Upload Play Store AAB
         if: env.HAS_ANDROID_SIGNING == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: shadecode-student-android-aab-${{ github.run_number }}
           path: dist/android/ShadecodeStudent-Android.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload release checksums
+        if: env.HAS_ANDROID_SIGNING == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadecode-student-android-checksums-${{ github.run_number }}
+          path: dist/android/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -158,3 +175,4 @@ jobs:
           files: |
             dist/android/ShadecodeStudent-Android.apk
             dist/android/ShadecodeStudent-Android.aab
+            dist/android/SHA256SUMS.txt
