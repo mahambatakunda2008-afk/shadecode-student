@@ -85,7 +85,7 @@ object NativeOfflinePaperStore {
     ): SavedPaper {
         require(userId.isNotBlank()) { "Sign in to save papers to this device." }
         require(signedUrl.startsWith("https://")) { "The paper download must use a secure HTTPS connection." }
-        val fileName = digest(paper.id) + ".pdf"
+        val fileName = digest("$userId:${paper.id}") + ".pdf"
         val target = File(root(context), fileName)
         val temp = File(root(context), fileName + ".part")
         var connection: HttpURLConnection? = null
