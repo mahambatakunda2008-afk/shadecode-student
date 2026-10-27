@@ -39,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -178,9 +179,33 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
             1 -> LearnNativeScreen(padding, session, profile, subjects, database, api)
             2 -> NativePracticeScreen(padding, subjects, database)
             3 -> SnapExtractScreen(padding)
-            else -> ProfileNativeScreen(padding, profile) {
-                scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
-            }
+            else -> ProfileNativeScreen(
+                padding = padding,
+                session = session,
+                profile = profile,
+                api = api,
+                sessionStore = sessionStore,
+                onProfileSaved = { updated ->
+                    scope.launch {
+                        profile = updated
+                        try {
+                            val remoteSubjects = withContext(Dispatchers.IO) { api.loadSubjects(session, updated) }
+                            if (remoteSubjects.isNotEmpty()) {
+                                withContext(Dispatchers.IO) {
+                                    database.subjects().clear()
+                                    database.subjects().replaceAll(remoteSubjects)
+                                }
+                            }
+                            subjects = withContext(Dispatchers.IO) { database.subjects().all() }
+                        } catch (e: Exception) {
+                            error = "Profile saved. Subject list will refresh when you're online."
+                        }
+                    }
+                },
+                onSignOut = {
+                    scope.launch { withContext(Dispatchers.IO) { sessionStore.clearSession() }; onSignOut() }
+                },
+            )
         }
     }
 }
@@ -348,11 +373,148 @@ private fun NativeLessonRow(lesson: NativeLessonEntity, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun ProfileNativeScreen(padding: PaddingValues, profile: NativeProfile?, onSignOut: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
-        Text("Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(18.dp))
-        Text(profile?.displayName ?: "Student", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(profile?.email ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp)); Text("Study level: ${profile?.studyLevel ?: "Not set"}"); Spacer(Modifier.height(24.dp)); TextButton(onClick = onSignOut) { Text("Sign out") }
+private fun ProfileNativeScreen(
+    padding: PaddingValues,
+    session: NativeSession,
+    profile: NativeProfile?,
+    api: NativeApi,
+    sessionStore: NativeStore,
+    onProfileSaved: (NativeProfile) -> Unit,
+    onSignOut: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var displayName by remember(profile?.id, profile?.displayName) { mutableStateOf(profile?.displayName.orEmpty()) }
+    var studyLevel by remember(profile?.id, profile?.studyLevel) { mutableStateOf(profile?.studyLevel ?: "upper-secondary") }
+    var selectedCodes by remember(profile?.id, profile?.subjects) {
+        mutableStateOf((profile?.subjects ?: emptyList()).map { NativeSubjectCatalog.codeFor(it) }.toSet())
+    }
+    var query by remember { mutableStateOf("") }
+    var customSubject by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var failure by remember { mutableStateOf<String?>(null) }
+    val filtered = remember(query) {
+        val term = query.trim()
+        if (term.isBlank()) NativeSubjectCatalog.all.distinctBy { it.code }
+        else NativeSubjectCatalog.all.distinctBy { it.code }.filter {
+            it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
+        }
+    }
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item {
+            Spacer(Modifier.height(18.dp))
+            Text("Your learning profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(profile?.email ?: session.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = displayName,
+                onValueChange = { displayName = it; message = null },
+                label = { Text("Display name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = studyLevel,
+                onValueChange = { studyLevel = it; message = null },
+                label = { Text("Education stage / study level") },
+                supportingText = { Text("Examples: primary, lower-secondary, o-level, a-level, university, tvet, independent") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            Spacer(Modifier.height(8.dp))
+            Text("My subjects", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("${selectedCodes.size} selected. Subject availability does not guarantee verified syllabus coverage.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Search subjects") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        items(filtered, key = { it.code }) { option ->
+            Row(
+                Modifier.fillMaxWidth().background(ShadeSurface, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = option.code in selectedCodes,
+                    onCheckedChange = { checked ->
+                        selectedCodes = if (checked) selectedCodes + option.code else selectedCodes - option.code
+                        message = null
+                    },
+                )
+                Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+                    Text(option.label, fontWeight = FontWeight.SemiBold)
+                    Text(option.group, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        item {
+            Spacer(Modifier.height(6.dp))
+            Text("Can't find a subject?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            OutlinedTextField(
+                value = customSubject,
+                onValueChange = { customSubject = it },
+                label = { Text("Add a custom subject") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextButton(
+                onClick = {
+                    val custom = customSubject.trim()
+                    if (custom.length >= 2) {
+                        selectedCodes = selectedCodes + NativeSubjectCatalog.codeFor(custom)
+                        customSubject = ""
+                        message = "Custom subject added to your selection. Curriculum coverage is not yet verified."
+                        failure = null
+                    }
+                },
+                enabled = customSubject.trim().length >= 2,
+            ) { Text("Add subject") }
+            if (failure != null) Text(failure!!, color = MaterialTheme.colorScheme.error)
+            if (message != null) Text(message!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Button(
+                onClick = {
+                    val current = profile ?: NativeProfile(session.userId, session.email, "Student", "upper-secondary", emptyList(), false)
+                    val updated = current.copy(
+                        displayName = displayName.trim().ifBlank { "Student" },
+                        studyLevel = studyLevel.trim().ifBlank { "upper-secondary" },
+                        subjects = selectedCodes.toList().sorted(),
+                        onboardingCompleted = true,
+                    )
+                    saving = true
+                    failure = null
+                    message = null
+                    scope.launch {
+                        try {
+                            withContext(Dispatchers.IO) { api.saveLearnerProfile(session, updated) }
+                            withContext(Dispatchers.IO) { sessionStore.saveProfile(updated) }
+                            onProfileSaved(updated)
+                            message = "Profile saved. Your selected subjects will sync with Shadecode."
+                        } catch (e: Exception) {
+                            failure = e.message ?: "Could not save your profile. Check your connection and try again."
+                        } finally {
+                            saving = false
+                        }
+                    }
+                },
+                enabled = !saving && selectedCodes.isNotEmpty() && studyLevel.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Save learning profile")
+            }
+            TextButton(onClick = onSignOut) { Text("Sign out") }
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
 
