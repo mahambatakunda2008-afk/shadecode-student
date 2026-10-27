@@ -198,3 +198,9 @@ The queue currently covers task creation, task completion and timetable replacem
 - [ ] Install and test on a physical Android device, including fresh account onboarding, account switching, offline paper access, and exam recovery after force-stop. CI success proves compilation and artifact upload, not real-device behaviour or complete feature parity.
 - [ ] Continue the next implementation slice: test the downloaded past-paper attempt workflow on a real device, especially process death, expired deadlines, pause/resume, offline PDF opening and account switching. Source inspection confirms the past-paper workspace already persists a deadline and recomputes remaining time when an attempt is reopened; this still needs device verification.
 
+### Past-paper retry usability fix (2026-10-27)
+- [x] Added an explicit **Start a fresh attempt** action after a timed past-paper attempt has finished or expired.
+- [x] Added a confirmation step that warns the learner that the saved answer notes and timer for that paper/account will be cleared; the downloaded PDF itself is preserved.
+- [ ] Verify the Kotlin/Android build for commit `429960cd09745d3762cc63cf91dd1b1d0fcf8bd8`.
+- [ ] Verify completed/expired attempts can be restarted, the timer starts only when requested, notes persist while an attempt is active, and cancel leaves existing work untouched.
+
