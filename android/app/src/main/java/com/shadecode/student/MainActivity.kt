@@ -223,7 +223,7 @@ private fun StudentShell(session: NativeSession, onSignOut: () -> Unit, sessionS
         if (showExamHub) {
             NativeExamHubScreen(padding, session, api, subjects, onBack = { showExamHub = false })
         } else if (showExamSimulation) {
-            NativeExamSimulationScreen(padding, session, api, subjects, onBack = { showExamSimulation = false })
+            NativeExamSimulationScreen(padding, session, api, subjects, onBack = { showExamSimulation = false }, onBrowsePastPapers = { showExamSimulation = false; showExamHub = true })
         } else when (selected) {
             0 -> DashboardScreen(padding, session, api, profile, subjects, loading, error, onOpenExamHub = { showExamHub = true }, onOpenExamSimulation = { showExamSimulation = true })
             5 -> NativeTimetableScreen(padding, session, api, subjects)
