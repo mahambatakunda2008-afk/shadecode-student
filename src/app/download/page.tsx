@@ -5,36 +5,14 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, Download, ExternalLink, MonitorSmartphone, ShieldCheck, Smartphone, WifiOff } from "lucide-react";
 import { BrandLockup } from "@/components/brand/BrandLockup";
 
-type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }> };
-
 export default function DownloadPage() {
-  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const [installing, setInstalling] = useState(false);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     setInstalled(standalone);
-    const onPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as InstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
-  }, []);
 
-  async function installWebApp() {
-    if (!installPrompt) return;
-    setInstalling(true);
-    try {
-      await installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === "accepted") setInstalled(true);
-      setInstallPrompt(null);
-    } finally {
-      setInstalling(false);
-    }
-  }
+  }, []);
 
   return (
     <main className="min-h-screen bg-[var(--brand-ink)] px-4 py-8 text-slate-100 sm:px-6">
@@ -55,12 +33,10 @@ export default function DownloadPage() {
               <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><MonitorSmartphone size={18} /> Install the web app</div>
               <h2 className="mt-3 text-xl font-semibold text-white">Available now</h2>
               <p className="mt-2 text-sm leading-6 text-slate-300">Add Shadecode to your home screen or desktop. It opens in its own app window where supported, without needing an app-store download.</p>
-              {installPrompt ? (
-                <button onClick={installWebApp} disabled={installing} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-60"><Download size={17} />{installing ? "Opening install…" : "Install Shadecode"}</button>
-              ) : installed ? (
+              {installed ? (
                 <div className="mt-5 flex min-h-11 items-center gap-2 rounded-xl border border-emerald-300/20 px-4 py-3 text-sm font-semibold text-emerald-200"><CheckCircle2 size={17} /> Already installed on this device</div>
               ) : (
-                <div className="mt-5 rounded-xl border border-white/10 px-4 py-3 text-sm leading-6 text-slate-300"><strong className="text-white">To install:</strong> open the browser menu and choose <em>Install app</em> or <em>Add to Home Screen</em>. On iPhone/iPad, use Safari’s Share menu.</div>
+                <div className="mt-5 rounded-xl border border-white/10 px-4 py-3 text-sm leading-6 text-slate-300"><strong className="text-white">To install:</strong> use the browser’s install prompt if it appears, or open the browser menu and choose <em>Install app</em> or <em>Add to Home Screen</em>. On iPhone/iPad, use Safari’s Share menu.</div>
               )}
               <Link href="/auth/signup" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 hover:text-white">Create a free account <ExternalLink size={14} /></Link>
             </article>
