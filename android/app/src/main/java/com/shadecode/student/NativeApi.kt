@@ -294,6 +294,44 @@ class NativeApi {
         return NativeSession(json.getString("access_token"), json.optString("refresh_token"), user.getString("id"), user.optString("email", fallbackEmail))
     }
 
+    fun generateNativeExam(session: NativeSession, subject: String, count: Int, difficulty: String): JSONObject {
+        val body = JSONObject().put("subject", subject).put("questionCount", count).put("difficulty", difficulty)
+        return JSONObject(requestApp("POST", "/api/native/exam-sim/generate", body.toString(), session.accessToken))
+    }
+
+    fun markNativeExam(session: NativeSession, subject: String, subjectId: String?, questions: JSONArray, answers: JSONObject): JSONObject {
+        val body = JSONObject().put("subject", subject).put("questions", questions).put("answers", answers)
+        if (!subjectId.isNullOrBlank()) body.put("subjectId", subjectId)
+        return JSONObject(requestApp("POST", "/api/native/exam-sim/mark", body.toString(), session.accessToken))
+    }
+
+    private fun requestApp(method: String, path: String, body: String, accessToken: String): String {
+        val appBase = BuildConfig.APP_BASE_URL.trimEnd('/')
+        require(appBase.startsWith("https://")) { "The Shadecode app URL is not configured for secure exam requests." }
+        val connection = (URL(appBase + path).openConnection() as HttpURLConnection).apply {
+            requestMethod = method
+            connectTimeout = 15_000
+            readTimeout = 50_000
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Authorization", "Bearer $accessToken")
+            doOutput = true
+        }
+        try {
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) {
+                val message = runCatching { JSONObject(text).optString("error").ifBlank { JSONObject(text).optString("message") } }.getOrNull()
+                throw IllegalStateException(message?.ifBlank { null } ?: "Exam request failed ($code)")
+            }
+            return text
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     private fun request(method: String, path: String, body: String? = null, accessToken: String? = null, prefer: String? = null, urlBase: String = baseUrl): String {
         val connection = (URL(urlBase + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 10_000; readTimeout = 10_000
