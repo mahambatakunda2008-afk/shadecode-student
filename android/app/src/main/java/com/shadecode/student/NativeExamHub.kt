@@ -42,6 +42,8 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var openingPaperId by remember { mutableStateOf<String?>(null) }
+    var downloadingPaperId by remember { mutableStateOf<String?>(null) }
+    var offlinePapers by remember(session.userId) { mutableStateOf(NativeOfflinePaperStore.list(context, session.userId)) }
     fun load(block:suspend ()->Unit) { loading=true; error=null; scope.launch { try { block() } catch(e:Exception) { error=e.message ?: "Could not load papers." } finally { loading=false } } }
     LaunchedEffect(session.userId,subjects) { load { syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) } } }
     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal=16.dp, vertical=12.dp)) {
@@ -53,6 +55,33 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
         if(loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
         LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=24.dp)) {
+            if (offlinePapers.isNotEmpty()) {
+                item {
+                    Text("Available offline on this device", style=MaterialTheme.typography.titleLarge, fontWeight=FontWeight.Bold)
+                    Text("Downloaded PDFs open without internet. They stay private to this app and signed-in account.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+                }
+                items(offlinePapers, key = { "offline-${it.id}" }) { saved ->
+                    Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+                        Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                            Text("${saved.subject} · ${saved.board}", fontWeight=FontWeight.SemiBold)
+                            Text("${saved.title} · ${saved.session} ${saved.year}", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(String.format(java.util.Locale.ROOT, "%.1f MB · saved for offline use", saved.bytes / (1024.0 * 1024.0)), style=MaterialTheme.typography.labelSmall, color=MaterialTheme.colorScheme.primary)
+                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = {
+                                    try {
+                                        val uri = NativeOfflinePaperStore.openUri(context, saved)
+                                        context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
+                                    } catch (e: Exception) { error = e.message ?: "Could not open saved paper." }
+                                }) { Text("Open offline") }
+                                OutlinedButton(onClick = {
+                                    NativeOfflinePaperStore.delete(context, session.userId, saved.id)
+                                    offlinePapers = NativeOfflinePaperStore.list(context, session.userId)
+                                }) { Text("Remove") }
+                            }
+                        }
+                    }
+                }
+            }
             if(syllabus==null) {
                 item { Text("Choose one of your selected subjects",style=MaterialTheme.typography.titleMedium) }
                 items(syllabi) { item -> ExamCatalogCard("${item.subject} · ${item.board}",item.levels.joinToString(" · ").ifBlank { "Levels available in library" }) {
@@ -81,22 +110,52 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                 }
                 if(year!=null) {
                     item { Text("Papers · ${examSession} ${year}",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold) }
-                    items(papers) { paper ->
+                    items(papers, key = { it.id }) { paper ->
                         val kind=when(paper.kind) { "qp"->"Question Paper"; "ms"->"Mark Scheme"; "in"->"Insert"; "gt"->"Grade Thresholds"; else->paper.kind.uppercase() }
-                        ExamCatalogCard("Paper ${paper.paperNumber} / ${paper.variant} · $kind", if (openingPaperId == paper.id) "Preparing secure paper link…" else "${paper.level} · ${paper.session} ${paper.year}") {
-                            scope.launch {
-                                openingPaperId = paper.id
-                                error = null
-                                try {
-                                    val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, paper.id) }
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                                } catch (e: Exception) {
-                                    error = e.message ?: "Could not open this paper. Check your connection and try again."
-                                } finally {
-                                    openingPaperId = null
+                        val saved = offlinePapers.any { it.id == paper.id }
+                        NativeExamPaperCard(
+                            title = "Paper ${paper.paperNumber} / ${paper.variant} · $kind",
+                            detail = "${paper.level} · ${paper.session} ${paper.year}",
+                            isSaved = saved,
+                            isOpening = openingPaperId == paper.id,
+                            isDownloading = downloadingPaperId == paper.id,
+                            onOpen = {
+                                val cached = NativeOfflinePaperStore.find(context, session.userId, paper.id)
+                                if (cached != null) {
+                                    try {
+                                        val uri = NativeOfflinePaperStore.openUri(context, cached)
+                                        context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
+                                    } catch (e: Exception) { error = e.message ?: "Could not open saved paper." }
+                                } else {
+                                    scope.launch {
+                                        openingPaperId = paper.id
+                                        error = null
+                                        try {
+                                            val url = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, paper.id) }
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                        } catch (e: Exception) {
+                                            error = e.message ?: "Could not open this paper. Check your connection and try again."
+                                        } finally { openingPaperId = null }
+                                    }
+                                }
+                            },
+                            onDownload = {
+                                scope.launch {
+                                    downloadingPaperId = paper.id
+                                    error = null
+                                    try {
+                                        val signedUrl = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, paper.id) }
+                                        val savedPaper = withContext(Dispatchers.IO) {
+                                            NativeOfflinePaperStore.download(context, session.userId, paper, syllabus!!.subject, syllabus!!.board, signedUrl)
+                                        }
+                                        offlinePapers = NativeOfflinePaperStore.list(context, session.userId)
+                                        status = "Saved ${savedPaper.title} for offline use on this device."
+                                    } catch (e: Exception) {
+                                        error = e.message ?: "Could not save this paper offline."
+                                    } finally { downloadingPaperId = null }
                                 }
                             }
-                        }
+                        )
                     }
                     if(!loading && papers.isEmpty() && error==null) item { Text("No papers are available for this selection yet.",color=MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
@@ -116,6 +175,34 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             item { ExternalLearningResourceCard("Khan Academy", "Free lessons, practice questions and videos across maths, science, humanities and other subjects.", "https://www.khanacademy.org/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
             item { ExternalLearningResourceCard("CK-12", "Free digital textbooks, adaptive practice and interactive STEM learning resources.", "https://www.ck12.org/") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
             item { ExternalLearningResourceCard("OpenStax", "Free, peer-reviewed textbooks in many subjects. Some content is licensed CC BY-NC-SA, so commercial reuse requires care.", "https://openstax.org/subjects") { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+        }
+    }
+}
+
+ 
+@Composable
+private fun NativeExamPaperCard(
+    title: String,
+    detail: String,
+    isSaved: Boolean,
+    isOpening: Boolean,
+    isDownloading: Boolean,
+    onOpen: () -> Unit,
+    onDownload: () -> Unit,
+) {
+    Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(7.dp)) {
+            Text(title, fontWeight=FontWeight.SemiBold)
+            Text(detail, style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                Button(onClick=onOpen, enabled=!isOpening && !isDownloading) {
+                    Text(when { isOpening -> "Opening…"; isSaved -> "Open offline"; else -> "Open paper" })
+                }
+                OutlinedButton(onClick=onDownload, enabled=!isSaved && !isDownloading && !isOpening) {
+                    Text(when { isDownloading -> "Downloading…"; isSaved -> "Saved offline"; else -> "Download for offline" })
+                }
+            }
+            if (isSaved) Text("Stored on this device. No connection needed to reopen it.", style=MaterialTheme.typography.labelSmall, color=MaterialTheme.colorScheme.primary)
         }
     }
 }
