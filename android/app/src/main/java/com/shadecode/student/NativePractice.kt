@@ -81,6 +81,7 @@ fun NativePracticeScreen(
     onFocusDurationSelected: (Int) -> Unit,
     onFocusToggle: () -> Unit,
     onFocusReset: () -> Unit,
+    focusStatus: String?,
 ) {
     var selectedSubject by remember { mutableStateOf<String?>(null) }
     var lessons by remember { mutableStateOf<List<NativeLessonEntity>>(emptyList()) }
@@ -142,6 +143,7 @@ fun NativePracticeScreen(
                         ) { Text("Reset") }
                     }
                     if (focusRemaining == 0) Text("Session complete. Take a short break before the next sprint.", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
+                    focusStatus?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp)) }
                 }
             }
         }
