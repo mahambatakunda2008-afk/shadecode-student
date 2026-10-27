@@ -229,7 +229,7 @@ export default function SubjectsPage() {
           <p style={{ margin: "10px 0 0", fontSize: 11, lineHeight: 1.5, color: "var(--muted-foreground)" }}>The catalogue is a starting point, not a guarantee that every syllabus or lesson is verified. Subjects commonly associated with your current level appear first, but you can still choose other subjects.</p>
         </section>
 
-        {!error && subjects.length > 0 && <CurriculumProfileEditor subjects={subjects} />}
+        {!error && subjects.length > 0 && <CurriculumProfileEditor subjects={subjects} studyLevel={studyLevel} />}
 
         {/* ── Error ── */}
         {error && (
