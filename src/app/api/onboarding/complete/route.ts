@@ -25,8 +25,8 @@ function normalizeSelectedSubjects(value: unknown): string[] {
   const subjects: string[] = [];
   for (const item of value) {
     if (typeof item !== "string") continue;
-    const name = item.trim().replace(/\\s+/g, " ");
-    if (!name || name.length > 80 || !/[\\p{L}\\p{N}]/u.test(name)) continue;
+    const name = item.trim().replace(/\s+/g, " ");
+    if (!name || name.length > 80 || !/[\p{L}\p{N}]/u.test(name)) continue;
     const key = name.toLocaleLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
