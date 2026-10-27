@@ -231,3 +231,19 @@ This first pass makes the subject list manageable and broadens selectable choice
 - [ ] Latest CI for the current source changes is running; no pass is claimed until the exact current commit completes.
 - [ ] The profile editor currently configures per-subject curriculum identity. Editing the learner's global study level, goals, language and learning preferences in one unified profile workflow remains open.
 - [ ] End-to-end verification of adding/removing subjects, configuring curriculum, and generating a correctly scoped lesson remains open.
+
+
+## Onboarding now consumes the central catalogue (2026-10-27)
+
+- [x] Added early-childhood learning areas to `src/lib/subjects/catalog.ts` so foundation options have canonical IDs too.
+- [x] Updated `src/components/onboarding/steps/SubjectStep.tsx` to use the central catalogue rather than a separate hard-coded subject list.
+- [x] Added subject search and category grouping to onboarding.
+- [x] Default view prioritizes subjects tagged for the learner's selected pathway; learners can browse the full catalogue instead of being silently blocked from less-common subject choices.
+- [x] Selected subject IDs remain selected while the learner searches or switches between recommended/all catalogue views.
+- [x] Extended `src/lib/onboarding/mapFormData.ts` to map canonical catalogue IDs into the existing subject-interest contract.
+- [ ] Confirm the new onboarding and mapping changes pass CI/type checks on the exact latest commit.
+- [ ] Test migration/compatibility for existing stored onboarding IDs such as `maths`, `english`, and `science`, and confirm Learn still resolves display labels consistently.
+- [ ] Run onboarding through sign-up and verify the selected canonical subject IDs, curriculum code fields, and subject-interest summary persist without loss.
+- [ ] Validate search and category groups on small screens and with keyboard/screen-reader navigation.
+
+**Latest source commits for this slice:** catalogue foundation entries `a8981ad735d2df1102930e1d94b72508c10c84dd`; central-catalogue onboarding `d5f9e5a741da8490d337b116a2be9aa7d168356a`; canonical subject-interest mapping `9c1e4473b30cb72589723101dccf083a6035a1a8`. CI is in progress for the latest commit at the time of this update.
