@@ -393,10 +393,16 @@ private fun ProfileNativeScreen(
     var saving by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
-    val filtered = remember(query) {
+    val catalogue = remember(selectedCodes) {
+        val known = NativeSubjectCatalog.all.distinctBy { it.code }
+        known + selectedCodes.filterNot { code -> known.any { it.code == code } }.map { code ->
+            NativeSubjectOption(code, NativeSubjectCatalog.labelFor(code), "Custom / saved")
+        }
+    }
+    val filtered = remember(query, catalogue) {
         val term = query.trim()
-        if (term.isBlank()) NativeSubjectCatalog.all.distinctBy { it.code }
-        else NativeSubjectCatalog.all.distinctBy { it.code }.filter {
+        if (term.isBlank()) catalogue
+        else catalogue.filter {
             it.label.contains(term, ignoreCase = true) || it.group.contains(term, ignoreCase = true)
         }
     }
@@ -507,7 +513,7 @@ private fun ProfileNativeScreen(
                         }
                     }
                 },
-                enabled = !saving && selectedCodes.isNotEmpty() && studyLevel.isNotBlank(),
+                enabled = !saving && studyLevel.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 if (saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text("Save learning profile")
