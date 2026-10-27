@@ -75,9 +75,17 @@ export async function resolveVerifiedCurriculumPromptContext(userId: string, pro
     effectiveTo: version.effective_to,
   }));
 
+  const hasRequestedVersion = Boolean(identity.syllabusId || identity.syllabusVersion);
   const matchingStoredVersion = identity.syllabusId && identity.syllabusVersion
     ? versions.find((version) => version.identity.syllabusId === identity.syllabusId && version.identity.syllabusVersion === identity.syllabusVersion)
     : undefined;
+  if (hasRequestedVersion && (!identity.syllabusId || !identity.syllabusVersion || !matchingStoredVersion)) {
+    return {
+      status: "blocked",
+      promptContext: "",
+      reason: "The requested syllabus code/version does not match a verified curriculum for this subject. Update the subject's curriculum settings or clear both fields to use the latest verified version.",
+    };
+  }
   const matchingVersion = matchingStoredVersion ?? [...versions].sort((a, b) => String(b.effectiveFrom ?? "").localeCompare(String(a.effectiveFrom ?? "")))[0];
   if (!matchingVersion) return { status: "blocked", promptContext: "", reason: "No suitable verified curriculum version could be selected." };
 
