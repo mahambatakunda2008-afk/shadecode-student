@@ -50,6 +50,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var attemptSeconds by remember(session.userId) { mutableIntStateOf(3600) }
     var attemptDurationMinutes by remember(session.userId) { mutableIntStateOf(60) }
     var attemptRunning by remember(session.userId) { mutableStateOf(false) }
+    var attemptDeadlineMillis by remember(session.userId) { mutableLongStateOf(0L) }
     var attemptFinished by remember(session.userId) { mutableStateOf(false) }
     val attemptPrefs = remember(session.userId) { context.getSharedPreferences("past_paper_attempts_v1", android.content.Context.MODE_PRIVATE) }
     fun load(block:suspend ()->Unit) { loading=true; error=null; scope.launch { try { block() } catch(e:Exception) { error=e.message ?: "Could not load papers." } finally { loading=false } } }
@@ -59,29 +60,42 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
         attemptNotes = attemptPrefs.getString("notes_$key", "").orEmpty()
         val savedSecondsKey = "seconds_$key"
         attemptDurationMinutes = attemptPrefs.getInt("duration_$key", attemptDurationMinutes).coerceIn(15, 240)
-        attemptSeconds = attemptPrefs.getInt(savedSecondsKey, attemptDurationMinutes * 60).coerceAtLeast(0)
+        val storedSeconds = attemptPrefs.getInt(savedSecondsKey, attemptDurationMinutes * 60).coerceAtLeast(0)
+        val storedRunning = attemptPrefs.getBoolean("running_$key", false)
+        val storedDeadline = attemptPrefs.getLong("deadline_$key", 0L)
         attemptFinished = attemptPrefs.getBoolean("finished_$key", false)
-        attemptRunning = !attemptFinished && attemptSeconds > 0
-        status = "Attempt opened. Your notes are saved locally."
+        val now = System.currentTimeMillis()
+        attemptSeconds = if (storedRunning && storedDeadline > 0L) (((storedDeadline - now).coerceAtLeast(0L) + 999L) / 1000L).toInt() else storedSeconds
+        attemptDeadlineMillis = if (storedRunning && storedDeadline > now && !attemptFinished) storedDeadline else 0L
+        attemptRunning = storedRunning && attemptDeadlineMillis > now && attemptSeconds > 0 && !attemptFinished
+        if (storedRunning && attemptSeconds == 0 && !attemptFinished) {
+            attemptFinished = true
+            status = "Time expired while the app was closed. Your saved notes are still available."
+        } else status = "Attempt restored. Timer and notes are saved on this device."
     }
     LaunchedEffect(session.userId) {
         offlinePapers = withContext(Dispatchers.IO) { NativeOfflinePaperStore.importBundled(context, session.userId) }
     }
-    LaunchedEffect(activeAttempt?.id, attemptNotes, attemptSeconds, attemptFinished) {
+    LaunchedEffect(activeAttempt?.id, attemptNotes, attemptSeconds, attemptFinished, attemptRunning, attemptDeadlineMillis, attemptDurationMinutes) {
         val active = activeAttempt ?: return@LaunchedEffect
         val key = "${session.userId}:${active.id}"
         attemptPrefs.edit().putString("notes_$key", attemptNotes).putInt("seconds_$key", attemptSeconds)
-            .putInt("duration_$key", attemptDurationMinutes)
-            .putBoolean("finished_$key", attemptFinished).apply()
+            .putInt("duration_$key", attemptDurationMinutes).putBoolean("finished_$key", attemptFinished)
+            .putBoolean("running_$key", attemptRunning && !attemptFinished)
+            .putLong("deadline_$key", if (attemptRunning && !attemptFinished) attemptDeadlineMillis else 0L).apply()
     }
-    LaunchedEffect(activeAttempt?.id, attemptRunning, attemptFinished) {
-        while (attemptRunning && !attemptFinished && attemptSeconds > 0) {
-            kotlinx.coroutines.delay(1000)
-            attemptSeconds = (attemptSeconds - 1).coerceAtLeast(0)
-        }
-        if (attemptSeconds == 0 && attemptRunning) {
-            attemptRunning = false
-            status = "Time is up. Your answer notes have been saved on this device."
+    LaunchedEffect(activeAttempt?.id, attemptRunning, attemptFinished, attemptDeadlineMillis) {
+        while (attemptRunning && !attemptFinished && attemptDeadlineMillis > 0L) {
+            val remaining = (((attemptDeadlineMillis - System.currentTimeMillis()).coerceAtLeast(0L) + 999L) / 1000L).toInt()
+            attemptSeconds = remaining
+            if (remaining <= 0) {
+                attemptRunning = false
+                attemptFinished = true
+                attemptDeadlineMillis = 0L
+                status = "Time is up. Your answer notes have been saved on this device."
+                break
+            }
+            kotlinx.coroutines.delay(250L)
         }
     }
     LaunchedEffect(session.userId,subjects) { load { syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) } } }
@@ -132,8 +146,19 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             Text("Paper ${active.paperNumber} / ${active.variant}", style=MaterialTheme.typography.titleMedium)
                             Text("Time remaining: ${attemptSeconds / 60}:${(attemptSeconds % 60).toString().padStart(2, '0')}", style=MaterialTheme.typography.headlineSmall, color=if (attemptSeconds < 60) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { attemptRunning = !attemptRunning && attemptSeconds > 0 && !attemptFinished }, enabled = attemptSeconds > 0 && !attemptFinished) { Text(if (attemptRunning) "Pause timer" else "Resume timer") }
-                                OutlinedButton(onClick = { attemptRunning = false; attemptFinished = true; status = "Attempt finished. Notes are saved locally; review them against the mark scheme." }) { Text(if (attemptFinished) "Finished" else "Finish attempt") }
+                                Button(onClick = {
+                                    if (attemptRunning) {
+                                        attemptSeconds = (((attemptDeadlineMillis - System.currentTimeMillis()).coerceAtLeast(0L) + 999L) / 1000L).toInt()
+                                        attemptRunning = false
+                                        attemptDeadlineMillis = 0L
+                                        status = "Timer paused. Notes are saved locally."
+                                    } else if (attemptSeconds > 0 && !attemptFinished) {
+                                        attemptDeadlineMillis = System.currentTimeMillis() + attemptSeconds * 1000L
+                                        attemptRunning = true
+                                        status = "Timer running. It accounts for time spent away from the app."
+                                    }
+                                }, enabled = attemptSeconds > 0 && !attemptFinished) { Text(if (attemptRunning) "Pause timer" else "Resume timer") }
+                                OutlinedButton(onClick = { attemptRunning = false; attemptDeadlineMillis = 0L; attemptFinished = true; status = "Attempt finished. Notes are saved locally; review them against the mark scheme." }) { Text(if (attemptFinished) "Finished" else "Finish attempt") }
                             }
                             Text("Open the PDF, then return here to write your answers. Notes save automatically on this device.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -164,7 +189,8 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             }
                             OutlinedTextField(value=attemptNotes, onValueChange={ attemptNotes=it }, modifier=Modifier.fillMaxWidth().heightIn(min=220.dp), label={ Text("Answer sheet / working") }, placeholder={ Text("Write answers, working and question numbers here…") }, minLines=8)
                             Text("Self-mark against the official mark scheme. This version does not automatically grade PDFs or award XP.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
-                            OutlinedButton(onClick={ activeAttempt=null; attemptRunning=false }) { Text("Return to paper catalogue") }
+                            OutlinedButton(onClick={ activeAttempt=null }) { Text("Return to paper catalogue") }
+                            Text("Timer uses a saved wall-clock deadline, so closing and reopening the app will not reset elapsed time. Pause it if you want it stopped.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
