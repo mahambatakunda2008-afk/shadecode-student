@@ -35,16 +35,45 @@ class NativeApi {
         if (profile.subjects.isEmpty()) return emptyList()
         val rows = request("GET", "/rest/v1/subjects?select=id,name&user_id=eq.${session.userId}&order=name.asc", accessToken = session.accessToken)
         val array = JSONArray(rows)
-        val allowed = profile.subjects.map { it.trim().lowercase() }.toSet()
+        val allowed = profile.subjects.flatMap { code ->
+            val label = NativeSubjectCatalog.labelFor(code)
+            val mappedLabel = when {
+                code.equals("maths", true) || code.equals("mathematics", true) -> "Mathematics"
+                code.equals("computer-science", true) || code.equals("computer_science", true) || code.equals("coding", true) -> "Computer Science"
+                code.equals("english", true) && profile.studyLevel.equals("a-level", true) -> "English Language"
+                code.equals("business", true) && profile.studyLevel.equals("lower-secondary", true) -> "Business Studies"
+                else -> label
+            }
+            listOf(code, label, mappedLabel)
+        }.map { normalizeSubjectKey(it) }.toSet()
         val result = mutableListOf<NativeSubjectEntity>()
         for (i in 0 until array.length()) {
             val row = array.getJSONObject(i)
             val name = row.optString("name").trim()
-            if (name.isBlank() || name.equals("general", ignoreCase = true) || name.lowercase() !in allowed) continue
-            result += NativeSubjectEntity(row.getString("id"), name, name.lowercase())
+            if (name.isBlank() || name.equals("general", ignoreCase = true) || normalizeSubjectKey(name) !in allowed) continue
+            result += NativeSubjectEntity(row.getString("id"), name, normalizeSubjectKey(name))
         }
         return result
     }
+
+    /** Update only learner-editable profile fields; the database trigger synchronizes the subject catalog. */
+    fun saveLearnerProfile(session: NativeSession, profile: NativeProfile) {
+        val body = JSONObject()
+            .put("display_name", profile.displayName.trim().ifBlank { "Student" })
+            .put("study_level", profile.studyLevel.trim().ifBlank { "upper-secondary" })
+            .put("subjects", JSONArray(profile.subjects.map { NativeSubjectCatalog.codeFor(it) }.distinct()))
+            .put("onboarding_completed", true)
+        request(
+            "PATCH",
+            "/rest/v1/profiles?id=eq.${session.userId}",
+            body.toString(),
+            accessToken = session.accessToken,
+            prefer = "return=minimal",
+        )
+    }
+
+    private fun normalizeSubjectKey(value: String): String =
+        value.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
 
     fun loadLessons(session: NativeSession, subjectId: String): List<NativeLessonEntity> {
         val rows = request("GET", "/rest/v1/learn_lessons?select=id,subject_id,topic,title,description,difficulty,blocks,progress,updated_at&user_id=eq.${session.userId}&subject_id=eq.$subjectId&order=updated_at.desc&limit=100", accessToken = session.accessToken)
