@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   ArrowLeft, BookOpen, Zap, Dna, Globe, FlaskConical,
   Calculator, Brain, Code2, TrendingUp, Languages, Music,
-  Palette, Sparkles, ChevronRight, Plus,
+  Palette, Sparkles, ChevronRight, Plus, Search, X,
 } from "lucide-react";
 
 type SubjectTheme = {
@@ -47,6 +47,10 @@ export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
+  const [subjectQuery, setSubjectQuery] = useState("");
+  const [addingSubject, setAddingSubject] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -68,6 +72,44 @@ export default function SubjectsPage() {
       }
     })();
   }, []);
+
+
+  const subjectCatalogue: { group: string; items: string[] }[] = [
+    { group: "Mathematics & sciences", items: ["Mathematics", "Additional Mathematics", "Further Mathematics", "Statistics", "Numeracy", "Physics", "Chemistry", "Biology", "Integrated Science", "Combined Science", "Environmental Science", "Agriculture", "Computer Science", "ICT", "Programming", "Electronics"] },
+    { group: "Languages & literature", items: ["English Language", "English Literature", "Shona", "Ndebele", "French", "Portuguese", "Spanish", "Chinese", "Other Language", "Literature in English", "Communication Skills"] },
+    { group: "Humanities & social sciences", items: ["Geography", "History", "Religious Studies", "Sociology", "Psychology", "Global Perspectives", "Government", "Citizenship", "Social Studies", "Philosophy"] },
+    { group: "Business & commerce", items: ["Business Studies", "Economics", "Accounting", "Commerce", "Entrepreneurship", "Finance", "Marketing", "Management", "Travel and Tourism"] },
+    { group: "Creative, practical & technical", items: ["Art and Design", "Music", "Design and Technology", "Food and Nutrition", "Physical Education", "Sport Science", "Engineering", "Electrical Technology", "Building Studies", "Agricultural Science", "Fashion and Textiles", "Media Studies"] },
+    { group: "University, TVET & professional", items: ["Data Science", "Artificial Intelligence", "Web Development", "Cybersecurity", "Networking", "Software Engineering", "Nursing", "Public Health", "Law", "Education", "Project Management", "Research Methods"] },
+  ];
+  const existingKeys = new Set(subjects.map(subject => subject.name.trim().toLowerCase()));
+  const matchingCatalogue = subjectCatalogue.map(group => ({
+    ...group,
+    items: group.items.filter(name => name.toLowerCase().includes(subjectQuery.trim().toLowerCase()) && !existingKeys.has(name.toLowerCase())),
+  })).filter(group => group.items.length > 0);
+  const addSubject = async (name: string) => {
+    setAddingSubject(name); setAddError(null); setAddSuccess(null);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { router.push("/login"); return; }
+      const response = await fetch("/api/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+        body: JSON.stringify({ subject: name }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || "Could not add this subject.");
+      const refreshed = await fetch("/api/learn", { headers: { Authorization: "Bearer " + session.access_token } });
+      if (!refreshed.ok) throw new Error("Subject saved, but the list could not refresh. Reload this page.");
+      const data = await refreshed.json();
+      setSubjects(data.subjects ?? []);
+      setAddSuccess(String(payload.subject) + " added to your study space.");
+      setSubjectQuery("");
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : "Could not add this subject.");
+    } finally { setAddingSubject(null); }
+  };
 
   // ── Loading ─────────────────────────────────────────────────────────────────
 
@@ -117,6 +159,39 @@ export default function SubjectsPage() {
             </div>
           </div>
         </div>
+
+
+        <section aria-labelledby="add-subject-heading" style={{ marginBottom: 28, padding: 20, borderRadius: 18, border: "1px solid var(--card-border)", background: "var(--surface)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+            <div>
+              <h2 id="add-subject-heading" style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--foreground)" }}>Build your subject list</h2>
+              <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.5, color: "var(--muted-foreground)" }}>Add what you actually study. You can choose subjects across fields, then tailor your level and syllabus in your learning profile.</p>
+            </div>
+            <Plus size={20} color="var(--primary)" aria-hidden="true" />
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid var(--card-border)", borderRadius: 11, padding: "0 12px", background: "var(--background)" }}>
+            <Search size={17} color="var(--muted-foreground)" aria-hidden="true" />
+            <input value={subjectQuery} onChange={event => { setSubjectQuery(event.target.value); setAddError(null); setAddSuccess(null); }} placeholder="Find a subject, e.g. Biology or Web Development" aria-label="Search subject catalogue" style={{ flex: 1, minWidth: 0, padding: "12px 0", border: 0, outline: "none", background: "transparent", color: "var(--foreground)", fontSize: 13 }} />
+            {subjectQuery && <button type="button" onClick={() => setSubjectQuery("")} aria-label="Clear search" style={{ border: 0, background: "transparent", color: "var(--muted-foreground)", cursor: "pointer" }}><X size={16} /></button>}
+          </label>
+          {addError && <p role="alert" style={{ margin: "10px 0 0", fontSize: 12, color: "var(--danger)" }}>{addError}</p>}
+          {addSuccess && <p role="status" style={{ margin: "10px 0 0", fontSize: 12, color: "var(--primary)" }}>{addSuccess}</p>}
+          <div style={{ display: "grid", gap: 14, marginTop: 15 }}>
+            {matchingCatalogue.map(group => <div key={group.group}>
+              <h3 style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", letterSpacing: ".04em" }}>{group.group}</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {group.items.map(name => <button key={name} type="button" onClick={() => void addSubject(name)} disabled={Boolean(addingSubject)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--card-border)", borderRadius: 999, padding: "8px 11px", background: "var(--surface-2)", color: "var(--foreground)", fontSize: 12, cursor: addingSubject ? "wait" : "pointer", opacity: addingSubject && addingSubject !== name ? .55 : 1 }}>
+                  <Plus size={13} aria-hidden="true" />{addingSubject === name ? "Adding…" : name}
+                </button>)}
+              </div>
+            </div>)}
+            {matchingCatalogue.length === 0 && <p style={{ margin: 0, fontSize: 12, color: "var(--muted-foreground)" }}>No unadded catalogue subjects match. You can still add a subject by its exact name below.</p>}
+          </div>
+          <form onSubmit={event => { event.preventDefault(); if (subjectQuery.trim()) void addSubject(subjectQuery.trim()); }} style={{ display: "flex", gap: 8, marginTop: 15 }}>
+            <button type="submit" disabled={!subjectQuery.trim() || Boolean(addingSubject)} className="gen-btn" style={{ border: "1px solid var(--card-border)", borderRadius: 10, padding: "9px 13px", background: "var(--primary-glow)", color: "var(--foreground)", fontSize: 12, fontWeight: 650, cursor: "pointer" }}>Add custom subject</button>
+          </form>
+          <p style={{ margin: "10px 0 0", fontSize: 11, lineHeight: 1.5, color: "var(--muted-foreground)" }}>Adding a subject makes it part of your profile and learning workspace. Verified syllabus coverage and generated content may vary by subject, board and level.</p>
+        </section>
 
         {/* ── Error ── */}
         {error && (
