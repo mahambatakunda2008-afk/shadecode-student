@@ -368,3 +368,27 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 15. Never invent curriculum topics, exam readiness scores, mastery claims or academic content when real evidence is unavailable.
 16. Before building a feature, identify its source of truth and at least one producer/consumer path.
 17. Strategic roadmap items are not permission to start large future systems prematurely; execute the immediate queue and verified backlog first.
+
+
+## 2026-10-27 Subject management, catalogue breadth and learner personalisation
+
+Source of truth: docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md. This is a product-wide requirement, not a request to append a few subjects to a hard-coded list.
+
+- [x] Document the requested outcome, current limitations, planned architecture, subject taxonomy, cross-platform requirement and acceptance matrix in the focused work register.
+- [ ] P0: Audit src/app/api/subjects/route.ts (commit fbd3b388f3ec714939eb9842677046da9b7c6ae2) against actual profiles/subjects schema, triggers, auth conventions, RLS/grants and existing source of truth. Do not treat the endpoint as verified or production-ready yet.
+- [ ] P0: Add real web subject management to src/app/(app)/subjects/page.tsx: searchable/grouped picker, add/remove/custom subject, validation, loading/success/failure states and honest empty-content messaging.
+- [ ] P0: Confirm subject choices persist across refresh/relogin and flow into Learn without cross-account leakage or duplicate rows.
+- [ ] P1: Build a central catalogue with stable canonical IDs, aliases, category and pathway metadata; cover foundation/primary, lower/upper secondary, O Level, AS/A Level, university/polytechnic, TVET, professional and independent learning.
+- [ ] P1: Expand breadth across mathematics, sciences, languages, humanities/social sciences, business/commerce, computing/technology, creative/practical fields and custom course/subject entries.
+- [ ] P1: Separate selectable subjects from curriculum-mapped, curriculum-verified, published-content-ready and tool-supported status. Do not imply full syllabus coverage merely because a subject appears.
+- [ ] P1: Support per-subject exam board, qualification, syllabus code and version; allow edits after onboarding; preserve unresolved values rather than guessing.
+- [ ] P2: Define a shared learner-context contract used by web and native Android for study level, subjects, per-subject curriculum, goals, language and learning preferences.
+- [ ] P2: Wire level-appropriate teaching and adaptive difficulty to demonstrated mastery, recurring errors and prerequisites; keep memory private and learner-scoped.
+- [ ] P2: Gate subject-specific modules/tools appropriately and avoid showing fake lesson counts or unsupported curriculum claims.
+- [ ] P2: Reuse only validated, permitted, scope-matching shared learning assets; never reuse private learner work as public/shared content.
+- [ ] P3: Align Android subject management and local/offline persistence with the same contract after web source-of-truth is stable.
+- [ ] P3: Test foundation, secondary, O Level with differing subject codes, AS/A Level non-default combinations, tertiary/TVET and custom independent-learning subjects.
+- [ ] P3: Test duplicates/aliases, invalid input, auth rejection, persistence, account switching/isolation, offline/reconnect, responsive accessibility and relevant web/Android CI.
+- [ ] Release gate: verify exact commit CI, deployed web behavior and real-device Android behavior before marking complete. Update the focused register and master register with evidence.
+
+Do not call this complete while the only evidence is a committed endpoint, a successful build, a catalogue list, or a local screenshot.
