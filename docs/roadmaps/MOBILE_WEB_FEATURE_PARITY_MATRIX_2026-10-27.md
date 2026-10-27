@@ -21,9 +21,9 @@
 
 ### First-visit offline starter pack (source implementation; CI/device verification pending)
 
-- On the first visit to Exam Hub for each signed-in account, the native app offers an explicit choice to download an offline starter pack. It does not silently consume data during installation or on mobile data.
+- On the first visit to Exam Hub for each signed-in account, the native app offers a full-screen offline study setup screen showing the user's selected subjects and a clear opt-in to download an offline starter pack. It does not silently consume data during installation or on mobile data.
 - The action proceeds only when Android reports Wi-Fi or Ethernet. It attempts the newest available question paper plus its matching mark scheme for selected syllabus entries, with a 12-PDF cap for the initial pack. Existing downloads are skipped; files are stored in the private account-scoped offline library.
-- The user can skip the prompt and download individual papers later. The prompt is remembered per account.
+- The user can skip setup and download individual papers later. The setup screen is remembered per account. The prompt is remembered per account.
 - Android installation itself does not run network downloads. This is a first-use, post-install action after sign-in and opening Exam Hub.
 - This uses the existing authenticated exam catalogue and signed paper-download route. It does not bypass redistribution rights, and it only downloads papers already present in the authorized catalogue.
 - The implementation is in `NativeExamHub.kt` and requires `ACCESS_NETWORK_STATE` to avoid starting the pack over mobile data. Build and physical-device validation are still required before calling this verified.
