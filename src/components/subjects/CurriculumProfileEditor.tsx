@@ -64,7 +64,7 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, { boardId: string; qualificationId: string; level: CurriculumLevel }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { boardId: string; qualificationId: string; level: CurriculumLevel; syllabusId: string; syllabusVersion: string }>>({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -111,6 +111,8 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
         boardId: existing?.boardId ?? "",
         qualificationId: existing?.qualificationId ?? "",
         level: existing?.level ?? defaultCurriculumLevel,
+        syllabusId: existing?.syllabusId ?? "",
+        syllabusVersion: existing?.syllabusVersion ?? "",
       },
     }));
     setEditing(subject.id);
@@ -123,6 +125,10 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
     const qualificationId = slug(draft?.qualificationId ?? "");
     if (!draft?.boardId || !qualificationId) {
       setError("Choose an exam board and enter the qualification for this subject.");
+      return;
+    }
+    if (Boolean(draft.syllabusId.trim()) !== Boolean(draft.syllabusVersion.trim())) {
+      setError("Enter both a syllabus code and version/year, or leave both blank for automatic verified-version selection.");
       return;
     }
     setSaving(subject.id);
@@ -142,6 +148,8 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
         level: draft.level,
         subjectId,
         subjectName: subject.name,
+        syllabusId: draft.syllabusId.trim() || undefined,
+        syllabusVersion: draft.syllabusVersion.trim() || undefined,
       };
       const next = identities.filter(item =>
         key(item.subjectName || item.subjectId) !== key(subject.name) &&
@@ -219,8 +227,16 @@ export function CurriculumProfileEditor({ subjects, studyLevel }: { subjects: Su
                       {LEVELS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                     </select>
                   </label>
+                  <label className="grid gap-1.5 text-xs font-medium text-[var(--muted-foreground)]">
+                    Syllabus code (optional)
+                    <input className={fieldClass} value={draft.syllabusId} onChange={event => setDrafts(current => ({ ...current, [subject.id]: { ...draft, syllabusId: event.target.value } }))} placeholder="e.g. 9702" maxLength={40} />
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-medium text-[var(--muted-foreground)]">
+                    Syllabus version / year (optional)
+                    <input className={fieldClass} value={draft.syllabusVersion} onChange={event => setDrafts(current => ({ ...current, [subject.id]: { ...draft, syllabusVersion: event.target.value } }))} placeholder="e.g. 2025-2027" maxLength={40} />
+                  </label>
                   <div className="sm:col-span-2 lg:col-span-3 flex flex-wrap items-center justify-between gap-3">
-                    <p className="max-w-2xl text-xs leading-5 text-[var(--muted-foreground)]">Syllabus code and version are resolved from verified curriculum records where available. If this combination is not verified, the subject remains selectable but syllabus-specific generation may be unavailable.</p>
+                    <p className="max-w-2xl text-xs leading-5 text-[var(--muted-foreground)]">Enter both syllabus fields to request a specific version, or leave both blank to let Shadecode select the latest matching verified version. If the requested combination is not verified, syllabus-specific generation will not silently switch to another version.</p>
                     <button type="button" onClick={() => void save(subject)} disabled={saving === subject.id} className="ssc-button">
                       {saving === subject.id ? "Saving…" : "Save curriculum"}
                     </button>
