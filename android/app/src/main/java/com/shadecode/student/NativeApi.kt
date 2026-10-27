@@ -226,6 +226,22 @@ class NativeApi {
         request("PATCH", "/rest/v1/learn_lessons?id=eq.$lessonId&user_id=eq.${session.userId}", JSONObject().put("progress", percentage).toString(), session.accessToken, "return=minimal")
     }
 
+    fun createSignedExamPaperUrl(session: NativeSession, paperId: String): String {
+        require(paperId.matches(Regex("[0-9a-fA-F-]{36}"))) { "Invalid paper identifier." }
+        val response = JSONObject(
+            request(
+                "GET",
+                "/api/native/exam-hub/papers/${java.net.URLEncoder.encode(paperId, "UTF-8")}",
+                accessToken = session.accessToken,
+                urlBase = BuildConfig.APP_BASE_URL.trimEnd('/'),
+            )
+        )
+        val signedUrl = response.optString("signedUrl")
+        if (signedUrl.isBlank()) throw IllegalStateException(response.optString("error").ifBlank { "Could not open this paper." })
+        return if (signedUrl.startsWith("https://") || signedUrl.startsWith("http://")) signedUrl
+        else baseUrl.trimEnd('/') + "/" + signedUrl.trimStart('/')
+    }
+
     fun loadExamSyllabi(session: NativeSession, allowedSubjects: List<String>): List<NativeExamSyllabus> {
         if (allowedSubjects.isEmpty()) return emptyList()
         val rows = JSONArray(request("GET", "/rest/v1/syllabi?select=id,subject,board,levels&order=subject.asc", accessToken = session.accessToken))
