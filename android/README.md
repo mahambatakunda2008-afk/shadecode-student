@@ -50,3 +50,12 @@ Never commit signing keys, keystores, or Play service-account credentials. Unsig
 ## Tagged release
 
 After the intended changes are merged to `main`, push a tag matching `android-v*`. The Android workflow then builds the APK and AAB and publishes them as a GitHub Release.
+
+
+## Current release and product work register
+
+See [the subject-personalization and Android release register](../docs/roadmaps/SUBJECT_PERSONALIZATION_AND_ANDROID_RELEASE_REGISTER_2026-10-27.md) for the agreed scope, implementation findings, acceptance criteria, release checklist, and items still incomplete.
+
+Important release rule: a commit or a successful build is not proof of a production release. Match the build artifact's workflow `head_sha` to the exact source commit. Confirm signing before calling an APK production-ready. Real-device smoke testing and Google Play publication must be reported separately and only after they occur.
+
+The mobile release checklist covers startup, authentication/profile, navigation, offline Snap & Extract, saved-extract search, persistence, supported Android versions/ABIs, and the status of signing credentials. Subject selection and profile personalization must be aligned with the web client; a web-only change does not automatically ship in the native app.
