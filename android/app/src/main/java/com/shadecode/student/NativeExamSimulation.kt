@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ fun NativeExamSimulationScreen(
     onBrowsePastPapers: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val scroll = rememberScrollState()
     var selectedSubject by remember(subjects) { mutableStateOf(subjects.firstOrNull()?.name.orEmpty()) }
     var count by remember { mutableIntStateOf(10) }
@@ -66,6 +68,61 @@ fun NativeExamSimulationScreen(
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
+    var attemptRestored by remember { mutableStateOf(false) }
+
+    // Restore an unfinished attempt before enabling autosave, so initial empty Compose state
+    // cannot overwrite a saved attempt when Android recreates the activity.
+    LaunchedEffect(session.userId) {
+        val saved = NativeExamAttemptStore.read(context, session.userId)
+        if (saved != null) {
+            runCatching {
+                val exam = JSONObject(saved.paperJson)
+                val rawArray = JSONArray(saved.questionsJson)
+                val parsed = mutableListOf<NativeSimQuestion>()
+                for (i in 0 until rawArray.length()) {
+                    val q = rawArray.optJSONObject(i) ?: continue
+                    val id = q.optString("id")
+                    val prompt = q.optString("question")
+                    val marks = q.optInt("marks", 0)
+                    if (id.isBlank() || prompt.isBlank() || marks <= 0) continue
+                    val opts = mutableListOf<String>()
+                    q.optJSONArray("options")?.let { a -> for (j in 0 until a.length()) opts += a.optString(j) }
+                    parsed += NativeSimQuestion(id, q.optString("type", "short_answer"), prompt, opts, marks, q.optString("topic"), q)
+                }
+                if (parsed.isNotEmpty()) {
+                    paper = exam
+                    questions = parsed
+                    questionsJson = rawArray
+                    answers = JSONObject(saved.answersJson).let { objectJson ->
+                        buildMap { val keys = objectJson.keys(); while (keys.hasNext()) { val key = keys.next(); put(key, objectJson.optString(key)) } }
+                    }
+                    selectedSubject = saved.subject
+                    secondsLeft = saved.secondsLeft.coerceAtLeast(0)
+                    taking = saved.taking && secondsLeft > 0
+                    status = "Recovered your unfinished exam on this device."
+                }
+            }
+        }
+        attemptRestored = true
+    }
+
+    LaunchedEffect(paper, answers, selectedSubject, secondsLeft, taking, report, attemptRestored) {
+        if (!attemptRestored) return@LaunchedEffect
+        if (paper == null || report != null) {
+            NativeExamAttemptStore.clear(context, session.userId)
+        } else if (questions.isNotEmpty()) {
+            NativeExamAttemptStore.write(
+                context = context,
+                userId = session.userId,
+                subject = selectedSubject,
+                paperJson = paper.toString(),
+                questionsJson = questionsJson.toString(),
+                answersJson = JSONObject().apply { answers.forEach { (id, answer) -> put(id, answer) } }.toString(),
+                secondsLeft = secondsLeft,
+                taking = taking,
+            )
+        }
+    }
 
     LaunchedEffect(taking, secondsLeft) {
         if (taking && secondsLeft > 0) {
