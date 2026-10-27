@@ -107,3 +107,11 @@ Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not app
 7. Run release gates, produce a commit-matched artifact, test on device, then publish with honest release notes.
 
 **Current truth:** Native Android is a real Kotlin/Compose project, but the existing Android README explicitly says feature parity is incomplete. This matrix is the contract for closing that gap, not evidence that the gap has already been closed.
+
+
+## 2026-10-27 implementation update
+
+- **Native profile and subject selection: Partial.** Searchable multi-subject selection, custom subjects, display name and study level are implemented in the Android Compose Profile screen. Cross-client persistence still requires a successful Android build and live Supabase/RLS verification.
+- **Native focus timer: Partial.** A local 15/25/45-minute focus sprint timer is now available in the Practice workspace. It is a timer only; it does not yet sync focus sessions or statistics with the web Focus module.
+- **Offline subject cache removal: corrected in source.** When a learner removes every subject from the profile, the native client now clears stale cached subjects. If subjects remain selected but the remote catalog is temporarily empty, the client preserves cached subjects to avoid accidental data loss.
+- **Build/release: pending.** Do not treat these source changes as a release until the Android workflow succeeds and the artifact is checked against its source commit. Real-device verification remains required.
