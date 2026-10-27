@@ -21,6 +21,11 @@ on:
 permissions:
   contents: write
 
+# Keep only the newest Android build active for a branch while code is changing.
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   ANDROID_VERSION_CODE: ${{ github.run_number }}
   ANDROID_VERSION_NAME: "0.2.0"
