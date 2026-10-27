@@ -194,3 +194,11 @@ This is a discovery directory, not a claim that external sites have been ingeste
 
 ### Next implementation slice
 Build the native Exam Simulation around existing indexed paper records rather than AI-generated question payloads: choose an actual question-paper record, open/render its PDF inside the app where practical, provide a timer and locally durable answer sheet, let learners attach the matching mark scheme for self-marking, and make Cortex feedback an optional post-attempt enhancement. Only score objectively when a trusted mark scheme or verified marking workflow exists. Continue to validate paper provenance, subject/board/level alignment, paper component and variant, and rights before importing more files.
+
+
+## Offline past-paper library implementation update (2026-10-27)
+
+- **Native offline paper library: Partial, source implemented.** The Exam Hub now offers a per-paper **Download for offline** action. It obtains a short-lived authenticated paper URL, downloads the PDF into app-private storage (50 MB per-file limit), validates the PDF signature, writes through a temporary file, indexes the file under the signed-in account, and can reopen/remove saved PDFs without a network connection. A FileProvider grants read-only access to the external PDF viewer; raw private file paths are not exposed.
+- **Offline availability boundary:** the first download still needs a connection and the paper must already exist in the authorized catalogue. Once downloaded, reopening that PDF is offline. The catalogue itself and not-yet-downloaded papers still require network access.
+- **Bundled real-paper packs are a separate release item.** Cambridge and ZIMSEC past papers may be copyrighted even when their PDFs are publicly reachable. Do not include them in the APK/AAB until Shadecode has explicit redistribution permission or a clearly applicable licence. Bundle only paper packs with recorded source, board/subject/year metadata, licence/permission evidence, attribution requirements and a checksum. Do not represent third-party links as permission to redistribute.
+- **Not yet verified:** latest Android CI for the offline-library source changes is pending; no physical-device airplane-mode test has been performed. Test download → force-stop/reopen → airplane mode → open PDF → remove, plus account-switch isolation, before marking this Verified.
