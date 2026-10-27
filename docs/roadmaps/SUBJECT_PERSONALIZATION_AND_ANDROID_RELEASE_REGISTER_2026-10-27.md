@@ -172,3 +172,18 @@ The current Android profile editor allows editing the existing study-level field
 - [ ] Extend queued offline behavior to other mutation-capable modules only after each API and conflict contract has been reviewed.
 
 The queue currently covers task creation, task completion and timetable replacement only. This is not a claim that the entire app works offline, and a successful CI build alone would not prove reliable background sync on a device.
+
+## Android release continuation update: 2026-10-27
+
+### Exam Simulation recovery change
+- Implemented `NativeExamAttemptStore.kt` for private, device-local, per-account recovery of an unfinished native exam.
+- `NativeExamSimulation.kt` now restores the saved paper/questions, answer map, selected subject, remaining time and taking state when the screen is recreated or reopened.
+- The screen writes recovery checkpoints as the paper, answers and timer state change. A recovered attempt that has reached zero seconds remains submittable for marking.
+- The stored attempt is not uploaded by this recovery mechanism. It uses Android private app preferences keyed by the authenticated Supabase user ID.
+- **Not yet verified:** fresh Android compilation, force-stop/process-death recovery on a real device, persistence across an app update, and recovery behaviour after logout/re-login. Treat this as implemented code awaiting verification, not a release-certified feature.
+
+### Current CI evidence
+- Latest observed Android workflow run: [run 256](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772124), still in progress at the last check.
+- Latest observed web CI run: [run 4315](https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40588772129), still in progress at the last check.
+- The older debug APK must not be represented as containing this recovery change. Use only an artifact whose workflow run head SHA matches the final tested commit.
+- Offline bundled-paper manifest remains intentionally empty (`android/app/src/main/assets/offline-papers/index.json` is `[]`) pending documented redistribution rights. Online downloads saved by Exam Hub remain a separate path.
