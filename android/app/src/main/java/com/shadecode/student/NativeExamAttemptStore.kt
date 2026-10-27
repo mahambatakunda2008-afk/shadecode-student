@@ -60,12 +60,11 @@ object NativeExamAttemptStore {
             .put("taking", taking)
             .put("savedAt", System.currentTimeMillis())
             .toString()
-        check(prefs(context).edit().putString(key(userId), encoded).commit()) {
-            "Could not save your exam recovery checkpoint on this device."
-        }
+        // apply() schedules disk I/O off the UI thread; this checkpoint may be written each timer tick.
+        prefs(context).edit().putString(key(userId), encoded).apply()
     }
 
     fun clear(context: Context, userId: String) {
-        if (userId.isNotBlank()) prefs(context).edit().remove(key(userId)).commit()
+        if (userId.isNotBlank()) prefs(context).edit().remove(key(userId)).apply()
     }
 }
