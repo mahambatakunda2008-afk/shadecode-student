@@ -375,10 +375,10 @@ Existing tables: `achievements`, `cortex_insights`, `daily_challenges`, `exams`,
 Source of truth: docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md. This is a product-wide requirement, not a request to append a few subjects to a hard-coded list.
 
 - [x] Document the requested outcome, current limitations, planned architecture, subject taxonomy, cross-platform requirement and acceptance matrix in the focused work register.
-- [ ] P0: Audit src/app/api/subjects/route.ts (commit fbd3b388f3ec714939eb9842677046da9b7c6ae2) against actual profiles/subjects schema, triggers, auth conventions, RLS/grants and existing source of truth. Do not treat the endpoint as verified or production-ready yet.
-- [ ] P0: Add real web subject management to src/app/(app)/subjects/page.tsx: searchable/grouped picker, add/remove/custom subject, validation, loading/success/failure states and honest empty-content messaging.
+- [ ] P0: Finish audit and test of src/app/api/subjects/route.ts (original commit fbd3b388f3ec714939eb9842677046da9b7c6ae2; latest implementation includes alias-aware add and non-destructive active-selection removal). Schema/trigger constraints are documented, but CI and end-to-end behavior are not yet verified.
+- [x] Initial web subject management UI committed in src/app/(app)/subjects/page.tsx: searchable grouped catalogue, add/custom subject, and remove-from-active-selection controls. End-to-end behavior remains unverified.
 - [ ] P0: Confirm subject choices persist across refresh/relogin and flow into Learn without cross-account leakage or duplicate rows.
-- [ ] P1: Build a central catalogue with stable canonical IDs, aliases, category and pathway metadata; cover foundation/primary, lower/upper secondary, O Level, AS/A Level, university/polytechnic, TVET, professional and independent learning.
+- [x] Initial central catalogue committed at src/lib/subjects/catalog.ts with stable IDs, aliases, categories and pathway metadata; completeness and curriculum mapping remain open.
 - [ ] P1: Expand breadth across mathematics, sciences, languages, humanities/social sciences, business/commerce, computing/technology, creative/practical fields and custom course/subject entries.
 - [ ] P1: Separate selectable subjects from curriculum-mapped, curriculum-verified, published-content-ready and tool-supported status. Do not imply full syllabus coverage merely because a subject appears.
 - [ ] P1: Support per-subject exam board, qualification, syllabus code and version; allow edits after onboarding; preserve unresolved values rather than guessing.
