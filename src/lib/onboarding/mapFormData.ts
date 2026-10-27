@@ -36,6 +36,8 @@ export interface OnboardingApiPayload {
   study_level: StudyLevel;
   learning_goal: LearningGoal;
   subject_interests: SubjectInterest[];
+  /** Full learner-selected subject names, independent of recommendation-interest enums. */
+  selected_subjects: string[];
   goals: string[];
   display_name?: string;
   daily_goal_minutes?: number;
@@ -56,7 +58,15 @@ export interface OnboardingApiPayload {
 }
 
 function slug(value: string): string { return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
-function subjectLabel(subjectId: string): string { return subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+const SUBJECT_ID_TO_LABEL: Record<string, string> = {
+  maths: "Mathematics", mathematics: "Mathematics", english: "English", "computer-science": "Computer Science",
+  "early-literacy": "Early Literacy", "early-numeracy": "Early Numeracy", discovery: "My World & Discovery",
+  creative: "Creative Expression", movement: "Movement & Wellbeing", "social-studies": "Social Studies",
+  "art-design": "Art and Design", "food-nutrition": "Food and Nutrition", "physical-education": "Physical Education",
+};
+function subjectLabel(subjectId: string): string {
+  return SUBJECT_ID_TO_LABEL[subjectId] ?? subjectId.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 function boardIdFor(value: string): string { const id = slug(value); return id === "cambridge-international" ? "cambridge" : id; }
 
 function buildExactCurriculumSubjects(form: Partial<OnboardingFormData>): OnboardingCurriculumSubject[] {
@@ -104,7 +114,7 @@ export function mapOnboardingFormData(form: Partial<OnboardingFormData>): Onboar
   const subject_interests = (form.subjects ?? []).map((subject) => SUBJECT_ID_TO_INTEREST[subject]).filter((subject): subject is SubjectInterest => Boolean(subject));
 
   return {
-    education_level, study_level, learning_goal, subject_interests, goals,
+    education_level, study_level, learning_goal, subject_interests, selected_subjects: (form.subjects ?? []).map(subjectLabel), goals,
     display_name: form.displayName?.trim() || undefined,
     daily_goal_minutes: Number.isFinite(form.dailyGoalMinutes) ? form.dailyGoalMinutes : 30,
     study_style: form.studyStyle === "structured" ? "structured" : "flexible",
