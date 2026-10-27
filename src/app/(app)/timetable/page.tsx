@@ -214,60 +214,44 @@ export default function Timetable() {
   const totalStudyMins = schedule.filter(s => !s.is_break).length * (Number.parseInt(duration, 10) || 0);
   const studySessions = schedule.filter(s => !s.is_break).length;
 
-  const cardStyle = {
-    background: "var(--card)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "12px",
-    padding: "16px",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    background: "var(--muted)",
-    border: "1px solid var(--card-border)",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    color: "var(--foreground)",
-    fontSize: "14px",
-    outline: "none",
-    boxSizing: "border-box" as const,
-  };
+  // Shared chip styles. Per-subject colours are data-driven, so those few values stay inline; everything else is tokens/utilities.
+  const chipBase = "inline-flex min-h-10 cursor-pointer items-center rounded-lg border px-3.5 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--primary)]";
+  const chipOn = "border-[color-mix(in_srgb,var(--primary)_40%,transparent)] bg-[var(--primary-glow)] font-bold text-[var(--primary)]";
+  const chipOff = "border-transparent bg-[var(--muted)] font-normal text-[var(--muted-foreground)] hover:text-[var(--foreground)]";
+  const chipBreakOn = "border-amber-500/40 bg-amber-500/15 font-bold text-amber-500";
+  const sectionTitle = "mb-2.5 text-sm font-bold";
+  const fieldLabel = "mb-1.5 text-xs text-[var(--muted-foreground)]";
 
   return (
-    <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+    <div className="flex flex-col gap-4 px-4 pb-6 pt-6 sm:px-6 sm:pt-8">
+      <div className="flex items-start gap-3">
         <ShadecodeFeatureIcon feature="timetable" size="sm" />
-        <div>
-          <p style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--primary)", margin: 0 }}>
-            Plan your study time
-          </p>
-          <h1 style={{ fontSize: "28px", fontWeight: 800, margin: "2px 0 0" }}>Timetable</h1>
-          <p style={{ color: "var(--muted-foreground)", fontSize: "14px", marginTop: "4px" }}>
-            Build your colour-coded study plan
-          </p>
+        <div className="min-w-0">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--primary)]">Plan your study time</p>
+          <h1 className="mt-0.5 text-2xl font-extrabold sm:text-[28px]">Timetable</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">Build your colour-coded study plan</p>
         </div>
       </div>
 
       {/* Subject selector */}
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: "10px", fontSize: "14px" }}>Subjects</p>
+      <div className="ssc-card p-4">
+        <p className={sectionTitle}>Subjects</p>
 
         {userSubjects.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
+          <div className="mb-2.5 flex flex-wrap gap-2">
             {userSubjects.map((s, i) => {
               const color = SUBJECT_COLORS[i % SUBJECT_COLORS.length];
               const selected = selectedSubjects.includes(s.name);
               return (
-                <button type="button" key={s.id} onClick={() => toggleSubject(s.name)} aria-pressed={selected} style={{
-                  padding: "6px 14px", borderRadius: "20px", fontSize: "13px", cursor: "pointer",
-                  background: selected ? `${color}20` : "var(--muted)",
-                  border: selected ? `1px solid ${color}60` : "1px solid transparent",
-                  color: selected ? color : "var(--muted-foreground)",
-                  fontWeight: selected ? 700 : 400,
-                  transition: "all 0.2s",
-                }}>
-                  {selected && <span style={{ marginRight: "4px" }}>●</span>}
+                <button
+                  type="button"
+                  key={s.id}
+                  onClick={() => toggleSubject(s.name)}
+                  aria-pressed={selected}
+                  className={`inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--primary)] ${selected ? "font-bold" : "border-transparent bg-[var(--muted)] font-normal text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
+                  style={selected ? { background: `${color}20`, borderColor: `${color}60`, color } : undefined}
+                >
+                  {selected && <span className="mr-1" aria-hidden="true">●</span>}
                   {s.name}
                 </button>
               );
@@ -275,95 +259,72 @@ export default function Timetable() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="flex gap-2">
           <input
             placeholder="Add subject..."
             aria-label="Add a custom subject"
             value={customSubject}
             onChange={e => setCustomSubject(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCustomSubject()}
-            style={{ ...inputStyle, flex: 1 }}
+            className="ssc-input min-w-0 flex-1"
           />
-          <button type="button" aria-label="Add subject" onClick={addCustomSubject} style={{
-            background: "var(--primary)", color: "white", border: "none",
-            borderRadius: "8px", padding: "10px 14px", fontWeight: 700, cursor: "pointer",
-          }}>+</button>
+          <button type="button" aria-label="Add subject" onClick={addCustomSubject} className="ssc-button min-w-11 px-3.5 font-bold">+</button>
         </div>
 
         {selectedSubjects.length > 0 && (
-          <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {selectedSubjects.map((s, i) => (
-              <span key={s} style={{
-                fontSize: "12px", padding: "3px 10px", borderRadius: "20px",
-                background: `${SUBJECT_COLORS[i % SUBJECT_COLORS.length]}20`,
-                color: SUBJECT_COLORS[i % SUBJECT_COLORS.length],
-                fontWeight: 600,
-                display: "flex", alignItems: "center", gap: "4px",
-              }}>
-                {s}
-                <button type="button" aria-label={`Remove ${s} from schedule`} onClick={() => setSelectedSubjects(prev => prev.filter(x => x !== s))}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0, fontSize: "12px" }}>
-                  ✕
-                </button>
-              </span>
-            ))}
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {selectedSubjects.map((s, i) => {
+              const color = SUBJECT_COLORS[i % SUBJECT_COLORS.length];
+              return (
+                <span key={s} className="flex max-w-full items-center gap-1 rounded-full py-1 pl-3 pr-1.5 text-xs font-semibold" style={{ background: `${color}20`, color }}>
+                  <span className="min-w-0 truncate">{s}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${s} from schedule`}
+                    onClick={() => setSelectedSubjects(prev => prev.filter(x => x !== s))}
+                    className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full text-xs text-inherit hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-[color:var(--primary)]"
+                  >
+                    <span aria-hidden="true">✕</span>
+                  </button>
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Time settings */}
-      <div style={cardStyle}>
-        <p style={{ fontWeight: 700, marginBottom: "10px", fontSize: "14px" }}>Schedule Settings</p>
+      <div className="ssc-card p-4">
+        <p className={sectionTitle}>Schedule Settings</p>
 
         {/* Start time presets */}
-        <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "6px" }}>Start time</p>
-        <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+        <p className={fieldLabel}>Start time</p>
+        <div className="mb-2.5 flex flex-wrap gap-1.5">
           {TIME_PRESETS.map(p => (
-            <button type="button" key={p.value} onClick={() => setStartTime(p.value)} aria-pressed={startTime === p.value} style={{
-              padding: "6px 12px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
-              background: startTime === p.value ? "color-mix(in srgb, var(--primary) 15%, transparent)" : "var(--muted)",
-              border: startTime === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
-              color: startTime === p.value ? "var(--primary)" : "var(--muted-foreground)",
-              fontWeight: startTime === p.value ? 700 : 400,
-            }}>
+            <button type="button" key={p.value} onClick={() => setStartTime(p.value)} aria-pressed={startTime === p.value} className={`${chipBase} ${startTime === p.value ? chipOn : chipOff}`}>
               {p.label}
             </button>
           ))}
-          <input type="time" aria-label="Schedule start time" value={startTime} onChange={e => setStartTime(e.target.value)}
-            style={{ ...inputStyle, width: "110px", padding: "6px 10px", fontSize: "12px" }} />
+          <input type="time" aria-label="Schedule start time" value={startTime} onChange={e => setStartTime(e.target.value)} className="ssc-input min-h-10! w-[7.5rem]! px-2.5! py-1.5! text-[13px]!" />
         </div>
 
         {/* Study duration presets */}
-        <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "6px" }}>Study session length</p>
-        <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+        <p className={fieldLabel}>Study session length</p>
+        <div className="mb-2.5 flex flex-wrap gap-1.5">
           {DURATION_PRESETS.map(p => (
-            <button type="button" key={p.value} onClick={() => setDuration(p.value)} aria-pressed={duration === p.value} style={{
-              padding: "8px 14px", borderRadius: "8px", fontSize: "13px", cursor: "pointer",
-              background: duration === p.value ? "var(--primary-glow)" : "var(--muted)",
-              border: duration === p.value ? "1px solid color-mix(in srgb, var(--primary) 40%, transparent)" : "1px solid transparent",
-              color: duration === p.value ? "var(--primary)" : "var(--muted-foreground)",
-              fontWeight: duration === p.value ? 700 : 400,
-            }}>
+            <button type="button" key={p.value} onClick={() => setDuration(p.value)} aria-pressed={duration === p.value} className={`${chipBase} ${duration === p.value ? chipOn : chipOff}`}>
               {p.label}
             </button>
           ))}
-          <input type="number" min={1} max={240} step={1} aria-label="Custom study session length in minutes" value={duration} onChange={e => setDuration(e.target.value)}
-            placeholder="Custom"
-            style={{ ...inputStyle, width: "80px", padding: "6px 10px", fontSize: "12px" }} />
+          <input type="number" min={1} max={240} step={1} inputMode="numeric" aria-label="Custom study session length in minutes" value={duration} onChange={e => setDuration(e.target.value)} placeholder="Custom" className="ssc-input min-h-10! w-24! px-2.5! py-1.5! text-[13px]!" />
         </div>
 
         {/* Break duration presets */}
-        <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "6px" }}>Break length</p>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+        <p className={fieldLabel}>Break length</p>
+        <div className="flex flex-wrap gap-1.5">
           {BREAK_PRESETS.map(p => (
-            <button type="button" key={p.value} onClick={() => setBreakDuration(p.value)} aria-pressed={breakDuration === p.value} style={{
-              padding: "6px 14px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
-              background: breakDuration === p.value ? "rgba(245,158,11,0.15)" : "var(--muted)",
-              border: breakDuration === p.value ? "1px solid rgba(245,158,11,0.4)" : "1px solid transparent",
-              color: breakDuration === p.value ? "#f59e0b" : "var(--muted-foreground)",
-              fontWeight: breakDuration === p.value ? 700 : 400,
-            }}>
-              ☕ {p.label}
+            <button type="button" key={p.value} onClick={() => setBreakDuration(p.value)} aria-pressed={breakDuration === p.value} className={`${chipBase} ${breakDuration === p.value ? chipBreakOn : chipOff}`}>
+              <span aria-hidden="true" className="mr-1">☕</span>{p.label}
             </button>
           ))}
         </div>
@@ -371,107 +332,75 @@ export default function Timetable() {
 
       {scheduleError && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">{scheduleError}</p>}
 
-      <button
-        type="button"
-        onClick={generateSchedule}
-        disabled={selectedSubjects.length === 0}
-        style={{
-          background: selectedSubjects.length === 0 ? "var(--muted)" : "var(--primary)",
-          color: selectedSubjects.length === 0 ? "var(--muted-foreground)" : "white",
-          border: "none", borderRadius: "12px", padding: "14px",
-          fontWeight: 800, fontSize: "15px",
-          cursor: selectedSubjects.length === 0 ? "not-allowed" : "pointer",
-          boxShadow: "none",
-        }}
-      >
+      <button type="button" onClick={generateSchedule} disabled={selectedSubjects.length === 0} className="ssc-button min-h-12 w-full text-[15px] font-extrabold">
         Generate Schedule →
       </button>
 
       {/* Schedule display */}
       {schedule.length > 0 && (
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: "15px" }}>Today&apos;s Plan</p>
-              <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "2px" }}>
+        <div className="ssc-card p-4">
+          <div className="mb-3.5 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[15px] font-bold">Today&apos;s Plan</p>
+              <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
                 {studySessions} sessions · {totalStudyMins} min total
               </p>
             </div>
-            <button type="button" onClick={saveSchedule} disabled={loading || saved} aria-live="polite" style={{
-              background: saved ? "rgba(34,197,94,0.15)" : "var(--muted)",
-              color: saved ? "#22c55e" : "var(--foreground)",
-              border: saved ? "1px solid rgba(34,197,94,0.3)" : "1px solid var(--card-border)",
-              borderRadius: "8px", padding: "8px 14px", fontSize: "13px",
-              fontWeight: 600, cursor: saved ? "default" : "pointer",
-            }}>
+            <button
+              type="button"
+              onClick={saveSchedule}
+              disabled={loading || saved}
+              aria-live="polite"
+              className={`inline-flex min-h-10 shrink-0 items-center rounded-lg border px-3.5 text-[13px] font-semibold transition-colors disabled:cursor-default ${saved ? "border-green-500/30 bg-green-500/15 text-green-500" : "border-[var(--card-border)] bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--surface-2)] disabled:opacity-60"}`}
+            >
               {saved ? "✓ Saved" : loading ? "Saving..." : "Save Plan"}
             </button>
           </div>
 
           {saveError && (
-            <p role="alert" style={{ color: "var(--danger, #ef4444)", fontSize: "13px", marginTop: "-8px", marginBottom: "12px" }}>
+            <p role="alert" className="mb-3 text-[13px] text-[var(--danger,#ef4444)]">
               {saveError}
             </p>
           )}
 
           {/* Visual timeline */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {schedule.map((slot, index) => (
-              <div key={index} style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: slot.is_break ? "rgba(245,158,11,0.06)" : `${slot.color || "#6366f1"}10`,
-                border: `1px solid ${slot.is_break ? "rgba(245,158,11,0.15)" : `${slot.color || "#6366f1"}30`}`,
-              }}>
-                {/* Color dot */}
-                <div style={{
-                  width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0,
-                  background: slot.is_break ? "#f59e0b" : (slot.color || "#6366f1"),
-                  boxShadow: "none",
-                }} />
-
-                <p style={{
-                  flex: 1, fontWeight: 600, fontSize: "14px",
-                  color: slot.is_break ? "#f59e0b" : (slot.color || "var(--primary)"),
-                }}>
-                  {slot.is_break ? "☕ Break" : slot.subject}
-                </p>
-
-                <p style={{ fontSize: "12px", color: "var(--muted-foreground)", flexShrink: 0 }}>
-                  {slot.start_time} – {slot.end_time}
-                </p>
-
-                {!slot.is_break && (
-                  <span style={{
-                    fontSize: "11px", padding: "2px 8px", borderRadius: "20px",
-                    background: `${slot.color || "#6366f1"}20`,
-                    color: slot.color || "#6366f1",
-                    fontWeight: 600, flexShrink: 0,
-                  }}>
-                    {duration}m
-                  </span>
-                )}
-              </div>
-            ))}
+          <div className="flex flex-col gap-1.5">
+            {schedule.map((slot, index) => {
+              const color = slot.color || "#6366f1";
+              const accent = slot.is_break ? "#f59e0b" : color;
+              return (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-[10px] border px-3.5 py-2.5"
+                  style={{ background: slot.is_break ? "rgba(245,158,11,0.06)" : `${color}10`, borderColor: slot.is_break ? "rgba(245,158,11,0.15)" : `${color}30` }}
+                >
+                  <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: accent }} />
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: slot.is_break ? "#f59e0b" : (slot.color || "var(--primary)") }}>
+                    {slot.is_break ? "☕ Break" : slot.subject}
+                  </p>
+                  <p className="shrink-0 text-xs text-[var(--muted-foreground)]">
+                    {slot.start_time} – {slot.end_time}
+                  </p>
+                  {!slot.is_break && (
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: `${color}20`, color }}>
+                      {duration}m
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Summary */}
-          <div style={{
-            marginTop: "12px", paddingTop: "12px",
-            borderTop: "1px solid var(--card-border)",
-            display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px",
-          }}>
+          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--card-border)] pt-3">
             {[
               { label: "Sessions", value: studySessions, icon: "📚" },
               { label: "Study time", value: `${totalStudyMins}m`, icon: "⏱" },
               { label: "Breaks", value: schedule.filter(s => s.is_break).length, icon: "☕" },
             ].map(stat => (
-              <div key={stat.label} style={{ textAlign: "center" }}>
-                <p style={{ fontSize: "18px", fontWeight: 800, color: "var(--primary)" }}>{stat.icon} {stat.value}</p>
-                <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "2px" }}>{stat.label}</p>
+              <div key={stat.label} className="text-center">
+                <p className="text-lg font-extrabold text-[var(--primary)]"><span aria-hidden="true">{stat.icon}</span> {stat.value}</p>
+                <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">{stat.label}</p>
               </div>
             ))}
           </div>
