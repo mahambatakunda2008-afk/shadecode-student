@@ -1,6 +1,6 @@
 # Shadecode Master Work Register & Sustainable Growth Plan
 
-**Last reviewed:** 2026-10-24  
+**Last reviewed:** 2026-10-27  
 **Status:** Living register; work is not complete until implementation and acceptance evidence are recorded.  
 **Purpose:** Consolidate current work, prioritize safe execution, and add a sustainable, privacy-respecting growth loop.
 
@@ -169,3 +169,8 @@ A work item is **Verified complete** only when:
 ## Growth north star
 
 **Build something worth sharing, make sharing effortless and voluntary, earn honest public trust, and publish resources that help students even before they become users.**
+
+
+## Subject management and learner personalisation
+
+The focused implementation register is `docs/roadmaps/SUBJECT_MANAGEMENT_AND_PERSONALISATION_WORK_REGISTER_2026-10-27.md`. It tracks the web subject picker/API, central catalogue, per-learner curriculum profile, adaptive learning, Android alignment, and acceptance evidence. The initial API route is committed but **not yet verified end-to-end**; the web picker UI and deployment verification remain outstanding. Do not mark this work complete until the focused register's acceptance criteria are satisfied.
