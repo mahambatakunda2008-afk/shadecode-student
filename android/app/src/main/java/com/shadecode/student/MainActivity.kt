@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -57,6 +58,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -547,21 +549,13 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                     if (subjects.isEmpty()) {
                         Text("Add subjects in Profile before creating subject tasks.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            subjects.take(3).forEach { subject ->
-                                OutlinedButton(
-                                    onClick = { selectedTaskSubjectId = subject.id },
-                                    modifier = Modifier.weight(1f),
-                                ) { Text(if (selectedTaskSubjectId == subject.id) "✓ " + subject.name else subject.name, maxLines = 1) }
-                            }
-                        }
-                        if (subjects.size > 3) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                subjects.drop(3).take(3).forEach { subject ->
-                                    OutlinedButton(
-                                        onClick = { selectedTaskSubjectId = subject.id },
-                                        modifier = Modifier.weight(1f),
-                                    ) { Text(if (selectedTaskSubjectId == subject.id) "✓ " + subject.name else subject.name, maxLines = 1) }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            subjects.forEach { subject ->
+                                OutlinedButton(onClick = { selectedTaskSubjectId = subject.id }) {
+                                    Text(if (selectedTaskSubjectId == subject.id) "✓ " + subject.name else subject.name, maxLines = 1)
                                 }
                             }
                         }
