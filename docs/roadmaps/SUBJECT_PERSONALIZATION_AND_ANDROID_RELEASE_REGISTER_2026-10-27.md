@@ -188,3 +188,13 @@ The queue currently covers task creation, task completion and timetable replacem
 - The current branch head is newer than the cancelled Android run. A successful Android build for the latest head is still required.
 - The older debug APK must not be represented as containing this recovery change. Use only an artifact whose workflow run head SHA matches the final tested commit.
 - Offline bundled-paper manifest remains intentionally empty (`android/app/src/main/assets/offline-papers/index.json` is `[]`) pending documented redistribution rights. Online downloads saved by Exam Hub remain a separate path.
+
+### Verification update: Android debug build completed (2026-10-27)
+- [x] Android workflow run 260 completed successfully for branch head `a5fc1aac7a0a774b8cc21ac06a5e5ee73266d293`.
+- [x] Gradle project validation and `:app:assembleDebug` passed; the workflow uploaded artifact `shadecode-student-android-debug-260`.
+- [x] The artifact metadata confirms it was built from the same head SHA above. Its ZIP contains `ShadecodeStudent-debug.apk`.
+- [x] The first-run setup screen is wired into `StudentShell` when the saved learner profile has not completed onboarding. It captures display name, study level and subject selection, saves the profile through the authenticated API, and refreshes the subject cache.
+- [ ] This is a **debug APK**, not a signed production build. Release-signing preparation was skipped because no Android signing secret was available to this workflow.
+- [ ] Install and test on a physical Android device, including fresh account onboarding, account switching, offline paper access, and exam recovery after force-stop. CI success proves compilation and artifact upload, not real-device behaviour or complete feature parity.
+- [ ] Continue the next implementation slice: make the downloaded past-paper PDF workflow more resilient and ensure elapsed exam time is reconciled after process death in the past-paper attempt workspace, not only in the generated Exam Simulation screen.
+
