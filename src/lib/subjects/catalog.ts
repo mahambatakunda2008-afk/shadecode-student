@@ -36,7 +36,7 @@ export const SUBJECT_CATALOG: readonly SubjectCatalogEntry[] = [
   { id: "general-science", name: "General Science", category: "Sciences & environment", pathways: ALL_PATHWAYS },
   { id: "biology", name: "Biology", category: "Sciences & environment", pathways: [...SCHOOL_PATHWAYS, "university", "independent"] },
   { id: "chemistry", name: "Chemistry", category: "Sciences & environment", pathways: [...SECONDARY_PATHWAYS, "university", "independent"] },
-  { id: "physics", name: "Physics", category: "Sciences & environment", pathways: SECONDARY_PATHWAYS.concat(["university", "independent"]) },
+  { id: "physics", name: "Physics", category: "Sciences & environment", pathways: [...SECONDARY_PATHWAYS, "university", "independent"] },
   { id: "environmental-science", name: "Environmental Science", category: "Sciences & environment", pathways: [...SCHOOL_PATHWAYS, ...HIGHER_PATHWAYS] },
   { id: "agriculture", name: "Agriculture", category: "Sciences & environment", pathways: [...SCHOOL_PATHWAYS, "tvet", "independent"] },
   { id: "applied-science", name: "Applied Science", category: "Sciences & environment", pathways: ["upper-secondary", "university", "tvet", "professional", "independent"] },
