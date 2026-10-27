@@ -81,7 +81,7 @@ export default function SubjectsPage() {
   }, []);
 
 
-  const normalizeLabel = (value: string) => value.trim().toLocaleLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").replace(/\\s+/g, " ");
+  const normalizeLabel = (value: string) => value.trim().toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").replace(/\s+/g, " ");
   const existingKeys = new Set(subjects.map(subject => normalizeLabel(subject.name)));
   const matchingCatalogue = SUBJECT_CATEGORIES.map(group => ({
     group,
