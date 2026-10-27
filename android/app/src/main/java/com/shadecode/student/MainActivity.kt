@@ -75,6 +75,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
+import java.io.IOException
+import java.net.SocketTimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import com.google.mlkit.vision.common.InputImage
@@ -584,12 +587,33 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                             } else {
                                 taskScope.launch {
                                     try {
-                                        val created = withContext(Dispatchers.IO) { api.createTask(session, title, taskDescription, selectedTaskSubjectId.orEmpty()) }
-                                        tasks = (tasks + created).sortedBy { it.dueDate.orEmpty() }
-                                        withContext(Dispatchers.IO) { store.saveTasks(session.userId, tasks) }
+                                        try {
+                                            val created = withContext(Dispatchers.IO) { api.createTask(session, title, taskDescription, selectedTaskSubjectId.orEmpty()) }
+                                            tasks = (tasks + created).sortedBy { it.dueDate.orEmpty() }
+                                            withContext(Dispatchers.IO) { store.saveTasks(session.userId, tasks) }
+                                            taskMessage = "Task saved and synced."
+                                        } catch (networkError: Exception) {
+                                            if (!isRetryableSyncFailure(networkError)) throw networkError
+                                            val localId = "local-task-${UUID.randomUUID()}"
+                                            val localTask = NativeTask(localId, selectedTaskSubjectId.orEmpty(), title, taskDescription.trim(), null, false)
+                                            tasks = (tasks + localTask).sortedBy { it.dueDate.orEmpty() }
+                                            withContext(Dispatchers.IO) {
+                                                store.saveTasks(session.userId, tasks)
+                                                store.enqueuePendingOperation(
+                                                    session.userId,
+                                                    "task_create",
+                                                    org.json.JSONObject()
+                                                        .put("localId", localId)
+                                                        .put("title", title)
+                                                        .put("description", taskDescription)
+                                                        .put("subjectId", selectedTaskSubjectId.orEmpty()),
+                                                )
+                                            }
+                                            NativeSyncWorker.schedule(context)
+                                            taskMessage = "Saved on this device. It will sync when your connection returns."
+                                        }
                                         taskTitle = ""
                                         taskDescription = ""
-                                        taskMessage = "Task saved and synced."
                                     } catch (_: Exception) {
                                         taskMessage = "Task could not be saved. Check your connection and permissions."
                                     }
@@ -613,9 +637,22 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                                                 withContext(Dispatchers.IO) { api.completeTask(session, task.id) }
                                                 withContext(Dispatchers.IO) { store.saveTasks(session.userId, tasks) }
                                                 taskMessage = "Task completed and synced."
-                                            } catch (_: Exception) {
-                                                tasks = tasks.map { if (it.id == task.id) it.copy(completed = false) else it }
-                                                taskMessage = "Could not complete this task. Try again when connected."
+                                            } catch (syncError: Exception) {
+                                                if (isRetryableSyncFailure(syncError)) {
+                                                    withContext(Dispatchers.IO) {
+                                                        store.saveTasks(session.userId, tasks)
+                                                        store.enqueuePendingOperation(
+                                                            session.userId,
+                                                            "task_complete",
+                                                            org.json.JSONObject().put("taskId", task.id),
+                                                        )
+                                                    }
+                                                    NativeSyncWorker.schedule(context)
+                                                    taskMessage = "Completion saved on this device. It will sync when your connection returns."
+                                                } else {
+                                                    tasks = tasks.map { if (it.id == task.id) it.copy(completed = false) else it }
+                                                    taskMessage = "Could not complete this task. Check your permissions and try again."
+                                                }
                                             }
                                         }
                                     }
@@ -1261,4 +1298,14 @@ private fun SnapExtractScreen(padding: PaddingValues) {
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+
+private fun isRetryableSyncFailure(error: Throwable): Boolean {
+    if (error is IOException || error is SocketTimeoutException) return true
+    val message = error.message.orEmpty()
+    return Regex("Request failed \\((429|5[0-9]{2})\\)").containsMatchIn(message) ||
+        message.contains("timed out", ignoreCase = true) ||
+        message.contains("unable to resolve host", ignoreCase = true) ||
+        message.contains("failed to connect", ignoreCase = true)
 }
