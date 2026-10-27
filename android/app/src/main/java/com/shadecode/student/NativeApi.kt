@@ -96,6 +96,28 @@ class NativeApi {
         return result
     }
 
+    /** Atomically replace the authenticated learner's timetable using the existing RLS-protected RPC. */
+    fun saveTimetable(session: NativeSession, slots: List<NativeTimetableSlot>) {
+        require(slots.isNotEmpty() && slots.size <= 100) { "Generate between 1 and 100 timetable slots." }
+        val payload = JSONArray()
+        slots.forEach { slot ->
+            payload.put(
+                JSONObject()
+                    .put("subject", slot.subject.trim().take(120))
+                    .put("start_time", slot.startTime.take(5))
+                    .put("end_time", slot.endTime.take(5))
+                    .put("is_break", slot.isBreak)
+            )
+        }
+        request(
+            "POST",
+            "/rest/v1/rpc/replace_own_timetable",
+            JSONObject().put("p_slots", payload).toString(),
+            accessToken = session.accessToken,
+            prefer = "return=minimal",
+        )
+    }
+
     fun loadTimetable(session: NativeSession): List<NativeTimetableSlot> {
         val rows = request(
             "GET",
