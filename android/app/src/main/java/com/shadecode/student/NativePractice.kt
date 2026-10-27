@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -76,6 +75,12 @@ fun NativePracticeScreen(
     padding: androidx.compose.foundation.layout.PaddingValues,
     subjects: List<NativeSubjectEntity>,
     database: NativeDatabase,
+    focusDuration: Int,
+    focusRemaining: Int,
+    focusRunning: Boolean,
+    onFocusDurationSelected: (Int) -> Unit,
+    onFocusToggle: () -> Unit,
+    onFocusReset: () -> Unit,
 ) {
     var selectedSubject by remember { mutableStateOf<String?>(null) }
     var lessons by remember { mutableStateOf<List<NativeLessonEntity>>(emptyList()) }
@@ -84,17 +89,6 @@ fun NativePracticeScreen(
     var selectedOption by remember { mutableStateOf<Int?>(null) }
     var revealed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
-    var focusDuration by remember { mutableStateOf(25 * 60) }
-    var focusRemaining by remember { mutableStateOf(25 * 60) }
-    var focusRunning by remember { mutableStateOf(false) }
-
-    LaunchedEffect(focusRunning) {
-        while (focusRunning && focusRemaining > 0) {
-            delay(1_000)
-            if (focusRunning && focusRemaining > 0) focusRemaining -= 1
-        }
-        if (focusRemaining == 0) focusRunning = false
-    }
 
     LaunchedEffect(subjects) {
         if (selectedSubject == null || subjects.none { it.id == selectedSubject }) selectedSubject = subjects.firstOrNull()?.id
@@ -129,7 +123,7 @@ fun NativePracticeScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(15, 25, 45).forEach { minutes ->
                             OutlinedButton(
-                                onClick = { focusRunning = false; focusDuration = minutes * 60; focusRemaining = minutes * 60 },
+                                onClick = { onFocusDurationSelected(minutes * 60) },
                                 enabled = !focusRunning,
                                 modifier = Modifier.weight(1f),
                             ) { Text("${minutes} min") }
@@ -138,12 +132,12 @@ fun NativePracticeScreen(
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
-                            onClick = { if (focusRemaining == 0) focusRemaining = focusDuration; focusRunning = !focusRunning },
+                            onClick = onFocusToggle,
                             enabled = focusRemaining > 0 || !focusRunning,
                             modifier = Modifier.weight(1f),
                         ) { Text(if (focusRunning) "Pause" else if (focusRemaining == 0) "Start again" else "Start focus") }
                         OutlinedButton(
-                            onClick = { focusRunning = false; focusRemaining = focusDuration },
+                            onClick = onFocusReset,
                             modifier = Modifier.weight(1f),
                         ) { Text("Reset") }
                     }
