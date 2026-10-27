@@ -2,6 +2,9 @@ package com.shadecode.student
 
 import android.content.Intent
 import android.net.Uri
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,6 +55,8 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var attemptRunning by remember(session.userId) { mutableStateOf(false) }
     var attemptDeadlineMillis by remember(session.userId) { mutableLongStateOf(0L) }
     var attemptFinished by remember(session.userId) { mutableStateOf(false) }
+    var showStarterPackPrompt by remember(session.userId) { mutableStateOf(false) }
+    var starterPackBusy by remember(session.userId) { mutableStateOf(false) }
     val attemptPrefs = remember(session.userId) { context.getSharedPreferences("past_paper_attempts_v1", android.content.Context.MODE_PRIVATE) }
     fun load(block:suspend ()->Unit) { loading=true; error=null; scope.launch { try { block() } catch(e:Exception) { error=e.message ?: "Could not load papers." } finally { loading=false } } }
     fun beginAttempt(paper: NativeExamPaper) {
@@ -98,7 +103,100 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             kotlinx.coroutines.delay(250L)
         }
     }
-    LaunchedEffect(session.userId,subjects) { load { syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) } } }
+    LaunchedEffect(session.userId,subjects) {
+        load {
+            syllabi=withContext(Dispatchers.IO) { api.loadExamSyllabi(session,subjects.map { it.name }) }
+            val onboardingPrefs = context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE)
+            if (!onboardingPrefs.getBoolean("prompted_${session.userId}", false) && syllabi.isNotEmpty()) {
+                showStarterPackPrompt = true
+            }
+        }
+    }
+    if (showStarterPackPrompt) {
+        AlertDialog(
+            onDismissRequest = {
+                showStarterPackPrompt = false
+                context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE).edit().putBoolean("prompted_${session.userId}", true).apply()
+            },
+            title = { Text("Prepare Shadecode for offline study?") },
+            text = { Text("On this first visit, Shadecode can download the newest available question paper and matching mark scheme for your selected subjects. This uses Wi-Fi or Ethernet only, saves files privately on this device, and can be skipped. You can download papers later from Exam Hub.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showStarterPackPrompt = false
+                    context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE).edit().putBoolean("prompted_${session.userId}", true).apply()
+                    val connectivity = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                    val network = connectivity.activeNetwork
+                    val caps = connectivity.getNetworkCapabilities(network)
+                    val unmetered = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true ||
+                        caps?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true
+                    if (!unmetered) {
+                        status = "Starter pack paused: connect to Wi-Fi or Ethernet, then download papers from Exam Hub."
+                        return@TextButton
+                    }
+                    if (starterPackBusy) return@TextButton
+                    starterPackBusy = true
+                    scope.launch {
+                        var savedCount = 0
+                        var attemptedCount = 0
+                        try {
+                            for (subjectItem in syllabi) {
+                                if (savedCount >= 12) break
+                                val available = withContext(Dispatchers.IO) { api.loadExamPaperFacets(session, subjectItem.id) }
+                                val chosenLevel = available.levels.firstOrNull() ?: subjectItem.levels.firstOrNull() ?: continue
+                                val levelFacets = withContext(Dispatchers.IO) { api.loadExamPaperFacets(session, subjectItem.id, chosenLevel) }
+                                val chosenSession = levelFacets.sessions.firstOrNull() ?: continue
+                                val chosenYear = levelFacets.years.maxOrNull() ?: continue
+                                val availablePapers = withContext(Dispatchers.IO) {
+                                    api.loadExamPapers(session, subjectItem.id, chosenLevel, chosenSession, chosenYear)
+                                }
+                                val questionPaper = availablePapers.firstOrNull {
+                                    it.kind.lowercase() in listOf("qp", "question_paper", "question-paper")
+                                } ?: continue
+                                val markScheme = availablePapers.firstOrNull {
+                                    it.kind.lowercase() in listOf("ms", "mark_scheme", "mark-scheme") &&
+                                        it.paperNumber == questionPaper.paperNumber && it.variant == questionPaper.variant
+                                }
+                                val toSave = listOfNotNull(questionPaper, markScheme).distinctBy { it.id }
+                                for (paper in toSave) {
+                                    if (savedCount >= 12) break
+                                    if (NativeOfflinePaperStore.find(context, session.userId, paper.id) != null) continue
+                                    attemptedCount++
+                                    try {
+                                        val signed = withContext(Dispatchers.IO) { api.createSignedExamPaperUrl(session, paper.id) }
+                                        withContext(Dispatchers.IO) {
+                                            NativeOfflinePaperStore.download(context, session.userId, paper, subjectItem.subject, subjectItem.board, signed)
+                                        }
+                                        savedCount++
+                                    } catch (_: Exception) {
+                                        // Continue with other selected subjects; report partial success below.
+                                    }
+                                }
+                            }
+                            offlinePapers = withContext(Dispatchers.IO) { NativeOfflinePaperStore.list(context, session.userId) }
+                            status = if (savedCount > 0) {
+                                "Offline starter pack ready: saved $savedCount PDF(s). You can now open them without internet."
+                            } else if (attemptedCount == 0) {
+                                "No new starter papers were available to download. Browse the catalogue and try individual papers."
+                            } else {
+                                "The starter pack could not be completed. Check your connection and download papers individually."
+                            }
+                        } catch (e: Exception) {
+                            error = e.message ?: "Could not prepare the offline starter pack."
+                        } finally {
+                            starterPackBusy = false
+                        }
+                    }
+                }) { Text("Download on Wi-Fi") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showStarterPackPrompt = false
+                    context.getSharedPreferences("offline_starter_pack_v1", Context.MODE_PRIVATE).edit().putBoolean("prompted_${session.userId}", true).apply()
+                    status = "You can prepare an offline starter pack later by downloading papers in Exam Hub."
+                }) { Text("Not now") }
+            }
+        )
+    }
     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal=16.dp, vertical=12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) { Text("Exam Hub",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold); Text("Past-paper catalog",color=MaterialTheme.colorScheme.onSurfaceVariant) }
