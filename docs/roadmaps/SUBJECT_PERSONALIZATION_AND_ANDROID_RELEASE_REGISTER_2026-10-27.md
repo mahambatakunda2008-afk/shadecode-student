@@ -218,3 +218,17 @@ The queue currently covers task creation, task completion and timetable replacem
 - [x] Kept the dedicated install-prompt event handler in the shared PWA installer instead of adding another competing `beforeinstallprompt` listener to the download page.
 - [x] Removed the duplicate install-prompt listener from service-worker registration; it now handles service-worker lifecycle and sign-out cache clearing only.
 - [x] Reduced past-paper countdown polling from four times per second to once per second. Remaining time still derives from the saved wall-clock deadline, and this change awaits Android CI/device verification.
+
+
+### Release status update (2026-10-28)
+
+- [x] PR #489 merged into `main` as merge commit `107cf10a691ad5739a0e14f3f515a7091baca13a`.
+- [x] Vercel production deployment for that exact merge commit reached `READY`; the deployment aliases include `shadecodestudent.vercel.app`. Deployment ID: `dpl_7BbBUw3vkuzHvKVp5AjzjBzcFb1b`.
+- [x] The landing-page source on `main` contains a header **Get the app** link and a mobile-visible hero link to `/download`.
+- [x] The existing `/download` route is the only route for that path and clearly labels Android and Google Play as not yet released.
+- [x] Android debug workflow run 275 succeeded and uploaded `shadecode-student-android-debug-275` (artifact ID `12775770379`, SHA-256 `506cae8fdca59afd9c3b3b7be47ca9f18812ebde7786dbb92a13a5dad6639b91`). Its source is PR head `6f92897ffd24a82ee8c6ac2244e1d3cb36e4c9f5`, the exact code tree merged by PR #489; it is a **debug-only** artifact, not a production-signed release.
+- [ ] Confirm the deployed `/download` route in a real browser on desktop and mobile, including the install instructions and links.
+- [ ] Add production Android signing secrets through GitHub repository settings (never commit a keystore or passwords). Required secret names in the workflow: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The keystore must be retained securely and reused for future updates; losing it can prevent users from updating an installed APK.
+- [ ] Trigger a fresh Android workflow on `main` after signing is configured, then verify signed APK and AAB artifacts, package/version metadata, checksum, install/upgrade behaviour, and Play Console requirements.
+- [ ] Complete real-device checks for onboarding, account isolation, downloaded-paper offline access, timer/process-death recovery, and web-to-native account continuity before publishing a public Android APK.
+- [ ] Do not bundle complete Cambridge or ZIMSEC papers until redistribution rights and attribution requirements are confirmed. Keep the bundled-paper manifest empty meanwhile.
