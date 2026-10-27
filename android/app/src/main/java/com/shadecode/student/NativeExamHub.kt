@@ -20,11 +20,11 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun NativeExamHubEntryCard(subjects: List<NativeSubjectEntity>, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick=onClick), shape=RoundedCornerShape(20.dp), colors=CardDefaults.cardColors(containerColor=ShadeSurface)) {
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick), shape=RoundedCornerShape(20.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(18.dp), verticalArrangement=Arrangement.spacedBy(6.dp)) {
             Text("Exam Hub", style=MaterialTheme.typography.titleLarge, fontWeight=FontWeight.Bold)
             Text("Browse past papers by board, subject, level, session and year.", color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("${subjects.size} selected subjects · personalized catalog", color=ShadePrimary, style=MaterialTheme.typography.bodySmall)
+            Text("${subjects.size} selected subjects · personalized catalog", color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.bodySmall)
         }
     }
 }
