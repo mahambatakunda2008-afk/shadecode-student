@@ -366,9 +366,11 @@ private fun SnapExtractScreen(padding: PaddingValues) {
             editableText = ""
             processing = true
             message = "Reading image locally…"
+            var recognizerToClose: com.google.mlkit.vision.text.TextRecognizer? = null
             try {
                 val image = InputImage.fromFilePath(context, uri)
                 val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                recognizerToClose = recognizer
                 recognizer.process(image)
                     .addOnSuccessListener { result ->
                         rawOcr = result.text
@@ -387,6 +389,7 @@ private fun SnapExtractScreen(padding: PaddingValues) {
                         recognizer.close()
                     }
             } catch (error: Exception) {
+                recognizerToClose?.close()
                 message = "Could not open image: ${error.localizedMessage ?: "unsupported image"}"
                 processing = false
             }
