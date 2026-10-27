@@ -318,6 +318,29 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("My tasks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("Keep the next small step visible. Tasks are shared with your Shadecode account.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Subject", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    if (subjects.isEmpty()) {
+                        Text("Add subjects in Profile before creating subject tasks.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            subjects.take(3).forEach { subject ->
+                                OutlinedButton(
+                                    onClick = { selectedTaskSubjectId = subject.id },
+                                    modifier = Modifier.weight(1f),
+                                ) { Text(if (selectedTaskSubjectId == subject.id) "✓ " + subject.name else subject.name, maxLines = 1) }
+                            }
+                        }
+                        if (subjects.size > 3) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                subjects.drop(3).take(3).forEach { subject ->
+                                    OutlinedButton(
+                                        onClick = { selectedTaskSubjectId = subject.id },
+                                        modifier = Modifier.weight(1f),
+                                    ) { Text(if (selectedTaskSubjectId == subject.id) "✓ " + subject.name else subject.name, maxLines = 1) }
+                                }
+                            }
+                        }
+                    }
                     OutlinedTextField(
                         value = taskTitle,
                         onValueChange = { taskTitle = it; taskMessage = null },
@@ -342,7 +365,7 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                             } else {
                                 taskScope.launch {
                                     try {
-                                        val created = withContext(Dispatchers.IO) { api.createTask(session, title, taskDescription) }
+                                        val created = withContext(Dispatchers.IO) { api.createTask(session, title, taskDescription, selectedTaskSubjectId.orEmpty()) }
                                         tasks = (tasks + created).sortedBy { it.dueDate.orEmpty() }
                                         taskTitle = ""
                                         taskDescription = ""
@@ -353,7 +376,7 @@ private fun DashboardScreen(padding: PaddingValues, session: NativeSession, api:
                                 }
                             }
                         },
-                        enabled = taskTitle.isNotBlank() && !tasksLoading,
+                        enabled = taskTitle.isNotBlank() && !tasksLoading && selectedTaskSubjectId != null,
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Add task") }
                     if (tasksLoading) Text("Loading tasks…", color = MaterialTheme.colorScheme.onSurfaceVariant)
