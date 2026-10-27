@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SUBJECT_CATALOG, SUBJECT_CATEGORIES } from "@/lib/subjects/catalog";
+import { CurriculumProfileEditor } from "@/components/subjects/CurriculumProfileEditor";
 import {
   ArrowLeft, BookOpen, Zap, Dna, Globe, FlaskConical,
   Calculator, Brain, Code2, TrendingUp, Languages, Music,
@@ -227,6 +228,8 @@ export default function SubjectsPage() {
           </form>
           <p style={{ margin: "10px 0 0", fontSize: 11, lineHeight: 1.5, color: "var(--muted-foreground)" }}>The catalogue is a starting point, not a guarantee that every syllabus or lesson is verified. Subjects commonly associated with your current level appear first, but you can still choose other subjects.</p>
         </section>
+
+        {!error && subjects.length > 0 && <CurriculumProfileEditor subjects={subjects} />}
 
         {/* ── Error ── */}
         {error && (
