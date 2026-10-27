@@ -165,3 +165,32 @@ Allowed statuses: **Verified**, **Partial**, **Planned**, **Blocked**, **Not app
 - Fixed the native marking route's bearer-token whitespace parser while updating the fallback.
 - Web CI run 40577624099 passed before these latest UI/API commits. Android CI run 40577624101 was still running when this entry was written; re-check it against the latest branch head before calling these changes build-verified.
 - Remaining required work: make past-paper question papers the primary Exam Simulation source inside the simulation workspace, preserve timer/answers/resume, link the corresponding mark scheme, and only use Cortex for optional feedback when available. Do not record an authoritative score from client-supplied or unverified answers. Physical-device and production-runtime checks remain open.
+
+
+## External resource discovery expansion (2026-10-27)
+
+The native Exam Hub now includes a curated **More learning resources** directory that opens external resources in the browser. It currently links to:
+- Cambridge International Resource Centre for syllabus-specific official papers, specimen papers, examiner reports and published resources.
+- Official ZIMSEC syllabuses, specimen papers and published O Level paper downloads.
+- Zimfundi as a Zimbabwe-focused third-party study resource.
+- PhET for interactive maths/science simulations.
+- Khan Academy for lessons and practice.
+- CK-12 for free digital textbooks, adaptive practice and STEM interactives.
+- OpenStax for free peer-reviewed textbooks.
+
+This is a discovery directory, not a claim that external sites have been ingested into Shadecode's database or that all external materials are licensed for redistribution. The app should not scrape or republish third-party exam papers without checking access terms and reuse rights. Prefer official board sources, open educational resources and user-contributed material with provenance and permission.
+
+### External resource references checked on 2026-10-27
+- Cambridge International resource centre: https://www.cambridgeinternational.org/resource-centre/
+- Cambridge guidance on papers and mark schemes: https://help.cambridgeinternational.org/hc/en-gb/articles/115004448905-Where-can-I-find-past-papers-mark-schemes-and-resources-for-our-exams
+- ZIMSEC syllabuses: https://www5.zimsec.co.zw/syllabi/
+- ZIMSEC specimen papers: https://www5.zimsec.co.zw/specimen-papers/
+- ZIMSEC O Level downloads: https://www5.zimsec.co.zw/download-category/o-level/
+- Zimfundi: https://zimfundi.co.zw/
+- PhET: https://phet.colorado.edu/
+- Khan Academy: https://www.khanacademy.org/
+- CK-12: https://www.ck12.org/
+- OpenStax: https://openstax.org/subjects
+
+### Next implementation slice
+Build the native Exam Simulation around existing indexed paper records rather than AI-generated question payloads: choose an actual question-paper record, open/render its PDF inside the app where practical, provide a timer and locally durable answer sheet, let learners attach the matching mark scheme for self-marking, and make Cortex feedback an optional post-attempt enhancement. Only score objectively when a trusted mark scheme or verified marking workflow exists. Continue to validate paper provenance, subject/board/level alignment, paper component and variant, and rights before importing more files.
