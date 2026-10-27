@@ -205,3 +205,12 @@ Build the native Exam Simulation around existing indexed paper records rather th
 
 
 - **Bundled-pack importer scaffold added:** Android reads `android/app/src/main/assets/offline-papers/index.json` and imports only entries with source, attribution, licence/permission metadata, a safe asset path, PDF signature and matching SHA-256. The manifest is intentionally empty while rights to redistribute real Cambridge/ZIMSEC papers are not documented. This is pack infrastructure, not a claim that real past papers are currently bundled.
+
+
+## Native real-paper attempt workspace (2026-10-27)
+
+- **Implemented in source, CI/device verification pending:** question-paper entries now offer a timed attempt workspace. It opens the real PDF through the device's PDF viewer, provides a local answer/working sheet, saves notes and remaining time to app-private preferences, and supports pausing/resuming/finishing. Saved question papers can start an attempt directly while offline.
+- The workspace can open a matching mark scheme when that record is present in the currently loaded catalogue. In an offline-only session, automatic mark-scheme pairing from the local library is still incomplete.
+- **Scoring is intentionally self-assessed.** No AI-generated mark is treated as authoritative, no official score is stored, and no XP is awarded from this PDF workflow.
+- Timer duration currently defaults to 60 minutes and is not yet configurable per syllabus/paper. The PDF is viewed externally rather than rendered inline. Diagrams and question-specific structured answer inputs are not yet part of this workspace.
+- Test required before marking complete: download QP + mark scheme, start attempt, enter notes, force-stop/relaunch, enable airplane mode, reopen paper and notes, finish attempt, confirm the timer and notes restore correctly, then switch accounts and verify isolation.
