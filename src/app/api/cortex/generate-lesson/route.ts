@@ -24,6 +24,7 @@ interface GenerateLessonResponse {
   success: boolean;
   lesson?: any;
   error?: string;
+  code?: string;
   metadata?: { cached: boolean; processingTime: number; validationScore?: number; completeness?: number; cacheStats?: any };
 }
 
@@ -80,6 +81,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
             id: "lesson_" + Date.now() + "_" + Math.random().toString(36).slice(2, 11),
             createdAt: new Date(),
           };
+          // Shared cache content still needs a per-learner durable row. A cache
+          // hit must not bypass the save guarantee or appear in the UI as a
+          // completed lesson that cannot be reopened later.
+          const { error: cachedPersistenceError } = await supabase.from("generated_lessons").insert({
+            id: reusableLesson.id, user_id: user.id, topic, subject_id: subjectId,
+            title: reusableLesson.title, content: reusableLesson.content, metadata: reusableLesson.metadata,
+            format, validation_score: cachedValidation.score, created_at: reusableLesson.createdAt.toISOString(),
+          });
+          if (cachedPersistenceError) {
+            console.error("[LessonGenerate] Cached lesson persistence failed", {
+              code: cachedPersistenceError.code,
+              message: cachedPersistenceError.message,
+              lessonId: reusableLesson.id,
+            });
+            return NextResponse.json({
+              success: false,
+              error: "A matching lesson was found, but it could not be saved to your account. Please retry.",
+              code: "LESSON_PERSISTENCE_FAILED",
+            }, { status: 503 });
+          }
           return NextResponse.json({
             success: true,
             lesson: reusableLesson,
@@ -88,7 +109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
         }
         await cache.delete(cacheKey);
       } catch {
-        await cache.clearByType("lesson");
+        await cache.delete(cacheKey);
       }
     }
 
@@ -146,14 +167,26 @@ Do not pad the lesson with generic motivational text. Do not invent syllabus fac
       }
     }
 
-    try {
-      await supabase.from("generated_lessons").insert({
-        id: lesson.id, user_id: user.id, topic, subject_id: subjectId,
-        title: lesson.title, content: lesson.content, metadata: lesson.metadata,
-        format, validation_score: validation.score, created_at: new Date().toISOString(),
+    const { error: persistenceError } = await supabase.from("generated_lessons").insert({
+      id: lesson.id, user_id: user.id, topic, subject_id: subjectId,
+      title: lesson.title, content: lesson.content, metadata: lesson.metadata,
+      format, validation_score: validation.score, created_at: new Date().toISOString(),
+    });
+
+    // Supabase reports database failures through the returned error object; they
+    // do not reliably throw. Never report a lesson as successfully generated and
+    // saved when the durable insert failed.
+    if (persistenceError) {
+      console.error("[LessonGenerate] Database insert failed", {
+        code: persistenceError.code,
+        message: persistenceError.message,
+        lessonId: lesson.id,
       });
-    } catch (dbError) {
-      console.warn("[LessonGenerate] Database insert failed", dbError);
+      return NextResponse.json({
+        success: false,
+        error: "The lesson was generated but could not be saved. Please retry. No saved lesson is being claimed.",
+        code: "LESSON_PERSISTENCE_FAILED",
+      }, { status: 503 });
     }
 
     return NextResponse.json({
