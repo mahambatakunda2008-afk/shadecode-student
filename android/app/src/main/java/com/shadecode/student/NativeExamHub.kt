@@ -478,7 +478,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             if (offlinePapers.isNotEmpty()) {
                 item {
                     Text("Available offline on this device", style=MaterialTheme.typography.titleLarge, fontWeight=FontWeight.Bold)
-                    Text("${offlinePapers.size} saved PDF(s) · searchable and available without internet.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+                    Text("${offlinePapers.size} saved PDF(s) · ${String.format(java.util.Locale.ROOT, "%.1f MB total", offlinePapers.sumOf { it.bytes } / (1024.0 * 1024.0))} · searchable and available without internet.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(
                         value = offlineQuery,
