@@ -277,7 +277,7 @@ Build the native Exam Simulation around existing indexed paper records rather th
 ### Native offline paper library search and filtering (2026-10-28)
 
 - Added a local search field to the **Available offline on this device** section. It matches subject, exam board, level, session, year, title, paper number, variant and paper kind.
-- Added quick filters for all saved PDFs, question papers, mark schemes and other components. Search and filtering operate only on the already-saved, account-scoped local index; they do not need internet access.
+- Added quick filters for all saved PDFs, question papers, mark schemes and other components. The filter row scrolls horizontally on narrow phones instead of forcing all chips into the screen width. Search and filtering operate only on the already-saved, account-scoped local index; they do not need internet access.
 - Added a clear no-results state when the search/filter combination has no matches.
-- Source change: `android/app/src/main/java/com/shadecode/student/NativeExamHub.kt`, commit `8dbc284eac836d530da03659109d0caf8de93dd0`.
+- Source change: `android/app/src/main/java/com/shadecode/student/NativeExamHub.kt`, commits `8dbc284eac836d530da03659109d0caf8de93dd0` and `ac6da8e404b9618b5d2d5431d8f26f9e531255fe`.
 - **Verification state:** Android workflow `40745018511` was pending and CI workflow `40745017608` was in progress when documented. Do not claim build verification until the Android workflow succeeds. No physical-device test is claimed.
