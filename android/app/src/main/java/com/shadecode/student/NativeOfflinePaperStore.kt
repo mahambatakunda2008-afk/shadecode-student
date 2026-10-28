@@ -139,6 +139,8 @@ object NativeOfflinePaperStore {
         if (!paper.fileName.matches(Regex("[a-f0-9]{64}\\.pdf"))) return null
         val candidate = File(root(context), paper.fileName)
         if (!candidate.isFile || candidate.length() <= 5 || candidate.length() > MAX_PAPER_BYTES) return null
+        // A stored length mismatch catches many truncated or replaced files before showing them as saved.
+        if (paper.bytes > 0L && candidate.length() != paper.bytes) return null
         return candidate.takeIf { readPdfHeader(it) == "%PDF-" }
     }
 
