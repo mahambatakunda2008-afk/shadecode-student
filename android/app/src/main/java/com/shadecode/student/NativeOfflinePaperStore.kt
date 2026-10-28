@@ -110,8 +110,7 @@ object NativeOfflinePaperStore {
                     temp.delete()
                     continue
                 }
-                val header = temp.inputStream().use { input -> ByteArray(5).also { input.read(it) } }
-                if (String(header, Charsets.US_ASCII) != "%PDF-" || hashFile(temp) != expectedHash) {
+                if (readPdfHeader(temp) != "%PDF-" || hashFile(temp) != expectedHash) {
                     temp.delete()
                     continue
                 }
@@ -140,19 +139,7 @@ object NativeOfflinePaperStore {
         if (!paper.fileName.matches(Regex("[a-f0-9]{64}\\.pdf"))) return null
         val candidate = File(root(context), paper.fileName)
         if (!candidate.isFile || candidate.length() <= 5 || candidate.length() > MAX_PAPER_BYTES) return null
-        val header = runCatching {
-            candidate.inputStream().use { input ->
-                val bytes = ByteArray(5)
-                var offset = 0
-                while (offset < bytes.size) {
-                    val count = input.read(bytes, offset, bytes.size - offset)
-                    if (count < 0) break
-                    offset += count
-                }
-                if (offset == bytes.size) String(bytes, Charsets.US_ASCII) else ""
-            }
-        }.getOrDefault("")
-        return candidate.takeIf { header == "%PDF-" }
+        return candidate.takeIf { readPdfHeader(it) == "%PDF-" }
     }
 
     fun openUri(context: Context, paper: SavedPaper): Uri {
@@ -256,6 +243,19 @@ object NativeOfflinePaperStore {
 
     private fun digest(value: String): String = MessageDigest.getInstance("SHA-256")
         .digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+
+    private fun readPdfHeader(file: File): String = runCatching {
+        file.inputStream().use { input ->
+            val bytes = ByteArray(5)
+            var offset = 0
+            while (offset < bytes.size) {
+                val count = input.read(bytes, offset, bytes.size - offset)
+                if (count < 0) break
+                offset += count
+            }
+            if (offset == bytes.size) String(bytes, Charsets.US_ASCII) else ""
+        }
+    }.getOrDefault("")
 
     private fun hashFile(file: File): String {
         val md = MessageDigest.getInstance("SHA-256")
