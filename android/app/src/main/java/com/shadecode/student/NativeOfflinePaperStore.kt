@@ -156,7 +156,7 @@ object NativeOfflinePaperStore {
             connection = (URL(signedUrl).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 20_000
                 readTimeout = 45_000
-                instanceFollowRedirects = true
+                instanceFollowRedirects = false
                 setRequestProperty("Accept", "application/pdf,application/octet-stream;q=0.9")
             }
             val code = connection.responseCode
