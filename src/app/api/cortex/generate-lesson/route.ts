@@ -64,7 +64,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
 
     const cache = getCache();
     const cacheTopic = `${subject}::${topic}`;
-    const cacheKey = generateCacheKey(cacheTopic, level, format, user.id);
+    // Generic curriculum content can be reused across learners for the same subject/topic/level/format.
+    const cacheKey = generateCacheKey(cacheTopic, level, format);
     const cachedContent = await cache.get(cacheKey);
 
     if (cachedContent) {
@@ -73,13 +74,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
         const cachedValidation = validateLessonStructure(cachedLesson);
         const cachedCompleteness = checkCompleteness(cachedLesson);
         if (cachedValidation.isValid && cachedValidation.score >= MIN_VALIDATION_SCORE && cachedCompleteness.coverage >= 85) {
+          // Give each learner a distinct lesson identity instead of reusing the creator's ID.
+          const reusableLesson = {
+            ...cachedLesson,
+            id: "lesson_" + Date.now() + "_" + Math.random().toString(36).slice(2, 11),
+            createdAt: new Date(),
+          };
           return NextResponse.json({
             success: true,
-            lesson: cachedLesson,
+            lesson: reusableLesson,
             metadata: { cached: true, processingTime: Date.now() - startTime, validationScore: cachedValidation.score, completeness: cachedCompleteness.coverage, cacheStats: cache.getStats() },
           });
         }
-        await cache.clearByType("lesson");
+        await cache.delete(cacheKey);
       } catch {
         await cache.clearByType("lesson");
       }
