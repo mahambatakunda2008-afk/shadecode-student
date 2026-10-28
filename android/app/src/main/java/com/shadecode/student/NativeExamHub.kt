@@ -39,6 +39,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var facets by remember { mutableStateOf<NativeExamFacets?>(null) }
     var papers by remember { mutableStateOf<List<NativeExamPaper>>(emptyList()) }
     var syllabus by remember { mutableStateOf<NativeExamSyllabus?>(null) }
+    var syllabusQuery by remember { mutableStateOf("") }
     var level by remember { mutableStateOf<String?>(null) }
     var examSession by remember { mutableStateOf<String?>(null) }
     var year by remember { mutableStateOf<Int?>(null) }
@@ -483,11 +484,28 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             }
             if(syllabus==null) {
                 item { Text("Choose one of your selected subjects",style=MaterialTheme.typography.titleMedium) }
-                items(syllabi) { item -> ExamCatalogCard("${item.subject} · ${item.board}",item.levels.joinToString(" · ").ifBlank { "Levels available in library" }) {
+                item {
+                    OutlinedTextField(
+                        value = syllabusQuery,
+                        onValueChange = { syllabusQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("Search subjects and exam boards") },
+                        placeholder = { Text("e.g. Geography, Computer Science, ZIMSEC") },
+                    )
+                }
+                val visibleSyllabi = syllabi.filter {
+                    val query = syllabusQuery.trim()
+                    query.isBlank() || it.subject.contains(query, ignoreCase = true) ||
+                        it.board.contains(query, ignoreCase = true) ||
+                        it.levels.any { itemLevel -> itemLevel.contains(query, ignoreCase = true) }
+                }
+                items(visibleSyllabi) { item -> ExamCatalogCard("${item.subject} · ${item.board}",item.levels.joinToString(" · ").ifBlank { "Levels available in library" }) {
                     syllabus=item; level=null; examSession=null; year=null; papers=emptyList()
                     load { facets=withContext(Dispatchers.IO) { api.loadExamPaperFacets(session,item.id) } }
                 } }
                 if(!loading && syllabi.isEmpty() && error==null) item { Text("No syllabuses matched your selected subjects. Update your subjects in Profile.",color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                else if (!loading && visibleSyllabi.isEmpty()) item { Text("No matching subject or exam board. Try a different search.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             } else {
                 item { OutlinedButton(onClick={ syllabus=null; facets=null; level=null; examSession=null; year=null; papers=emptyList() }) { Text("← All subjects") } }
                 item { Text("${syllabus!!.subject} · ${syllabus!!.board}",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold) }
