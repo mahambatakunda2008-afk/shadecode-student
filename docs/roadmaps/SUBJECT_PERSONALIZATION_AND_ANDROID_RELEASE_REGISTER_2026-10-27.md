@@ -255,3 +255,16 @@ The queue currently covers task creation, task completion and timetable replacem
 - Fixed subject-key normalization to preserve letters and numbers from non-ASCII writing systems instead of stripping everything outside ASCII. Added regression coverage for accented Latin and Chinese subject names.
 - Latest Unicode regression-test commit is queued for CI and a new Vercel deployment. Do not call the Unicode fix production-live until that exact commit reaches READY.
 - Remaining verification: authenticated browser tests for add/remove, duplicate submissions and profile persistence; database trigger/RLS and cross-device race behavior; real Android device smoke tests; signed APK/AAB and release verification after signing credentials are configured.
+
+
+### Atomic subject mutations: PR #494 (2026-10-28)
+
+- [x] Added migration `20261028120000_atomic_profile_subject_mutations.sql` with an authenticated, security-invoker RPC that locks the current learner's profile row and serializes add/remove operations.
+- [x] Updated `/api/subjects` to call the RPC rather than writing a stale, client-read subject array back to the profile.
+- [x] Subject removal continues to deactivate the profile selection without deleting the subject catalogue row or historical lesson/task references.
+- [ ] CI for PR #494 must pass before merge.
+- [ ] Apply the migration to the actual Supabase project before deploying the route change. A Git migration file alone does not change the live database.
+- [ ] Verify duplicate/parallel add and remove requests, bearer-token and cookie-session authorization, RLS, and profile/catalog trigger behavior using a test account.
+- [ ] Confirm the exact merged commit reaches Vercel production before describing this repair as live.
+
+PR: https://github.com/mahambatakunda2008-afk/shadecode-student/pull/494
