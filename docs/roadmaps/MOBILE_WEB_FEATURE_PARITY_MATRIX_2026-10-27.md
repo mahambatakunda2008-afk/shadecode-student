@@ -43,6 +43,8 @@
 
 - The Exam Hub now shows a helpful empty state when no PDFs have been saved offline yet, explaining how to save papers and pointing learners to the subject catalogue below. This avoids hiding the offline-library section entirely for first-time users. Source change: `100a7222fd22275451f1c95dcb4a0b05e8c919c7`. CI and Android build/device verification are pending.
 
+- The offline-paper list now sorts by local save time, with the most recently saved PDFs first. Search and type filters remain local and continue to work offline. Source change: `7316ffc0764734c01a01ebb15f1699532d5f415b`; build and device verification are pending.
+
 ## 1. Parity rules
 
 1. **Feature parity, not pixel parity.** Adapt the interaction for a phone while preserving the capability, inputs, outputs, saved state and recovery paths.
