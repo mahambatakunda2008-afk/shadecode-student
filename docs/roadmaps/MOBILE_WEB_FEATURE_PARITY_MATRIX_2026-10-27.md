@@ -241,3 +241,10 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - Pause captures the remaining seconds and clears the deadline; resume creates a fresh deadline. Returning to the catalogue leaves an active timer running, matching a real timed attempt.
 - Expired attempts reopen as finished while retaining local answer notes. The timer/notes remain device-local and account-scoped.
 - Still requires Android build confirmation and real-device checks for force-stop/relaunch, pause/resume, account isolation, and offline PDF opening. This is not yet a signed production release.
+
+
+## 2026-10-28 native subject-filter correction
+
+- **Exam Hub subject filtering: source implemented; CI pending.** Replaced substring matching with exact canonical subject keys and a small explicit alias map. Mathematics no longer implies Additional Mathematics or Further Mathematics; Computer Science and ICT aliases are handled explicitly. Added JVM unit tests and wired them into Android CI before the debug APK build.
+- **Security boundary:** this is a user-experience and data-relevance correction, not authorization. The server must continue to validate learner access when creating signed paper URLs.
+- **Verification state:** awaiting the Android workflow result for the latest commit. No phone test or release is claimed.
