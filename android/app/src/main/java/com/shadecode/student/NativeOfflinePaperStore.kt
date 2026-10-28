@@ -38,8 +38,13 @@ object NativeOfflinePaperStore {
     private fun indexKey(userId: String) = "papers_" + digest(userId)
 
     fun list(context: Context, userId: String): List<SavedPaper> {
-        val array = runCatching { JSONArray(prefs(context).getString(indexKey(userId), "[]")) }.getOrNull() ?: JSONArray()
-        return buildList {
+        val directory = root(context)
+        // Remove abandoned partial downloads left by process death or a forced shutdown.
+        directory.listFiles()?.filter { it.isFile && it.name.endsWith(".part") }?.forEach { it.delete() }
+
+        val rawIndex = prefs(context).getString(indexKey(userId), "[]")
+        val array = runCatching { JSONArray(rawIndex) }.getOrNull() ?: JSONArray()
+        val papers = buildList {
             for (i in 0 until array.length()) {
                 val row = array.optJSONObject(i) ?: continue
                 val paper = runCatching {
@@ -53,7 +58,13 @@ object NativeOfflinePaperStore {
                 }.getOrNull() ?: continue
                 if (paper.userId == userId && file(context, paper) != null) add(paper)
             }
-        }.sortedByDescending { it.savedAt }
+        }.distinctBy { it.id }.sortedByDescending { it.savedAt }
+
+        // Repair stale index entries when a file was removed, truncated, or corrupted.
+        if (papers.size != array.length() || runCatching { JSONArray(rawIndex).length() }.getOrNull() != papers.size) {
+            writeIndex(context, userId, papers)
+        }
+        return papers
     }
 
     fun find(context: Context, userId: String, paperId: String): SavedPaper? =
@@ -124,7 +135,21 @@ object NativeOfflinePaperStore {
 
     fun file(context: Context, paper: SavedPaper): File? {
         if (!paper.fileName.matches(Regex("[a-f0-9]{64}\\.pdf"))) return null
-        return File(root(context), paper.fileName).takeIf { it.isFile && it.length() > 5 }
+        val candidate = File(root(context), paper.fileName)
+        if (!candidate.isFile || candidate.length() <= 5 || candidate.length() > MAX_PAPER_BYTES) return null
+        val header = runCatching {
+            candidate.inputStream().use { input ->
+                val bytes = ByteArray(5)
+                var offset = 0
+                while (offset < bytes.size) {
+                    val count = input.read(bytes, offset, bytes.size - offset)
+                    if (count < 0) break
+                    offset += count
+                }
+                if (offset == bytes.size) String(bytes, Charsets.US_ASCII) else ""
+            }
+        }.getOrDefault("")
+        return candidate.takeIf { header == "%PDF-" }
     }
 
     fun openUri(context: Context, paper: SavedPaper): Uri {
