@@ -245,13 +245,15 @@ class NativeApi {
     fun loadExamSyllabi(session: NativeSession, allowedSubjects: List<String>): List<NativeExamSyllabus> {
         if (allowedSubjects.isEmpty()) return emptyList()
         val rows = JSONArray(request("GET", "/rest/v1/syllabi?select=id,subject,board,levels&order=subject.asc", accessToken = session.accessToken))
-        val allowed = allowedSubjects.map { normalizeSubjectKey(it) }.toSet()
+        val allowed = allowedSubjects.map { NativeSubjectMatcher.key(it) }.toSet()
         return buildList {
             for (i in 0 until rows.length()) {
                 val row = rows.getJSONObject(i)
                 val subject = row.optString("subject").trim()
-                val key = normalizeSubjectKey(subject)
-                if (subject.isBlank() || allowed.none { it == key || it.contains(key) || key.contains(it) }) continue
+                val key = NativeSubjectMatcher.key(subject)
+                // Exact canonical matching prevents Mathematics from surfacing
+                // Additional Mathematics or Further Mathematics by substring.
+                if (subject.isBlank() || key !in allowed) continue
                 val levels = mutableListOf<String>()
                 row.optJSONArray("levels")?.let { values -> for (j in 0 until values.length()) levels += values.optString(j) }
                 add(NativeExamSyllabus(row.getString("id"), subject, row.optString("board"), levels))
