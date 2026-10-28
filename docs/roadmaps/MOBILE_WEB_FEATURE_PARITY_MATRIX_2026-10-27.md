@@ -273,3 +273,11 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - Bundle download is sequential and limited to the matching components available in the loaded catalogue; it does not claim that every paper has all components. It does not bundle files from other years/sessions or bypass redistribution restrictions.
 - Source commits: `a8797e09` (bundle action), `1a6b9dfb` (correct per-card progress and disable conflicting actions).
 - Android build status must be checked for these commits. Device/network interruption behavior remains unverified until runtime testing.
+
+### Native offline paper library search and filtering (2026-10-28)
+
+- Added a local search field to the **Available offline on this device** section. It matches subject, exam board, level, session, year, title, paper number, variant and paper kind.
+- Added quick filters for all saved PDFs, question papers, mark schemes and other components. Search and filtering operate only on the already-saved, account-scoped local index; they do not need internet access.
+- Added a clear no-results state when the search/filter combination has no matches.
+- Source change: `android/app/src/main/java/com/shadecode/student/NativeExamHub.kt`, commit `8dbc284eac836d530da03659109d0caf8de93dd0`.
+- **Verification state:** Android workflow `40745018511` was pending and CI workflow `40745017608` was in progress when documented. Do not claim build verification until the Android workflow succeeds. No physical-device test is claimed.
