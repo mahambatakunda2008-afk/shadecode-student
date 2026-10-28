@@ -39,8 +39,11 @@ object NativeOfflinePaperStore {
 
     fun list(context: Context, userId: String): List<SavedPaper> {
         val directory = root(context)
-        // Remove abandoned partial downloads left by process death or a forced shutdown.
-        directory.listFiles()?.filter { it.isFile && it.name.endsWith(".part") }?.forEach { it.delete() }
+        // Remove only old partial downloads. A fresh .part file may belong to an active download.
+        val staleBefore = System.currentTimeMillis() - PARTIAL_FILE_MAX_AGE_MS
+        directory.listFiles()?.filter {
+            it.isFile && it.name.endsWith(".part") && it.lastModified() < staleBefore
+        }?.forEach { it.delete() }
 
         val rawIndex = prefs(context).getString(indexKey(userId), "[]")
         val array = runCatching { JSONArray(rawIndex) }.getOrNull() ?: JSONArray()
@@ -268,4 +271,5 @@ object NativeOfflinePaperStore {
     }
 
     private const val MAX_PAPER_BYTES = 50L * 1024L * 1024L
+    private const val PARTIAL_FILE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
 }
