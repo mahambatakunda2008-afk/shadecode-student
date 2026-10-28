@@ -205,8 +205,8 @@ export default function QuestionTaggingPage() {
                       {q.difficulty && <span style={{ color: "var(--warning)" }}> · {q.difficulty}</span>}
                       {q.marks && <span style={{ color: "var(--muted-foreground)" }}> · {q.marks} marks</span>}
                     </div>
-                    <button onClick={() => removeQuestion(q.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>
-                      <Trash2 size={14} color="var(--danger)" />
+                    <button type="button" onClick={() => removeQuestion(q.id)} aria-label={`Delete question ${q.question_number}`} title="Delete question" style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>
+                      <Trash2 size={14} color="var(--danger)" aria-hidden="true" />
                     </button>
                   </div>
                 ))}

@@ -58,10 +58,12 @@ export function AchievementToast() {
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Dismiss achievement"
             onClick={() => { setVisible(false); clearNew(); }}
             className="flex-shrink-0 p-1 rounded-full hover:bg-white/10 transition-colors"
           >
-            <X className="w-3.5 h-3.5 text-slate-400" />
+            <X className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
           </button>
         </div>
       </div>

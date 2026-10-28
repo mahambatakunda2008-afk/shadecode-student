@@ -139,7 +139,7 @@ export default function ManageBoardsPage() {
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--foreground)", height: 32 }}>
               <input type="checkbox" checked={newGlobal} onChange={(e) => setNewGlobal(e.target.checked)} /> Global
             </label>
-            <button type="submit" disabled={submitting} style={iconBtn("var(--accent)")}><Check size={14} /></button>
+            <button type="submit" disabled={submitting} aria-label="Add board" title="Add board" style={iconBtn("var(--accent)")}><Check size={14} aria-hidden="true" /></button>
           </form>
         )}
 
@@ -160,8 +160,8 @@ export default function ManageBoardsPage() {
                       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--foreground)", height: 32 }}>
                         <input type="checkbox" checked={draft.is_global} onChange={(e) => setDraft({ ...draft, is_global: e.target.checked })} /> Global
                       </label>
-                      <button onClick={() => saveEdit(b.id)} disabled={submitting} style={iconBtn("var(--accent)")}><Check size={14} /></button>
-                      <button onClick={() => setEditingId(null)} style={iconBtn("var(--muted-foreground)")}><X size={14} /></button>
+                      <button type="button" onClick={() => saveEdit(b.id)} disabled={submitting} aria-label="Save board" title="Save board" style={iconBtn("var(--accent)")}><Check size={14} aria-hidden="true" /></button>
+                      <button type="button" onClick={() => setEditingId(null)} aria-label="Cancel editing" title="Cancel editing" style={iconBtn("var(--muted-foreground)")}><X size={14} aria-hidden="true" /></button>
                     </div>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -178,8 +178,8 @@ export default function ManageBoardsPage() {
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => startEdit(b)} style={iconBtn("var(--primary)")}><Pencil size={14} /></button>
-                        <button onClick={() => removeBoard(b.id)} style={iconBtn("var(--danger)")}><Trash2 size={14} /></button>
+                        <button type="button" onClick={() => startEdit(b)} aria-label={`Edit board ${b.name}`} title="Edit board" style={iconBtn("var(--primary)")}><Pencil size={14} aria-hidden="true" /></button>
+                        <button type="button" onClick={() => removeBoard(b.id)} aria-label={`Delete board ${b.name}`} title="Delete board" style={iconBtn("var(--danger)")}><Trash2 size={14} aria-hidden="true" /></button>
                       </div>
                     </div>
                   )}

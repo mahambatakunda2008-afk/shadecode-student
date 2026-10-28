@@ -147,8 +147,8 @@ export default function ManagePapersPage() {
                           {Object.entries(KIND_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
                       </MiniField>
-                      <button onClick={() => saveEdit(p.id)} disabled={saving} style={iconBtn("var(--accent)")}><Check size={14} /></button>
-                      <button onClick={cancelEdit} style={iconBtn("var(--muted-foreground)")}><X size={14} /></button>
+                      <button type="button" onClick={() => saveEdit(p.id)} disabled={saving} aria-label="Save paper" title="Save paper" style={iconBtn("var(--accent)")}><Check size={14} aria-hidden="true" /></button>
+                      <button type="button" onClick={cancelEdit} aria-label="Cancel editing" title="Cancel editing" style={iconBtn("var(--muted-foreground)")}><X size={14} aria-hidden="true" /></button>
                     </div>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -156,8 +156,8 @@ export default function ManagePapersPage() {
                         {p.level} · {p.session} {p.year} · Paper {p.paper_number}/{p.variant} · {KIND_LABELS[p.kind] ?? p.kind}
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => startEdit(p)} style={iconBtn("var(--primary)")}><Pencil size={14} /></button>
-                        <button onClick={() => removePaper(p.id)} style={iconBtn("var(--danger)")}><Trash2 size={14} /></button>
+                        <button type="button" onClick={() => startEdit(p)} aria-label={`Edit paper ${p.year} ${p.session} ${p.paper_number}/${p.variant}`} title="Edit paper" style={iconBtn("var(--primary)")}><Pencil size={14} aria-hidden="true" /></button>
+                        <button type="button" onClick={() => removePaper(p.id)} aria-label={`Delete paper ${p.year} ${p.session} ${p.paper_number}/${p.variant}`} title="Delete paper" style={iconBtn("var(--danger)")}><Trash2 size={14} aria-hidden="true" /></button>
                       </div>
                     </div>
                   )}

@@ -221,8 +221,14 @@ export default function StudyGoalInput({ onSubmit, onCancel, initialGoals }: Stu
                   {prioritySubjects.includes(subject) ? "Priority" : "Set Priority"}
                 </button>
                 <button
+                  type="button"
+                  aria-label={`Remove ${subject}`}
                   onClick={() => handleRemoveSubject(subject)}
                   style={{
+                    display: "grid",
+                    placeItems: "center",
+                    minWidth: "36px",
+                    minHeight: "36px",
                     padding: "4px",
                     borderRadius: "6px",
                     background: "transparent",
@@ -231,7 +237,7 @@ export default function StudyGoalInput({ onSubmit, onCancel, initialGoals }: Stu
                     cursor: "pointer",
                   }}
                 >
-                  <X size={14} />
+                  <X size={14} aria-hidden="true" />
                 </button>
               </div>
             ))}
