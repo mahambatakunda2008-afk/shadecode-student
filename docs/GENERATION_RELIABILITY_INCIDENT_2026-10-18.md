@@ -130,3 +130,9 @@ A fresh grouped runtime-error query for the last hour returned no recorded error
 The new Exam Simulation acceptance test is in PR #384. Its standard CI passed, but authenticated Playwright execution still requires `E2E_EMAIL`, `E2E_PASSWORD`, and `E2E_EXAM_SUBJECT`. The existing signed-in Learn acceptance test also remains unrun in this pass.
 
 **Incident remains open for end-to-end acceptance.** Do not mark lesson generation or Exam Simulation fully resolved until signed-in workflows verify generation, persistence, reload/resume, marking, and result persistence against the deployed app. The broader redesign PR #369 remains draft because visual and authenticated journey QA are incomplete.
+
+## 2026-10-28 lesson-cache reuse repair
+
+The Learn lesson-generation route now keys its validated in-process cache by canonical subject + topic + level + format, rather than appending the requesting user ID. This permits learners served by the same warm server instance to reuse generic curriculum content instead of making a duplicate provider call. A cache hit receives a fresh lesson ID and timestamp so the originating learner's lesson identity is not reused. If a cached entry fails structural or completeness validation, only that entry is evicted; the previous behavior cleared every cached lesson, allowing one malformed entry to flush unrelated valid work.
+
+**Scope limitation:** this cache is still process-local and may be cold on a new serverless instance or deployment. This is not yet a durable cross-instance/shared cache, and it does not prove provider-exhaustion recovery is fixed. Signed-in end-to-end generation, save, refresh/resume, and provider-failure tests remain release gates.
