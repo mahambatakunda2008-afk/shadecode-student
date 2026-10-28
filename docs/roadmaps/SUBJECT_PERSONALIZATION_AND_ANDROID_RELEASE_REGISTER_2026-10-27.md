@@ -268,3 +268,14 @@ The queue currently covers task creation, task completion and timetable replacem
 - [ ] Confirm the exact merged commit reaches Vercel production before describing this repair as live.
 
 PR: https://github.com/mahambatakunda2008-afk/shadecode-student/pull/494
+
+
+## Android release hardening: 2026-10-28
+
+- [x] Tightened `.github/workflows/android.yml` so the workflow considers production signing configured only when **all four** secrets exist: keystore Base64, keystore password, alias and key password. Previously it checked only the keystore secret, which could let an incomplete secret setup enter the release-build path without proving a production signature.
+- [x] Added release-artifact verification before upload: `apksigner verify --verbose --print-certs` for the APK, JAR-signature verification and certificate inspection for the AAB, plus checks for the expected package ID, workflow version code/name, minimum SDK 26 and target SDK 35.
+- [x] Kept public release gated behind an `android-v*` tag and complete signing configuration. This change does not publish a release or claim device testing.
+- [ ] Inspect the new Android workflow run for this commit and confirm the debug build still succeeds.
+- [ ] When signed credentials are present, require the new signature/package checks to pass before trusting release artifacts; confirm the APK and AAB use the retained production key.
+- [ ] Physical-device checks and public release remain postponed until a device is available. Continue source-level implementation, CI validation and release documentation meanwhile.
+
