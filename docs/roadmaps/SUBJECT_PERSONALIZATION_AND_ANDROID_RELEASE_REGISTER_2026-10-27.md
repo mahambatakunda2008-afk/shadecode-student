@@ -279,3 +279,14 @@ PR: https://github.com/mahambatakunda2008-afk/shadecode-student/pull/494
 - [ ] When signed credentials are present, require the new signature/package checks to pass before trusting release artifacts; confirm the APK and AAB use the retained production key.
 - [ ] Physical-device checks and public release remain postponed until a device is available. Continue source-level implementation, CI validation and release documentation meanwhile.
 
+
+
+## Exact subject filtering and automated tests: 2026-10-28
+
+- [x] Added `NativeSubjectMatcher` to canonicalize common subject aliases without substring matching.
+- [x] Fixed native Exam Hub syllabus filtering so a learner selecting Mathematics does not see Additional Mathematics or Further Mathematics merely because the subject names contain the word “Mathematics”.
+- [x] Added unit tests for Mathematics aliases, specialist-mathematics separation, Computer Science/ICT aliases, blank values and empty subject selections.
+- [x] Added JUnit 4 and a dedicated Android CI step to run `:app:testDebugUnitTest` before assembling the debug APK.
+- [ ] Confirm the new Android CI run passes on the latest main commit. This code change is committed, but until the run finishes it is not build-verified.
+- [ ] Keep server-side paper-access authorization as the security boundary; client filtering improves relevance but does not grant access.
+- [ ] Physical-device testing and public release remain deferred until a phone is available.
