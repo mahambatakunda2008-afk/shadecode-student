@@ -535,8 +535,66 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             detail = "${paper.level} · ${paper.session} ${paper.year}",
                             isSaved = saved,
                             isOpening = openingPaperId == paper.id,
-                            isDownloading = downloadingPaperId == paper.id,
+                            isDownloading = downloadingPaperId != null,
+                            isQuestionPaper = paper.kind.lowercase() in listOf("qp", "question_paper", "question-paper"),
                             onStartAttempt = { beginAttempt(paper) },
+                            onDownloadBundle = {
+                                scope.launch {
+                                    downloadingPaperId = paper.id
+                                    error = null
+                                    var savedCount = 0
+                                    var skippedCount = 0
+                                    val componentGroups = listOf(
+                                        setOf("ms", "mark_scheme", "mark-scheme"),
+                                        setOf("in", "insert", "inserts"),
+                                        setOf("db", "data_booklet", "data-booklet", "formulae_booklet", "formulae-booklet")
+                                    )
+                                    val candidates = papers.filter { candidate ->
+                                        candidate.id != paper.id &&
+                                            candidate.paperNumber == paper.paperNumber &&
+                                            candidate.variant == paper.variant &&
+                                            componentGroups.any { it.contains(candidate.kind.lowercase()) }
+                                    }
+                                    val bundle = listOf(paper) + componentGroups.mapNotNull { kinds ->
+                                        candidates.firstOrNull { it.kind.lowercase() in kinds }
+                                    }
+                                    try {
+                                        for (bundlePaper in bundle.distinctBy { it.id }) {
+                                            if (NativeOfflinePaperStore.find(context, session.userId, bundlePaper.id) != null) {
+                                                skippedCount++
+                                                continue
+                                            }
+                                            val signedUrl = withContext(Dispatchers.IO) {
+                                                api.createSignedExamPaperUrl(session, bundlePaper.id)
+                                            }
+                                            withContext(Dispatchers.IO) {
+                                                NativeOfflinePaperStore.download(
+                                                    context, session.userId, bundlePaper,
+                                                    syllabus!!.subject, syllabus!!.board, signedUrl
+                                                )
+                                            }
+                                            savedCount++
+                                        }
+                                        offlinePapers = withContext(Dispatchers.IO) {
+                                            NativeOfflinePaperStore.list(context, session.userId)
+                                        }
+                                        status = if (savedCount > 0) {
+                                            "Saved " + savedCount + " file(s) from this exam bundle offline" +
+                                                if (skippedCount > 0) "; " + skippedCount + " already saved." else "."
+                                        } else {
+                                            "This exam bundle is already saved offline."
+                                        }
+                                    } catch (e: Exception) {
+                                        offlinePapers = withContext(Dispatchers.IO) {
+                                            NativeOfflinePaperStore.list(context, session.userId)
+                                        }
+                                        error = "Bundle partially saved (" + savedCount + " of " + bundle.size +
+                                            " new files). " + (e.message ?: "Retry to continue.")
+                                    } finally {
+                                        downloadingPaperId = null
+                                    }
+                                }
+                            },
                             onOpen = {
                                 val cached = NativeOfflinePaperStore.find(context, session.userId, paper.id)
                                 if (cached != null) {
@@ -605,9 +663,11 @@ private fun NativeExamPaperCard(
     isSaved: Boolean,
     isOpening: Boolean,
     isDownloading: Boolean,
+    isQuestionPaper: Boolean,
     onOpen: () -> Unit,
     onDownload: () -> Unit,
     onStartAttempt: () -> Unit,
+    onDownloadBundle: () -> Unit,
 ) {
     Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(7.dp)) {
@@ -621,8 +681,11 @@ private fun NativeExamPaperCard(
                     Text(when { isDownloading -> "Downloading…"; isSaved -> "Saved offline"; else -> "Download for offline" })
                 }
             }
-            if (title.contains("Question Paper")) {
-                OutlinedButton(onClick=onStartAttempt, modifier=Modifier.fillMaxWidth()) { Text("Start timed attempt") }
+            if (isQuestionPaper) {
+                OutlinedButton(onClick=onDownloadBundle, enabled=!isDownloading && !isOpening, modifier=Modifier.fillMaxWidth()) {
+                    Text(if (isDownloading) "Saving exam bundle…" else "Save complete exam bundle")
+                }
+                OutlinedButton(onClick=onStartAttempt, enabled=!isDownloading, modifier=Modifier.fillMaxWidth()) { Text("Start timed attempt") }
             }
             if (isSaved) Text("Stored on this device. No connection needed to reopen it.", style=MaterialTheme.typography.labelSmall, color=MaterialTheme.colorScheme.primary)
         }
