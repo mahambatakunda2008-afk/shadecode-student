@@ -135,4 +135,8 @@ The new Exam Simulation acceptance test is in PR #384. Its standard CI passed, b
 
 The Learn lesson-generation route now keys its validated in-process cache by canonical subject + topic + level + format, rather than appending the requesting user ID. This permits learners served by the same warm server instance to reuse generic curriculum content instead of making a duplicate provider call. A cache hit receives a fresh lesson ID and timestamp so the originating learner's lesson identity is not reused. If a cached entry fails structural or completeness validation, only that entry is evicted; the previous behavior cleared every cached lesson, allowing one malformed entry to flush unrelated valid work.
 
+
+
+A follow-up audit found one remaining malformed-cache catch path in the same endpoint: JSON parse/validation exceptions still cleared every entry of type `lesson`. That catch now deletes only the requested `cacheKey`, matching the targeted eviction policy and preventing one corrupt cache entry from flushing unrelated lessons. This is a source change on `fix/lesson-cache-targeted-eviction`; it remains pending CI verification and merge.
+
 **Scope limitation:** this cache is still process-local and may be cold on a new serverless instance or deployment. This is not yet a durable cross-instance/shared cache, and it does not prove provider-exhaustion recovery is fixed. Signed-in end-to-end generation, save, refresh/resume, and provider-failure tests remain release gates.
