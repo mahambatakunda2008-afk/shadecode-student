@@ -58,24 +58,23 @@ export async function POST(request: NextRequest) {
     if (profileError) return NextResponse.json({ error: "Could not load your learner profile." }, { status: 500 });
     if (!profile) return NextResponse.json({ error: "Your learner profile is not ready yet. Finish onboarding first." }, { status: 409 });
 
-    const current = normalizeSubjectNames(profile.subjects);
-    const existing = current.find(name => subjectMatches(name, requested));
-    if (!existing) {
-      // profiles.subjects is the canonical selection; its database trigger syncs the
-      // per-user subjects catalogue used by Learn. Keep this write scoped to this user.
-      const { error: saveError } = await supabase.from("profiles")
-        .update({ subjects: [...current, requested] }).eq("id", user.id);
-      if (saveError) {
-        console.error("[subjects] profile update failed", saveError);
-        return NextResponse.json({ error: "Could not save this subject to your profile." }, { status: 500 });
-      }
+    const before = normalizeSubjectNames(profile.subjects);
+    const existing = before.find(name => subjectMatches(name, requested));
+
+    // The database function locks the profile row and performs the mutation atomically,
+    // so simultaneous requests cannot silently overwrite each other's subject changes.
+    const { data, error: saveError } = await supabase.rpc("mutate_my_profile_subjects", {
+      p_action: "add",
+      p_subject: requested,
+    });
+    if (saveError || !Array.isArray(data)) {
+      console.error("[subjects] atomic profile update failed", saveError);
+      return NextResponse.json({ error: "Could not save this subject to your profile." }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      subject: existing ? canonicalSubjectName(existing) : requested,
-      subjects: existing ? current : [...current, requested],
-    });
+    const subjects = normalizeSubjectNames(data);
+    const resolved = subjects.find(name => subjectMatches(name, requested)) ?? requested;
+    return NextResponse.json({ success: true, subject: existing ?? resolved, subjects });
   } catch (error) {
     console.error("[subjects] add failed", error);
     return NextResponse.json({ error: "Unable to add this subject right now." }, { status: 500 });
@@ -102,23 +101,28 @@ export async function DELETE(request: NextRequest) {
       .from("profiles").select("subjects").eq("id", user.id).maybeSingle();
     if (profileError || !profile) return NextResponse.json({ error: "Could not load your learner profile." }, { status: 500 });
 
-    const current = normalizeSubjectNames(profile.subjects);
-    const nextSubjects = current.filter(value => !subjectMatches(value, subject.name));
-    if (nextSubjects.length === current.length) {
+    const before = normalizeSubjectNames(profile.subjects);
+    const activeSubject = before.find(value => subjectMatches(value, subject.name));
+    if (!activeSubject) {
       return NextResponse.json({ error: "This subject is not in your active profile selection." }, { status: 409 });
     }
 
-    // Do not delete the subjects row: existing lessons/tasks may reference its UUID.
-    // Learn filters subject rows against profiles.subjects, so removing the profile
-    // selection hides it from the active subject list while preserving existing work.
-    const { error: saveError } = await supabase.from("profiles")
-      .update({ subjects: nextSubjects }).eq("id", user.id);
-    if (saveError) {
-      console.error("[subjects] profile removal failed", saveError);
+    // Pass the exact active profile value so aliases are removed consistently.
+    // Keep the catalogue row so lessons and tasks retain their historical subject UUID.
+    const { data, error: saveError } = await supabase.rpc("mutate_my_profile_subjects", {
+      p_action: "remove",
+      p_subject: activeSubject,
+    });
+    if (saveError || !Array.isArray(data)) {
+      console.error("[subjects] atomic profile removal failed", saveError);
       return NextResponse.json({ error: "Could not remove this subject. Your data has not been deleted." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, removed: subject.name, subjects: nextSubjects });
+    return NextResponse.json({
+      success: true,
+      removed: subject.name,
+      subjects: normalizeSubjectNames(data),
+    });
   } catch (error) {
     console.error("[subjects] remove failed", error);
     return NextResponse.json({ error: "Unable to remove this subject right now." }, { status: 500 });
