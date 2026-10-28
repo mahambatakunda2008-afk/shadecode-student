@@ -64,6 +64,7 @@ fun NativeExamSimulationScreen(
     var answers by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var report by remember { mutableStateOf<JSONObject?>(null) }
     var secondsLeft by remember { mutableIntStateOf(0) }
+    var deadlineMillis by remember { mutableLongStateOf(0L) }
     var taking by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -97,16 +98,29 @@ fun NativeExamSimulationScreen(
                         buildMap { val keys = objectJson.keys(); while (keys.hasNext()) { val key = keys.next(); put(key, objectJson.optString(key)) } }
                     }
                     selectedSubject = saved.subject
-                    secondsLeft = (saved.secondsLeft - (if (saved.savedAt > 0L) ((System.currentTimeMillis() - saved.savedAt).coerceAtLeast(0L) / 1000L).toInt() else 0)).coerceAtLeast(0)
-                    taking = saved.taking
-                    status = "Recovered your unfinished exam on this device."
+                    val now = System.currentTimeMillis()
+                    val restoredSeconds = if (saved.taking && saved.deadlineMillis > 0L) {
+                        (((saved.deadlineMillis - now).coerceAtLeast(0L) + 999L) / 1000L).toInt()
+                    } else {
+                        saved.secondsLeft.coerceAtLeast(0)
+                    }
+                    secondsLeft = restoredSeconds
+                    taking = saved.taking && restoredSeconds > 0
+                    deadlineMillis = if (taking) {
+                        if (saved.deadlineMillis > now) saved.deadlineMillis else now + restoredSeconds * 1000L
+                    } else 0L
+                    status = if (saved.taking && restoredSeconds == 0) {
+                        "Time expired while the app was closed. Your answers are saved; submit when ready."
+                    } else {
+                        "Recovered your unfinished exam on this device."
+                    }
                 }
             }
         }
         attemptRestored = true
     }
 
-    LaunchedEffect(paper, answers, selectedSubject, secondsLeft, taking, report, attemptRestored) {
+    LaunchedEffect(paper, answers, selectedSubject, secondsLeft, taking, deadlineMillis, report, attemptRestored) {
         if (!attemptRestored) return@LaunchedEffect
         if (paper == null || report != null) {
             NativeExamAttemptStore.clear(context, session.userId)
@@ -120,18 +134,26 @@ fun NativeExamSimulationScreen(
                 answersJson = JSONObject().apply { answers.forEach { (id, answer) -> put(id, answer) } }.toString(),
                 secondsLeft = secondsLeft,
                 taking = taking,
+                deadlineMillis = deadlineMillis,
             )
         }
     }
 
-    LaunchedEffect(taking, secondsLeft) {
+    LaunchedEffect(taking, deadlineMillis) {
         if (taking) {
-            if (secondsLeft <= 0) {
-                taking = false
-                status = "Time is up. Your answers are saved on this device. Submit when ready."
-            } else {
-                delay(1000)
-                secondsLeft = (secondsLeft - 1).coerceAtLeast(0)
+            if (deadlineMillis <= 0L && secondsLeft > 0) {
+                deadlineMillis = System.currentTimeMillis() + secondsLeft * 1000L
+            }
+            while (taking && deadlineMillis > 0L) {
+                val remaining = (((deadlineMillis - System.currentTimeMillis()).coerceAtLeast(0L) + 999L) / 1000L).toInt()
+                secondsLeft = remaining
+                if (remaining <= 0) {
+                    taking = false
+                    deadlineMillis = 0L
+                    status = "Time is up. Your answers are saved on this device. Submit when ready."
+                    break
+                }
+                delay(1000L)
             }
         }
     }
@@ -164,7 +186,9 @@ fun NativeExamSimulationScreen(
                 questionsJson = rawArray
                 answers = emptyMap()
                 report = null
-                secondsLeft = (exam.optInt("durationMinutes", 30).coerceIn(1, 180)) * 60
+                val durationSeconds = exam.optInt("durationMinutes", 30).coerceIn(1, 180) * 60
+                secondsLeft = durationSeconds
+                deadlineMillis = System.currentTimeMillis() + durationSeconds * 1000L
                 taking = true
                 status = "Paper ready. Your answers stay on this screen until you submit."
             } catch (e: Exception) {
@@ -305,7 +329,7 @@ fun NativeExamSimulationScreen(
                         }
                     }
                 }
-                Button(onClick = { paper = null; questions = emptyList(); report = null; taking = false; answers = emptyMap(); status = null; error = null }, modifier = Modifier.fillMaxWidth()) { Text("Start another exam") }
+                Button(onClick = { paper = null; questions = emptyList(); report = null; taking = false; deadlineMillis = 0L; answers = emptyMap(); status = null; error = null }, modifier = Modifier.fillMaxWidth()) { Text("Start another exam") }
             }
         }
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
