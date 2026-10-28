@@ -207,6 +207,16 @@ object NativeOfflinePaperStore {
                     }
                 }
             }
+            // Some servers omit Content-Length, but when it is present the received byte
+            // count must match it. Never promote a truncated response into the offline library.
+            if (declaredLength >= 0L && total != declaredLength) {
+                throw IllegalStateException(
+                    "The paper download was incomplete ($total of $declaredLength bytes). Please retry."
+                )
+            }
+            if (total <= 5L) {
+                throw IllegalStateException("The downloaded paper is empty or incomplete. Please retry.")
+            }
             if (!temp.renameTo(target)) {
                 temp.copyTo(target, overwrite = true)
                 temp.delete()
