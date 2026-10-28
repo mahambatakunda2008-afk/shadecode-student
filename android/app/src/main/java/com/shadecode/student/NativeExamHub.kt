@@ -197,13 +197,46 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                     for (subjectItem in syllabi) {
                                         if (savedCount >= 12) break
                                         val available = withContext(Dispatchers.IO) { api.loadExamPaperFacets(session, subjectItem.id) }
-                                        val chosenLevel = available.levels.firstOrNull() ?: subjectItem.levels.firstOrNull() ?: continue
-                                        val levelFacets = withContext(Dispatchers.IO) { api.loadExamPaperFacets(session, subjectItem.id, chosenLevel) }
-                                        val chosenSession = levelFacets.sessions.firstOrNull() ?: continue
-                                        val chosenYear = levelFacets.years.maxOrNull() ?: continue
-                                        val availablePapers = withContext(Dispatchers.IO) {
-                                            api.loadExamPapers(session, subjectItem.id, chosenLevel, chosenSession, chosenYear)
+                                        val candidateLevels = (available.levels + subjectItem.levels).distinct()
+                                        if (candidateLevels.isEmpty()) continue
+
+                                        // Facets are returned alphabetically, not chronologically. Search newest
+                                        // year first and prefer the latest exam session within that year, while
+                                        // checking actual paper availability before choosing a bundle.
+                                        var chosenLevel: String? = null
+                                        var availablePapers: List<NativeExamPaper> = emptyList()
+                                        val sessionRecency: (String) -> Int = { value ->
+                                            when (value.lowercase().replace(" ", "").replace("-", "").replace("/", "")) {
+                                                "octobernovember", "octnov", "on" -> 3
+                                                "mayjune", "mayjun", "mj" -> 2
+                                                "febmarch", "febmar", "fm" -> 1
+                                                else -> 0
+                                            }
                                         }
+                                        searchLevels@ for (candidateLevel in candidateLevels) {
+                                            val levelFacets = withContext(Dispatchers.IO) {
+                                                api.loadExamPaperFacets(session, subjectItem.id, candidateLevel)
+                                            }
+                                            val orderedSessions = levelFacets.sessions.sortedWith(
+                                                compareByDescending<String> { sessionRecency(it) }.thenByDescending { it }
+                                            )
+                                            for (candidateYear in levelFacets.years.sortedDescending()) {
+                                                for (candidateSession in orderedSessions) {
+                                                    val candidatePapers = withContext(Dispatchers.IO) {
+                                                        api.loadExamPapers(session, subjectItem.id, candidateLevel, candidateSession, candidateYear)
+                                                    }
+                                                    if (candidatePapers.any {
+                                                            it.kind.lowercase() in listOf("qp", "question_paper", "question-paper")
+                                                        }) {
+                                                        chosenLevel = candidateLevel
+                                                        availablePapers = candidatePapers
+                                                        break@searchLevels
+                                                    }
+                                                }
+                                                if (chosenLevel != null) break@searchLevels
+                                            }
+                                        }
+                                        if (chosenLevel == null) continue
                                         val questionPaper = availablePapers.firstOrNull {
                                             it.kind.lowercase() in listOf("qp", "question_paper", "question-paper")
                                         } ?: continue
