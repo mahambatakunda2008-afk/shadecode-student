@@ -14,8 +14,22 @@ class NativeLocalModelManager(private val context: Context) {
     data class DownloadResult(val model: NativeLocalModelSpec, val file: File, val bytes: Long)
 
     suspend fun isInstalled(model: NativeLocalModelSpec): Boolean = withContext(Dispatchers.IO) {
+        // Only Gemma currently has a wired downloader, checksum, and runtime path.
+        if (model.id != GEMMA_ID) return@withContext false
         val file = modelFile(model)
-        file.isFile && file.length() >= model.approximateSizeMb * 1024L * 1024L / 2L
+        if (!file.isFile) return@withContext false
+        val bytes = file.length()
+        if (bytes !in GEMMA_MIN_BYTES..GEMMA_MAX_BYTES) {
+            file.delete()
+            return@withContext false
+        }
+        try {
+            verifySha256(file, GEMMA_SHA256)
+            true
+        } catch (_: IllegalStateException) {
+            file.delete()
+            false
+        }
     }
 
     suspend fun downloadGemma270m(
@@ -26,9 +40,19 @@ class NativeLocalModelManager(private val context: Context) {
         val destination = File(directory, GEMMA_FILE)
         val partial = File(directory, "$GEMMA_FILE.part")
 
-        if (destination.isFile && destination.length() >= GEMMA_MIN_BYTES) {
-            verifySha256(destination, GEMMA_SHA256)
-            return@withContext DownloadResult(model, destination, destination.length())
+        if (destination.isFile) {
+            val existingBytes = destination.length()
+            if (existingBytes in GEMMA_MIN_BYTES..GEMMA_MAX_BYTES) {
+                try {
+                    verifySha256(destination, GEMMA_SHA256)
+                    return@withContext DownloadResult(model, destination, existingBytes)
+                } catch (_: IllegalStateException) {
+                    // A corrupt model must not block every future retry.
+                    destination.delete()
+                }
+            } else {
+                destination.delete()
+            }
         }
 
         val connection = (URL(GEMMA_URL).openConnection() as HttpURLConnection).apply {
@@ -43,6 +67,7 @@ class NativeLocalModelManager(private val context: Context) {
         try {
             check(connection.responseCode in 200..299) { "GGUF download failed: HTTP ${connection.responseCode}" }
             val total = connection.contentLengthLong
+            check(total <= GEMMA_MAX_BYTES) { "GGUF asset exceeds the safe download limit" }
             var downloaded = 0L
             connection.inputStream.use { input ->
                 FileOutputStream(partial).use { output ->
@@ -50,6 +75,9 @@ class NativeLocalModelManager(private val context: Context) {
                     while (true) {
                         val count = input.read(buffer)
                         if (count < 0) break
+                        check(downloaded + count <= GEMMA_MAX_BYTES) {
+                            "GGUF asset exceeded the safe download limit"
+                        }
                         output.write(buffer, 0, count)
                         downloaded += count
                         onProgress(downloaded, total)
@@ -68,8 +96,10 @@ class NativeLocalModelManager(private val context: Context) {
         }
     }
 
-    fun modelFile(model: NativeLocalModelSpec): File =
-        File(File(context.filesDir, MODELS_DIRECTORY), "$GEMMA_FILE")
+    fun modelFile(model: NativeLocalModelSpec): File {
+        require(model.id == GEMMA_ID) { "This model does not have a supported downloader yet" }
+        return File(File(context.filesDir, MODELS_DIRECTORY), GEMMA_FILE)
+    }
 
     suspend fun deleteGemma270m(): Boolean = withContext(Dispatchers.IO) {
         modelFile(NativeLocalModelCatalog.models.first { it.id == GEMMA_ID }).delete()
@@ -96,6 +126,8 @@ class NativeLocalModelManager(private val context: Context) {
         private const val GEMMA_URL = "https://huggingface.co/gguf-org/gemma-3-270m-it-gguf/resolve/main/gemma-3-270m-it-q4_k_m.gguf?download=true"
         private const val GEMMA_SHA256 = "55aed1673d2f3014a739732c659c4995fc57abf6e4e9c68462fb2ceee820ea2f"
         private const val GEMMA_MIN_BYTES = 240L * 1024L * 1024L
+        // The catalog's 250 MB estimate leaves room for metadata while preventing runaway downloads.
+        private const val GEMMA_MAX_BYTES = 400L * 1024L * 1024L
         private const val BUFFER_SIZE = 64 * 1024
     }
 }
