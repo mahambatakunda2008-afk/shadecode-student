@@ -35,6 +35,7 @@
 - Android installation itself does not run network downloads. This is a first-use, post-install action after sign-in and opening Exam Hub.
 - This uses the existing authenticated exam catalogue and signed paper-download route. It does not bypass redistribution rights, and it only downloads papers already present in the authorized catalogue.
 - The implementation is in `NativeExamHub.kt` and requires `ACCESS_NETWORK_STATE` to avoid starting the pack over mobile data. Build and physical-device validation are still required before calling this verified.
+- The starter-pack selector now also attempts matching inserts and data/formula booklets, when the catalogue contains them for the same paper number and variant, alongside the question paper and mark scheme. This is committed source code; CI and runtime verification for this latest change are pending.
 
 ## 1. Parity rules
 
