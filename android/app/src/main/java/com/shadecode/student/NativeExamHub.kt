@@ -519,7 +519,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                 if (visibleOfflinePapers.isEmpty()) {
                     item { Text("No saved papers match this search or filter.", color=MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
-                items(visibleOfflinePapers, key = { "offline-${it.id}" }) { saved ->
+                items(visibleOfflinePapers.sortedByDescending { it.savedAt }, key = { "offline-${it.id}" }) { saved ->
                     Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(6.dp)) {
                             Text("${saved.subject} · ${saved.board}", fontWeight=FontWeight.SemiBold)
