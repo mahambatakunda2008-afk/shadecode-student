@@ -265,3 +265,11 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - An explicit no-match message appears when a query returns no subject or board.
 - Source change: `android/app/src/main/java/com/shadecode/student/NativeExamHub.kt`, commit `3133c74530e1bacefa4df3977d9116811319addb`.
 - Build status must be checked in GitHub Actions. Physical-device interaction and large-catalogue usability remain unverified.
+
+### Native Exam Hub: save complete matching exam bundles (2026-10-28)
+
+- Added a **Save complete exam bundle** action to question-paper cards. It selects the question paper plus the first available matching mark scheme, insert and data/formula booklet for the same paper number and variant from the currently loaded exam session.
+- Each file is downloaded through the existing authenticated signed-URL route and validated by the account-scoped offline store. Already-saved files are skipped; if one download fails, successfully saved files remain indexed and the error reports a partial bundle so the learner can retry.
+- Bundle download is sequential and limited to the matching components available in the loaded catalogue; it does not claim that every paper has all components. It does not bundle files from other years/sessions or bypass redistribution restrictions.
+- Source commits: `a8797e09` (bundle action), `1a6b9dfb` (correct per-card progress and disable conflicting actions).
+- Android build status must be checked for these commits. Device/network interruption behavior remains unverified until runtime testing.
