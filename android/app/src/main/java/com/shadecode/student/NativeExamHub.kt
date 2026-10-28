@@ -207,11 +207,21 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                         val questionPaper = availablePapers.firstOrNull {
                                             it.kind.lowercase() in listOf("qp", "question_paper", "question-paper")
                                         } ?: continue
-                                        val markScheme = availablePapers.firstOrNull {
-                                            it.kind.lowercase() in listOf("ms", "mark_scheme", "mark-scheme") &&
-                                                it.paperNumber == questionPaper.paperNumber && it.variant == questionPaper.variant
+                                        val matchingComponentKinds = mapOf(
+                                            "mark scheme" to setOf("ms", "mark_scheme", "mark-scheme"),
+                                            "insert" to setOf("in", "insert", "inserts"),
+                                            "data booklet" to setOf("db", "data_booklet", "data-booklet", "formulae_booklet", "formulae-booklet"),
+                                        )
+                                        val matchingComponents = matchingComponentKinds.values.mapNotNull { kinds ->
+                                            availablePapers.firstOrNull { paper ->
+                                                paper.kind.lowercase() in kinds &&
+                                                    paper.paperNumber == questionPaper.paperNumber &&
+                                                    paper.variant == questionPaper.variant
+                                            }
                                         }
-                                        for (paper in listOfNotNull(questionPaper, markScheme).distinctBy { it.id }) {
+                                        // Keep the complete matching exam bundle together where the catalogue has it:
+                                        // question paper, mark scheme, insert and/or data/formula booklet.
+                                        for (paper in (listOf(questionPaper) + matchingComponents).distinctBy { it.id }) {
                                             if (savedCount >= 12) break
                                             if (NativeOfflinePaperStore.find(context, session.userId, paper.id) != null) continue
                                             attemptedCount++
