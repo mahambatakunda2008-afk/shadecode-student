@@ -133,6 +133,9 @@ The new Exam Simulation acceptance test is in PR #384. Its standard CI passed, b
 
 ## 2026-10-28 lesson-cache reuse repair
 
+
+The same route also previously ignored Supabase's returned `error` value from the `generated_lessons` insert. Supabase can report insert failures without throwing, so the route could return `success: true` even when no durable lesson row was saved. It now checks the returned error and responds with `LESSON_PERSISTENCE_FAILED` / HTTP 503 instead of claiming success. This is a correctness guard, not proof that the primary Learn workflow is fixed; the end-to-end save/reopen gate remains open.
+
 The Learn lesson-generation route now keys its validated in-process cache by canonical subject + topic + level + format, rather than appending the requesting user ID. This permits learners served by the same warm server instance to reuse generic curriculum content instead of making a duplicate provider call. A cache hit receives a fresh lesson ID and timestamp so the originating learner's lesson identity is not reused. If a cached entry fails structural or completeness validation, only that entry is evicted; the previous behavior cleared every cached lesson, allowing one malformed entry to flush unrelated valid work.
 
 
