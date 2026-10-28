@@ -6,6 +6,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Entity(tableName = "subjects")
 data class NativeSubjectEntity(
@@ -97,6 +99,27 @@ abstract class NativeDatabase : RoomDatabase() {
     abstract fun sync(): NativeSyncDao
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `lessons` (
+                        `id` TEXT NOT NULL,
+                        `subjectId` TEXT NOT NULL,
+                        `topic` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `description` TEXT NOT NULL,
+                        `difficulty` TEXT NOT NULL,
+                        `blocksJson` TEXT NOT NULL,
+                        `progress` REAL NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile private var instance: NativeDatabase? = null
         @Volatile private var applicationContext: Context? = null
 
@@ -106,7 +129,12 @@ abstract class NativeDatabase : RoomDatabase() {
                 context.applicationContext,
                 NativeDatabase::class.java,
                 "shadecode_student.db",
-            ).fallbackToDestructiveMigration().build().also { instance = it }
+            )
+                // Version 1 already contains subjects, lesson_progress and pending_sync.
+                // Add the lesson cache without wiping offline progress or queued work.
+                .addMigrations(MIGRATION_1_2)
+                .build()
+                .also { instance = it }
         }
 
         fun appContext(): Context = requireNotNull(applicationContext) { "Native database has not been initialized." }
