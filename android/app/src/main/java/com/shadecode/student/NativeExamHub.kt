@@ -157,7 +157,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Prepare offline papers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text("With your permission, Shadecode will try to save a recent question paper and its matching mark scheme for each available subject. The starter pack is capped at 12 PDFs.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("With your permission, Shadecode will try to save a recent question paper and its matching mark scheme, plus any matching insert or data/formula booklet available. The starter pack is capped at 12 PDFs.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("• Downloads only on Wi-Fi or Ethernet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("• Saved privately on this device", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("• Works offline after download", color = MaterialTheme.colorScheme.onSurfaceVariant)
