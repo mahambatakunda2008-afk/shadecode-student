@@ -88,7 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateL
         }
         await cache.delete(cacheKey);
       } catch {
-        await cache.clearByType("lesson");
+        await cache.delete(cacheKey);
       }
     }
 
