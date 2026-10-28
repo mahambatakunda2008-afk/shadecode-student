@@ -288,5 +288,7 @@ PR: https://github.com/mahambatakunda2008-afk/shadecode-student/pull/494
 - [x] Added unit tests for Mathematics aliases, specialist-mathematics separation, Computer Science/ICT aliases, blank values and empty subject selections.
 - [x] Added JUnit 4 and a dedicated Android CI step to run `:app:testDebugUnitTest` before assembling the debug APK.
 - [ ] Confirm the new Android CI run passes on the latest main commit. This code change is committed, but until the run finishes it is not build-verified.
+
+- [x] Unified the native profile-subject catalog filter with the same canonical matcher used by Exam Hub, avoiding two separate normalization rules that could disagree on aliases. Commit: `44b98061fa05b38fdebf87987c147cf0aa0aaa3e`.
 - [ ] Keep server-side paper-access authorization as the security boundary; client filtering improves relevance but does not grant access.
 - [ ] Physical-device testing and public release remain deferred until a phone is available.
