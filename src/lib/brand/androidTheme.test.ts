@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -54,3 +54,30 @@ describe.skipIf(!hasAndroid)("Android theme mirrors the web dark theme", () => {
     }
   });
 });
+
+describe.skipIf(!hasAndroid)("Android XML resources are well-formed", () => {
+  const walk = (dir: string): string[] =>
+    readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => {
+      const rel = path.posix.join(dir, e.name);
+      return e.isDirectory() ? (e.name === "build" ? [] : walk(rel)) : e.name.endsWith(".xml") ? [rel] : [];
+    });
+
+  // The Android build fails (during resource processing, only visible in CI) if an XML comment contains "--"
+  // or ends with "-". A comment mentioning a CSS token like --background caused exactly that.
+  it("no XML comment contains a double hyphen or ends with a hyphen", () => {
+    for (const file of walk("android/app/src/main")) {
+      for (const m of read(file).matchAll(/<!--([\s\S]*?)-->/g)) {
+        expect(m[1], `${file}: illegal "--" inside XML comment`).not.toContain("--");
+        expect(m[1].endsWith("-"), `${file}: XML comment ends with "-"`).toBe(false);
+      }
+    }
+  });
+  it("every XML file starts with a declaration or root element and has balanced angle brackets", () => {
+    for (const file of walk("android/app/src/main")) {
+      const text = read(file).replace(/<!--[\s\S]*?-->/g, "");
+      expect(text.trimStart().startsWith("<"), `${file} does not start with <`).toBe(true);
+      expect((text.match(/</g) ?? []).length, `${file}: unbalanced < and >`).toBe((text.match(/>/g) ?? []).length);
+    }
+  });
+});
+

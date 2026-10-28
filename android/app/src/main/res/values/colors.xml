@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Window, status bar and navigation bar. Mirrors the web dark background (--background in brand-polish.css .dark). -->
+    <!-- Window, status bar and navigation bar. Mirrors the web dark background token (background, in brand-polish.css under .dark). -->
     <color name="shadecode_background">#0D111A</color>
     <color name="shadecode_primary">#83A4FF</color>
 </resources>
