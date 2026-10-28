@@ -14,7 +14,7 @@ declare
   learner_id uuid := auth.uid();
   selected_subjects text[];
   next_subjects text[];
-  cleaned_subject text := btrim(regexp_replace(coalesce(p_subject, ''), '\\s+', ' ', 'g'));
+  cleaned_subject text := btrim(regexp_replace(coalesce(p_subject, ''), '\s+', ' ', 'g'));
 begin
   if learner_id is null then
     raise exception 'Authentication required' using errcode = '42501';
