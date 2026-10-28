@@ -102,14 +102,16 @@ export async function DELETE(request: NextRequest) {
     if (profileError || !profile) return NextResponse.json({ error: "Could not load your learner profile." }, { status: 500 });
 
     const before = normalizeSubjectNames(profile.subjects);
-    if (!before.some(value => subjectMatches(value, subject.name))) {
+    const activeSubject = before.find(value => subjectMatches(value, subject.name));
+    if (!activeSubject) {
       return NextResponse.json({ error: "This subject is not in your active profile selection." }, { status: 409 });
     }
 
+    // Pass the exact active profile value so aliases are removed consistently.
     // Keep the catalogue row so lessons and tasks retain their historical subject UUID.
     const { data, error: saveError } = await supabase.rpc("mutate_my_profile_subjects", {
       p_action: "remove",
-      p_subject: canonicalSubjectName(subject.name),
+      p_subject: activeSubject,
     });
     if (saveError || !Array.isArray(data)) {
       console.error("[subjects] atomic profile removal failed", saveError);
