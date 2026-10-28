@@ -535,7 +535,8 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             detail = "${paper.level} · ${paper.session} ${paper.year}",
                             isSaved = saved,
                             isOpening = openingPaperId == paper.id,
-                            isDownloading = downloadingPaperId != null,
+                            isDownloading = downloadingPaperId == paper.id,
+                            isBusy = downloadingPaperId != null,
                             isQuestionPaper = paper.kind.lowercase() in listOf("qp", "question_paper", "question-paper"),
                             onStartAttempt = { beginAttempt(paper) },
                             onDownloadBundle = {
@@ -663,6 +664,7 @@ private fun NativeExamPaperCard(
     isSaved: Boolean,
     isOpening: Boolean,
     isDownloading: Boolean,
+    isBusy: Boolean,
     isQuestionPaper: Boolean,
     onOpen: () -> Unit,
     onDownload: () -> Unit,
@@ -682,10 +684,10 @@ private fun NativeExamPaperCard(
                 }
             }
             if (isQuestionPaper) {
-                OutlinedButton(onClick=onDownloadBundle, enabled=!isDownloading && !isOpening, modifier=Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick=onDownloadBundle, enabled=!isBusy && !isOpening, modifier=Modifier.fillMaxWidth()) {
                     Text(if (isDownloading) "Saving exam bundle…" else "Save complete exam bundle")
                 }
-                OutlinedButton(onClick=onStartAttempt, enabled=!isDownloading, modifier=Modifier.fillMaxWidth()) { Text("Start timed attempt") }
+                OutlinedButton(onClick=onStartAttempt, enabled=!isBusy, modifier=Modifier.fillMaxWidth()) { Text("Start timed attempt") }
             }
             if (isSaved) Text("Stored on this device. No connection needed to reopen it.", style=MaterialTheme.typography.labelSmall, color=MaterialTheme.colorScheme.primary)
         }
