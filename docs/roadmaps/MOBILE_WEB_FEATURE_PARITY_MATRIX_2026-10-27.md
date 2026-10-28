@@ -250,3 +250,10 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - **Exam Hub subject filtering: source implemented; CI pending.** Replaced substring matching with exact canonical subject keys and a small explicit alias map. Mathematics no longer implies Additional Mathematics or Further Mathematics; Computer Science and ICT aliases are handled explicitly. Added JVM unit tests and wired them into Android CI before the debug APK build.
 - **Security boundary:** this is a user-experience and data-relevance correction, not authorization. The server must continue to validate learner access when creating signed paper URLs.
 - **Verification state:** awaiting the Android workflow result for the latest commit. No phone test or release is claimed.
+
+## Native Exam Simulation timer recovery hardening (2026-10-28)
+
+- **Source implemented; CI pending.** Exam Simulation now persists a wall-clock deadline for an active timed paper. On activity/process recreation, remaining time is reconstructed from that deadline instead of subtracting time since the last autosave. The previous per-second autosave refreshed its timestamp every second, which could effectively pause the timer while the app was closed.
+- When the timer reaches zero, answer inputs stop accepting changes and the learner can still submit the saved answers for marking. If marking fails after time has expired, the attempt remains expired rather than silently reopening.
+- Deadline metadata is backward-compatible: older saved attempts without a deadline recover their last saved remaining time and establish a deadline when resumed.
+- **Verification state:** Android and CI workflows are running for commit `9ec24f2c3f21455a1bd4d32fed01baf230201c94`. Do not mark build-verified until those runs finish. No physical-device test is claimed.
