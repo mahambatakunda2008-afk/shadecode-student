@@ -38,6 +38,9 @@
 - The starter-pack selector now attempts matching inserts and data/formula booklets, when present for the same paper number and variant, alongside the question paper and mark scheme. It no longer assumes the alphabetically first session contains the newest year's paper: it searches available levels, years descending and session recency, and only chooses a bundle after confirming a question paper exists for that exact combination. This is committed source code; CI and runtime verification for the latest selector change are pending.
 - Offline paper downloads now require HTTPS and reject redirects, accumulate the PDF magic header across short network reads (rather than assuming the first read contains five bytes), enforce the existing 50 MB limit, and only commit a file after the PDF header has been checked. The Android workflow must pass for the commit before this hardening is considered build-verified; physical-device and redirect behavior still require runtime testing.
 
+
+- The native offline-paper library now reports both the saved PDF count and their combined on-device size, so learners can see the local storage footprint before saving more material. Source change: `d0321c124d10ddfc761ddfaafd3189eda2575b0b`. Build and device validation are still required; this is not a storage quota or a guarantee of available device space.
+
 ## 1. Parity rules
 
 1. **Feature parity, not pixel parity.** Adapt the interaction for a phone while preserving the capability, inputs, outputs, saved state and recovery paths.
