@@ -542,6 +542,27 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                         }
                     }
                 }
+            } else {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text("Your offline library is empty", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Save a question paper or a complete exam bundle while connected. Downloaded PDFs stay on this device and can be opened without internet.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text("Browse your selected subjects below to find available papers.", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
             if(syllabus==null) {
                 item { Text("Choose one of your selected subjects",style=MaterialTheme.typography.titleMedium) }
