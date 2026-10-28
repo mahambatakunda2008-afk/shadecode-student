@@ -9,7 +9,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-const PUBLIC_PREFIXES = ['/auth', '/api', '/_next', '/favicon', '/images', '/fonts'];
+const PUBLIC_PREFIXES = ['/auth', '/api', '/_next', '/favicon', '/images', '/fonts', '/download'];
 function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
