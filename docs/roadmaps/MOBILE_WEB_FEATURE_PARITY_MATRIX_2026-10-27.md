@@ -41,6 +41,8 @@
 
 - The native offline-paper library now reports both the saved PDF count and their combined on-device size, so learners can see the local storage footprint before saving more material. Source change: `d0321c124d10ddfc761ddfaafd3189eda2575b0b`. Build and device validation are still required; this is not a storage quota or a guarantee of available device space.
 
+- The Exam Hub now shows a helpful empty state when no PDFs have been saved offline yet, explaining how to save papers and pointing learners to the subject catalogue below. This avoids hiding the offline-library section entirely for first-time users. Source change: `100a7222fd22275451f1c95dcb4a0b05e8c919c7`. CI and Android build/device verification are pending.
+
 ## 1. Parity rules
 
 1. **Feature parity, not pixel parity.** Adapt the interaction for a phone while preserving the capability, inputs, outputs, saved state and recovery paths.
