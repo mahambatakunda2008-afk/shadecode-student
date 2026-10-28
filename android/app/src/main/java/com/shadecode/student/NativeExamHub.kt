@@ -352,17 +352,31 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                                 Button(onClick = {
                                     if (attemptRunning) {
-                                        attemptSeconds = (((attemptDeadlineMillis - System.currentTimeMillis()).coerceAtLeast(0L) + 999L) / 1000L).toInt()
+                                        val remaining = (((attemptDeadlineMillis - System.currentTimeMillis()).coerceAtLeast(0L) + 999L) / 1000L).toInt()
+                                        attemptSeconds = remaining
                                         attemptRunning = false
                                         attemptDeadlineMillis = 0L
-                                        status = "Timer paused. Notes are saved locally."
+                                        if (remaining == 0) {
+                                            attemptFinished = true
+                                            status = "Time is up. Your answer notes have been saved on this device."
+                                        } else {
+                                            status = "Timer paused. Notes are saved locally."
+                                        }
                                     } else if (attemptSeconds > 0 && !attemptFinished) {
                                         attemptDeadlineMillis = System.currentTimeMillis() + attemptSeconds * 1000L
                                         attemptRunning = true
                                         status = "Timer running. It accounts for time spent away from the app."
                                     }
                                 }, enabled = attemptSeconds > 0 && !attemptFinished) { Text(if (attemptRunning) "Pause timer" else "Resume timer") }
-                                OutlinedButton(onClick = { attemptRunning = false; attemptDeadlineMillis = 0L; attemptFinished = true; status = "Attempt finished. Notes are saved locally; review them against the mark scheme." }) { Text(if (attemptFinished) "Finished" else "Finish attempt") }
+                                OutlinedButton(
+                                    onClick = {
+                                        attemptRunning = false
+                                        attemptDeadlineMillis = 0L
+                                        attemptFinished = true
+                                        status = "Attempt finished. Notes are saved locally; review them against the mark scheme."
+                                    },
+                                    enabled = !attemptFinished,
+                                ) { Text(if (attemptFinished) "Finished" else "Finish attempt") }
                             }
                             Text("Open the PDF, then return here to write your answers. Notes save automatically on this device.", style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
                             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -414,7 +428,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                                 .remove("finished_$key")
                                                 .remove("running_$key")
                                                 .remove("deadline_$key")
-                                                .apply()
+                                                .commit()
                                             attemptNotes = ""
                                             attemptSeconds = attemptDurationMinutes * 60
                                             attemptFinished = false
