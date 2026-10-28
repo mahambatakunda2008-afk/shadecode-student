@@ -96,5 +96,6 @@ dependencies {
     // Bundled Latin text-recognition model: image OCR runs on-device after installation.
     implementation("com.google.mlkit:text-recognition:16.0.1")
     ksp("androidx.room:room-compiler:2.7.0")
+    testImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
