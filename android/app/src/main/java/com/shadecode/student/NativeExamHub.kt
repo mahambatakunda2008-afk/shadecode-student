@@ -49,6 +49,8 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var openingPaperId by remember { mutableStateOf<String?>(null) }
     var downloadingPaperId by remember { mutableStateOf<String?>(null) }
     var offlinePapers by remember(session.userId) { mutableStateOf(NativeOfflinePaperStore.list(context, session.userId)) }
+    var offlineQuery by remember(session.userId) { mutableStateOf("") }
+    var offlineKindFilter by remember(session.userId) { mutableStateOf("All") }
     var activeAttempt by remember(session.userId) { mutableStateOf<NativeExamPaper?>(null) }
     var attemptNotes by remember(session.userId) { mutableStateOf("") }
     var attemptSeconds by remember(session.userId) { mutableIntStateOf(3600) }
@@ -453,9 +455,45 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             if (offlinePapers.isNotEmpty()) {
                 item {
                     Text("Available offline on this device", style=MaterialTheme.typography.titleLarge, fontWeight=FontWeight.Bold)
-                    Text("Downloaded PDFs open without internet. They stay private to this app and signed-in account.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+                    Text("${offlinePapers.size} saved PDF(s) · searchable and available without internet.", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = offlineQuery,
+                        onValueChange = { offlineQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("Search saved papers") },
+                        placeholder = { Text("Subject, board, session, year or paper") },
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("All", "Question papers", "Mark schemes", "Other").forEach { kind ->
+                            FilterChip(
+                                selected = offlineKindFilter == kind,
+                                onClick = { offlineKindFilter = kind },
+                                label = { Text(kind) }
+                            )
+                        }
+                    }
                 }
-                items(offlinePapers, key = { "offline-${it.id}" }) { saved ->
+                val visibleOfflinePapers = offlinePapers.filter { saved ->
+                    val query = offlineQuery.trim()
+                    val matchesQuery = query.isBlank() ||
+                        listOf(saved.subject, saved.board, saved.level, saved.session, saved.year.toString(),
+                            saved.title, saved.kind, "paper ${saved.paperNumber}", "variant ${saved.variant}")
+                            .any { it.contains(query, ignoreCase = true) }
+                    val kind = saved.kind.lowercase()
+                    val matchesKind = when (offlineKindFilter) {
+                        "Question papers" -> kind in listOf("qp", "question_paper", "question-paper")
+                        "Mark schemes" -> kind in listOf("ms", "mark_scheme", "mark-scheme")
+                        "Other" -> kind !in listOf("qp", "question_paper", "question-paper", "ms", "mark_scheme", "mark-scheme")
+                        else -> true
+                    }
+                    matchesQuery && matchesKind
+                }
+                if (visibleOfflinePapers.isEmpty()) {
+                    item { Text("No saved papers match this search or filter.", color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+                items(visibleOfflinePapers, key = { "offline-${it.id}" }) { saved ->
                     Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(14.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(6.dp)) {
                             Text("${saved.subject} · ${saved.board}", fontWeight=FontWeight.SemiBold)
