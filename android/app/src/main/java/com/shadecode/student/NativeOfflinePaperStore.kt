@@ -160,6 +160,9 @@ object NativeOfflinePaperStore {
                 setRequestProperty("Accept", "application/pdf,application/octet-stream;q=0.9")
             }
             val code = connection.responseCode
+            if (!connection.url.protocol.equals("https", ignoreCase = true)) {
+                throw IllegalStateException("The paper source redirected to an insecure connection. Try again from the catalogue.")
+            }
             if (code !in 200..299) throw IllegalStateException("Paper download failed ($code). Try again when connected.")
             val declaredLength = connection.contentLengthLong
             if (declaredLength > MAX_PAPER_BYTES) throw IllegalStateException("This paper is larger than the 50 MB offline limit.")
@@ -167,17 +170,22 @@ object NativeOfflinePaperStore {
             connection.inputStream.use { input ->
                 FileOutputStream(temp).use { output ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    var firstBytes = ByteArray(0)
+                    val pdfHeader = ByteArray(5)
+                    var headerBytes = 0
                     while (true) {
                         val count = input.read(buffer)
                         if (count < 0) break
-                        if (total == 0L) firstBytes = buffer.copyOf(minOf(count, 5))
+                        if (headerBytes < pdfHeader.size) {
+                            val copyCount = minOf(count, pdfHeader.size - headerBytes)
+                            buffer.copyInto(pdfHeader, destinationOffset = headerBytes, startIndex = 0, endIndex = copyCount)
+                            headerBytes += copyCount
+                        }
                         total += count
                         if (total > MAX_PAPER_BYTES) throw IllegalStateException("This paper is larger than the 50 MB offline limit.")
                         output.write(buffer, 0, count)
                     }
                     output.fd.sync()
-                    if (firstBytes.size < 5 || String(firstBytes, Charsets.US_ASCII) != "%PDF-") {
+                    if (headerBytes < pdfHeader.size || String(pdfHeader, Charsets.US_ASCII) != "%PDF-") {
                         throw IllegalStateException("The source did not return a valid PDF paper.")
                     }
                 }
