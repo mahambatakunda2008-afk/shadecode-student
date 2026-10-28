@@ -281,3 +281,10 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - Added a clear no-results state when the search/filter combination has no matches.
 - Source change: `android/app/src/main/java/com/shadecode/student/NativeExamHub.kt`, commits `8dbc284eac836d530da03659109d0caf8de93dd0` and `ac6da8e404b9618b5d2d5431d8f26f9e531255fe`.
 - **Verification state:** Android workflow `40745018511` was pending and CI workflow `40745017608` was in progress when documented. Do not claim build verification until the Android workflow succeeds. No physical-device test is claimed.
+
+### Native offline paper library: safer deletion (2026-10-28)
+
+- The **Remove** action now asks for confirmation and names the saved subject/paper before deleting the local copy. Learners can cancel and keep it, reducing accidental loss of offline materials.
+- The confirmation explains that the paper is removed from this device and can be downloaded again when connected. It does not delete any server-side source paper.
+- Source commit: `7722a5435091efa009fbe264d11859b9e3034880`.
+- **Build investigation:** Android workflow `40745178820` failed during the environment's **Validate Android project** step while installing Android NDK `27.0.12077973`, with `java.util.zip.ZipException: Archive is not a ZIP archive`. This occurred before the app compile step, so it does not establish a Kotlin source failure. CI for the responsive filter change passed (`40745178085`), but Android compilation must pass on a fresh run before the recent UI changes are considered build-verified. No physical-device test is claimed.
