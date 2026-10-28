@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="shadecode_background">#06111C</color>
-    <color name="shadecode_cyan">#22D3EE</color>
-    <color name="shadecode_cyan_strong">#0891B2</color>
+    <!-- Window, status bar and navigation bar. Mirrors the web dark background (--background in brand-polish.css .dark). -->
+    <color name="shadecode_background">#0D111A</color>
+    <color name="shadecode_primary">#83A4FF</color>
 </resources>

@@ -84,9 +84,38 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
-private val ShadeBackground = Color(0xFF06111C)
-private val ShadeSurface = Color(0xFF0B1E2D)
-private val ShadePrimary = Color(0xFF22D3EE)
+// Mirrors the web dark theme tokens (src/app/brand-polish.css, `.dark`) so web and Android read as one product.
+// Keep in sync: src/lib/brand/androidTheme.test.ts fails if these drift from the web values.
+private val ShadeBackground = Color(0xFF0D111A)
+private val ShadeSurface = Color(0xFF121824)
+private val ShadeSurfaceVariant = Color(0xFF171F2D)
+private val ShadePrimary = Color(0xFF83A4FF)
+private val ShadeAccent = Color(0xFFA69AFF)
+private val ShadeForeground = Color(0xFFEDF1F8)
+private val ShadeMuted = Color(0xFFA0ABC0)
+private val ShadeOutline = Color(0xFF283346)
+private val ShadeDanger = Color(0xFFFB7185)
+
+private val ShadeColorScheme = androidx.compose.material3.darkColorScheme(
+    primary = ShadePrimary,
+    onPrimary = ShadeBackground,
+    primaryContainer = Color(0xFF22305C),
+    onPrimaryContainer = Color(0xFFDCE5FF),
+    secondary = ShadeAccent,
+    onSecondary = ShadeBackground,
+    tertiary = Color(0xFFB7A5FF),
+    onTertiary = ShadeBackground,
+    background = ShadeBackground,
+    onBackground = ShadeForeground,
+    surface = ShadeSurface,
+    onSurface = ShadeForeground,
+    surfaceVariant = ShadeSurfaceVariant,
+    onSurfaceVariant = ShadeMuted,
+    outline = Color(0xFF55607A),
+    outlineVariant = ShadeOutline,
+    error = ShadeDanger,
+    onError = ShadeBackground,
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,7 +126,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun ShadecodeStudentNative(context: Context) {
-    MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme(primary = ShadePrimary, background = ShadeBackground, surface = ShadeSurface)) {
+    MaterialTheme(colorScheme = ShadeColorScheme) {
         Surface(Modifier.fillMaxSize(), color = ShadeBackground) {
             val store = remember { NativeStore(context) }
             var session by remember { mutableStateOf<NativeSession?>(null) }

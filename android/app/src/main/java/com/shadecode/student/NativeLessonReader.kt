@@ -163,7 +163,7 @@ fun NativeLessonReader(
 
         if (blocks.isEmpty()) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0B1E2D)), shape = RoundedCornerShape(18.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(18.dp)) {
                     Text(
                         "This lesson has no readable content yet. Open it on the web client to regenerate the lesson content.",
                         modifier = Modifier.padding(20.dp),
@@ -206,13 +206,13 @@ fun NativeLessonReader(
 
 @Composable
 private fun NativeLessonBlockCard(number: Int, block: NativeLessonBlock, active: Boolean) {
-    val surface = if (active) Color(0xFF102B3C) else Color(0xFF0B1E2D)
+    val surface = if (active) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
     Card(colors = CardDefaults.cardColors(containerColor = surface), shape = RoundedCornerShape(18.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp)) {
             Text(
                 block.type.replace('_', ' ').replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.labelMedium,
-                color = Color(0xFF22D3EE),
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
             )
             if (block.title.isNotBlank()) {
@@ -229,7 +229,7 @@ private fun NativeLessonBlockCard(number: Int, block: NativeLessonBlock, active:
                     block.formula,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF06111C), RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(12.dp))
                         .padding(14.dp),
                     fontWeight = FontWeight.SemiBold,
                 )
