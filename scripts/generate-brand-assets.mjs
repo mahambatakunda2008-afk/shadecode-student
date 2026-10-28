@@ -94,6 +94,36 @@ const outputs = {
 };
 for (const [file, text] of Object.entries(outputs)) write(file, text);
 
+// ---- Android launcher icon (VectorDrawable) -----------------------------------------
+// Same canonical geometry as the web icons, so the installed app and the website always show the same mark.
+// Skipped when the android/ project is absent (e.g. a web-only checkout).
+const androidRes = join(root, "android", "app", "src", "main", "res");
+if (existsSync(androidRes)) {
+  const S = 0.115; // glyph ~61dp tall inside the 108dp adaptive canvas (66dp safe zone)
+  const tx = f(54 - C.x * S);
+  const ty = f(54 - C.y * S);
+  const g = geo.gradients[0];
+  const dp = geo.depth;
+  const [top, middle, bottom] = geo.layers;
+  const XML = '<?xml version="1.0" encoding="utf-8"?>\n';
+  const vectorOpen = `<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:aapt="http://schemas.android.com/aapt"\n    android:width="108dp"\n    android:height="108dp"\n    android:viewportWidth="108"\n    android:viewportHeight="108">\n`;
+  const groupOpen = `    <group\n        android:pivotX="0"\n        android:pivotY="0"\n        android:scaleX="${S}"\n        android:scaleY="${S}"\n        android:translateX="${tx}"\n        android:translateY="${ty}">\n`;
+  const gradient = `            <aapt:attr name="android:fillColor">\n                <gradient\n                    android:startX="${g.x1}"\n                    android:startY="${g.y1}"\n                    android:endX="${g.x2}"\n                    android:endY="${g.y2}"\n                    android:type="linear">\n${g.stops.map(([o, c]) => `                    <item android:color="${c}" android:offset="${o}" />\n`).join("")}                </gradient>\n            </aapt:attr>\n`;
+  const face = (l) => `        <path\n            android:pathData="${l.d}"\n            android:strokeColor="${dp.edgeColor}"\n            android:strokeAlpha="${dp.edgeOpacity}"\n            android:strokeWidth="${dp.edgeWidth}"\n            android:strokeLineJoin="round">\n${gradient}        </path>\n`;
+  const shadows = (l) => dp.shadows.map((s) => `        <group android:translateY="${s.dy}">\n            <path\n                android:pathData="${l.d}"\n                android:fillColor="${dp.shadowColor}"\n                android:fillAlpha="${s.opacity}" />\n        </group>\n`).join("");
+  const foreground = `${XML}${vectorOpen}${groupOpen}${face(bottom)}${shadows(middle)}${face(middle)}${shadows(top)}${face(top)}    </group>\n</vector>\n`;
+  const monochrome = `${XML}${vectorOpen}${groupOpen}${geo.layers.map((l) => `        <path\n            android:pathData="${l.flatD}"\n            android:fillColor="#FF000000" />\n`).join("")}    </group>\n</vector>\n`;
+  const t = geo.tile.dark;
+  const background = `${XML}<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">\n    <gradient\n        android:angle="270"\n        android:startColor="${t.bg}"\n        android:endColor="${t.bg2 ?? t.bg}" />\n</shape>\n`;
+  const adaptive = `${XML}<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@drawable/ic_launcher_background" />\n    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />\n</adaptive-icon>\n`;
+  write(join(androidRes, "drawable", "ic_launcher_foreground.xml"), foreground);
+  write(join(androidRes, "drawable", "ic_launcher_monochrome.xml"), monochrome);
+  write(join(androidRes, "drawable", "ic_launcher_background.xml"), background);
+  // minSdk is 26, so adaptive icons are always available; keep every ic_launcher variant identical so no stale logo can resurface.
+  for (const dir of ["mipmap", "mipmap-anydpi", "mipmap-anydpi-v26"]) write(join(androidRes, dir, "ic_launcher.xml"), adaptive);
+}
+
+
 // ---- PNG outputs -----------------------------------------------------------------
 const fullBleed = tileSvg({ theme: "dark", rounded: false });
 const maskable = tileSvg({ theme: "dark", rounded: false, scale: 1.0 });

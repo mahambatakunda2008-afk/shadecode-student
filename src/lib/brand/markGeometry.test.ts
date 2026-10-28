@@ -73,3 +73,32 @@ describe("icon declarations agree with the manifest and files on disk", () => {
     expect(existsSync(path.join(root, "src/app/apple-icon.svg"))).toBe(false);
   });
 });
+
+describe("Android launcher icon uses the canonical mark", () => {
+  const res = "android/app/src/main/res";
+  const hasAndroid = existsSync(path.join(root, res));
+  const adaptiveFiles = ["mipmap/ic_launcher.xml", "mipmap-anydpi/ic_launcher.xml", "mipmap-anydpi-v26/ic_launcher.xml"];
+  // Legacy artwork that used to live in the Android project (old sharp three-band mark, old circle logo, old gradient).
+  const LEGACY_ANDROID = ["M29.64,36.84", "M29.64,42.48", "M54,12A42,42", "#C135FF", "#00E5FF"];
+
+  it.skipIf(!hasAndroid)("foreground contains every canonical layer path and gradient colour", () => {
+    const text = read(`${res}/drawable/ic_launcher_foreground.xml`);
+    for (const d of MARK_PATHS) expect(text).toContain(d);
+    for (const color of MARK_COLORS) expect(text.toLowerCase()).toContain(color.toLowerCase());
+  });
+  it.skipIf(!hasAndroid)("monochrome (themed icon) layer uses the canonical silhouette", () => {
+    const text = read(`${res}/drawable/ic_launcher_monochrome.xml`);
+    for (const d of MARK_FLAT_PATHS) expect(text).toContain(d);
+  });
+  it.skipIf(!hasAndroid)("every ic_launcher variant is the same adaptive icon, with a monochrome layer", () => {
+    const [first, ...rest] = adaptiveFiles.map((f) => read(`${res}/${f}`));
+    expect(first).toContain("<adaptive-icon");
+    expect(first).toContain("ic_launcher_monochrome");
+    for (const other of rest) expect(other).toBe(first);
+  });
+  it.skipIf(!hasAndroid)("no legacy Android artwork remains", () => {
+    const files = [...adaptiveFiles, "drawable/ic_launcher_foreground.xml", "drawable/ic_launcher_background.xml", "drawable/ic_launcher_monochrome.xml"];
+    for (const f of files) for (const legacy of LEGACY_ANDROID) expect(read(`${res}/${f}`), `${f} contains ${legacy}`).not.toContain(legacy);
+  });
+});
+
