@@ -1,5 +1,7 @@
 package com.shadecode.student
 
+import android.app.ActivityManager
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -61,5 +63,16 @@ Use 8-12 useful blocks. Teach understanding, not a generic summary. Include prec
         return NativeLessonEntity("local:gguf:${java.util.UUID.randomUUID()}", subjectId, topic.take(500), json.optString("title").ifBlank { topic }.take(255), json.optString("description").take(1000), json.optString("difficulty").ifBlank { "intermediate" }.take(40), normalized.toString(), 0f)
     }
 
-    private fun availableRamMb(): Int = (Runtime.getRuntime().maxMemory() / 1024L / 1024L).toInt()
+    /**
+     * Runtime.maxMemory() is only the app's Java heap cap, not device RAM.
+     * Using it here incorrectly hides every multi-hundred-MB local model on
+     * ordinary phones, even when the device has enough physical memory.
+     */
+    private fun availableRamMb(): Int {
+        val context = NativeRuntimeContext.require()
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return 0
+        val memory = ActivityManager.MemoryInfo()
+        manager.getMemoryInfo(memory)
+        return (memory.totalMem / (1024L * 1024L)).toInt()
+    }
 }
