@@ -45,13 +45,13 @@ class NativeApi {
                 else -> label
             }
             listOf(code, label, mappedLabel)
-        }.map { normalizeSubjectKey(it) }.toSet()
+        }.map { NativeSubjectMatcher.key(it) }.toSet()
         val result = mutableListOf<NativeSubjectEntity>()
         for (i in 0 until array.length()) {
             val row = array.getJSONObject(i)
             val name = row.optString("name").trim()
-            if (name.isBlank() || name.equals("general", ignoreCase = true) || normalizeSubjectKey(name) !in allowed) continue
-            result += NativeSubjectEntity(row.getString("id"), name, normalizeSubjectKey(name))
+            if (name.isBlank() || name.equals("general", ignoreCase = true) || NativeSubjectMatcher.key(name) !in allowed) continue
+            result += NativeSubjectEntity(row.getString("id"), name, NativeSubjectMatcher.key(name))
         }
         return result
     }
@@ -74,9 +74,6 @@ class NativeApi {
             throw IllegalStateException("Profile was not updated. Please sign in again and retry.")
         }
     }
-
-    private fun normalizeSubjectKey(value: String): String =
-        value.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
 
     fun loadLessons(session: NativeSession, subjectId: String): List<NativeLessonEntity> {
         val rows = request("GET", "/rest/v1/learn_lessons?select=id,subject_id,topic,title,description,difficulty,blocks,progress,updated_at&user_id=eq.${session.userId}&subject_id=eq.$subjectId&order=updated_at.desc&limit=100", accessToken = session.accessToken)
