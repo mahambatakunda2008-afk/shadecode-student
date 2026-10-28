@@ -268,3 +268,18 @@ The queue currently covers task creation, task completion and timetable replacem
 - [ ] Confirm the exact merged commit reaches Vercel production before describing this repair as live.
 
 PR: https://github.com/mahambatakunda2008-afk/shadecode-student/pull/494
+
+
+### Verification update: atomic subject mutation rollout (2026-10-28)
+
+- [x] PR #494 merged to `main` at `88d393a0c897e0caf1a2a0786b35745cc296432f`.
+- [x] CI run 4354 passed typecheck, lint, tests and production build for that exact SHA: https://github.com/mahambatakunda2008-afk/shadecode-student/actions/runs/40641496067
+- [x] Applied the `atomic_profile_subject_mutations` migration to Supabase project `zczdtffwzkctkxwmvalb` and verified `public.mutate_my_profile_subjects(text,text)` exists.
+- [x] Vercel production deployment `dpl_9puvx52FMsDKHU8vKzmZz66vJKZZ` reached `READY` for the exact SHA and includes the `shadecodestudent.vercel.app` alias.
+- [x] Public landing page smoke check returned the expected Shadecode Student page. This is not an authenticated subject-mutation test.
+- [ ] Test authenticated add/remove using a dedicated test learner, including bearer-token and cookie-session paths, duplicate requests, refresh and relogin.
+- [ ] Verify parallel add/remove requests and profile-to-subject-catalog trigger behavior with a test account. No real learner profile should be mutated for testing.
+- [ ] Run the Android workflow from the latest source and verify that its `head_sha` matches the intended release commit. The latest known Android debug artifact predates this web-only merge.
+- [ ] Configure and verify persistent Android signing credentials, then build signed APK/AAB. Until that exists, do not describe Android as a production release.
+
+**Status:** The atomic web subject mutation code is merged, CI-green, migration-applied, and deployed to production. Authenticated end-to-end verification and Android release gates remain open.
