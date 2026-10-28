@@ -14,8 +14,22 @@ class NativeLocalModelManager(private val context: Context) {
     data class DownloadResult(val model: NativeLocalModelSpec, val file: File, val bytes: Long)
 
     suspend fun isInstalled(model: NativeLocalModelSpec): Boolean = withContext(Dispatchers.IO) {
+        // Only Gemma currently has a wired downloader, checksum, and runtime path.
+        if (model.id != GEMMA_ID) return@withContext false
         val file = modelFile(model)
-        file.isFile && file.length() >= model.approximateSizeMb * 1024L * 1024L / 2L
+        if (!file.isFile) return@withContext false
+        val bytes = file.length()
+        if (bytes !in GEMMA_MIN_BYTES..GEMMA_MAX_BYTES) {
+            file.delete()
+            return@withContext false
+        }
+        try {
+            verifySha256(file, GEMMA_SHA256)
+            true
+        } catch (_: IllegalStateException) {
+            file.delete()
+            false
+        }
     }
 
     suspend fun downloadGemma270m(
@@ -82,8 +96,10 @@ class NativeLocalModelManager(private val context: Context) {
         }
     }
 
-    fun modelFile(model: NativeLocalModelSpec): File =
-        File(File(context.filesDir, MODELS_DIRECTORY), "$GEMMA_FILE")
+    fun modelFile(model: NativeLocalModelSpec): File {
+        require(model.id == GEMMA_ID) { "This model does not have a supported downloader yet" }
+        return File(File(context.filesDir, MODELS_DIRECTORY), GEMMA_FILE)
+    }
 
     suspend fun deleteGemma270m(): Boolean = withContext(Dispatchers.IO) {
         modelFile(NativeLocalModelCatalog.models.first { it.id == GEMMA_ID }).delete()
