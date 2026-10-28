@@ -53,6 +53,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
     var offlinePapers by remember(session.userId) { mutableStateOf(NativeOfflinePaperStore.list(context, session.userId)) }
     var offlineQuery by remember(session.userId) { mutableStateOf("") }
     var offlineKindFilter by remember(session.userId) { mutableStateOf("All") }
+    var paperPendingDeletion by remember(session.userId) { mutableStateOf<NativeOfflinePaperStore.SavedPaper?>(null) }
     var activeAttempt by remember(session.userId) { mutableStateOf<NativeExamPaper?>(null) }
     var attemptNotes by remember(session.userId) { mutableStateOf("") }
     var attemptSeconds by remember(session.userId) { mutableIntStateOf(3600) }
@@ -308,6 +309,26 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
             }
         }
     }
+    paperPendingDeletion?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { paperPendingDeletion = null },
+            title = { Text("Remove saved paper?") },
+            text = {
+                Text("${pending.subject} · ${pending.title} will be deleted from this device. You can download it again later when connected.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    NativeOfflinePaperStore.delete(context, session.userId, pending.id)
+                    offlinePapers = NativeOfflinePaperStore.list(context, session.userId)
+                    paperPendingDeletion = null
+                    status = "Paper removed from this device."
+                }) { Text("Remove paper") }
+            },
+            dismissButton = {
+                TextButton(onClick = { paperPendingDeletion = null }) { Text("Keep paper") }
+            }
+        )
+    }
     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal=16.dp, vertical=12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) { Text("Exam Hub",style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold); Text("Past-paper catalog",color=MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -511,10 +532,7 @@ fun NativeExamHubScreen(padding: PaddingValues, session: NativeSession, api: Nat
                                         context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
                                     } catch (e: Exception) { error = e.message ?: "Could not open saved paper." }
                                 }) { Text("Open offline") }
-                                OutlinedButton(onClick = {
-                                    NativeOfflinePaperStore.delete(context, session.userId, saved.id)
-                                    offlinePapers = NativeOfflinePaperStore.list(context, session.userId)
-                                }) { Text("Remove") }
+                                OutlinedButton(onClick = { paperPendingDeletion = saved }) { Text("Remove") }
                             }
                             if (saved.kind.lowercase() in listOf("qp", "question_paper", "question-paper")) {
                                 OutlinedButton(onClick = {
