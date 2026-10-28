@@ -175,6 +175,11 @@ export class ResponseCache {
     this.stats = { hits: 0, misses: 0 };
   }
 
+  /** Remove one invalid entry without evicting unrelated lessons. */
+  async delete(key: string): Promise<void> {
+    this.cache.delete(key);
+  }
+
   /**
    * Clear cache for specific type
    */
