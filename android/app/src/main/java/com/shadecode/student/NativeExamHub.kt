@@ -676,10 +676,10 @@ private fun NativeExamPaperCard(
             Text(title, fontWeight=FontWeight.SemiBold)
             Text(detail, style=MaterialTheme.typography.bodySmall, color=MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                Button(onClick=onOpen, enabled=!isOpening && !isDownloading) {
+                Button(onClick=onOpen, enabled=!isBusy && !isOpening && !isDownloading) {
                     Text(when { isOpening -> "Opening…"; isSaved -> "Open offline"; else -> "Open paper" })
                 }
-                OutlinedButton(onClick=onDownload, enabled=!isSaved && !isDownloading && !isOpening) {
+                OutlinedButton(onClick=onDownload, enabled=!isBusy && !isSaved && !isDownloading && !isOpening) {
                     Text(when { isDownloading -> "Downloading…"; isSaved -> "Saved offline"; else -> "Download for offline" })
                 }
             }
