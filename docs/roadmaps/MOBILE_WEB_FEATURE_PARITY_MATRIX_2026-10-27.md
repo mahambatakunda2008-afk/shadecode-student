@@ -257,3 +257,11 @@ Build the native Exam Simulation around existing indexed paper records rather th
 - When the timer reaches zero, answer inputs stop accepting changes and the learner can still submit the saved answers for marking. If marking fails after time has expired, the attempt remains expired rather than silently reopening.
 - Deadline metadata is backward-compatible: older saved attempts without a deadline recover their last saved remaining time and establish a deadline when resumed.
 - **Verification state:** Android and CI workflows are running for commit `9ec24f2c3f21455a1bd4d32fed01baf230201c94`. Do not mark build-verified until those runs finish. No physical-device test is claimed.
+
+### Exam Hub catalogue discoverability (2026-10-28)
+
+- Added a searchable filter above the selected-subject syllabus catalogue. Learners can search by subject, exam board, or available level instead of scrolling through every selected syllabus.
+- Search is local to the already loaded authorized catalogue; it does not broaden access beyond the learner's selected subjects or claim that a syllabus has paper coverage when none is available.
+- An explicit no-match message appears when a query returns no subject or board.
+- Source change: `android/app/src/main/java/com/shadecode/student/NativeExamHub.kt`, commit `3133c74530e1bacefa4df3977d9116811319addb`.
+- Build status must be checked in GitHub Actions. Physical-device interaction and large-catalogue usability remain unverified.
