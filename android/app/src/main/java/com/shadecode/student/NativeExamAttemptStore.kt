@@ -16,6 +16,7 @@ object NativeExamAttemptStore {
         val secondsLeft: Int,
         val taking: Boolean,
         val savedAt: Long,
+        val deadlineMillis: Long,
     )
 
     private fun prefs(context: Context) =
@@ -36,6 +37,7 @@ object NativeExamAttemptStore {
                 secondsLeft = json.optInt("secondsLeft", 0),
                 taking = json.optBoolean("taking", false),
                 savedAt = json.optLong("savedAt", 0L),
+                deadlineMillis = json.optLong("deadlineMillis", 0L),
             )
         }.getOrNull()
     }
@@ -49,6 +51,7 @@ object NativeExamAttemptStore {
         answersJson: String,
         secondsLeft: Int,
         taking: Boolean,
+        deadlineMillis: Long,
     ) {
         if (userId.isBlank()) return
         val encoded = JSONObject()
@@ -59,6 +62,7 @@ object NativeExamAttemptStore {
             .put("secondsLeft", secondsLeft.coerceAtLeast(0))
             .put("taking", taking)
             .put("savedAt", System.currentTimeMillis())
+            .put("deadlineMillis", if (taking) deadlineMillis.coerceAtLeast(0L) else 0L)
             .toString()
         // apply() schedules disk I/O off the UI thread; this checkpoint may be written each timer tick.
         prefs(context).edit().putString(key(userId), encoded).apply()
