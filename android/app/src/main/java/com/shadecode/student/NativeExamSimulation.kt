@@ -125,9 +125,14 @@ fun NativeExamSimulationScreen(
     }
 
     LaunchedEffect(taking, secondsLeft) {
-        if (taking && secondsLeft > 0) {
-            delay(1000)
-            secondsLeft -= 1
+        if (taking) {
+            if (secondsLeft <= 0) {
+                taking = false
+                status = "Time is up. Your answers are saved on this device. Submit when ready."
+            } else {
+                delay(1000)
+                secondsLeft = (secondsLeft - 1).coerceAtLeast(0)
+            }
         }
     }
 
@@ -185,7 +190,7 @@ fun NativeExamSimulationScreen(
                 report = response.optJSONObject("report") ?: throw IllegalStateException("The marking service returned no report.")
                 status = "Marking report received."
             } catch (e: Exception) {
-                taking = true
+                taking = secondsLeft > 0
                 error = e.message ?: "Marking failed. Your answers are still on this screen; retry when connected."
             } finally {
                 busy = false
@@ -275,7 +280,7 @@ fun NativeExamSimulationScreen(
                         }
                     }
                 }
-                Button(onClick = { submit() }, enabled = !busy && !taking.not() && questions.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { submit() }, enabled = !busy && questions.isNotEmpty() && report == null, modifier = Modifier.fillMaxWidth()) {
                     Text(if (busy) "Marking…" else "Submit for marking")
                 }
             } else {
