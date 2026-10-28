@@ -10,7 +10,7 @@ class NativeSubjectRepository(private val database: NativeDatabase) {
             .distinctBy { it.lowercase() }
             .map { name ->
                 NativeSubjectEntity(
-                    id = name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-'),
+                    id = name.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), "-").trim('-'),
                     name = name,
                     normalizedName = name.trim().lowercase(),
                 )
