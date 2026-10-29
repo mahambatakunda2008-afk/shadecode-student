@@ -31,6 +31,23 @@ describe("Pure Mathematics sequences and series starter", () => {
     expect(6 / (1 - 0.5)).toBe(12);
   });
 
+  it("checks convergence numerically and handles the finite-sum r = 1 case", () => {
+    const partialSum = (a: number, r: number, n: number) =>
+      Array.from({ length: n }, (_, index) => a * r ** index).reduce((sum, term) => sum + term, 0);
+
+    // For |r| < 1, partial sums approach a / (1 - r).
+    expect(partialSum(8, 0.5, 20)).toBeCloseTo(16, 5);
+    expect(partialSum(8, -0.5, 20)).toBeCloseTo(8 / 1.5, 5);
+
+    // A ratio of 1 is valid for a finite series but not for the quotient formula.
+    expect(partialSum(3, 1, 5)).toBe(15);
+    expect(3 * 5).toBe(15);
+
+    // With |r| >= 1 and non-zero first term, terms do not tend to zero.
+    expect(Math.abs(2 * 2 ** 20)).toBeGreaterThan(1);
+    expect(Math.abs(4 * (-1) ** 20)).toBe(4);
+  });
+
   it("guards the convergence condition for infinite geometric series", () => {
     expect(Math.abs(0.5)).toBeLessThan(1);
     expect(Math.abs(-0.5)).toBeLessThan(1);
