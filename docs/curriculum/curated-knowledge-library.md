@@ -63,10 +63,16 @@ The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOf
 
 The lessons use original explanations and examples. The source books guide scope and teaching sequence; textbook prose, figures and end-of-chapter questions are not copied into the app.
 
+
+
+### Pure Mathematics algebra expansion (draft)
+
+The algebra pilot now has a stepwise modulus-graph routine, a worked sketch of \`y = |x² − 4|\` with its piecewise definition, and a polynomial-division example with a non-zero remainder. The practice set includes a second division calculation and explicit checks by expanding \`P(x) = D(x)Q(x) + R(x)\`. Tests verify the division identities at multiple values and check modulus-graph roots and the reflected central value. These are arithmetic/structure checks, not independent examiner review or exact current-syllabus verification; the lesson remains a draft.
+
 ## Next curation queue
 1. Map the Physics kinematics and accelerated-motion lessons to the exact current Cambridge syllabus and have a second reviewer check every numerical answer.
 2. Inspect the Oxford Pure Mathematics contents and create a syllabus map for Pure 2 and Pure 3.
-3. Expand the Mathematics pilot to include modulus graph sketches and further polynomial-division examples, with answer checks.
-4. Add tests that recompute every numerical answer and reject topic drift.
-5. Add a runtime registry only after each entry passes review and tests.
+3. Extend the Mathematics pilot with further Pure 2/Pure 3 topics only after checking the supplied book contents and current syllabus map.
+4. Expand the automated answer checks to every numerical result and add topic-drift checks.
+5. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
 6. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
