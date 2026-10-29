@@ -283,71 +283,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Direct Gemini is the first configured independent fallback after Gateway. This app already has
-  // Gemini keys configured, and Flash-Lite is now the preferred model; try it before slower Cloudflare
-  // and OpenRouter paths so a short section budget is not consumed before the configured Google lane.
-  // Direct Google fallback remains deliberately small and stable. Do not add
-  // preview/experimental/latest aliases here. Secondary keys cover quota buckets.
-  // Try the newest explicitly configured backup first; it is intended to recover when older keys hit quota or model pressure.
-  const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
-  // Prefer the official high-throughput Flash-Lite model first: production telemetry shows
-  // repeated timeouts/503s for 3.8 Flash and timeouts for 3.6 Flash. Quality gates still
-  // validate its output, and the larger stable models remain available as fallbacks.
-  const geminiModels = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"];
-
-  // A 503 is a model-capacity signal, not usually an API-key-specific failure.
-  // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
-  const unavailableGeminiModels = new Set<string>();
-  async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
-    if (unavailableGeminiModels.has(model)) return null;
-    return tryProvider("gemini", model, async timeout => {
-      let res: Response;
-      try {
-        res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: groundedPrompt },
-                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
-              ],
-            }],
-            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
-          }),
-        }, timeout);
-      } catch (error) {
-        // An aborted request is not proof the key is bad, but retrying the same slow model with
-        // every backup key wastes this request's entire budget. Try a different model instead.
-        if (error instanceof Error && (error.name === "AbortError" || /timeout|aborted/i.test(error.message))) {
-          unavailableGeminiModels.add(model);
-        }
-        throw error;
-      }
-      if (!res.ok) {
-        const detail = (await res.text().catch(() => "")).slice(0, 300);
-        if (res.status === 503) unavailableGeminiModels.add(model);
-        throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
-      }
-      const data = await res.json() as any;
-      return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
-    }, `gemini:${model}:key-${keyIndex + 1}`);
-  }
-
-  // Remaining fallback order after Gateway and direct Gemini: Groq, OpenRouter, Cloudflare,
-  // then paid OpenAI only when explicitly enabled. Each configured provider remains time-bounded.
-  // Rotate API keys before spending the whole chain budget on alternate model IDs for one key.
-  // Lesson sections have a 32s chain budget; key-major ordering could time out on key 1's three
-  // models before ever reaching keys 2-4, making the configured backup keys effectively useless.
-  for (const model of geminiModels) {
-    for (const key of geminiKeys) {
-      if (!canTry()) break;
-      const text = await callGemini(key, model, geminiKeys.indexOf(key));
-      if (text) return text;
-    }
-    if (!canTry()) break;
-  }
-
   // Groq: a genuinely free (no card required), independent-vendor provider with typically sub-2s
   // inference, added 2026-09-23 after Gemini, OpenRouter and Cloudflare were all found failing
   // simultaneously in production. Diversifying vendors reduces the chance every provider is down at
@@ -410,6 +345,67 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       if (text) return text;
     }
   }
+
+  // Google fallback after the independent free-provider lanes.
+  // Gemini is a later fallback after Gateway, Groq, OpenRouter, and Cloudflare.
+  // Production telemetry showed repeated Gemini timeouts/503s and no successful lesson responses,
+  // while the independent providers have recorded occasional successes. Trying those lanes first
+  // preserves the bounded chain budget for providers with observed production recovery.
+  // Keep the Google model list explicit and stable; secondary keys cover key-specific quota buckets.
+  const geminiKeys = [process.env.GEMINI_API_KEY_4, process.env.GEMINI_API_KEY, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3].filter(Boolean) as string[];
+  // Prefer the official high-throughput Flash-Lite model first: production telemetry shows
+  // repeated timeouts/503s for 3.8 Flash and timeouts for 3.6 Flash. Quality gates still
+  // validate its output, and the larger stable models remain available as fallbacks.
+  const geminiModels = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"];
+
+  // A 503 is a model-capacity signal, not usually an API-key-specific failure.
+  // Do not spend the remaining lesson budget retrying the same overloaded model with every key.
+  const unavailableGeminiModels = new Set<string>();
+  async function callGemini(key: string, model: string, keyIndex: number): Promise<string | null> {
+    if (unavailableGeminiModels.has(model)) return null;
+    return tryProvider("gemini", model, async timeout => {
+      let res: Response;
+      try {
+        res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: groundedPrompt },
+                ...media.slice(0, 4).map(part => ({ inlineData: { mimeType: part.mimeType, data: part.data } })),
+              ],
+            }],
+            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.35 },
+          }),
+        }, timeout);
+      } catch (error) {
+        // An aborted request is not proof the key is bad, but retrying the same slow model with
+        // every backup key wastes this request's entire budget. Try a different model instead.
+        if (error instanceof Error && (error.name === "AbortError" || /timeout|aborted/i.test(error.message))) {
+          unavailableGeminiModels.add(model);
+        }
+        throw error;
+      }
+      if (!res.ok) {
+        const detail = (await res.text().catch(() => "")).slice(0, 300);
+        if (res.status === 503) unavailableGeminiModels.add(model);
+        throw new Error(`Gemini HTTP ${res.status}: ${detail}`);
+      }
+      const data = await res.json() as any;
+      return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
+    }, `gemini:${model}:key-${keyIndex + 1}`);
+  }
+
+  for (const model of geminiModels) {
+    for (const key of geminiKeys) {
+      if (!canTry()) break;
+      const text = await callGemini(key, model, geminiKeys.indexOf(key));
+      if (text) return text;
+    }
+    if (!canTry()) break;
+  }
+
 
   if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
     const text = await tryProvider("openai", "gpt-5.5", async timeout => {
