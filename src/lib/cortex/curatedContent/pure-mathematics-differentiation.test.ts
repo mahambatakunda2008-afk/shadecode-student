@@ -54,7 +54,7 @@ describe("Pure Mathematics differentiation starter", () => {
     expect(block("Worked example: polynomial derivative")).toContain("12x² - 6x + 6");
 
     // Chain rule: d[(3x + 2)^4]/dx = 12(3x + 2)^3.
-    expect(4 * (3 * 2 + 2) ** 3 * 3).toBe(768);
+    expect(4 * (3 * 2 + 2) ** 3 * 3).toBe(6144);
     expect(block("Worked example: differentiate a bracket power")).toContain("12(3x+2)³");
 
     // Tangent and practice answers must pass through their stated points with the stated gradients.
