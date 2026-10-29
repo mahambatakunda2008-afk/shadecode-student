@@ -70,7 +70,7 @@ The lessons use original explanations and examples. The source books guide scope
 
 ### Pure Mathematics logarithms/exponentials validation (draft)
 
-The automated checks now evaluate the product, quotient and power laws numerically, substitute candidate solutions into exponential and logarithmic equations, check positive-argument restrictions, and verify the coordinates used in the graph sketch. These are regression checks for the authored examples, not independent mathematical review or syllabus verification; the lesson remains a draft.
+The automated checks evaluate the product, quotient and power laws numerically; substitute candidate solutions into exponential and logarithmic equations; reject zero/negative logarithm arguments; check graph coordinates and asymptotes; and guard against the false rule that a logarithm of a sum equals a sum of logarithms. They are regression checks for the authored examples, not independent mathematical review or syllabus verification; the lesson remains a draft.
 
 ### Pure Mathematics algebra expansion (draft)
 
@@ -82,5 +82,5 @@ The algebra pilot now has a stepwise modulus-graph routine, a worked sketch of \
 3. Independently check the logarithms/exponentials worked answers and map the lesson to the exact current Cambridge 9709 syllabus before upgrading its status.
 4. Extend the Mathematics pilot with further Pure 2/Pure 3 topics only after checking the supplied book contents and current syllabus map.
 5. Expand automated answer checks to every numerical result and add topic-drift checks.
-5. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
+6. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
 6. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
