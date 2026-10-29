@@ -49,9 +49,11 @@ describe("Pure Mathematics logarithms and exponentials starter", () => {
     expect(Math.log(2 * 4 + 1) / Math.log(3)).toBeCloseTo(2);
     expect(2 * 4 + 1).toBeGreaterThan(0);
 
-    // log_2(x - 1) requires x > 1, so x = 0 is not an admissible input.
-    expect(9).toBeGreaterThan(1);
-    expect(0 - 1).toBeLessThanOrEqual(0);
+    // log_2(x - 1) requires x > 1. At x = 1 the argument is zero;
+    // at x = 0 it is negative, so neither input gives a finite real logarithm.
+    expect(9 - 1).toBeGreaterThan(0);
+    expect(Number.isFinite(Math.log2(1 - 1))).toBe(false);
+    expect(Number.isNaN(Math.log2(0 - 1))).toBe(true);
 
     // Change-of-base answer for 10^x = 7 is checked by substitution.
     const x = Math.log(7) / Math.log(10);
