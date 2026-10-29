@@ -36,12 +36,14 @@ Never imply a higher status than the evidence supports.
 
 ## Pilot content
 - `src/lib/cortex/curatedContent/physics-kinematics.ts`: original introductory kinematics lesson. Draft only until independently checked against the exact Cambridge Physics syllabus version and the relevant coursebook chapter.
+- `src/lib/cortex/curatedContent/physics-accelerated-motion.ts`: original lesson on acceleration, velocity-time graphs, constant-acceleration equations, free fall and projectile components. Draft only until independently checked against the exact Cambridge Physics syllabus version and relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/pure-mathematics-algebra.ts`: original algebra lesson on modulus, polynomial division, remainder theorem and factor theorem. Draft only until independently checked against the exact Cambridge 9709 syllabus year and the relevant Pure 2/3 chapter coverage.
 
 ## Runtime integration status
 
 The two pilot modules are now wired into deterministic lesson fallback retrieval:
 - `physics|kinematics` serves the original kinematics lesson for Physics requests, including syllabus-coded labels such as Cambridge 9702.
+- `physics|accelerated motion` serves an original accelerated-motion lesson with worked calculations, graph reasoning, free-fall conventions and projectile components.
 - `mathematics|algebra` serves the original algebra lesson for Mathematics/Pure Mathematics requests, including syllabus-coded labels such as Cambridge 9709.
 - The fallback tests cover positive retrieval, required teaching structure, and subject isolation.
 
@@ -53,13 +55,14 @@ The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOf
 
 | Pilot | Source-derived scope | Status |
 |---|---|---|
-| Physics kinematics | *Physics for Cambridge International AS & A Level Coursebook*, syllabus 9702 (examination from 2022): speed, distance/displacement, scalar/vector, velocity, displacement-time graphs, vector operations. Accelerated motion is the next chapter and must be mapped as a separate lesson. | draft; runtime connected |
+| Physics kinematics | *Physics for Cambridge International AS & A Level Coursebook*, syllabus 9702 (examination from 2022): speed, distance/displacement, scalar/vector, velocity, displacement-time graphs, vector operations. | draft; runtime connected |
+| Physics accelerated motion | Same coursebook: acceleration, equations of motion, experimental measurement, gravity and projectiles. Lesson content is original and uses standard ideal-model assumptions explicitly. | draft; runtime connected |
 | Pure Mathematics algebra | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition, syllabus 9709: modulus, sketching modulus graphs, polynomial division, remainder theorem, factor theorem. The book's contents place this in Chapter 1. | draft; runtime connected |
 
 The lessons use original explanations and examples. The source books guide scope and teaching sequence; textbook prose, figures and end-of-chapter questions are not copied into the app.
 
 ## Next curation queue
-1. Extract the Physics book's contents and map kinematics to the current Cambridge syllabus.
+1. Map the Physics kinematics and accelerated-motion lessons to the exact current Cambridge syllabus and have a second reviewer check every numerical answer.
 2. Inspect the Oxford Pure Mathematics contents and create a syllabus map for Pure 2 and Pure 3.
 3. Expand the Mathematics pilot to include modulus graph sketches and further polynomial-division examples, with answer checks.
 4. Add tests that recompute every numerical answer and reject topic drift.
