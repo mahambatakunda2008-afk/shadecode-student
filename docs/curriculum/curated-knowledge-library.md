@@ -38,15 +38,17 @@ Never imply a higher status than the evidence supports.
 - `src/lib/cortex/curatedContent/physics-kinematics.ts`: original introductory kinematics lesson. Draft only until independently checked against the exact Cambridge Physics syllabus version and the relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/physics-accelerated-motion.ts`: original lesson on acceleration, velocity-time graphs, constant-acceleration equations, free fall and projectile components. Draft only until independently checked against the exact Cambridge Physics syllabus version and relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/pure-mathematics-algebra.ts`: original algebra lesson on modulus, polynomial division, remainder theorem and factor theorem. Draft only until independently checked against the exact Cambridge 9709 syllabus year and the relevant Pure 2/3 chapter coverage.
-- `src/lib/cortex/curatedContent/pure-mathematics-logs-exponentials.ts`: original lesson on logarithm meaning and laws, exponential/logarithmic graphs, solving equations and domain restrictions. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.\n- `src/lib/cortex/curatedContent/pure-mathematics-trigonometric-equations.ts`: original lesson on reference angles, quadrant signs, periods, and equations with multiple angles. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
+- `src/lib/cortex/curatedContent/pure-mathematics-logs-exponentials.ts`: original lesson on logarithm meaning and laws, exponential/logarithmic graphs, solving equations and domain restrictions. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
+- `src/lib/cortex/curatedContent/pure-mathematics-trigonometric-equations.ts`: original lesson on reference angles, quadrant signs, periods, and equations with multiple angles. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
 
 ## Runtime integration status
 
-The two pilot modules are now wired into deterministic lesson fallback retrieval:
+The original pilot modules are wired into deterministic lesson fallback retrieval:
 - `physics|kinematics` serves the original kinematics lesson for Physics requests, including syllabus-coded labels such as Cambridge 9702.
 - `physics|accelerated motion` serves an original accelerated-motion lesson with worked calculations, graph reasoning, free-fall conventions and projectile components.
 - `mathematics|algebra` serves the original algebra lesson for Mathematics/Pure Mathematics requests, including syllabus-coded labels such as Cambridge 9709.
 - `mathematics|logarithms and exponential functions` serves the original logarithms lesson for Mathematics/Pure Mathematics requests. Its graph sketch instructions, worked examples, practice and subject-isolation tests are wired into deterministic fallback retrieval. Short requests using `logarithms` or `exponential functions` also resolve to this lesson.
+- `mathematics|trigonometric equations` serves an original lesson on solving sine, cosine and tangent equations over a stated interval; `trig equations` is also an accepted short alias. Multiple-angle examples explicitly transform the interval before solving.
 - The fallback tests cover positive retrieval, required teaching structure, and subject isolation.
 
 **Important:** runtime availability is not a verification claim. Both modules remain drafts. The Mathematics PDF is image-based and its contents were read with OCR, so its detailed syllabus mapping still needs manual checking. The deterministic fallback modules are bundled with the application code, so these two lessons do not require an AI/network call once the app shell and JavaScript bundle are available locally. This is still not a complete downloadable, versioned curriculum pack.
@@ -87,7 +89,8 @@ The algebra pilot now has a stepwise modulus-graph routine, a worked sketch of \
 5. Expand automated answer checks to every numerical result and add topic-drift checks.
 6. Independently review the differentiation starter, verify all worked answers, and map it to the exact current 9709 syllabus before changing its draft status.
 7. Independently review the sequences/series starter, verify each formula and answer, and map it to the exact current 9709 syllabus before changing its draft status.
-8. Independently review the trigonometric-equations starter, verify every solution set and map it to the exact current 9709 syllabus before changing its draft status.\n9. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
+8. Independently review the trigonometric-equations starter, verify every solution set and map it to the exact current 9709 syllabus before changing its draft status.
+9. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
 10. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
 
 
