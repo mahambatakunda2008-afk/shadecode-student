@@ -1,3 +1,5 @@
+import { getLocalRecord, putLocalRecord } from "@/lib/offline/indexedDb";
+
 export interface OfflineCurriculumKnowledgeItem {
   id: string;
   kind: string;
@@ -83,6 +85,85 @@ export function readOfflineCurriculumPack(subject: string, board?: string, level
     }
     return null;
   } catch { return null; }
+}
+
+
+// Stable IndexedDB key, separate from display labels and safe across browser restarts.
+function durablePackId(subject: string, board?: string, level?: string) {
+  return `curriculum-pack:${[board || "", level || "", subject].map(value => value.trim().toLowerCase()).join(":")}`;
+}
+
+function createNormalizedPack(pack: Omit<OfflineCurriculumPack, "version" | "cachedAt">): OfflineCurriculumPack {
+  return {
+    ...pack,
+    version: 2,
+    objectives: pack.objectives.map(normalizeObjective).filter((x): x is { id?: string; code?: string; statement: string } => Boolean(x)).slice(0, 500),
+    knowledge: pack.knowledge.map(normalizeKnowledge).filter((x): x is OfflineCurriculumKnowledgeItem => Boolean(x)).slice(0, MAX_KNOWLEDGE),
+    promptContext: pack.promptContext?.slice(0, MAX_CONTEXT),
+    cachedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Durable async reader for app flows that can await storage. IndexedDB is the
+ * primary store; the legacy synchronous localStorage pack is migrated lazily.
+ * This does not label content verified. Consumers must honour source metadata.
+ */
+export async function readOfflineCurriculumPackDurable(
+  subject: string,
+  board?: string,
+  level?: string,
+): Promise<OfflineCurriculumPack | null> {
+  if (typeof window === "undefined" || !subject.trim()) return null;
+  const id = durablePackId(subject, board, level);
+  try {
+    const record = await getLocalRecord(id);
+    if (record?.entity === "curriculum-pack") {
+      const stored = normalizePack(record.value as Partial<OfflineCurriculumPack>);
+      if (stored) return stored;
+    }
+  } catch {
+    // Continue to the legacy store when IndexedDB is unavailable or blocked.
+  }
+
+  const legacy = readOfflineCurriculumPack(subject, board, level);
+  if (!legacy) return null;
+  try {
+    await putLocalRecord({ id, entity: "curriculum-pack", value: legacy, updatedAt: Date.now() });
+  } catch {
+    // The legacy pack remains readable even when migration cannot be persisted.
+  }
+  return legacy;
+}
+
+/**
+ * Durable async writer. Keeps the v2 localStorage mirror for older app builds,
+ * while making IndexedDB the preferred source for future offline reads.
+ */
+export async function writeOfflineCurriculumPackDurable(
+  pack: Omit<OfflineCurriculumPack, "version" | "cachedAt">,
+): Promise<"indexeddb" | "localstorage" | "unavailable"> {
+  if (typeof window === "undefined" || !pack.subject.trim()) return "unavailable";
+  const value = createNormalizedPack(pack);
+  let indexedDbSaved = false;
+  try {
+    await putLocalRecord({
+      id: durablePackId(value.subject, value.board, value.level),
+      entity: "curriculum-pack",
+      value,
+      updatedAt: Date.now(),
+    });
+    indexedDbSaved = true;
+  } catch {
+    // Try the backwards-compatible store below.
+  }
+
+  try {
+    localStorage.setItem(key(value.subject, value.board, value.level), JSON.stringify(value));
+    return indexedDbSaved ? "indexeddb" : "localstorage";
+  } catch {
+    return indexedDbSaved ? "indexeddb" : "unavailable";
+  }
 }
 
 export function writeOfflineCurriculumPack(pack: Omit<OfflineCurriculumPack, "version" | "cachedAt">) {
