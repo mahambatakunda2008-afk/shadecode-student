@@ -448,13 +448,24 @@ export function buildDeterministicLessonFallback(subject: string, topic: string)
     // Prefer the most specific topic when a request contains multiple curated labels.
     .sort((a, b) => b.knownTopic.length - a.knownTopic.length);
 
-  for (const { key, lesson, knownTopic } of candidates) {
-    if (normalizedTopic === knownTopic || normalizedTopic.startsWith(`${knownTopic} `) || normalizedTopic.endsWith(` ${knownTopic}`) || normalizedTopic.includes(` ${knownTopic} `)) {
-      // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
-      // not what the lesson teaches: skip it rather than serve the wrong lesson.
-      if (THEORY_EXCLUSIONS[key]?.test(normalizedTopic)) continue;
-      return lesson;
-    }
+  const matches = candidates.filter(({ key, knownTopic }) => {
+    const topicMatches =
+      normalizedTopic === knownTopic ||
+      normalizedTopic.startsWith(`${knownTopic} `) ||
+      normalizedTopic.endsWith(` ${knownTopic}`) ||
+      normalizedTopic.includes(` ${knownTopic} `);
+    // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
+    // not what the lesson teaches: exclude it before considering candidate matches.
+    return topicMatches && !THEORY_EXCLUSIONS[key]?.test(normalizedTopic);
+  });
+
+  // Short aliases (for example "sequences" and "series") can point to the same
+  // authored lesson. Treat those as one match, but never choose arbitrarily
+  // when a request genuinely names two different lessons.
+  const distinctLessons = new Map<string, FallbackLesson>();
+  for (const { lesson } of matches) {
+    distinctLessons.set(lesson.title, lesson);
   }
-  return null;
+  if (distinctLessons.size !== 1) return null;
+  return distinctLessons.values().next().value ?? null;
 }
