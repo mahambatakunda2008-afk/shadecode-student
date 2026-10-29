@@ -38,7 +38,23 @@ Never imply a higher status than the evidence supports.
 - `src/lib/cortex/curatedContent/physics-kinematics.ts`: original introductory kinematics lesson. Draft only until independently checked against the exact Cambridge Physics syllabus version and the relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/pure-mathematics-algebra.ts`: original algebra lesson on modulus, polynomial division, remainder theorem and factor theorem. Draft only until independently checked against the exact Cambridge 9709 syllabus year and the relevant Pure 2/3 chapter coverage.
 
-Neither pilot is connected to runtime fallback retrieval yet. Integration requires syllabus mapping, content review, answer tests, suitable diagram coverage, and lookup tests confirming that unrelated requests cannot receive the wrong lesson.
+## Runtime integration status
+
+The two pilot modules are now wired into deterministic lesson fallback retrieval:
+- `physics|kinematics` serves the original kinematics lesson for Physics requests, including syllabus-coded labels such as Cambridge 9702.
+- `mathematics|algebra` serves the original algebra lesson for Mathematics/Pure Mathematics requests, including syllabus-coded labels such as Cambridge 9709.
+- The fallback tests cover positive retrieval, required teaching structure, and subject isolation.
+
+**Important:** runtime availability is not a verification claim. Both modules remain drafts. The Mathematics PDF is image-based and its contents were read with OCR, so its detailed syllabus mapping still needs manual checking. Neither pilot is yet proven to be part of a durable, versioned offline content pack. The existing fallback can serve content when provider generation fails, but that is not equivalent to a complete offline-first learning experience.
+
+## Source mapping for the first pilots
+
+| Pilot | Source-derived scope | Status |
+|---|---|---|
+| Physics kinematics | *Physics for Cambridge International AS & A Level Coursebook*, syllabus 9702 (examination from 2022): speed, distance/displacement, scalar/vector, velocity, displacement-time graphs, vector operations. Accelerated motion is the next chapter and must be mapped as a separate lesson. | draft; runtime connected |
+| Pure Mathematics algebra | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition, syllabus 9709: modulus, sketching modulus graphs, polynomial division, remainder theorem, factor theorem. The book's contents place this in Chapter 1. | draft; runtime connected |
+
+The lessons use original explanations and examples. The source books guide scope and teaching sequence; textbook prose, figures and end-of-chapter questions are not copied into the app.
 
 ## Next curation queue
 1. Extract the Physics book's contents and map kinematics to the current Cambridge syllabus.
