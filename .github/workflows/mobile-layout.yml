@@ -18,14 +18,28 @@ on:
         options:
           - production
           - local-dev
+          - local-prod
+      ref:
+        description: "Git ref (branch/tag/sha) whose app code to test in local-dev / local-prod modes. Tests always come from main."
+        required: false
+        default: "main"
 
 jobs:
   mobile-layout:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout app code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.mode == 'production' && 'main' || inputs.ref }}
+          fetch-depth: 0
+
+      - name: Overlay the tests from main
+        if: inputs.mode != 'production' && inputs.ref != 'main'
+        run: |
+          git fetch origin main
+          git checkout origin/main -- e2e playwright.config.ts
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,6 +69,23 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
           NEXT_TELEMETRY_DISABLED: "1"
+        run: npx playwright test e2e/mobile --reporter=github,list --retries=0
+
+      - name: Build and start the app (local production build)
+        if: inputs.mode == 'local-prod'
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm run build
+          (npx next start -p 3000 > next-start.log 2>&1 &)
+          for i in $(seq 1 40); do curl -sf http://127.0.0.1:3000/ >/dev/null && break; sleep 2; done
+
+      - name: Run mobile layout checks (local production build)
+        if: inputs.mode == 'local-prod'
+        env:
+          BASE_URL: http://127.0.0.1:3000
         run: npx playwright test e2e/mobile --reporter=github,list --retries=0
 
       - name: Publish measurements as annotations
