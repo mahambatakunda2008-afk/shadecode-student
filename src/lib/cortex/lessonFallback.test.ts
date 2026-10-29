@@ -170,4 +170,18 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Physics (9702)", "Algebra")).toBeNull();
   });
 
+  it("serves the original Pure Mathematics logarithms lesson offline without leaking it to other subjects", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Teach me logarithms and exponential functions",
+    );
+
+    expect(lesson?.title).toContain("Logarithms and exponential functions");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(14);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Logarithms and exponential functions")).toBeNull();
+  });
+
 });
