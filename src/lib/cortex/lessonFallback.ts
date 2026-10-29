@@ -3,6 +3,7 @@ import { PHYSICS_KINEMATICS_STARTER } from "./curatedContent/physics-kinematics"
 import { PHYSICS_ACCELERATED_MOTION_STARTER } from "./curatedContent/physics-accelerated-motion";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
+import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
 import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
 
 type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
@@ -385,6 +386,7 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "mathematics|logarithms and exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
   "mathematics|logarithms": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
   "mathematics|exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
+  "mathematics|differentiation": PURE_MATHEMATICS_DIFFERENTIATION_STARTER,
 };
 
 // Specific curated entries win over broad legacy theory entries with overlapping names.
