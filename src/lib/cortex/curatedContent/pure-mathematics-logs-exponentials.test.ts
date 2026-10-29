@@ -6,7 +6,7 @@ describe("Pure Mathematics logarithms and exponentials starter", () => {
     const blocks = PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER.blocks;
     const types = new Set(blocks.map((block) => block.type));
     for (const type of ["objective", "prior", "definition", "example", "concept", "diagram", "checkpoint", "misconception", "practice", "exam", "summary"]) {
-      expect(types.has(type), `missing ${type}`).toBe(true);
+      expect(types.has(type), `missing block type: ${type}`).toBe(true);
     }
     expect(blocks.length).toBeGreaterThanOrEqual(14);
     expect(blocks[0].type).toBe("objective");
@@ -74,11 +74,18 @@ describe("Pure Mathematics logarithms and exponentials starter", () => {
     expect(diagram?.content).toContain("asymptotes y = 0 and x = 0");
   });
 
-  it("guards against false logarithm laws and checks translated exponential asymptotes", () => {
-    const lhs = Math.log10(10 + 10);
-    const invalidRhs = Math.log10(10) + Math.log10(10);
-    expect(lhs).not.toBeCloseTo(invalidRhs);
-    expect(Math.log10(10 * 10)).toBeCloseTo(invalidRhs);
+  it("rejects the false additive-log law across varied positive inputs", () => {
+    // A single counterexample catches the misconception; varied inputs prevent
+    // the regression test from accidentally depending on one convenient pair.
+    const pairs = [[2, 3], [10, 5], [0.5, 4], [7, 0.25]] as const;
+    for (const [m, n] of pairs) {
+      const falseExpansion = Math.log10(m) + Math.log10(n);
+      expect(Math.log10(m + n)).not.toBeCloseTo(falseExpansion, 12);
+      expect(Math.log10(m * n)).toBeCloseTo(falseExpansion, 12);
+    }
+  });
+
+  it("checks translated exponential asymptotes", () => {
 
     // For y = 3 + 2^x, the horizontal asymptote is y = 3.
     for (const x of [-10, -6, -3]) {
