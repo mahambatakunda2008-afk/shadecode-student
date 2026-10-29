@@ -62,7 +62,7 @@ The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOf
 | Physics kinematics | *Physics for Cambridge International AS & A Level Coursebook*, syllabus 9702 (examination from 2022): speed, distance/displacement, scalar/vector, velocity, displacement-time graphs, vector operations. | draft; runtime connected |
 | Physics accelerated motion | Same coursebook: acceleration, equations of motion, experimental measurement, gravity and projectiles. Lesson content is original and uses standard ideal-model assumptions explicitly. | draft; runtime connected |
 | Pure Mathematics algebra | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition, syllabus 9709: modulus, sketching modulus graphs, polynomial division, remainder theorem, factor theorem. The book's contents place this in Chapter 1. | draft; runtime connected |
-| Pure Mathematics logarithms and exponentials | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition: topic heading visible in the OCR-read contents. Detailed chapter coverage and exact syllabus-year mapping are not yet independently verified. | draft; runtime connected |
+| Pure Mathematics logarithms and exponentials | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition: topic heading visible in the OCR-read contents. Detailed chapter coverage and exact syllabus-year mapping are not yet independently verified. | draft; runtime connected |\n| Pure Mathematics differentiation | Original authored starter covering derivative meaning, first principles, power and chain rules, tangents and stationary points. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
 
 The lessons use original explanations and examples. The source books guide scope and teaching sequence; textbook prose, figures and end-of-chapter questions are not copied into the app.
 
@@ -81,6 +81,7 @@ The algebra pilot now has a stepwise modulus-graph routine, a worked sketch of \
 2. Inspect the Oxford Pure Mathematics contents and create a syllabus map for Pure 2 and Pure 3.
 3. Independently check the logarithms/exponentials worked answers and map the lesson to the exact current Cambridge 9709 syllabus before upgrading its status.
 4. Extend the Mathematics pilot with further Pure 2/Pure 3 topics only after checking the supplied book contents and current syllabus map.
-5. Expand automated answer checks to every numerical result and add topic-drift checks.
+5. Expand automated answer checks to every numerical result and add topic-drift checks.\n6. Independently review the differentiation starter, verify all worked answers, and map it to the exact current 9709 syllabus before changing its draft status.
 6. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
 6. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
+\n\n### Pure Mathematics differentiation starter (draft)\n\nAdded an original teaching sequence on derivative meaning, first principles for x², polynomial differentiation, the chain rule, tangent equations and stationary-point classification. A learner-drawn curve/tangent prompt is included. Regression tests cover the numerical examples and lesson structure. This is a draft, not a claim of exact syllabus coverage or independent examiner approval.\n
