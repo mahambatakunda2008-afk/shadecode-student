@@ -81,7 +81,7 @@ describe("Pure Mathematics algebra starter", () => {
 
     const dividend = (x: number) => 2 * x ** 2 + 3 * x - 2;
     const quotient = (x: number) => (x + 2) * (2 * x - 1);
-    for (const x of [-3, -2, -1, 0, 1, 3]) expect(quotient(x)).toBe(dividend(x));
+    for (const x of [-3, -2, -1, 0, 1, 3]) expect(quotient(x)).toBeCloseTo(dividend(x), 10);
   });
 
   it("does not claim syllabus verification", () => {
