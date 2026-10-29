@@ -32,6 +32,36 @@ describe("Pure Mathematics algebra starter", () => {
     expect((3 - 2) * (3 + 2)).toBe(5);
   });
 
+  it("checks polynomial-division identities across multiple values", () => {
+    const evaluate = (coefficients: number[], x: number) =>
+      coefficients.reduce((sum, coefficient) => sum * x + coefficient, 0);
+
+    // x^3 + 2x^2 - x + 3 = (x + 2)(x^2 - 1) + 5
+    for (const x of [-3, -2, -1, 0, 1, 2, 4]) {
+      const dividend = evaluate([1, 2, -1, 3], x);
+      const quotient = evaluate([1, 0, -1], x);
+      expect((x + 2) * quotient + 5).toBe(dividend);
+    }
+
+    // 2x^2 + x - 3 = (x + 2)(2x - 3) + 3
+    for (const x of [-3, -2, -1, 0, 1, 3]) {
+      const dividend = evaluate([2, 1, -3], x);
+      const quotient = evaluate([2, -3], x);
+      expect((x + 2) * quotient + 3).toBe(dividend);
+    }
+  });
+
+  it("covers the reflected modulus-graph interval and corner values", () => {
+    const graph = PURE_MATHEMATICS_ALGEBRA_STARTER.blocks.find((block) =>
+      block.title === "Worked graph sketch: y = |x² − 4|",
+    );
+    expect(graph?.content).toContain("4 − x² for −2 ≤ x ≤ 2");
+    expect(graph?.content).toContain("x² − 4 for x < −2 or x > 2");
+    expect(Math.abs(0 ** 2 - 4)).toBe(4);
+    expect(Math.abs((-2) ** 2 - 4)).toBe(0);
+    expect(Math.abs(2 ** 2 - 4)).toBe(0);
+  });
+
   it("does not claim syllabus verification", () => {
     expect(PURE_MATHEMATICS_ALGEBRA_STARTER.title).toMatch(/algebra/i);
     const visibleLesson = PURE_MATHEMATICS_ALGEBRA_STARTER.blocks.map((block) => block.content).join("\n");
