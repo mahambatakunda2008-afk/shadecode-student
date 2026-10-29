@@ -232,6 +232,13 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Physics (9702)", "Trigonometric equations")).toBeNull();
   });
 
+  it("does not substitute a foundational lesson for a specialised neighbouring topic", () => {
+    expect(buildDeterministicLessonFallback("Computer Science", "Binary search tree traversal")).toBeNull();
+    expect(buildDeterministicLessonFallback("Chemistry", "Dative covalent bonding")).toBeNull();
+    expect(buildDeterministicLessonFallback("Physics", "Kirchhoff laws in electric circuits")).toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Calvin cycle in photosynthesis")).toBeNull();
+  });
+
   it("accepts the short trig-equations alias and common Maths spelling", () => {
     expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Trig equations")?.title).toContain("Trigonometric equations");
   });
