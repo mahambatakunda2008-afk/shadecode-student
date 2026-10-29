@@ -10,6 +10,47 @@ Build a dependable, offline-capable knowledge layer for cases where a model is u
 - Record the source edition and exact syllabus mapping separately from the authored content.
 - Do not label content verified until calculations, terminology, syllabus scope, diagrams, and answers have been reviewed independently.
 
+## Programme-wide coverage mandate
+
+**Product requirement: comprehensive ZIMSEC and Cambridge secondary-school coverage, across all relevant high-school levels and subjects.** The current curated modules are small runtime pilots and must never be mistaken for broad curriculum coverage.
+
+### Programme and level coverage
+
+Maintain separate, versioned curriculum maps rather than assuming similarly named subjects or levels are interchangeable.
+
+| Programme track | Coverage target | Required mapping |
+|---|---|---|
+| Zimbabwe national pathway (ZIMSEC) | Secondary Forms 1–4, including the applicable junior-secondary learning stages and O Level syllabuses; A Level Forms 5–6 where offered | Official subject syllabus, syllabus/examination code, examination year, topic/subtopic, practical/coursework/oral requirements, assessment objectives, paper structure and allowed resources |
+| Cambridge pathway | Lower Secondary where relevant to a learner's entry point; Cambridge IGCSE/O Level; AS Level; full A Level | Exact Cambridge syllabus code and examination year, topic/subtopic, practical/coursework/oral requirements, assessment objectives, paper structure and allowed resources |
+| School-specific and mixed pathways | Learners taking a mixture of boards, levels or subject options | Per-learner subject/level/board selection, with explicit mapping for shared concepts and separate board-specific expectations |
+
+The pathway labels above define the product's intended reach, not a claim that every subject or stage has already been mapped. Confirm each level and subject against current official documentation before marking it available or verified. Do not assume ZIMSEC and Cambridge syllabuses are equivalent because the subject names match.
+
+### Subject catalogue and personalisation
+
+Build a discoverable subject catalogue that can expand without hard-coding only Mathematics and Physics. Candidate subject families to audit against the actual offerings for each programme include languages and literature; Mathematics and additional/further mathematics where applicable; Biology, Chemistry, Physics and other sciences; Computer Science/ICT; Geography; History; Commerce/business/economics/accounting; agriculture; and practical, technical, creative and vocational subjects. This is an audit queue, not a statement that every listed subject exists at every level or under both boards.
+
+Each subject entry must state its supported board, level, syllabus year, language, topic coverage, assessment modes, practical/resource requirements and confidence status. Onboarding and settings must let learners select their actual board, level, subjects and examination year. The app must not show a subject as fully supported merely because a single lesson or a generic AI response exists. Optional/specialist subject modules should be shown only when relevant to the learner's selections, while still remaining discoverable in subject settings.
+
+### Minimum completion criteria for each subject-level-syllabus version
+
+1. **Syllabus inventory:** every official topic and subtopic is accounted for, with a coverage state: not started, outlined, authored, checked, syllabus-mapped, or verified.
+2. **Learning pathway:** prerequisites, ordered lessons, objectives, vocabulary, examples, misconceptions, retrieval practice and spaced review.
+3. **Assessment readiness:** original exam-style questions across relevant difficulty levels; step-by-step marking guidance; command words; common lost-mark patterns; and explicit mapping to assessment objectives.
+4. **Subject-specific modes:** required graphs, labelled diagrams, map work, source analysis, essays, programming, calculations, experiments, practical skills, coursework or oral work, as appropriate to the syllabus. Text-only lessons are insufficient where visual or practical assessment is required.
+5. **Answer quality:** independently checked calculations, units, accepted alternatives, mark allocations and explanations. Tests can catch regressions but do not replace subject-expert review.
+6. **Offline readiness:** versioned downloadable lessons and eligible openly licensed or authorised resources, with integrity checks, clear storage size, update management and a graceful no-network learning path. A runtime fallback is not itself an offline content pack.
+7. **Coverage transparency:** a learner/guardian/teacher can see exactly what is covered, what remains incomplete, the syllabus year, and when content was last checked.
+8. **Release gate:** no subject/level is advertised as comprehensive until all official syllabus items are mapped, required assessment modes are represented, answer checks and independent review are complete, and offline behaviour has been tested.
+
+### Content provenance and resource rights
+
+Use current official ZIMSEC and Cambridge syllabuses and assessment documentation as the mapping authority, recording document title, version/year, URL or source reference, and date checked. Use supplied books to guide teaching sequence and explanations, but create original explanations, examples and exam-style questions. Include past papers, mark schemes, diagrams or textbook-derived material in an offline pack only when the licence, copyright exception or permission permits the intended distribution. Do not scrape and redistribute copyrighted books or papers wholesale. Where redistribution is not permitted, provide lawful source links and let users import files they are entitled to use.
+
+### Coverage ledger and rollout order
+
+Track completion at the atomic topic/subtopic level, not merely by the number of lesson files. First establish the official syllabus inventory for every selected programme/level/subject; then prioritise high-enrolment core subjects and exam-critical gaps; then expand to electives and practical/technical subjects. Keep ZIMSEC and Cambridge coverage separate in reporting, and publish a truthful coverage percentage based on mapped syllabus items rather than authored lesson count.
+
 ## Teaching structure observed in the supplied materials
 The Oxford Pure Mathematics book's introductory pages describe objectives, prerequisite checks (Before you start), worked examples, graded exercises from basic to exam standard, real-world links, chapter summaries, glossary and concise answers. Use these as pedagogical cues, not as a template to copy verbatim.
 The Cambridge Physics coursebook is a 907-page searchable PDF. Its detailed contents and topic-by-topic mapping still need extraction and review before claiming complete syllabus coverage.
