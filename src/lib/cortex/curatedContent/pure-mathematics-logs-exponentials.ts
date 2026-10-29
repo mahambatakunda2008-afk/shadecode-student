@@ -1,0 +1,34 @@
+import type { LessonQualityBlock } from "../lessonQuality";
+
+/**
+ * Original logarithms and exponential-functions starter, informed by the
+ * topic heading visible in the supplied Oxford Pure Mathematics book.
+ * Draft only: exact syllabus-year mapping and independent review remain due.
+ */
+export const PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER: {
+  title: string;
+  blocks: LessonQualityBlock[];
+} = {
+  title: "Logarithms and exponential functions",
+  blocks: [
+    { type: "objective", title: "Learning objectives", content: "By the end, you should be able to move between exponential and logarithmic form, apply logarithm laws with valid conditions, solve basic exponential and logarithmic equations, and describe key features of exponential graphs." },
+    { type: "prior", title: "Before you start", content: "You should be confident with powers, roots, indices and solving simple equations. For a positive base a not equal to 1, the expression a^x is defined for every real x and is always positive. This positivity is central to logarithms." },
+    { type: "definition", title: "What a logarithm means", content: "The statement log_a(x) = y means exactly that a^y = x. The base a must satisfy a > 0 and a not equal to 1, and the argument x must be positive. For example, log_2(8) = 3 because 2^3 = 8; log_10(0.01) = -2 because 10^-2 = 0.01." },
+    { type: "example", title: "Worked example: change between forms", content: "Write log_3(81) = 4 in exponential form, then write 5^x = 125 in logarithmic form. First: log_3(81) = 4 means 3^4 = 81. Second: 5^x = 125 means x = log_5(125). Since 125 = 5^3, x = 3. Always identify the base before changing form." },
+    { type: "concept", title: "The three core logarithm laws", content: "For positive M and N, and a valid base a, log_a(MN) = log_a(M) + log_a(N); log_a(M/N) = log_a(M) - log_a(N); and log_a(M^k) = k log_a(M) for real k where the expressions are defined. Products become sums, quotients become differences, and powers become multipliers. These laws do not turn log(M + N) into log(M) + log(N)." },
+    { type: "example", title: "Worked example: simplify with laws", content: "Simplify log_2(8x) - log_2(x) for x > 0. Use the quotient law to obtain log_2(8x/x) = log_2(8). Since 2^3 = 8, the expression equals 3. The condition x > 0 matters because both logarithm arguments must be positive." },
+    { type: "misconception", title: "A common false law", content: "There is no general rule log_a(M + N) = log_a(M) + log_a(N). For example, log_10(10 + 10) = log_10(20), which is not equal to log_10(10) + log_10(10) = 2. Use logarithm laws only for products, quotients and powers in their stated forms." },
+    { type: "definition", title: "Exponential and logarithmic functions are inverses", content: "For a > 0 and a not equal to 1, y = a^x and y = log_a(x) undo one another. The exponential graph has domain all real x and range y > 0. The logarithmic graph has domain x > 0 and range all real y. Their graphs reflect across the line y = x." },
+    { type: "diagram", title: "Sketching exponential and logarithmic graphs", content: "On axes, sketch y = 2^x through (-1, 1/2), (0, 1), and (1, 2), approaching but never touching the x-axis as x decreases. Sketch y = log_2(x) through (1/2, -1), (1, 0), and (2, 1), approaching but never touching the y-axis. Label the asymptotes y = 0 and x = 0 respectively." },
+    { type: "concept", title: "Growth, decay and asymptotes", content: "If a > 1, y = a^x increases as x increases. If 0 < a < 1, it decreases. In both cases y = a^x stays positive and has horizontal asymptote y = 0. A translated function such as y = 3 + 2^x has horizontal asymptote y = 3. The asymptote is approached but not reached." },
+    { type: "example", title: "Worked example: solve an exponential equation", content: "Solve 3^(2x - 1) = 27. Rewrite 27 as 3^3, giving 3^(2x - 1) = 3^3. The bases are equal and valid, so equate exponents: 2x - 1 = 3. Hence 2x = 4 and x = 2. Check: 3^(4 - 1) = 27." },
+    { type: "example", title: "Worked example: solve a logarithmic equation", content: "Solve log_2(x - 1) = 3. Convert to exponential form: x - 1 = 2^3 = 8, so x = 9. Check the domain first: x - 1 > 0 requires x > 1, and x = 9 is valid. A candidate that makes the logarithm argument zero or negative must be rejected." },
+    { type: "concept", title: "When the bases do not match", content: "If an equation cannot be rewritten using a common base, logarithms can bring an exponent down. For example, if 5^x = 12, take logarithms to get x log(5) = log(12), so x = log(12)/log(5). This is the change-of-base method; the ratio can use any consistent logarithm base." },
+    { type: "checkpoint", title: "Pause and predict", content: "Without calculating a decimal approximation, decide whether log_3(1/9) is positive, zero or negative. Then convert it to an equation involving a power of 3 and use that equation to justify your choice." },
+    { type: "practice", title: "Practice questions with answers", content: "1. Write log_4(64) = 3 in exponential form. 2. Simplify log_5(25) + log_5(5). 3. Solve 2^(x + 2) = 32. 4. Solve log_3(2x + 1) = 2 and state the domain condition. 5. Solve 10^x = 7 exactly using logarithms. 6. State the domain and range of y = log_2(x). 7. Explain why log_2(x - 4) requires x > 4.
+
+Answers: 1. 4^3 = 64. 2. 2 + 1 = 3. 3. 32 = 2^5, so x + 2 = 5 and x = 3. 4. 2x + 1 = 9, so x = 4; the condition is 2x + 1 > 0, or x > -1/2, so the solution is valid. 5. x = log(7)/log(10), equivalently log_10(7). 6. Domain x > 0; range all real numbers. 7. The argument of a logarithm must be positive, so x - 4 > 0." },
+    { type: "exam", title: "Exam technique", content: "For logarithm equations, write the argument restrictions before or alongside solving. When converting to exponential form, keep the base and exponent in the correct positions. For exponential equations, express both sides with a common base when possible; otherwise take logarithms and show the rearrangement. Give exact logarithmic answers unless a decimal is requested." },
+    { type: "summary", title: "Key ideas", content: "log_a(x) = y exactly when a^y = x, with a > 0, a not equal to 1 and x > 0. Products, quotients and powers follow the three logarithm laws. Exponential functions are positive and have domain all real numbers; logarithmic functions require positive inputs. Solve equations by converting forms, matching bases or taking logarithms, and always check the domain." }
+  ]
+};
