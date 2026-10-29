@@ -76,6 +76,15 @@ describe("buildDeterministicLessonFallback", () => {
   });
 
 
+  it("prefers the most specific curated topic when a request contains a broader topic phrase", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Mathematics AS Level 9709",
+      "Please explain integration by parts in detail",
+    );
+
+    expect(lesson?.title).toContain("Integration by parts");
+  });
+
   it("matches common subject spelling variants (math/maths)", () => {
     expect(buildDeterministicLessonFallback("math", "Trigonometric Identities")).not.toBeNull();
     expect(buildDeterministicLessonFallback("Maths", "trigonometric identities")).not.toBeNull();
