@@ -63,6 +63,7 @@ The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOf
 |---|---|---|
 | Physics kinematics | *Physics for Cambridge International AS & A Level Coursebook*, syllabus 9702 (examination from 2022): speed, distance/displacement, scalar/vector, velocity, displacement-time graphs, vector operations. | draft; runtime connected |
 | Physics accelerated motion | Same coursebook: acceleration, equations of motion, experimental measurement, gravity and projectiles. Lesson content is original and uses standard ideal-model assumptions explicitly. | draft; runtime connected |
+| Physics momentum and impulse | Original lesson on signed momentum, impulse, force-time graph area, conservation of momentum, and one-dimensional collisions. Guided by the supplied Cambridge International AS & A Level Physics coursebook topic sequence; exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
 | Pure Mathematics algebra | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition, syllabus 9709: modulus, sketching modulus graphs, polynomial division, remainder theorem, factor theorem. The book's contents place this in Chapter 1. | draft; runtime connected |
 | Pure Mathematics logarithms and exponentials | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition: topic heading visible in the OCR-read contents. Detailed chapter coverage and exact syllabus-year mapping are not yet independently verified. | draft; runtime connected |
 | Pure Mathematics differentiation | Original authored starter covering derivative meaning, first principles, power and chain rules, tangents and stationary points. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
@@ -107,3 +108,8 @@ Added original instruction on arithmetic and geometric nth terms, finite sums, c
 ### Pure Mathematics trigonometric equations starter (draft)
 
 Added original instruction for solving sine, cosine and tangent equations over a stated interval, using reference angles and quadrant signs, and handling multiple-angle equations by transforming the interval before solving. The learner-drawn quadrant guide and automated checks cover representative exact-angle solutions. This remains draft content until independent mathematical review and exact syllabus mapping are complete.
+
+
+### Physics momentum and impulse starter (draft)
+
+Added an original offline lesson covering signed momentum, impulse as change in momentum, force-time graph area, one-dimensional conservation of momentum, collisions, and why longer stopping time reduces average force. The worked examples state a positive direction and carry signs through the calculation; practice answers are included. Runtime retrieval tests cover the topic and subject isolation. These checks do not replace independent physics review or exact current-syllabus mapping, so the lesson remains a draft.
