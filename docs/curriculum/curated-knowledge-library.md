@@ -1,5 +1,8 @@
 # Shadecode Student curated knowledge library
 
+**Programme-wide source and coverage tracking:** use [the curriculum resource register](./resource-register.md) for official ZIMSEC/Cambridge sources, supplementary OER and rights checks, and [the coverage ledger template](./coverage-ledger-template.csv) to track every syllabus topic at topic/subtopic level. The template contains discovery seeds only; blank topic rows mean the official syllabus has not yet been fully inventoried. Do not report those entries as mapped or verified.
+
+
 ## Purpose
 Build a dependable, offline-capable knowledge layer for cases where a model is unavailable, slow, or produces unreliable work. A curated lesson is authored and checked content, not a generated response and not a copied textbook chapter.
 
