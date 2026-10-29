@@ -1,6 +1,7 @@
 import type { LessonQualityBlock } from "./lessonQuality";
 import { PHYSICS_KINEMATICS_STARTER } from "./curatedContent/physics-kinematics";
 import { PHYSICS_ACCELERATED_MOTION_STARTER } from "./curatedContent/physics-accelerated-motion";
+import { PHYSICS_MOMENTUM_STARTER } from "./curatedContent/physics-momentum";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -384,6 +385,8 @@ const SUBJECT_ALIASES: Record<string, string> = {
 const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
   "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
+  "physics|momentum": PHYSICS_MOMENTUM_STARTER,
+  "physics|impulse": PHYSICS_MOMENTUM_STARTER,
   "mathematics|algebra": PURE_MATHEMATICS_ALGEBRA_STARTER,
   "mathematics|logarithms and exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
   "mathematics|logarithms": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
