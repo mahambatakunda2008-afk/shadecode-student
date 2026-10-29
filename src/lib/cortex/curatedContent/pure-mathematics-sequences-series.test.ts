@@ -36,8 +36,8 @@ describe("Pure Mathematics sequences and series starter", () => {
       Array.from({ length: n }, (_, index) => a * r ** index).reduce((sum, term) => sum + term, 0);
 
     // For |r| < 1, partial sums approach a / (1 - r).
-    expect(partialSum(8, 0.5, 20)).toBeCloseTo(16, 5);
-    expect(partialSum(8, -0.5, 20)).toBeCloseTo(8 / 1.5, 5);
+    expect(partialSum(8, 0.5, 24)).toBeCloseTo(16, 5);
+    expect(partialSum(8, -0.5, 24)).toBeCloseTo(8 / 1.5, 5);
 
     // A ratio of 1 is valid for a finite series but not for the quotient formula.
     expect(partialSum(3, 1, 5)).toBe(15);
