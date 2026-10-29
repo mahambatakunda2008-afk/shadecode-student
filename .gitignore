@@ -54,3 +54,6 @@ public/workbox-*.js
 public/workbox-*.js.map
 public/worker-*.js
 public/worker-*.js.map
+
+# Playwright mobile layout output
+/mobile-metrics

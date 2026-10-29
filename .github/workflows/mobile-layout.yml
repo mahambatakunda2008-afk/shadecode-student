@@ -1,0 +1,62 @@
+name: Mobile layout checks
+
+# Opens the live app in a real phone-sized Chromium and asserts layout rules (no sideways scroll, sticky header,
+# bottom nav visible, touch-target sizes). Run it after a deploy. Measurements appear as annotations on the run and
+# full-page screenshots are attached as an artifact, so you can review the phone layout without any device.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "App URL to check"
+        required: true
+        default: "https://shadecodestudent.vercel.app"
+
+jobs:
+  mobile-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run mobile layout checks
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: npx playwright test e2e/mobile --reporter=github,list
+
+      - name: Publish measurements as annotations
+        if: always()
+        run: |
+          node -e "
+          const fs=require('fs');
+          if(!fs.existsSync('mobile-metrics/metrics.json')){console.log('::warning title=Mobile metrics::no metrics file was written');process.exit(0)}
+          for(const m of JSON.parse(fs.readFileSync('mobile-metrics/metrics.json','utf8'))){
+            const {page,...rest}=m;
+            console.log('::notice title=mobile '+page+'::'+JSON.stringify(rest).replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A'));
+          }"
+
+      - name: Upload screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-layout-${{ github.run_number }}
+          path: |
+            mobile-metrics/
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
