@@ -283,19 +283,6 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     if (text) return text;
   }
 
-  // Free independent fallback lanes run before Gemini so a struggling Google endpoint cannot
-  // consume the whole lesson budget before other vendors are attempted. Paid OpenAI remains opt-in.
-  // Each configured provider remains time-bounded; Gemini keys rotate within each model to avoid
-  // exhausting the request budget on every model for the first key.
-  for (const model of geminiModels) {
-    for (const key of geminiKeys) {
-      if (!canTry()) break;
-      const text = await callGemini(key, model, geminiKeys.indexOf(key));
-      if (text) return text;
-    }
-    if (!canTry()) break;
-  }
-
   // Groq: a genuinely free (no card required), independent-vendor provider with typically sub-2s
   // inference, added 2026-09-23 after Gemini, OpenRouter and Cloudflare were all found failing
   // simultaneously in production. Diversifying vendors reduces the chance every provider is down at
@@ -408,6 +395,15 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
       const data = await res.json() as any;
       return typeof data?.candidates?.[0]?.content?.parts?.[0]?.text === "string" ? data.candidates[0].content.parts[0].text : null;
     }, `gemini:${model}:key-${keyIndex + 1}`);
+  }
+
+  for (const model of geminiModels) {
+    for (const key of geminiKeys) {
+      if (!canTry()) break;
+      const text = await callGemini(key, model, geminiKeys.indexOf(key));
+      if (text) return text;
+    }
+    if (!canTry()) break;
   }
 
 
