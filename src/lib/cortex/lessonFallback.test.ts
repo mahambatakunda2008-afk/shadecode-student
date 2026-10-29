@@ -129,4 +129,31 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Biology", "Cell structure")).toBeNull();
   });
 
+
+  it("serves the book-informed Physics kinematics pilot when offline fallback is needed", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Cambridge International AS Level Physics (9702)",
+      "Teach me kinematics",
+    );
+
+    expect(lesson?.title).toContain("Kinematics");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Mathematics", "Kinematics")).toBeNull();
+  });
+
+  it("serves the book-informed Pure Mathematics algebra pilot without leaking it to other subjects", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Algebra",
+    );
+
+    expect(lesson?.title).toContain("Algebra");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Algebra")).toBeNull();
+  });
+
 });
