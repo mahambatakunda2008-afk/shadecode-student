@@ -143,6 +143,20 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Mathematics", "Kinematics")).toBeNull();
   });
 
+  it("serves the original accelerated-motion lesson offline and keeps it Physics-only", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Cambridge International AS Level Physics (9702)",
+      "Teach me accelerated motion",
+    );
+
+    expect(lesson?.title).toContain("Accelerated motion");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(10);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.content.includes("stopping displacement"))).toBe(true);
+    expect(buildDeterministicLessonFallback("Mathematics", "Accelerated motion")).toBeNull();
+  });
+
   it("serves the book-informed Pure Mathematics algebra pilot without leaking it to other subjects", () => {
     const lesson = buildDeterministicLessonFallback(
       "Pure Mathematics (9709)",
