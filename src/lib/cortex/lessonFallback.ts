@@ -1,4 +1,6 @@
 import type { LessonQualityBlock } from "./lessonQuality";
+import { PHYSICS_KINEMATICS_STARTER } from "./curatedContent/physics-kinematics";
+import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
 
 type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
@@ -371,8 +373,20 @@ const SUBJECT_ALIASES: Record<string, string> = {
   physics: "physics",
 };
 
-// Hand-written theory lessons live in their own file; the original small curated set stays below.
-const ALL_FALLBACK_LESSONS: Record<string, FallbackLesson> = { ...FALLBACK_LESSONS, ...THEORY_LESSONS };
+// Book-informed pilot lessons are original authored content, kept separate from AI output.
+// They remain marked as drafts in the curriculum documentation until syllabus mapping
+// and independent review are complete. Runtime availability is not a verification claim.
+const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
+  "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
+  "mathematics|algebra": PURE_MATHEMATICS_ALGEBRA_STARTER,
+};
+
+// Specific curated entries win over broad legacy theory entries with overlapping names.
+const ALL_FALLBACK_LESSONS: Record<string, FallbackLesson> = {
+  ...FALLBACK_LESSONS,
+  ...THEORY_LESSONS,
+  ...BOOK_INFORMED_PILOTS,
+};
 
 function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/['’]/g, "").replace(/\s+/g, " ");
