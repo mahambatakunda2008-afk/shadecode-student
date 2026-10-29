@@ -38,7 +38,7 @@ Never imply a higher status than the evidence supports.
 - `src/lib/cortex/curatedContent/physics-kinematics.ts`: original introductory kinematics lesson. Draft only until independently checked against the exact Cambridge Physics syllabus version and the relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/physics-accelerated-motion.ts`: original lesson on acceleration, velocity-time graphs, constant-acceleration equations, free fall and projectile components. Draft only until independently checked against the exact Cambridge Physics syllabus version and relevant coursebook chapter.
 - `src/lib/cortex/curatedContent/pure-mathematics-algebra.ts`: original algebra lesson on modulus, polynomial division, remainder theorem and factor theorem. Draft only until independently checked against the exact Cambridge 9709 syllabus year and the relevant Pure 2/3 chapter coverage.
-- `src/lib/cortex/curatedContent/pure-mathematics-logs-exponentials.ts`: original lesson on logarithm meaning and laws, exponential/logarithmic graphs, solving equations and domain restrictions. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
+- `src/lib/cortex/curatedContent/pure-mathematics-logs-exponentials.ts`: original lesson on logarithm meaning and laws, exponential/logarithmic graphs, solving equations and domain restrictions. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.\n- `src/lib/cortex/curatedContent/pure-mathematics-trigonometric-equations.ts`: original lesson on reference angles, quadrant signs, periods, and equations with multiple angles. Draft only until independently checked against the exact Cambridge 9709 syllabus year and relevant chapter coverage.
 
 ## Runtime integration status
 
@@ -64,7 +64,7 @@ The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOf
 | Pure Mathematics algebra | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition, syllabus 9709: modulus, sketching modulus graphs, polynomial division, remainder theorem, factor theorem. The book's contents place this in Chapter 1. | draft; runtime connected |
 | Pure Mathematics logarithms and exponentials | *Complete Pure Mathematics for Cambridge International AS & A Level*, Second Edition: topic heading visible in the OCR-read contents. Detailed chapter coverage and exact syllabus-year mapping are not yet independently verified. | draft; runtime connected |
 | Pure Mathematics differentiation | Original authored starter covering derivative meaning, first principles, power and chain rules, tangents and stationary points. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
-| Pure Mathematics sequences and series | Original authored starter covering arithmetic/geometric nth terms and finite sums, plus the convergence condition for an infinite geometric series. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
+| Pure Mathematics sequences and series | Original authored starter covering arithmetic/geometric nth terms and finite sums, plus the convergence condition for an infinite geometric series. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |\n| Pure Mathematics trigonometric equations | Original authored starter covering reference angles, quadrant signs, periods, exact-angle solution sets and multiple-angle interval handling. Exact syllabus-year mapping and independent review remain outstanding. | draft; runtime connected |
 
 The lessons use original explanations and examples. The source books guide scope and teaching sequence; textbook prose, figures and end-of-chapter questions are not copied into the app.
 
@@ -86,8 +86,8 @@ The algebra pilot now has a stepwise modulus-graph routine, a worked sketch of \
 5. Expand automated answer checks to every numerical result and add topic-drift checks.
 6. Independently review the differentiation starter, verify all worked answers, and map it to the exact current 9709 syllabus before changing its draft status.
 7. Independently review the sequences/series starter, verify each formula and answer, and map it to the exact current 9709 syllabus before changing its draft status.
-8. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
-9. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
+8. Independently review the trigonometric-equations starter, verify every solution set and map it to the exact current 9709 syllabus before changing its draft status.\n9. Add a runtime registry only after each entry passes independent content review and exact syllabus mapping.
+10. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
 
 
 ### Pure Mathematics differentiation starter (draft)
@@ -98,3 +98,8 @@ Added an original teaching sequence on derivative meaning, first principles for 
 ### Pure Mathematics sequences and series starter (draft)
 
 Added original instruction on arithmetic and geometric nth terms, finite sums, convergence of infinite geometric series, and a learner-drawn terms/partial-sums sketch. Numerical regression tests and runtime matching checks cover the authored examples and subject isolation. This remains draft content until independent mathematical review and exact syllabus mapping are complete.
+
+
+### Pure Mathematics trigonometric equations starter (draft)
+
+Added original instruction for solving sine, cosine and tangent equations over a stated interval, using reference angles and quadrant signs, and handling multiple-angle equations by transforming the interval before solving. The learner-drawn quadrant guide and automated checks cover representative exact-angle solutions. This remains draft content until independent mathematical review and exact syllabus mapping are complete.
