@@ -439,11 +439,16 @@ export function buildDeterministicLessonFallback(subject: string, topic: string)
   // Match a curated topic when the learner adds a natural-language request,
   // syllabus code, or exam phrasing around the topic. Never broaden the
   // subject match: a Physics lesson must not leak into another subject.
-  for (const [key, lesson] of Object.entries(ALL_FALLBACK_LESSONS)) {
-    const separator = key.indexOf("|");
-    const knownSubject = key.slice(0, separator);
-    const knownTopic = key.slice(separator + 1);
-    if (knownSubject !== normalizedSubject) continue;
+  const candidates = Object.entries(ALL_FALLBACK_LESSONS)
+    .map(([key, lesson]) => {
+      const separator = key.indexOf("|");
+      return { key, lesson, knownSubject: key.slice(0, separator), knownTopic: key.slice(separator + 1) };
+    })
+    .filter(candidate => candidate.knownSubject === normalizedSubject)
+    // Prefer the most specific topic when a request contains multiple curated labels.
+    .sort((a, b) => b.knownTopic.length - a.knownTopic.length);
+
+  for (const { key, lesson, knownTopic } of candidates) {
     if (normalizedTopic === knownTopic || normalizedTopic.startsWith(`${knownTopic} `) || normalizedTopic.endsWith(` ${knownTopic}`) || normalizedTopic.includes(` ${knownTopic} `)) {
       // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
       // not what the lesson teaches: skip it rather than serve the wrong lesson.
