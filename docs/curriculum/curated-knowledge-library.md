@@ -35,12 +35,15 @@ Every lesson should provide, where relevant:
 Never imply a higher status than the evidence supports.
 
 ## Pilot content
-The file src/lib/cortex/curatedContent/physics-kinematics.ts is an original starter lesson covering introductory kinematics. It is a draft until independently checked against the exact Cambridge Physics syllabus version and the full coursebook chapter. It is intentionally not yet connected to the runtime fallback registry; integration requires a dedicated lookup test and confirmation that unrelated requests cannot receive it.
+- `src/lib/cortex/curatedContent/physics-kinematics.ts`: original introductory kinematics lesson. Draft only until independently checked against the exact Cambridge Physics syllabus version and the relevant coursebook chapter.
+- `src/lib/cortex/curatedContent/pure-mathematics-algebra.ts`: original algebra lesson on modulus, polynomial division, remainder theorem and factor theorem. Draft only until independently checked against the exact Cambridge 9709 syllabus year and the relevant Pure 2/3 chapter coverage.
+
+Neither pilot is connected to runtime fallback retrieval yet. Integration requires syllabus mapping, content review, answer tests, suitable diagram coverage, and lookup tests confirming that unrelated requests cannot receive the wrong lesson.
 
 ## Next curation queue
-1. Extract the Physics book's contents and map the kinematics chapter to the current Cambridge syllabus.
+1. Extract the Physics book's contents and map kinematics to the current Cambridge syllabus.
 2. Inspect the Oxford Pure Mathematics contents and create a syllabus map for Pure 2 and Pure 3.
-3. Add an original Algebra pilot with modulus graphs, polynomial division, remainder theorem and factor theorem.
+3. Expand the Mathematics pilot to include modulus graph sketches and further polynomial-division examples, with answer checks.
 4. Add tests that recompute every numerical answer and reject topic drift.
 5. Add a runtime registry only after each entry passes review and tests.
 6. Add local retrieval and download packaging, with versioning and a visible distinction between curated content and AI-generated content.
