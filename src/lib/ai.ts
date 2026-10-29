@@ -359,8 +359,7 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
     }
   }
 
-  if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
-    const text = await tryProvider("ope  // Google fallback after the independent free-provider lanes.
+  // Google fallback after the independent free-provider lanes.
   // Gemini is a later fallback after Gateway, Groq, OpenRouter, and Cloudflare.
   // Production telemetry showed repeated Gemini timeouts/503s and no successful lesson responses,
   // while the independent providers have recorded occasional successes. Trying those lanes first
@@ -412,7 +411,8 @@ export async function callAI(prompt: string, maxTokens = 2000, options: CallAIOp
   }
 
 
-nai", "gpt-5.5", async timeout => {
+  if (!media.length && ALLOW_PAID_AI && process.env.OPENAI_API_KEY && canTry()) {
+    const text = await tryProvider("openai", "gpt-5.5", async timeout => {
       const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST", headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model: "gpt-5.5", messages: [{ role: "user", content: groundedPrompt }], max_tokens: maxTokens }),
