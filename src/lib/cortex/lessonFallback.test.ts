@@ -184,4 +184,9 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Physics (9702)", "Logarithms and exponential functions")).toBeNull();
   });
 
+  it("accepts short logarithms and exponential-functions topic requests", () => {
+    expect(buildDeterministicLessonFallback("Pure Mathematics (9709)", "Logarithms")?.title).toContain("Logarithms and exponential functions");
+    expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Exponential functions")?.title).toContain("Logarithms and exponential functions");
+  });
+
 });
