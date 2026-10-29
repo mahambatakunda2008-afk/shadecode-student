@@ -124,6 +124,25 @@ describe("buildDeterministicLessonFallback", () => {
     expect(persistableBlocks.every((block) => typeof block.type === "string")).toBe(true);
   });
 
+  it("serves the original Pure Mathematics sequences and series lesson offline without subject leakage", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Teach me sequences and series",
+    );
+
+    expect(lesson?.title).toContain("Sequences and series");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(16);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.content.includes("|r| < 1"))).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Sequences and series")).toBeNull();
+  });
+
+  it("accepts short sequences and series requests", () => {
+    expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Sequences")?.title).toContain("Sequences and series");
+    expect(buildDeterministicLessonFallback("Mathematics", "Series")?.title).toContain("Sequences and series");
+  });
+
   it("returns null for a topic with no hand-authored fallback", () => {
     expect(buildDeterministicLessonFallback("Mathematics", "Quadratic equations")).toBeNull();
     expect(buildDeterministicLessonFallback("Biology", "Cell structure")).toBeNull();
