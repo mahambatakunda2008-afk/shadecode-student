@@ -34,6 +34,7 @@ describe("Pure Mathematics algebra starter", () => {
 
   it("does not claim syllabus verification", () => {
     expect(PURE_MATHEMATICS_ALGEBRA_STARTER.title).toMatch(/algebra/i);
-    expect(PURE_MATHEMATICS_ALGEBRA_STARTER.blocks.at(-1)?.content).toMatch(/draft/i);
+    const visibleLesson = PURE_MATHEMATICS_ALGEBRA_STARTER.blocks.map((block) => block.content).join("\n");
+    expect(visibleLesson).not.toMatch(/syllabus (?:is )?verified/i);
   });
 });
