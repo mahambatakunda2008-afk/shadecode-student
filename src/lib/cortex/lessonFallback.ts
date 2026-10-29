@@ -1,5 +1,6 @@
 import type { LessonQualityBlock } from "./lessonQuality";
 import { PHYSICS_KINEMATICS_STARTER } from "./curatedContent/physics-kinematics";
+import { PHYSICS_ACCELERATED_MOTION_STARTER } from "./curatedContent/physics-accelerated-motion";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
 
@@ -378,6 +379,7 @@ const SUBJECT_ALIASES: Record<string, string> = {
 // and independent review are complete. Runtime availability is not a verification claim.
 const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
+  "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
   "mathematics|algebra": PURE_MATHEMATICS_ALGEBRA_STARTER,
 };
 
