@@ -74,6 +74,30 @@ describe("Pure Mathematics logarithms and exponentials starter", () => {
     expect(diagram?.content).toContain("asymptotes y = 0 and x = 0");
   });
 
+  it("guards against false logarithm laws and checks translated exponential asymptotes", () => {
+    const lhs = Math.log10(10 + 10);
+    const invalidRhs = Math.log10(10) + Math.log10(10);
+    expect(lhs).not.toBeCloseTo(invalidRhs);
+    expect(Math.log10(10 * 10)).toBeCloseTo(invalidRhs);
+
+    // For y = 3 + 2^x, the horizontal asymptote is y = 3.
+    for (const x of [-10, -6, -3]) {
+      expect(3 + 2 ** x).toBeGreaterThan(3);
+      expect(3 + 2 ** x - 3).toBeCloseTo(2 ** x);
+    }
+    expect(3 + 2 ** -10).toBeCloseTo(3, 2);
+    expect(3 + 2 ** 0).toBe(4);
+  });
+
+  it("checks the practice answers for logarithm values and domains", () => {
+    expect(Math.log(25) / Math.log(5) + Math.log(5) / Math.log(5)).toBeCloseTo(3);
+    const solution = (3 ** 2 - 1) / 2;
+    expect(solution).toBe(4);
+    expect(2 * solution + 1).toBeGreaterThan(0);
+    expect(2 ** 0).toBe(1);
+    expect(Number.isFinite(Math.log2(-1))).toBe(false);
+  });
+
   it("documents logarithm domain restrictions and graph features", () => {
     const lesson = PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER.blocks.map((block) => block.content).join("\n");
     expect(lesson).toContain("argument x must be positive");
