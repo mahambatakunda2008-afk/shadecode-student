@@ -171,6 +171,27 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Mathematics", "Kinematics")).toBeNull();
   });
 
+  it("serves the original momentum and impulse lesson offline and keeps it Physics-only", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Cambridge International AS Level Physics (9702)",
+      "Teach me momentum and impulse",
+    );
+
+    expect(lesson?.title).toContain("Momentum and impulse");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(14);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.content.includes("kg m s"))).toBe(true);
+    expect(buildDeterministicLessonFallback("Mathematics (9709)", "Momentum")).toBeNull();
+  });
+
+  it("recognises impulse as an alias for the same momentum lesson", () => {
+    expect(
+      buildDeterministicLessonFallback("Physics (9702)", "Please explain impulse in detail")?.title,
+    ).toContain("Momentum and impulse");
+  });
+
   it("serves the original accelerated-motion lesson offline and keeps it Physics-only", () => {
     const lesson = buildDeterministicLessonFallback(
       "Cambridge International AS Level Physics (9702)",
