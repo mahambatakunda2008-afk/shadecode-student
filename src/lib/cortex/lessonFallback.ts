@@ -383,6 +383,8 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
   "mathematics|algebra": PURE_MATHEMATICS_ALGEBRA_STARTER,
   "mathematics|logarithms and exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
+  "mathematics|logarithms": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
+  "mathematics|exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
 };
 
 // Specific curated entries win over broad legacy theory entries with overlapping names.
