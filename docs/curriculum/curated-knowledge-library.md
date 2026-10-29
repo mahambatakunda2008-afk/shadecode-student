@@ -45,7 +45,9 @@ The two pilot modules are now wired into deterministic lesson fallback retrieval
 - `mathematics|algebra` serves the original algebra lesson for Mathematics/Pure Mathematics requests, including syllabus-coded labels such as Cambridge 9709.
 - The fallback tests cover positive retrieval, required teaching structure, and subject isolation.
 
-**Important:** runtime availability is not a verification claim. Both modules remain drafts. The Mathematics PDF is image-based and its contents were read with OCR, so its detailed syllabus mapping still needs manual checking. Neither pilot is yet proven to be part of a durable, versioned offline content pack. The existing fallback can serve content when provider generation fails, but that is not equivalent to a complete offline-first learning experience.
+**Important:** runtime availability is not a verification claim. Both modules remain drafts. The Mathematics PDF is image-based and its contents were read with OCR, so its detailed syllabus mapping still needs manual checking. The deterministic fallback modules are bundled with the application code, so these two lessons do not require an AI/network call once the app shell and JavaScript bundle are available locally. This is still not a complete downloadable, versioned curriculum pack.
+
+The pack store now exposes async `readOfflineCurriculumPackDurable` and `writeOfflineCurriculumPackDurable` APIs backed by the existing IndexedDB `records` store, with the v2 localStorage pack retained as a backwards-compatible mirror and lazy migration source. These APIs are an incremental storage foundation. They must still be adopted by the relevant runtime call sites and exercised in browser/PWA and Android WebView testing before we claim end-to-end durable pack behaviour. The existing synchronous localStorage functions remain for compatibility.
 
 ## Source mapping for the first pilots
 
