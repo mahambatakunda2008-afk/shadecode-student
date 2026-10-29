@@ -239,6 +239,21 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Biology", "Calvin cycle in photosynthesis")).toBeNull();
   });
 
+  it("returns null when one request asks for two distinct curated lessons", () => {
+    expect(
+      buildDeterministicLessonFallback(
+        "Mathematics AS Level 9709",
+        "Compare integration by parts and integration by substitution",
+      ),
+    ).toBeNull();
+  });
+
+  it("does not treat aliases for the same authored lesson as ambiguous", () => {
+    expect(
+      buildDeterministicLessonFallback("Mathematics AS Level 9709", "Please explain sequences and series in detail")?.title,
+    ).toContain("Sequences and series");
+  });
+
   it("accepts the short trig-equations alias and common Maths spelling", () => {
     expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Trig equations")?.title).toContain("Trigonometric equations");
   });
