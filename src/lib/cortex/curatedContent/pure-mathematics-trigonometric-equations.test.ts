@@ -34,6 +34,21 @@ describe("Pure Mathematics trigonometric equations starter", () => {
     closeTo(cos(60), 0.5);
   });
 
+  it("finds all integer-degree solutions and excludes tangent's undefined angles", () => {
+    const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+    const interval = Array.from({ length: 360 }, (_, degree) => degree);
+    const sinSolutions = interval.filter((degree) => Math.abs(Math.sin(toRadians(degree)) - 0.5) < 1e-10);
+    const cosSolutions = interval.filter((degree) => Math.abs(Math.cos(toRadians(degree)) + Math.sqrt(3) / 2) < 1e-10);
+    const tanSolutions = interval.filter((degree) => Math.abs(Math.cos(toRadians(degree))) > 1e-10 && Math.abs(Math.tan(toRadians(degree)) - 1) < 1e-10);
+
+    expect(sinSolutions).toEqual([30, 150]);
+    expect(cosSolutions).toEqual([150, 210]);
+    expect(tanSolutions).toEqual([45, 225]);
+    expect(Math.abs(Math.cos(toRadians(90)))).toBeLessThan(1e-10);
+    expect(Math.abs(Math.cos(toRadians(270)))).toBeLessThan(1e-10);
+    expect(interval).not.toContain(360);
+  });
+
   it("checks multiple-angle practice answers in the original interval", () => {
     const answers = [30, 60];
     expect(answers.every((x) => x >= 0 && x < 180)).toBe(true);
