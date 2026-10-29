@@ -208,4 +208,22 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Exponential functions")?.title).toContain("Logarithms and exponential functions");
   });
 
+
+  it("serves the original trigonometric-equations lesson offline and isolates it to Mathematics", () => {
+    const lesson = buildDeterministicLessonFallback(
+      "Pure Mathematics (9709)",
+      "Please teach me trigonometric equations",
+    );
+
+    expect(lesson?.title).toContain("Trigonometric equations");
+    expect(lesson?.blocks.length).toBeGreaterThanOrEqual(15);
+    expect(lesson?.blocks.some((block) => block.type === "diagram")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "example")).toBe(true);
+    expect(lesson?.blocks.some((block) => block.type === "practice")).toBe(true);
+    expect(buildDeterministicLessonFallback("Physics (9702)", "Trigonometric equations")).toBeNull();
+  });
+
+  it("accepts the short trig-equations alias and common Maths spelling", () => {
+    expect(buildDeterministicLessonFallback("Maths AS Level 9709", "Trig equations")?.title).toContain("Trigonometric equations");
+  });
 });
