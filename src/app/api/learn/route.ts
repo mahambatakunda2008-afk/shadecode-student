@@ -573,10 +573,11 @@ Repair only the defective section. Preserve correct material where possible. Do 
         rawSection = await executeCortexText(sectionRequestPrompt, 2200, {
           operation: attempt === 0 ? "lesson.generate_section" : "lesson.repair_section",
           userId: user.id, feature: "lesson_assistant", subfeature: attempt === 0 ? "generate_lesson_section" : "repair_lesson_section",
-          // Sharing the chain budget lets a working provider finish a section-sized answer; a fixed 6s cap was
-          // aborting healthy providers mid-answer. Worst case 32s + 16s + 16s = 64s stays under the client's
-          // 72s wait (CLOUD_GENERATION_TIMEOUT_MS) and this route's maxDuration; see sectionBudget.test.ts.
-          maxChainMs: attempt === 0 ? 32000 : 16000, perProviderMaxMs: 6000, shareChainBudget: true,
+          // Give each provider enough time to finish a structured lesson section. Six seconds was
+          // repeatedly aborting providers before a complete answer could be returned. The chain remains
+          // bounded (32s initial, 16s repair), with at most three attempts and a 72s client wait.
+          // Keep this cap below the AI runtime's 10s shareable-provider ceiling; see sectionBudget.test.ts.
+          maxChainMs: attempt === 0 ? 32000 : 16000, perProviderMaxMs: 8000, shareChainBudget: true,
           recovery: {
             hasCheckpoint: Boolean(durableJobId),
             supportsRepair: attempt > 0,
