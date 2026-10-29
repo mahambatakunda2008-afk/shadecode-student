@@ -40,8 +40,37 @@ async function overflow(page: Page): Promise<Overflow> {
 
 function collectPageErrors(page: Page) {
   const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message.slice(0, 200)));
+  page.on("pageerror", (e) => errors.push(e.message.slice(0, 1500)));
   return errors;
+}
+
+type Diag = { navigations: number; console: string[]; failedRequests: string[] };
+
+/** Records what the page did while loading: navigations, console errors/warnings, failed requests. */
+function watch(page: Page): Diag {
+  const d: Diag = { navigations: 0, console: [], failedRequests: [] };
+  page.on("framenavigated", (f) => { if (f === page.mainFrame()) d.navigations += 1; });
+  page.on("console", (m) => { if (["error", "warning"].includes(m.type()) && d.console.length < 6) d.console.push(`${m.type()}: ${m.text().slice(0, 1500)}`); });
+  page.on("requestfailed", (r) => { if (d.failedRequests.length < 6) d.failedRequests.push(`${r.method()} ${r.url().slice(0, 110)} ${r.failure()?.errorText ?? ""}`); });
+  return d;
+}
+
+/** Never let a hung page hang the whole run: give up after `ms` and say so. */
+async function within<T>(promise: Promise<T>, ms: number, label: string): Promise<T | { timedOut: string }> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<{ timedOut: string }>((resolve) => { timer = setTimeout(() => resolve({ timedOut: `${label} did not finish in ${ms}ms` }), ms); });
+  try { return await Promise.race([promise, timeout]); } finally { if (timer) clearTimeout(timer); }
+}
+
+/** Main-thread CPU totals from Chromium (works even when the page's JS is busy). */
+async function cpuMetrics(page: Page) {
+  try {
+    const client = await page.context().newCDPSession(page);
+    const res = await within(client.send("Performance.getMetrics"), 5000, "Performance.getMetrics");
+    if ("timedOut" in res) return res;
+    const pick = ["TaskDuration", "ScriptDuration", "LayoutDuration", "RecalcStyleDuration", "JSHeapUsedSize", "Nodes"];
+    return Object.fromEntries(res.metrics.filter((m) => pick.includes(m.name)).map((m) => [m.name, Math.round(m.value * 1000) / 1000]));
+  } catch (e) { return { error: String(e).slice(0, 120) }; }
 }
 
 const slug = (route: string) => (route === "/" ? "home" : route.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-"));
@@ -49,12 +78,23 @@ const slug = (route: string) => (route === "/" ? "home" : route.replace(/^\//, "
 test.describe("public pages on a phone", () => {
   for (const route of ["/", "/auth/login", "/download"]) {
     test(`${route} does not scroll sideways and throws no page errors`, async ({ page }) => {
+      test.setTimeout(60_000);
       const errors = collectPageErrors(page);
-      await page.goto(route);
-      await page.waitForLoadState("networkidle").catch(() => undefined);
-      const o = await overflow(page);
-      await page.screenshot({ path: `${OUT}/shots/${slug(route)}.png`, fullPage: true });
-      metrics.push({ page: route, ...o, pageErrors: errors });
+      const diag = watch(page);
+      const started = Date.now();
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(2000);
+      const o = await within(overflow(page), 15_000, "overflow measurement");
+      const entry: Record<string, unknown> = { page: route, loadMs: Date.now() - started, ...diag, pageErrors: errors };
+      if ("timedOut" in o) {
+        entry.hang = o.timedOut;
+        entry.cpu = await cpuMetrics(page);
+        metrics.push(entry);
+        throw new Error(`${route}: ${o.timedOut}`);
+      }
+      Object.assign(entry, o);
+      await page.screenshot({ path: `${OUT}/shots/${slug(route)}.png`, fullPage: true, timeout: 20_000 }).catch((e) => { entry.screenshotError = String(e).slice(0, 120); });
+      metrics.push(entry);
       expect.soft(o.scrollWidth, `horizontal overflow on ${route}: ${o.offenders.join(" | ")}`).toBeLessThanOrEqual(o.innerWidth + 1);
       expect(errors, `uncaught page errors on ${route}`).toEqual([]);
     });
@@ -86,15 +126,19 @@ test.describe("signed-in screens on a phone", () => {
     const errors = collectPageErrors(page);
     await signIn(page);
     for (const route of routes) {
-      await page.goto(route);
-      await page.waitForLoadState("domcontentloaded");
-      await page.waitForLoadState("networkidle").catch(() => undefined);
-      await page.waitForTimeout(800);
-      const o = await overflow(page);
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(2500);
+      const measured = await within(overflow(page), 15_000, `overflow on ${route}`);
+      if ("timedOut" in measured) {
+        metrics.push({ page: route, hang: measured.timedOut, cpu: await cpuMetrics(page) });
+        expect.soft(false, measured.timedOut).toBe(true);
+        continue;
+      }
+      const o = measured;
       const nav = page.locator(".ssc-bottom-nav");
       const navVisible = await nav.first().isVisible().catch(() => false);
       const pillVisible = await page.getByRole("button", { name: "Open Ask Cortex" }).isVisible().catch(() => false);
-      await page.screenshot({ path: `${OUT}/shots/app-${slug(route)}.png`, fullPage: true });
+      await page.screenshot({ path: `${OUT}/shots/app-${slug(route)}.png`, fullPage: true, timeout: 20_000 }).catch(() => undefined);
       metrics.push({ page: route, ...o, bottomNavVisible: navVisible, floatingCortexPillVisible: pillVisible });
       expect.soft(o.scrollWidth, `horizontal overflow on ${route}: ${o.offenders.join(" | ")}`).toBeLessThanOrEqual(o.innerWidth + 1);
       expect.soft(navVisible, `bottom navigation should be visible on ${route}`).toBe(true);

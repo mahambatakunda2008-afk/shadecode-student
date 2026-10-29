@@ -7,9 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: "App URL to check"
+        description: "App URL to check (ignored in local-dev mode)"
         required: true
         default: "https://shadecodestudent.vercel.app"
+      mode:
+        description: "production = test base_url with the E2E account; local-dev = start the dev server in CI (public pages only, readable React errors)"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - local-dev
 
 jobs:
   mobile-layout:
@@ -31,12 +39,23 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run mobile layout checks
+      - name: Run mobile layout checks (production)
+        if: inputs.mode == 'production'
         env:
           BASE_URL: ${{ inputs.base_url }}
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-        run: npx playwright test e2e/mobile --reporter=github,list
+        run: npx playwright test e2e/mobile --reporter=github,list --retries=0
+
+      - name: Run mobile layout checks (local dev server)
+        if: inputs.mode == 'local-dev'
+        env:
+          START_SERVER: "1"
+          BASE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npx playwright test e2e/mobile --reporter=github,list --retries=0
 
       - name: Publish measurements as annotations
         if: always()
