@@ -93,8 +93,9 @@ jobs:
         run: |
           node -e "
           const fs=require('fs');
-          if(!fs.existsSync('mobile-metrics/metrics.json')){console.log('::warning title=Mobile metrics::no metrics file was written');process.exit(0)}
-          for(const m of JSON.parse(fs.readFileSync('mobile-metrics/metrics.json','utf8'))){
+          const files=['mobile-metrics/metrics.json','mobile-metrics/style-probe.json'].filter(f=>fs.existsSync(f));
+          if(!files.length){console.log('::warning title=Mobile metrics::no metrics file was written');process.exit(0)}
+          for(const m of files.flatMap(f=>JSON.parse(fs.readFileSync(f,'utf8')))){
             const {page,...rest}=m;
             console.log('::notice title=mobile '+page+'::'+JSON.stringify(rest).replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A'));
           }"
