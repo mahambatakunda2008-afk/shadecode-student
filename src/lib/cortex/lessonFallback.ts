@@ -22,6 +22,7 @@ import { BIOLOGY_INFECTIOUS_DISEASES_STARTER } from "./curatedContent/biology-in
 import { BIOLOGY_IMMUNITY_STARTER } from "./curatedContent/biology-immunity";
 import { BIOLOGY_ENERGY_RESPIRATION_STARTER } from "./curatedContent/biology-energy-respiration";
 import { BIOLOGY_PHOTOSYNTHESIS_STARTER } from "./curatedContent/biology-photosynthesis";
+import { BIOLOGY_HOMEOSTASIS_STARTER } from "./curatedContent/biology-homeostasis";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -454,6 +455,19 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|homeostasis": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|negative feedback": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|kidney": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|nephron": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|ultrafiltration": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|osmoregulation": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|adh": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|blood glucose": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|glucagon": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|insulin": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|stomata": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|guard cells": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|abscisic acid": BIOLOGY_HOMEOSTASIS_STARTER,
   "biology|photosynthesis": BIOLOGY_PHOTOSYNTHESIS_STARTER,
   "biology|light-dependent stage": BIOLOGY_PHOTOSYNTHESIS_STARTER,
   "biology|light independent stage": BIOLOGY_PHOTOSYNTHESIS_STARTER,
