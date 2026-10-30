@@ -144,6 +144,7 @@ const NOT_ORGANIC_BASICS = /\b(mechanisms?|spectroscopy|nmr|infrared|ir|mass spe
 const NOT_BONDING_BASICS = /\b(dative|coordinate|co ordinate|hydrogen|intermolecular|polar|polarity|electronegativity|vsepr|shapes?|hybridi[sz]ation|sigma|pi|bond energy|bond enthalpy|lattice energy|born haber)\b/;
 const NOT_CIRCUITS_BASICS = /\b(rc|capacitors?|internal resistance|potential dividers?|divider|kirchhoff|alternating|thermistors?|ldr|diodes?|transistors?|digital|logic|magnetic|electrostatic|static)\b/;
 const NOT_PHOTOSYNTHESIS_ALONE = /\b(respiration|c4|cam|photophosphorylation|calvin cycle)\b/;
+const NOT_RESPIRATION_ALONE = /\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\b/;
 
 export const THEORY_EXCLUSIONS: Record<string, RegExp> = {
   "computer science|binary search": NOT_BINARY_SEARCH,
