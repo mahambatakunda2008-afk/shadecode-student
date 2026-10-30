@@ -21,6 +21,7 @@ import { BIOLOGY_GAS_EXCHANGE_STARTER } from "./curatedContent/biology-gas-excha
 import { BIOLOGY_INFECTIOUS_DISEASES_STARTER } from "./curatedContent/biology-infectious-diseases";
 import { BIOLOGY_IMMUNITY_STARTER } from "./curatedContent/biology-immunity";
 import { BIOLOGY_ENERGY_RESPIRATION_STARTER } from "./curatedContent/biology-energy-respiration";
+import { BIOLOGY_PHOTOSYNTHESIS_STARTER } from "./curatedContent/biology-photosynthesis";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -453,6 +454,14 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|photosynthesis": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|light-dependent stage": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|light independent stage": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|calvin cycle": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|photophosphorylation": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|chloroplast pigments": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|limiting factors": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|chromatography": BIOLOGY_PHOTOSYNTHESIS_STARTER,
   "biology|energy and respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|energy": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|aerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
