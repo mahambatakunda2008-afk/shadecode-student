@@ -482,7 +482,7 @@ function normalizeSubject(value: string): string {
   const cleaned = normalize(value)
     .replace(/\b(970[0-9]|961[0-9]|9[0-9]{3})\b/g, " ")
     .replace(/\b(as|a level|a-level|a-levels|level|cambridge|international|igcse|o level|o-level|gcse)\b/g, " ")
-    .replace(/[()[\]_-]/g, " ")
+    .replace(/[()[\]_-&]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   if (/^(physics|phys|physical science)\b/.test(cleaned)) return "physics";
