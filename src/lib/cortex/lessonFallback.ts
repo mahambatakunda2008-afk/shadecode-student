@@ -32,6 +32,12 @@ import { PURE_MATHEMATICS_SEQUENCES_SERIES_STARTER } from "./curatedContent/pure
 import { PURE_MATHEMATICS_TRIGONOMETRIC_EQUATIONS_STARTER } from "./curatedContent/pure-mathematics-trigonometric-equations";
 import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
 
+const FALLBACK_EXCLUSIONS: Record<string, RegExp> = {
+  "biology|respiration": /\\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\\b/,
+  "biology|aerobic respiration": /\\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\\b/,
+  "biology|anaerobic respiration": /\\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\\b/,
+};
+
 type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
 
 /**
@@ -631,7 +637,7 @@ export function buildDeterministicLessonFallback(subject: string, topic: string)
       normalizedTopic.includes(` ${knownTopic} `);
     // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
     // not what the lesson teaches: exclude it before considering candidate matches.
-    return topicMatches && !THEORY_EXCLUSIONS[key]?.test(normalizedTopic);
+    return topicMatches && !(THEORY_EXCLUSIONS[key] ?? FALLBACK_EXCLUSIONS[key])?.test(normalizedTopic);
   });
 
   // Short aliases (for example "sequences" and "series") can point to the same
