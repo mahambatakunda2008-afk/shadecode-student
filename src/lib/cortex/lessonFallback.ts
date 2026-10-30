@@ -26,6 +26,7 @@ import { BIOLOGY_HOMEOSTASIS_STARTER } from "./curatedContent/biology-homeostasi
 import { BIOLOGY_CONTROL_COORDINATION_STARTER } from "./curatedContent/biology-control-coordination";
 import { BIOLOGY_INHERITANCE_STARTER } from "./curatedContent/biology-inheritance";
 import { BIOLOGY_SELECTION_EVOLUTION_STARTER } from "./curatedContent/biology-selection-evolution";
+import { BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER } from "./curatedContent/biology-classification-biodiversity";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -465,6 +466,37 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|classification biodiversity and conservation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|classification": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|three domains": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|archaea": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|bacteria": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|eukarya": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|taxonomic hierarchy": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|protoctista": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|fungi": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|plant kingdom": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|animal kingdom": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|virus classification": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|biodiversity": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|ecosystem": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|ecological niche": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|random sampling": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|quadrats": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|line transect": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|belt transect": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|mark-release-recapture": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|lincoln index": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|spearman rank": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|pearson correlation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|simpson index": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|conservation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|seed banks": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|frozen zoos": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|assisted reproduction": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|invasive alien species": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|iucn": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|cites": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
   "biology|selection and evolution": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|continuous variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
