@@ -193,3 +193,9 @@ An official [2024 examiner-training notice](https://www5.zimsec.co.zw/wp-content
 - The official topic-title inventory is recorded in [cambridge-9702-2025-2027-topic-inventory.csv](./cambridge-9702-2025-2027-topic-inventory.csv). It is intentionally marked incomplete at subtopic/learning-outcome level.
 - Cambridge also lists a separate 2028–2030 syllabus. Keep that as a separate versioned curriculum map and do not silently apply it to 2025–2027 learners.
 - Copyright note: use the syllabus to map requirements and write original teaching content. Do not copy Cambridge's explanatory learning-outcome text, diagrams or assessment materials into redistributed content without permission.
+
+### 9702 practical-skills mapping (required, not optional enrichment)
+
+The official syllabus places practical skills in a separate section from the 25 theory topics. Learners should spend at least 20% of course time doing practical work individually or in small groups; demonstrations do not count toward that guide. Paper 3 is a two-hour laboratory practical assessing manipulation/measurement/observation, data presentation, analysis, conclusions and evaluation. Paper 5 is a written planning, analysis and evaluation paper and does not require laboratory facilities during the examination. Both may use unfamiliar physics contexts, so students must practise transferable experimental skills rather than memorise a fixed list of experiments. See [the practical-skills inventory](./cambridge-9702-2025-2027-practical-skills.csv).
+
+The 9702 AS section structure is separately indexed in [the AS subtopic index](./cambridge-9702-2025-2027-as-subtopic-index.csv). It records section identifiers and titles only; the next pass must extract and check every numbered learning outcome and all relevant exclusions, assumptions and required diagrams/graphs before declaring any topic mapped.
