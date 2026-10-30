@@ -429,3 +429,17 @@ The Topic 10 CI run identified two existing coverage-test issues in addition to 
 - Scope guardrails: detailed molecular mechanisms beyond the stated learning outcomes are not treated as mandatory. The Venus flytrap explanation stays at the level of stimulus, electrical response and rapid trap closure; the auxin and gibberellin sections stay within the specified mechanisms.
 - Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible neurone/synapse/sarcomere diagrams and micrograph assets, and offline-pack integration remain outstanding.
 - All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### Biology 9700 Topic 16: inheritance (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 16, sections 16.1–16.3, official syllabus PDF pages 41–42: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 16.1 coverage: haploid/diploid, homologous chromosomes, need for reduction division, chromosome and nuclear events through the eight named meiotic stages, photomicrograph/diagram recognition, crossing over, independent assortment and random fertilisation.
+- 16.2 coverage: gene/locus/allele and inheritance vocabulary; monohybrid and dihybrid crosses; dominance, codominance, multiple alleles, sex linkage, autosomal linkage, epistasis and test crosses; chi-squared calculation and interpretation; gene-to-protein-to-phenotype examples TYR/tyrosinase/albinism, HBB/haemoglobin/sickle cell anaemia, F8/factor VIII/haemophilia, HTT/huntingtin/Huntington's disease; Le/le alleles and gibberellin synthesis in stem elongation.
+- 16.3 coverage: structural and regulatory genes, inducible and repressible enzymes, lac operon (without cAMP detail), eukaryotic transcription factors, and gibberellin-triggered DELLA repressor breakdown.
+- Module: `src/lib/cortex/curatedContent/biology-inheritance.ts`.
+- Runtime aliases include inheritance, meiosis, crossing over, independent assortment, Punnett squares, monohybrid/dihybrid crosses, codominance, multiple alleles, sex linkage, autosomal linkage, epistasis, test crosses, chi-squared, named gene-condition examples, lac operon, gene control and gibberellin stem elongation. All routes are Biology-scoped.
+- Test: `src/lib/cortex/curatedContent/biology-inheritance.test.ts`.
+- Original teaching includes meiosis stage drawing/recognition prompts, monohybrid and dihybrid Punnett-square workflows, linked-chromosome crossover diagrams, sex-linked crosses, worked chi-squared calculation and decision, lac-operon diagrams and an integrated exam-style question. Diagram prompts are not supplied micrographs or official exam diagrams.
+- Important scope guardrails: no memorisation of epistasis phenotype ratios is required; cAMP is not required for the lac operon; the chi-squared formula is provided in the examination; expected ratios must be derived from the stated cross and assumptions. The 9:3:3:1 ratio is not a universal dihybrid answer.
+- Status: draft teaching pilot. Outcome-by-outcome teacher review, external validation of worked genetic examples and statistical interpretation, original accessible meiosis/operon diagrams, and offline-pack integration remain outstanding.
+- All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
