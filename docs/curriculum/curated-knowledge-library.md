@@ -458,3 +458,18 @@ The Topic 10 CI run identified two existing coverage-test issues in addition to 
 - Scope guardrails: use the t-test formula and critical values supplied by the examination question; do not infer causation solely from statistical significance. Hardy–Weinberg equations are supplied and depend on stated equilibrium assumptions.
 - Status: draft teaching pilot. Independent Biology teacher review, verification of statistical worked examples against the current syllabus support materials, accessible original diagrams and offline-pack integration remain outstanding.
 - All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 18: classification, biodiversity and conservation (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 18, sections 18.1–18.3, official syllabus PDF pages 44–46: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 18.1 classification: biological, morphological and ecological species concepts; Archaea, Bacteria and Eukarya; prokaryotic differences limited to membrane lipids, ribosomal RNA and cell-wall composition; Eukarya hierarchy and kingdoms Protoctista, Fungi, Plantae and Animalia; virus classification by DNA/RNA and single-/double-stranded genome.
+- 18.2 biodiversity: ecosystem, species and genetic levels; ecosystem and niche definitions; random sampling; frame quadrats, line and belt transects, mark-release-recapture and Lincoln index; Spearman's rank and Pearson's linear correlation; Simpson's index of diversity and interpretation.
+- 18.3 conservation: extinction threats; reasons to maintain biodiversity; zoos, botanic gardens, protected areas, frozen zoos and seed banks; IVF, embryo transfer and surrogacy; invasive alien species control; IUCN and CITES roles.
+- Module: `src/lib/cortex/curatedContent/biology-classification-biodiversity.ts`.
+- Test: `src/lib/cortex/curatedContent/biology-classification-biodiversity.test.ts`.
+- Runtime aliases cover classification, domains, kingdoms, virus classification, field sampling, population estimation, correlations, Simpson's index, conservation methods and organisations. All routes are Biology-scoped.
+- Original learning assets include taxonomy and transect drawing prompts, quadrat density and Lincoln-index calculations, sampling assumptions, correlation interpretation, Simpson-index comparison and integrated fieldwork/conservation practice.
+- Scope guardrails: statistical formulae and the Lincoln index are supplied by the examination; use the exact formula version provided. Simpson's index conventions can differ, so interpret direction using the Cambridge formula supplied. Correlation does not establish causation.
+- Status: draft teaching pilot. Independent Biology teacher review, validation of all worked calculations against the exact examination formulae, accessible original diagrams, local fieldwork resource design and offline-pack integration remain outstanding.
+- All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
