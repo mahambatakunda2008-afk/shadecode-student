@@ -423,6 +423,7 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|mitotic cell cycle": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
   "biology|nucleic acids": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|transport in plants": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|water transport in plants": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
   "biology|transpiration": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
   "biology|xylem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
   "biology|phloem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
