@@ -24,6 +24,7 @@ import { BIOLOGY_ENERGY_RESPIRATION_STARTER } from "./curatedContent/biology-ene
 import { BIOLOGY_PHOTOSYNTHESIS_STARTER } from "./curatedContent/biology-photosynthesis";
 import { BIOLOGY_HOMEOSTASIS_STARTER } from "./curatedContent/biology-homeostasis";
 import { BIOLOGY_CONTROL_COORDINATION_STARTER } from "./curatedContent/biology-control-coordination";
+import { BIOLOGY_INHERITANCE_STARTER } from "./curatedContent/biology-inheritance";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -456,6 +457,27 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|inheritance": BIOLOGY_INHERITANCE_STARTER,
+  "biology|meiosis": BIOLOGY_INHERITANCE_STARTER,
+  "biology|crossing over": BIOLOGY_INHERITANCE_STARTER,
+  "biology|independent assortment": BIOLOGY_INHERITANCE_STARTER,
+  "biology|punnett square": BIOLOGY_INHERITANCE_STARTER,
+  "biology|monohybrid cross": BIOLOGY_INHERITANCE_STARTER,
+  "biology|dihybrid cross": BIOLOGY_INHERITANCE_STARTER,
+  "biology|codominance": BIOLOGY_INHERITANCE_STARTER,
+  "biology|multiple alleles": BIOLOGY_INHERITANCE_STARTER,
+  "biology|sex linkage": BIOLOGY_INHERITANCE_STARTER,
+  "biology|autosomal linkage": BIOLOGY_INHERITANCE_STARTER,
+  "biology|epistasis": BIOLOGY_INHERITANCE_STARTER,
+  "biology|test cross": BIOLOGY_INHERITANCE_STARTER,
+  "biology|chi-squared": BIOLOGY_INHERITANCE_STARTER,
+  "biology|gene control": BIOLOGY_INHERITANCE_STARTER,
+  "biology|lac operon": BIOLOGY_INHERITANCE_STARTER,
+  "biology|sickle cell anaemia": BIOLOGY_INHERITANCE_STARTER,
+  "biology|haemophilia": BIOLOGY_INHERITANCE_STARTER,
+  "biology|albinism": BIOLOGY_INHERITANCE_STARTER,
+  "biology|huntington disease": BIOLOGY_INHERITANCE_STARTER,
+  "biology|gibberellin stem elongation": BIOLOGY_INHERITANCE_STARTER,
   "biology|control and coordination": BIOLOGY_CONTROL_COORDINATION_STARTER,
   "biology|nervous system": BIOLOGY_CONTROL_COORDINATION_STARTER,
   "biology|endocrine system": BIOLOGY_CONTROL_COORDINATION_STARTER,
