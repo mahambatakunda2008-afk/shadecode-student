@@ -16,6 +16,7 @@ import { BIOLOGY_MEMBRANES_TRANSPORT_STARTER } from "./curatedContent/biology-me
 import { BIOLOGY_MITOTIC_CELL_CYCLE_STARTER } from "./curatedContent/biology-mitotic-cell-cycle";
 import { BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER } from "./curatedContent/biology-nucleic-acids-protein-synthesis";
 import { BIOLOGY_TRANSPORT_IN_PLANTS_STARTER } from "./curatedContent/biology-transport-in-plants";
+import { BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER } from "./curatedContent/biology-transport-in-mammals";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -423,6 +424,11 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|transpiration": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
   "biology|xylem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
   "biology|phloem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|transport in mammals": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|mammalian circulation": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|the heart": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|blood vessels": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|tissue fluid": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
   "biology|protein synthesis": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|dna replication": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|transcription": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
