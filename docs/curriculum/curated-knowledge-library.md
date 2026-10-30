@@ -380,3 +380,16 @@ A second pass against section 8 of the same official syllabus identified additio
 ### CI regression follow-up
 
 The Topic 10 CI run identified two existing coverage-test issues in addition to the new Topic 10 assertion: the Topic 10 test expected the full spelling of `Mycobacterium bovis` where the lesson initially abbreviated it as `M. bovis`, and the Topic 7 test requested the missing natural-language alias `water transport in plants`. The lesson now spells out the species and the fallback alias has been added. Re-run the full workflow on the latest head before treating these corrections as verified.
+
+
+### Biology 9700 Topic 12: energy and respiration (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (Topic 12, PDF pages 32–34). The official subject page lists a separate 2028–2030 syllabus; this pilot is explicitly scoped to 2025–2027.
+- Scope checked against sections 12.1 and 12.2. Section 12.1 includes energy needs (active transport, movement, anabolic reactions), ATP features and synthesis by substrate-linked phosphorylation and chemiosmosis, relative substrate energy values, RQ definition/calculation, and simple respirometer investigations to determine RQ. Section 12.2 includes locations and stages of aerobic respiration, glycolysis, link reaction, Krebs cycle, NAD/FAD, oxidative phosphorylation and chemiosmosis, mitochondrial structure/function, mammalian lactate and yeast ethanol fermentation, relative aerobic/anaerobic energy yield, flooded-rice adaptations, yeast redox-indicator investigations (DCPIP and methylene blue), and respirometer investigations of temperature effects.
+- Module: `src/lib/cortex/curatedContent/biology-energy-respiration.ts`.
+- Runtime aliases: energy and respiration, energy, respiration, aerobic respiration, anaerobic respiration, glycolysis, link reaction, Krebs cycle, oxidative phosphorylation, respiratory quotient, respirometers, fermentation and ATP, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-energy-respiration.test.ts`.
+- Original lesson includes energy-use cases, ATP structure and synthesis, substrate comparison, worked RQ calculations, respirometer design and controls, all four aerobic stages and locations, mitochondrial structure/function, anaerobic pathways, rice aerenchyma, yeast redox-indicator investigations and practical evaluation. Diagram blocks are drawing prompts, not rendered diagrams or micrograph assets.
+- Scope guardrails: the syllabus does not expect a detailed total ATP yield from aerobic glucose respiration or detailed identities of electron carriers/ATP synthase. The lesson avoids presenting a single total ATP figure as a required fact.
+- Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible mitochondrial/respirometer diagrams and micrograph exercises, practical safety review, validation of calculations and offline-pack integration remain outstanding.
+- All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
