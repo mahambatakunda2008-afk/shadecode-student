@@ -285,3 +285,12 @@ Test: `src/lib/cortex/curatedContent/biology-enzymes.test.ts`
 Runtime fallback aliases: enzymes, enzyme action and enzyme activity.
 
 The starter covers biological catalysis, active sites and the induced-fit model, activation energy, effects of temperature and pH, substrate and enzyme concentration, denaturation, initial-rate interpretation and controlled enzyme investigations. Worked data and practice prompts are original. This is a Topic 3 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. Energy-profile and rate-curve visual assets, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
+
+
+### Biology 9700 theory pilot: cell membranes and transport (Topic 4)
+
+Original module: `src/lib/cortex/curatedContent/biology-membranes-transport.ts`
+Test: `src/lib/cortex/curatedContent/biology-membranes-transport.test.ts`
+Runtime fallback aliases: cell membranes, membrane transport and transport across membranes.
+
+The starter covers the fluid mosaic model, phospholipids, membrane proteins and cholesterol, simple and facilitated diffusion, osmosis and water potential, active transport, co-transport, endocytosis and exocytosis, and surface area-to-volume ratio. The examples and practice prompts are original. This is a Topic 4 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. A proper labelled membrane diagram, transport visualisations, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
