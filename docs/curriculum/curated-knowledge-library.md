@@ -473,3 +473,18 @@ The Topic 10 CI run identified two existing coverage-test issues in addition to 
 - Scope guardrails: statistical formulae and the Lincoln index are supplied by the examination; use the exact formula version provided. Simpson's index conventions can differ, so interpret direction using the Cambridge formula supplied. Correlation does not establish causation.
 - Status: draft teaching pilot. Independent Biology teacher review, validation of all worked calculations against the exact examination formulae, accessible original diagrams, local fieldwork resource design and offline-pack integration remain outstanding.
 - All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 19: genetic technology (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 19, sections 19.1–19.3, official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 19.1 principles: recombinant DNA and genetic engineering; gene sources (donor DNA, cDNA made from mRNA, chemical synthesis); restriction endonucleases, DNA ligase, plasmid vectors, DNA polymerase and reverse transcriptase; promoters and fluorescent marker genes; gene editing by insertion, deletion or replacement; PCR and Taq polymerase; gel electrophoresis; microarrays; nucleotide, amino-acid and protein-structure databases.
+- 19.2 medicine: recombinant human insulin, factor VIII and adenosine deaminase; genetic screening examples BRCA1/BRCA2, Huntington's disease and cystic fibrosis; gene therapy examples ADA-SCID and inherited retinal disease; social and ethical considerations of screening and therapy.
+- 19.3 agriculture: genetic engineering in food production, including GM salmon, herbicide-resistant soybean and insect-resistant cotton; evaluation of social and ethical implications.
+- Module: `src/lib/cortex/curatedContent/biology-genetic-technology.ts`.
+- Test: `src/lib/cortex/curatedContent/biology-genetic-technology.test.ts`.
+- Runtime aliases cover genetic engineering, recombinant DNA, gene transfer, restriction enzymes, plasmids, gene editing, PCR, electrophoresis, microarrays, databases, medical applications and the named agricultural examples. All routes are Biology-scoped.
+- Original learning assets include plasmid cloning, PCR-cycle, gel-electrophoresis and microarray drawing prompts, alongside original explanations, practice and an integrated exam-style question. These are text prompts, not rendered scientific diagrams.
+- Scope guardrails: distinguish reverse transcriptase (RNA-templated cDNA synthesis) from DNA polymerase; distinguish gene presence from gene expression; BRCA variants alter risk rather than guaranteeing cancer; distinguish somatic therapy from heritable germline editing; evaluate each GMO by its specific trait and context.
+- Status: draft teaching pilot. Independent Biology teacher review, outcome-by-outcome traceability, scientific review of gene-therapy examples and ethical framing, accessible original diagrams, and offline-pack integration remain outstanding.
+- All explanations and questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
