@@ -11,6 +11,7 @@ import { BIOLOGY_PRACTICAL_MICROSCOPY_STARTER } from "./curatedContent/biology-p
 import { BIOLOGY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/biology-practical-planning";
 import { BIOLOGY_CELL_STRUCTURE_STARTER } from "./curatedContent/biology-cell-structure";
 import { BIOLOGY_BIOLOGICAL_MOLECULES_STARTER } from "./curatedContent/biology-biological-molecules";
+import { BIOLOGY_ENZYMES_STARTER } from "./curatedContent/biology-enzymes";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -406,6 +407,9 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "chemistry|paper 5": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "chemistry|planning analysis and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "biology|biological molecules": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
+  "biology|enzymes": BIOLOGY_ENZYMES_STARTER,
+  "biology|enzyme action": BIOLOGY_ENZYMES_STARTER,
+  "biology|enzyme activity": BIOLOGY_ENZYMES_STARTER,
   "biology|carbohydrates": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
   "biology|lipids": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
   "biology|proteins": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
