@@ -25,6 +25,7 @@ import { BIOLOGY_PHOTOSYNTHESIS_STARTER } from "./curatedContent/biology-photosy
 import { BIOLOGY_HOMEOSTASIS_STARTER } from "./curatedContent/biology-homeostasis";
 import { BIOLOGY_CONTROL_COORDINATION_STARTER } from "./curatedContent/biology-control-coordination";
 import { BIOLOGY_INHERITANCE_STARTER } from "./curatedContent/biology-inheritance";
+import { BIOLOGY_SELECTION_EVOLUTION_STARTER } from "./curatedContent/biology-selection-evolution";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -464,6 +465,27 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|selection and evolution": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|continuous variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|discontinuous variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|t-test": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|natural selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|directional selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|stabilising selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|disruptive selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|genetic drift": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|founder effect": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|bottleneck effect": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|antibiotic resistance": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|hardy-weinberg": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|selective breeding": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|artificial selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|speciation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|allopatric speciation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|sympatric speciation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|gene pool": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|evolutionary relationships": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|inheritance": BIOLOGY_INHERITANCE_STARTER,
   "biology|meiosis": BIOLOGY_INHERITANCE_STARTER,
   "biology|crossing over": BIOLOGY_INHERITANCE_STARTER,
