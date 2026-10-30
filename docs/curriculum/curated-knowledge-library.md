@@ -393,3 +393,15 @@ The Topic 10 CI run identified two existing coverage-test issues in addition to 
 - Scope guardrails: the syllabus does not expect a detailed total ATP yield from aerobic glucose respiration or detailed identities of electron carriers/ATP synthase. The lesson avoids presenting a single total ATP figure as a required fact.
 - Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible mitochondrial/respirometer diagrams and micrograph exercises, practical safety review, validation of calculations and offline-pack integration remain outstanding.
 - All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### Biology 9700 Topic 13: photosynthesis (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (Topic 13, PDF pages 35–36). Do not silently mix the separate 2028–2030 syllabus into this pilot.
+- Scope checked against 13.1 and 13.2. Section 13.1 covers chloroplast structure in diagrams/electron micrographs; ATP and reduced NADP transfer between stages; thylakoid and stroma locations; chlorophyll a/b, carotene and xanthophyll; absorption/action spectra; pigment chromatography and Rf; cyclic and non-cyclic photophosphorylation; proton movement and ATP synthase; the three Calvin-cycle stages; and specified uses of GP and TP. Section 13.2 covers light intensity, CO₂ concentration and temperature as limiting factors, plus chloroplast-suspension redox-indicator investigations and whole-plant investigations.
+- Module: `src/lib/cortex/curatedContent/biology-photosynthesis.ts`.
+- Runtime aliases: photosynthesis, light-dependent stage, light-independent stage, Calvin cycle, photophosphorylation, chloroplast pigments, limiting factors and chromatography, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-photosynthesis.test.ts`.
+- Original lesson includes chloroplast drawing/micrograph prompts, spectra interpretation, chromatography and worked Rf calculation, pathway comparisons, photolysis, Calvin-cycle flow diagram, limiting-factor graph interpretation, DCPIP/methylene-blue investigations, whole-plant practical design, controls, evaluation and exam-style data interpretation. Diagram blocks are drawing prompts, not rendered assets.
+- Scope guardrails: detailed identities of individual electron carriers and ATP synthase structure are not required. The lesson stays within specified Calvin-cycle product routes and does not add unsupported C4 pathway content.
+- Status: draft teaching pilot. Detailed outcome-by-outcome traceability, independent Biology teacher review, accessible chloroplast diagrams and micrograph assets, practical safety review and offline-pack integration remain outstanding.
+- All explanations, examples and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
