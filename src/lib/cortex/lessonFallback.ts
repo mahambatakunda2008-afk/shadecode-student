@@ -13,6 +13,7 @@ import { BIOLOGY_CELL_STRUCTURE_STARTER } from "./curatedContent/biology-cell-st
 import { BIOLOGY_BIOLOGICAL_MOLECULES_STARTER } from "./curatedContent/biology-biological-molecules";
 import { BIOLOGY_ENZYMES_STARTER } from "./curatedContent/biology-enzymes";
 import { BIOLOGY_MEMBRANES_TRANSPORT_STARTER } from "./curatedContent/biology-membranes-transport";
+import { BIOLOGY_MITOTIC_CELL_CYCLE_STARTER } from "./curatedContent/biology-mitotic-cell-cycle";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -414,6 +415,9 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|cell membranes": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
   "biology|membrane transport": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
   "biology|transport across membranes": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
+  "biology|mitotic cell cycle": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
+  "biology|mitosis": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
+  "biology|cell cycle": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
   "biology|carbohydrates": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
   "biology|lipids": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
   "biology|proteins": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
