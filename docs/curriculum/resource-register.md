@@ -182,3 +182,14 @@ An official [2024 examiner-training notice](https://www5.zimsec.co.zw/wp-content
 4. Keep Forms 1–4 school curriculum coverage distinct from O Level examination coverage. Do not assume the O Level syllabus alone defines all Form 1–4 teaching.
 5. Keep Forms 5–6/A Level subject coverage distinct from O Level, and record practical, coursework, oral, project and performance requirements.
 6. Where the official evidence remains incomplete, mark the subject as needs-board-confirmation; do not silently omit it or invent a code.
+
+## First fully identified Cambridge syllabus document: Physics 9702 (2025–2027)
+
+- Official subject page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/
+- Official syllabus PDF: https://www.cambridgeinternational.org/Images/664565-2025-2027-syllabus.pdf
+- Exact document: Cambridge International AS & A Level Physics 9702, Version 1, published September 2022; applies to examinations in 2025, 2026 and 2027. Cambridge states that the latest version is Version 1 and that there are no significant teaching changes for this syllabus period.
+- Content boundary: AS candidates study topics 1–11; A Level candidates study all topics 1–25. AS learning outcomes are assumed knowledge for A Level components.
+- Assessment boundary: Papers 1 and 2 assess AS theory; Paper 4 assesses A Level theory and requires AS knowledge. Paper 3 (Advanced Practical Skills) and Paper 5 (Planning, Analysis and Evaluation) assess practical skills; practical assessment content is specified separately from the 25 theory topics. Do not pretend that topic titles alone constitute the practical-skills inventory.
+- The official topic-title inventory is recorded in [cambridge-9702-2025-2027-topic-inventory.csv](./cambridge-9702-2025-2027-topic-inventory.csv). It is intentionally marked incomplete at subtopic/learning-outcome level.
+- Cambridge also lists a separate 2028–2030 syllabus. Keep that as a separate versioned curriculum map and do not silently apply it to 2025–2027 learners.
+- Copyright note: use the syllabus to map requirements and write original teaching content. Do not copy Cambridge's explanatory learning-outcome text, diagrams or assessment materials into redistributed content without permission.
