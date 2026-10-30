@@ -148,3 +148,37 @@ For every distinct board + qualification + subject code + examination year:
 - `blocked-rights`: useful source exists but redistribution rights are absent or unclear; use a link or replace with original material.
 
 A subject is not “comprehensive” because it has many lessons. It is comprehensive only when every applicable official syllabus item is accounted for and the evidence for its coverage is visible.
+## Expanded official subject-discovery evidence (checked 2026-10-30)
+
+This section records the breadth of the official subject catalogues. It is a discovery index, not a promise that every listed syllabus is offered by every Zimbabwean school or that every syllabus is current for every examination session.
+
+### Cambridge IGCSE and O Level
+
+The official [Cambridge IGCSE subject catalogue](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-upper-secondary/cambridge-igcse/subjects/) exposes a broad set of subject codes, including languages, agriculture, art and design, biology, business, chemistry, commerce, computer science, design and technology, drama, economics, English language/literature, enterprise, environmental management, food and nutrition, geography, global perspectives, history, ICT, Islamiyat, marine science, mathematics, music, physical education, physical science, physics, psychology, religious studies, combined/co-ordinated sciences, sociology, statistics, travel and tourism, and world literature. The page also lists language variants and 9–1 variants; these are distinct syllabus codes and must not be collapsed into a generic subject record.
+
+The official [Cambridge O Level subject catalogue](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-upper-secondary/cambridge-o-level/subjects/) is a separate catalogue with its own codes and availability. Examples include Accounting 7707, Biology 5090, Business 7081, Business Studies 7115, Chemistry 5070, Commerce 7100, Computer Science 2210, Economics 2281, English Language 1123, Environmental Management 5014, Geography 2217, History 2147, Literature in English 2010, Mathematics (Syllabus D) 4024, Additional Mathematics 4037, Physics 5054, Combined Science 5129, Sociology 2251 and Statistics 4040. Do not assume an IGCSE code and an O Level code are interchangeable.
+
+### Cambridge AS & A Level
+
+The official [Cambridge International AS & A Level subject catalogue](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-advanced/cambridge-international-as-and-a-levels/subjects/) exposes a much wider range than the initial STEM seed list. Examples include Accounting 9706, Biology 9700, Business 9609, Chemistry 9701, Computer Science 9618, Design & Technology 9705, Digital Media & Design 9481, Drama 9482, Economics 9708, English Language 9093, English Literature 9695, Geography 9696, Global Perspectives & Research 9239, History 9489, Information Technology 9626, Law 9084, Marine Science 9693, Mathematics 9709, Further Mathematics 9231, Media Studies 9607, Music 9483, Physics 9702, Psychology 9990, Sociology 9699, Thinking Skills 9694 and Travel & Tourism 9395. The catalogue also includes language-specific and AS-only/A-Level-only syllabuses. Capture the exact award level and language variant rather than flattening them into one subject.
+
+Cambridge's [resource centre](https://www.cambridgeinternational.org/resource-centre/) distinguishes public subject discovery from additional password-protected support resources for registered schools. Shadecode must not imply it can access or redistribute restricted School Support Hub materials.
+
+### ZIMSEC subject-code evidence from official examiner notices
+
+The ZIMSEC public syllabus index is not a complete machine-readable inventory. To widen discovery without guessing, use official examination administration documents as secondary evidence and then locate the exact syllabus document before marking a subject current.
+
+An official [2023 examiner-training notice](https://www5.zimsec.co.zw/wp-content/uploads/2023/07/2023-EXAMINER-TRAINING-ADVERT.pdf) lists the following O Level subject/code examples: Agriculture 4001; Combined Science 4003; Mathematics 4004; Heritage Studies 4006; Shona Language 4007; Sesotho Language 4014; Computer Science 4021; Geography 4022; Biology 4025; Sociology 4045; Family and Religious Studies 4047; Business Enterprise Skills 4048; Building Technology and Design 4052; Food Technology and Design 4054; Technical Graphics and Design 4057; Physical Education 4002; Ndebele 4068. The same notice lists A Level examples: Business Enterprise Skills 6004; Art 6029; Biology 6030; and Chemistry 6031.
+
+An official [2024 examiner-training notice](https://www5.zimsec.co.zw/wp-content/uploads/2024/06/Final-Examiner-Training-Advert.-for-August-2024.pdf) adds A Level subject/code evidence including Accounting 6001, Building Technology and Design 6003, Design and Technology 6005, Business Studies 6025, Biology 6030, Comment and Appreciation 6039, Pure Mathematics 6042, Statistics 6046, Technical Graphics and Design 6047, Musical Arts 6053, Nambya 6057, PESMD 6070, Economics 6073, Sport Science 6080 and Heritage Studies 6081. It also identifies O Level Commercial Studies 4065 and Food Technology and Design 4054.
+
+**Critical limitation:** these are dated examiner-training notices, not a current official syllabus catalogue. Some entries may be legacy, changed, renamed, or unavailable in a given session. The listed codes must be checked against the current ZIMSEC syllabus, current registration/entry documents, and recent examination materials before creating learner-facing choices. Do not treat missing entries as evidence that a subject does not exist. In particular, continue researching current O Level and A Level subjects and Forms 1–4 curricula independently.
+
+### Required next inventory pass
+
+1. Extract every subject and code from the Cambridge IGCSE, O Level and AS & A Level catalogues into separate records, preserving variants and level limitations.
+2. For ZIMSEC, reconcile syllabus PDFs, current entry/registration documents, specimen papers and recent examiner reports. Maintain a separate historical-evidence flag for dated notices.
+3. Resolve each subject to a current syllabus PDF, examination session/version and component structure before topic extraction.
+4. Keep Forms 1–4 school curriculum coverage distinct from O Level examination coverage. Do not assume the O Level syllabus alone defines all Form 1–4 teaching.
+5. Keep Forms 5–6/A Level subject coverage distinct from O Level, and record practical, coursework, oral, project and performance requirements.
+6. Where the official evidence remains incomplete, mark the subject as needs-board-confirmation; do not silently omit it or invent a code.
