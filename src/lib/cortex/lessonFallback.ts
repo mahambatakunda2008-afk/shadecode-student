@@ -15,6 +15,7 @@ import { BIOLOGY_ENZYMES_STARTER } from "./curatedContent/biology-enzymes";
 import { BIOLOGY_MEMBRANES_TRANSPORT_STARTER } from "./curatedContent/biology-membranes-transport";
 import { BIOLOGY_MITOTIC_CELL_CYCLE_STARTER } from "./curatedContent/biology-mitotic-cell-cycle";
 import { BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER } from "./curatedContent/biology-nucleic-acids-protein-synthesis";
+import { BIOLOGY_TRANSPORT_IN_PLANTS_STARTER } from "./curatedContent/biology-transport-in-plants";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -418,6 +419,10 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|transport across membranes": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
   "biology|mitotic cell cycle": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
   "biology|nucleic acids": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
+  "biology|transport in plants": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|transpiration": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|xylem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|phloem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
   "biology|protein synthesis": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|dna replication": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|transcription": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
