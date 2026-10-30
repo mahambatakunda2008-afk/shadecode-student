@@ -23,6 +23,7 @@ import { BIOLOGY_IMMUNITY_STARTER } from "./curatedContent/biology-immunity";
 import { BIOLOGY_ENERGY_RESPIRATION_STARTER } from "./curatedContent/biology-energy-respiration";
 import { BIOLOGY_PHOTOSYNTHESIS_STARTER } from "./curatedContent/biology-photosynthesis";
 import { BIOLOGY_HOMEOSTASIS_STARTER } from "./curatedContent/biology-homeostasis";
+import { BIOLOGY_CONTROL_COORDINATION_STARTER } from "./curatedContent/biology-control-coordination";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -455,6 +456,21 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|control and coordination": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|nervous system": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|endocrine system": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|sensory neurone": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|motor neurone": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|action potential": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|saltatory conduction": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|synapse": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|neuromuscular junction": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|sarcomere": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|sliding filament": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|venus flytrap": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|auxin": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|gibberellin": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|barley germination": BIOLOGY_CONTROL_COORDINATION_STARTER,
   "biology|homeostasis": BIOLOGY_HOMEOSTASIS_STARTER,
   "biology|negative feedback": BIOLOGY_HOMEOSTASIS_STARTER,
   "biology|kidney": BIOLOGY_HOMEOSTASIS_STARTER,
