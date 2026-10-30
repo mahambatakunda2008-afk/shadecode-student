@@ -294,3 +294,12 @@ Test: `src/lib/cortex/curatedContent/biology-membranes-transport.test.ts`
 Runtime fallback aliases: cell membranes, membrane transport and transport across membranes.
 
 The starter covers the fluid mosaic model, phospholipids, membrane proteins and cholesterol, simple and facilitated diffusion, osmosis and water potential, active transport, co-transport, endocytosis and exocytosis, and surface area-to-volume ratio. The examples and practice prompts are original. This is a Topic 4 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. A proper labelled membrane diagram, transport visualisations, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
+
+
+### Biology 9700 theory pilot: the mitotic cell cycle (Topic 5)
+
+Original module: `src/lib/cortex/curatedContent/biology-mitotic-cell-cycle.ts`
+Test: `src/lib/cortex/curatedContent/biology-mitotic-cell-cycle.test.ts`
+Runtime fallback aliases: mitotic cell cycle, mitosis and cell cycle.
+
+The starter covers interphase (G1, S and G2), chromosome and sister-chromatid terminology, prophase, metaphase, anaphase, telophase, cytokinesis in plant and animal cells, the role of mitosis in growth and repair, and cell-cycle checkpoints. It includes original chromosome-number reasoning and practice prompts. This is a Topic 5 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. A labelled mitosis diagram/animation, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
