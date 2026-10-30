@@ -455,7 +455,6 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
   "biology|energy and respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|energy": BIOLOGY_ENERGY_RESPIRATION_STARTER,
-  "biology|respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|aerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|anaerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|glycolysis": BIOLOGY_ENERGY_RESPIRATION_STARTER,
