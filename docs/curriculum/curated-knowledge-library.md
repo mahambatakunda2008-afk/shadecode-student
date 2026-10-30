@@ -364,3 +364,19 @@ A second pass against section 8 of the same official syllabus identified additio
 - Original teaching content includes pathogen classification, faecal-oral cholera transmission, mosquito-vector malaria transmission, airborne TB transmission (and the M. bovis animal/food context), specific HIV exposure routes and prevention, public-health and socioeconomic controls, penicillin's peptidoglycan target, viral differences, resistance by natural selection and gene transfer, stewardship and applied evaluation.
 - Status: draft teaching pilot. The transmission-route flowchart is a drawing prompt, not a rendered diagram. Independent Biology teacher review, detailed learning-outcome mapping, current public-health source review, accessible diagrams, question validation and offline-pack integration remain outstanding. This is educational content, not clinical advice.
 - All explanations and questions are original. No textbook passages, protected figures, or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 11: immunity (2025–2027 pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, examinations 2025–2027. Official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (section 11, PDF page 31). The official subject page lists separate 2025–2027 and 2028–2030 syllabus versions: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/.
+- Scope: 11.1 phagocytes (macrophages and neutrophils), antigens and self/non-self antigens, primary immune response involving macrophages, B-lymphocytes/plasma cells and T-helper/T-killer cells, memory cells and secondary response. 11.2 antibody structure/function, hybridoma production, monoclonal antibody diagnosis/treatment, active/passive and natural/artificial immunity, vaccines and vaccination programmes.
+- Module: `src/lib/cortex/curatedContent/biology-immunity.ts`.
+- Runtime aliases: immunity, immune system, phagocytosis, antibodies, monoclonal antibodies, vaccination and active/passive immunity, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-immunity.test.ts`.
+- Original lesson includes phagocytosis sequence, antigen presentation, clonal selection/expansion, primary and secondary response, antibody structure-function links, hybridoma outline, diagnostic/therapeutic uses, immunity classifications, vaccination and community-level transmission effects. It includes antibody-response graph and immune-sequence drawing prompts, not rendered biological diagrams.
+- Status: draft teaching pilot, not a complete independently verified lesson pack. Detailed outcome-by-outcome assessment mapping, accessible labelled diagrams and graph assets, independent Biology teacher review, validation of monoclonal antibody examples and offline-pack integration remain outstanding.
+- All explanations and questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+### CI regression follow-up
+
+The Topic 10 CI run identified two existing coverage-test issues in addition to the new Topic 10 assertion: the Topic 10 test expected the full spelling of `Mycobacterium bovis` where the lesson initially abbreviated it as `M. bovis`, and the Topic 7 test requested the missing natural-language alias `water transport in plants`. The lesson now spells out the species and the fallback alias has been added. Re-run the full workflow on the latest head before treating these corrections as verified.
