@@ -258,3 +258,12 @@ Test: src/lib/cortex/curatedContent/biology-practical-planning.test.ts
 Fallback aliases: experimental planning, planning and evaluation, Paper 5, and planning analysis and evaluation.
 
 The lesson teaches problem definition, independent/dependent/control variables, hypotheses, repeatable methods, sampling and replication, table design, graphs, calculations and statistics, evidence-based conclusions, and evaluation. The worked contexts are original teaching examples, not prescribed Cambridge practicals. The Paper 5 register rows now point to this starter but remain pending detailed line-by-line syllabus verification and independent content review. This written lesson does not replace supervised practical laboratory work.
+
+
+### Biology 9700 theory pilot: cell structure
+
+Original module: src/lib/cortex/curatedContent/biology-cell-structure.ts
+Test: src/lib/cortex/curatedContent/biology-cell-structure.test.ts
+Runtime fallback aliases: cell structure, cells, prokaryotic and eukaryotic cells, and organelles.
+
+The starter introduces prokaryotic and eukaryotic cells; organelle structure and function; plant, animal and bacterial cell comparisons; cell specialisation and differentiation; microscopy magnification and resolution; and original worked calculations and practice. This is a first Topic 1 teaching pilot, not complete Biology 9700 topic coverage. Full topic/subtopic mapping, assessment mapping, diagrams, independent review and offline content packaging remain outstanding.
