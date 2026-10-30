@@ -276,3 +276,12 @@ Test: src/lib/cortex/curatedContent/biology-biological-molecules.test.ts
 Runtime fallback aliases: biological molecules, carbohydrates, lipids, proteins and water.
 
 The module covers water properties, condensation and hydrolysis, monosaccharides, disaccharides and polysaccharides, triglycerides, saturated and unsaturated fatty acids, phospholipids, amino acids and protein structure, biological molecule food tests, original worked comparisons and practice. It is a Topic 2 starter, not a complete topic/subtopic inventory. Full syllabus mapping, independently checked detail, visual teaching assets, review and offline content packaging remain outstanding.
+
+
+### Biology 9700 theory pilot: enzymes (Topic 3)
+
+Original module: `src/lib/cortex/curatedContent/biology-enzymes.ts`
+Test: `src/lib/cortex/curatedContent/biology-enzymes.test.ts`
+Runtime fallback aliases: enzymes, enzyme action and enzyme activity.
+
+The starter covers biological catalysis, active sites and the induced-fit model, activation energy, effects of temperature and pH, substrate and enzyme concentration, denaturation, initial-rate interpretation and controlled enzyme investigations. Worked data and practice prompts are original. This is a Topic 3 teaching starter, not a complete subtopic inventory or independently reviewed syllabus sign-off. Energy-profile and rate-curve visual assets, exact syllabus mapping, independent scientific review and offline pack integration remain outstanding.
