@@ -7,6 +7,7 @@ import { PHYSICS_PRACTICAL_PLANNING_STARTER } from "./curatedContent/physics-pra
 import { CHEMISTRY_PRACTICAL_TITRATION_STARTER } from "./curatedContent/chemistry-practical-titration";
 import { CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER } from "./curatedContent/chemistry-practical-qualitative";
 import { CHEMISTRY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/chemistry-practical-planning";
+import { BIOLOGY_PRACTICAL_MICROSCOPY_STARTER } from "./curatedContent/biology-practical-microscopy";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -401,6 +402,10 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "chemistry|planning and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "chemistry|paper 5": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "chemistry|planning analysis and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "biology|microscopy": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|microscope": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|biological drawings": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|specimen observation": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
   "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
   "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
   "physics|momentum": PHYSICS_MOMENTUM_STARTER,
