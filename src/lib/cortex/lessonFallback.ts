@@ -477,7 +477,6 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|genetic drift": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|founder effect": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|bottleneck effect": BIOLOGY_SELECTION_EVOLUTION_STARTER,
-  "biology|antibiotic resistance": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|hardy-weinberg": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|selective breeding": BIOLOGY_SELECTION_EVOLUTION_STARTER,
   "biology|artificial selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
