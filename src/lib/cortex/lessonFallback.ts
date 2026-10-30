@@ -27,6 +27,7 @@ import { BIOLOGY_CONTROL_COORDINATION_STARTER } from "./curatedContent/biology-c
 import { BIOLOGY_INHERITANCE_STARTER } from "./curatedContent/biology-inheritance";
 import { BIOLOGY_SELECTION_EVOLUTION_STARTER } from "./curatedContent/biology-selection-evolution";
 import { BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER } from "./curatedContent/biology-classification-biodiversity";
+import { BIOLOGY_GENETIC_TECHNOLOGY_STARTER } from "./curatedContent/biology-genetic-technology";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -466,6 +467,35 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|genetic technology": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|genetic engineering": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|recombinant dna": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gene transfer": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|restriction enzymes": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|restriction endonucleases": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|dna ligase": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|plasmids": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gene editing": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|pcr": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|polymerase chain reaction": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gel electrophoresis": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|dna microarrays": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|microarrays": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|sequence databases": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|recombinant proteins": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|genetic screening": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|brca1": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|brca2": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|huntington disease screening": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gene therapy": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|ada scid": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|inherited retinal disease": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|genetically modified organisms": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gm salmon": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|herbicide resistance": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|herbicide resistant soybean": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|bt cotton": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|insect resistant cotton": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
   "biology|classification biodiversity and conservation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
   "biology|classification": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
   "biology|three domains": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
