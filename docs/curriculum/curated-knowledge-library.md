@@ -232,3 +232,20 @@ Current authored pilots:
 - **Paper 5 planning and evaluation:** [chemistry-practical-planning.ts](../../src/lib/cortex/curatedContent/chemistry-practical-planning.ts) teaches problem definition, variables, hypotheses, apparatus/method design, data planning, safety, analysis, conclusions and evaluation using an original reaction-rate example.
 
 These are original teaching pilots, not copied Cambridge material. The qualitative test coverage is not a replacement for the complete official test table. The planning module is a preparation framework, not an official mark scheme or a guarantee of complete Paper 5 coverage. A lesson, a simulation or a worked dataset does not establish hands-on laboratory competence. Before calling 9701 practical coverage complete, map every applicable official skill and test, review reagent hazards and disposal, check calculations and accepted observations independently, and validate the learning activities against the exact 2025–2027 syllabus. Keep the 2028–2030 syllabus separate.
+
+
+## Biology 9700 practical pilot: microscopy and specimen observations
+
+Syllabus version: Cambridge International AS & A Level Biology 9700, 2025-2027, Version 1 (published September 2022). Keep this distinct from 2028-2030.
+
+Official syllabus: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+Official qualification page: https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/
+
+Paper 3 is a timetabled laboratory practical. It assesses manipulation, measurement and observation; presentation of data and observations; and analysis, conclusions and evaluation. Candidates may prepare slides, use a light microscope, observe specimens, present observations, analyse data and make deductions or conclusions. Paper 5 is a written planning, analysis and evaluation examination, but candidates still need extensive supervised laboratory experience. The syllabus recommends at least 20% of course time doing practical work individually or in small groups. Demonstrations and simulations do not count towards that recommendation.
+
+Original module: src/lib/cortex/curatedContent/biology-practical-microscopy.ts
+Fallback aliases: microscopy, microscope, biological drawings and specimen observation.
+Test: src/lib/cortex/curatedContent/biology-practical-microscopy.test.ts
+Register: docs/curriculum/cambridge-9700-2025-2027-practical-skills.csv
+
+The module covers slide preparation, safe focusing sequence, total magnification, actual-size calculations and unit conversion, observation versus inference, biological drawings, representative sampling and evidence recording. It is an introductory skill module, not a complete Paper 3 syllabus map. Register rows remain pending line-by-line verification and content review. Digital lessons and simulations cannot certify microscope handling or replace supervised work with real specimens and equipment.
