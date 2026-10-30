@@ -9,6 +9,7 @@ import { CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER } from "./curatedContent/chemis
 import { CHEMISTRY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/chemistry-practical-planning";
 import { BIOLOGY_PRACTICAL_MICROSCOPY_STARTER } from "./curatedContent/biology-practical-microscopy";
 import { BIOLOGY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/biology-practical-planning";
+import { BIOLOGY_CELL_STRUCTURE_STARTER } from "./curatedContent/biology-cell-structure";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -403,6 +404,10 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "chemistry|planning and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "chemistry|paper 5": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "chemistry|planning analysis and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "biology|cell structure": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|cells": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|prokaryotic and eukaryotic cells": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|organelles": BIOLOGY_CELL_STRUCTURE_STARTER,
   "biology|microscopy": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
   "biology|microscope": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
   "biology|biological drawings": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
