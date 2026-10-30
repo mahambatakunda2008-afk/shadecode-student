@@ -336,3 +336,19 @@ The starter covers interphase (G1, S and G2), chromosome and sister-chromatid te
 - Automated tests check core coverage, practice content, alias retrieval and subject isolation.
 - Status: original teaching pilot, draft. It is not a complete line-by-line syllabus map or independent subject-expert verification. Confirm every subtopic and assessment demand against the exact Cambridge 9700 2025–2027 syllabus before upgrading status. Physical circulatory practicals, diagram assessment, independent review and versioned offline-pack integration remain outstanding.
 - The lesson is authored independently. No textbook passages, diagrams, or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 9: gas exchange (2025–2027 syllabus pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, for examinations 2025–2027. Topic 9 is an AS topic. Official source: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (section 9.1, PDF page 29).
+- Scope follows the seven learning outcomes in section 9.1: human gas-exchange structures; distribution of cartilage, ciliated epithelium, goblet cells, alveolar squamous epithelium, smooth muscle and capillaries; recognition of these tissues in slides and micrographs; recognition of trachea, bronchi, bronchioles and alveoli; plan diagrams of transverse sections of trachea and bronchus; roles of ciliated cells, goblet cells and mucous glands; functions of cartilage, smooth muscle, elastic fibres and squamous epithelium; and diffusion between alveolar air and capillary blood.
+- Module: `src/lib/cortex/curatedContent/biology-gas-exchange.ts`.
+- Runtime aliases: `gas exchange`, `human gas exchange system`, `alveoli`, `trachea and bronchi`, and `gas exchange in humans`, restricted to Biology requests.
+- Original lesson includes airway pathway, tissue distribution and function, mucociliary clearance, bronchiole smooth muscle, alveolar exchange adaptations, partial-pressure gradients, micrograph identification, and explicit plan-diagram drawing practice for trachea and bronchus transverse sections.
+- Automated tests check the official subject strands, diagram/practice prompts, alias retrieval and subject isolation.
+- Status: draft teaching pilot with section-level syllabus scope checked against the official 2025–2027 PDF. Detailed sub-outcome review, independent Biology teacher review, actual accessible labelled diagrams/micrograph practice, and offline pack integration remain outstanding. A text drawing prompt is not a rendered anatomical diagram.
+- All explanations and questions are original; no protected syllabus illustrations, coursebook figures or examination questions are reproduced.
+
+### Topic 8 review note
+
+A second pass against section 8 of the same official syllabus identified additional required strands not present in the first mammalian transport draft. The Topic 8 module has now been extended to include arterioles and venules, monocytes and neutrophils, water's solvent action and high specific heat capacity, sinoatrial node, atrioventricular node and Purkyne tissue, carbonic anhydrase, haemoglobinic acid, carbaminohaemoglobin, plasma transport of carbon dioxide and the chloride shift. Regression tests now check these terms. The topic remains a draft pending detailed mapping and independent review.
