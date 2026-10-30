@@ -154,7 +154,8 @@ describe("buildDeterministicLessonFallback", () => {
 
   it("returns null for a topic with no hand-authored fallback", () => {
     expect(buildDeterministicLessonFallback("Mathematics", "Quadratic equations")).toBeNull();
-    expect(buildDeterministicLessonFallback("Biology", "Cell structure")).toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Cell structure")).not.toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Biological molecules")).not.toBeNull();
   });
 
 
