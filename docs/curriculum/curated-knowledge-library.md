@@ -314,3 +314,14 @@ The starter covers interphase (G1, S and G2), chromosome and sister-chromatid te
 - Teaching scope: nucleotide components and DNA/RNA differences; phosphodiester bonds; antiparallel complementary DNA strands; semi-conservative replication; transcription; mRNA codons; tRNA anticodons; ribosome and peptide-bond formation; polypeptide sequence and protein function.
 - This is an original starter lesson, not a complete topic 6 syllabus inventory. Exact learning-outcome mapping, sequence/diagram assets, specialist review, assessment-question validation and downloadable-pack integration remain outstanding. Strand-direction examples and biological terminology require independent review before verified status.
 - No textbook passages, diagrams, questions or answer keys have been copied.
+
+
+## Biology 9700 Topic 7 teaching pilot: transport in plants
+
+- Version scope: Cambridge International AS & A Level Biology 9700, 2025–2027 syllabus only. Do not mix with the separate 2028–2030 syllabus.
+- Original module: `src/lib/cortex/curatedContent/biology-transport-in-plants.ts`.
+- Offline fallback aliases: transport in plants, transpiration, xylem and phloem.
+- Test: `src/lib/cortex/curatedContent/biology-transport-in-plants.test.ts`.
+- Teaching scope: root hair uptake; osmosis and mineral-ion absorption; apoplast, symplast and endodermis/Casparian strip; xylem adaptation; cohesion-tension; transpiration and stomatal control; potometer interpretation and its limitations; phloem structure; sources, sinks and mass flow.
+- This is an original teaching pilot, not a complete Topic 7 learning-outcome inventory. Detailed official syllabus mapping, labelled transport diagrams, practical data/graph tasks, specialist review and offline pack integration remain outstanding. Potometer and transport explanations require independent subject review.
+- No textbook passages, diagrams, questions or answer keys have been copied.
