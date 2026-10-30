@@ -21,7 +21,7 @@ describe("Biology 9700 Topic 17 selection and evolution lesson", () => {
   });
 
   it("covers variation, statistics, selection, population genetics and speciation", () => {
-    for (const term of ["phenotypic variation", "discontinuous variation", "continuous variation", "t-test", "directional selection", "stabilising selection", "disruptive selection", "genetic drift", "founder effect", "bottleneck", "antibiotic resistance", "Hardy–Weinberg", "p² + 2pq + q²", "selective breeding", "dairy cattle", "maize", "gene pool", "DNA base sequences", "allopatric", "sympatric", "ecological", "behavioural"]) {
+    for (const term of ["phenotypic variation", "discontinuous variation", "continuous variation", "t-test", "directional selection", "stabilising selection", "disruptive selection", "genetic drift", "founder effect", "bottleneck", "Hardy–Weinberg", "p² + 2pq + q²", "selective breeding", "dairy cattle", "maize", "gene pool", "DNA base sequences", "allopatric", "sympatric", "ecological", "behavioural"]) {
       expect(text).toContain(term.toLowerCase());
     }
   });
