@@ -352,3 +352,15 @@ The starter covers interphase (G1, S and G2), chromosome and sister-chromatid te
 ### Topic 8 review note
 
 A second pass against section 8 of the same official syllabus identified additional required strands not present in the first mammalian transport draft. The Topic 8 module has now been extended to include arterioles and venules, monocytes and neutrophils, water's solvent action and high specific heat capacity, sinoatrial node, atrioventricular node and Purkyne tissue, carbonic anhydrase, haemoglobinic acid, carbaminohaemoglobin, plasma transport of carbon dioxide and the chloride shift. Regression tests now check these terms. The topic remains a draft pending detailed mapping and independent review.
+
+
+### Biology 9700 Topic 10: infectious diseases and antibiotics (2025–2027 pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, Version 1, September 2022, examinations 2025–2027. Official syllabus: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf (sections 10.1–10.2).
+- Scope: infectious disease and pathogens; named diseases and agents (cholera, malaria, TB and HIV); transmission routes; biological, social and economic factors in prevention/control; penicillin action and why antibiotics do not affect viruses; antibiotic resistance and ways to reduce its impact. The syllabus does not require a detailed malaria parasite life cycle.
+- Module: `src/lib/cortex/curatedContent/biology-infectious-diseases.ts`.
+- Runtime aliases: infectious diseases, cholera, malaria, tuberculosis, HIV, antibiotics and antibiotic resistance, restricted to Biology requests.
+- Test: `src/lib/cortex/curatedContent/biology-infectious-diseases.test.ts`.
+- Original teaching content includes pathogen classification, faecal-oral cholera transmission, mosquito-vector malaria transmission, airborne TB transmission (and the M. bovis animal/food context), specific HIV exposure routes and prevention, public-health and socioeconomic controls, penicillin's peptidoglycan target, viral differences, resistance by natural selection and gene transfer, stewardship and applied evaluation.
+- Status: draft teaching pilot. The transmission-route flowchart is a drawing prompt, not a rendered diagram. Independent Biology teacher review, detailed learning-outcome mapping, current public-health source review, accessible diagrams, question validation and offline-pack integration remain outstanding. This is educational content, not clinical advice.
+- All explanations and questions are original. No textbook passages, protected figures, or past-paper questions are reproduced.
