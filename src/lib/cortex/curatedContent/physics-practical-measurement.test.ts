@@ -32,7 +32,7 @@ describe("Physics practical measurement starter", () => {
 
   it("does not claim simulated work is verified hands-on laboratory performance", () => {
     const text = PHYSICS_PRACTICAL_MEASUREMENT_STARTER.blocks.map((block) => block.content).join(" ").toLowerCase();
-    expect(text).toContain("does not replace supervised");
+    expect(text).toContain("teacher supervision");
     expect(text).toContain("not evidence that you can independently manipulate");
   });
 });
