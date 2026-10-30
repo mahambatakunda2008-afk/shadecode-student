@@ -7,7 +7,7 @@ describe("Biology 9700 transport in mammals starter", () => {
     const blocks = BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER.blocks;
     const content = blocks.map(block => block.content).join(" ").toLowerCase();
     expect(blocks.length).toBeGreaterThanOrEqual(20);
-    for (const phrase of ["double circulation", "pulmonary circuit", "systemic circuit", "left ventricle", "cardiac cycle", "cardiac output", "arteries", "veins", "capillaries", "haemoglobin", "oxygen dissociation curve", "bohr effect", "tissue fluid", "lymph"]) {
+    for (const phrase of ["double circulation", "pulmonary circuit", "systemic circuit", "left ventricle", "cardiac cycle", "cardiac output", "arteries", "veins", "capillaries", "haemoglobin", "oxygen dissociation curve", "bohr effect", "tissue fluid", "lymph", "sinoatrial node", "atrioventricular node", "purkyne tissue", "carbonic anhydrase", "haemoglobinic acid", "carbaminohaemoglobin", "chloride shift", "arterioles", "venules", "monocytes", "neutrophils", "specific heat"]) {
       expect(content).toContain(phrase);
     }
   });
