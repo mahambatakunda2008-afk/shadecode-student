@@ -20,6 +20,7 @@ import { BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER } from "./curatedContent/biology-t
 import { BIOLOGY_GAS_EXCHANGE_STARTER } from "./curatedContent/biology-gas-exchange";
 import { BIOLOGY_INFECTIOUS_DISEASES_STARTER } from "./curatedContent/biology-infectious-diseases";
 import { BIOLOGY_IMMUNITY_STARTER } from "./curatedContent/biology-immunity";
+import { BIOLOGY_ENERGY_RESPIRATION_STARTER } from "./curatedContent/biology-energy-respiration";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -452,6 +453,19 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
   "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
   "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|energy and respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|energy": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|aerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|anaerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|glycolysis": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|link reaction": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|krebs cycle": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|oxidative phosphorylation": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|respiratory quotient": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|respirometers": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|fermentation": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|atp": BIOLOGY_ENERGY_RESPIRATION_STARTER,
   "biology|protein synthesis": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|dna replication": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|transcription": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
