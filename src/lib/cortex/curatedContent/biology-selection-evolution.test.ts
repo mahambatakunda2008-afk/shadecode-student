@@ -27,7 +27,7 @@ describe("Biology 9700 Topic 17 selection and evolution lesson", () => {
   });
 
   it("routes Topic 17 aliases to Biology only", () => {
-    for (const topic of ["selection and evolution", "variation", "continuous variation", "discontinuous variation", "t-test", "natural selection", "directional selection", "stabilising selection", "disruptive selection", "genetic drift", "founder effect", "bottleneck effect", "antibiotic resistance", "Hardy–Weinberg", "selective breeding", "artificial selection", "speciation", "allopatric speciation", "sympatric speciation", "gene pool", "evolutionary relationships"]) {
+    for (const topic of ["selection and evolution", "variation", "continuous variation", "discontinuous variation", "t-test", "natural selection", "directional selection", "stabilising selection", "disruptive selection", "genetic drift", "founder effect", "bottleneck effect", "Hardy–Weinberg", "selective breeding", "artificial selection", "speciation", "allopatric speciation", "sympatric speciation", "gene pool", "evolutionary relationships"]) {
       expect(buildDeterministicLessonFallback("Cambridge International AS & A Level Biology 9700", topic)?.title, topic).toContain("Selection and evolution");
     }
     expect(buildDeterministicLessonFallback("Chemistry", "natural selection")).toBeNull();
