@@ -7,6 +7,10 @@
 
 **First official syllabus inventory:** [Cambridge AS & A Level Physics 9702 (2025–2027)](./cambridge-9702-2025-2027-topic-inventory.csv) records all 25 official topic titles, AS/A Level scope, source pages and assessment context. Topic titles are verified against Cambridge's official PDF; detailed subtopic/learning-outcome extraction, practical-skill mapping, lesson review and offline packaging remain pending. Do not treat this topic-level inventory as completed syllabus coverage.
 
+**Physics AS subtopic structure:** [9702 AS subtopic index](./cambridge-9702-2025-2027-as-subtopic-index.csv) records 31 section identifiers and official subtopic titles for topics 1–11. It is a structural index only; outcome-level teaching coverage remains unverified.
+
+**Physics practical skills:** [9702 practical skills inventory](./cambridge-9702-2025-2027-practical-skills.csv) separates Paper 3 laboratory skills from Paper 5 planning, analysis and evaluation. These assessment skills must be taught and practised explicitly, not assumed to be covered by theory lessons.
+
 ## Purpose
 Build a dependable, offline-capable knowledge layer for cases where a model is unavailable, slow, or produces unreliable work. A curated lesson is authored and checked content, not a generated response and not a copied textbook chapter.
 
