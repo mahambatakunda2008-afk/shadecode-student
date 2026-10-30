@@ -161,5 +161,8 @@ export const THEORY_EXCLUSIONS: Record<string, RegExp> = {
   "physics|electrical circuits": NOT_CIRCUITS_BASICS,
   "physics|current electricity": NOT_CIRCUITS_BASICS,
   "physics|series and parallel circuits": NOT_CIRCUITS_BASICS,
-  "biology|photosynthesis": NOT_PHOTOSYNTHESIS_ALONE,\n  "biology|respiration": NOT_RESPIRATION_ALONE,\n  "biology|aerobic respiration": NOT_RESPIRATION_ALONE,\n  "biology|anaerobic respiration": NOT_RESPIRATION_ALONE,
+  "biology|photosynthesis": NOT_PHOTOSYNTHESIS_ALONE,
+  "biology|respiration": NOT_RESPIRATION_ALONE,
+  "biology|aerobic respiration": NOT_RESPIRATION_ALONE,
+  "biology|anaerobic respiration": NOT_RESPIRATION_ALONE,
 };
