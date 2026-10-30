@@ -5,6 +5,7 @@ import { PHYSICS_MOMENTUM_STARTER } from "./curatedContent/physics-momentum";
 import { PHYSICS_PRACTICAL_MEASUREMENT_STARTER } from "./curatedContent/physics-practical-measurement";
 import { PHYSICS_PRACTICAL_PLANNING_STARTER } from "./curatedContent/physics-practical-planning";
 import { CHEMISTRY_PRACTICAL_TITRATION_STARTER } from "./curatedContent/chemistry-practical-titration";
+import { CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER } from "./curatedContent/chemistry-practical-qualitative";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -390,6 +391,11 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "chemistry|acid base titration": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
   "chemistry|quantitative analysis": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
   "chemistry|volumetric analysis": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
+  "chemistry|qualitative analysis": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|ion tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|cation tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|anion tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|gas tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
   "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
   "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
   "physics|momentum": PHYSICS_MOMENTUM_STARTER,
