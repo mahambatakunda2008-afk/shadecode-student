@@ -27,7 +27,8 @@ describe("Biology 9700 Topic 16 inheritance lesson", () => {
 
   it("routes inheritance to Biology and avoids other subjects", () => {
     for (const topic of ["inheritance", "meiosis", "crossing over", "Punnett square", "monohybrid cross", "dihybrid cross", "codominance", "sex linkage", "autosomal linkage", "epistasis", "test cross", "chi-squared", "lac operon", "gene control", "DELLA protein", "sickle cell anaemia"]) {
-      expect(buildDeterministicLessonFallback("Cambridge International AS & A Level Biology 9700", topic)?.title).toContain("Inheritance");
+      const lesson = buildDeterministicLessonFallback("Cambridge International AS & A Level Biology 9700", topic);
+      expect(lesson?.title, `topic: ${topic}`).toContain("Inheritance");
     }
     expect(buildDeterministicLessonFallback("Chemistry", "meiosis")).toBeNull();
     expect(buildDeterministicLessonFallback("Physics", "Punnett square")).toBeNull();
