@@ -1,5 +1,46 @@
 import type { LessonQualityBlock } from "./lessonQuality";
+import { PHYSICS_KINEMATICS_STARTER } from "./curatedContent/physics-kinematics";
+import { PHYSICS_ACCELERATED_MOTION_STARTER } from "./curatedContent/physics-accelerated-motion";
+import { PHYSICS_MOMENTUM_STARTER } from "./curatedContent/physics-momentum";
+import { PHYSICS_PRACTICAL_MEASUREMENT_STARTER } from "./curatedContent/physics-practical-measurement";
+import { PHYSICS_PRACTICAL_PLANNING_STARTER } from "./curatedContent/physics-practical-planning";
+import { CHEMISTRY_PRACTICAL_TITRATION_STARTER } from "./curatedContent/chemistry-practical-titration";
+import { CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER } from "./curatedContent/chemistry-practical-qualitative";
+import { CHEMISTRY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/chemistry-practical-planning";
+import { BIOLOGY_PRACTICAL_MICROSCOPY_STARTER } from "./curatedContent/biology-practical-microscopy";
+import { BIOLOGY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/biology-practical-planning";
+import { BIOLOGY_CELL_STRUCTURE_STARTER } from "./curatedContent/biology-cell-structure";
+import { BIOLOGY_BIOLOGICAL_MOLECULES_STARTER } from "./curatedContent/biology-biological-molecules";
+import { BIOLOGY_ENZYMES_STARTER } from "./curatedContent/biology-enzymes";
+import { BIOLOGY_MEMBRANES_TRANSPORT_STARTER } from "./curatedContent/biology-membranes-transport";
+import { BIOLOGY_MITOTIC_CELL_CYCLE_STARTER } from "./curatedContent/biology-mitotic-cell-cycle";
+import { BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER } from "./curatedContent/biology-nucleic-acids-protein-synthesis";
+import { BIOLOGY_TRANSPORT_IN_PLANTS_STARTER } from "./curatedContent/biology-transport-in-plants";
+import { BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER } from "./curatedContent/biology-transport-in-mammals";
+import { BIOLOGY_GAS_EXCHANGE_STARTER } from "./curatedContent/biology-gas-exchange";
+import { BIOLOGY_INFECTIOUS_DISEASES_STARTER } from "./curatedContent/biology-infectious-diseases";
+import { BIOLOGY_IMMUNITY_STARTER } from "./curatedContent/biology-immunity";
+import { BIOLOGY_ENERGY_RESPIRATION_STARTER } from "./curatedContent/biology-energy-respiration";
+import { BIOLOGY_PHOTOSYNTHESIS_STARTER } from "./curatedContent/biology-photosynthesis";
+import { BIOLOGY_HOMEOSTASIS_STARTER } from "./curatedContent/biology-homeostasis";
+import { BIOLOGY_CONTROL_COORDINATION_STARTER } from "./curatedContent/biology-control-coordination";
+import { BIOLOGY_INHERITANCE_STARTER } from "./curatedContent/biology-inheritance";
+import { BIOLOGY_SELECTION_EVOLUTION_STARTER } from "./curatedContent/biology-selection-evolution";
+import { BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER } from "./curatedContent/biology-classification-biodiversity";
+import { BIOLOGY_GENETIC_TECHNOLOGY_STARTER } from "./curatedContent/biology-genetic-technology";
+import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
+import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
+import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
+import { PURE_MATHEMATICS_SEQUENCES_SERIES_STARTER } from "./curatedContent/pure-mathematics-sequences-series";
+import { PURE_MATHEMATICS_TRIGONOMETRIC_EQUATIONS_STARTER } from "./curatedContent/pure-mathematics-trigonometric-equations";
 import { THEORY_EXCLUSIONS, THEORY_LESSONS } from "./theoryLessons";
+
+const FALLBACK_EXCLUSIONS: Record<string, RegExp> = {
+  "biology|respiration": /\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\b/,
+  "biology|aerobic respiration": /\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\b/,
+  "biology|anaerobic respiration": /\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\b/,
+  "biology|gibberellin": /\bstem elongation\b/,
+};
 
 type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
 
@@ -371,8 +412,265 @@ const SUBJECT_ALIASES: Record<string, string> = {
   physics: "physics",
 };
 
-// Hand-written theory lessons live in their own file; the original small curated set stays below.
-const ALL_FALLBACK_LESSONS: Record<string, FallbackLesson> = { ...FALLBACK_LESSONS, ...THEORY_LESSONS };
+// Book-informed pilot lessons are original authored content, kept separate from AI output.
+// They remain marked as drafts in the curriculum documentation until syllabus mapping
+// and independent review are complete. Runtime availability is not a verification claim.
+const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
+  "chemistry|titration": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
+  "chemistry|acid base titration": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
+  "chemistry|quantitative analysis": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
+  "chemistry|volumetric analysis": CHEMISTRY_PRACTICAL_TITRATION_STARTER,
+  "chemistry|qualitative analysis": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|ion tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|cation tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|anion tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|gas tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|experimental planning": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "chemistry|planning and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "chemistry|paper 5": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "chemistry|planning analysis and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "biology|biological molecules": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
+  "biology|enzymes": BIOLOGY_ENZYMES_STARTER,
+  "biology|enzyme action": BIOLOGY_ENZYMES_STARTER,
+  "biology|enzyme activity": BIOLOGY_ENZYMES_STARTER,
+  "biology|cell membranes": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
+  "biology|membrane transport": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
+  "biology|transport across membranes": BIOLOGY_MEMBRANES_TRANSPORT_STARTER,
+  "biology|mitotic cell cycle": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
+  "biology|nucleic acids": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
+  "biology|transport in plants": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|water transport in plants": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|transpiration": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|xylem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|phloem": BIOLOGY_TRANSPORT_IN_PLANTS_STARTER,
+  "biology|transport in mammals": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|mammalian circulation": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|the heart": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|blood vessels": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|tissue fluid": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|gas exchange": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|human gas exchange system": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|alveoli": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|trachea and bronchi": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|gas exchange in humans": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|infectious diseases": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|cholera": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|malaria": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|tuberculosis": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|hiv": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|antibiotics": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|antibiotic resistance": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|immune system": BIOLOGY_IMMUNITY_STARTER,
+  "biology|phagocytosis": BIOLOGY_IMMUNITY_STARTER,
+  "biology|antibodies": BIOLOGY_IMMUNITY_STARTER,
+  "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
+  "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
+  "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|genetic technology": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|genetic engineering": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|recombinant dna": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gene transfer": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|restriction enzymes": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|restriction endonucleases": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|dna ligase": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|plasmids": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gene editing": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|pcr": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|polymerase chain reaction": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gel electrophoresis": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|dna microarrays": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|microarrays": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|sequence databases": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|recombinant proteins": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|genetic screening": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|brca1": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|brca2": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|huntington disease screening": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gene therapy": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|ada scid": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|scid": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|inherited retinal disease": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|genetically modified organisms": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|gm salmon": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|herbicide resistance": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|herbicide resistant soybean": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|bt cotton": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|insect resistant cotton": BIOLOGY_GENETIC_TECHNOLOGY_STARTER,
+  "biology|classification biodiversity and conservation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|classification": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|three domains": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|archaea": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|bacteria": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|eukarya": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|taxonomic hierarchy": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|protoctista": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|fungi": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|plant kingdom": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|animal kingdom": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|virus classification": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|biodiversity": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|ecosystem": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|ecological niche": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|random sampling": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|quadrats": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|line transect": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|belt transect": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|mark-release-recapture": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|lincoln index": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|spearman rank": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|pearson correlation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|simpson index": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|simpsons index": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|conservation": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|seed banks": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|frozen zoos": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|assisted reproduction": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|invasive alien species": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|iucn": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|cites": BIOLOGY_CLASSIFICATION_BIODIVERSITY_STARTER,
+  "biology|selection and evolution": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|continuous variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|discontinuous variation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|t-test": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|natural selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|directional selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|stabilising selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|disruptive selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|genetic drift": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|founder effect": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|bottleneck effect": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|hardy-weinberg": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|hardy–weinberg": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|selective breeding": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|artificial selection": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|speciation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|allopatric speciation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|sympatric speciation": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|gene pool": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|evolutionary relationships": BIOLOGY_SELECTION_EVOLUTION_STARTER,
+  "biology|inheritance": BIOLOGY_INHERITANCE_STARTER,
+  "biology|meiosis": BIOLOGY_INHERITANCE_STARTER,
+  "biology|crossing over": BIOLOGY_INHERITANCE_STARTER,
+  "biology|independent assortment": BIOLOGY_INHERITANCE_STARTER,
+  "biology|punnett square": BIOLOGY_INHERITANCE_STARTER,
+  "biology|monohybrid cross": BIOLOGY_INHERITANCE_STARTER,
+  "biology|dihybrid cross": BIOLOGY_INHERITANCE_STARTER,
+  "biology|codominance": BIOLOGY_INHERITANCE_STARTER,
+  "biology|multiple alleles": BIOLOGY_INHERITANCE_STARTER,
+  "biology|sex linkage": BIOLOGY_INHERITANCE_STARTER,
+  "biology|autosomal linkage": BIOLOGY_INHERITANCE_STARTER,
+  "biology|epistasis": BIOLOGY_INHERITANCE_STARTER,
+  "biology|test cross": BIOLOGY_INHERITANCE_STARTER,
+  "biology|chi-squared": BIOLOGY_INHERITANCE_STARTER,
+  "biology|gene control": BIOLOGY_INHERITANCE_STARTER,
+  "biology|lac operon": BIOLOGY_INHERITANCE_STARTER,
+  "biology|sickle cell anaemia": BIOLOGY_INHERITANCE_STARTER,
+  "biology|haemophilia": BIOLOGY_INHERITANCE_STARTER,
+  "biology|albinism": BIOLOGY_INHERITANCE_STARTER,
+  "biology|huntington disease": BIOLOGY_INHERITANCE_STARTER,
+  "biology|gibberellin stem elongation": BIOLOGY_INHERITANCE_STARTER,
+  "biology|della protein": BIOLOGY_INHERITANCE_STARTER,
+  "biology|control and coordination": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|nervous system": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|endocrine system": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|sensory neurone": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|motor neurone": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|action potential": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|saltatory conduction": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|synapse": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|neuromuscular junction": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|sarcomere": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|sliding filament": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|venus flytrap": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|auxin": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|gibberellin": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|barley germination": BIOLOGY_CONTROL_COORDINATION_STARTER,
+  "biology|homeostasis": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|negative feedback": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|kidney": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|nephron": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|ultrafiltration": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|osmoregulation": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|adh": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|blood glucose": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|glucagon": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|insulin": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|stomata": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|guard cells": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|abscisic acid": BIOLOGY_HOMEOSTASIS_STARTER,
+  "biology|photosynthesis": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|light-dependent stage": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|light independent stage": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|calvin cycle": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|photophosphorylation": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|chloroplast pigments": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|limiting factors": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|chromatography": BIOLOGY_PHOTOSYNTHESIS_STARTER,
+  "biology|energy and respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|energy": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|aerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|anaerobic respiration": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|glycolysis": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|link reaction": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|krebs cycle": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|oxidative phosphorylation": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|respiratory quotient": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|respirometers": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|fermentation": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|atp": BIOLOGY_ENERGY_RESPIRATION_STARTER,
+  "biology|protein synthesis": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
+  "biology|dna replication": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
+  "biology|transcription": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
+  "biology|translation": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
+  "biology|mitosis": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
+  "biology|cell cycle": BIOLOGY_MITOTIC_CELL_CYCLE_STARTER,
+  "biology|carbohydrates": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
+  "biology|lipids": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
+  "biology|proteins": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
+  "biology|water": BIOLOGY_BIOLOGICAL_MOLECULES_STARTER,
+  "biology|cell structure": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|cells": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|prokaryotic and eukaryotic cells": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|organelles": BIOLOGY_CELL_STRUCTURE_STARTER,
+  "biology|microscopy": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|microscope": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|biological drawings": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|specimen observation": BIOLOGY_PRACTICAL_MICROSCOPY_STARTER,
+  "biology|experimental planning": BIOLOGY_PRACTICAL_PLANNING_STARTER,
+  "biology|planning and evaluation": BIOLOGY_PRACTICAL_PLANNING_STARTER,
+  "biology|paper 5": BIOLOGY_PRACTICAL_PLANNING_STARTER,
+  "biology|planning analysis and evaluation": BIOLOGY_PRACTICAL_PLANNING_STARTER,
+  "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
+  "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
+  "physics|momentum": PHYSICS_MOMENTUM_STARTER,
+  "physics|impulse": PHYSICS_MOMENTUM_STARTER,
+  "physics|practical measurement": PHYSICS_PRACTICAL_MEASUREMENT_STARTER,
+  "physics|measurement and uncertainty": PHYSICS_PRACTICAL_MEASUREMENT_STARTER,
+  "physics|practical skills": PHYSICS_PRACTICAL_MEASUREMENT_STARTER,
+  "physics|experimental planning": PHYSICS_PRACTICAL_PLANNING_STARTER,
+  "physics|planning and evaluation": PHYSICS_PRACTICAL_PLANNING_STARTER,
+  "physics|paper 5": PHYSICS_PRACTICAL_PLANNING_STARTER,
+  "mathematics|algebra": PURE_MATHEMATICS_ALGEBRA_STARTER,
+  "mathematics|logarithms and exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
+  "mathematics|logarithms": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
+  "mathematics|exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
+  "mathematics|differentiation": PURE_MATHEMATICS_DIFFERENTIATION_STARTER,
+  "mathematics|sequences and series": PURE_MATHEMATICS_SEQUENCES_SERIES_STARTER,
+  "mathematics|sequences": PURE_MATHEMATICS_SEQUENCES_SERIES_STARTER,
+  "mathematics|series": PURE_MATHEMATICS_SEQUENCES_SERIES_STARTER,
+  "mathematics|trigonometric equations": PURE_MATHEMATICS_TRIGONOMETRIC_EQUATIONS_STARTER,
+  "mathematics|trig equations": PURE_MATHEMATICS_TRIGONOMETRIC_EQUATIONS_STARTER,
+};
+
+// Specific curated entries win over broad legacy theory entries with overlapping names.
+const ALL_FALLBACK_LESSONS: Record<string, FallbackLesson> = {
+  ...FALLBACK_LESSONS,
+  ...THEORY_LESSONS,
+  ...BOOK_INFORMED_PILOTS,
+};
 
 function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/['’]/g, "").replace(/\s+/g, " ");
@@ -381,8 +679,8 @@ function normalize(value: string): string {
 function normalizeSubject(value: string): string {
   const cleaned = normalize(value)
     .replace(/\b(970[0-9]|961[0-9]|9[0-9]{3})\b/g, " ")
-    .replace(/\b(as|a level|a-level|a-levels|level|cambridge|international|igcse|o level|o-level|gcse)\b/g, " ")
-    .replace(/[()[\]_-]/g, " ")
+    .replace(/\b(as|a level|a-level|a-levels|level|and|cambridge|international|igcse|o level|o-level|gcse)\b/g, " ")
+    .replace(/[()[\]_&-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   if (/^(physics|phys|physical science)\b/.test(cleaned)) return "physics";
@@ -410,17 +708,33 @@ export function buildDeterministicLessonFallback(subject: string, topic: string)
   // Match a curated topic when the learner adds a natural-language request,
   // syllabus code, or exam phrasing around the topic. Never broaden the
   // subject match: a Physics lesson must not leak into another subject.
-  for (const [key, lesson] of Object.entries(ALL_FALLBACK_LESSONS)) {
-    const separator = key.indexOf("|");
-    const knownSubject = key.slice(0, separator);
-    const knownTopic = key.slice(separator + 1);
-    if (knownSubject !== normalizedSubject) continue;
-    if (normalizedTopic === knownTopic || normalizedTopic.startsWith(`${knownTopic} `) || normalizedTopic.endsWith(` ${knownTopic}`) || normalizedTopic.includes(` ${knownTopic} `)) {
-      // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
-      // not what the lesson teaches: skip it rather than serve the wrong lesson.
-      if (THEORY_EXCLUSIONS[key]?.test(normalizedTopic)) continue;
-      return lesson;
-    }
+  const candidates = Object.entries(ALL_FALLBACK_LESSONS)
+    .map(([key, lesson]) => {
+      const separator = key.indexOf("|");
+      return { key, lesson, knownSubject: key.slice(0, separator), knownTopic: key.slice(separator + 1) };
+    })
+    .filter(candidate => candidate.knownSubject === normalizedSubject)
+    // Prefer the most specific topic when a request contains multiple curated labels.
+    .sort((a, b) => b.knownTopic.length - a.knownTopic.length);
+
+  const matches = candidates.filter(({ key, knownTopic }) => {
+    const topicMatches =
+      normalizedTopic === knownTopic ||
+      normalizedTopic.startsWith(`${knownTopic} `) ||
+      normalizedTopic.endsWith(` ${knownTopic}`) ||
+      normalizedTopic.includes(` ${knownTopic} `);
+    // A specialised neighbour ("binary search tree", "dative covalent bonding") shares words with a key but is
+    // not what the lesson teaches: exclude it before considering candidate matches.
+    return topicMatches && !(THEORY_EXCLUSIONS[key] ?? FALLBACK_EXCLUSIONS[key])?.test(normalizedTopic);
+  });
+
+  // Short aliases (for example "sequences" and "series") can point to the same
+  // authored lesson. Treat those as one match, but never choose arbitrarily
+  // when a request genuinely names two different lessons.
+  const distinctLessons = new Map<string, FallbackLesson>();
+  for (const { lesson } of matches) {
+    distinctLessons.set(lesson.title, lesson);
   }
-  return null;
+  if (distinctLessons.size !== 1) return null;
+  return distinctLessons.values().next().value ?? null;
 }

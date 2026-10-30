@@ -1,3 +1,5 @@
+import { getLocalRecord, putLocalRecord } from "@/lib/offline/indexedDb";
+
 export interface OfflineCurriculumKnowledgeItem {
   id: string;
   kind: string;
@@ -10,8 +12,23 @@ export interface OfflineCurriculumKnowledgeItem {
   metadata?: Record<string, unknown>;
 }
 
+export type CurriculumVerificationStatus = "unreviewed" | "content-checked" | "syllabus-mapped" | "verified";
+
+export interface CurriculumPackProvenance {
+  status: CurriculumVerificationStatus;
+  sourceTitle?: string;
+  sourceEdition?: string;
+  syllabusAuthority?: string;
+  syllabusYear?: string;
+  author?: string;
+  reviewer?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+}
+
 export interface OfflineCurriculumPack {
   version: 2;
+  provenance?: CurriculumPackProvenance;
   curriculumId?: string;
   board?: string;
   qualification?: string;
@@ -55,10 +72,23 @@ function normalizeKnowledge(value: unknown): OfflineCurriculumKnowledgeItem | nu
   };
 }
 
+function normalizeProvenance(value: unknown): CurriculumPackProvenance {
+  const item = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const allowed: CurriculumVerificationStatus[] = ["unreviewed", "content-checked", "syllabus-mapped", "verified"];
+  const status = typeof item.status === "string" && allowed.includes(item.status as CurriculumVerificationStatus)
+    ? item.status as CurriculumVerificationStatus : "unreviewed";
+  const optionalText = (field: string) => typeof item[field] === "string" && (item[field] as string).trim()
+    ? (item[field] as string).trim() : undefined;
+  return { status, sourceTitle: optionalText("sourceTitle"), sourceEdition: optionalText("sourceEdition"),
+    syllabusAuthority: optionalText("syllabusAuthority"), syllabusYear: optionalText("syllabusYear"),
+    author: optionalText("author"), reviewer: optionalText("reviewer"), reviewedAt: optionalText("reviewedAt"),
+    reviewNotes: optionalText("reviewNotes") };
+}
+
 function normalizePack(value: Partial<OfflineCurriculumPack>): OfflineCurriculumPack | null {
   if (value?.version !== 2 || typeof value.subject !== "string" || !Array.isArray(value.objectives) || !Array.isArray(value.knowledge)) return null;
   return {
-    version: 2, curriculumId: value.curriculumId, board: value.board, qualification: value.qualification, level: value.level,
+    version: 2, provenance: normalizeProvenance(value.provenance), curriculumId: value.curriculumId, board: value.board, qualification: value.qualification, level: value.level,
     subject: value.subject, syllabusId: value.syllabusId, syllabusVersion: value.syllabusVersion,
     objectives: value.objectives.map(normalizeObjective).filter((x): x is { id?: string; code?: string; statement: string } => Boolean(x)).slice(0, 500),
     knowledge: value.knowledge.map(normalizeKnowledge).filter((x): x is OfflineCurriculumKnowledgeItem => Boolean(x)).slice(0, MAX_KNOWLEDGE),
@@ -85,11 +115,92 @@ export function readOfflineCurriculumPack(subject: string, board?: string, level
   } catch { return null; }
 }
 
+
+// Stable IndexedDB key, separate from display labels and safe across browser restarts.
+function durablePackId(subject: string, board?: string, level?: string) {
+  return `curriculum-pack:${[board || "", level || "", subject].map(value => value.trim().toLowerCase()).join(":")}`;
+}
+
+function createNormalizedPack(pack: Omit<OfflineCurriculumPack, "version" | "cachedAt">): OfflineCurriculumPack {
+  return {
+    ...pack,
+    provenance: normalizeProvenance(pack.provenance),
+    version: 2,
+    objectives: pack.objectives.map(normalizeObjective).filter((x): x is { id?: string; code?: string; statement: string } => Boolean(x)).slice(0, 500),
+    knowledge: pack.knowledge.map(normalizeKnowledge).filter((x): x is OfflineCurriculumKnowledgeItem => Boolean(x)).slice(0, MAX_KNOWLEDGE),
+    promptContext: pack.promptContext?.slice(0, MAX_CONTEXT),
+    cachedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Durable async reader for app flows that can await storage. IndexedDB is the
+ * primary store; the legacy synchronous localStorage pack is migrated lazily.
+ * This does not label content verified. Consumers must honour source metadata.
+ */
+export async function readOfflineCurriculumPackDurable(
+  subject: string,
+  board?: string,
+  level?: string,
+): Promise<OfflineCurriculumPack | null> {
+  if (typeof window === "undefined" || !subject.trim()) return null;
+  const id = durablePackId(subject, board, level);
+  try {
+    const record = await getLocalRecord(id);
+    if (record?.entity === "curriculum-pack") {
+      const stored = normalizePack(record.value as Partial<OfflineCurriculumPack>);
+      if (stored) return stored;
+    }
+  } catch {
+    // Continue to the legacy store when IndexedDB is unavailable or blocked.
+  }
+
+  const legacy = readOfflineCurriculumPack(subject, board, level);
+  if (!legacy) return null;
+  try {
+    await putLocalRecord({ id, entity: "curriculum-pack", value: legacy, updatedAt: Date.now() });
+  } catch {
+    // The legacy pack remains readable even when migration cannot be persisted.
+  }
+  return legacy;
+}
+
+/**
+ * Durable async writer. Keeps the v2 localStorage mirror for older app builds,
+ * while making IndexedDB the preferred source for future offline reads.
+ */
+export async function writeOfflineCurriculumPackDurable(
+  pack: Omit<OfflineCurriculumPack, "version" | "cachedAt">,
+): Promise<"indexeddb" | "localstorage" | "unavailable"> {
+  if (typeof window === "undefined" || !pack.subject.trim()) return "unavailable";
+  const value = createNormalizedPack(pack);
+  let indexedDbSaved = false;
+  try {
+    await putLocalRecord({
+      id: durablePackId(value.subject, value.board, value.level),
+      entity: "curriculum-pack",
+      value,
+      updatedAt: Date.now(),
+    });
+    indexedDbSaved = true;
+  } catch {
+    // Try the backwards-compatible store below.
+  }
+
+  try {
+    localStorage.setItem(key(value.subject, value.board, value.level), JSON.stringify(value));
+    return indexedDbSaved ? "indexeddb" : "localstorage";
+  } catch {
+    return indexedDbSaved ? "indexeddb" : "unavailable";
+  }
+}
+
 export function writeOfflineCurriculumPack(pack: Omit<OfflineCurriculumPack, "version" | "cachedAt">) {
   if (typeof window === "undefined" || !pack.subject.trim()) return;
   try {
     const value: OfflineCurriculumPack = {
       ...pack, version: 2,
+      provenance: normalizeProvenance(pack.provenance),
       objectives: pack.objectives.map(normalizeObjective).filter((x): x is { id?: string; code?: string; statement: string } => Boolean(x)).slice(0, 500),
       knowledge: pack.knowledge.map(normalizeKnowledge).filter((x): x is OfflineCurriculumKnowledgeItem => Boolean(x)).slice(0, MAX_KNOWLEDGE),
       promptContext: pack.promptContext?.slice(0, MAX_CONTEXT), cachedAt: new Date().toISOString(),
@@ -106,5 +217,14 @@ export function buildOfflineCurriculumScope(pack: OfflineCurriculumPack | null, 
   const matchingObjectives = pack.objectives.filter(objective => topicTerms.some(term => objective.statement.toLowerCase().includes(term)));
   const objectives = (matchingObjectives.length ? matchingObjectives : pack.objectives.slice(0, 12)).map(item => `- ${item.code ? `[${item.code}] ` : ""}${item.statement}`).join("\n");
   const matchingKnowledge = pack.knowledge.map(item => ({ item, score: topicTerms.reduce((n, term) => n + (`${item.kind} ${item.title} ${item.content} ${item.topicCode || ""}`.toLowerCase().includes(term) ? 1 : 0), 0) })).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 120).map(x => `- ${x.item.kind}: ${x.item.code ? `[${x.item.code}] ` : ""}${x.item.title}${x.item.content ? ` | ${x.item.content.slice(0, 600)}` : ""}`).join("\n");
-  return `OFFLINE VERIFIED CURRICULUM PACK\nBoard: ${pack.board || "not specified"}\nQualification: ${pack.qualification || "not specified"}\nLevel: ${pack.level || "not specified"}\nSubject: ${pack.subject}\nSyllabus: ${pack.syllabusId || "not specified"} ${pack.syllabusVersion || ""}\nRelevant objectives:\n${objectives}\n${matchingKnowledge ? `\nRelevant verified knowledge:\n${matchingKnowledge}` : ""}${pack.promptContext ? `\n\nVerified scope context:\n${pack.promptContext.slice(0, 10000)}` : ""}\n\nTreat these objectives as the scope gate. Use only the supplied verified knowledge for offline teaching. Do not invent syllabus claims or missing assessment content.`;
+  const provenance = normalizeProvenance(pack.provenance);
+  const statusNotes: Record<CurriculumVerificationStatus, string> = {
+    unreviewed: "UNREVIEWED: treat as a draft; do not present as checked or syllabus-verified.",
+    "content-checked": "CONTENT-CHECKED: content was reviewed, but syllabus mapping is not confirmed by this status alone.",
+    "syllabus-mapped": "SYLLABUS-MAPPED: topic mapping is recorded, but independent content checking is not confirmed by this status alone.",
+    verified: "VERIFIED: valid only when both content review and exact syllabus mapping have been completed.",
+  };
+  const source = provenance.sourceTitle ? `\nSource: ${provenance.sourceTitle}${provenance.sourceEdition ? ` (${provenance.sourceEdition})` : ""}` : "";
+  const reviewer = provenance.reviewer ? `\nReviewer: ${provenance.reviewer}` : "";
+  return `CACHED CURRICULUM CONTEXT (not inherently verified)\nVerification status: ${provenance.status}\n${statusNotes[provenance.status]}${source}${reviewer}\nBoard: ${pack.board || "not specified"}\nQualification: ${pack.qualification || "not specified"}\nLevel: ${pack.level || "not specified"}\nSubject: ${pack.subject}\nSyllabus: ${pack.syllabusId || "not specified"} ${pack.syllabusVersion || ""}\nRelevant objectives:\n${objectives}\n${matchingKnowledge ? `\nRelevant knowledge records:\n${matchingKnowledge}` : ""}${pack.promptContext ? `\n\nCached scope context (not independently verified here):\n${pack.promptContext.slice(0, 10000)}` : ""}\n\nUse this material as cached context, not as proof beyond its explicit verification status. Never upgrade the status, invent missing syllabus claims or assessment content, or describe unreviewed material as verified. If the requested topic is not supported by these records, say so.`;
 }
