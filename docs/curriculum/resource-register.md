@@ -25,6 +25,45 @@ When sources conflict, the applicable official syllabus and examination document
 | Cambridge resource centre | Qualification-level resource discovery and links to syllabus-specific materials | https://www.cambridgeinternational.org/resource-centre/ | Some teacher support materials require registered-school access. Do not attempt to bypass restricted access. |
 | Cambridge published/endorsed resources | Officially listed textbooks and digital resources for a specific syllabus | Open the subject in the Cambridge materials finder and choose “Published resources” | Record title, edition, publisher, ISBN if available, syllabus alignment and purchase/access route. “Endorsed” does not mean freely redistributable. |
 
+
+## Verified catalogue observations (checked 2026-10-30)
+
+These are concrete observations from the current official catalogue pages. They are deliberately not presented as a complete syllabus inventory.
+
+### ZIMSEC catalogue visibility
+
+The official [Syllabi page](https://www5.zimsec.co.zw/syllabi/) currently exposes these visible secondary entries in its page text: Agriculture Forms 1–4; Arts Syllabus Forms 1–4; Chemistry Forms 3–4; Combined Science; Commerce Forms 1–4; Commercial Studies Forms 1–4; Computer Science O Level; and Additional Mathematics O Level. It also displays Infant-level entries. The public page's visible list is not enough to establish the complete Forms 1–6 subject catalogue: do not infer that omitted subjects are not examined or that A Level has no syllabuses. Continue subject-by-subject discovery through official ZIMSEC resources and record any gaps for direct confirmation with ZIMSEC.
+
+The official navigation also exposes dedicated destinations for [Specimen Papers](https://www5.zimsec.co.zw/specimen-papers/), [Q&A Booklets](https://www5.zimsec.co.zw/qa-booklets/) and [Chief Examiner Reports](https://www5.zimsec.co.zw/chief-examiner-report/). Use these as assessment-resource discovery points, then record each individual document, subject, level and session. Older examiner reports are useful for technique and recurring misconceptions but do not override a newer syllabus.
+
+### Cambridge qualification catalogue
+
+- [Cambridge Lower Secondary curriculum](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-lower-secondary/curriculum/) currently lists Art & Design (0073), Computing (0860), Digital Literacy (0082), English (0861), English as a Second Language (0876), Global Perspectives (1129), Humanities (0839), Mathematics (0862), Modern Foreign Language (0771), Music (0078), Physical Education (0081), Science (0893) and Wellbeing (0859). Lower Secondary is a relevant entry stage for a broad high-school journey, but local school adoption and a learner's starting point must be selected explicitly.
+- [Cambridge Upper Secondary](https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-upper-secondary/) covers Cambridge IGCSE and Cambridge O Level, typically ages 14–16. Its catalogue includes a wide range of academic, language, humanities, creative and practical subjects. The catalogue page is the discovery index; each subject's own page is the authority for its exact syllabus year and components.
+- Cambridge's subject-specific pages link syllabus overviews, past papers, examiner reports, specimen papers and endorsed resources. Registered-school teacher resources may require School Support Hub access; do not claim those restricted resources are publicly downloadable.
+
+### Syllabus-year rules and important examples
+
+- Cambridge states that syllabus year means the calendar year in which the candidate sits the examination. A candidate sitting in 2026 uses the 2026 syllabus; one sitting in 2027 uses the 2027 syllabus. Always use the official year rule and the subject page's own document list.
+- Cambridge IGCSE Computer Science 0478 has a 2026–2028 syllabus and a 2029–2031 syllabus. The 2029–2031 version changes the programming focus to Python 3, removes pseudocode from teaching/assessment and changes the assessment design. Keep these versions as distinct curriculum records; do not teach the future version to a candidate sitting under the earlier syllabus.
+- Cambridge AS & A Level Mathematics 9709 has different component routes. The learner's chosen route (Pure only, Pure + Mechanics, Pure + Probability & Statistics, or applicable A Level combination) must be recorded; do not assume every student takes every applied component.
+- Cambridge AS & A Level Computer Science 9618 has distinct 2026 and 2027–2029 syllabus documents. Store the examination year against the learner's target and the relevant syllabus record.
+
+### Source records required before topic extraction
+
+For each official subject page, record:
+- exact qualification name and level;
+- subject title and code;
+- syllabus year(s) and direct PDF link(s);
+- syllabus update document(s), where present;
+- paper/component codes and assessment structure;
+- published/endorsed textbook editions and publisher links;
+- public specimen/past-paper/mark-scheme/examiner-report links;
+- whether a resource is open, restricted, purchasable or link-only;
+- last checked date and the person who checked it.
+
+Do not copy a subject's current year from another subject. Cambridge subjects change on different schedules, and ZIMSEC syllabus availability must be confirmed per subject and level.
+
 ## Open and supplementary learning resources
 
 | Resource | Useful for | Rights / product decision | Link |
