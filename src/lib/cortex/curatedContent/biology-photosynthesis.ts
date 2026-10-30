@@ -5,7 +5,7 @@ export const BIOLOGY_PHOTOSYNTHESIS_STARTER: {
   title: string;
   blocks: LessonQualityBlock[];
 } = {
-  title: "Biology 9700: photosynthesis",
+  title: "Photosynthesis: Cambridge Biology 9700",
   blocks: [
     { type: "objective", title: "Learning targets", content: "Connect chloroplast structure to function; explain pigment absorption and spectra; compare cyclic and non-cyclic photophosphorylation; trace the Calvin cycle; explain how GP and TP are used; and investigate how light intensity, wavelength, carbon dioxide concentration and temperature affect photosynthesis." },
     { type: "prior", title: "Photosynthesis transfers energy", content: "Photosynthesis transfers light energy into chemical energy in organic molecules. In most food chains, this energy supports organisms directly or indirectly. In eukaryotic plants, photosynthesis occurs in chloroplasts, especially in leaf mesophyll cells. Link chloroplasts to the cell structures studied earlier and leaves to gas exchange and transport." },
