@@ -443,3 +443,18 @@ The Topic 10 CI run identified two existing coverage-test issues in addition to 
 - Important scope guardrails: no memorisation of epistasis phenotype ratios is required; cAMP is not required for the lac operon; the chi-squared formula is provided in the examination; expected ratios must be derived from the stated cross and assumptions. The 9:3:3:1 ratio is not a universal dihybrid answer.
 - Status: draft teaching pilot. Outcome-by-outcome teacher review, external validation of worked genetic examples and statistical interpretation, original accessible meiosis/operon diagrams, and offline-pack integration remain outstanding.
 - All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
+
+
+### Biology 9700 Topic 17: selection and evolution (2025–2027 A Level pilot)
+
+- Official mapping authority: Cambridge International AS & A Level Biology 9700, examinations 2025–2027, Topic 17, sections 17.1–17.3, official syllabus PDF: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf
+- 17.1 variation: genetic and environmental contributions; continuous and discontinuous variation and their genetic basis; comparing two sample means with the supplied t-test formula; null hypothesis and significance interpretation.
+- 17.2 natural and artificial selection: overproduction, competition and differential reproductive success; directional, stabilising and disruptive selection; genetic drift, founder effect and bottleneck; antibiotic resistance; Hardy–Weinberg allele/genotype calculations and assumptions; selective breeding principles and examples in disease-resistant wheat/rice, hybrid maize and dairy cattle.
+- 17.3 evolution: gene-pool changes across generations; DNA sequence evidence for evolutionary relationships; allopatric speciation through geographical separation and sympatric speciation through ecological or behavioural isolation.
+- Module: `src/lib/cortex/curatedContent/biology-selection-evolution.ts`.
+- Runtime aliases include variation, t-test, selection patterns, genetic drift, founder/bottleneck effects, Hardy–Weinberg, selective breeding, speciation and evolutionary relationships. All routes are Biology-scoped. The existing antibiotic-resistance alias remains mapped to the infectious-diseases lesson, which also teaches the mechanism of resistance.
+- Test: `src/lib/cortex/curatedContent/biology-selection-evolution.test.ts`.
+- Original teaching includes variation-distribution drawing prompts, t-test decision workflow, selection curves, Hardy–Weinberg worked calculation, evolutionary-tree interpretation and original integrated practice.
+- Scope guardrails: use the t-test formula and critical values supplied by the examination question; do not infer causation solely from statistical significance. Hardy–Weinberg equations are supplied and depend on stated equilibrium assumptions.
+- Status: draft teaching pilot. Independent Biology teacher review, verification of statistical worked examples against the current syllabus support materials, accessible original diagrams and offline-pack integration remain outstanding.
+- All explanations and practice questions are original. No textbook passages, protected figures or past-paper questions are reproduced.
