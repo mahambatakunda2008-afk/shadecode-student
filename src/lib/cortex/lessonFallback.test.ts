@@ -258,7 +258,7 @@ describe("buildDeterministicLessonFallback", () => {
     expect(buildDeterministicLessonFallback("Computer Science", "Binary search tree traversal")).toBeNull();
     expect(buildDeterministicLessonFallback("Chemistry", "Dative covalent bonding")).toBeNull();
     expect(buildDeterministicLessonFallback("Physics", "Kirchhoff laws in electric circuits")).toBeNull();
-    expect(buildDeterministicLessonFallback("Biology", "Calvin cycle in photosynthesis")).toBeNull();
+    expect(buildDeterministicLessonFallback("Biology", "Calvin cycle in photosynthesis")?.title).toContain("Photosynthesis");
   });
 
   it("returns null when one request asks for two distinct curated lessons", () => {
