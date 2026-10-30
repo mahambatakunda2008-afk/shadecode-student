@@ -249,3 +249,12 @@ Test: src/lib/cortex/curatedContent/biology-practical-microscopy.test.ts
 Register: docs/curriculum/cambridge-9700-2025-2027-practical-skills.csv
 
 The module covers slide preparation, safe focusing sequence, total magnification, actual-size calculations and unit conversion, observation versus inference, biological drawings, representative sampling and evidence recording. It is an introductory skill module, not a complete Paper 3 syllabus map. Register rows remain pending line-by-line verification and content review. Digital lessons and simulations cannot certify microscope handling or replace supervised work with real specimens and equipment.
+
+
+### Biology Paper 5 planning pilot
+
+Original module: src/lib/cortex/curatedContent/biology-practical-planning.ts
+Test: src/lib/cortex/curatedContent/biology-practical-planning.test.ts
+Fallback aliases: experimental planning, planning and evaluation, Paper 5, and planning analysis and evaluation.
+
+The lesson teaches problem definition, independent/dependent/control variables, hypotheses, repeatable methods, sampling and replication, table design, graphs, calculations and statistics, evidence-based conclusions, and evaluation. The worked contexts are original teaching examples, not prescribed Cambridge practicals. The Paper 5 register rows now point to this starter but remain pending detailed line-by-line syllabus verification and independent content review. This written lesson does not replace supervised practical laboratory work.
