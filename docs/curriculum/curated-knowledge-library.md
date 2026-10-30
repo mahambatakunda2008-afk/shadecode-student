@@ -325,3 +325,14 @@ The starter covers interphase (G1, S and G2), chromosome and sister-chromatid te
 - Teaching scope: root hair uptake; osmosis and mineral-ion absorption; apoplast, symplast and endodermis/Casparian strip; xylem adaptation; cohesion-tension; transpiration and stomatal control; potometer interpretation and its limitations; phloem structure; sources, sinks and mass flow.
 - This is an original teaching pilot, not a complete Topic 7 learning-outcome inventory. Detailed official syllabus mapping, labelled transport diagrams, practical data/graph tasks, specialist review and offline pack integration remain outstanding. Potometer and transport explanations require independent subject review.
 - No textbook passages, diagrams, questions or answer keys have been copied.
+
+
+### Biology 9700 Topic 8: transport in mammals (original teaching pilot)
+
+- Module: `src/lib/cortex/curatedContent/biology-transport-in-mammals.ts`.
+- Runtime aliases: `transport in mammals`, `mammalian circulation`, `the heart`, `blood vessels`, and `tissue fluid`, restricted to Biology requests.
+- The original lesson introduces the double circulation, route of blood through chambers and valves, cardiac cycle and cardiac output, artery/vein/capillary adaptations, plasma and formed elements, red-cell and haemoglobin function, the oxygen dissociation curve and Bohr effect, tissue-fluid formation and lymph return.
+- A labelled route-of-blood drawing task and comparison table are included as teaching prompts. The diagram prompt is not a rendered anatomical illustration; a properly labelled, accessible heart/circulation visual remains outstanding.
+- Automated tests check core coverage, practice content, alias retrieval and subject isolation.
+- Status: original teaching pilot, draft. It is not a complete line-by-line syllabus map or independent subject-expert verification. Confirm every subtopic and assessment demand against the exact Cambridge 9700 2025–2027 syllabus before upgrading status. Physical circulatory practicals, diagram assessment, independent review and versioned offline-pack integration remain outstanding.
+- The lesson is authored independently. No textbook passages, diagrams, or past-paper questions are reproduced.
