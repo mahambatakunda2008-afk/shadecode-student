@@ -54,6 +54,36 @@ The current official archive is paginated and exposes subject-specific reports, 
 - Cambridge AS & A Level Mathematics 9709 has different component routes. The learner's chosen route (Pure only, Pure + Mechanics, Pure + Probability & Statistics, or applicable A Level combination) must be recorded; do not assume every student takes every applied component.
 - Cambridge AS & A Level Computer Science 9618 has distinct 2026 and 2027–2029 syllabus documents. Store the examination year against the learner's target and the relevant syllabus record.
 
+
+### Cambridge subject-page checks: additional concrete examples
+
+The following current subject pages were checked on 2026-10-30. Use their direct links as catalogue records and open the exact syllabus PDF plus its update notice before extracting topic lists.
+
+| Qualification | Subject | Code | Official subject page | Published syllabus periods visible |
+|---|---|---:|---|---|
+| IGCSE | Mathematics | 0580 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-mathematics-0580/ | 2025–2027; 2028–2030 |
+| IGCSE | Physics | 0625 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-0625/ | 2026–2028; 2029 |
+| IGCSE | Biology | 0610 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-biology-0610/ | 2026–2028; 2029 |
+| IGCSE | Chemistry | 0620 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-chemistry-0620/ | 2026–2028 |
+| IGCSE | Computer Science | 0478 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-computer-science-0478/ | 2026–2028; 2029–2031 |
+| AS & A Level | Mathematics | 9709 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-mathematics-9709/ | 2026–2027; 2028–2030 |
+| AS & A Level | Biology | 9700 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-biology-9700/ | 2025–2027; 2028–2030 |
+| AS & A Level | Chemistry | 9701 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-chemistry-9701/ | 2025–2027; 2028–2030 |
+| AS & A Level | Physics | 9702 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-physics-9702/ | 2025–2027; 2028–2030 |
+| AS & A Level | Computer Science | 9618 | https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-international-as-and-a-level-computer-science-9618/ | 2026; 2027–2029 |
+
+These periods are what the official pages showed when checked; the candidate's examination year determines which syllabus applies. Always revisit the page because future updates can appear.
+
+### Textbook discovery: official endorsed-resource examples
+
+The Cambridge subject pages also identify current or syllabus-linked published resources. Examples include:
+- IGCSE Mathematics 0580: *Cambridge IGCSE Mathematics Core and Extended*, Third Edition (Cambridge University Press, 2023), listed as supporting the syllabus for examination from 2025.
+- AS & A Level Physics 9702: *Cambridge International AS & A Level Physics: Coursebook*, Third Edition (Cambridge University Press, 2020), plus endorsed resources from Hachette Learning and Collins.
+- AS & A Level Chemistry 9701: *Cambridge International AS & A Level Chemistry Coursebook* (Cambridge University Press, 2020).
+- AS & A Level Biology 9700: *Cambridge International AS & A Level Biology Coursebook* (Cambridge University Press, 2020).
+
+These are discovery leads, not free downloads. Record ISBN, edition, publisher, current syllabus support statement and purchase/access route from the individual published-resource page. Use the book as a teaching reference; do not copy or bundle it without permission.
+
 ### Source records required before topic extraction
 
 For each official subject page, record:
