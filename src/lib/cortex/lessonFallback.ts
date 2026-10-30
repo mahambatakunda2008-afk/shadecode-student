@@ -3,6 +3,7 @@ import { PHYSICS_KINEMATICS_STARTER } from "./curatedContent/physics-kinematics"
 import { PHYSICS_ACCELERATED_MOTION_STARTER } from "./curatedContent/physics-accelerated-motion";
 import { PHYSICS_MOMENTUM_STARTER } from "./curatedContent/physics-momentum";
 import { PHYSICS_PRACTICAL_MEASUREMENT_STARTER } from "./curatedContent/physics-practical-measurement";
+import { PHYSICS_PRACTICAL_PLANNING_STARTER } from "./curatedContent/physics-practical-planning";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -391,6 +392,9 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "physics|practical measurement": PHYSICS_PRACTICAL_MEASUREMENT_STARTER,
   "physics|measurement and uncertainty": PHYSICS_PRACTICAL_MEASUREMENT_STARTER,
   "physics|practical skills": PHYSICS_PRACTICAL_MEASUREMENT_STARTER,
+  "physics|experimental planning": PHYSICS_PRACTICAL_PLANNING_STARTER,
+  "physics|planning and evaluation": PHYSICS_PRACTICAL_PLANNING_STARTER,
+  "physics|paper 5": PHYSICS_PRACTICAL_PLANNING_STARTER,
   "mathematics|algebra": PURE_MATHEMATICS_ALGEBRA_STARTER,
   "mathematics|logarithms and exponential functions": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
   "mathematics|logarithms": PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER,
