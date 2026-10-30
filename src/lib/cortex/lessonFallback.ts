@@ -6,6 +6,7 @@ import { PHYSICS_PRACTICAL_MEASUREMENT_STARTER } from "./curatedContent/physics-
 import { PHYSICS_PRACTICAL_PLANNING_STARTER } from "./curatedContent/physics-practical-planning";
 import { CHEMISTRY_PRACTICAL_TITRATION_STARTER } from "./curatedContent/chemistry-practical-titration";
 import { CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER } from "./curatedContent/chemistry-practical-qualitative";
+import { CHEMISTRY_PRACTICAL_PLANNING_STARTER } from "./curatedContent/chemistry-practical-planning";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -396,6 +397,10 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "chemistry|cation tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
   "chemistry|anion tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
   "chemistry|gas tests": CHEMISTRY_PRACTICAL_QUALITATIVE_STARTER,
+  "chemistry|experimental planning": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "chemistry|planning and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "chemistry|paper 5": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
+  "chemistry|planning analysis and evaluation": CHEMISTRY_PRACTICAL_PLANNING_STARTER,
   "physics|kinematics": PHYSICS_KINEMATICS_STARTER,
   "physics|accelerated motion": PHYSICS_ACCELERATED_MOTION_STARTER,
   "physics|momentum": PHYSICS_MOMENTUM_STARTER,
