@@ -19,6 +19,7 @@ import { BIOLOGY_TRANSPORT_IN_PLANTS_STARTER } from "./curatedContent/biology-tr
 import { BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER } from "./curatedContent/biology-transport-in-mammals";
 import { BIOLOGY_GAS_EXCHANGE_STARTER } from "./curatedContent/biology-gas-exchange";
 import { BIOLOGY_INFECTIOUS_DISEASES_STARTER } from "./curatedContent/biology-infectious-diseases";
+import { BIOLOGY_IMMUNITY_STARTER } from "./curatedContent/biology-immunity";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -444,6 +445,13 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|hiv": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
   "biology|antibiotics": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
   "biology|antibiotic resistance": BIOLOGY_INFECTIOUS_DISEASES_STARTER,
+  "biology|immunity": BIOLOGY_IMMUNITY_STARTER,
+  "biology|immune system": BIOLOGY_IMMUNITY_STARTER,
+  "biology|phagocytosis": BIOLOGY_IMMUNITY_STARTER,
+  "biology|antibodies": BIOLOGY_IMMUNITY_STARTER,
+  "biology|monoclonal antibodies": BIOLOGY_IMMUNITY_STARTER,
+  "biology|vaccination": BIOLOGY_IMMUNITY_STARTER,
+  "biology|active and passive immunity": BIOLOGY_IMMUNITY_STARTER,
   "biology|protein synthesis": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|dna replication": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|transcription": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
