@@ -17,6 +17,7 @@ import { BIOLOGY_MITOTIC_CELL_CYCLE_STARTER } from "./curatedContent/biology-mit
 import { BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER } from "./curatedContent/biology-nucleic-acids-protein-synthesis";
 import { BIOLOGY_TRANSPORT_IN_PLANTS_STARTER } from "./curatedContent/biology-transport-in-plants";
 import { BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER } from "./curatedContent/biology-transport-in-mammals";
+import { BIOLOGY_GAS_EXCHANGE_STARTER } from "./curatedContent/biology-gas-exchange";
 import { PURE_MATHEMATICS_ALGEBRA_STARTER } from "./curatedContent/pure-mathematics-algebra";
 import { PURE_MATHEMATICS_LOGS_EXPONENTIALS_STARTER } from "./curatedContent/pure-mathematics-logs-exponentials";
 import { PURE_MATHEMATICS_DIFFERENTIATION_STARTER } from "./curatedContent/pure-mathematics-differentiation";
@@ -429,6 +430,11 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|the heart": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
   "biology|blood vessels": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
   "biology|tissue fluid": BIOLOGY_TRANSPORT_IN_MAMMALS_STARTER,
+  "biology|gas exchange": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|human gas exchange system": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|alveoli": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|trachea and bronchi": BIOLOGY_GAS_EXCHANGE_STARTER,
+  "biology|gas exchange in humans": BIOLOGY_GAS_EXCHANGE_STARTER,
   "biology|protein synthesis": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|dna replication": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
   "biology|transcription": BIOLOGY_NUCLEIC_ACIDS_PROTEIN_SYNTHESIS_STARTER,
