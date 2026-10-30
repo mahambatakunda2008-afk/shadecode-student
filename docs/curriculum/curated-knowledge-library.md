@@ -219,3 +219,13 @@ Added original instruction for solving sine, cosine and tangent equations over a
 ### Physics momentum and impulse starter (draft)
 
 Added an original offline lesson covering signed momentum, impulse as change in momentum, force-time graph area, one-dimensional conservation of momentum, collisions, and why longer stopping time reduces average force. The worked examples state a positive direction and carry signs through the calculation; practice answers are included. Runtime retrieval tests cover the topic and subject isolation. These checks do not replace independent physics review or exact current-syllabus mapping, so the lesson remains a draft.
+
+### Chemistry 9701 practical-skills mapping (pilot stage)
+
+The [9701 practical-skills register](./cambridge-9701-2025-2027-practical-skills.csv) tracks the current Chemistry 9701 (2025–2027) practical pilots against Paper 3 and Paper 5 skill areas. It records which areas have an initial authored lesson, which remain unbuilt, and which still require line-by-line confirmation against the official syllabus. It is deliberately **not** marked as an exhaustive or syllabus-verified practical inventory.
+
+Current authored pilots:
+- **Quantitative analysis/titration:** [chemistry-practical-titration.ts](../../src/lib/cortex/curatedContent/chemistry-practical-titration.ts) covers volumetric apparatus, titre technique, concordance, mole/concentration calculations, uncertainty prompts and common procedural errors.
+- **Qualitative analysis:** [chemistry-practical-qualitative.ts](../../src/lib/cortex/curatedContent/chemistry-practical-qualitative.ts) introduces systematic cation, anion and gas testing, observations versus inferences, confirmatory evidence and safety cautions.
+
+These are original teaching pilots, not copied Cambridge material. The qualitative test coverage is not a replacement for the complete official test table. A lesson, a simulation or a worked dataset does not establish hands-on laboratory competence. Before calling 9701 practical coverage complete, map every applicable official skill and test, review reagent hazards and disposal, check calculations and accepted observations independently, and validate the learning activities against the exact 2025–2027 syllabus. Keep the 2028–2030 syllabus separate.
