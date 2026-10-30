@@ -1,6 +1,6 @@
 # Curriculum resource register
 
-Last researched: 2026-10-29. This is a source register, not a claim that Shadecode Student has completed syllabus mapping or obtained redistribution rights.
+Last researched: 2026-10-30. This is a source register, not a claim that Shadecode Student has completed syllabus mapping or obtained redistribution rights.
 
 ## Authority order
 
