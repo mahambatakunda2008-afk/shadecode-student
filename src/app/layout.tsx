@@ -6,7 +6,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BandwidthProvider } from "@/contexts/BandwidthContext";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
-import { MuiThemeProvider } from "@/theme/MuiThemeProvider";
 import { RouteNavigationGuard } from "@/components/layout/RouteNavigationGuard";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import OfflineShell from "@/components/OfflineShell";
@@ -75,20 +74,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${michroma.variable} antialiased`}>
         <IosStandaloneSafeArea />
         <ThemeContextProvider>
-          <MuiThemeProvider>
-            <BandwidthProvider>
-              <RouteNavigationGuard />
-              {children}
-              <StudentWebMCP />
-              <ServiceWorkerRegistration />
-              <OfflineShell />
-              <PWAInstallPrompt />
-              <InAppSurvey />
-              <TractionBootstrap />
-              <Analytics />
-              <SpeedInsights />
-            </BandwidthProvider>
-          </MuiThemeProvider>
+          <BandwidthProvider>
+            <RouteNavigationGuard />
+            {children}
+            <StudentWebMCP />
+            <ServiceWorkerRegistration />
+            <OfflineShell />
+            <PWAInstallPrompt />
+            <InAppSurvey />
+            <TractionBootstrap />
+            <Analytics />
+            <SpeedInsights />
+          </BandwidthProvider>
         </ThemeContextProvider>
       </body>
     </html>

@@ -371,6 +371,10 @@ h3 { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spaci
   }
 }
 
+/* Text rendering. Previously applied as a side effect of MUI CssBaseline, which was removed (it caused a production hydration
+   error on every page and overrode the design-token body colours). */
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
 /* Installed iOS PWA only (class set by IosStandaloneSafeArea together with viewport-fit=cover).
    Content starts below the status bar, a dark scrim keeps the translucent status bar legible in every theme,
    viewport-height utilities subtract the inset so pages never gain a phantom scrollbar, sticky headers stick
