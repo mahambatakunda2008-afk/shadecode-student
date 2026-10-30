@@ -54,6 +54,60 @@ Each subject entry must state its supported board, level, syllabus year, languag
 7. **Coverage transparency:** a learner/guardian/teacher can see exactly what is covered, what remains incomplete, the syllabus year, and when content was last checked.
 8. **Release gate:** no subject/level is advertised as comprehensive until all official syllabus items are mapped, required assessment modes are represented, answer checks and independent review are complete, and offline behaviour has been tested.
 
+
+### Practical-skills training is a first-class learning mode
+
+**Core product principle:** Shadecode must teach learners how to perform, interpret and communicate subject work, not only how to recall theory or answer written examination questions. Practical-skills training is a required part of curriculum coverage wherever the syllabus assesses experimental, investigative, field, technical, creative, performance, oral, programming or other applied competencies. It is not an optional enrichment feature and must not be reduced to a few theory notes or exam questions.
+
+#### Physics 9702: concrete requirement
+
+For Cambridge AS & A Level Physics 9702 (2025–2027), theory lessons alone are insufficient. The product must prepare learners for both:
+- **Paper 3, Advanced Practical Skills:** hands-on apparatus work, manipulation, measurement and observation, recording results, tables, graph construction, analysis, conclusions and evaluation.
+- **Paper 5, Planning, Analysis and Evaluation:** defining variables, designing a repeatable method, selecting apparatus, explaining controls and safety, planning data collection, analysing data, estimating uncertainty, drawing conclusions and evaluating limitations/improvements.
+
+The syllabus recommends that at least 20% of course time is spent on practical work. Shadecode's progress model should therefore track practical competence and practice activity separately from theory-topic completion. A learner must not be shown as fully prepared for 9702 because they completed all theory lessons or a bank of multiple-choice questions.
+
+#### Required learning experiences
+
+For every practical or applied skill required by a syllabus, design an appropriate combination of the following. The exact mix must follow the subject and assessment mode; do not force a laboratory template onto non-laboratory subjects.
+
+1. **Demonstration and orientation:** identify apparatus, tools, materials, software or field methods; explain purpose, safe handling, setup and limitations.
+2. **Guided practice:** provide sequenced tasks in which the learner makes decisions and performs steps, rather than only reading a description of a procedure.
+3. **Independent investigation:** give a question or objective, require a method, variables, observations/data, analysis and a justified conclusion.
+4. **Data and evidence handling:** support structured observations, tables, units, significant figures, graphs, diagrams, calculations, uncertainty and evidence-based interpretation where relevant.
+5. **Feedback on method as well as result:** assess setup, choice of method, control of variables, precision, repeatability, safety, reasoning and communication, not only the final numerical answer.
+6. **Reflection and improvement:** ask learners to identify limitations, explain sources of error, propose realistic improvements and justify how those changes improve evidence quality.
+7. **Assessment rehearsal:** provide original tasks that reflect the relevant practical, coursework, fieldwork, oral, performance or project assessment objectives and mark criteria without copying protected examination material.
+
+#### Access modes: real equipment, low-cost alternatives and simulation
+
+- **Real practical work is preferred where the syllabus requires hands-on competence.** A simulation or video must never be presented as equivalent to physically manipulating apparatus when the assessment expects the learner to do so.
+- **Low-cost/local-material pathways** may help learners practise safely where school laboratories are limited. Each activity must identify required materials, substitutions, hazards, supervision needs and what competency it can and cannot demonstrate. Never recommend unsafe home experiments or mains-electricity work.
+- **Interactive simulations and virtual labs** can teach setup decisions, variable control, prediction, data interpretation and repeatable experimentation, especially before or after a real practical. Label these as simulated practice and record them separately from completed physical practical work.
+- **Offline support** should include downloadable instructions, blank results tables, graph paper/templates, apparatus diagrams, datasets for analysis practice and locally runnable simulations where feasible. Sync records and content updates when connectivity returns; core practice should not depend on a live AI call.
+- **Teacher/school support** should allow practical activities to be assigned, observed or signed off where direct evidence is needed. A learner's self-reported completion must not be confused with teacher-verified practical performance.
+
+#### Product and data requirements
+
+Practical training must be represented in the content model and learner experience, not hidden inside prose. Each practical/applied activity should carry, as applicable:
+- board, qualification, level, subject, syllabus code and examination-year version;
+- topic/subtopic and assessment component/objective;
+- competency and observable success criteria;
+- activity mode: physical, low-cost physical, simulated, data-analysis or teacher-observed;
+- prerequisites, apparatus/materials, setup, procedure and safety/supervision notes;
+- variables, expected observations, data schema, units and recording template;
+- graph/diagram/calculation requirements and analysis prompts;
+- conclusion, uncertainty, evaluation and improvement prompts;
+- feedback/marking rubric, accepted alternatives and common errors;
+- evidence state: assigned, attempted, self-reported complete, teacher-observed, checked or verified;
+- offline availability, content version, provenance and review history.
+
+Track at least three distinct progress dimensions: **theory understanding**, **practical/applied skill**, and **assessment readiness**. Do not collapse them into one completion percentage. For Physics, record Paper 3 and Paper 5 readiness separately. For other subjects, derive the applied-skill categories from the actual syllabus rather than assuming they have Physics-style practical papers.
+
+#### Release and quality gates
+
+A subject-level-syllabus version cannot be labelled comprehensive until its practical/applied requirements have been inventoried and each requirement has an appropriate learning experience, assessment rehearsal, feedback method and evidence status. For 9702, verify the Paper 3 and Paper 5 skill map independently against the complete official syllabus before marking the practical component covered. Automated tests may validate calculations, content structure and offline behavior, but they do not replace a qualified subject teacher's review of procedures, safety, assessment alignment and practical rubrics.
+
 ### Content provenance and resource rights
 
 Use current official ZIMSEC and Cambridge syllabuses and assessment documentation as the mapping authority, recording document title, version/year, URL or source reference, and date checked. Use supplied books to guide teaching sequence and explanations, but create original explanations, examples and exam-style questions. Include past papers, mark schemes, diagrams or textbook-derived material in an offline pack only when the licence, copyright exception or permission permits the intended distribution. Do not scrape and redistribute copyrighted books or papers wholesale. Where redistribution is not permitted, provide lawful source links and let users import files they are entitled to use.
