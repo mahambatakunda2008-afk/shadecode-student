@@ -36,6 +36,7 @@ const FALLBACK_EXCLUSIONS: Record<string, RegExp> = {
   "biology|respiration": /\\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\\b/,
   "biology|aerobic respiration": /\\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\\b/,
   "biology|anaerobic respiration": /\\b(photosynthesis|photosynthetic|calvin cycle|chloroplast)\\b/,
+  "biology|gibberellin": /\\bstem elongation\\b/,
 };
 
 type FallbackLesson = { title: string; blocks: LessonQualityBlock[] };
