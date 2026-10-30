@@ -267,3 +267,12 @@ Test: src/lib/cortex/curatedContent/biology-cell-structure.test.ts
 Runtime fallback aliases: cell structure, cells, prokaryotic and eukaryotic cells, and organelles.
 
 The starter introduces prokaryotic and eukaryotic cells; organelle structure and function; plant, animal and bacterial cell comparisons; cell specialisation and differentiation; microscopy magnification and resolution; and original worked calculations and practice. This is a first Topic 1 teaching pilot, not complete Biology 9700 topic coverage. Full topic/subtopic mapping, assessment mapping, diagrams, independent review and offline content packaging remain outstanding.
+
+
+### Biology 9700 theory pilot: biological molecules
+
+Original module: src/lib/cortex/curatedContent/biology-biological-molecules.ts
+Test: src/lib/cortex/curatedContent/biology-biological-molecules.test.ts
+Runtime fallback aliases: biological molecules, carbohydrates, lipids, proteins and water.
+
+The module covers water properties, condensation and hydrolysis, monosaccharides, disaccharides and polysaccharides, triglycerides, saturated and unsaturated fatty acids, phospholipids, amino acids and protein structure, biological molecule food tests, original worked comparisons and practice. It is a Topic 2 starter, not a complete topic/subtopic inventory. Full syllabus mapping, independently checked detail, visual teaching assets, review and offline content packaging remain outstanding.
