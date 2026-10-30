@@ -25,7 +25,7 @@ describe("Chemistry practical titration starter", () => {
     const text = CHEMISTRY_PRACTICAL_TITRATION_STARTER.blocks.map((block) => block.content).join(" ");
     expect(text).toContain("0.002480 mol");
     expect(text).toContain("0.09920 mol dm⁻³");
-    expect(text).toContain("Do not assume a 1:1 ratio");
+    expect(text).toContain("Never assume a 1:1 ratio");
   });
 
   it("is reachable through Cambridge 9701 offline fallback aliases", () => {
