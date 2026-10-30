@@ -1,5 +1,7 @@
 # Shadecode Student curated knowledge library
 
+**Structured subject discovery register:** [subject-discovery-register.csv](./subject-discovery-register.csv) records catalogue evidence separately from syllabus verification. It includes 62 discovery records across Cambridge Lower Secondary, IGCSE, O Level and AS & A Level, plus ZIMSEC O Level/A Level historical-code leads. Historical evidence is explicitly not current-syllabus verification; every entry must be resolved to the applicable official syllabus before topic coverage is claimed.
+
 **Programme-wide source and coverage tracking:** use [the curriculum resource register](./resource-register.md) for official ZIMSEC/Cambridge sources, supplementary OER and rights checks, and [the coverage ledger template](./coverage-ledger-template.csv) to track every syllabus topic at topic/subtopic level. The template contains discovery seeds only; blank topic rows mean the official syllabus has not yet been fully inventoried. Do not report those entries as mapped or verified.
 
 
