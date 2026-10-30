@@ -484,6 +484,7 @@ const BOOK_INFORMED_PILOTS: Record<string, FallbackLesson> = {
   "biology|albinism": BIOLOGY_INHERITANCE_STARTER,
   "biology|huntington disease": BIOLOGY_INHERITANCE_STARTER,
   "biology|gibberellin stem elongation": BIOLOGY_INHERITANCE_STARTER,
+  "biology|della protein": BIOLOGY_INHERITANCE_STARTER,
   "biology|control and coordination": BIOLOGY_CONTROL_COORDINATION_STARTER,
   "biology|nervous system": BIOLOGY_CONTROL_COORDINATION_STARTER,
   "biology|endocrine system": BIOLOGY_CONTROL_COORDINATION_STARTER,
