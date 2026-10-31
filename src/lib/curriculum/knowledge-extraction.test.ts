@@ -87,7 +87,7 @@ LEARNING OUTCOMES
       profile,
     );
 
-    expect(items.some((item) => item.kind === "topic" && /inheritance/i.test(item.content))).toBe(true);
+    expect(items.some((item) => item.kind === "topic" && /inheritance/i.test(item.title))).toBe(true);
     expect(items.filter((item) => item.kind === "objective").map((item) => item.code)).toEqual([
       "16.1.1", "16.1.2", "16.2.1", "17.1.1",
     ]);
