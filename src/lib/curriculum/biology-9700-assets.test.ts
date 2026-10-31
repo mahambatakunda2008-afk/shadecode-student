@@ -131,7 +131,7 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     ]) {
       expect(pack).toContain(heading);
     }
-    expect(pack).toContain("19 / 1000 × 100 = **19%**");
+    expect(pack).toContain("190 / 1000 × 100 = **19%**");
     expect(pack).toContain("percentage increase = 14 / 4 × 100 = **350%**");
     expect(pack).toContain("all offspring Pp and purple");
     expect(pack).toContain("Original practice questions");
