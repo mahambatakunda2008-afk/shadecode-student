@@ -11,7 +11,14 @@
     "syllabus_version": "2025-2027",
     "expected_topic_key": "16",
     "status": "draft",
-    "source_reference": "Cambridge International AS & A Level Biology 9700 (2025–2027), Topic 16.3 Gene control, syllabus p. 42, learning outcomes 1–4. https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf"
+    "source_reference": "Cambridge International AS & A Level Biology 9700 (2025–2027), Topic 16.3 Gene control, syllabus p. 42, learning outcomes 1–4. https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "16.3.1",
+      "16.3.2",
+      "16.3.3",
+      "16.3.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
   },
   "review_status": "draft",
   "quality_checks": {
@@ -20,7 +27,8 @@
     "assessment_checked": false,
     "accessibility_checked": false,
     "review_notes": [
-      "Draft covers all four Topic 16.3 outcomes. Lac operon diagram is an original vector schematic. Requires subject-editor review and objective-key reconciliation before import or publication."
+      "Draft covers all four Topic 16.3 outcomes. Lac operon diagram is an original vector schematic. Requires subject-editor review and objective-key reconciliation before import or publication.",
+      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved."
     ]
   },
   "content": {
