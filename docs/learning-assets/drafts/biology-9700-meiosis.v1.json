@@ -20,7 +20,8 @@
     "assessment_checked": false,
     "accessibility_checked": false,
     "review_notes": [
-      "Draft aligned to all seven Topic 16.1 outcomes. Original vector diagrams are included in public/learning-assets/biology/9700/inheritance/. Requires subject-editor review and objective-key reconciliation before import."
+      "Draft aligned to all seven Topic 16.1 outcomes. Original vector diagrams are included in public/learning-assets/biology/9700/inheritance/. Requires subject-editor review and objective-key reconciliation before import.",
+      "Expanded cytokinesis coverage to distinguish cleavage furrow formation in animal cells from cell-plate formation in plant cells, alongside spindle behaviour."
     ]
   },
   "content": {
@@ -52,11 +53,11 @@
       },
       {
         "heading": "Meiosis I: separating homologous chromosomes",
-        "body": "Prophase I: chromosomes condense; homologous chromosomes pair; crossing over may occur between non-sister chromatids; the nuclear envelope breaks down and spindle microtubules form. Metaphase I: homologous pairs align at the equator in random orientations and attach to spindle fibres. Anaphase I: homologous chromosomes move to opposite poles; centromeres do not divide and sister chromatids remain joined. Telophase I: chromosomes reach the poles; nuclei may reform and cytokinesis divides the cell. The result is two haploid cells, although each chromosome still consists of two chromatids. Meiosis I is the reduction division."
+        "body": "Prophase I: chromosomes condense; homologous chromosomes pair; crossing over may occur between non-sister chromatids; the nuclear envelope breaks down and spindle microtubules form. Metaphase I: homologous pairs align at the equator in random orientations and attach to spindle fibres. Anaphase I: homologous chromosomes move to opposite poles; centromeres do not divide and sister chromatids remain joined. Telophase I: chromosomes reach the poles; nuclei may reform and cytokinesis divides the cell. The result is two haploid cells, although each chromosome still consists of two chromatids. Meiosis I is the reduction division. The cell surface membrane also divides during cytokinesis: in animal cells it constricts to form a cleavage furrow, while in plant cells vesicles fuse at the equator to form a cell plate that develops into a new separating wall. Spindle fibres attach to chromosome centromere regions and shorten to move chromosomes towards the poles."
       },
       {
         "heading": "Meiosis II: separating sister chromatids",
-        "body": "There is no DNA replication between the two divisions. Prophase II: chromosomes condense again if necessary, nuclear envelopes break down and new spindles form. Metaphase II: chromosomes align singly at the equator. Anaphase II: centromeres divide and sister chromatids separate to opposite poles. Telophase II: nuclear envelopes reform and cytokinesis produces four haploid cells. The products are genetically different because crossing over and independent assortment have generated different combinations of alleles."
+        "body": "There is no DNA replication between the two divisions. Prophase II: chromosomes condense again if necessary, nuclear envelopes break down and new spindles form. Metaphase II: chromosomes align singly at the equator. Anaphase II: centromeres divide and sister chromatids separate to opposite poles. Telophase II: nuclear envelopes reform and cytokinesis produces four haploid cells. The products are genetically different because crossing over and independent assortment have generated different combinations of alleles. Cytokinesis again divides the cell surface membrane; animal cells form a cleavage furrow, while plant cells form a cell plate. The final products are four haploid cells."
       },
       {
         "heading": "Crossing over",
