@@ -21,7 +21,8 @@
     "accessibility_checked": false,
     "review_notes": [
       "Authored as a draft from the official 2025-2027 syllabus Topic 16. Exact objective UUIDs and version linkage must be reconciled against active curriculum records before import or publication.",
-      "Original vector teaching diagrams added for monohybrid crosses, X-linked inheritance and pedigree notation. All assets remain draft and require editorial review."
+      "Original vector teaching diagrams added for monohybrid crosses, X-linked inheritance and pedigree notation. All assets remain draft and require editorial review.",
+      "Added ABO codominance and dihybrid cross diagrams with alt text and explicit assumptions for the 9:3:3:1 ratio."
     ]
   },
   "content": {
@@ -200,6 +201,29 @@
         ]
       },
       {
+        "type": "punnett_square",
+        "image": "/learning-assets/biology/9700/inheritance/abo-codominance-cross.svg",
+        "alt": "ABO cross Iᴬi by Iᴮi showing four blood group phenotypes.",
+        "instruction": "Explain why the heterozygote IᴬIᴮ expresses blood group AB, and why each of the four offspring phenotypes has a 25% probability.",
+        "expected_features": [
+          "Iᴬ and Iᴮ both expressed",
+          "i is recessive to both",
+          "Four genotypes and phenotypes matched correctly"
+        ]
+      },
+      {
+        "type": "punnett_square",
+        "image": "/learning-assets/biology/9700/inheritance/dihybrid-independent-assortment.svg",
+        "alt": "Four-by-four Punnett square for AaBb by AaBb.",
+        "instruction": "Use the gamete labels to explain the 9:3:3:1 ratio. State all assumptions required for this ratio to apply.",
+        "expected_features": [
+          "Four gamete types from each parent",
+          "Correct genotype combinations",
+          "Complete dominance at both loci",
+          "Independent assortment; no linkage or epistasis"
+        ]
+      },
+      {
         "type": "genetic_diagram",
         "image": "/learning-assets/biology/9700/inheritance/x-linked-haemophilia-cross.svg",
         "alt": "X-linked recessive cross between a carrier female and an unaffected male.",
@@ -274,6 +298,16 @@
         "path": "/learning-assets/biology/9700/inheritance/pedigree-symbols.svg",
         "caption": "Standard pedigree symbols and a simple family diagram.",
         "alt": "Square, circle, filled symbols and family relationship lines."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/abo-codominance-cross.svg",
+        "caption": "ABO blood group cross illustrating codominance and multiple alleles.",
+        "alt": "Iᴬi by Iᴮi cross producing AB, A, B and O offspring."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/dihybrid-independent-assortment.svg",
+        "caption": "A dihybrid Punnett square under independent assortment assumptions.",
+        "alt": "A four-by-four AaBb cross illustrating the conditional 9:3:3:1 ratio."
       }
     ],
     "sources": [
