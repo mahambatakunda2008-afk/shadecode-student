@@ -117,6 +117,19 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
   });
 
 
+  it("connects the meiosis-II branch to all four haploid products", () => {
+    const diagram = readFileSync(
+      join(process.cwd(), "public/learning-assets/biology/9700/inheritance/meiosis-overview.svg"),
+      "utf8",
+    );
+
+    expect(diagram).toContain(
+      'M600 535 V590 M210 590 H990 M210 590 V617 M470 590 V617 M730 590 V617 M990 590 V617',
+    );
+    expect(diagram.match(/<circle cx="(?:210|470|730|990)" cy="665" r="48"/g)).toHaveLength(4);
+  });
+
+
   it("keeps the original Topic 16 structured assessment pack review-gated and numerically traceable", () => {
     const pack = readFileSync(
       join(process.cwd(), "docs/learning-assets/drafts/biology-9700-topic-16-assessment-pack.v1.md"),
