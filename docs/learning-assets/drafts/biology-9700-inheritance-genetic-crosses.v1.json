@@ -33,7 +33,8 @@
       "Authored as a draft from the official 2025-2027 syllabus Topic 16. Exact objective UUIDs and version linkage must be reconciled against active curriculum records before import or publication.",
       "Original vector teaching diagrams added for monohybrid crosses, X-linked inheritance and pedigree notation. All assets remain draft and require editorial review.",
       "Added ABO codominance and dihybrid cross diagrams with alt text and explicit assumptions for the 9:3:3:1 ratio.",
-      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved."
+      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
+      "Expanded assessment with linked-gene recombination frequency, a stated epistasis model and chi-squared decision-making; added gene-to-protein visual interpretation task. These are original teaching exercises, not past-paper reproductions."
     ]
   },
   "content": {
@@ -196,6 +197,38 @@
           "Not independent assortment",
           "Crossing over can produce recombinants"
         ]
+      },
+      {
+        "question": "A test cross of an individual heterozygous for two linked genes produces 412 AB, 398 ab, 96 Ab and 94 aB offspring. Identify the parental and recombinant classes, then calculate the recombination frequency.",
+        "answer": "The parental classes are AB and ab because they are most frequent. Recombinant classes are Ab and aB. Recombination frequency = (96 + 94) / (412 + 398 + 96 + 94) × 100 = 19%.",
+        "mark_points": [
+          "Largest two classes identified as parental",
+          "Smallest two classes identified as recombinant",
+          "Recombinant total = 190",
+          "Total offspring = 1000",
+          "Recombination frequency = 19%"
+        ]
+      },
+      {
+        "question": "In a plant, pigment production requires a functional enzyme coded by gene P. A second gene, C, is required to activate the pigment pathway. Plants with cc are white regardless of their P genotype. Explain why this is epistasis and predict the phenotype of PpCc × PpCc offspring if both genes assort independently.",
+        "answer": "The cc genotype masks the effect of the P gene, so gene C is epistatic to P. In a PpCc × PpCc cross, 9/16 are P_C_ and coloured, 3/16 are ppC_ and unpigmented, and 4/16 are __cc and white. The ratio is 9 coloured : 3 unpigmented : 4 white.",
+        "mark_points": [
+          "cc masks expression at P locus",
+          "Interaction between two different gene loci",
+          "Correct genotype classes",
+          "9:3:4 ratio derived from the stated model"
+        ]
+      },
+      {
+        "question": "A chi-squared test gives a calculated value of 2.4 with 1 degree of freedom. The critical value at p = 0.05 is 3.84. State the statistical decision and interpret it in context.",
+        "answer": "2.4 is less than 3.84, so the result is not significant at p = 0.05. Do not reject the null hypothesis; the difference between observed and expected values could reasonably be due to chance. This does not prove the genetic model is true.",
+        "mark_points": [
+          "Compare 2.4 with 3.84",
+          "Calculated value is lower",
+          "Do not reject null hypothesis",
+          "Difference is not statistically significant at p = 0.05",
+          "Does not prove the hypothesis"
+        ]
       }
     ],
     "visual_tasks": [
@@ -267,6 +300,18 @@
           "Observed and expected values distinguished",
           "Axes labelled clearly"
         ]
+      },
+      {
+        "type": "gene_to_phenotype",
+        "image": "/learning-assets/biology/9700/inheritance/gene-protein-phenotype.svg",
+        "alt": "Gene to protein to phenotype flow diagram with four named syllabus examples.",
+        "instruction": "For each example, explain the chain from gene to protein to cellular or organism-level effect. Distinguish a change in protein structure from a change in the amount of functional protein.",
+        "expected_features": [
+          "TYR and tyrosinase linked to melanin production",
+          "HBB and beta-globin linked to haemoglobin properties",
+          "F8 and factor VIII linked to blood clotting",
+          "HTT and huntingtin linked to progressive neurological effects"
+        ]
       }
     ],
     "common_mistakes": [
@@ -319,6 +364,11 @@
         "path": "/learning-assets/biology/9700/inheritance/dihybrid-independent-assortment.svg",
         "caption": "A dihybrid Punnett square under independent assortment assumptions.",
         "alt": "A four-by-four AaBb cross illustrating the conditional 9:3:3:1 ratio."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/gene-protein-phenotype.svg",
+        "caption": "Syllabus examples linking gene alleles to protein products and phenotype.",
+        "alt": "Flow diagram connecting TYR, HBB, F8 and HTT gene variants with their protein products and associated phenotypes."
       }
     ],
     "sources": [
