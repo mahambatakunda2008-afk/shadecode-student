@@ -33,7 +33,8 @@
       "Draft aligned to all seven Topic 16.1 outcomes. Original vector diagrams are included in public/learning-assets/biology/9700/inheritance/. Requires subject-editor review and objective-key reconciliation before import.",
       "Expanded cytokinesis coverage to distinguish cleavage furrow formation in animal cells from cell-plate formation in plant cells, alongside spindle behaviour.",
       "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
-      "Added an original four-stage recognition schematic with a structured interpretation task. It is a schematic learning aid and does not replace practice interpreting authentic photomicrographs."
+      "Added an original four-stage recognition schematic with a structured interpretation task. It is a schematic learning aid and does not replace practice interpreting authentic photomicrographs.",
+      "Added an 8-mark original stage-identification and chromosome-count question with point-by-point marking guidance."
     ]
   },
   "content": {
@@ -174,6 +175,20 @@
           "Gametes are genetically different",
           "Fusion is random",
           "New allele combination in zygote"
+        ]
+      },
+      {
+        "question": "Study the four cells A–D in the stage-recognition figure. (a) Identify the stage shown in each cell. (4) (b) For B and D, state which chromosome structures are separating. (2) (c) Explain why the chromosome number per cell is haploid at C even though each chromosome still contains two chromatids. (2)",
+        "answer": "A: metaphase I; B: anaphase I; C: metaphase II; D: anaphase II. In B, homologous chromosomes separate while sister chromatids remain joined. In D, centromeres divide and sister chromatids separate. At C, homologous pairs have already been separated in meiosis I, so each cell has one chromosome from each pair; each chromosome is still replicated, but two chromatids joined at one centromere count as one chromosome.",
+        "mark_points": [
+          "A metaphase I",
+          "B anaphase I",
+          "C metaphase II",
+          "D anaphase II",
+          "B: homologous chromosomes separate; centromeres do not divide",
+          "D: centromeres divide; sister chromatids separate",
+          "Haploid means one chromosome set after homologues separate",
+          "Two sister chromatids joined at one centromere count as one chromosome"
         ]
       }
     ],
