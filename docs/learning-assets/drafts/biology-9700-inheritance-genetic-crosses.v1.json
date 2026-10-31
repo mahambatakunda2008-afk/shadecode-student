@@ -35,7 +35,8 @@
       "Added ABO codominance and dihybrid cross diagrams with alt text and explicit assumptions for the 9:3:3:1 ratio.",
       "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
       "Expanded assessment with linked-gene recombination frequency, a stated epistasis model and chi-squared decision-making; added gene-to-protein visual interpretation task. These are original teaching exercises, not past-paper reproductions.",
-      "Added original pedigree-evidence evaluation, a complete test-cross genetic diagram question and a probability-versus-observed-data response. These remain draft assessment items pending subject review."
+      "Added original pedigree-evidence evaluation, a complete test-cross genetic diagram question and a probability-versus-observed-data response. These remain draft assessment items pending subject review.",
+      "Added a structured test-cross investigation question covering experimental design, sample size, replication and cautious inference, plus an incomplete genetic-diagram task requiring both possible parental genotypes."
     ]
   },
   "content": {
@@ -261,6 +262,31 @@
           "Recognises probability rather than certainty",
           "Explains random sampling variation"
         ]
+      },
+      {
+        "question": "A breeder wants to determine whether a purple-flowered plant with an unknown genotype is homozygous or heterozygous. Purple (P) is dominant to white (p). (a) State the cross the breeder should perform. (2) (b) Give the predicted offspring for each possible genotype of the purple-flowered plant. (4) (c) Explain why a large number of offspring and repeated crosses improve the strength of the conclusion. (2)",
+        "answer": "Cross the unknown purple plant with a homozygous recessive white plant (pp). If the unknown plant is PP, all offspring are Pp and purple. If it is Pp, the expected offspring are 1 Pp purple : 1 pp white. A larger sample reduces the effect of chance variation, and repeats help show that the result is reproducible. A small sample with no white offspring does not prove the parent is PP.",
+        "mark_points": [
+          "Test cross with pp",
+          "PP × pp stated",
+          "All offspring purple if PP",
+          "Pp × pp stated",
+          "Expected 1:1 purple:white if Pp",
+          "Large sample reduces sampling effects",
+          "Repeats assess reproducibility",
+          "Does not overclaim certainty from a small sample"
+        ]
+      },
+      {
+        "question": "A student investigates whether two genes are linked by test-crossing a double heterozygote. The offspring are classified into four phenotype groups. State how the student can identify parental and recombinant classes, calculate recombination frequency, and explain one reason why the observed frequency may not equal the theoretical value exactly.",
+        "answer": "The two most frequent classes are usually the parental combinations and the less frequent classes are recombinants. Recombination frequency = (number of recombinant offspring / total offspring) × 100. The observed value may vary because of random sampling. The student should use a sufficiently large sample and repeat the cross where possible.",
+        "mark_points": [
+          "Largest classes identified as parental",
+          "Less frequent classes identified as recombinant",
+          "Correct recombination frequency formula",
+          "Random sampling variation",
+          "Large sample and/or repeats suggested"
+        ]
       }
     ],
     "visual_tasks": [
@@ -343,6 +369,18 @@
           "HBB and beta-globin linked to haemoglobin properties",
           "F8 and factor VIII linked to blood clotting",
           "HTT and huntingtin linked to progressive neurological effects"
+        ]
+      },
+      {
+        "type": "incomplete_genetic_diagram",
+        "instruction": "Complete a test-cross diagram for an unknown purple-flowered plant (P_) crossed with a white-flowered plant (pp). Show both possible genotypes of the unknown parent, the gametes, offspring genotypes and phenotype ratios. Then annotate which outcome supports heterozygosity.",
+        "expected_features": [
+          "Unknown parent considered as PP or Pp",
+          "Tester genotype pp",
+          "Gametes correctly derived",
+          "PP × pp gives all purple Pp offspring",
+          "Pp × pp gives 1 purple : 1 white",
+          "White offspring demonstrate that the unknown parent carries p"
         ]
       }
     ],
