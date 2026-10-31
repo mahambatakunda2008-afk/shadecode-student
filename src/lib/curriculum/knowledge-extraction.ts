@@ -258,7 +258,10 @@ export function extractCurriculumKnowledge(
 
   const seen = new Set<string>();
   return [...sectionItems, ...objectives, ...assessments, ...papers].filter((item) => {
-    const key = `${item.kind}:${item.code ?? ""}:${item.content.toLowerCase().replace(/\s+/g, " ")}`;
+    // Empty topic sections are valid syllabus structure. Include their heading in
+    // the deduplication key so distinct empty topics do not collapse into one.
+    const dedupeValue = item.kind === "topic" ? item.title : item.content;
+    const key = `${item.kind}:${item.code ?? ""}:${dedupeValue.toLowerCase().replace(/\s+/g, " ")}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
