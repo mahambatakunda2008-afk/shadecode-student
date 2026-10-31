@@ -56,6 +56,24 @@ function headingInfo(line: string): HeadingInfo | null {
 }
 
 function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingInfo | null {
+  // Topic headings in official syllabuses are commonly prefixed with a topic
+  // number (for example, "16 Inheritance"). Resolve these against the
+  // profile's explicit topic list before applying the generic heading parser.
+  const cleaned = line.replace(/^#+\s*/, "").trim();
+  const topicTitle = cleaned.replace(/^\d+(?:\.\d+)*[.)]?\s+/, "");
+  const normalizedTopic = normalizeHeading(topicTitle);
+  const topicMatch = (profile.topicHeadings ?? [])
+    .map(normalizeHeading)
+    .includes(normalizedTopic);
+  if (topicMatch) {
+    const number = cleaned.match(/^(\d+(?:\.\d+)*)[.)]?\s+/)?.[1];
+    return {
+      normalized: normalizedTopic,
+      level: number ? number.split(".").length : 1,
+      raw: cleaned,
+    };
+  }
+
   const info = headingInfo(line);
   if (!info) return null;
   const allowed = new Set([
@@ -105,11 +123,14 @@ function extractSectionBlocks(
   const flush = (endLine: number) => {
     if (!currentHeading) return;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
-    if (!content) return;
     const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
-    if (!kind) return;
+    if (!kind || (!content && kind !== "topic")) return;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
-    const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
+    const chunks = content
+      ? content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean)
+      : kind === "topic"
+        ? [""]
+        : [];
     chunks.forEach((chunk, index) => {
       const headingTitle = currentHeading!.raw;
       const item = makeItem(kind, headingTitle, chunk.trim(), identity, {

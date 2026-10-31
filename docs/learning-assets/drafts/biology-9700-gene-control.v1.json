@@ -1,0 +1,332 @@
+{
+  "asset_key": "biology-9700-gene-control-lac-operon-transcription-factors",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Gene control: lac operon, transcription factors and gibberellin",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2025-2027",
+    "expected_topic_key": "16",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 (2025–2027), Topic 16.3 Gene control, syllabus p. 42, learning outcomes 1–4. https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "16.3.1",
+      "16.3.2",
+      "16.3.3",
+      "16.3.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft covers all four Topic 16.3 outcomes. Lac operon diagram is an original vector schematic. Requires subject-editor review and objective-key reconciliation before import or publication.",
+      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
+      "Expanded Topic 16.3 assessment with operator and repressor mutation analysis, eukaryotic transcription-factor mutation, quantitative gibberellin/DELLA data interpretation, and a comparative causal-chain response. Questions are original draft exercises and require independent subject review.",
+      "Added an experimental-reasoning section and a data-analysis visual task that distinguish measured growth from inferred molecular mechanism; includes percentage-change calculation and limits of inference."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Distinguish structural genes from regulatory genes.",
+      "Distinguish repressible enzymes from inducible enzymes.",
+      "Explain control of protein production in a prokaryote using the lac operon, without requiring cAMP.",
+      "Explain how transcription factors regulate gene expression in eukaryotes by increasing or decreasing transcription rate.",
+      "Explain how gibberellin activates genes by causing DELLA protein repressors to be broken down."
+    ],
+    "sections": [
+      {
+        "heading": "Why cells control gene expression",
+        "body": "A cell does not need every gene to be active at all times. Gene control allows proteins to be made when and where they are needed. In bacteria, the lac operon provides a clear example of transcriptional control. In eukaryotes, transcription factors can increase or decrease the rate at which particular genes are transcribed."
+      },
+      {
+        "heading": "Structural genes and regulatory genes",
+        "body": "A structural gene codes for a polypeptide or functional RNA that has a role in the cell. A regulatory gene codes for a product, commonly a protein, that controls the expression of other genes. In the lac operon, the lac structural genes code for proteins involved in lactose metabolism; a separate regulatory gene lacI codes for the repressor protein. Do not confuse a regulatory gene with the operator, which is a DNA control sequence."
+      },
+      {
+        "heading": "Repressible and inducible enzymes",
+        "body": "A repressible enzyme system is usually active until a corepressor or end product enables repression. The end product can bind to a repressor and make it able to bind DNA, switching transcription off. An inducible enzyme system is usually off until an inducer prevents repression, allowing transcription to occur. The lac operon is inducible: lactose-derived allolactose binds to the repressor and prevents it from blocking the operator."
+      },
+      {
+        "heading": "The lac operon: components",
+        "body": "The lac operon is a bacterial gene-control system. The lacI regulatory gene is transcribed to produce a repressor protein. The promoter is a DNA sequence where RNA polymerase binds to begin transcription. The operator is a DNA sequence where the repressor can bind. The structural genes lacZ, lacY and lacA are transcribed together as a polycistronic mRNA and code for proteins involved in lactose use. The syllabus does not require the role of cAMP."
+      },
+      {
+        "heading": "The lac operon without lactose",
+        "body": "When lactose is absent, the repressor is active and binds to the operator. This prevents RNA polymerase from transcribing the structural genes effectively. The enzymes needed for lactose metabolism are not produced at a high rate because the substrate is absent. Be precise: the repressor binds the operator, not the promoter."
+      },
+      {
+        "heading": "The lac operon when lactose is present",
+        "body": "Some lactose is converted to allolactose, which acts as the inducer. Allolactose binds to the repressor and changes its shape. The repressor can no longer bind to the operator. RNA polymerase can transcribe lacZ, lacY and lacA, and the corresponding proteins are produced. These proteins allow the bacterium to take up and metabolise lactose. The syllabus explanation can stop here; cAMP is not required."
+      },
+      {
+        "heading": "Transcription factors in eukaryotes",
+        "body": "Transcription factors are proteins that bind to specific DNA sequences and are involved in controlling gene expression. They can increase or decrease the rate of transcription by affecting the ability of RNA polymerase and associated proteins to initiate transcription. Different cells can express different sets of genes because they contain different active transcription factors, even though most cells of an organism contain the same genome."
+      },
+      {
+        "heading": "Gibberellin and DELLA protein repressors",
+        "body": "DELLA proteins act as repressors by inhibiting transcription factors that promote transcription. When gibberellin is perceived by the cell, signalling leads to DELLA proteins being targeted for breakdown. The transcription factors are released from inhibition and can promote transcription of target genes. This activates gene expression and contributes to growth and developmental responses. The key causal sequence is gibberellin signal → DELLA breakdown → transcription factors released → increased transcription of target genes."
+      },
+      {
+        "heading": "Compare the three control situations",
+        "body": "In the lac operon, an inducer binds a repressor so that it can no longer bind the operator. In a repressible system, an end product can enable a repressor to bind DNA and switch transcription off. In the gibberellin pathway, a hormone signal promotes the breakdown of DELLA repressors, releasing transcription factors. These are different molecular mechanisms; do not describe gibberellin as binding directly to the lac operator or claim that DELLA is a bacterial repressor."
+      },
+      {
+        "heading": "Exam technique: causal chains",
+        "body": "For the lac operon, state what happens to the repressor, whether it binds the operator, whether RNA polymerase can transcribe the structural genes and what proteins are produced. For transcription factors, state that they are proteins that bind DNA and increase or decrease transcription rate. For gibberellin, include DELLA breakdown and release of transcription factors. A vague statement such as 'the gene switches on' is not enough for a full explanation."
+      },
+      {
+        "heading": "Experimental reasoning: connect molecular mechanism to measured phenotype",
+        "body": "An experiment may measure a whole-organism response, such as stem elongation, while the proposed mechanism acts at the molecular level. Keep observation separate from explanation. First compare the measured values and identify the direction and size of the effect. Then use the proposed pathway to explain the pattern: if DELLA breakdown is prevented, DELLA repression may persist and transcription factors may remain inhibited. A growth measurement alone does not directly show DELLA concentration, transcription-factor activity or target-gene transcription. Strong evidence uses appropriate controls, repeats, sufficient sample size and direct measurements of the proposed molecular steps."
+      }
+    ],
+    "worked_examples": [
+      {
+        "prompt": "Explain why lac structural genes are transcribed when lactose is available.",
+        "steps": [
+          "Lactose is converted to allolactose, which acts as an inducer.",
+          "Allolactose binds to the repressor and changes its shape.",
+          "The repressor can no longer bind to the operator.",
+          "RNA polymerase transcribes lacZ, lacY and lacA; the proteins are produced."
+        ],
+        "answer": "The inducer removes repressor blockage at the operator, allowing transcription of the structural genes.",
+        "common_error": "Do not say lactose binds directly to RNA polymerase or that the repressor is destroyed."
+      },
+      {
+        "prompt": "A mutation prevents the lac repressor from binding allolactose but leaves its operator-binding ability intact. Predict the effect.",
+        "steps": [
+          "The repressor remains able to bind the operator.",
+          "Allolactose cannot change the repressor's shape effectively.",
+          "The repressor continues to block transcription even when lactose is present."
+        ],
+        "answer": "The lac structural genes are not properly induced, so expression remains low or off.",
+        "common_error": "An inducer must alter repressor activity; simply having lactose present is not enough if the repressor cannot respond."
+      },
+      {
+        "prompt": "Explain how gibberellin can increase transcription of a target gene.",
+        "steps": [
+          "Gibberellin initiates a signalling pathway.",
+          "DELLA protein repressors are broken down.",
+          "Transcription factors are no longer inhibited by DELLA.",
+          "The transcription factors promote transcription of target genes."
+        ],
+        "answer": "Gibberellin relieves DELLA-mediated repression, allowing transcription factors to increase transcription.",
+        "common_error": "Do not say gibberellin itself is a transcription factor."
+      }
+    ],
+    "practice": [
+      {
+        "question": "Distinguish a structural gene from a regulatory gene.",
+        "answer": "A structural gene codes for a functional product such as a polypeptide involved in cell activity. A regulatory gene codes for a product that controls expression of other genes.",
+        "mark_points": [
+          "Structural gene product has a functional cellular role",
+          "Regulatory gene product controls gene expression"
+        ]
+      },
+      {
+        "question": "Explain the difference between an inducible and a repressible enzyme system.",
+        "answer": "An inducible system is usually off and is switched on by an inducer that prevents repression. A repressible system is usually on and can be switched off when an end product enables a repressor to bind DNA.",
+        "mark_points": [
+          "Inducible usually off; inducer relieves repression",
+          "Repressible usually on; corepressor/end product enables repression"
+        ]
+      },
+      {
+        "question": "Describe the role of the operator in the lac operon.",
+        "answer": "The operator is a DNA sequence that can bind the lac repressor. When the repressor is bound, transcription of the structural genes is blocked or reduced.",
+        "mark_points": [
+          "DNA control sequence",
+          "Repressor binds operator",
+          "Binding prevents/reduces transcription"
+        ]
+      },
+      {
+        "question": "State the role of transcription factors in eukaryotic gene control.",
+        "answer": "They are proteins that bind to DNA and increase or decrease the rate of transcription.",
+        "mark_points": [
+          "Proteins",
+          "Bind to DNA",
+          "Increase or decrease transcription rate"
+        ]
+      },
+      {
+        "question": "Explain the effect of gibberellin on DELLA proteins and transcription.",
+        "answer": "Gibberellin causes DELLA protein repressors to be broken down. This releases transcription factors that were inhibited by DELLA, allowing them to promote transcription of target genes.",
+        "mark_points": [
+          "Gibberellin signal",
+          "DELLA repressors broken down",
+          "Transcription factors released",
+          "Target-gene transcription promoted"
+        ]
+      },
+      {
+        "question": "A student says that cAMP must be described to explain the lac operon in this syllabus. Correct the statement.",
+        "answer": "The 9700 syllabus explicitly excludes knowledge of the role of cAMP. The required explanation focuses on the repressor, operator, allolactose inducer and transcription of lac structural genes.",
+        "mark_points": [
+          "Identifies cAMP not required",
+          "Explains core repressor/operator/inducer mechanism"
+        ]
+      },
+      {
+        "question": "A bacterial strain has a mutation in the operator sequence. The repressor protein is normal but can no longer bind to the mutated operator. Predict the effect on transcription of lacZ, lacY and lacA when lactose is absent. Explain your answer.",
+        "answer": "The structural genes may be transcribed even when lactose is absent because the repressor cannot bind the operator to block transcription. The normal repressor is present, but its DNA binding site has changed.",
+        "mark_points": [
+          "Repressor protein itself is normal",
+          "Mutated operator cannot bind repressor",
+          "Repressor cannot block transcription",
+          "Structural genes may be transcribed without lactose"
+        ]
+      },
+      {
+        "question": "A mutation in lacI produces a repressor that binds the operator normally but cannot bind allolactose. Explain the effect on lac operon expression when lactose is present.",
+        "answer": "The repressor remains bound to the operator because allolactose cannot bind and alter its shape. RNA polymerase is prevented from effectively transcribing lacZ, lacY and lacA, so the operon cannot be induced normally.",
+        "mark_points": [
+          "Repressor still binds operator",
+          "Allolactose cannot bind mutant repressor",
+          "Repressor is not released from operator",
+          "Transcription remains blocked or very low"
+        ]
+      },
+      {
+        "question": "A eukaryotic cell contains a gene whose transcription rate increases when activator transcription factors bind to regulatory DNA sequences. A mutation prevents the activator from binding DNA. Predict the likely effect on transcription and explain why.",
+        "answer": "Transcription is likely to decrease because the activator cannot bind the regulatory DNA sequence and cannot promote recruitment or activity of the transcription machinery. The gene may still have some basal transcription depending on its other regulatory inputs.",
+        "mark_points": [
+          "Activator is a protein transcription factor",
+          "Mutation prevents DNA binding",
+          "Activator cannot increase transcription effectively",
+          "Avoids claiming transcription must be absolutely zero"
+        ]
+      },
+      {
+        "question": "The following values are from a controlled investigation of a plant response. Mean stem elongation over 48 hours: untreated seedlings, 4 mm; gibberellin-treated seedlings, 18 mm; gibberellin plus a treatment that prevents DELLA breakdown, 5 mm. (a) Describe the effect of gibberellin. (2) (b) Explain how preventing DELLA breakdown affects the response. (2) (c) State one conclusion that the data alone cannot establish. (1)",
+        "answer": "(a) Gibberellin-treated seedlings elongated more, with a mean increase from 4 mm to 18 mm. (b) Preventing DELLA breakdown keeps the repressor present, so transcription factors remain inhibited and the growth response is greatly reduced. (c) The data alone do not establish the exact molecular target or prove that DELLA is the only pathway involved; further controls and molecular measurements would be needed.",
+        "mark_points": [
+          "Correct comparison and direction of effect",
+          "Uses the values accurately",
+          "DELLA remains when breakdown is prevented",
+          "Transcription factors remain inhibited / target gene transcription reduced",
+          "Recognises a limitation of the data"
+        ]
+      },
+      {
+        "question": "Compare the control of the lac operon with gibberellin-mediated gene activation. Your answer should identify the regulator in each system and explain how the signal changes its effect on transcription.",
+        "answer": "In the lac operon, allolactose binds to the repressor and changes its shape so it can no longer bind the operator; transcription of the structural genes can occur. In the gibberellin pathway, the hormone signal promotes breakdown of DELLA repressors. Transcription factors are released from inhibition and can increase transcription of target genes.",
+        "mark_points": [
+          "Allolactose is the lac inducer",
+          "Allolactose changes repressor shape",
+          "Repressor no longer binds operator",
+          "Gibberellin promotes DELLA breakdown",
+          "Transcription factors released from inhibition",
+          "Target gene transcription increases"
+        ]
+      }
+    ],
+    "visual_tasks": [
+      {
+        "type": "label_diagram",
+        "image": "/learning-assets/biology/9700/inheritance/lac-operon.svg",
+        "alt": "Two-state lac operon schematic, with repressor bound in the absence of lactose and inducer-bound repressor unable to bind operator when lactose is present.",
+        "instruction": "Label lacI, repressor, promoter, operator, lacZYA, RNA polymerase and allolactose. Annotate the transcription state in each condition.",
+        "expected_features": [
+          "Repressor bound to operator without lactose",
+          "Allolactose changes repressor shape",
+          "RNA polymerase transcribes structural genes when repressor is not bound"
+        ]
+      },
+      {
+        "type": "pathway_annotation",
+        "image": "/learning-assets/biology/9700/inheritance/gibberellin-della-pathway.svg",
+        "alt": "Pathway showing gibberellin signal, DELLA breakdown, release of transcription factors and increased target-gene transcription.",
+        "instruction": "Add arrows and explanatory labels to show how gibberellin removes repression and activates transcription.",
+        "expected_features": [
+          "DELLA breakdown",
+          "Transcription factors released",
+          "Transcription of target genes increases"
+        ]
+      },
+      {
+        "type": "compare_table",
+        "instruction": "Construct a comparison table for inducible lac operon control, repressible enzyme control and gibberellin-mediated DELLA breakdown. Include initial state, signal, effect on regulator and effect on transcription.",
+        "expected_features": [
+          "Correct initial state for each system",
+          "Correct regulator interaction",
+          "Correct transcription outcome"
+        ]
+      },
+      {
+        "type": "data_analysis",
+        "instruction": "Analyse the 48-hour stem-elongation results in the quantitative gibberellin question. Calculate the percentage increase caused by gibberellin compared with untreated seedlings, compare the gibberellin-only and gibberellin-plus-DELLA-breakdown-inhibitor groups, and state one limitation of inferring a molecular mechanism from growth measurements alone.",
+        "expected_features": [
+          "Percentage increase calculated as (18 - 4) / 4 × 100 = 350%",
+          "Gibberellin plus inhibitor gives 5 mm, close to untreated 4 mm and far below gibberellin alone",
+          "Links persistent DELLA repression to reduced transcription-factor activity",
+          "Recognises growth is an indirect measure and molecular measurements or additional controls are needed"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/inheritance/lac-operon.svg",
+        "caption": "The lac operon in the absence and presence of lactose-derived allolactose.",
+        "alt": "Schematic of repressor binding and inducer-mediated release at the lac operator."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/gibberellin-della-pathway.svg",
+        "caption": "Gibberellin signalling promotes DELLA breakdown and releases transcription factors.",
+        "alt": "Pathway from gibberellin signal to DELLA degradation and target-gene transcription."
+      }
+    ],
+    "common_mistakes": [
+      "Calling the operator a gene that codes for a protein.",
+      "Saying the repressor binds to the promoter rather than the operator.",
+      "Saying lactose itself is the direct inducer without recognising allolactose.",
+      "Claiming the repressor is destroyed when allolactose binds it.",
+      "Including cAMP as required 9700 knowledge.",
+      "Describing transcription factors as DNA sequences rather than proteins.",
+      "Saying gibberellin binds directly to DNA or acts as a transcription factor.",
+      "Omitting DELLA breakdown from the gibberellin mechanism."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What is a structural gene?",
+        "What is the operator?",
+        "What happens to the lac repressor when allolactose binds?",
+        "What are transcription factors?",
+        "How does gibberellin activate target genes?",
+        "Is cAMP required for the 9700 lac operon explanation?"
+      ],
+      "answers": [
+        "A gene coding for a functional product used by the cell.",
+        "A DNA sequence where the repressor can bind and control transcription.",
+        "Its shape changes and it can no longer bind the operator.",
+        "Proteins that bind DNA and increase or decrease transcription rate.",
+        "It promotes breakdown of DELLA repressors, releasing transcription factors to promote transcription.",
+        "No, cAMP is explicitly not required in the syllabus."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2025–2027, Topic 16.3",
+        "url": "https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
+        "use": "Controlling the required scope and exclusions, including cAMP."
+      },
+      {
+        "title": "OpenStax Biology 2e, 16.1 Regulation of Gene Expression",
+        "url": "https://openstax.org/books/biology-2e/pages/16-1-regulation-of-gene-expression",
+        "use": "Independent conceptual cross-check for gene expression regulation."
+      },
+      {
+        "title": "OpenStax Biology 2e, 16.4 Eukaryotic Transcription Gene Regulation",
+        "url": "https://openstax.org/books/biology-2e/pages/16-4-eukaryotic-transcription-gene-regulation",
+        "use": "Supplementary reference for transcription factors and promoter control."
+      }
+    ]
+  }
+}

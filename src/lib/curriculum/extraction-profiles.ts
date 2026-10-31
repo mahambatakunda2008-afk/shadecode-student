@@ -116,6 +116,52 @@ export const CURRICULUM_EXTRACTION_PROFILES: Record<string, CurriculumExtraction
     paperPatterns: COMMON_PAPER_PATTERNS,
   },
 
+  "cambridge-as-a-level-biology-9700": {
+    topicHeadings: [
+      "cell structure", "biological molecules", "enzymes", "cell membranes and transport",
+      "mitosis", "nucleic acids and protein synthesis", "transport in plants",
+      "transport in mammals", "gas exchange", "infectious diseases", "immunity",
+      "energy and respiration", "photosynthesis", "homeostasis", "control and coordination",
+      "inheritance", "selection and evolution", "classification", "genetic technology",
+      ...COMMON_HEADINGS,
+    ],
+    sectionKinds: {
+      "cell structure": "topic",
+      "biological molecules": "topic",
+      enzymes: "topic",
+      "cell membranes and transport": "topic",
+      mitosis: "topic",
+      "nucleic acids and protein synthesis": "topic",
+      "transport in plants": "topic",
+      "transport in mammals": "topic",
+      "gas exchange": "topic",
+      "infectious diseases": "topic",
+      immunity: "topic",
+      "energy and respiration": "topic",
+      photosynthesis: "topic",
+      homeostasis: "topic",
+      "control and coordination": "topic",
+      inheritance: "topic",
+      "selection and evolution": "topic",
+      classification: "topic",
+      "genetic technology": "topic",
+      "syllabus content": "content_scope",
+      "content overview": "content_scope",
+      "learning outcomes": "learning_outcome",
+      "assessment objectives": "assessment_requirement",
+      assessment: "assessment_requirement",
+      "examination format": "examination_format",
+      "paper structure": "paper_component",
+      "practical assessment": "practical_activity",
+      "experimental skills": "practical_activity",
+    },
+    // Biology's numbered syllabus outcomes are hierarchical (for example 16.1.1).
+    // Keep the code boundary within Topics 1–19; extraction remains draft until reviewed.
+    objectiveCodePattern: "^(?:[1-9]|1[0-9])\\.\\d+(?:\\.\\d+)?$",
+    assessmentPatterns: COMMON_ASSESSMENT_PATTERNS,
+    paperPatterns: COMMON_PAPER_PATTERNS,
+  },
+
   // Cambridge syllabus documents are intentionally conservative here. Their
   // numbered content sections are not automatically objectives. A future
   // board-specific profile can add verified objective/learning-outcome codes.

@@ -1,0 +1,303 @@
+{
+  "asset_key": "biology-9700-meiosis-passage-of-genetic-information",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Meiosis: passing genetic information between generations",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2025-2027",
+    "expected_topic_key": "16",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 (2025–2027), Topic 16.1, syllabus pp. 40–41, learning outcomes 1–7. https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "16.1.1",
+      "16.1.2",
+      "16.1.3",
+      "16.1.4",
+      "16.1.5",
+      "16.1.6",
+      "16.1.7"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Draft aligned to all seven Topic 16.1 outcomes. Original vector diagrams are included in public/learning-assets/biology/9700/inheritance/. Requires subject-editor review and objective-key reconciliation before import.",
+      "Expanded cytokinesis coverage to distinguish cleavage furrow formation in animal cells from cell-plate formation in plant cells, alongside spindle behaviour.",
+      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
+      "Added an original four-stage recognition schematic with a structured interpretation task. It is a schematic learning aid and does not replace practice interpreting authentic photomicrographs.",
+      "Added an 8-mark original stage-identification and chromosome-count question with point-by-point marking guidance."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Define haploid (n) and diploid (2n).",
+      "Explain homologous chromosome pairs and distinguish homologous chromosomes from sister chromatids.",
+      "Explain why meiosis is a reduction division in gamete production.",
+      "Describe chromosome, nuclear-envelope, cell-surface-membrane and spindle behaviour through the eight named stages of meiosis.",
+      "Identify meiotic stages from diagrams and photomicrographs.",
+      "Explain how crossing over and independent assortment produce genetically different gametes.",
+      "Explain how random fertilisation increases genetic variation among offspring."
+    ],
+    "sections": [
+      {
+        "heading": "Ploidy: haploid and diploid",
+        "body": "A diploid nucleus (2n) contains two sets of chromosomes. In a typical diploid animal cell, one chromosome of each homologous pair was inherited from each parent. A haploid nucleus (n) contains one set of chromosomes. Human body cells are diploid with 46 chromosomes; human gametes are haploid with 23. The symbols n and 2n describe sets of chromosomes, not the amount of DNA present at a particular moment. After DNA replication, a cell remains diploid even though each chromosome consists of two sister chromatids."
+      },
+      {
+        "heading": "Homologous chromosomes and sister chromatids",
+        "body": "Homologous chromosomes are a pair, one maternal and one paternal, that carry the same genes at corresponding loci. They may carry different alleles. They are similar in length, centromere position and gene loci. Sister chromatids are the two copies of one chromosome produced by DNA replication; they are joined at the centromere until they separate. Do not call homologous chromosomes sister chromatids."
+      },
+      {
+        "heading": "Why meiosis is necessary",
+        "body": "Meiosis produces haploid gametes from diploid cells. At fertilisation, two haploid nuclei fuse and restore the diploid chromosome number. If gametes were diploid, fertilisation would double the chromosome number in each generation. Meiosis therefore maintains a stable chromosome number across generations in a species with a diploid-dominant life cycle."
+      },
+      {
+        "heading": "Before meiosis: DNA replication",
+        "body": "DNA replicates once during interphase before meiosis begins. Each chromosome then consists of two genetically identical sister chromatids joined at a centromere. There is no second DNA replication between meiosis I and meiosis II. The two divisions distribute the replicated chromosomes into four haploid products."
+      },
+      {
+        "heading": "Meiosis I: separating homologous chromosomes",
+        "body": "Prophase I: chromosomes condense; homologous chromosomes pair; crossing over may occur between non-sister chromatids; the nuclear envelope breaks down and spindle microtubules form. Metaphase I: homologous pairs align at the equator in random orientations and attach to spindle fibres. Anaphase I: homologous chromosomes move to opposite poles; centromeres do not divide and sister chromatids remain joined. Telophase I: chromosomes reach the poles; nuclei may reform and cytokinesis divides the cell. The result is two haploid cells, although each chromosome still consists of two chromatids. Meiosis I is the reduction division. The cell surface membrane also divides during cytokinesis: in animal cells it constricts to form a cleavage furrow, while in plant cells vesicles fuse at the equator to form a cell plate that develops into a new separating wall. Spindle fibres attach to chromosome centromere regions and shorten to move chromosomes towards the poles."
+      },
+      {
+        "heading": "Meiosis II: separating sister chromatids",
+        "body": "There is no DNA replication between the two divisions. Prophase II: chromosomes condense again if necessary, nuclear envelopes break down and new spindles form. Metaphase II: chromosomes align singly at the equator. Anaphase II: centromeres divide and sister chromatids separate to opposite poles. Telophase II: nuclear envelopes reform and cytokinesis produces four haploid cells. The products are genetically different because crossing over and independent assortment have generated different combinations of alleles. Cytokinesis again divides the cell surface membrane; animal cells form a cleavage furrow, while plant cells form a cell plate. The final products are four haploid cells."
+      },
+      {
+        "heading": "Crossing over",
+        "body": "During prophase I, homologous chromosomes pair closely. Non-sister chromatids can break and rejoin at corresponding positions, exchanging equivalent DNA segments. This produces recombinant chromatids with new combinations of alleles. Crossing over does not normally exchange whole chromosomes, and it is not the separation of sister chromatids. It increases variation among gametes."
+      },
+      {
+        "heading": "Independent assortment",
+        "body": "At metaphase I, each homologous pair can orient in either direction independently of the other pairs. The maternal or paternal homolog that moves to a pole for one chromosome pair does not determine which homolog moves to that pole for another pair. This creates different combinations of maternal and paternal chromosomes in gametes. For a cell with n chromosome pairs, independent assortment alone can produce 2^n possible chromosome combinations, before considering crossing over."
+      },
+      {
+        "heading": "Random fertilisation",
+        "body": "Any one genetically different haploid gamete may fuse with any compatible gamete from the other parent. Random fusion combines two independently generated sets of alleles, creating a genetically unique zygote. Variation therefore arises through crossing over, independent assortment and random fertilisation."
+      },
+      {
+        "heading": "Recognising stages in diagrams and photomicrographs",
+        "body": "Look for paired homologous chromosomes at the equator in metaphase I; homologous chromosomes moving apart while sister chromatids remain joined in anaphase I; individual chromosomes aligned at the equator in metaphase II; and sister chromatids moving apart in anaphase II. Count centromeres and chromosome units carefully. A replicated chromosome is still counted as one chromosome until its centromere divides and sister chromatids separate. In photomicrographs, use chromosome arrangement and movement rather than relying only on the apparent number of cells."
+      },
+      {
+        "heading": "Meiosis compared with mitosis",
+        "body": "Both processes follow DNA replication and use spindle fibres to move chromosomes. Mitosis has one nuclear division and normally produces two genetically similar daughter nuclei with the same chromosome-set number as the parent. Meiosis has two nuclear divisions, pairs homologous chromosomes in prophase I, separates homologous chromosomes in meiosis I and sister chromatids in meiosis II, and produces four haploid products that are genetically different. Meiosis includes crossing over and independent assortment; these are not normal features of mitosis."
+      },
+      {
+        "heading": "Exam technique: describe chromosome behaviour precisely",
+        "body": "Use the correct pair of structures for each division. In anaphase I, homologous chromosomes separate. In anaphase II, sister chromatids separate after centromeres divide. State that the spindle attaches to chromosomes and moves them towards opposite poles. Include nuclear-envelope breakdown and reformation where relevant. Do not say that DNA replicates twice or that meiosis I directly produces four gametes."
+      }
+    ],
+    "worked_examples": [
+      {
+        "prompt": "A diploid cell has 2n = 8. State the chromosome number in each gamete after meiosis and explain the change.",
+        "steps": [
+          "The diploid cell has four homologous pairs, so 2n = 8.",
+          "Meiosis I separates homologous chromosomes, reducing the number of sets from two to one.",
+          "Meiosis II separates sister chromatids without changing the number of chromosome sets."
+        ],
+        "answer": "Each gamete is haploid and has n = 4 chromosomes.",
+        "common_error": "Do not say n = 8. Haploid means half the diploid chromosome number."
+      },
+      {
+        "prompt": "Explain why a chromosome remains one chromosome after DNA replication even though it contains two chromatids.",
+        "steps": [
+          "DNA replication produces two sister chromatids.",
+          "The chromatids remain joined at one centromere.",
+          "They are counted as separate chromosomes only when the centromere divides and they separate."
+        ],
+        "answer": "It is one replicated chromosome made of two sister chromatids until separation.",
+        "common_error": "Do not count each chromatid as a separate chromosome before centromere division."
+      },
+      {
+        "prompt": "Explain how meiosis and fertilisation maintain chromosome number while generating variation.",
+        "steps": [
+          "Meiosis halves the chromosome-set number to form haploid gametes.",
+          "Fertilisation fuses two haploid nuclei and restores diploidy.",
+          "Crossing over, independent assortment and random fertilisation produce different allele combinations."
+        ],
+        "answer": "Reduction division prevents chromosome doubling; random and recombined gametes create variation.",
+        "common_error": "Do not claim fertilisation itself halves the chromosome number."
+      }
+    ],
+    "practice": [
+      {
+        "question": "Distinguish homologous chromosomes from sister chromatids.",
+        "answer": "Homologous chromosomes are maternal and paternal versions with the same genes at corresponding loci and may have different alleles. Sister chromatids are replicated copies of one chromosome joined at a centromere.",
+        "mark_points": [
+          "One from each parent for homologues",
+          "Same genes/loci; alleles may differ",
+          "Sister chromatids are replicated copies",
+          "Joined at centromere"
+        ]
+      },
+      {
+        "question": "Describe the events of anaphase I and anaphase II.",
+        "answer": "In anaphase I, homologous chromosomes move to opposite poles while centromeres do not divide and sister chromatids remain joined. In anaphase II, centromeres divide and sister chromatids move to opposite poles.",
+        "mark_points": [
+          "Homologues separate in anaphase I",
+          "Centromeres remain intact in anaphase I",
+          "Centromeres divide in anaphase II",
+          "Sister chromatids separate in anaphase II"
+        ]
+      },
+      {
+        "question": "Explain two ways meiosis generates genetically different gametes.",
+        "answer": "Crossing over exchanges corresponding segments between non-sister chromatids of homologous chromosomes in prophase I. Independent assortment results from random orientation of homologous pairs at metaphase I, producing different maternal and paternal chromosome combinations.",
+        "mark_points": [
+          "Crossing over between non-sister chromatids",
+          "Exchange of equivalent DNA segments",
+          "Random orientation at metaphase I",
+          "Different chromosome combinations"
+        ]
+      },
+      {
+        "question": "A species has 2n = 14. How many chromosomes are present in a cell at metaphase II?",
+        "answer": "7 chromosomes, each consisting of two sister chromatids.",
+        "mark_points": [
+          "Haploid number is 7",
+          "Each chromosome remains replicated at metaphase II"
+        ]
+      },
+      {
+        "question": "Why is random fertilisation an additional source of genetic variation?",
+        "answer": "Any genetically different haploid gamete can fuse with any compatible gamete from the other parent, creating a new combination of alleles in the zygote.",
+        "mark_points": [
+          "Gametes are genetically different",
+          "Fusion is random",
+          "New allele combination in zygote"
+        ]
+      },
+      {
+        "question": "Study the four cells A–D in the stage-recognition figure. (a) Identify the stage shown in each cell. (4) (b) For B and D, state which chromosome structures are separating. (2) (c) Explain why the chromosome number per cell is haploid at C even though each chromosome still contains two chromatids. (2)",
+        "answer": "A: metaphase I; B: anaphase I; C: metaphase II; D: anaphase II. In B, homologous chromosomes separate while sister chromatids remain joined. In D, centromeres divide and sister chromatids separate. At C, homologous pairs have already been separated in meiosis I, so each cell has one chromosome from each pair; each chromosome is still replicated, but two chromatids joined at one centromere count as one chromosome.",
+        "mark_points": [
+          "A metaphase I",
+          "B anaphase I",
+          "C metaphase II",
+          "D anaphase II",
+          "B: homologous chromosomes separate; centromeres do not divide",
+          "D: centromeres divide; sister chromatids separate",
+          "Haploid means one chromosome set after homologues separate",
+          "Two sister chromatids joined at one centromere count as one chromosome"
+        ]
+      }
+    ],
+    "visual_tasks": [
+      {
+        "type": "label_diagram",
+        "image": "/learning-assets/biology/9700/inheritance/meiosis-overview.svg",
+        "alt": "Meiosis overview from diploid parent through two divisions to four haploid products.",
+        "instruction": "Annotate the stages where DNA replication, homologous chromosome separation and sister chromatid separation occur. Add 2n and n labels.",
+        "expected_features": [
+          "One DNA replication before meiosis I",
+          "Meiosis I separates homologous chromosomes",
+          "Meiosis II separates sister chromatids",
+          "Four haploid products"
+        ]
+      },
+      {
+        "type": "sequence_sort",
+        "instruction": "Arrange eight stage cards in order: prophase I, metaphase I, anaphase I, telophase I, prophase II, metaphase II, anaphase II, telophase II. For each card, identify the chromosome event.",
+        "expected_features": [
+          "Correct eight-stage order",
+          "Correct homologous/sister chromatid distinction"
+        ]
+      },
+      {
+        "type": "diagram_interpretation",
+        "image": "/learning-assets/biology/9700/inheritance/crossing-over-independent-assortment.svg",
+        "alt": "Diagram showing crossing over and independent assortment.",
+        "instruction": "Use the two panels to explain how meiosis produces recombinant chromatids and different chromosome combinations.",
+        "expected_features": [
+          "Crossing over in prophase I",
+          "Non-sister chromatids exchange segments",
+          "Random orientation at metaphase I"
+        ]
+      },
+      {
+        "type": "stage_recognition",
+        "image": "/learning-assets/biology/9700/inheritance/meiosis-stage-recognition.svg",
+        "alt": "Four original schematic cells show chromosome behaviour at metaphase I, anaphase I, metaphase II and anaphase II.",
+        "instruction": "For each cell A–D, name the meiotic stage and describe the chromosome behaviour that identifies it. Then explain why the chromosome count is not the same as the chromatid count.",
+        "expected_features": [
+          "A: metaphase I, homologous pairs align at the equator",
+          "B: anaphase I, homologous chromosomes separate while sister chromatids remain joined",
+          "C: metaphase II, individual replicated chromosomes align at the equator",
+          "D: anaphase II, centromeres divide and sister chromatids separate",
+          "Chromosomes are counted by centromeres; chromatids are not separate chromosomes before centromere division"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/inheritance/meiosis-overview.svg",
+        "caption": "One DNA replication followed by meiosis I and meiosis II.",
+        "alt": "Diploid cell forms four haploid products through two meiotic divisions."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/crossing-over-independent-assortment.svg",
+        "caption": "Crossing over and independent assortment as sources of genetic variation.",
+        "alt": "Two panels showing non-sister chromatid exchange and random orientation of homologous pairs."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/meiosis-stage-recognition.svg",
+        "caption": "Original stage-recognition schematic comparing metaphase I, anaphase I, metaphase II and anaphase II.",
+        "alt": "Four labelled cells A–D show paired homologues, homologous separation, single chromosome alignment and sister chromatid separation."
+      }
+    ],
+    "common_mistakes": [
+      "Confusing homologous chromosomes with sister chromatids.",
+      "Saying that centromeres divide in anaphase I.",
+      "Saying that DNA replicates before meiosis II.",
+      "Calling meiosis I equational rather than reduction division.",
+      "Claiming crossing over occurs between sister chromatids.",
+      "Describing independent assortment as random separation of sister chromatids in meiosis I.",
+      "Counting chromatids as separate chromosomes before centromere division."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What does 2n mean?",
+        "What separates in anaphase I?",
+        "What separates in anaphase II?",
+        "When does crossing over occur and between which chromatids?",
+        "How does independent assortment create variation?",
+        "Why does fertilisation restore diploidy?"
+      ],
+      "answers": [
+        "Two sets of chromosomes; diploid.",
+        "Homologous chromosomes.",
+        "Sister chromatids after centromeres divide.",
+        "Prophase I, between non-sister chromatids of homologous chromosomes.",
+        "Homologous pairs orient randomly at metaphase I, giving different maternal/paternal combinations.",
+        "Two haploid nuclei fuse, restoring two chromosome sets."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2025–2027, Topic 16.1",
+        "url": "https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
+        "use": "Controlling syllabus scope and required named stages and outcomes."
+      },
+      {
+        "title": "OpenStax Biology 2e, 11.1 The Process of Meiosis",
+        "url": "https://openstax.org/books/biology-2e/pages/11-1-the-process-of-meiosis",
+        "use": "Independent explanation and diagram cross-check for reduction division and genetic variation."
+      },
+      {
+        "title": "HHMI BioInteractive, Meiosis animation",
+        "url": "https://www.biointeractive.org/classroom-resources/meiosis",
+        "use": "Supplementary visual reference for chromosome behaviour and gamete formation."
+      }
+    ]
+  }
+}
