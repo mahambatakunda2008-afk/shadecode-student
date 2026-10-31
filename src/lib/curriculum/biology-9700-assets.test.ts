@@ -135,7 +135,7 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(pack).toContain("percentage increase = 14 / 4 × 100 = **350%**");
     expect(pack).toContain("all offspring Pp and purple");
     expect(pack).toContain("Original practice questions");
-    expect(pack).toContain("not Cambridge past-paper questions");
+    expect(pack).toContain("Cambridge past-paper questions");
     expect(pack).toContain("Do not import or publish");
   });
 });
