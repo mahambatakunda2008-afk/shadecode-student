@@ -97,4 +97,23 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     }
   });
 
+  it("keeps the Topic 16 assessment map traceable to every draft syllabus outcome", () => {
+    const map = readFileSync(
+      join(process.cwd(), "docs/curriculum-maps/cambridge-9700-2025-2027-topic-16-assessment-map.md"),
+      "utf8",
+    );
+    const expectedCodes = [
+      ...Array.from({ length: 7 }, (_, index) => `16.1.${index + 1}`),
+      ...Array.from({ length: 7 }, (_, index) => `16.2.${index + 1}`),
+      ...Array.from({ length: 4 }, (_, index) => `16.3.${index + 1}`),
+    ];
+
+    for (const code of expectedCodes) {
+      expect(map).toContain(`| ${code} |`);
+    }
+    expect(map).toContain("2025–2027");
+    expect(map).toContain("Authentic, permission-cleared photomicrograph still required");
+    expect(map).toContain("Do not invent UUIDs");
+  });
+
 });
