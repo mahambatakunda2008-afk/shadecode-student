@@ -126,7 +126,11 @@ function extractSectionBlocks(
     const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
     if (!kind || (!content && kind !== "topic")) return;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
-    const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
+    const chunks = content
+      ? content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean)
+      : kind === "topic"
+        ? [""]
+        : [];
     chunks.forEach((chunk, index) => {
       const headingTitle = currentHeading!.raw;
       const item = makeItem(kind, headingTitle, chunk.trim(), identity, {
