@@ -114,7 +114,7 @@ LEARNING OUTCOMES
     expect(profile.topicHeadings?.slice(0, 19)).toHaveLength(19);
     expect(topics).toHaveLength(19);
     expect(topics.map((item) => item.title)).toEqual(
-      expect.arrayContaining(["1 Cell structure", "16 Inheritance", "17 Selection and evolution", "19 Genetic technology"]),
+      expect.arrayContaining(["1 cell structure", "16 inheritance", "17 selection and evolution", "19 genetic technology"]),
     );
     expect(topics.every((item) => item.status === "draft")).toBe(true);
   });
