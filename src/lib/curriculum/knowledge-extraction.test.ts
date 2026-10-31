@@ -93,4 +93,30 @@ LEARNING OUTCOMES
     ]);
     expect(items.every((item) => item.status === "draft")).toBe(true);
   });
+
+  it("preserves all 19 numbered Biology topic headings, including empty topic sections", () => {
+    const profile = getCurriculumExtractionProfile("cambridge-as-a-level-biology-9700");
+    const biologyIdentity = {
+      boardId: "cambridge",
+      qualificationId: "as-a-level",
+      level: "a_level",
+      syllabusId: "9700",
+      syllabusVersion: "2025-2027",
+      subjectId: "biology",
+    };
+    const source = (profile.topicHeadings ?? [])
+      .slice(0, 19)
+      .map((heading, index) => `${index + 1} ${heading}`)
+      .join("\\n");
+    const items = extractCurriculumKnowledge(source, biologyIdentity, provenance, profile);
+    const topics = items.filter((item) => item.kind === "topic");
+
+    expect(profile.topicHeadings?.slice(0, 19)).toHaveLength(19);
+    expect(topics).toHaveLength(19);
+    expect(topics.map((item) => item.title)).toEqual(
+      expect.arrayContaining(["1 Cell structure", "16 Inheritance", "17 Selection and evolution", "19 Genetic technology"]),
+    );
+    expect(topics.every((item) => item.status === "draft")).toBe(true);
+  });
+
 });
