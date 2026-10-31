@@ -29,7 +29,8 @@
     "review_notes": [
       "Draft covers all four Topic 16.3 outcomes. Lac operon diagram is an original vector schematic. Requires subject-editor review and objective-key reconciliation before import or publication.",
       "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
-      "Expanded Topic 16.3 assessment with operator and repressor mutation analysis, eukaryotic transcription-factor mutation, quantitative gibberellin/DELLA data interpretation, and a comparative causal-chain response. Questions are original draft exercises and require independent subject review."
+      "Expanded Topic 16.3 assessment with operator and repressor mutation analysis, eukaryotic transcription-factor mutation, quantitative gibberellin/DELLA data interpretation, and a comparative causal-chain response. Questions are original draft exercises and require independent subject review.",
+      "Added an experimental-reasoning section and a data-analysis visual task that distinguish measured growth from inferred molecular mechanism; includes percentage-change calculation and limits of inference."
     ]
   },
   "content": {
@@ -80,6 +81,10 @@
       {
         "heading": "Exam technique: causal chains",
         "body": "For the lac operon, state what happens to the repressor, whether it binds the operator, whether RNA polymerase can transcribe the structural genes and what proteins are produced. For transcription factors, state that they are proteins that bind DNA and increase or decrease transcription rate. For gibberellin, include DELLA breakdown and release of transcription factors. A vague statement such as 'the gene switches on' is not enough for a full explanation."
+      },
+      {
+        "heading": "Experimental reasoning: connect molecular mechanism to measured phenotype",
+        "body": "An experiment may measure a whole-organism response, such as stem elongation, while the proposed mechanism acts at the molecular level. Keep observation separate from explanation. First compare the measured values and identify the direction and size of the effect. Then use the proposed pathway to explain the pattern: if DELLA breakdown is prevented, DELLA repression may persist and transcription factors may remain inhibited. A growth measurement alone does not directly show DELLA concentration, transcription-factor activity or target-gene transcription. Strong evidence uses appropriate controls, repeats, sufficient sample size and direct measurements of the proposed molecular steps."
       }
     ],
     "worked_examples": [
@@ -253,6 +258,16 @@
           "Correct initial state for each system",
           "Correct regulator interaction",
           "Correct transcription outcome"
+        ]
+      },
+      {
+        "type": "data_analysis",
+        "instruction": "Analyse the 48-hour stem-elongation results in the quantitative gibberellin question. Calculate the percentage increase caused by gibberellin compared with untreated seedlings, compare the gibberellin-only and gibberellin-plus-DELLA-breakdown-inhibitor groups, and state one limitation of inferring a molecular mechanism from growth measurements alone.",
+        "expected_features": [
+          "Percentage increase calculated as (18 - 4) / 4 × 100 = 350%",
+          "Gibberellin plus inhibitor gives 5 mm, close to untreated 4 mm and far below gibberellin alone",
+          "Links persistent DELLA repression to reduced transcription-factor activity",
+          "Recognises growth is an indirect measure and molecular measurements or additional controls are needed"
         ]
       }
     ],
