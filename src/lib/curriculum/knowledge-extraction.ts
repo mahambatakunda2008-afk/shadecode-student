@@ -60,13 +60,13 @@ function isHeading(line: string, profile: CurriculumExtractionProfile): HeadingI
   // number (for example, "16 Inheritance"). Resolve these against the
   // profile's explicit topic list before applying the generic heading parser.
   const cleaned = line.replace(/^#+\s*/, "").trim();
-  const topicTitle = cleaned.replace(/^\d+(?:\\.\d+)*[.)]?\s+/, "");
+  const topicTitle = cleaned.replace(/^\d+(?:\.\d+)*[.)]?\s+/, "");
   const normalizedTopic = normalizeHeading(topicTitle);
   const topicMatch = (profile.topicHeadings ?? [])
     .map(normalizeHeading)
     .includes(normalizedTopic);
   if (topicMatch) {
-    const number = cleaned.match(/^(\d+(?:\\.\d+)*)[.)]?\s+/)?.[1];
+    const number = cleaned.match(/^(\d+(?:\.\d+)*)[.)]?\s+/)?.[1];
     return {
       normalized: normalizedTopic,
       level: number ? number.split(".").length : 1,
