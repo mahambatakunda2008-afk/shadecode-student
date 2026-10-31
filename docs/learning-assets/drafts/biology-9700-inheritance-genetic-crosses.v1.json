@@ -34,7 +34,8 @@
       "Original vector teaching diagrams added for monohybrid crosses, X-linked inheritance and pedigree notation. All assets remain draft and require editorial review.",
       "Added ABO codominance and dihybrid cross diagrams with alt text and explicit assumptions for the 9:3:3:1 ratio.",
       "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
-      "Expanded assessment with linked-gene recombination frequency, a stated epistasis model and chi-squared decision-making; added gene-to-protein visual interpretation task. These are original teaching exercises, not past-paper reproductions."
+      "Expanded assessment with linked-gene recombination frequency, a stated epistasis model and chi-squared decision-making; added gene-to-protein visual interpretation task. These are original teaching exercises, not past-paper reproductions.",
+      "Added original pedigree-evidence evaluation, a complete test-cross genetic diagram question and a probability-versus-observed-data response. These remain draft assessment items pending subject review."
     ]
   },
   "content": {
@@ -228,6 +229,37 @@
           "Do not reject null hypothesis",
           "Difference is not statistically significant at p = 0.05",
           "Does not prove the hypothesis"
+        ]
+      },
+      {
+        "question": "A pedigree shows an affected father and an unaffected mother. They have two daughters, one affected and one unaffected, and two sons, both unaffected. The trait is rare. State one inheritance pattern that is consistent with this family and explain why the pedigree alone is insufficient to establish it.",
+        "answer": "An autosomal dominant pattern is consistent: an affected heterozygous father could pass the allele to one daughter but not the other, and neither son may inherit it. However, this small pedigree does not establish the pattern; more relatives, family history and further generations are needed. Other patterns may also fit depending on the genotypes and assumptions.",
+        "mark_points": [
+          "Suggests a plausible pattern rather than claiming certainty",
+          "Correctly relates transmission to a possible heterozygous parent",
+          "Explains that unaffected offspring can occur",
+          "Recognises that a small pedigree cannot establish inheritance pattern"
+        ]
+      },
+      {
+        "question": "In a plant, purple flowers (P) are dominant to white flowers (p). A purple-flowered plant of unknown genotype is test-crossed with a white-flowered plant. (a) Give the genotype of the white-flowered parent. (1) (b) State the expected offspring if the unknown parent is PP. (2) (c) State the expected offspring if it is Pp. (2)",
+        "answer": "(a) pp. (b) PP × pp produces all Pp, so all offspring are purple. (c) Pp × pp produces 1 Pp : 1 pp, giving 1 purple : 1 white.",
+        "mark_points": [
+          "pp",
+          "PP parent produces P gametes only",
+          "All offspring Pp and purple",
+          "Pp parent produces P and p gametes",
+          "1 Pp : 1 pp or 1 purple : 1 white"
+        ]
+      },
+      {
+        "question": "A gene has two alleles, R and r. In a test cross Rr × rr, 120 offspring are recorded: 64 show the dominant phenotype and 56 show the recessive phenotype. (a) State the expected ratio. (1) (b) Calculate the expected numbers. (2) (c) Explain why the observed numbers need not be exactly equal. (2)",
+        "answer": "(a) 1:1. (b) 60 dominant and 60 recessive. (c) Allele segregation and fertilisation are probabilistic; random sampling variation means a finite offspring group may differ from the exact expectation.",
+        "mark_points": [
+          "Expected ratio 1:1",
+          "Correct expected numbers 60 and 60",
+          "Recognises probability rather than certainty",
+          "Explains random sampling variation"
         ]
       }
     ],
