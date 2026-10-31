@@ -116,4 +116,26 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(map).toContain("Do not invent UUIDs");
   });
 
+
+  it("keeps the original Topic 16 structured assessment pack review-gated and numerically traceable", () => {
+    const pack = readFileSync(
+      join(process.cwd(), "docs/learning-assets/drafts/biology-9700-topic-16-assessment-pack.v1.md"),
+      "utf8",
+    );
+
+    for (const heading of [
+      "## Question 1: Meiosis, chromosome behaviour and microscopy (10 marks)",
+      "## Question 2: Linked genes and interpretation of offspring data (8 marks)",
+      "## Question 3: Gene control and experimental evaluation (7 marks)",
+      "## Question 4: Test-cross design and inference (5 marks)",
+    ]) {
+      expect(pack).toContain(heading);
+    }
+    expect(pack).toContain("19 / 1000 × 100 = **19%**");
+    expect(pack).toContain("percentage increase = 14 / 4 × 100 = **350%**");
+    expect(pack).toContain("all offspring Pp and purple");
+    expect(pack).toContain("Original practice questions");
+    expect(pack).toContain("not Cambridge past-paper questions");
+    expect(pack).toContain("Do not import or publish");
+  });
 });
