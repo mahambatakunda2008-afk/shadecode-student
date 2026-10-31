@@ -20,7 +20,8 @@
     "assessment_checked": false,
     "accessibility_checked": false,
     "review_notes": [
-      "Authored as a draft from the official 2025-2027 syllabus Topic 16. Exact objective UUIDs and version linkage must be reconciled against active curriculum records before import or publication."
+      "Authored as a draft from the official 2025-2027 syllabus Topic 16. Exact objective UUIDs and version linkage must be reconciled against active curriculum records before import or publication.",
+      "Original vector teaching diagrams added for monohybrid crosses, X-linked inheritance and pedigree notation. All assets remain draft and require editorial review."
     ]
   },
   "content": {
@@ -188,20 +189,39 @@
     "visual_tasks": [
       {
         "type": "punnett_square",
-        "instruction": "Complete a 2 × 2 Punnett square for Tt × Tt. Put T and t from one parent across the top and T and t from the other parent down the side. Fill all four offspring genotypes and shade or label the recessive phenotype.",
+        "image": "/learning-assets/biology/9700/inheritance/monohybrid-punnett-square.svg",
+        "alt": "Completed Tt by Tt monohybrid Punnett square showing TT, Tt, Tt and tt.",
+        "instruction": "Study the completed cross, then recreate it from scratch. Explain why the genotype ratio differs from the phenotype ratio.",
         "expected_features": [
-          "Four offspring genotypes TT, Tt, Tt and tt",
-          "Correct gamete labels",
-          "One recessive phenotype outcome"
+          "Gametes T and t from each parent",
+          "Genotypes TT, Tt, Tt and tt",
+          "Genotype ratio 1:2:1",
+          "Phenotype ratio 3:1"
         ]
       },
       {
         "type": "genetic_diagram",
-        "instruction": "Draw a genetic diagram for a carrier female XᴴXʰ crossed with an unaffected male XᴴY. Show parental phenotypes, gametes and all four possible offspring genotypes.",
+        "image": "/learning-assets/biology/9700/inheritance/x-linked-haemophilia-cross.svg",
+        "alt": "X-linked recessive cross between a carrier female and an unaffected male.",
+        "instruction": "Use the diagram to calculate the probability of an affected son, an affected daughter and a carrier daughter. State whether each probability is conditional on sex or applies to all offspring.",
         "expected_features": [
-          "X-linked alleles written as superscripts on X",
-          "Four offspring genotype classes",
-          "Affected son and carrier daughter correctly identified"
+          "X-linked alleles shown as superscripts",
+          "Four offspring classes",
+          "One quarter of all offspring affected sons",
+          "One half of sons affected",
+          "One half of daughters carriers"
+        ]
+      },
+      {
+        "type": "pedigree_interpretation",
+        "image": "/learning-assets/biology/9700/inheritance/pedigree-symbols.svg",
+        "alt": "Pedigree symbols and a two-generation example.",
+        "instruction": "Identify the sex and phenotype of each individual. Then explain what additional generations or family information would be needed to infer a mode of inheritance reliably.",
+        "expected_features": [
+          "Square represents male",
+          "Circle represents female",
+          "Filled symbol represents affected individual",
+          "Mating and offspring lines interpreted correctly"
         ]
       },
       {
@@ -238,6 +258,40 @@
         "A male has only one X chromosome and usually no corresponding allele on the Y chromosome.",
         "The difference between observed and expected frequencies is unlikely to be due to chance at the stated significance level, so the null hypothesis is rejected."
       ]
-    }
+    },
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/inheritance/monohybrid-punnett-square.svg",
+        "caption": "A worked monohybrid cross for two heterozygous tall plants.",
+        "alt": "Tt by Tt Punnett square with a 1:2:1 genotype ratio and 3:1 phenotype ratio."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/x-linked-haemophilia-cross.svg",
+        "caption": "A carrier female crossed with an unaffected male for an X-linked recessive allele.",
+        "alt": "Four possible offspring genotypes showing affected sons and carrier daughters."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/pedigree-symbols.svg",
+        "caption": "Standard pedigree symbols and a simple family diagram.",
+        "alt": "Square, circle, filled symbols and family relationship lines."
+      }
+    ],
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2025–2027, Topic 16.2",
+        "url": "https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf",
+        "use": "Controlling all required inheritance terms, cross types, chi-squared and gene/protein examples."
+      },
+      {
+        "title": "OpenStax Biology 2e, 12.3 Laws of Inheritance",
+        "url": "https://openstax.org/books/biology-2e/pages/12-3-laws-of-inheritance",
+        "use": "Independent conceptual cross-check for segregation, independent assortment, linkage, recombination and epistasis."
+      },
+      {
+        "title": "OpenStax Biology 2e, 11.1 The Process of Meiosis",
+        "url": "https://openstax.org/books/biology-2e/pages/11-1-the-process-of-meiosis",
+        "use": "Cross-check for chromosome behaviour and the relationship between meiosis and inheritance."
+      }
+    ]
   }
 }
