@@ -44,4 +44,30 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
       }
     }
   });
+  it("requires assessable practice and explicit success criteria in every Topic 16 draft", () => {
+    for (const draftPath of draftPaths) {
+      const asset = JSON.parse(readFileSync(join(process.cwd(), draftPath), "utf8")) as {
+        content: {
+          practice?: Array<{ question: string; answer: string; mark_points?: string[] }>;
+          visual_tasks?: Array<{ instruction: string; expected_features?: string[] }>;
+        };
+      };
+
+      expect(asset.content.practice?.length).toBeGreaterThanOrEqual(8);
+      for (const question of asset.content.practice ?? []) {
+        expect(question.question.trim().length).toBeGreaterThan(20);
+        expect(question.answer.trim().length).toBeGreaterThan(20);
+        expect(question.mark_points?.length).toBeGreaterThanOrEqual(2);
+        for (const point of question.mark_points ?? []) {
+          expect(point.trim().length).toBeGreaterThan(3);
+        }
+      }
+
+      for (const task of asset.content.visual_tasks ?? []) {
+        expect(task.instruction.trim().length).toBeGreaterThan(20);
+        expect(task.expected_features?.length).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+
 });
