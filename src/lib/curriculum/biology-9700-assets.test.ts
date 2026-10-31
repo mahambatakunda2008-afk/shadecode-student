@@ -70,4 +70,31 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     }
   });
 
+  it("covers every numbered Topic 16 syllabus outcome without publishing or inventing database mappings", () => {
+    const expectedByFile: Record<string, string[]> = {
+      "docs/learning-assets/drafts/biology-9700-meiosis.v1.json": [
+        "16.1.1", "16.1.2", "16.1.3", "16.1.4", "16.1.5", "16.1.6", "16.1.7",
+      ],
+      "docs/learning-assets/drafts/biology-9700-inheritance-genetic-crosses.v1.json": [
+        "16.2.1", "16.2.2", "16.2.3", "16.2.4", "16.2.5", "16.2.6", "16.2.7",
+      ],
+      "docs/learning-assets/drafts/biology-9700-gene-control.v1.json": [
+        "16.3.1", "16.3.2", "16.3.3", "16.3.4",
+      ],
+    };
+
+    for (const [draftPath, expectedCodes] of Object.entries(expectedByFile)) {
+      const asset = JSON.parse(readFileSync(join(process.cwd(), draftPath), "utf8")) as {
+        review_status: string;
+        curriculum: {
+          syllabus_outcome_codes?: string[];
+          objective_mapping_status?: string;
+        };
+      };
+      expect(asset.review_status).toBe("draft");
+      expect(asset.curriculum.syllabus_outcome_codes).toEqual(expectedCodes);
+      expect(asset.curriculum.objective_mapping_status).toBe("unmapped_to_database_objective_uuids");
+    }
+  });
+
 });
