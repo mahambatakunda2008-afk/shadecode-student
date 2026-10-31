@@ -32,7 +32,8 @@
     "review_notes": [
       "Draft aligned to all seven Topic 16.1 outcomes. Original vector diagrams are included in public/learning-assets/biology/9700/inheritance/. Requires subject-editor review and objective-key reconciliation before import.",
       "Expanded cytokinesis coverage to distinguish cleavage furrow formation in animal cells from cell-plate formation in plant cells, alongside spindle behaviour.",
-      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved."
+      "Syllabus outcome code coverage is explicitly recorded; database objective UUIDs remain intentionally unmapped until the verified curriculum version is resolved.",
+      "Added an original four-stage recognition schematic with a structured interpretation task. It is a schematic learning aid and does not replace practice interpreting authentic photomicrographs."
     ]
   },
   "content": {
@@ -207,6 +208,19 @@
           "Non-sister chromatids exchange segments",
           "Random orientation at metaphase I"
         ]
+      },
+      {
+        "type": "stage_recognition",
+        "image": "/learning-assets/biology/9700/inheritance/meiosis-stage-recognition.svg",
+        "alt": "Four original schematic cells show chromosome behaviour at metaphase I, anaphase I, metaphase II and anaphase II.",
+        "instruction": "For each cell A–D, name the meiotic stage and describe the chromosome behaviour that identifies it. Then explain why the chromosome count is not the same as the chromatid count.",
+        "expected_features": [
+          "A: metaphase I, homologous pairs align at the equator",
+          "B: anaphase I, homologous chromosomes separate while sister chromatids remain joined",
+          "C: metaphase II, individual replicated chromosomes align at the equator",
+          "D: anaphase II, centromeres divide and sister chromatids separate",
+          "Chromosomes are counted by centromeres; chromatids are not separate chromosomes before centromere division"
+        ]
       }
     ],
     "visual_assets": [
@@ -219,6 +233,11 @@
         "path": "/learning-assets/biology/9700/inheritance/crossing-over-independent-assortment.svg",
         "caption": "Crossing over and independent assortment as sources of genetic variation.",
         "alt": "Two panels showing non-sister chromatid exchange and random orientation of homologous pairs."
+      },
+      {
+        "path": "/learning-assets/biology/9700/inheritance/meiosis-stage-recognition.svg",
+        "caption": "Original stage-recognition schematic comparing metaphase I, anaphase I, metaphase II and anaphase II.",
+        "alt": "Four labelled cells A–D show paired homologues, homologous separation, single chromosome alignment and sister chromatid separation."
       }
     ],
     "common_mistakes": [
