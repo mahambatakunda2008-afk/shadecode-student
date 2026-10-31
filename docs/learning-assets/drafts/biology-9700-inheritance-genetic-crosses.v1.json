@@ -246,7 +246,7 @@
         "question": "In a plant, purple flowers (P) are dominant to white flowers (p). A purple-flowered plant of unknown genotype is test-crossed with a white-flowered plant. (a) Give the genotype of the white-flowered parent. (1) (b) State the expected offspring if the unknown parent is PP. (2) (c) State the expected offspring if it is Pp. (2)",
         "answer": "(a) pp. (b) PP × pp produces all Pp, so all offspring are purple. (c) Pp × pp produces 1 Pp : 1 pp, giving 1 purple : 1 white.",
         "mark_points": [
-          "pp",
+          "Tester genotype is pp",
           "PP parent produces P gametes only",
           "All offspring Pp and purple",
           "Pp parent produces P and p gametes",
