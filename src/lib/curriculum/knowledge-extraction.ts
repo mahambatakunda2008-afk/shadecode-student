@@ -105,9 +105,8 @@ function extractSectionBlocks(
   const flush = (endLine: number) => {
     if (!currentHeading) return;
     const content = buffer.join(" ").replace(/\s+/g, " ").trim();
-    if (!content) return;
     const kind = profile.sectionKinds?.[currentHeading.normalized] ?? DEFAULT_SECTION_KINDS[currentHeading.normalized];
-    if (!kind) return;
+    if (!kind || (!content && kind !== "topic")) return;
     const parent = topicStack.length ? topicStack[topicStack.length - 1] : undefined;
     const chunks = content.split(/\s*;\s*|(?<=\.)\s+(?=\d+\.\s)/).filter(Boolean);
     chunks.forEach((chunk, index) => {
