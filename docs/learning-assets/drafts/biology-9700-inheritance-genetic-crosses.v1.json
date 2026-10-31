@@ -1,0 +1,243 @@
+{
+  "asset_key": "biology-9700-inheritance-genetic-crosses",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Inheritance: genes, genetic crosses and predicting phenotypes",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2025-2027",
+    "expected_topic_key": "16",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus, 2025-2027, Topic 16 Inheritance, especially 16.2 The roles of genes in determining the phenotype, pp. 40-42: https://www.cambridgeinternational.org/Images/664560-2025-2027-syllabus.pdf"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Authored as a draft from the official 2025-2027 syllabus Topic 16. Exact objective UUIDs and version linkage must be reconciled against active curriculum records before import or publication."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Use the terms gene, locus, allele, dominant, recessive, codominant, phenotype, genotype, homozygous and heterozygous accurately.",
+      "Construct and interpret genetic diagrams and Punnett squares for monohybrid and dihybrid crosses.",
+      "Predict outcomes involving multiple alleles, codominance, sex linkage, autosomal linkage and epistasis.",
+      "Explain and interpret test crosses.",
+      "Use chi-squared to assess whether differences between observed and expected results are statistically significant.",
+      "Explain how selected genes influence proteins and phenotypes, using the examples in the syllabus."
+    ],
+    "sections": [
+      {
+        "heading": "The information chain: gene to phenotype",
+        "body": "A gene is a length of DNA that codes for a polypeptide or functional RNA. Its position on a chromosome is its locus. Different versions of the same gene are alleles. An organism's genotype is the combination of alleles it carries; its phenotype is the observable feature produced by the genotype interacting with the environment. A dominant allele affects the phenotype in a heterozygote. A recessive allele affects the phenotype only when no dominant allele at that locus is present. With codominance, both alleles contribute to the heterozygote phenotype. Homozygous means two identical alleles at a locus; heterozygous means two different alleles."
+      },
+      {
+        "heading": "Write alleles and genotypes consistently",
+        "body": "Choose symbols before starting a cross. For complete dominance, use the same letter in upper and lower case, such as A and a. Write a genotype with both alleles, for example Aa. State what each symbol represents. Do not use a capital letter for one allele and an unrelated lowercase letter for another allele unless the question's notation requires it. For sex-linked inheritance, place the allele as a superscript on the X chromosome, for example Xᴴ and Xʰ."
+      },
+      {
+        "heading": "Monohybrid cross: one gene",
+        "body": "A monohybrid cross follows the inheritance of alleles at one gene locus. Each diploid parent has two alleles but a gamete receives only one allele. A Punnett square combines one gamete from each parent to show possible offspring genotypes. It predicts probabilities, not a guaranteed number of each phenotype in a small family."
+      },
+      {
+        "heading": "Worked example: complete dominance",
+        "body": "In a plant, allele T gives tall stems and is dominant to allele t for short stems. Cross two heterozygous plants: Tt × Tt. Each parent forms gametes T and t. The combinations are TT, Tt, Tt and tt. Genotype ratio = 1 TT : 2 Tt : 1 tt. Phenotype ratio = 3 tall : 1 short. The probability of a short offspring is 1/4, or 25%."
+      },
+      {
+        "heading": "Test crosses",
+        "body": "An individual showing a dominant phenotype could be homozygous dominant or heterozygous. Cross it with a homozygous recessive individual. If any offspring show the recessive phenotype, the unknown parent must be heterozygous. If all offspring show the dominant phenotype, the unknown parent is likely homozygous dominant, but a small sample cannot prove this with absolute certainty."
+      },
+      {
+        "heading": "Codominance and multiple alleles",
+        "body": "In codominance, both alleles are expressed in a heterozygote. Use distinct allele symbols and show both in the genotype. In a multiple-allele system, more than two alleles exist in the population, although a diploid individual still carries only two at that locus. The ABO blood group system is a standard example: Iᴬ and Iᴮ are codominant, and both are dominant to i. Genotype IᴬIᴮ gives blood group AB; Iᴬi gives A; Iᴮi gives B; ii gives O."
+      },
+      {
+        "heading": "Worked example: ABO inheritance",
+        "body": "A parent with genotype Iᴬi and a parent with genotype Iᴮi each produce two gamete types. The possible offspring genotypes are IᴬIᴮ, Iᴬi, Iᴮi and ii. Each has probability 1/4. The predicted phenotypes are AB, A, B and O in equal proportions. The appearance of four blood groups is possible because the two parents carry different alleles."
+      },
+      {
+        "heading": "Sex linkage",
+        "body": "A sex-linked gene is located on a sex chromosome. For an X-linked recessive condition, a male with the recessive allele on his single X chromosome expresses the condition because the Y chromosome usually has no corresponding allele. A female generally needs two recessive alleles to express an X-linked recessive condition; a heterozygous female is a carrier. Write X-linked genotypes with superscripts and do not assign the X-linked allele to the Y chromosome."
+      },
+      {
+        "heading": "Worked example: X-linked recessive inheritance",
+        "body": "Let Xᴴ represent the allele for normal blood clotting and Xʰ the recessive allele associated with haemophilia. Cross a carrier female XᴴXʰ with an unaffected male XᴴY. Possible offspring are XᴴXᴴ, XᴴXʰ, XᴴY and XʰY, each with probability 1/4. Among sons, half are predicted to have haemophilia; among daughters, none are predicted to have haemophilia in this cross, while half are carriers."
+      },
+      {
+        "heading": "Dihybrid crosses and independent assortment",
+        "body": "A dihybrid cross follows two genes. If the genes are unlinked, alleles of one gene assort independently of alleles of the other during meiosis. A double heterozygote AaBb can form AB, Ab, aB and ab gametes in equal proportions. A cross AaBb × AaBb gives the familiar 9:3:3:1 phenotype ratio only when both genes show complete dominance, assort independently, and the cross is otherwise uncomplicated. Do not apply this ratio automatically when linkage, epistasis or different dominance relationships are involved."
+      },
+      {
+        "heading": "Autosomal linkage",
+        "body": "Linked genes are on the same autosome and tend to be inherited together because they are on the same chromosome. Crossing over during meiosis can separate linked alleles, producing recombinant gametes. If genes are linked, the four gamete types from a double heterozygote are not necessarily produced in equal proportions. Use the parental and recombinant classes in the question's data rather than assuming independent assortment."
+      },
+      {
+        "heading": "Epistasis",
+        "body": "Epistasis occurs when an allele of one gene affects or masks the expression of a gene at a different locus. It can modify the phenotype ratios expected from a simple dihybrid cross. The 9700 syllabus requires candidates to interpret and construct crosses involving epistasis, but does not require memorising expected ratios for different types of epistasis. Explain the interaction described by the question and derive the phenotype classes from the stated genetic information."
+      },
+      {
+        "heading": "From genes to proteins and phenotype",
+        "body": "A change in a gene's DNA base sequence can alter the amino acid sequence or amount of a protein, which may change phenotype. The syllabus examples include TYR and tyrosinase in albinism; HBB and haemoglobin in sickle cell anaemia; F8 and factor VIII in haemophilia; and HTT and huntingtin in Huntington's disease. Link the gene to the protein and then to the effect on cells or the organism. Avoid saying that every allele produces a completely different protein: some changes affect protein function, and some do not."
+      },
+      {
+        "heading": "Gibberellin and stem elongation",
+        "body": "The dominant Le allele codes for a functional enzyme in the gibberellin synthesis pathway. The recessive le allele codes for a non-functional enzyme. Plants with at least one Le allele can produce the functional enzyme; lele plants have reduced ability to synthesise gibberellin through this pathway and show reduced stem elongation. Describe the allele's effect through the enzyme and hormone pathway rather than claiming that le is a missing gene."
+      },
+      {
+        "heading": "Chi-squared: testing observed results",
+        "body": "A chi-squared test assesses whether the difference between observed and expected frequencies is large enough to be statistically significant. Calculate χ² = Σ((O − E)² / E), using the formula provided in the examination. Determine degrees of freedom from the number of categories (number of categories − 1 for the usual goodness-of-fit situation), then compare the calculated value with the critical value at the stated probability level. If calculated χ² is greater than the critical value, reject the null hypothesis: the difference is significant. If it is equal to or below the critical value, do not reject the null hypothesis: the difference is not significant."
+      },
+      {
+        "heading": "Worked example: chi-squared",
+        "body": "A cross predicts a 3:1 phenotype ratio. There are 80 offspring, so the expected numbers are 60 and 20. Suppose the observed numbers are 54 and 26. χ² = (54 − 60)²/60 + (26 − 20)²/20 = 36/60 + 36/20 = 0.6 + 1.8 = 2.4. There are two categories, so degrees of freedom = 1. Compare 2.4 with the critical value supplied for 1 degree of freedom at the stated probability. State the decision and what it means for the null hypothesis; do not claim that the cross is proven."
+      },
+      {
+        "heading": "How to construct a full genetic diagram",
+        "body": "1. Define the allele symbols. 2. State both parental genotypes and phenotypes. 3. Derive the gametes from each parent. 4. Combine gametes in a Punnett square or equivalent genetic diagram. 5. List offspring genotypes. 6. Convert genotypes into phenotypes using the dominance relationship. 7. Give the ratio or probability requested. 8. For sex linkage, show the sex chromosomes in every genotype. For linkage, show chromosome arrangement where the question supplies it."
+      },
+      {
+        "heading": "Common errors to eliminate",
+        "body": "Do not write AaBb as a gamete: a gamete receives one allele of each gene, such as AB or Ab. Do not confuse genotype ratio with phenotype ratio. Do not treat probability as a guaranteed family outcome. Do not use 9:3:3:1 when the genes are linked or epistatic. Do not write a Y-linked allele for an X-linked gene. Do not call a chi-squared result significant when the calculated value is below the critical value. Always identify the null hypothesis and degrees of freedom."
+      }
+    ],
+    "worked_examples": [
+      {
+        "prompt": "Two heterozygous tall plants are crossed. Tall (T) is dominant to short (t). Find the probability of a short offspring.",
+        "steps": [
+          "Parents: Tt × Tt.",
+          "Gametes from each parent: T and t.",
+          "Offspring genotypes: TT, Tt, Tt, tt.",
+          "Only tt is short, giving 1 out of 4."
+        ],
+        "answer": "1/4 = 25%.",
+        "common_error": "Do not report 1:2:1 as the phenotype ratio. It is the genotype ratio."
+      },
+      {
+        "prompt": "A plant with a dominant phenotype is crossed with a short plant. Some offspring are short. What is the unknown parent's genotype?",
+        "steps": [
+          "The short parent is tt and can only produce t gametes.",
+          "A short offspring must be tt, so the other parent must also have supplied t.",
+          "The unknown parent therefore carries t but has a dominant phenotype."
+        ],
+        "answer": "The unknown parent is heterozygous Tt.",
+        "common_error": "A dominant phenotype does not reveal whether the genotype is TT or Tt."
+      },
+      {
+        "prompt": "A carrier female XᴴXʰ has children with an unaffected male XᴴY. What proportion of all offspring are expected to be affected sons?",
+        "steps": [
+          "Possible offspring: XᴴXᴴ, XᴴXʰ, XᴴY, XʰY.",
+          "Only XʰY is an affected son.",
+          "One of four equally likely outcomes is affected."
+        ],
+        "answer": "1/4 of all offspring, or 1/2 of sons.",
+        "common_error": "Distinguish the probability among all offspring from the probability among sons."
+      }
+    ],
+    "practice": [
+      {
+        "question": "In a cross Aa × Aa, where A is completely dominant to a, give the genotype and phenotype ratios.",
+        "answer": "Genotype 1 AA : 2 Aa : 1 aa; phenotype 3 dominant : 1 recessive.",
+        "mark_points": [
+          "Correct genotype ratio",
+          "Correct phenotype ratio",
+          "Uses dominance relationship"
+        ]
+      },
+      {
+        "question": "A heterozygous individual AaBb forms gametes. Assuming independent assortment, list the gamete types.",
+        "answer": "AB, Ab, aB and ab, each with equal probability.",
+        "mark_points": [
+          "Each gamete contains one allele of each gene",
+          "All four combinations listed"
+        ]
+      },
+      {
+        "question": "Explain why a male can express an X-linked recessive allele while a heterozygous female is usually a carrier.",
+        "answer": "A male has one X chromosome and usually no corresponding allele on the Y chromosome, so the recessive allele on his X is expressed. A heterozygous female has a dominant allele on the other X chromosome.",
+        "mark_points": [
+          "Male has one X allele at the locus",
+          "Y usually lacks corresponding allele",
+          "Heterozygous female has dominant allele"
+        ]
+      },
+      {
+        "question": "Observed offspring numbers are 54 and 26, compared with expected numbers 60 and 20. Calculate χ².",
+        "answer": "χ² = (54−60)²/60 + (26−20)²/20 = 2.4.",
+        "mark_points": [
+          "Correct formula substitution",
+          "Correct two contributions",
+          "Final value 2.4"
+        ]
+      },
+      {
+        "question": "State why the 9:3:3:1 phenotype ratio should not be assumed for a cross involving linked genes.",
+        "answer": "Linked genes are on the same chromosome and do not assort independently; parental allele combinations are more common, with recombinants arising through crossing over.",
+        "mark_points": [
+          "Genes are on the same chromosome",
+          "Not independent assortment",
+          "Crossing over can produce recombinants"
+        ]
+      }
+    ],
+    "visual_tasks": [
+      {
+        "type": "punnett_square",
+        "instruction": "Complete a 2 × 2 Punnett square for Tt × Tt. Put T and t from one parent across the top and T and t from the other parent down the side. Fill all four offspring genotypes and shade or label the recessive phenotype.",
+        "expected_features": [
+          "Four offspring genotypes TT, Tt, Tt and tt",
+          "Correct gamete labels",
+          "One recessive phenotype outcome"
+        ]
+      },
+      {
+        "type": "genetic_diagram",
+        "instruction": "Draw a genetic diagram for a carrier female XᴴXʰ crossed with an unaffected male XᴴY. Show parental phenotypes, gametes and all four possible offspring genotypes.",
+        "expected_features": [
+          "X-linked alleles written as superscripts on X",
+          "Four offspring genotype classes",
+          "Affected son and carrier daughter correctly identified"
+        ]
+      },
+      {
+        "type": "data_analysis",
+        "instruction": "Plot observed and expected offspring frequencies for a two-category genetic cross as a paired bar chart. Label both axes, include units or counts where appropriate, and use a clear key.",
+        "expected_features": [
+          "Correct category labels",
+          "Observed and expected values distinguished",
+          "Axes labelled clearly"
+        ]
+      }
+    ],
+    "common_mistakes": [
+      "Confusing genotype ratio with phenotype ratio.",
+      "Writing a diploid genotype as a gamete.",
+      "Assuming all dihybrid crosses produce a 9:3:3:1 ratio.",
+      "Using ordinary allele notation instead of X-linked notation.",
+      "Treating a test cross with a small sample as absolute proof of homozygosity.",
+      "Calling a chi-squared result significant when the calculated value does not exceed the critical value.",
+      "Describing the le allele as absent rather than as coding for a non-functional enzyme."
+    ],
+    "retrieval_check": {
+      "questions": [
+        "What is the difference between genotype and phenotype?",
+        "Why does a test cross use a homozygous recessive individual?",
+        "What gametes can AaBb produce if the genes assort independently?",
+        "Why are X-linked recessive conditions more commonly expressed in males?",
+        "What does a significant chi-squared result mean in a genetic cross?"
+      ],
+      "answers": [
+        "Genotype is the allele combination; phenotype is the observable characteristic resulting from genotype and environmental effects.",
+        "The recessive tester reveals whether the unknown dominant-phenotype parent carries a recessive allele.",
+        "AB, Ab, aB and ab.",
+        "A male has only one X chromosome and usually no corresponding allele on the Y chromosome.",
+        "The difference between observed and expected frequencies is unlikely to be due to chance at the stated significance level, so the null hypothesis is rejected."
+      ]
+    }
+  }
+}
