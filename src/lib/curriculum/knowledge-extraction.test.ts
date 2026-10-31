@@ -107,7 +107,7 @@ LEARNING OUTCOMES
     const source = (profile.topicHeadings ?? [])
       .slice(0, 19)
       .map((heading, index) => `${index + 1} ${heading}`)
-      .join("\\n");
+      .join("\n");
     const items = extractCurriculumKnowledge(source, biologyIdentity, provenance, profile);
     const topics = items.filter((item) => item.kind === "topic");
 
