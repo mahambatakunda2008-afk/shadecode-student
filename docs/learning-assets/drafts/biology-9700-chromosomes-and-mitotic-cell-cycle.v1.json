@@ -1,0 +1,151 @@
+{
+  "asset_key": "biology-9700-chromosomes-and-mitotic-cell-cycle",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Chromosomes and the mitotic cell cycle",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "5",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 5, syllabus syllabus pp. 24–25, learning outcomes 5.1.1–5.1.6. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+    "syllabus_outcome_codes": [
+      "5.1.1",
+      "5.1.2",
+      "5.1.3",
+      "5.1.4",
+      "5.1.5",
+      "5.1.6"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced.",
+      "Microscopy and practical activities require local risk assessment, suitable equipment and teacher supervision."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Describe chromosome structure using DNA, histone proteins, sister chromatids, centromere and telomeres.",
+      "Explain the importance of mitosis in growth, cell replacement, tissue repair and asexual reproduction.",
+      "Outline interphase, mitosis and cytokinesis, including G1, S and G2.",
+      "Explain the role of telomeres, stem cells and uncontrolled cell division in tumour formation."
+    ],
+    "sections": [
+      {
+        "heading": "Chromosomes package DNA",
+        "body": "A chromosome is a long DNA molecule associated with proteins. In eukaryotic chromosomes, DNA is wrapped around histone proteins, helping to package and organise the molecule inside the nucleus. When a chromosome has replicated and is condensed for cell division, it consists of two genetically identical sister chromatids joined at a centromere. Each chromatid contains one DNA molecule. The centromere is the region where sister chromatids remain joined and where the kinetochore forms for spindle attachment. Telomeres are repetitive DNA sequences associated with proteins at the ends of linear chromosomes; they protect chromosome ends from being treated as broken DNA."
+      },
+      {
+        "heading": "Do not confuse chromosome and chromatid",
+        "body": "Before DNA replication, an unreplicated chromosome consists of one chromatid. After DNA replication, the replicated chromosome consists of two sister chromatids joined at the centromere. It is still counted as one chromosome until the sister chromatids separate. Once separated, each chromatid is regarded as an individual chromosome. DNA quantity doubles during S phase, but chromosome number does not double at that point."
+      },
+      {
+        "heading": "Why mitosis matters",
+        "body": "Mitosis is nuclear division that produces two genetically identical nuclei, provided DNA has been replicated accurately and no mutation or chromosome error has occurred. It enables growth in multicellular organisms by increasing cell number. It replaces damaged or dead cells and supports tissue repair by producing new cells. It is also involved in asexual reproduction, where offspring are produced from one parent without fusion of gametes. The genetic uniformity of daughter cells helps maintain the characteristics of tissues."
+      },
+      {
+        "heading": "The mitotic cell cycle",
+        "body": "The mitotic cell cycle includes interphase, mitosis and cytokinesis. Interphase is an active period, not a resting phase. During G1, the cell grows, carries out normal metabolism and synthesises proteins and organelles. During S phase, DNA is replicated so each chromosome is copied to form two sister chromatids. During G2, the cell continues to grow and prepares for nuclear division. Mitosis divides the nucleus and separates the replicated chromosomes into two nuclei. Cytokinesis then divides the cytoplasm and separates the cell into two daughter cells."
+      },
+      {
+        "heading": "Telomeres and chromosome-end protection",
+        "body": "DNA polymerase cannot completely replicate the ends of linear DNA molecules using the usual lagging-strand mechanism. Without a protective solution, repeated cell divisions could cause important genes near chromosome ends to be lost. Telomeres consist of repetitive non-coding DNA sequences and associated proteins that act as protective buffers. Telomeres can shorten during repeated cell divisions in many somatic cells. Their role in the syllabus is to prevent the loss of genes from chromosome ends during DNA replication; avoid claiming that telomeres make chromosomes immune to all damage."
+      },
+      {
+        "heading": "Stem cells in replacement and repair",
+        "body": "Stem cells are unspecialised cells that can divide by mitosis and can differentiate into specialised cell types. Their capacity for self-renewal maintains a stem-cell population, while differentiation produces cells needed for growth, replacement and tissue repair. Different tissues contain stem-cell populations with different ranges of developmental potential. For this syllabus outcome, focus on how mitosis supplies new cells and how differentiation allows replacement cells to acquire the specialised structures and functions of the tissue."
+      },
+      {
+        "heading": "Uncontrolled cell division and tumours",
+        "body": "The cell cycle is controlled by regulatory proteins and checkpoints that coordinate DNA replication and cell division. Mutations affecting genes that regulate the cell cycle can allow cells to divide when they should stop, avoid normal cell death or continue dividing despite DNA damage. Repeated uncontrolled division can produce a mass of abnormal cells called a tumour. A benign tumour remains localised, whereas a malignant tumour can invade surrounding tissues and may spread to other parts of the body (metastasis). Not every tumour is malignant."
+      },
+      {
+        "heading": "Cell-cycle checkpoints and exam reasoning",
+        "body": "When explaining why a cell-cycle control failure can cause a tumour, link the mutation to loss of normal regulation, continued cell division and accumulation of abnormal cells. Avoid vague statements such as 'cells grow too fast' without explaining that division is no longer properly controlled. In diagrams, distinguish DNA amount from chromosome number and label G1, S, G2, mitosis and cytokinesis in the correct order."
+      }
+    ],
+    "questions": [
+      {
+        "question": "A cell contains 12 chromosomes in G1. State the number of chromosomes and chromatids present after S phase, before mitosis.",
+        "answer": "There are still 12 chromosomes, but 24 sister chromatids. Each chromosome has replicated to form two sister chromatids joined at one centromere.",
+        "mark_points": [
+          "12 chromosomes remain because centromeres have not separated",
+          "24 chromatids are present",
+          "Each chromosome consists of two sister chromatids"
+        ]
+      },
+      {
+        "question": "Explain how mitosis contributes to tissue repair.",
+        "answer": "Mitosis produces genetically identical daughter nuclei. Cytokinesis forms new cells, increasing cell number to replace damaged or dead cells. The new cells can differentiate to perform the functions of the repaired tissue.",
+        "mark_points": [
+          "Mitosis produces genetically identical daughter nuclei",
+          "Cytokinesis forms new cells / increases cell number",
+          "Replaces damaged or dead cells",
+          "New cells can differentiate / restore tissue function"
+        ]
+      },
+      {
+        "question": "Outline the events of interphase in the correct sequence.",
+        "answer": "During G1 the cell grows and synthesises proteins and organelles. During S phase DNA is replicated, producing sister chromatids. During G2 the cell continues to grow and prepares for mitosis.",
+        "mark_points": [
+          "G1: growth and synthesis",
+          "S: DNA replication",
+          "G2: further growth / preparation for mitosis"
+        ]
+      },
+      {
+        "question": "Explain the role of telomeres in linear chromosomes.",
+        "answer": "Telomeres are repetitive DNA sequences and associated proteins at chromosome ends. They act as protective buffers so that loss of DNA during replication does not immediately remove important genes from chromosome ends.",
+        "mark_points": [
+          "Located at ends of linear chromosomes",
+          "Repetitive DNA / associated proteins",
+          "Protect chromosome ends",
+          "Buffer against loss of genes during DNA replication"
+        ]
+      },
+      {
+        "question": "Explain how stem cells contribute to tissue repair.",
+        "answer": "Stem cells divide by mitosis to produce new cells. Some daughter cells remain as stem cells while others differentiate into specialised cells that replace damaged or lost cells in the tissue.",
+        "mark_points": [
+          "Stem cells divide by mitosis",
+          "Self-renewal maintains stem-cell population",
+          "Some daughter cells differentiate",
+          "Specialised cells replace damaged / lost cells"
+        ]
+      },
+      {
+        "question": "Describe how uncontrolled cell division can result in a tumour.",
+        "answer": "Mutations can affect genes controlling the cell cycle. Cells may then divide when they should stop or fail to undergo normal cell death. Repeated uncontrolled cell division produces a mass of abnormal cells called a tumour.",
+        "mark_points": [
+          "Mutation affects cell-cycle regulation",
+          "Cell division continues when it should be controlled / stopped",
+          "Abnormal cells accumulate",
+          "Mass of abnormal cells is a tumour"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/mitotic-cell-cycle/chromosome-structure.svg",
+        "alt": "Diagram of a replicated chromosome showing two sister chromatids joined at a centromere, with telomeres at both ends and DNA associated with histone proteins.",
+        "caption": "A replicated chromosome and the structures named in the syllabus."
+      },
+      {
+        "path": "/learning-assets/biology/9700/mitotic-cell-cycle/cell-cycle.svg",
+        "alt": "Cell-cycle diagram showing G1 growth, S phase DNA replication, G2 preparation, mitosis and cytokinesis in sequence.",
+        "caption": "The stages of the mitotic cell cycle."
+      }
+    ]
+  }
+}
