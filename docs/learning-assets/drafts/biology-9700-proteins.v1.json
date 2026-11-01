@@ -281,6 +281,23 @@
         "url": "https://openstax.org/books/biology-2e/pages/3-4-proteins",
         "use": "Supplementary explanation and independent structural cross-check."
       }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/biological-molecules/amino-acid-peptide-bond.svg",
+        "caption": "General amino acid structure and peptide bond formation by condensation.",
+        "alt": "Central alpha carbon bonded to amino group, carboxyl group, hydrogen and R group, with a peptide bond schematic."
+      },
+      {
+        "path": "/learning-assets/biology/9700/biological-molecules/protein-structure-levels.svg",
+        "caption": "The four levels of protein structure.",
+        "alt": "Primary amino acid sequence, secondary alpha helix or beta sheet, tertiary folded chain and quaternary subunit association."
+      },
+      {
+        "path": "/learning-assets/biology/9700/biological-molecules/haemoglobin-collagen.svg",
+        "caption": "Haemoglobin subunits and collagen triple-helix fibre assembly.",
+        "alt": "Schematic haemoglobin with two alpha and two beta chains and haem groups compared with collagen triple helix molecules assembled into fibres."
+      }
     ]
   }
 }
