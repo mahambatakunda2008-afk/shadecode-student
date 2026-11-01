@@ -1,0 +1,154 @@
+{
+  "asset_key": "biology-9700-structure-of-transport-tissues",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Structure of transport tissues",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "7",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 7, p. 27. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 7.1.1, 7.1.2, 7.1.3, 7.1.4.",
+    "syllabus_outcome_codes": [
+      "7.1.1",
+      "7.1.2",
+      "7.1.3",
+      "7.1.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, exact objective UUID reconciliation against the verified 2028–2030 curriculum version, assessment review and accessibility review before import or learner publication.",
+      "Questions are original learning checks, not Cambridge past-paper questions or official mark schemes. Diagrams are original explanatory schematics, not photomicrographs."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Draw plan diagrams of transverse sections of herbaceous dicotyledonous stems, roots and leaves.",
+      "Describe the distribution of xylem and phloem in these transverse sections.",
+      "Draw and label xylem vessel elements, phloem sieve tube elements and companion cells.",
+      "Relate the structure of xylem vessel elements, sieve tube elements and companion cells to their functions."
+    ],
+    "sections": [
+      {
+        "heading": "Why plants need transport tissues",
+        "body": "A flowering plant has roots and leaves spread over a large volume. Water and mineral ions are absorbed mainly by roots, while sugars and amino acids are produced in photosynthetic or other metabolic tissues. Diffusion alone is too slow to move materials over the distances found in a large plant. Xylem transports water and dissolved mineral ions; phloem transports organic assimilates such as sucrose and amino acids in water. The tissues form continuous transport pathways through roots, stems and leaves."
+      },
+      {
+        "heading": "Plan diagrams are tissue maps, not cell drawings",
+        "body": "A plan diagram shows the distribution and relative arrangement of tissues in a transverse section. Use clear, single lines, no shading, and label tissue regions with straight ruled label lines that do not cross. Show the overall outline and major tissue boundaries in proportion. Do not draw individual cells in a plan diagram. A detailed biological drawing is different: it shows the shape and arrangement of individual cells or structures at higher magnification."
+      },
+      {
+        "heading": "Dicotyledonous stem in transverse section",
+        "body": "In a typical herbaceous dicotyledonous stem, vascular bundles are arranged in a ring near the outside of the stem. In each bundle, xylem is on the inner side, towards the centre of the stem, and phloem is on the outer side, towards the epidermis. A cambium may be present between xylem and phloem, but do not add it unless it is visible or required by the specimen. The ground tissue inside the ring is mainly pith; cortex lies between the vascular bundles and the epidermis."
+      },
+      {
+        "heading": "Dicotyledonous root in transverse section",
+        "body": "In a typical herbaceous dicotyledonous root, the central vascular cylinder contains a star-shaped or cross-shaped xylem arrangement. Phloem occurs in groups between the arms of the xylem. The endodermis forms a boundary around the vascular cylinder, with cortex outside it and the epidermis at the surface. Identify the pattern rather than assuming every specimen has identical proportions."
+      },
+      {
+        "heading": "Dicotyledonous leaf in transverse section",
+        "body": "A leaf vascular bundle is found in the vein or midrib. In a typical dicot leaf, xylem is towards the upper epidermis and phloem towards the lower epidermis. The upper and lower epidermises enclose mesophyll: palisade mesophyll is usually towards the upper surface and spongy mesophyll contains air spaces. A plan diagram should show tissue distribution and the position of the vascular bundle, not individual chloroplasts or every mesophyll cell."
+      },
+      {
+        "heading": "Xylem vessel elements: structure fits water transport",
+        "body": "Xylem vessel elements are dead at functional maturity and joined end to end to form a continuous hollow vessel. End walls are absent or perforated, reducing resistance to water flow. The cell walls are thickened with lignin, which strengthens and waterproofs them and helps prevent collapse under the tension created by transpiration. Pits are regions without lignin where water can move sideways between vessels and surrounding cells. Lignin may be deposited in rings, spirals or a more continuous pattern."
+      },
+      {
+        "heading": "Phloem sieve tube elements and companion cells",
+        "body": "Sieve tube elements are living cells joined end to end. Their end walls form sieve plates with pores that allow phloem sap to pass between elements. At maturity, sieve tube elements have very little cytoplasm and no nucleus, reducing resistance to mass flow. Companion cells are closely associated with sieve tube elements and contain a nucleus, dense cytoplasm and many mitochondria. Plasmodesmata connect the two cell types. Companion cells provide metabolic support and are involved in loading and unloading assimilates."
+      },
+      {
+        "heading": "Relating tissue structure to function",
+        "body": "Xylem vessels provide a low-resistance pathway for water and dissolved mineral ions and resist collapse under tension because of lignified walls. Sieve tube elements provide a pathway for assimilates; sieve plates permit flow between elements, while reduced internal contents lower resistance. Companion cells contain many mitochondria to supply ATP for active transport processes and are linked to sieve tubes by plasmodesmata. In answers, link each named feature to a specific functional consequence."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Describe the distribution of vascular bundles and the relative positions of xylem and phloem in a transverse section of a herbaceous dicotyledonous stem.",
+        "answer": "Vascular bundles form a ring near the outside of the stem. Xylem is on the inner side of each bundle, towards the centre; phloem is on the outer side, towards the epidermis.",
+        "mark_points": [
+          "Vascular bundles arranged in a ring",
+          "Xylem towards the centre / inner side",
+          "Phloem towards the epidermis / outer side"
+        ]
+      },
+      {
+        "question": "Describe the arrangement of xylem and phloem in a transverse section of a typical herbaceous dicotyledonous root.",
+        "answer": "Xylem is central and commonly forms a star or cross. Phloem occurs in groups between the arms of the xylem. The vascular cylinder is surrounded by the endodermis.",
+        "mark_points": [
+          "Central star/cross-shaped xylem",
+          "Phloem between xylem arms",
+          "Endodermis surrounds vascular cylinder"
+        ]
+      },
+      {
+        "question": "State the relative positions of xylem and phloem in a typical dicotyledonous leaf vascular bundle.",
+        "answer": "Xylem is towards the upper epidermis and phloem is towards the lower epidermis.",
+        "mark_points": [
+          "Xylem upper side",
+          "Phloem lower side"
+        ]
+      },
+      {
+        "question": "Explain three ways in which the structure of a xylem vessel element is adapted to its function.",
+        "answer": "Vessel elements are dead and hollow, forming a low-resistance continuous tube. Perforated or absent end walls allow water to pass between elements. Lignified walls strengthen the vessel and prevent collapse under tension; pits allow lateral water movement.",
+        "mark_points": [
+          "Dead / no cytoplasm creates hollow lumen",
+          "End walls absent or perforated for flow",
+          "Lignified walls strengthen and prevent collapse",
+          "Pits permit lateral movement"
+        ]
+      },
+      {
+        "question": "Describe two structural differences between a sieve tube element and a companion cell.",
+        "answer": "A sieve tube element has sieve plates and, at maturity, lacks a nucleus and has little cytoplasm. A companion cell has a nucleus, dense cytoplasm and many mitochondria.",
+        "mark_points": [
+          "Sieve tube has sieve plate; companion cell does not",
+          "Sieve tube lacks nucleus at maturity; companion cell has nucleus",
+          "Companion cell has many mitochondria / dense cytoplasm"
+        ]
+      },
+      {
+        "question": "Explain how companion cells support translocation in phloem.",
+        "answer": "Companion cells provide metabolic support to sieve tube elements and use ATP in assimilate loading processes. Plasmodesmata connect companion cells to sieve tube elements, allowing substances and signals to pass between them.",
+        "mark_points": [
+          "Companion cells provide metabolic support",
+          "ATP supplies energy for loading processes",
+          "Plasmodesmata connect the two cell types"
+        ]
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/dicot-stem-ts.svg",
+        "alt": "Original schematic transverse section of a herbaceous dicotyledonous stem showing vascular bundles in a ring, xylem inward and phloem outward.",
+        "caption": "Typical herbaceous dicot stem: vascular bundles form a ring."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/dicot-root-ts.svg",
+        "alt": "Original schematic transverse section of a herbaceous dicotyledonous root showing central star-shaped xylem, phloem between arms and surrounding endodermis.",
+        "caption": "Typical herbaceous dicot root: central xylem with phloem between its arms."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/dicot-leaf-ts.svg",
+        "alt": "Original schematic transverse section of a dicotyledonous leaf showing upper epidermis, palisade and spongy mesophyll, and a vein with xylem above phloem.",
+        "caption": "Typical dicot leaf: xylem is towards the upper epidermis."
+      },
+      {
+        "path": "/learning-assets/biology/9700/transport-plants/xylem-phloem-cells.svg",
+        "alt": "Original comparison schematic of a lignified hollow xylem vessel element and living phloem sieve tube element with sieve plate and adjacent companion cell.",
+        "caption": "Transport cell structures and their adaptations."
+      }
+    ]
+  }
+}
