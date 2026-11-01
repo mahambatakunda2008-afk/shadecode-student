@@ -1,0 +1,204 @@
+{
+  "asset_key": "biology-9700-membranes-and-cell-signalling",
+  "asset_version": 1,
+  "asset_type": "lesson",
+  "title": "Cell membranes and cell signalling",
+  "subject_id": "biology",
+  "curriculum": {
+    "board_id": "cambridge",
+    "qualification_id": "cambridge-as-a-level",
+    "syllabus_id": "cambridge-9700",
+    "syllabus_version": "2028-2030",
+    "expected_topic_key": "4",
+    "status": "draft",
+    "source_reference": "Cambridge International AS & A Level Biology 9700 syllabus for exams in 2028, 2029 and 2030, Version 1, September 2025, Topic 4, syllabus pp. 22–24. https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf Learning outcomes 4.1.1–4.1.4.",
+    "syllabus_outcome_codes": [
+      "4.1.1",
+      "4.1.2",
+      "4.1.3",
+      "4.1.4"
+    ],
+    "objective_mapping_status": "unmapped_to_database_objective_uuids"
+  },
+  "review_status": "draft",
+  "quality_checks": {
+    "syllabus_checked": false,
+    "factual_accuracy_checked": false,
+    "assessment_checked": false,
+    "accessibility_checked": false,
+    "review_notes": [
+      "Original draft learning asset. Requires independent Biology subject-editor review, objective UUID reconciliation against the verified 2028–2030 curriculum version, and assessment/accessibility review before import or learner publication.",
+      "No Cambridge past-paper questions, official mark schemes or third-party diagrams are reproduced.",
+      "Practical activities are outlines only. Complete local school risk assessments and follow teacher supervision before practical use."
+    ]
+  },
+  "content": {
+    "learning_objectives": [
+      "Explain the fluid mosaic model of cell surface membranes, including phospholipid bilayers and membrane proteins.",
+      "Describe the positions and roles of cholesterol, glycolipids, glycoproteins and membrane proteins.",
+      "Relate membrane component structure to selective permeability, stability, fluidity, transport, cell recognition and signalling.",
+      "Describe the stages of cell signalling from ligand secretion and transport to receptor binding."
+    ],
+    "sections": [
+      {
+        "heading": "Why cells need membranes",
+        "body": "Cell surface membranes separate the cytoplasm from the external environment. Membranes also surround organelles, creating compartments in which different reactions can occur. A membrane is selectively permeable: some substances cross readily, others cross slowly or require transport proteins, and some cannot cross without a specific mechanism. This allows cells to maintain different internal conditions from their surroundings."
+      },
+      {
+        "heading": "The phospholipid bilayer",
+        "body": "A phospholipid has a hydrophilic phosphate-containing head and two hydrophobic fatty-acid tails. In an aqueous environment, phospholipids arrange into a bilayer: heads face the water on either side, while tails point towards one another in the interior. The hydrophobic core restricts movement of many polar and charged substances, while small non-polar molecules can pass more readily. The bilayer is flexible rather than a rigid wall."
+      },
+      {
+        "heading": "The fluid mosaic model",
+        "body": "The fluid mosaic model describes a phospholipid bilayer with proteins embedded in or associated with it. Many phospholipids and some proteins can move laterally within the plane of the membrane, giving the membrane fluidity. The arrangement is described as a mosaic because different proteins and other components are distributed through the bilayer. Not every component moves freely: some are anchored to the cytoskeleton or extracellular structures."
+      },
+      {
+        "heading": "Integral and peripheral proteins",
+        "body": "Integral proteins are embedded in the bilayer; many span the membrane and are called transmembrane proteins. Their hydrophobic regions interact with the fatty-acid core, while hydrophilic regions can face aqueous environments or form a channel. Peripheral proteins are attached to the membrane surface or to other proteins and do not usually penetrate the hydrophobic core. Membrane proteins act as channels, carriers, receptors, enzymes and attachment points."
+      },
+      {
+        "heading": "Cholesterol and membrane properties",
+        "body": "Cholesterol is positioned between phospholipid molecules, with its small hydrophilic hydroxyl group near the phospholipid heads and its hydrophobic regions among the fatty-acid tails. It helps regulate membrane fluidity and stability. At higher temperatures it restrains phospholipid movement, reducing excessive fluidity; at lower temperatures it interferes with close packing of phospholipids, helping prevent the membrane becoming too rigid. It also reduces permeability to some small water-soluble molecules."
+      },
+      {
+        "heading": "Glycolipids and glycoproteins",
+        "body": "Glycolipids are lipids with carbohydrate chains attached; glycoproteins are proteins with carbohydrate chains attached. Their carbohydrate chains project from the outer surface of the cell surface membrane. They contribute to cell recognition, cell adhesion and interactions between cells. Some act as receptors or as markers that allow cells and the immune system to distinguish cell types."
+      },
+      {
+        "heading": "Connecting structure to membrane function",
+        "body": "Phospholipids create the basic selective barrier and contribute to flexibility. Cholesterol stabilises the bilayer and moderates fluidity and permeability. Channel and carrier proteins provide selective routes for polar or charged substances. Receptor proteins bind specific signalling molecules. Glycoproteins and glycolipids provide recognition and adhesion sites. A single membrane component can contribute to more than one function, and the properties of the whole membrane arise from their combined arrangement."
+      },
+      {
+        "heading": "Cell signalling: the ligand",
+        "body": "A ligand is a signalling molecule that binds to a receptor. A signalling cell may synthesise and secrete a ligand, which is then transported to a target cell. Transport may occur over a short distance between nearby cells or over a longer distance in a body fluid such as blood. The ligand carries information; it is not necessarily transported into the target cell."
+      },
+      {
+        "heading": "Receptor binding and target-cell response",
+        "body": "A target cell responds when a ligand binds to a receptor with a complementary binding site. Receptors may be on the cell surface or inside the cell, depending on the properties of the ligand. For cell-surface signalling, ligand binding changes the receptor's state and initiates events inside the target cell. Only cells with the appropriate receptor are able to respond to that ligand. Binding is specific, and the response depends on the cell's internal machinery."
+      }
+    ],
+    "questions": [
+      {
+        "question": "Explain how the amphipathic structure of phospholipids leads to formation of a bilayer in water.",
+        "answer": "The hydrophilic heads interact with water while the hydrophobic tails avoid water and associate with one another. Two layers form with heads facing the aqueous environments and tails directed towards the centre.",
+        "mark_points": [
+          "Phospholipid has hydrophilic head and hydrophobic tails",
+          "Heads face aqueous surroundings",
+          "Tails face inward away from water",
+          "Bilayer forms with hydrophobic core"
+        ]
+      },
+      {
+        "question": "Describe two features of the fluid mosaic model.",
+        "answer": "The membrane is a phospholipid bilayer with proteins embedded in or associated with it. Many components can move laterally, and the different proteins form a mosaic distribution within the fluid bilayer.",
+        "mark_points": [
+          "Phospholipid bilayer",
+          "Proteins embedded/associated",
+          "Components distributed as mosaic",
+          "Lateral movement gives fluidity"
+        ]
+      },
+      {
+        "question": "Explain how a transmembrane channel protein can allow an ion to cross the membrane.",
+        "answer": "The protein spans the bilayer and provides a hydrophilic pathway through its interior. Ions can move through this pathway down their electrochemical gradient without entering the hydrophobic core of the phospholipid bilayer.",
+        "mark_points": [
+          "Protein spans membrane",
+          "Hydrophilic channel/pore",
+          "Ion avoids hydrophobic core",
+          "Movement down electrochemical gradient for facilitated diffusion"
+        ]
+      },
+      {
+        "question": "Describe how cholesterol affects membrane properties at high and low temperatures.",
+        "answer": "At high temperature cholesterol restricts phospholipid movement and reduces excessive fluidity. At low temperature it disrupts close packing of phospholipids, helping maintain fluidity and preventing the membrane becoming too rigid.",
+        "mark_points": [
+          "Located between phospholipids",
+          "Restrains movement at higher temperature",
+          "Prevents tight packing at lower temperature",
+          "Buffers/regulates membrane fluidity"
+        ]
+      },
+      {
+        "question": "Distinguish a glycolipid from a glycoprotein and state a shared function.",
+        "answer": "A glycolipid is a lipid with a carbohydrate chain attached; a glycoprotein is a protein with a carbohydrate chain attached. Both can contribute to cell recognition at the outer surface of the membrane.",
+        "mark_points": [
+          "Glycolipid: carbohydrate attached to lipid",
+          "Glycoprotein: carbohydrate attached to protein",
+          "Carbohydrate chains project outwards",
+          "Both contribute to cell recognition/adhesion"
+        ]
+      },
+      {
+        "question": "A cell loses many of its membrane glycoproteins. Predict one effect on interactions with neighbouring cells and explain it.",
+        "answer": "Cell recognition or adhesion may be reduced because carbohydrate chains on glycoproteins provide binding and identification sites at the cell surface. The effect depends on which glycoproteins were lost.",
+        "mark_points": [
+          "Glycoproteins have external carbohydrate chains",
+          "Recognition or adhesion sites reduced",
+          "Link structure to interaction with neighbouring cells"
+        ]
+      },
+      {
+        "question": "Outline the stages of cell signalling involving a secreted ligand and a cell-surface receptor.",
+        "answer": "A signalling cell produces and secretes a ligand. The ligand is transported to a target cell, binds specifically to a complementary cell-surface receptor and changes the receptor's state, initiating an intracellular response.",
+        "mark_points": [
+          "Ligand produced and secreted",
+          "Ligand transported to target",
+          "Specific binding to receptor",
+          "Receptor activation initiates response"
+        ]
+      },
+      {
+        "question": "Explain why two neighbouring cells may respond differently to the same signalling molecule.",
+        "answer": "Only cells with a suitable receptor can detect the ligand, and different cell types may have different intracellular signalling proteins and response pathways. Therefore receptor presence and internal machinery determine the response.",
+        "mark_points": [
+          "Receptor specificity",
+          "Cells may differ in receptor expression",
+          "Intracellular pathways differ",
+          "Responses can differ or one cell may not respond"
+        ]
+      }
+    ],
+    "visual_tasks": [],
+    "common_mistakes": [],
+    "retrieval_check": {
+      "questions": [
+        "Explain how the amphipathic structure of phospholipids leads to formation of a bilayer in water.",
+        "Describe two features of the fluid mosaic model.",
+        "Explain how a transmembrane channel protein can allow an ion to cross the membrane.",
+        "Describe how cholesterol affects membrane properties at high and low temperatures.",
+        "Distinguish a glycolipid from a glycoprotein and state a shared function."
+      ],
+      "answers": [
+        "The hydrophilic heads interact with water while the hydrophobic tails avoid water and associate with one another. Two layers form with heads facing the aqueous environments and tails directed towards the centre.",
+        "The membrane is a phospholipid bilayer with proteins embedded in or associated with it. Many components can move laterally, and the different proteins form a mosaic distribution within the fluid bilayer.",
+        "The protein spans the bilayer and provides a hydrophilic pathway through its interior. Ions can move through this pathway down their electrochemical gradient without entering the hydrophobic core of the phospholipid bilayer.",
+        "At high temperature cholesterol restricts phospholipid movement and reduces excessive fluidity. At low temperature it disrupts close packing of phospholipids, helping maintain fluidity and preventing the membrane becoming too rigid.",
+        "A glycolipid is a lipid with a carbohydrate chain attached; a glycoprotein is a protein with a carbohydrate chain attached. Both can contribute to cell recognition at the outer surface of the membrane."
+      ]
+    },
+    "sources": [
+      {
+        "title": "Cambridge International AS & A Level Biology 9700 syllabus 2028–2030",
+        "url": "https://www.cambridgeinternational.org/Images/744622-2028-2030-syllabus.pdf",
+        "use": "Controlling Topic 4 outcomes."
+      }
+    ],
+    "visual_assets": [
+      {
+        "path": "/learning-assets/biology/9700/membranes/phospholipid-bilayer.svg",
+        "caption": "Phospholipid bilayer with hydrophilic heads and hydrophobic tails.",
+        "alt": "Diagram showing two phospholipid layers with hydrophilic heads facing water and hydrophobic tails facing the bilayer centre."
+      },
+      {
+        "path": "/learning-assets/biology/9700/membranes/fluid-mosaic-membrane.svg",
+        "caption": "Fluid mosaic membrane components and their positions.",
+        "alt": "Diagram showing phospholipid bilayer, integral and peripheral proteins, cholesterol, glycolipid and glycoprotein."
+      },
+      {
+        "path": "/learning-assets/biology/9700/membranes/cell-signalling.svg",
+        "caption": "Secreted ligand transport and receptor binding.",
+        "alt": "Flow diagram showing ligand secretion, movement to a target cell, receptor binding and initiation of an intracellular response."
+      }
+    ]
+  }
+}
