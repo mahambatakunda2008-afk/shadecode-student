@@ -41,7 +41,7 @@ The current draft set includes:
 - Worked examples with explicit reasoning steps and common errors.
 - Genetic-diagram construction rather than ratio recall alone.
 - Linked-gene offspring data and recombination-frequency calculation.
-- Epistasis and chi-squared interpretation with cautious conclusions, including a 8-mark structured assessment item with an independently traceable χ² calculation, plus a 6-mark Le/le genetic-cross item.
+- Epistasis and chi-squared interpretation with cautious conclusions, including an 8-mark structured assessment item with an independently traceable χ² calculation, plus a 6-mark Le/le genetic-cross item.
 - Pedigree evidence evaluation that avoids claiming a unique inheritance pattern from insufficient data.
 - Meiosis stage identification, chromosome counting, magnification and a photomicrograph-evidence task.
 - Gene-regulation mutation prediction and quantitative experimental-data analysis.
