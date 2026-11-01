@@ -59,7 +59,7 @@ describe("Cambridge Biology 9700 Topic 2 draft assets (2028–2030)", () => {
       expect(asset.quality_checks.assessment_checked).toBe(false);
       expect(asset.quality_checks.accessibility_checked).toBe(false);
       for (const visual of asset.content.visual_assets ?? []) {
-        expect(existsSync(join(root, "public", visual.path.replace(/^\\//, "")))).toBe(true);
+        expect(existsSync(join(root, "public", visual.path.startsWith("/") ? visual.path.slice(1) : visual.path))).toBe(true);
         expect(visual.alt.length).toBeGreaterThan(20);
       }
     });
