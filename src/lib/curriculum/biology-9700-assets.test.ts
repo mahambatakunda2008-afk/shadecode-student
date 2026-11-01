@@ -114,6 +114,9 @@ describe("Cambridge Biology 9700 Topic 16 draft assets", () => {
     expect(map).toContain("2025–2027");
     expect(map).toContain("Authentic, permission-cleared photomicrograph still required");
     expect(map).toContain("Do not invent UUIDs");
+    expect(map).toContain("| 16.1.2 | Explain what is meant by homologous pairs of chromosomes.");
+    expect(map).toContain("| 16.1.4 | Describe chromosome behaviour during meiosis and the associated behaviour");
+    expect(map).toContain("| 16.1.6 | Explain how crossing over and random orientation (independent assortment)");
     expect(map).toContain("Expected ratios for different types of epistasis are not required knowledge.");
     expect(map).toContain("| 16.2.5 | Use the chi-squared test");
     expect(map).toContain("| 16.2.6 | Explain the relationship between the specified genes");
